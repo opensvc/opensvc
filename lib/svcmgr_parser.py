@@ -472,30 +472,6 @@ ACTIONS = {
                    '--subset, disregarding their schedule',
             'options': ACTION_OPTS,
         },
-        'startloop': {
-            'msg': 'attach loop resources of this service',
-            'options': ACTION_OPTS,
-        },
-        'stoploop': {
-            'msg': 'detach loop resources of this service',
-            'options': ACTION_OPTS,
-        },
-        'startvg': {
-            'msg': 'activate/import volume group resources of this service',
-            'options': ACTION_OPTS,
-        },
-        'stopvg': {
-            'msg': 'deactivate/deport volume group resources of this service',
-            'options': ACTION_OPTS,
-        },
-        'startpool': {
-            'msg': 'activate zpool resources of this service',
-            'options': ACTION_OPTS,
-        },
-        'stoppool': {
-            'msg': 'deactivate zpool resources of this service',
-            'options': ACTION_OPTS,
-        },
         'startdisk': {
             'msg': 'combo action, activating standby disks, taking '
                    'reservations, starting loopback devices and volume '

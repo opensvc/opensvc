@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2016\-12\-13
+.TH SVCMGR 1 2016\-12\-22
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -22,6 +22,42 @@ the acker name to log when used with the 'collector ack unavailability' action
 .TP
 .B --comment=COMMENT
 a comment to log when used with the 'collector ack unavailability' action
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector ack unavailability\fP
@@ -47,6 +83,42 @@ a comment to log when used with the 'collector ack unavailability' action
 .TP
 .B --duration=DURATION
 a duration expressed in minutes. used with the 'collector ack unavailability' action
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector alerts\fP
@@ -54,17 +126,128 @@ a duration expressed in minutes. used with the 'collector ack unavailability' ac
 
 display service alerts
 
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
+
 .RE
 \fBsvcmgr collector asset\fP
 .RS
 
 display asset information known to the collector
 
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
+
 .RE
 \fBsvcmgr collector checks\fP
 .RS
 
 display service checks
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector create tag\fP
@@ -75,12 +258,85 @@ create a new tag
 .TP
 .B --tag=TAG
 a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector disks\fP
 .RS
 
 display service disks
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector events\fP
@@ -94,6 +350,42 @@ a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unava
 .TP
 .B --end=END
 a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector list actions\fP
@@ -107,6 +399,42 @@ a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unava
 .TP
 .B --end=END
 a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector list tags\fP
@@ -117,6 +445,42 @@ list all available tags. use --like to filter the output.
 .TP
 .B --like=LIKE
 a sql like filtering expression. leading and trailing wildcards are automatically set.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector list unavailability ack\fP
@@ -136,6 +500,42 @@ a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavail
 .TP
 .B --comment=COMMENT
 a comment to log when used with the 'collector ack unavailability' action
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector log\fP
@@ -146,12 +546,85 @@ log a message in the collector's service log
 .TP
 .B --message=MESSAGE
 the message to send to the collector for logging
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector networks\fP
 .RS
 
 display network information known to the collector for each service ip
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector show actions\fP
@@ -168,12 +641,85 @@ specify an object id to act on
 .TP
 .B --end=END
 a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector show tags\fP
 .RS
 
 list all service tags
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector tag\fP
@@ -184,6 +730,42 @@ set a service tag (pointed by --tag)
 .TP
 .B --tag=TAG
 a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr collector untag\fP
@@ -194,6 +776,42 @@ unset a service tag (pointed by --tag)
 .TP
 .B --tag=TAG
 a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 \fRCOMPLIANCE\fP
 
@@ -209,6 +827,42 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 .TP
 .B --ruleset=RULESET
 compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr compliance attach moduleset\fP
@@ -219,6 +873,42 @@ attach moduleset specified by --moduleset to this service
 .TP
 .B --moduleset=MODULESET
 compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr compliance attach ruleset\fP
@@ -229,6 +919,42 @@ attach ruleset specified by --ruleset to this service
 .TP
 .B --ruleset=RULESET
 compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr compliance check\fP
@@ -248,6 +974,42 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 .TP
 .B --ruleset-date=RULESET_DATE
 compliance, use rulesets valid on specified date
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr compliance detach\fP
@@ -261,6 +1023,42 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 .TP
 .B --ruleset=RULESET
 compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr compliance detach moduleset\fP
@@ -271,6 +1069,42 @@ detach moduleset specified by --moduleset from this service
 .TP
 .B --moduleset=MODULESET
 compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr compliance detach ruleset\fP
@@ -281,6 +1115,42 @@ detach ruleset specified by --ruleset from this service
 .TP
 .B --ruleset=RULESET
 compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr compliance env\fP
@@ -294,6 +1164,42 @@ compliance, set module list
 .TP
 .B --moduleset=MODULESET
 compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr compliance fix\fP
@@ -313,6 +1219,42 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 .TP
 .B --ruleset-date=RULESET_DATE
 compliance, use rulesets valid on specified date
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr compliance fixable\fP
@@ -332,6 +1274,42 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 .TP
 .B --ruleset-date=RULESET_DATE
 compliance, use rulesets valid on specified date
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr compliance list moduleset\fP
@@ -339,11 +1317,85 @@ compliance, use rulesets valid on specified date
 
 list available compliance modulesets. --moduleset f% limit the scope to modulesets matching the f% pattern.
 
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
+
 .RE
 \fBsvcmgr compliance list ruleset\fP
 .RS
 
 list available compliance rulesets. --ruleset f% limit the scope to rulesets matching the f% pattern.
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr compliance show moduleset\fP
@@ -351,17 +1403,128 @@ list available compliance rulesets. --ruleset f% limit the scope to rulesets mat
 
 show compliance rules applying to this service
 
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
+
 .RE
 \fBsvcmgr compliance show ruleset\fP
 .RS
 
 show compliance rules applying to this node
 
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
+
 .RE
 \fBsvcmgr compliance show status\fP
 .RS
 
 show compliance modules status
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 \fRSERVICE ACTIONS\fP
 
@@ -398,6 +1561,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr disable\fP
@@ -414,6 +1613,42 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .TP
 .B --subsets=PARM_SUBSETS
 comma-separated list of resource subsets to limit action to
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr dns update\fP
@@ -448,12 +1683,85 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr docker\fP
 .RS
 
 wrap the docker client command, setting automatically the socket parameter to join the service-private docker daemon. The %as_service%, %images% and %instances% words in the wrapped command are replaced by, respectively, the registry login username/password/email parameters to log as a service using <svcname>@<nodename> as the username and the node uuid as password (which is what is expected when the opensvc collector is used as the JWT manager for the registry), the set of docker instance names and images for container resources passing the --tags, --rid and --subsets filters. This is useful to remove all instances of a service or all instances of resources with a tag like "frontend". Note the opensvc filters must be positioned before the docker command in the arguments list.
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr enable\fP
@@ -470,6 +1778,42 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .TP
 .B --subsets=PARM_SUBSETS
 comma-separated list of resource subsets to limit action to
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr freeze\fP
@@ -477,17 +1821,128 @@ comma-separated list of resource subsets to limit action to
 
 set up a flag to block actions on this service
 
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
+
 .RE
 \fBsvcmgr frozen\fP
 .RS
 
 report on the current blocking of actions on this service
 
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
+
 .RE
 \fBsvcmgr logs\fP
 .RS
 
 display the service logs in the pager
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr migrate\fP
@@ -525,6 +1980,42 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .TP
 .B --to=PARM_DESTINATION_NODE
 remote node to start or migrate the service to
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr pg freeze\fP
@@ -559,6 +2050,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr pg kill\fP
@@ -593,6 +2120,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr pg thaw\fP
@@ -627,6 +2190,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr postsync\fP
@@ -661,6 +2260,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr presync\fP
@@ -695,12 +2330,85 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr print config mtime\fP
 .RS
 
 display service configuration file modification time
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr print devlist\fP
@@ -711,6 +2419,42 @@ print service device list
 .TP
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr print disklist\fP
@@ -721,6 +2465,42 @@ print service disk list
 .TP
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr print resource status\fP
@@ -737,6 +2517,42 @@ drop last resource status cache and re-evaluate before printing with the 'print 
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr print schedule\fP
@@ -750,6 +2566,42 @@ specify a data formatter for output of the print* and collector* commands. possi
 .TP
 .B --verbose
 add more information to some print commands: +next in 'print schedule'
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr print status\fP
@@ -769,6 +2621,42 @@ drop last resource status cache and re-evaluate before printing with the 'print 
 .TP
 .B --show-disabled
 tell print|json status action to include the disabled resources in the output, irrespective of the show_disabled service configuration setting.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr provision\fP
@@ -803,6 +2691,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr prstart\fP
@@ -837,12 +2761,85 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr prstatus\fP
 .RS
 
 report status of reservations on scsi disks held by this service
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr prstop\fP
@@ -877,6 +2874,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr pull\fP
@@ -884,11 +2917,85 @@ comma-separated list of resource tags to limit action to. The + separator can be
 
 pull a service configuration from the collector
 
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
+
 .RE
 \fBsvcmgr push\fP
 .RS
 
 push service configuration to the collector
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr push resinfo\fP
@@ -896,11 +3003,85 @@ push service configuration to the collector
 
 push service resources and application launchers info key/value pairs the collector
 
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
+
 .RE
 \fBsvcmgr push service status\fP
 .RS
 
 push service and its resources status to database
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr resource monitor\fP
@@ -935,6 +3116,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr restart\fP
@@ -969,6 +3186,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr resync\fP
@@ -1003,6 +3256,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr run\fP
@@ -1037,12 +3326,85 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr scheduler\fP
 .RS
 
 run the service task scheduler
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr shutdown\fP
@@ -1077,6 +3439,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr start\fP
@@ -1111,6 +3509,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr startapp\fP
@@ -1145,6 +3579,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr startcontainer\fP
@@ -1179,6 +3649,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr startdisk\fP
@@ -1213,6 +3719,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr startfs\fP
@@ -1247,6 +3789,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr startip\fP
@@ -1281,74 +3859,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-
-.RE
-\fBsvcmgr startloop\fP
-.RS
-
-attach loop resources of this service
-
 .TP
-.B --dry-run
-Show the action execution plan
+.B --onlyprimary
+operate only on service flagged for autostart on this node
 .TP
-.B -f, --force
-force action, ignore sanity check warnings
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
 .TP
-.B --master
-option to set to limit the action scope to the master service resources
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
 .TP
-.B --rid=PARM_RID
-comma-separated list of resource to limit action to
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
 .TP
-.B --slave=SLAVE
-option to set to limit the action scope to the service resources in the specified, comma-separated, slaves
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
 .TP
-.B --slaves
-option to set to limit the action scope to all slave service resources
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
 .TP
-.B --subsets=PARM_SUBSETS
-comma-separated list of resource subsets to limit action to
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
 .TP
-.B --tags=PARM_TAGS
-comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-
-.RE
-\fBsvcmgr startpool\fP
-.RS
-
-activate zpool resources of this service
-
+.B --debug
+debug mode
 .TP
-.B --dry-run
-Show the action execution plan
+.B -p, --parallel
+start actions on specified services in parallel
 .TP
-.B -f, --force
-force action, ignore sanity check warnings
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
 .TP
-.B --master
-option to set to limit the action scope to the master service resources
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
-.B --rid=PARM_RID
-comma-separated list of resource to limit action to
-.TP
-.B --slave=SLAVE
-option to set to limit the action scope to the service resources in the specified, comma-separated, slaves
-.TP
-.B --slaves
-option to set to limit the action scope to all slave service resources
-.TP
-.B --subsets=PARM_SUBSETS
-comma-separated list of resource subsets to limit action to
-.TP
-.B --tags=PARM_TAGS
-comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr startshare\fP
@@ -1383,6 +3929,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr startstandby\fP
@@ -1417,40 +3999,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-
-.RE
-\fBsvcmgr startvg\fP
-.RS
-
-activate/import volume group resources of this service
-
 .TP
-.B --dry-run
-Show the action execution plan
+.B --onlyprimary
+operate only on service flagged for autostart on this node
 .TP
-.B -f, --force
-force action, ignore sanity check warnings
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
 .TP
-.B --master
-option to set to limit the action scope to the master service resources
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
 .TP
-.B --rid=PARM_RID
-comma-separated list of resource to limit action to
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
 .TP
-.B --slave=SLAVE
-option to set to limit the action scope to the service resources in the specified, comma-separated, slaves
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
 .TP
-.B --slaves
-option to set to limit the action scope to all slave service resources
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
 .TP
-.B --subsets=PARM_SUBSETS
-comma-separated list of resource subsets to limit action to
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
 .TP
-.B --tags=PARM_TAGS
-comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr status\fP
@@ -1461,6 +4045,42 @@ return service overall status code
 .TP
 .B --refresh
 drop last resource status cache and re-evaluate before printing with the 'print [json] status' commands
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr stonith\fP
@@ -1495,6 +4115,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr stop\fP
@@ -1529,6 +4185,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr stopapp\fP
@@ -1563,6 +4255,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr stopcontainer\fP
@@ -1597,6 +4325,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr stopdisk\fP
@@ -1631,6 +4395,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr stopfs\fP
@@ -1665,6 +4465,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr stopip\fP
@@ -1699,74 +4535,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-
-.RE
-\fBsvcmgr stoploop\fP
-.RS
-
-detach loop resources of this service
-
 .TP
-.B --dry-run
-Show the action execution plan
+.B --onlyprimary
+operate only on service flagged for autostart on this node
 .TP
-.B -f, --force
-force action, ignore sanity check warnings
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
 .TP
-.B --master
-option to set to limit the action scope to the master service resources
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
 .TP
-.B --rid=PARM_RID
-comma-separated list of resource to limit action to
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
 .TP
-.B --slave=SLAVE
-option to set to limit the action scope to the service resources in the specified, comma-separated, slaves
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
 .TP
-.B --slaves
-option to set to limit the action scope to all slave service resources
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
 .TP
-.B --subsets=PARM_SUBSETS
-comma-separated list of resource subsets to limit action to
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
 .TP
-.B --tags=PARM_TAGS
-comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-
-.RE
-\fBsvcmgr stoppool\fP
-.RS
-
-deactivate zpool resources of this service
-
+.B --debug
+debug mode
 .TP
-.B --dry-run
-Show the action execution plan
+.B -p, --parallel
+start actions on specified services in parallel
 .TP
-.B -f, --force
-force action, ignore sanity check warnings
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
 .TP
-.B --master
-option to set to limit the action scope to the master service resources
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
-.B --rid=PARM_RID
-comma-separated list of resource to limit action to
-.TP
-.B --slave=SLAVE
-option to set to limit the action scope to the service resources in the specified, comma-separated, slaves
-.TP
-.B --slaves
-option to set to limit the action scope to all slave service resources
-.TP
-.B --subsets=PARM_SUBSETS
-comma-separated list of resource subsets to limit action to
-.TP
-.B --tags=PARM_TAGS
-comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr stopshare\fP
@@ -1801,40 +4605,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-
-.RE
-\fBsvcmgr stopvg\fP
-.RS
-
-deactivate/deport volume group resources of this service
-
 .TP
-.B --dry-run
-Show the action execution plan
+.B --onlyprimary
+operate only on service flagged for autostart on this node
 .TP
-.B -f, --force
-force action, ignore sanity check warnings
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
 .TP
-.B --master
-option to set to limit the action scope to the master service resources
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
 .TP
-.B --rid=PARM_RID
-comma-separated list of resource to limit action to
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
 .TP
-.B --slave=SLAVE
-option to set to limit the action scope to the service resources in the specified, comma-separated, slaves
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
 .TP
-.B --slaves
-option to set to limit the action scope to all slave service resources
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
 .TP
-.B --subsets=PARM_SUBSETS
-comma-separated list of resource subsets to limit action to
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
 .TP
-.B --tags=PARM_TAGS
-comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr switch\fP
@@ -1872,6 +4678,42 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .TP
 .B --to=PARM_DESTINATION_NODE
 remote node to start or migrate the service to
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync all\fP
@@ -1906,6 +4748,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync break\fP
@@ -1940,6 +4818,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync drp\fP
@@ -1974,6 +4888,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync establish\fP
@@ -2008,6 +4958,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync full\fP
@@ -2042,6 +5028,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync nodes\fP
@@ -2076,6 +5098,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync quiesce\fP
@@ -2110,6 +5168,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync restore\fP
@@ -2144,6 +5238,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync resume\fP
@@ -2178,6 +5308,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync resync\fP
@@ -2212,6 +5378,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync revert\fP
@@ -2246,6 +5448,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync split\fP
@@ -2280,6 +5518,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync update\fP
@@ -2314,6 +5588,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr sync verify\fP
@@ -2348,12 +5658,85 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr thaw\fP
 .RS
 
 remove the flag to unblock actions on this service
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr unprovision\fP
@@ -2388,6 +5771,42 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 \fRSERVICE CONFIGURATION\fP
 
@@ -2442,6 +5861,42 @@ a resource definition in json dictionary format fed to create or update
 .TP
 .B --template=PARAM_TEMPLATE
 the configuration file template name or id, served by the collector, to use when creating or installing a service
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr delete\fP
@@ -2479,6 +5934,42 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .TP
 .B --unprovision
 with the delete action, unprovision the service resources before config files file deletion. defaults to False.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr edit config\fP
@@ -2492,6 +5983,42 @@ Discard the stashed erroneous configuration file in a 'edit config' command
 .TP
 .B --recover
 Recover the stashed erroneous configuration file in a 'edit config' command
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr get\fP
@@ -2505,6 +6032,42 @@ If set with the 'get' action, the printed value of --param is scoped and derefer
 .TP
 .B --param=PARAM
 point a service configuration parameter for the 'get' and 'set' actions
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr print config\fP
@@ -2515,6 +6078,42 @@ display service current configuration
 .TP
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr set\fP
@@ -2528,6 +6127,42 @@ point a service configuration parameter for the 'get' and 'set' actions
 .TP
 .B --value=VALUE
 set a service configuration parameter value for the 'set --param' action
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr unset\fP
@@ -2538,6 +6173,42 @@ unset a node configuration parameter pointed by --param
 .TP
 .B --param=PARAM
 point a service configuration parameter for the 'get' and 'set' actions
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr update\fP
@@ -2575,12 +6246,85 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .TP
 .B --resource=RESOURCE
 a resource definition in json dictionary format fed to create or update
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBsvcmgr validate config\fP
 .RS
 
 check the sections and parameters are valid.
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
 .SH OPTIONS
 .SH SEE ALSO
 .BR nodemgr (1)
