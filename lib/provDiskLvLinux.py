@@ -24,14 +24,23 @@ class ProvisioningDisk(Provisioning):
         """
         Return the device path in the /dev/<vg>/<lv> format
         """
-        dev = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "dev")
+        try:
+            dev = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "dev")
+        except ex.OptNotFound:
+            raise ex.excError("the '%s.dev' keyword is mandatory" % self.r.rid)
+
         if dev.startswith("LABEL=") or dev.startswith("UUID="):
             _dev = label_to_dev(dev)
             if _dev is None:
                 self.r.log.info("unable to find device identified by %s", dev)
                 return
             dev = _dev
-        vg = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "vg")
+
+        try:
+            vg = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "vg")
+        except ex.OptNotFound:
+            raise ex.excError("the '%s.vg' keyword is mandatory" % self.r.rid)
+
         if dev.startswith('/dev/mapper/'):
             dev = dev.replace(vg.replace('-', '--')+'-', '')
             dev = dev.replace('--', '-')
