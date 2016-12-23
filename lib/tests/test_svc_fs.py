@@ -68,3 +68,7 @@ class TestSvc:
         ret = self.svc.action("stop")
         assert ret == 0
 
+    def test_009_delete_rid(self):
+        ret = self.svc.action("delete", {"rid": "fs#1", "unprovision": True})
+        assert ret == 0
+
