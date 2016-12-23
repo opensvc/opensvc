@@ -12,7 +12,7 @@ import shlex
 
 import rcExceptions as ex
 import rcStatus
-from rcUtilities import lazy, clear_cache, call, vcall
+from rcUtilities import lazy, clear_cache, call, vcall, set_lazy
 from rcGlobalEnv import rcEnv
 import rcColor
 
@@ -64,6 +64,13 @@ class Resource(object):
         Lazy init for the resource logger.
         """
         return logging.getLogger(self.log_label())
+
+    def set_logger(self, log):
+        """
+        Set the <log> logger as the resource logger, in place of the default
+        lazy-initialized one.
+        """
+        set_lazy(self, "log", log)
 
     def fmt_info(self, keys=None):
         """

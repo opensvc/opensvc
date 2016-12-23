@@ -229,7 +229,7 @@ class Rsync(resSync.Sync):
             if not hasattr(self.rset, 'snaps'):
                 Snap = lookup_snap_mod()
                 self.rset.snaps = Snap.Snap(self.rid)
-                self.rset.snaps.log = self.log
+                self.rset.snaps.set_logger(self.log)
             self.rset.snaps.try_snap(self.rset, target, rid=self.rid)
 
         if hasattr(self, "alt_src"):
@@ -307,7 +307,7 @@ class Rsync(resSync.Sync):
         Snap = lookup_snap_mod()
         try:
             self.rset.snaps = Snap.Snap(self.rid)
-            self.rset.snaps.log = self.log
+            self.rset.snaps.set_logger(self.log)
             self.rset.snaps.try_snap(self.rset, action)
         except ex.syncNotSnapable:
             raise ex.excError

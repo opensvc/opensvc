@@ -52,6 +52,13 @@ def lazy_initialized(self, attr):
         return True
     return False
 
+def set_lazy(self, attr, value):
+    """
+    Set a <value> as the <self> object lazy property hidden property value
+    """
+    attr_name = '_lazy_' + attr
+    setattr(self, attr_name, value)
+
 def bdecode(buff):
     if sys.version_info[0] < 3:
         return buff
