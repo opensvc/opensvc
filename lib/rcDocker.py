@@ -312,8 +312,8 @@ class DockerLib(object):
                 self.log.warning("the docker daemon data dir is handled by the %s "
                                  "resource in %s state. can't start the docker "
                                  "daemon" % (resource.rid, rcStatus.Status(state)))
-            lock.unlock(lockfd)
-            return
+                lock.unlock(lockfd)
+                return
 
         if os.path.exists(self.docker_pid_file):
             self.log.warning("removing leftover pid file %s" % self.docker_pid_file)
