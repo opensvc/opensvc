@@ -47,17 +47,15 @@ class TestSvc:
             assert True
 
     def test_005_update(self):
-        raise SkipTest
         ret = self.svc.action("update", {
-            "resource": '[{"rtype": "fs", "mnt": "/srv/{svcname}/foo", "dev": "/tmp", "type": "none"}]',
-            "provision": True
+            "resource": ['{"rtype": "fs", "mnt": "/srv/{svcname}/foo", "dev": "/tmp", "type": "none", "mnt_opt": "bind"}'],
+            "provision": True,
         })
         assert ret == 0
 
     def test_006_start(self):
         ret = self.svc.action("start")
         assert ret == 0
-
 
     def test_007_stop(self):
         ret = self.svc.action("stop")

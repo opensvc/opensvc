@@ -161,14 +161,13 @@ def do_svcs_action(node, options, action, argv):
             ret = 1
     return ret
 
-def do_svc_create_or_update(node, svcnames, action, options, build_kwargs):
+def do_svc_create(node, svcnames, action, options, build_kwargs):
     """
-    Handle service creation or update commands.
+    Handle service creation command.
     """
     ret = 0
 
-    if action == 'update' or (action == 'create' and \
-       options.config is None and options.template is None):
+    if action == 'create' and options.config is None and options.template is None:
         data = getattr(svcBuilder, action)(svcnames, options.resource,
                                            interactive=options.interactive,
                                            provision=options.provision)
@@ -278,9 +277,8 @@ def _main(node, argv=None):
             print(str(exc), file=sys.stderr)
             ret = 1
 
-    if action in ['create', 'update']:
-        return do_svc_create_or_update(node, svcnames, action, options,
-                                       build_kwargs)
+    if action == 'create':
+        return do_svc_create(node, svcnames, action, options, build_kwargs)
 
     node.options.parallel = options.parallel
     node.options.waitlock = options.waitlock

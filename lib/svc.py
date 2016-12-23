@@ -375,7 +375,7 @@ class Svc(object):
         self.need_postsync = set()
 
         # set by the builder
-        self.conf = None
+        self.conf = os.path.join(rcEnv.pathetc, svcname+".conf")
         self.node = None
         self.clustertype = "failover"
         self.show_disabled = False
@@ -3276,7 +3276,7 @@ class Svc(object):
 
     def prepare_options(self, options):
         """
-        Return a Storage() from command line options or dict passed as 
+        Return a Storage() from command line options or dict passed as
         <options>, sanitized, merge with default values in self.options.
         """
         if options is None:
@@ -3288,8 +3288,9 @@ class Svc(object):
             options.slave = options.slave.split(',')
 
         if isinstance(options.resource, list):
+            import json
             for idx, resource in enumerate(options.resource):
-                if not is_string(options.resource):
+                if not is_string(resource):
                     continue
                 options.resource[idx] = json.loads(resource)
 
@@ -4585,3 +4586,103 @@ class Svc(object):
             ofile.write(buff)
         shutil.move(fpath, self.paths.cf)
 
+    def allocate_rid(self, group):
+        """
+        Return an unused rid in <group>.
+        """
+        rids = [resource.rid for resource in self.get_resources(group)]
+        idx = 1
+        while True:
+            rid = "#".join((group, str(idx)))
+            if rid in rids:
+                idx += 1
+                continue
+            return rid
+
+    def update(self):
+        """
+        The 'update' action entry point.
+        Add resources to the service configuration, and provision them if
+        instructed to do so.
+        """
+        self.load_config()
+        sections = {}
+        rtypes = {}
+        defaults = self.config.defaults()
+        for section in self.config.sections():
+            sections[section] = {}
+            elements = section.split('#')
+            if len(elements) == 2:
+                rtype = elements[0]
+                ridx = elements[1]
+                if rtype not in rtypes:
+                    rtypes[rtype] = set([])
+                rtypes[rtype].add(ridx)
+            for option, value in self.config.items(section):
+                if option in defaults.keys() + ['rtype']:
+                    continue
+                sections[section][option] = value
+
+        import json
+        import svcBuilder
+        from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue
+
+        keys = KeyDict(provision=self.options.provision)
+        rid = []
+
+        for data in self.options.resource:
+            is_resource = False
+            if 'rid' in data:
+                section = data['rid']
+                if '#' not in section:
+                    raise ex.excError("%s must be formatted as 'rtype#n'" % section)
+                elements = section.split('#')
+                if len(elements) != 2:
+                    raise ex.excError("%s must be formatted as 'rtype#n'" % section)
+                del data['rid']
+                if section in sections:
+                    sections[section].update(data)
+                else:
+                    sections[section] = data
+                is_resource = True
+            elif 'rtype' in data and data["rtype"] == "env":
+                del data["rtype"]
+                if "env" in sections:
+                    sections["env"].update(data)
+                else:
+                    sections["env"] = data
+            elif 'rtype' in data and data["rtype"] != "DEFAULT":
+                section = self.allocate_rid(data['rtype'])
+                self.log.info("allocated rid %s" % section)
+                del data['rtype']
+                sections[section] = data
+                is_resource = True
+            else:
+                if "rtype" in data:
+                    del data["rtype"]
+                defaults.update(data)
+
+            if is_resource:
+                try:
+                    sections[section].update(keys.update(section, data))
+                except (MissKeyNoDefault, KeyInvalidValue):
+                    if not self.options.interactive:
+                        raise ex.excError("missing parameters")
+                rid.append(section)
+
+        for section, data in sections.items():
+            if not self.config.has_section(section):
+                self.config.add_section(section)
+            for key, val in data.items():
+                self.config.set(section, key, val)
+
+        self.write_config()
+
+        for section, data in sections.items():
+            group = section.split("#")[0]
+            getattr(svcBuilder, 'add_'+group)(self, self.config, section)
+
+        if self.options.provision and len(rid) > 0:
+            options = Storage(self.options)
+            options.rid = rid
+            self.action("provision", options)
