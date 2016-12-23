@@ -96,7 +96,7 @@ class Node(object):
         self.paths = Storage(
             reboot_flag=os.path.join(rcEnv.pathvar, "REBOOT_FLAG"),
         )
-        self.svcs = None
+        self.services = None
         self.load_config()
         self.options = Storage(
             cron=False,
@@ -124,6 +124,11 @@ class Node(object):
         self.set_collector_env()
         self.log = rcLogger.initLogger(rcEnv.nodename)
 
+    @property
+    def svcs(self):
+        if self.services is None:
+            return None
+        return list(self.services.values())
 
     @lazy
     def sched(self):
@@ -443,7 +448,7 @@ class Node(object):
             if len(svcnames_request-svcnames_actual) == 0:
                 return
 
-        self.svcs = []
+        self.services = {}
         autopush = True
         if 'autopush' in kwargs:
             if not kwargs['autopush']:
@@ -487,6 +492,18 @@ class Node(object):
         else:
             msg += "\n".join(["- "+err for err in errors])
         raise ex.excError(msg)
+
+    def rebuild_services(self, svcnames, minimal):
+        """
+        Delete the list of Svc objects in the Node object and create a new one.
+
+        Args:
+          svcnames: add only Svc objects for services specified
+          minimal: include a minimal set of properties in the new Svc objects
+        """
+        del self.services
+        self.services = None
+        self.build_services(svcnames=svcnames, autopush=False, minimal=minimal)
 
     def close(self):
         """
@@ -651,13 +668,13 @@ class Node(object):
         """
         if not hasattr(svc, "svcname"):
             return self
-        if self.svcs is None:
-            self.svcs = []
+        if self.services is None:
+            self.services = {}
         svc.node = self
         self.get_clusters()
         if not hasattr(svc, "clustername") and len(self.clusters) == 1:
             svc.clustername = self.clusters[0]
-        self.svcs.append(svc)
+        self.services[svc.svcname] = svc
         return self
 
     def action(self, action):

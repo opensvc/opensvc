@@ -19,18 +19,6 @@ import rcExceptions as ex
 from rcUtilities import ximport
 from rcGlobalEnv import Storage
 
-def refresh_node_svcs(node, svcnames, minimal):
-    """
-    Delete the list of Svc objects in the Node object and create a new one.
-
-    Args:
-      svcnames: add only Svc objects for services specified
-      minimal: include a minimal set of properties in the new Svc objects
-    """
-    del node.svcs
-    node.svcs = None
-    node.build_services(svcnames=svcnames, autopush=False, minimal=minimal)
-
 def get_docker_argv(argv=None):
     """
     Extract docker argv from svcmgr argv.
@@ -182,7 +170,7 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
     # force a refresh of node.svcs
     # don't push to the collector yet
     try:
-        refresh_node_svcs(node, svcnames, build_kwargs["minimal"])
+        node.rebuild_services(svcnames, build_kwargs["minimal"])
     except ex.excError as exc:
         print(exc, file=sys.stderr)
         ret = 1
@@ -195,7 +183,7 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
         # setenv changed the service config file
         # we need to rebuild again
         try:
-            refresh_node_svcs(node, svcnames, build_kwargs["minimal"])
+            node.rebuild_services(svcnames, build_kwargs["minimal"])
         except ex.excError as exc:
             print(exc, file=sys.stderr)
             ret = 1
