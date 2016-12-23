@@ -20,6 +20,8 @@ import platform
 import re
 from rcColor import colorize, color
 
+DEFAULT_HANDLERS = ["file", "stream", "syslog"]
+
 class ColorStreamHandler(logging.StreamHandler):
     def __init__(self, stream=None):
         logging.StreamHandler.__init__(self, stream)
@@ -97,7 +99,10 @@ def set_namelen(svcs):
     namelen = maxlen
     namefmt = "%-"+str(namelen)+"s"
 
-def initLogger(name, handlers=["file", "stream", "syslog"]):
+def initLogger(name, handlers=None):
+    if handlers is None:
+        handlers = DEFAULT_HANDLERS
+
     if name == rcEnv.nodename:
         logfile = os.path.join(rcEnv.pathlog, "node") + '.log'
     else:
