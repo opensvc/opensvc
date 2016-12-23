@@ -1000,6 +1000,8 @@ class Svc(object):
         """
         Extract and display the service logs, honoring --color and --debug
         """
+        if len(self.log.handlers) == 0:
+            return
         logfile = self.log.handlers[0].stream.name
         if not os.path.exists(logfile):
             return
@@ -3001,11 +3003,13 @@ class Svc(object):
         """
         if not self.collector_outdated():
             return
-        self.log.handlers[1].setLevel(logging.CRITICAL)
+        if len(self.log.handlers) > 1:
+            self.log.handlers[1].setLevel(logging.CRITICAL)
         try:
             self.push()
         finally:
-            self.log.handlers[1].setLevel(rcEnv.loglevel)
+            if len(self.log.handlers) > 1:
+                self.log.handlers[1].setLevel(rcEnv.loglevel)
 
     @scheduler_fork
     def push(self):
@@ -4188,7 +4192,8 @@ class Svc(object):
         """
         if self.options.unprovision:
             self.unprovision()
-        if len(self.action_rid) in (0, len(self.resources_by_id.keys())):
+        if not self.command_is_scoped() or \
+           len(self.action_rid) == len(self.resources_by_id.keys()):
             import shutil
             dpaths = [
                 os.path.join(rcEnv.pathetc, self.svcname+".dir"),
