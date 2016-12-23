@@ -228,8 +228,8 @@ class Rsync(resSync.Sync):
         if "delay_snap" in self.tags:
             if not hasattr(self.rset, 'snaps'):
                 Snap = lookup_snap_mod()
-                self.rset.snaps.log = self.log
                 self.rset.snaps = Snap.Snap(self.rid)
+                self.rset.snaps.log = self.log
             self.rset.snaps.try_snap(self.rset, target, rid=self.rid)
 
         if hasattr(self, "alt_src"):
