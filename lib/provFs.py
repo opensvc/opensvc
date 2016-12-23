@@ -86,6 +86,8 @@ class ProvisioningFs(Provisioning):
 
 
     def provisioner(self):
+        if "bind" in self.r.mount_options:
+            return
         self.provisioner_fs()
         self.r.start()
 
