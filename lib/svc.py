@@ -2666,21 +2666,21 @@ class Svc(object):
 
         self.need_postsync = set()
 
-    def remote_action(self, nodename, action, options, sync=False,
-                      verbose=True, action_mode=True):
+    def remote_action(self, nodename, action, waitlock=DEFAULT_WAITLOCK,
+                      sync=False, verbose=True, action_mode=True):
         if self.options.cron:
             # the scheduler action runs forked. don't use the cmdworker
             # in this context as it may hang
             sync = True
 
         rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
-        if options.debug:
+        if self.options.debug:
             rcmd += ['--debug']
-        if options.cluster and action_mode:
+        if self.options.cluster and action_mode:
             rcmd += ['--cluster']
-        if options.cron:
+        if self.options.cron:
             rcmd += ['--cron']
-        if options.waitlock != DEFAULT_WAITLOCK:
+        if self.options.waitlock != DEFAULT_WAITLOCK:
             rcmd += ['--waitlock', str(waitlock)]
         rcmd += action.split()
         cmd = rcEnv.rsh.split() + [nodename] + rcmd
