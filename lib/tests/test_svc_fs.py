@@ -53,11 +53,18 @@ class TestSvc:
         })
         assert ret == 0
 
-    def test_006_start(self):
+    def test_006_update(self):
+        ret = self.svc.action("update", {
+            "resource": [{"rtype": "fs", "mnt": "/srv/{svcname}/foo", "dev": "/tmp", "type": "none", "mnt_opt": "bind"}],
+            "provision": True,
+        })
+        assert ret == 0
+
+    def test_007_start(self):
         ret = self.svc.action("start")
         assert ret == 0
 
-    def test_007_stop(self):
+    def test_008_stop(self):
         ret = self.svc.action("stop")
         assert ret == 0
 
