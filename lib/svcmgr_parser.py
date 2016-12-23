@@ -708,6 +708,8 @@ ACTIONS = {
             'msg': 'update definitions in an existing service configuration '
                    'file',
             'options': ACTION_OPTS + [
+                OPT.interactive,
+                OPT.provision,
                 OPT.resource,
             ],
         },
