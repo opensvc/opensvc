@@ -1580,12 +1580,12 @@ class Node(object):
         self.checks()
         return 0
 
-    def service_action_worker(self, svc, action, **kwargs):
+    def service_action_worker(self, svc, action, options):
         """
         The method the per-service subprocesses execute
         """
         try:
-            ret = svc.action(action, **kwargs)
+            ret = svc.action(action, options)
         except ex.MonitorAction:
             self.close()
             sys.exit(self.ex_monitor_action_exit_code)
@@ -2054,7 +2054,7 @@ class Node(object):
             return True
         return False
 
-    def do_svcs_action(self, action, rid=None, tags=None, subsets=None):
+    def do_svcs_action(self, action, options):
         """
         The services action wrapper.
         Takes care of
@@ -2074,13 +2074,6 @@ class Node(object):
             print("action '%s' is not allowed on multiple services" % action, file=sys.stderr)
             return 1
 
-        kwargs = {
-            "rid": rid,
-            "tags": tags,
-            "subsets": subsets,
-            "waitlock": self.options.waitlock
-        }
-
         if self.can_parallel(action):
             from multiprocessing import Process
             if rcEnv.sysname == "Windows":
@@ -2095,13 +2088,12 @@ class Node(object):
                 data.procs[svc.svcname] = Process(
                     target=self.service_action_worker,
                     name='worker_'+svc.svcname,
-                    args=[svc, action],
-                    kwargs=kwargs
+                    args=[svc, action, options],
                 )
                 data.procs[svc.svcname].start()
             else:
                 try:
-                    ret = svc.action(action, **kwargs)
+                    ret = svc.action(action, options)
                     if need_aggregate:
                         if ret is not None:
                             data.outs[svc.svcname] = ret

@@ -49,7 +49,7 @@ OPT = Storage({
              "ack unavailability' action"),
     "config": Option(
         "--config", default=None,
-        action="store", dest="param_config",
+        action="store", dest="parm_config",
         help="the configuration file to use when creating or "
              "installing a service"),
     "cron": Option(
@@ -264,7 +264,7 @@ OPT = Storage({
              " tag2, or tag3."),
     "template": Option(
         "--template", default=None,
-        action="store", dest="param_template",
+        action="store", dest="parm_template",
         help="the configuration file template name or id, "
              "served by the collector, to use when creating or "
              "installing a service"),

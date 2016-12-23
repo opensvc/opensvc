@@ -17,6 +17,7 @@ import rcColor
 from svcmgr_parser import SvcmgrOptParser
 import rcExceptions as ex
 from rcUtilities import ximport
+from rcGlobalEnv import Storage
 
 def refresh_node_svcs(node, svcnames, minimal):
     """
@@ -85,21 +86,21 @@ def get_build_kwargs(optparser, options, action):
     if len(set(["svcnames", "status"]) & set(build_kwargs.keys())) == 0:
         if os.environ.get("OSVC_SERVICE_LINK"):
             build_kwargs["svcnames"] = [os.environ.get("OSVC_SERVICE_LINK")]
-        if hasattr(options, "parm_svcs") and options.parm_svcs is not None:
-            build_kwargs["svcnames"] = options.parm_svcs.split(',')
+        if hasattr(options, "svcs") and options.svcs is not None:
+            build_kwargs["svcnames"] = options.svcs.split(',')
 
-    if hasattr(options, "parm_status") and options.parm_status is not None:
-        build_kwargs["status"] = [rcStatus.status_value(s) for s in options.parm_status.split(",")]
+    if hasattr(options, "status") and options.status is not None:
+        build_kwargs["status"] = [rcStatus.status_value(s) for s in options.status.split(",")]
 
-    if hasattr(options, "parm_primary") and options.parm_primary is not None and \
-       hasattr(options, "parm_secondary") and options.parm_secondary is not None:
+    if hasattr(options, "primary") and options.primary is not None and \
+       hasattr(options, "secondary") and options.secondary is not None:
         optparser.parser.error("--onlyprimary and --onlysecondary are exclusive")
 
-    if hasattr(options, "parm_primary") and options.parm_primary is not None:
-        build_kwargs["onlyprimary"] = options.parm_primary
+    if hasattr(options, "primary") and options.primary is not None:
+        build_kwargs["onlyprimary"] = options.primary
 
-    if hasattr(options, "parm_secondary") and options.parm_secondary is not None:
-        build_kwargs["onlysecondary"] = options.parm_secondary
+    if hasattr(options, "secondary") and options.secondary is not None:
+        build_kwargs["onlysecondary"] = options.secondary
 
     # don't autopush when the intent is to push explicitely
     if action == "push":
@@ -109,20 +110,6 @@ def get_build_kwargs(optparser, options, action):
 
     return build_kwargs
 
-def set_svcs_options(node, options):
-    """
-    Relay some properties extracted from the command line as Svc object
-    properties.
-    """
-    if options.slave is not None:
-        slave = options.slave.split(',')
-    else:
-        slave = None
-
-    for svc in node.svcs:
-        svc.options.update(options.__dict__)
-        svc.options.slave = slave
-
 def do_svcs_action_detached(argv=None):
     """
     Executes the services action in detached process mode, so that
@@ -130,13 +117,11 @@ def do_svcs_action_detached(argv=None):
 
     Keyboard interrupts do abort the detached process though.
     """
-    if argv is None:
-        argv = sys.argv
     ret = 0
     try:
         import subprocess
         import signal
-        proc = subprocess.Popen([sys.executable] + argv + ["--daemon"],
+        proc = subprocess.Popen([sys.executable, __file__] + argv + ["--daemon"],
                                 stdout=None, stderr=None, stdin=None,
                                 close_fds=True, cwd=os.sep,
                                 preexec_fn=os.setsid)
@@ -161,7 +146,6 @@ def do_svcs_action(node, options, action, argv):
     stop*/shutdown/unprovision/switch, and inline mode for other actions.
     """
     ret = 0
-    rid, tags, subsets = get_specifiers(options)
 
     if not options.daemon and ( \
         action.startswith("stop") or \
@@ -171,43 +155,20 @@ def do_svcs_action(node, options, action, argv):
         ret = do_svcs_action_detached(argv)
     else:
         try:
-            ret = node.do_svcs_action(action, rid=rid, tags=tags,
-                                      subsets=subsets)
+            ret = node.do_svcs_action(action, options)
         except ex.excError as exc:
             print(exc, file=sys.stderr)
             ret = 1
     return ret
-
-def get_specifiers(options):
-    """
-    Extract rid, tags, subsets specifiers from the commandline options.
-    Return them as a tuple of lists.
-    """
-    if hasattr(options, "parm_rid") and options.parm_rid is not None:
-        rid = options.parm_rid.split(',')
-    else:
-        rid = []
-
-    if options.parm_tags is not None:
-        tags = options.parm_tags.replace("+", ",+").split(',')
-    else:
-        tags = []
-
-    if options.parm_subsets is not None:
-        subsets = options.parm_subsets.split(',')
-    else:
-        subsets = []
-    return rid, tags, subsets
 
 def do_svc_create_or_update(node, svcnames, action, options, build_kwargs):
     """
     Handle service creation or update commands.
     """
     ret = 0
-    rid, tags, subsets = get_specifiers(options)
 
     if action == 'update' or (action == 'create' and \
-       options.param_config is None and options.param_template is None):
+       options.config is None and options.template is None):
         data = getattr(svcBuilder, action)(svcnames, options.resource,
                                            interactive=options.interactive,
                                            provision=options.provision)
@@ -217,7 +178,7 @@ def do_svc_create_or_update(node, svcnames, action, options, build_kwargs):
     # if the user want to provision a resource defined via configuration
     # file edition, he will set --rid <rid> or --tag or --subset to point
     # the update command to it
-    rid += data.get("rid", [])
+    options.rid = ",".join(data.get("rid", []))
 
     # force a refresh of node.svcs
     # don't push to the collector yet
@@ -228,8 +189,8 @@ def do_svc_create_or_update(node, svcnames, action, options, build_kwargs):
         ret = 1
 
     if len(node.svcs) == 1 and ( \
-        options.param_config or \
-        options.param_template \
+        options.config or \
+        options.template \
        ):
         node.svcs[0].setenv(options.env, options.interactive)
         # setenv changed the service config file
@@ -243,16 +204,25 @@ def do_svc_create_or_update(node, svcnames, action, options, build_kwargs):
     if options.provision:
         if len(node.svcs) == 1 and ( \
             len(rid) > 0 or \
-            options.param_config or \
-            options.param_template \
+            options.config or \
+            options.template \
            ):
-            node.svcs[0].action("provision", rid=rid, tags=tags,
-                                subsets=subsets)
+            node.svcs[0].action("provision", options)
 
     if ret != 0:
         return ret
 
     return data["ret"]
+
+def prepare_options(options):
+    """
+    Prepare and return the options Storage() as expected by the Svc::action
+    and Node::do_svcs_action methods.
+    """
+    opts = Storage()
+    for key, val in options.__dict__.items():
+        opts[key.replace("parm_", "")] = val
+    return opts
 
 def _main(node, argv=None):
     """
@@ -266,6 +236,7 @@ def _main(node, argv=None):
     argv, docker_argv = get_docker_argv(argv)
     optparser = SvcmgrOptParser()
     options, action = optparser.parse_args(argv)
+    options = prepare_options(options)
     options.docker_argv = docker_argv
     rcColor.use_color = options.color
     try:
@@ -300,8 +271,8 @@ def _main(node, argv=None):
 
     if action == "create":
         try:
-            node.install_service(svcnames, fpath=options.param_config,
-                                 template=options.param_template)
+            node.install_service(svcnames, fpath=options.config,
+                                 template=options.template)
             ret = 0
         except Exception as exc:
             print(str(exc), file=sys.stderr)
@@ -312,10 +283,9 @@ def _main(node, argv=None):
                                        build_kwargs)
 
     node.options.parallel = options.parallel
-    node.options.waitlock = options.parm_waitlock
+    node.options.waitlock = options.waitlock
 
     node.set_rlimit()
-    set_svcs_options(node, options)
     ret = do_svcs_action(node, options, action, argv=argv)
 
     try:

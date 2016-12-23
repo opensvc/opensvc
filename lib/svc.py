@@ -34,6 +34,8 @@ def signal_handler(*args):
     """
     raise ex.excSignal
 
+DEFAULT_WAITLOCK = 60
+
 DEFAULT_STATUS_GROUPS = [
     "container",
     "ip",
@@ -394,7 +396,7 @@ class Svc(object):
         self.disabled = False
         self.anti_affinity = None
         self.autostart_node = []
-        self.lock_timeout = 60
+        self.lock_timeout = DEFAULT_WAITLOCK
 
         # merged by the cmdline parser
         self.options = Storage(
@@ -419,6 +421,7 @@ class Svc(object):
             parm_subsets=None,
             discard=False,
             recover=False,
+            waitlock=DEFAULT_WAITLOCK,
         )
 
         self.log = rcLogger.initLogger(self.svcname)
@@ -2663,7 +2666,7 @@ class Svc(object):
 
         self.need_postsync = set()
 
-    def remote_action(self, nodename, action, waitlock=-1, sync=False,
+    def remote_action(self, nodename, action, options, sync=False,
                       verbose=True, action_mode=True):
         if self.options.cron:
             # the scheduler action runs forked. don't use the cmdworker
@@ -2671,13 +2674,13 @@ class Svc(object):
             sync = True
 
         rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
-        if self.options.debug:
+        if options.debug:
             rcmd += ['--debug']
-        if self.options.cluster and action_mode:
+        if options.cluster and action_mode:
             rcmd += ['--cluster']
-        if self.options.cron:
+        if options.cron:
             rcmd += ['--cron']
-        if waitlock >= 0:
+        if options.waitlock != DEFAULT_WAITLOCK:
             rcmd += ['--waitlock', str(waitlock)]
         rcmd += action.split()
         cmd = rcEnv.rsh.split() + [nodename] + rcmd
@@ -3271,43 +3274,71 @@ class Svc(object):
         return [resource for resource in self.resources_by_id.values()
                 if rcEnv.nodename in resource.always_on]
 
-    def action(self, *args, **kwargs):
+    def prepare_options(self, options):
+        """
+        Return a Storage() from command line options or dict passed as 
+        <options>, sanitized, merge with default values in self.options.
+        """
+        if options is None:
+            options = Storage()
+        elif isinstance(options, dict):
+            options = Storage(options)
+
+        if is_string(options.slave):
+            options.slave = options.slave.split(',')
+
+        if isinstance(options.resource, list):
+            for idx, resource in enumerate(options.resource):
+                if not is_string(options.resource):
+                    continue
+                options.resource[idx] = json.loads(resource)
+
+        self.options.update(options)
+        options = self.options
+
+        return options
+
+    def action(self, action, options=None):
         """
         The service action main entrypoint.
         Handle the run file flag creation after the action is done,
         whatever its status.
         """
         try:
-            return self._action(*args, **kwargs)
+            return self._action(action, options)
         finally:
-            if args[0] != "scheduler":
+            if action != "scheduler":
                 self.set_run_flag()
 
-    def _action(self, *args, **kwargs):
+    def options_to_rids(self, options):
         """
-        Filter resources on which the service action must act.
-        Abort if the service is frozen, or if --cluster is not set on a HA
-        service.
-        Set up the environment variables.
-        Finally do the service action either in logged or unlogged mode.
+        Return the list of rids to apply an action to, from the command
+        line options passed as <options>.
         """
-        action = args[0]
-        rid = kwargs.get("rid", [])
-        tags = kwargs.get("tags", [])
-        subsets = kwargs.get("subsets", [])
-        xtags = kwargs.get("xtags", set())
-        waitlock = kwargs.get("waitlock", -1)
+        rid = options.get("rid", None)
+        tags = options.get("tags", None)
+        subsets = options.get("subsets", None)
+        xtags = options.get("xtags", None)
 
         if rid is None:
             rid = []
+        elif is_string(rid):
+            rid = rid.split(',')
+
         if tags is None:
             tags = []
+        elif is_string(tags):
+            tags = tags.replace("+", ",+").split(',')
+
         if subsets is None:
             subsets = []
+        elif is_string(subsets):
+            subsets = subsets.split(',')
+
         if xtags is None:
             xtags = set()
-        if waitlock < 0:
-            waitlock = self.lock_timeout
+        elif is_string(xtags):
+            xtags = xtags.split(',')
 
         if len(self.resources_by_id.keys()) > 0:
             rids = set(self.resources_by_id.keys()) - set([None])
@@ -3331,32 +3362,44 @@ class Svc(object):
             self.log.debug("rids retained after expansions intersection: %s",
                            ";".join(rids))
 
-            if not self.options.slaves and self.options.slave is None and \
+            if not options.slaves and options.slave is None and \
                len(set(rid) | set(subsets) | set(tags)) > 0 and len(rids) == 0:
-                self.log.error("no resource match the given --rid, --subset and "
-                               "--tags specifiers")
-                return 1
+                raise ex.excError("no resource match the given --rid, --subset "
+                                  "and --tags specifiers")
         else:
             # no resources certainly mean the build was done with minimal=True
             # let the action go on. 'delete', for one, takes a --rid but does
             # not need resource initialization
             rids = rid
 
-        self.action_rid = rids
+        return rids
+
+    def _action(self, action, options):
+        """
+        Filter resources on which the service action must act.
+        Abort if the service is frozen, or if --cluster is not set on a HA
+        service.
+        Set up the environment variables.
+        Finally do the service action either in logged or unlogged mode.
+        """
+        options = self.prepare_options(options)
+
+        self.action_rid = self.options_to_rids(options)
+        self.action_start_date = datetime.datetime.now()
+
         if self.node is None:
             self.node = node.Node()
-        self.action_start_date = datetime.datetime.now()
+
         if self.svc_env != 'PRD' and rcEnv.node_env == 'PRD':
             self.log.error("Abort action for non PRD service on PRD node")
             return 1
 
         action = self.action_translate(action)
 
-
         if action not in ACTIONS_ALLOW_ON_FROZEN and \
            'compliance' not in action and \
            'collector' not in action:
-            if self.frozen() and not self.options.force:
+            if self.frozen() and not options.force:
                 self.log.info("Abort action '%s' for frozen service. Use "
                               "--force to override.", action)
                 return 1
@@ -3384,27 +3427,27 @@ class Svc(object):
             # purge the resource status file cache, so that we don't take
             # decision on outdated information
             #
-            if not self.options.dry_run and action != "resource_monitor":
+            if not options.dry_run and action != "resource_monitor":
                 self.log.debug("purge all resource status file caches")
                 self.purge_status_last()
 
         self.setup_environ(action=action)
         self.setup_signal_handlers()
-        self.set_skip_resources(keeprid=rids, xtags=xtags)
+        self.set_skip_resources(keeprid=self.action_rid, xtags=options.xtags)
         if action.startswith("print_") or \
            action.startswith("collector") or \
            action.startswith("json_"):
-            return self.do_print_action(action)
+            return self.do_print_action(action, options)
         if action in ACTIONS_NO_LOG or \
            action.startswith("compliance") or \
            action.startswith("docker") or \
-           self.options.dry_run:
-            err = self.do_action(action, waitlock=waitlock)
+           options.dry_run:
+            err = self.do_action(action, options)
         else:
-            err = self.do_logged_action(action, waitlock=waitlock)
+            err = self.do_logged_action(action, options)
         return err
 
-    def do_print_action(self, action):
+    def do_print_action(self, action, options):
         """
         Call the service method associated with action. This method produces
         data the caller will print.
@@ -3416,17 +3459,19 @@ class Svc(object):
             action = "print_"+action[5:]
             self.node.options.format = "json"
             self.options.format = "json"
+            options.format = "json"
 
         if "_json_" in action:
             action = action.replace("_json_", "_")
             self.node.options.format = "json"
             self.options.format = "json"
+            options.format = "json"
 
-        if self.options.cluster and self.options.format != "json":
+        if options.cluster and options.format != "json":
             raise ex.excError("only the json output format is allowed with --cluster")
         if action.startswith("collector_"):
             from collector import Collector
-            collector = Collector(self.options, self.node, self.svcname)
+            collector = Collector(options, self.node, self.svcname)
             func = getattr(collector, action)
         else:
             func = getattr(self, action)
@@ -3446,7 +3491,7 @@ class Svc(object):
             results = self.join_cluster_action(**psinfo)
             for nodename in results:
                 results[nodename] = results[nodename][0]
-                if self.options.format == "json":
+                if options.format == "json":
                     import json
                     try:
                         results[nodename] = json.loads(results[nodename])
@@ -3454,7 +3499,7 @@ class Svc(object):
                         results[nodename] = {"error": str(exc)}
             results[rcEnv.nodename] = data
             return results
-        elif self.options.cluster:
+        elif options.cluster:
             # no remote though --cluster is set
             results = {}
             results[rcEnv.nodename] = data
@@ -3569,7 +3614,7 @@ class Svc(object):
                     results[nodename] = queue.get()
         return results
 
-    def do_action(self, action, waitlock=60):
+    def do_action(self, action, options):
         """
         Acquire the service action lock, call the service action method,
         handles its errors, and finally release the lock.
@@ -3580,12 +3625,12 @@ class Svc(object):
 
         err = 0
         try:
-            self.svclock(action, timeout=waitlock)
+            self.svclock(action, timeout=options.waitlock)
         except ex.excError as exc:
             self.log.error(str(exc))
             return 1
 
-        psinfo = self.do_cluster_action(action, waitlock=waitlock)
+        psinfo = self.do_cluster_action(action, options)
 
         try:
             if action.startswith("compliance_"):
@@ -3677,7 +3722,7 @@ class Svc(object):
         except ex.excError:
             self.log.error("rollback %s failed", action)
 
-    def do_logged_action(self, action, waitlock=60):
+    def do_logged_action(self, action, options):
         """
         Setup action logging to a machine-readable temp logfile, in preparation
         to the collector feeding.
@@ -3710,7 +3755,7 @@ class Svc(object):
         if "/svcmgr.py" in sys.argv:
             self.log.info(" ".join(sys.argv))
 
-        err = self.do_action(action, waitlock=waitlock)
+        err = self.do_action(action, options)
 
         # Push result and logs to database
         actionlogfilehandler.close()
