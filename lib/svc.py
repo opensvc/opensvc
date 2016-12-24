@@ -2913,7 +2913,9 @@ class Svc(object):
         Call the sync_all method of each sync resources that passed the
         scheduler constraints.
         """
-        self.action("sync_all", rid=[o.section for o in sched_options])
+        options = Storage(self.options)
+        options.rid = [option.section for option in sched_options]
+        self.action("sync_all", options)
         self.sched.sched_write_timestamp(sched_options)
 
     def sync_all(self):
