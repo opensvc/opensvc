@@ -416,9 +416,9 @@ class Svc(object):
             ruleset_date="",
             dry_run=False,
             refresh=False,
-            parm_rid=None,
-            parm_tags=None,
-            parm_subsets=None,
+            rid=None,
+            tags=None,
+            subsets=None,
             discard=False,
             recover=False,
             waitlock=DEFAULT_WAITLOCK,
@@ -1712,15 +1712,15 @@ class Svc(object):
             options.append('--refresh')
         if self.options.disable_rollback:
             options.append('--disable-rollback')
-        if self.options.parm_rid:
+        if self.options.rid:
             options.append('--rid')
-            options.append(self.options.parm_rid)
-        if self.options.parm_tags:
+            options.append(self.options.rid)
+        if self.options.tags:
             options.append('--tags')
-            options.append(self.options.parm_tags)
-        if self.options.parm_subsets:
+            options.append(self.options.tags)
+        if self.options.subsets:
             options.append('--subsets')
-            options.append(self.options.parm_subsets)
+            options.append(self.options.subsets)
 
         paths = get_osvc_paths(osvc_root_path=container.osvc_root_path,
                                sysname=container.guestos)
@@ -2121,14 +2121,16 @@ class Svc(object):
         self.master_shutdownfs()
         self.master_shutdownip()
 
-    def command_is_scoped(self):
+    def command_is_scoped(self, options=None):
         """
         Return True if a resource filter has been setup through
         --rid, --subsets or --tags
         """
-        if self.options.parm_rid is not None or \
-           self.options.parm_tags is not None or \
-           self.options.parm_subsets is not None:
+        if options is None:
+            options = self.options
+        if (options.rid is not None and options.rid != "") or \
+           (options.tags is not None and options.tags != "") or \
+           (options.subsets is not None and options.subsets != ""):
             return True
         return False
 
@@ -2204,7 +2206,7 @@ class Svc(object):
     def slave_stop(self):
         self.encap_cmd(['stop'], verbose=True, error="continue")
 
-    def cluster_mode_safety_net(self, action):
+    def cluster_mode_safety_net(self, action, options):
         """
         Raise excError to bar actions executed without --cluster on monitored
         services.
@@ -2219,7 +2221,7 @@ class Svc(object):
         if action in ACTIONS_ALLOW_ON_CLUSTER:
             return
 
-        if self.command_is_scoped():
+        if self.command_is_scoped(options):
             self.log.debug("stop: called with --rid, --tags or --subset, allow "
                            "action on ha service.")
             return
@@ -3368,7 +3370,7 @@ class Svc(object):
                            ";".join(rids))
 
             if not options.slaves and options.slave is None and \
-               self.command_is_scoped() and len(rids) == 0:
+               self.command_is_scoped(options) and len(rids) == 0:
                 raise ex.excError("no resource match the given --rid, --subset "
                                   "and --tags specifiers")
         else:
@@ -3417,7 +3419,7 @@ class Svc(object):
                 return 0
 
             try:
-                self.cluster_mode_safety_net(action)
+                self.cluster_mode_safety_net(action, options)
             except ex.excAbortAction as exc:
                 self.log.info(str(exc))
                 return 0
