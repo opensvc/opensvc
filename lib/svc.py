@@ -3368,7 +3368,7 @@ class Svc(object):
                            ";".join(rids))
 
             if not options.slaves and options.slave is None and \
-               len(set(rid) | set(subsets) | set(tags)) > 0 and len(rids) == 0:
+               self.command_is_scoped() and len(rids) == 0:
                 raise ex.excError("no resource match the given --rid, --subset "
                                   "and --tags specifiers")
         else:
@@ -3839,6 +3839,12 @@ class Svc(object):
         if not os.path.exists(self.paths.push_flag):
             self.log.debug("no last push timestamp found")
             return True
+
+        if not os.path.exists(self.paths.cf):
+            # happens in 'pull' action codepath
+            self.log.debug("no config file found")
+            return False
+
         try:
             mtime = os.stat(self.paths.cf).st_mtime
             with open(self.paths.push_flag) as flag:
@@ -4333,7 +4339,22 @@ class Svc(object):
         Pull a service configuration from the collector, installs it and
         create the svcmgr link.
         """
-        self.node.pull_service(self.svcname)
+        data = self.node.collector_rest_get("/services/"+self.svcname+"?props=svc_config&meta=0")
+        if "error" in data:
+            raise ex.excError(data["error"])
+        if len(data["data"]) == 0:
+            raise ex.excError("service not found on the collector")
+        if len(data["data"][0]["svc_config"]) == 0:
+            raise ex.excError("service has an empty configuration")
+        buff = data["data"][0]["svc_config"].replace("\\n", "\n").replace("\\t", "\t")
+        import codecs
+        with codecs.open(self.paths.cf, "w", "utf8") as ofile:
+            ofile.write(buff)
+        self.log.info("%s pulled", self.paths.cf)
+        self.node.install_service_files(self.svcname)
+
+        if self.options.provision:
+            self.action("provision")
 
     def validate_config(self, path=None):
         """

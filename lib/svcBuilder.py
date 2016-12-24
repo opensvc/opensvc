@@ -3377,12 +3377,13 @@ def add_apps_sysv(svc, conf):
 
 def get_pg_settings(svc, s):
     d = {}
-    if svc.conf is None or not os.path.exists(svc.conf):
+    if not os.path.exists(svc.paths.cf):
         return d
+
     if s != "DEFAULT":
         conf = rcConfigParser.RawConfigParser()
         import codecs
-        with codecs.open(svc.conf, "r", "utf8") as f:
+        with codecs.open(svc.paths.cf, "r", "utf8") as f:
             if sys.version_info[0] >= 3:
                 conf.read_file(f)
             else:
@@ -3392,6 +3393,7 @@ def get_pg_settings(svc, s):
             conf.remove_option("DEFAULT", o)
     else:
         conf = svc.config
+
     try:
         d["cpus"] = conf_get_string_scope(svc, conf, s, "pg_cpus")
     except ex.OptNotFound:
@@ -3551,7 +3553,6 @@ def build(name, minimal=False, svcconf=None):
     # Store useful properties
     #
     svc.svcmode = svcmode
-    svc.conf = svcconf
     svc.initd = svcinitd
     svc.config = conf
 
@@ -3838,11 +3839,13 @@ def list_services():
         l.append(name)
     return l
 
-def build_services(status=None, svcnames=None,
+def build_services(status=None, svcnames=None, create_instance=False,
                    onlyprimary=False, onlysecondary=False, minimal=False):
     """returns a list of all services of status matching the specified status.
     If no status is specified, returns all services
     """
+    import svc
+
     if svcnames is None:
         svcnames = []
 
@@ -3850,16 +3853,21 @@ def build_services(status=None, svcnames=None,
 
     errors = []
     services = {}
+
     if type(svcnames) == str:
         svcnames = [svcnames]
 
     if len(svcnames) == 0:
         svcnames = list_services()
+        missing_svcnames = []
     else:
         all_svcnames = list_services()
         missing_svcnames = sorted(list(set(svcnames) - set(all_svcnames)))
         for m in missing_svcnames:
-            errors.append("%s: service does not exist" % m)
+            if create_instance:
+                services[m] = svc.Svc(m)
+            else:
+                errors.append("%s: service does not exist" % m)
         svcnames = list(set(svcnames) & set(all_svcnames))
 
     setup_logging(svcnames)

@@ -91,10 +91,8 @@ def get_build_kwargs(optparser, options, action):
         build_kwargs["onlysecondary"] = options.secondary
 
     # don't autopush when the intent is to push explicitely
-    if action == "push":
-        build_kwargs["autopush"] = False
-    else:
-        build_kwargs["autopush"] = True
+    build_kwargs["autopush"] = action != "push"
+    build_kwargs["create_instance"] = action in ("create", "pull")
 
     return build_kwargs
 
@@ -154,8 +152,14 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
     Handle service creation command.
     """
     ret = 0
+    try:
+        node.install_service(svcnames, fpath=options.config,
+                             template=options.template)
+    except Exception as exc:
+        print(str(exc), file=sys.stderr)
+        ret = 1
 
-    if action == 'create' and options.config is None and options.template is None:
+    if options.config is None and options.template is None:
         data = getattr(svcBuilder, action)(svcnames, options.resource,
                                            interactive=options.interactive,
                                            provision=options.provision)
@@ -190,7 +194,6 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
 
     if options.provision:
         if len(node.svcs) == 1 and ( \
-            len(rid) > 0 or \
             options.config or \
             options.template \
            ):
@@ -233,7 +236,7 @@ def _main(node, argv=None):
 
     build_kwargs = get_build_kwargs(optparser, options, action)
 
-    if action not in ("create", "pull"):
+    if action != "create":
         try:
             node.build_services(**build_kwargs)
         except ex.excError as exc:
@@ -242,7 +245,7 @@ def _main(node, argv=None):
 
     if node.svcs is not None and len(node.svcs) > 0:
         svcnames = [svc.svcname for svc in node.svcs]
-    elif action in ("create", "pull") and "svcnames" in build_kwargs:
+    elif action == "create" and "svcnames" in build_kwargs:
         svcnames = build_kwargs["svcnames"]
 
     if len(svcnames) == 0:
@@ -253,23 +256,8 @@ def _main(node, argv=None):
                              " <svcname>\n")
         return 1
 
-    if action == 'pull' and (node.svcs is None or len(node.svcs) == 0):
-        return node.pull_services(svcnames)
-
     if action == "create":
-        try:
-            node.install_service(svcnames, fpath=options.config,
-                                 template=options.template)
-            ret = 0
-        except Exception as exc:
-            print(str(exc), file=sys.stderr)
-            ret = 1
-
-    if action == 'create':
         return do_svc_create(node, svcnames, action, options, build_kwargs)
-
-    node.options.parallel = options.parallel
-    node.options.waitlock = options.waitlock
 
     node.set_rlimit()
     ret = do_svcs_action(node, options, action, argv=argv)

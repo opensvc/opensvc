@@ -109,8 +109,6 @@ class Node(object):
             moduleset="",
             module="",
             ruleset_date="",
-            waitlock=-1,
-            parallel=False,
             objects=[],
             format=None,
             user=None,
@@ -2047,11 +2045,11 @@ class Node(object):
         except OSError:
             pass
 
-    def can_parallel(self, action):
+    def can_parallel(self, action, options):
         """
         Returns True if the action can be run in a subprocess per service
         """
-        if self.options.parallel and action not in ACTIONS_NO_PARALLEL:
+        if options.parallel and action not in ACTIONS_NO_PARALLEL:
             return True
         return False
 
@@ -2091,7 +2089,7 @@ class Node(object):
             print("action '%s' is not allowed on multiple services" % action, file=sys.stderr)
             return 1
 
-        if self.can_parallel(action):
+        if self.can_parallel(action, options):
             from multiprocessing import Process
             if rcEnv.sysname == "Windows":
                 from multiprocessing import set_executable
@@ -2100,7 +2098,7 @@ class Node(object):
             data.svcs = {}
 
         for svc in self.svcs:
-            if self.can_parallel(action):
+            if self.can_parallel(action, options):
                 data.svcs[svc.svcname] = svc
                 data.procs[svc.svcname] = Process(
                     target=self.service_action_worker,
@@ -2121,7 +2119,7 @@ class Node(object):
                 except ex.excSignal:
                     break
 
-        if self.can_parallel(action):
+        if self.can_parallel(action, options):
             for svcname in data.procs:
                 data.procs[svcname].join()
                 ret = data.procs[svcname].exitcode
@@ -2420,37 +2418,6 @@ class Node(object):
         elif os.path.realpath(rcEnv.svcmgr) != os.path.realpath(svcmgr_l):
             os.unlink(svcmgr_l)
             os.symlink(rcEnv.svcmgr, svcmgr_l)
-
-    def pull_services(self, svcnames):
-        """
-        Download specified services configuration files from the collector and
-        install them.
-        """
-        for svcname in svcnames:
-            self.pull_service(svcname)
-
-    def pull_service(self, svcname):
-        """
-        Pull the specified service configuration file from the collector and
-        install it.
-        """
-        fpath = os.path.join(rcEnv.pathetc, svcname+'.conf')
-        data = self.collector_rest_get("/services/"+svcname+"?props=svc_config&meta=0")
-        if "error" in data:
-            self.log.error(data["error"])
-            return 1
-        if len(data["data"]) == 0:
-            self.log.error("service not found on the collector")
-            return 1
-        if len(data["data"][0]["svc_config"]) == 0:
-            self.log.error("service has an empty configuration")
-            return 1
-        buff = data["data"][0]["svc_config"].replace("\\n", "\n").replace("\\t", "\t")
-        import codecs
-        with codecs.open(fpath, "w", "utf8") as ofile:
-            ofile.write(buff)
-        self.log.info("%s pulled", fpath)
-        self.install_service_files(svcname)
 
     def set_rlimit(self):
         """

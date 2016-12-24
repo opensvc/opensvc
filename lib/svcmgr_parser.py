@@ -581,6 +581,9 @@ ACTIONS = {
         },
         'pull': {
             'msg': 'pull a service configuration from the collector',
+            'options': [
+                OPT.provision,
+            ],
         },
         'push_resinfo': {
             'msg': 'push service resources and application launchers info '
