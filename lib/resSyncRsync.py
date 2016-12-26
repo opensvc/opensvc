@@ -355,7 +355,7 @@ class Rsync(resSync.Sync):
         for i in self.target:
             target |= self.target[i]
         if len(target - set([rcEnv.nodename])) == 0:
-            self.status_log("no destination nodes")
+            self.status_log("no destination nodes", "info")
             return rcStatus.NA
 
         try:
@@ -372,7 +372,7 @@ class Rsync(resSync.Sync):
             rcEnv.nodename != self.svc.flex_primary and \
             s['overall'].status == rcStatus.UP):
             if rcEnv.nodename not in target:
-                self.status_log("passive node not in sync destination nodes")
+                self.status_log("passive node not in destination nodes", "info")
                 return rcStatus.NA
             if self.node_need_sync(rcEnv.nodename):
                 self.status_log("passive node needs update")
@@ -383,7 +383,7 @@ class Rsync(resSync.Sync):
         """ sync state on DRP nodes where the service is UP
         """
         if 'drpnodes' in self.target and rcEnv.nodename in self.target['drpnodes']:
-            self.status_log("service up on drp node, sync disabled")
+            self.status_log("service up on drp node, sync disabled", "info")
             return rcStatus.NA
 
         """ sync state on nodes where the service is UP
