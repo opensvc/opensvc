@@ -1,3 +1,4 @@
+import re
 import checks
 from rcUtilities import justcall, which
 
@@ -64,6 +65,9 @@ class check(checks.check):
                 continue
             if "@" in l[0]:
                 # do not report clone usage
+                continue
+            if re.findall("/[0-9a-f]{64}", l[0]):
+                # docker id
                 continue
             if "osvc_sync_" in l[0]:
                 # do not report osvc sync snapshots fs usage
