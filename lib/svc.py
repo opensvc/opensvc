@@ -1685,8 +1685,11 @@ class Svc(object):
             self.log.debug("skip encap %s: no encap resource", ' '.join(cmd))
             return '', '', 0
         if not container.is_up():
-            self.log.info("skip encap %s: the container is not running here",
-                          ' '.join(cmd))
+            msg = "skip encap %s: the container is not running here" % ' '.join(cmd)
+            if verbose:
+                self.log.info(msg)
+            else:
+                self.log.debug(msg)
             return '', '', 0
 
         if self.options.slave is not None and not \
