@@ -29,11 +29,17 @@ class check(checks.check):
                 continue
             if l[5].startswith('/Volumes'):
                 continue
+            if l[5].startswith('/media/'):
+                continue
             if l[5].startswith('/run'):
                 continue
             if l[5].startswith('/sys/'):
                 continue
-            if l[5] == "/dev/shm":
+            if l[5].endswith('/shm'):
+                continue
+            if "/graph/" in l[5]:
+                continue
+            if "/aufs/mnt/" in l[5]:
                 continue
             if "osvc_sync_" in l[0]:
                 # do not report osvc sync snapshots fs usage
