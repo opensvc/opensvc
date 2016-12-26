@@ -1854,7 +1854,7 @@ class Svc(object):
         for group in groups:
             group_status[group] = 'n/a'
 
-        cmd = ['json', 'status']
+        cmd = ['print', 'status', '--format', 'json']
         try:
             results = self._encap_cmd(cmd, container)
         except ex.excError:
