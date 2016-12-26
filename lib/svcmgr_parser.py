@@ -878,6 +878,7 @@ ACTIONS = {
             'options': [
                 OPT.begin,
                 OPT.end,
+                OPT.format,
             ],
         },
         'collector_ack_action': {
@@ -897,13 +898,20 @@ ACTIONS = {
                 OPT.begin,
                 OPT.id,
                 OPT.end,
+                OPT.format,
             ],
         },
         'collector_checks': {
             'msg': 'display service checks',
+            'options': [
+                OPT.format,
+            ],
         },
         'collector_disks': {
             'msg': 'display service disks',
+            'options': [
+                OPT.format,
+            ],
         },
         'collector_log': {
             'msg': 'log a message in the collector\'s service log',
@@ -913,6 +921,9 @@ ACTIONS = {
         },
         'collector_alerts': {
             'msg': 'display service alerts',
+            'options': [
+                OPT.format,
+            ],
         },
         'collector_events': {
             'msg': 'display service events during the period specified by '
@@ -921,14 +932,21 @@ ACTIONS = {
             'options': [
                 OPT.begin,
                 OPT.end,
+                OPT.format,
             ],
         },
         'collector_asset': {
             'msg': 'display asset information known to the collector',
+            'options': [
+                OPT.format,
+            ],
         },
         'collector_networks': {
             'msg': 'display network information known to the collector for '
                    'each service ip',
+            'options': [
+                OPT.format,
+            ],
         },
         'collector_tag': {
             'msg': 'set a service tag (pointed by --tag)',
@@ -944,10 +962,14 @@ ACTIONS = {
         },
         'collector_show_tags': {
             'msg': 'list all service tags',
+            'options': [
+                OPT.format,
+            ],
         },
         'collector_list_tags': {
             'msg': 'list all available tags. use --like to filter the output.',
             'options': [
+                OPT.format,
                 OPT.like,
             ],
         },
