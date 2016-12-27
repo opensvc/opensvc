@@ -30,7 +30,19 @@ class color:
     LIGHTCYAN = '\033[96m'
     WHITE = '\033[97m'
 
+    BGBLACK = '\033[40m'
+    BGRED = '\033[41m'
+    BGGREEN = '\033[42m'
+    BGYELLOW = '\033[43m'
+    BGBLUE = '\033[44m'
+    BGPURPLE = '\033[45m'
+    BGCYAN = '\033[46m'
+    BGWHITE = '\033[47m'
+    BGDEFAULT = '\033[49m'
     BGGRAY = '\033[100m'
+
+    E_BGODD = '\033[48;2;240;240;205m'
+    E_BGCYAN = '\033[48;2;125;205;205m'
 
 def ansi_colorize(s, c=None):
     global use_color
@@ -127,6 +139,19 @@ def is_dict_of_list_of_list(d):
             return False
     return True
 
+def flatten_list(data):
+    for idx, entry in enumerate(data):
+        if not isinstance(entry, dict):
+            continue
+        for key, val in entry.items():
+            if not isinstance(val, dict):
+                continue
+            for _key, _val in val.items():
+                agg_key = key + "." + _key
+                data[idx][agg_key] = _val
+            del data[idx][key]
+    return data
+
 def xform_data_for_tabular(d):
     if is_list_of_dict(d):
         return _xform_ld_data_for_tabular(d)
@@ -160,6 +185,7 @@ def _xform_dld_data_for_tabular(d):
     return l
 
 def _xform_ld_data_for_tabular(d, include_header=True, prepend=None):
+    d = flatten_list(d)
     l = []
     if include_header:
         header = d[0].keys()

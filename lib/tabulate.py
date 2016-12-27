@@ -30,7 +30,7 @@ __version__ = "0.6"
 
 def __text_type(s):
     try:
-       return unicode(s, errors="ignore")
+       return _text_type(s, errors="ignore")
     except:
        return s
 
@@ -68,9 +68,13 @@ _table_formats = {"simple":
                               with_header_hide=["linebelow"],
                               without_header_hide=[]),
                   "plain":
-                  TableFormat(None, None, None, None,
-                              DataRow("", "  ", ""), DataRow("", "  ", ""),
-                              padding=_format_defaults["padding"],
+                  TableFormat(lineabove=None,
+                              linebelowheader=None,
+                              linebetweenrows=Line("+", "-", "+", "+"),
+                              linebelow=None,
+                              headerrow=DataRow(" ", " ", " "),
+                              datarow=DataRow("|", "|", "|"),
+                              padding=0,
                               usecolons=_format_defaults["usecolons"],
                               usehtmlattrs=_format_defaults["usehtmlattrs"],
                               with_header_hide=_format_defaults["with_header_hide"],
@@ -657,7 +661,7 @@ def tabulate(tabular_data, headers=[], tablefmt="simple",
     # optimization: look for ANSI control codes once,
     # enable smart width functions only if a control code is found
     plain_text = u'\n'.join(['\t'.join(map(_text_type, headers))] + \
-                            [u'\t'.join(map(__text_type, row)) for row in list_of_lists])
+                            [u'\t'.join(map(_text_type, row)) for row in list_of_lists])
     has_invisible = re.search(_invisible_codes, plain_text)
     if has_invisible:
         width_fn = _visible_width

@@ -1,10 +1,15 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+
+import sys
+
 from textwrap import wrap
 from rcColor import color, colorize
-import sys
+from rcUtilities import term_width
 
 if sys.version_info[0] >= 3:
     from functools import reduce
+    unicode = str
 
 def parse_data(data):
     lines = data.splitlines()
@@ -59,13 +64,16 @@ def convert(s):
     return s
 
 def validate_format(data):
+    if data is None:
+        raise Exception
+
     if not isinstance(data, list):
         data = parse_data(data)
 
     if len(data) == 0:
         raise Exception
 
-    if not isinstance(data[0], list): 
+    if not isinstance(data[0], list):
         for s in data:
             print(s)
         raise Exception
@@ -73,21 +81,50 @@ def validate_format(data):
     if len(data) < 2:
         raise Exception
 
+    return data
+
 def print_table_tabulate(data, width=20):
     try:
-        validate_format(data)
+        data = validate_format(data)
     except Exception as e:
         return
 
     from tabulate import tabulate
+    import rcColor
+
     try:
-        print(tabulate(data, headers="firstrow", tablefmt="simple"))
+        table = tabulate(data, headers="firstrow", tablefmt="plain").splitlines()
     except UnicodeEncodeError:
-        print(tabulate(data, headers="firstrow", tablefmt="simple").encode("utf-8"))
+        table = tabulate(data, headers="firstrow", tablefmt="plain").encode("utf-8").splitlines()
+
+    colors = [
+        rcColor.color.BGWHITE+rcColor.color.BLACK,
+        rcColor.color.E_BGODD+rcColor.color.BLACK,
+    ]
+    idx = 0
+    tw = term_width()
+
+    for line_idx, line in enumerate(table):
+        if line.startswith("+-"):
+            idx = (idx + 1) % 2
+            continue
+        if line_idx == 0:
+            color = rcColor.color.BOLD
+        else:
+            color = colors[idx]
+        if line.endswith("|"):
+            cont = False
+        else:
+            cont = True
+        length = len(line)
+        if length > tw or cont:
+            rpad = tw - (length % tw)
+            line += " " * rpad
+        print(rcColor.colorize(line, color))
 
 def print_table_default(data):
     try:
-        validate_format(data)
+        data = validate_format(data)
     except Exception as e:
         return
 
@@ -113,11 +150,11 @@ def print_table_default(data):
 
 def print_table_csv(data):
     try:
-        validate_format(data)
+        data = validate_format(data)
     except Exception as e:
         print(e)
         return
 
     for d in data:
-        print(";".join(map(lambda x: repr(x), d)))
+        print(";".join(map(lambda x: "'%s'" % unicode(x), d)))
 

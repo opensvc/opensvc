@@ -18,6 +18,7 @@ import readline
 import atexit
 import fnmatch
 import rcExceptions as ex
+from rcGlobalEnv import Storage
 
 try:
     import requests
@@ -37,7 +38,7 @@ except:
     has_docutils = False
 
 from rcUtilities import bdecode
-from rcColor import colorize_json
+from rcColor import formatter
 
 if sys.version_info[0] >= 3:
     raw_input = input
@@ -154,9 +155,31 @@ class Cmd(object):
 
     def __init__(self, cli=None):
         self.cli = cli
+        self.options = Storage()
+        self.options.format=cli.options.format
 
+    @formatter
     def print_content(self, s):
-        print(colorize_json(bdecode(s)))
+        data = json.loads(bdecode(s))
+        if self.options.format == "json":
+            return data
+        if "info" in data:
+            if isinstance(data["info"], list):
+                infos = data["info"]
+            else:
+                infos = [data["info"]]
+            for info in infos:
+                print("Info:", info)
+        if "error" in data:
+            if isinstance(data["error"], list):
+                errors = data["error"]
+            else:
+                errors = [data["error"]]
+            for error in errors:
+                print("Error:", error)
+        if "data" in data:
+            return data["data"]
+        return ""
 
     def path_match_handlers(self, p):
         for a, l in self.cli.api_o.get().items():
@@ -2324,6 +2347,9 @@ class Cli(object):
         parser.add_option("--color", default="auto",
                           action="store", dest="color",
                           help="colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize")
+        parser.add_option("--format", default="table",
+                          action="store", dest="format",
+                          help="format data as table, json, csv or yaml")
     
         self.options, self.args = parser.parse_args()
 
