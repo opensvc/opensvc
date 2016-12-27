@@ -24,7 +24,8 @@ try:
     import requests
 except:
     raise ex.excError("This feature requires the python requests module")
-    
+
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 # the collector api doc uses restructured text we'll have to print
 # in the command help messages
@@ -2258,6 +2259,9 @@ class Cli(object):
         self.insecure = self.set_option("insecure", False)
         self.auth = (self.user, self.password)
         self.config = self.options.config
+
+        if self.insecure:
+            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
     
         self.host = self.api.replace("https://", "").replace("http://", "")
         if "/" in self.host:
