@@ -57,15 +57,21 @@ class Mount(Res.Mount):
         }
         self.loopdevice = None
 
-    def try_umount(self, mnt=None):
-        if self.fs_type == "zfs":
-            self.umount_zfs()
-            return 0
-
+    def umount_generic(self, mnt=None):
         if mnt is None:
             mnt = self.mount_point
         cmd = ['umount', mnt]
-        (ret, out, err) = self.vcall(cmd, err_to_warn=True)
+        return self.vcall(cmd, err_to_warn=True)
+
+    def try_umount(self, mnt=None):
+        if mnt is None:
+            mnt = self.mount_point
+
+        if self.fs_type == "zfs":
+            ret, out, err = self.umount_zfs()
+        else:
+            ret, out, err = self.umount_generic(mnt)
+
         if ret == 0:
             return 0
     
@@ -83,7 +89,7 @@ class Mount(Res.Mount):
             action reliability, ie don't contest oprator's will
         """
         cmd = ['sync']
-        (ret, out, err) = self.vcall(cmd)
+        ret, out, err = self.vcall(cmd)
     
         if os.path.isdir(self.device):
             fuser_opts = '-kv'
@@ -392,8 +398,7 @@ class Mount(Res.Mount):
         ret, out, err = self.vcall(['zfs', 'umount', self.device ], err_to_info=True)
         if ret != 0 :
             ret, out, err = self.vcall(['zfs', 'umount', '-f', self.device ], err_to_info=True)
-            if ret != 0 :
-                raise ex.excError
+        return ret, out, err
 
     def mount_zfs(self):
         if 'encap' not in self.tags and not self.svc.config.has_option(self.rid, 'zone') and zfs_getprop(self.device, 'zoned') != 'off':
