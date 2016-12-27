@@ -752,6 +752,7 @@ ACTIONS = {
                    'collector to provide an historical ruleset.',
             'options': [
                 OPT.attach,
+                OPT.force,
                 OPT.module,
                 OPT.moduleset,
                 OPT.ruleset_date,
@@ -762,6 +763,7 @@ ACTIONS = {
                    'collector to provide an historical ruleset.',
             'options': [
                 OPT.attach,
+                OPT.force,
                 OPT.module,
                 OPT.moduleset,
                 OPT.ruleset_date,
@@ -772,6 +774,7 @@ ACTIONS = {
                    ' instruct the collector to provide an historical ruleset.',
             'options': [
                 OPT.attach,
+                OPT.force,
                 OPT.module,
                 OPT.moduleset,
                 OPT.ruleset_date,
