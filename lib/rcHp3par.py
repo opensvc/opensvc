@@ -7,7 +7,7 @@ import time
 import urllib
 import urllib2
 from rcGlobalEnv import rcEnv
-from rcUtilities import cache, clear_cache, justcall
+from rcUtilities import cache, clear_cache, justcall, which
 import re
 import datetime
 
@@ -198,8 +198,12 @@ class Hp3par(object):
         return out, err
 
     def cli_cmd(self, cmd, log=False):
+        if which(self.cli) is None:
+            raise ex.excError("%s executable not found" % self.cli)
+
         os.environ["TPDPWFILE"] = self.pwf
         os.environ["TPDNOCERTPROMPT"] = "1"
+
         cmd = [self.cli, '-sys', self.name, '-nohdtot', '-csvtable'] + cmd.split()
 
         if log:
@@ -213,6 +217,8 @@ class Hp3par(object):
         err = reformat(err)
 
         if p.returncode != 0:
+            if "The authenticity of the storage system cannot be established." in err:
+                 raise ex.excError("3par connection error. array ssl cert is not trusted. open interactive session to trust it.")
             if ("Connection closed by remote host" in err or "Too many local CLI connections." in err) and retry > 0:
                 if log:
                     self.log.info("3par connection refused. try #%d" % retry)
