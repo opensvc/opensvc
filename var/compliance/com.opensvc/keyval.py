@@ -13,6 +13,20 @@ data = {
     "value": "yes"
   }
 ]
+
+or
+
+{
+  "path": "/etc/ssh/sshd_config",
+  "keys": [
+    {
+      "key": "PermitRootLogin",
+      "op": "=",
+      "value": "yes"
+    }
+  ]
+}
+
 """,
   "description": """* Setup and verify keys in "key value" formatted configuration file.
 * Example files: sshd_config, ssh_config, ntp.conf, ...
@@ -81,37 +95,56 @@ class KeyVal(CompObject):
 
     def init(self):
         self.nocf = False
-        if self.cf is None:
-            perror("no file path specified")
-            raise NotApplicable()
+        self.file_keys = {}
 
-        self.keys = self.get_rules()
+        if self.cf:
+            self.file_keys[self.cf] = {
+                "target_n_key": {},
+                "keys": [],
+            }
 
-        self.target_n_key = {}
-        for i, key in enumerate(self.keys):
-             if self.keys[i]['op'] == 'IN':
-                 self.keys[i]['value'] = json.loads(self.keys[i]['value'])
-             if 'op' in key and 'key' in key and key['op'] not in ("unset", "reset"):
-                 if key['key'] not in self.target_n_key:
-                     self.target_n_key[key['key']] = 1
-                 else:
-                     self.target_n_key[key['key']] += 1
-        try:
-            self.conf = Parser(self.cf)
-        except ParserError as e:
-            perror(e)
-            raise ComplianceError()
+        for rule in self.get_rules():
+            if self.cf and "key" in rule:
+                self.file_keys[self.cf]["keys"] += [rule]
+                continue
+            if "path" not in rule:
+                continue
+            if "keys" not in rule or not isinstance(rule["keys"], list):
+                continue
+            path = rule["path"]
+            if path not in self.file_keys:
+                self.file_keys[path] = {
+                    "target_n_key": {},
+                    "keys": rule["keys"],
+                }
+            else:
+                self.file_keys[path]["keys"] += rule["keys"]
+
+        for path, data in self.file_keys.items():
+            for i, key in enumerate(data["keys"]):
+                if data["keys"][i]['op'] == 'IN':
+                    data["keys"][i]['value'] = json.loads(data["keys"][i]['value'])
+                if 'op' in key and 'key' in key and key['op'] not in ("unset", "reset"):
+                    if key['key'] not in data["target_n_key"]:
+                        data["target_n_key"][key['key']] = 1
+                    else:
+                        data["target_n_key"][key['key']] += 1
+            try:
+                data["conf"] = Parser(path)
+            except ParserError as e:
+                perror(e)
+                raise ComplianceError()
 
 
     def fixable(self):
         return RET_OK
 
-    def _check_key(self, keyname, target, op, value, instance=0, verbose=True):
+    def _check_key(self, path, data, keyname, target, op, value, instance=0, verbose=True):
         r = RET_OK
         if op == "reset":
             if value is not None:
                 current_n_key = len(value)
-                target_n_key = self.target_n_key[keyname] if keyname in self.target_n_key else 0
+                target_n_key = data["target_n_key"][keyname] if keyname in data["target_n_key"] else 0
                 if current_n_key > target_n_key:
                     if verbose:
                         perror("%s is set %d times, should be set %d times"%(keyname, current_n_key, target_n_key))
@@ -202,7 +235,7 @@ class KeyVal(CompObject):
                 pinfo("%s[%d]=%s on target"%(keyname, instance, str(value)))
         return r
 
-    def check_key(self, key, instance=0, verbose=True):
+    def check_key(self, path, data, key, instance=0, verbose=True):
         if 'key' not in key:
             if verbose:
                 perror("'key' not set in rule %s"%str(key))
@@ -224,36 +257,42 @@ class KeyVal(CompObject):
             return RET_NA
 
         keyname = key['key']
-        value = self.conf.get(keyname, instance=instance)
+        value = data["conf"].get(keyname, instance=instance)
 
-        r = self._check_key(keyname, target, op, value, instance=instance, verbose=verbose)
+        r = self._check_key(path, data, keyname, target, op, value, instance=instance, verbose=verbose)
 
         return r
 
-    def fix_key(self, key, instance=0):
+    def fix_key(self, path, data, key, instance=0):
         if key['op'] == "unset" or (key['op'] == "IN" and key['value'][0] == "unset"):
             pinfo("%s unset"%key['key'])
             if key['op'] == "IN":
                 target = None
             else:
                 target = key['value']
-            self.conf.unset(key['key'], target)
+            data["conf"].unset(key['key'], target)
         elif key['op'] == "reset":
-            target_n_key = self.target_n_key[key['key']] if key['key'] in self.target_n_key else 0
+            target_n_key = data["target_n_key"][key['key']] if key['key'] in data["target_n_key"] else 0
             pinfo("%s truncated to %d definitions"%(key['key'], target_n_key))
-            self.conf.truncate(key['key'], target_n_key)
+            data["conf"].truncate(key['key'], target_n_key)
         else:
             if key['op'] == "IN":
                 target = key['value'][0]
             else:
                 target = key['value']
             pinfo("%s=%s set"%(key['key'], target))
-            self.conf.set(key['key'], target, instance=instance)
+            data["conf"].set(key['key'], target, instance=instance)
 
     def check(self):
-        r = 0
+        r = RET_OK
+        for path, data in self.file_keys.items():
+            r |= self.check_keys(path, data)
+        return r
+
+    def check_keys(self, path, data):
+        r = RET_OK
         key_instance = {}
-        for key in self.keys:
+        for key in data["keys"]:
             if 'key' not in key or 'op' not in key:
                 continue
             if key['op'] in ('reset', 'unset'):
@@ -264,12 +303,18 @@ class KeyVal(CompObject):
                 else:
                     key_instance[key['key']] += 1
                 instance = key_instance[key['key']]
-            r |= self.check_key(key, instance=instance, verbose=True)
+            r |= self.check_key(path, data, key, instance=instance, verbose=True)
         return r
 
     def fix(self):
+        r = RET_OK
+        for path, data in self.file_keys.items():
+            r |= self.fix_keys(path, data)
+        return r
+
+    def fix_keys(self, path, data):
         key_instance = {}
-        for key in self.keys:
+        for key in data["keys"]:
             if 'key' not in key or 'op' not in key:
                 continue
             if key['op'] in ('reset', 'unset'):
@@ -280,12 +325,12 @@ class KeyVal(CompObject):
                 else:
                     key_instance[key['key']] += 1
                 instance = key_instance[key['key']]
-            if self.check_key(key, instance=instance, verbose=False) == RET_ERR:
-                self.fix_key(key, instance=instance)
-        if not self.conf.changed:
-            return
+            if self.check_key(path, data, key, instance=instance, verbose=False) == RET_ERR:
+                self.fix_key(path, data, key, instance=instance)
+        if not data["conf"].changed:
+            return RET_OK
         try:
-            self.conf.write()
+            data["conf"].write()
         except ParserError as e:
             perror(e)
             return RET_ERR
