@@ -3568,9 +3568,9 @@ def build(name, minimal=False, svcconf=None):
     # Store and validate the service type
     #
     if "env" in defaults:
-        svc.svc_env = defaults["env"]
+        svc.svc_env = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "env")
     elif "service_type" in defaults:
-        svc.svc_env = defaults["service_type"]
+        svc.svc_env = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "service_type")
 
     #
     # Setup service properties from config file content

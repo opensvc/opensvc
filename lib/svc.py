@@ -4449,7 +4449,8 @@ class Svc(object):
             """
             Fetch the value and convert it to expected type.
             """
-            value = config.get(section, option)
+            _option = option.split("@")[0]
+            value = conf_get_string_scope(self, self.config, section, _option)
             if isinstance(key.default, bool):
                 return bool(value)
             elif isinstance(key.default, int):
@@ -4484,7 +4485,10 @@ class Svc(object):
             if check_references(section, option) != 0:
                 err += 1
                 return err
-            value = get_val(key, section, option)
+            try:
+                value = get_val(key, section, option)
+            except ex.OptNotFound:
+                return 0
             err += check_candidates(key, section, option, value)
             return err
 
