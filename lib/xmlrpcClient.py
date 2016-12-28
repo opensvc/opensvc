@@ -314,12 +314,12 @@ class Collector(object):
              'version',
              'begin',
              'cron'],
-            [repr(svc.svcname),
-             repr(action),
-             repr(rcEnv.nodename),
-             repr(hostid),
-             repr(version),
-             repr(str(begin)),
+            [str(svc.svcname),
+             str(action),
+             str(rcEnv.nodename),
+             str(hostid),
+             str(version),
+             str(begin),
              '1' if svc.options.cron else '0']
         ]
         if self.auth_node:
@@ -444,15 +444,15 @@ class Collector(object):
              'time',
              'status',
              'cron'],
-            [repr(svc.svcname),
-             repr(action),
-             repr(rcEnv.nodename),
-             repr(hostid),
-             repr(','.join(map(str, pids))),
-             repr(str(begin)),
-             repr(str(end)),
-             repr(str(end-begin)),
-             repr(str(err)),
+            [str(svc.svcname),
+             str(action),
+             str(rcEnv.nodename),
+             str(hostid),
+             ','.join(map(str, pids)),
+             str(begin),
+             str(end),
+             str(end-begin),
+             str(err),
              '1' if svc.options.cron else '0']
         ]
         if self.auth_node:
