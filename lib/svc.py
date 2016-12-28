@@ -46,6 +46,7 @@ DEFAULT_STATUS_GROUPS = [
     "app",
     "hb",
     "stonith",
+    "task",
 ]
 
 CONFIG_DEFAULTS = {
@@ -261,6 +262,7 @@ STATUS_TYPES = [
     "sync.zfs",
     "stonith.callout",
     "stonith.ilo",
+    "task",
 ]
 
 ACTIONS_DO_MASTER_AND_SLAVE = [
@@ -1138,6 +1140,7 @@ class Svc(object):
         accessory_resources = get_res("hb")
         accessory_resources += get_res("stonith")
         accessory_resources += get_res("sync")
+        accessory_resources += get_res("task")
         n_accessory_resources = len(accessory_resources)
 
         print(colorize(self.svcname, color.BOLD))
@@ -1853,7 +1856,19 @@ class Svc(object):
             "overall": "n/a",
             "resources": {},
         }
-        groups = set(["container", "ip", "disk", "fs", "share", "hb", "app", "sync"])
+        groups = set([
+            "container",
+            "ip",
+            "disk",
+            "fs",
+            "share",
+            "hb",
+            "stonith",
+            "task",
+            "app",
+            "sync"
+        ])
+
         for group in groups:
             group_status[group] = 'n/a'
 
@@ -1897,6 +1912,7 @@ class Svc(object):
         for driver in [_driver for _driver in STATUS_TYPES if \
                   not _driver.startswith('sync') and \
                   not _driver.startswith('hb') and \
+                  not _driver.startswith('task') and \
                   not _driver.startswith('stonith')]:
             if driver in excluded_groups:
                 continue
@@ -1968,6 +1984,17 @@ class Svc(object):
                     status["overall"] += rstatus
                 else:
                     status["overall"] += rcStatus.WARN
+
+        for driver in [_driver for _driver in STATUS_TYPES if \
+                       _driver.startswith('task')]:
+            if 'task' not in groups:
+                continue
+            if driver in excluded_groups:
+                continue
+            for resource in self.get_resources(driver):
+                rstatus = resource.status()
+                status['task'] += rstatus
+                status["overall"] += rstatus
 
         self.group_status_cache = status
         return status
