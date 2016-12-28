@@ -1489,11 +1489,15 @@ class Node(object):
             if self.options.param in DEPRECATED_KEYWORDS:
                 newkw = DEPRECATED_KEYWORDS[self.options.param]
                 if self.config.has_option(section, newkw):
+                    print("deprecated keyword %s translated to %s" % \
+                          (self.options.param, newkw), file=sys.stderr)
                     print(self.config.get(section, newkw))
                     return 0
             if self.options.param in REVERSE_DEPRECATED_KEYWORDS:
                 for oldkw in REVERSE_DEPRECATED_KEYWORDS[self.options.param]:
                     if self.config.has_option(section, oldkw):
+                        print("keyword %s not found, translated to deprecated %s" % \
+                              (self.options.param, oldkw), file=sys.stderr)
                         print(self.config.get(section, oldkw))
                         return 0
             print("option '%s' not found in section '%s'"%(option, section),
