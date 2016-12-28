@@ -3497,45 +3497,47 @@ def build(name, minimal=False, svcconf=None):
         d_nodes = Storage()
         d_nodes.svcname = name
 
-        if "encapnodes" in defaults:
+        try:
             encapnodes = [n.lower() for n in conf_get_string_scope(d_nodes, conf, 'DEFAULT', "encapnodes").split() if n != ""]
-        else:
+        except ex.OptNotFound:
             encapnodes = []
         d_nodes['encapnodes'] = set(encapnodes)
 
-        if "nodes" in defaults:
+        try:
             nodes = [n.lower() for n in conf_get_string_scope(d_nodes, conf, 'DEFAULT', "nodes").split() if n != ""]
-        else:
+        except ex.OptNotFound:
             nodes = [rcEnv.nodename]
         d_nodes['nodes'] = set(nodes)
 
-        if "drpnodes" in defaults:
+        try:
             drpnodes = [n.lower() for n in conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drpnodes").split() if n != ""]
-        else:
+        except ex.OptNotFound:
             drpnodes = []
 
-        if "drpnode" in defaults:
+        try:
             drpnode = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drpnode").lower()
             if drpnode not in drpnodes and drpnode != "":
                 drpnodes.append(drpnode)
-        else:
+        except ex.OptNotFound:
             drpnode = ''
         d_nodes['drpnodes'] = set(drpnodes)
 
-        if "flex_primary" in defaults:
+        try:
             flex_primary = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "flex_primary").lower()
-        elif len(nodes) > 0:
-            flex_primary = nodes[0]
-        else:
-            flex_primary = ''
+        except ex.OptNotFound:
+            if len(nodes) > 0:
+                flex_primary = nodes[0]
+            else:
+                flex_primary = ''
         d_nodes['flex_primary'] = flex_primary
 
-        if "drp_flex_primary" in defaults:
+        try:
             drp_flex_primary = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drp_flex_primary").lower()
-        elif len(drpnodes) > 0:
-            drp_flex_primary = drpnodes[0]
-        else:
-            drp_flex_primary = ''
+        except ex.OptNotFound:
+            if len(drpnodes) > 0:
+                drp_flex_primary = drpnodes[0]
+            else:
+                drp_flex_primary = ''
         d_nodes['drp_flex_primary'] = drp_flex_primary
 
         if "pkg_name" in defaults:
@@ -3632,7 +3634,7 @@ def build(name, minimal=False, svcconf=None):
         pass
 
     #
-    # containerization options
+    # process group options
     #
     try:
         svc.create_pg = conf_get_boolean_scope(svc, conf, "DEFAULT", 'create_pg')
@@ -3650,12 +3652,6 @@ def build(name, minimal=False, svcconf=None):
         svc.anti_affinity = set(conf_get_string_scope(svc, conf, 'DEFAULT', 'anti_affinity').split())
     except ex.OptNotFound:
         pass
-
-
-    """ prune not managed service
-    """
-    if svc.svcmode not in rcEnv.vt_cloud and rcEnv.nodename not in svc.nodes | svc.drpnodes:
-        raise ex.excInitError('service not managed by this node. hostname %s is not a member of DEFAULT.nodes, DEFAULT.drpnode nor DEFAULT.drpnodes' % rcEnv.nodename)
 
     if not hasattr(svc, "clustertype"):
         try:

@@ -114,6 +114,19 @@ ACTIONS_ALLOW_ON_FROZEN = [
     "validate_config",
 ]
 
+ACTIONS_ALLOW_ON_INVALID_NODE = [
+    "delete",
+    "edit_config",
+    "frozen",
+    "get",
+    "logs",
+    "print_config",
+    "set",
+    "unset",
+    "update",
+    "validate_config",
+]
+
 ACTIONS_ALLOW_ON_CLUSTER = ACTIONS_ALLOW_ON_FROZEN + [
     "boot",
     "docker",
@@ -3421,6 +3434,7 @@ class Svc(object):
         Set up the environment variables.
         Finally do the service action either in logged or unlogged mode.
         """
+        self.allow_on_this_node(action)
         options = self.prepare_options(options)
 
         self.action_rid = self.options_to_rids(options)
@@ -4750,3 +4764,24 @@ class Svc(object):
             options = Storage(self.options)
             options.rid = rid
             self.action("provision", options)
+
+    def allow_on_this_node(self, action):
+        """
+        Raise excError if the service is not allowed to run on this node.
+        In other words, the nodename is not a service node or drpnode, nor the
+        service mode is cloud proxy.
+        """
+        if action in ACTIONS_ALLOW_ON_INVALID_NODE:
+            return
+        if self.svcmode in rcEnv.vt_cloud:
+            return
+        if rcEnv.nodename in self.nodes:
+            return
+        if rcEnv.nodename in self.drpnodes:
+            return
+        raise ex.excError("action '%s' aborted because this node's hostname "
+                          "'%s' is not a member of DEFAULT.nodes, "
+                          "DEFAULT.drpnode nor DEFAULT.drpnodes" % \
+                          (action, rcEnv.nodename))
+
+
