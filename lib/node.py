@@ -2192,22 +2192,16 @@ class Node(object):
         Returns the authentcation info for login as user
         """
         username = self.options.user
+
+        if self.options.password and self.options.password != "?":
+            return username, self.options.password
+
         import getpass
         try:
             password = getpass.getpass()
         except EOFError:
             raise KeyboardInterrupt()
         return username, password
-
-    def collector_url(self):
-        """
-        Mangles the node.dbopensvc url to produce the rest api head url
-        """
-        api = self.collector_api()
-        auth = "%s:%s@" % (api["username"], api["password"])
-        url = api["url"].replace("https://", "https://" + auth)
-        url = url.replace("http://", "http://" + auth)
-        return url
 
     def collector_request(self, path, svcname=None):
         """
@@ -2216,6 +2210,9 @@ class Node(object):
         import base64
         api = self.collector_api(svcname=svcname)
         url = api["url"]
+        if not url.startswith("https"):
+            raise ex.excError("refuse to submit auth tokens through a "
+                              "non-encrypted transport")
         request = Request(url+path)
         auth_string = '%s:%s' % (api["username"], api["password"])
         if sys.version_info[0] >= 3:
@@ -2270,10 +2267,7 @@ class Node(object):
         """
         Make a request to the collector's rest api
         """
-        api = self.collector_api(svcname=svcname)
         request = self.collector_request(path, svcname=svcname)
-        if not api["url"].startswith("https"):
-            raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
         if data is not None:
             try:
                 request.add_data(urlencode(data))
@@ -2298,11 +2292,7 @@ class Node(object):
         """
         Download bulk chunked data from the collector's rest api
         """
-        api = self.collector_api()
         request = self.collector_request(path)
-        if api["url"].startswith("https"):
-            raise ex.excError("refuse to submit auth tokens through a "
-                              "non-encrypted transport")
         kwargs = {}
         kwargs = self.set_ssl_context(kwargs)
         try:
