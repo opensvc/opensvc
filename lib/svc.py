@@ -1285,7 +1285,7 @@ class Svc(object):
             for resource in rset.resources:
                 if 'encap' in resource.tags:
                     continue
-                rstatus = str(resource.rstatus)
+                rstatus = str(rcStatus.Status(resource.rstatus))
                 r_vals.append([
                     self.svcname,
                     rcEnv.nodename,
