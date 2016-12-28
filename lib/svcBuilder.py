@@ -48,6 +48,8 @@ def handle_reference(svc, conf, ref, scope=False, impersonate=None):
             return rcEnv.nodename
         if ref == "svcname":
             return svc.svcname
+        if ref == "short_svcname":
+            return svc.svcname.split(".")[0]
         if ref == "svcmgr":
             return rcEnv.svcmgr
         if ref == "nodemgr":
