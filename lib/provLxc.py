@@ -2,6 +2,7 @@ from provisioning import Provisioning
 from rcGlobalEnv import rcEnv
 import os
 import rcExceptions as ex
+from svcBuilder import conf_get_string_scope
 
 class ProvisioningLxc(Provisioning):
     config_template = """\
@@ -43,8 +44,17 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
         Provisioning.__init__(self, r)
 
         self.section = r.svc.config.defaults()
-        self.rootfs = r.svc.config.get(r.rid, 'rootfs')
-        self.template = r.svc.config.get(r.rid, 'template')
+        try:
+            self.rootfs = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, 'rootfs')
+        except ex.OptNotFound:
+            self.rootfs = None
+            return
+
+        try:
+            self.template = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, 'template')
+        except ex.OptNotFound:
+            self.template =None
+            return
 
         # hostname file in the container rootfs
         self.p_hostname = os.path.join(self.rootfs, 'etc', 'hostname')
@@ -238,6 +248,12 @@ iface %(ipdev)s inet static
         ret, out, err = self.r.vcall(cmd, err_to_info=True)
 
     def provisioner(self):
+        if self.rootfs is None:
+            self.r.log.info("missing provisioning keyword: rootfs. skip")
+            return
+        if self.template is None:
+            self.r.log.info("missing provisioning keyword: template. skip")
+            return
         path = self.rootfs
 
         if not os.path.exists(path):
