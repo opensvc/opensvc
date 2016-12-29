@@ -1,19 +1,16 @@
 import os
 import datetime
-from rcUtilities import justcall, which
+from rcUtilities import justcall, which, bdecode
 import rcAsset
 
 def is_container():
-    p = '/proc/1/cgroup'
+    p = '/proc/1/environ'
     if not os.path.exists(p):
         return False
     with open(p, 'r') as f:
-        lines = f.readlines()
-        if len(lines) == 0:
-            return False
-        lines = [line for line in lines if line.strip().endswith(":/")]
-        if len(lines) == 0:
-            return True
+        buff = f.read()
+    if "container=lxc" in bdecode(buff):
+        return True
     return False
 
 class Asset(rcAsset.Asset):
