@@ -81,7 +81,17 @@ def fork(func, args=None, kwargs=None, serialize=False, delay=300):
     except:
         os._exit(1)
 
-    self = args[0]
+    obj = args[0]
+    if hasattr(obj, "svc") and obj.svc:
+        # svc compliance
+        self = obj.svc
+    elif hasattr(obj, "node"):
+        # node compliance
+        self = obj.node
+    else:
+        # svc or node
+        self = obj
+
     if self.sched.name == "node":
         title = "node."+func.__name__.lstrip("_")
     else:
