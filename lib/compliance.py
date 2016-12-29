@@ -323,6 +323,7 @@ class Compliance(object):
           'rset_md5',
           'run_svcname']
         self.env_bkp = os.environ.copy()
+        self.ordered_module = []
 
     def set_rset_md5(self):
         self.rset_md5 = ""
