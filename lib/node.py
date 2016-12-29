@@ -751,7 +751,10 @@ class Node(object):
 
         self.build_services()
         for svc in self.svcs:
-            svc.scheduler()
+            try:
+                svc.scheduler()
+            except ex.excError as exc:
+                svc.log.error(exc)
 
     def get_push_objects(self, section):
         """

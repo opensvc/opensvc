@@ -509,6 +509,8 @@ class Svc(object):
                     self.run_task(action)
                 else:
                     self.action(action)
+            except ex.excError as exc:
+                self.log.error(exc)
             except:
                 self.save_exc()
 
