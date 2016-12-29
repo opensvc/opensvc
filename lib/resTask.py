@@ -2,7 +2,7 @@ import os
 import pwd
 import resources as Res
 import rcStatus
-import rcExceptions as exc
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
 def run_as_popen_kwargs(user):
@@ -14,8 +14,8 @@ def run_as_popen_kwargs(user):
     import pwd
     try:
         pw_record = pwd.getpwnam(user)
-    except Exception as e:
-        raise ex.excError("user lookup failure: %s" % str(e))
+    except Exception as exc:
+        raise ex.excError("user lookup failure: %s" % str(exc))
     user_name      = pw_record.pw_name
     user_home_dir  = pw_record.pw_dir
     user_uid  = pw_record.pw_uid
@@ -38,6 +38,7 @@ class Task(Res.Resource):
                  rid=None,
                  command=None,
                  user=None,
+                 on_error=None,
                  type="task",
                  always_on=set([]),
                  optional=False,
@@ -56,6 +57,7 @@ class Task(Res.Resource):
                               restart=restart,
                               always_on=always_on)
         self.command = command
+        self.on_error = on_error
         self.user = user
 
     def __str__(self):
@@ -65,12 +67,17 @@ class Task(Res.Resource):
         data = [
           ["command", self.command],
         ]
+        if self.on_error:
+            data.append(["on_error", self.on_error])
         if self.user:
             data.append(["user", self.user])
         return self.fmt_info(data)
 
-    def has_it(self): return False
-    def is_up(self): return False
+    def has_it(self):
+        return False
+
+    def is_up(self):
+        return False
 
     def stop(self):
         pass
@@ -80,11 +87,16 @@ class Task(Res.Resource):
 
     def run(self):
         kwargs = {
-          'blocking': False,
+          'blocking': True,
         }
         kwargs.update(run_as_popen_kwargs(self.user))
 
-        self.action_triggers("", "command", **kwargs)
+        try:
+            self.action_triggers("", "command", **kwargs)
+        except ex.excError:
+            if self.on_error:
+                kwargs["blocking"] = False
+                self.action_triggers("", "on_error", **kwargs)
 
     def _status(self, verbose=False):
         return rcStatus.NA

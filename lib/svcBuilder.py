@@ -3205,6 +3205,11 @@ def add_task(svc, conf, s):
         return
 
     try:
+        kwargs['on_error'] = conf_get_string_scope(svc, conf, s, 'on_error')
+    except ex.OptNotFound:
+        pass
+
+    try:
         kwargs['user'] = conf_get_string_scope(svc, conf, s, 'user')
     except ex.OptNotFound:
         pass

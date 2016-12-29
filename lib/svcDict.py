@@ -3628,6 +3628,19 @@ class KeywordTaskCommand(Keyword):
                   example="/srv/{svcname}/data/scripts/backup.sh"
                 )
 
+class KeywordTaskOnError(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="task",
+                  keyword="on_error",
+                  at=True,
+                  order=1,
+                  required=False,
+                  text="A command to execute on 'run' action if 'command' returned an error.",
+                  example="/srv/{svcname}/data/scripts/task_on_error.sh"
+                )
+
 class KeywordTaskUser(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4342,6 +4355,7 @@ class KeyDict(KeywordStore):
         self += KeywordSharePath()
         self += KeywordShareNfsOpts()
         self += KeywordTaskCommand()
+        self += KeywordTaskOnError()
         self += KeywordTaskUser()
         self += KeywordTaskSchedule()
 
