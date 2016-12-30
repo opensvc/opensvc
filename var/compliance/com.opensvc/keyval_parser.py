@@ -13,14 +13,20 @@ class ParserError(Exception):
     pass
 
 class Parser(object):
-    def __init__(self, path):
+    def __init__(self, path, section_markers=None):
         self.path = path
         self.data = {}
         self.changed = False
         self.nocf = False
         self.keys = []
+        self.sections = {}
+        self.section_names = []
         self.lastkey = '__lastkey__'
         self.comments = {self.lastkey: []}
+        if section_markers:
+            self.section_markers = section_markers
+        else:
+            self.section_markers = ["Match"]
         self.load()
         self.bkp = path + '.' + str(datetime.datetime.now())
 
@@ -29,10 +35,14 @@ class Parser(object):
         for k in self.keys:
             if k in self.comments:
                 s += '\n'.join(self.comments[k]) + '\n'
-            for v in self.data[k]:
-                s += k + " " + str(v) + '\n'
+            s += '\n'.join([k + " " + str(v) for v in self.data[k]]) + '\n'
         if len(self.comments[self.lastkey]) > 0:
-            s += '\n'.join(self.comments[self.lastkey]) + '\n'
+            s += '\n'.join(self.comments[self.lastkey])
+        for section, data in self.sections.items():
+            s += section + '\n'
+            for k in data["keys"]:
+                for v in data["data"][k]:
+                    s += "\t" + k + " " + str(v) + '\n'
         return s
 
     def truncate(self, key, max):
@@ -119,6 +129,8 @@ class Parser(object):
             raise ParserError()
 
     def parse(self, buff):
+        section = None
+
         for line in buff.split("\n"):
             line = line.strip()
 
@@ -145,7 +157,10 @@ class Parser(object):
             key = l[0]
             value = line[len(key):].strip()
 
-            self.comments[key] = self.comments[self.lastkey]
+            if key not in self.comments:
+                self.comments[key] = self.comments[self.lastkey]
+            else:
+                self.comments[key] += self.comments[self.lastkey]
             self.comments[self.lastkey] = []
 
             try:
@@ -153,11 +168,25 @@ class Parser(object):
             except:
                 pass
 
-            if key not in self.keys:
-                self.keys.append(key)
-            if key not in self.data:
-                self.data[key] = []
-            self.data[key].append(value)
+            if key in self.section_markers:
+                section = key + " " + value
+                if section not in self.sections:
+                    self.sections[section] = {"keys": [], "data": {}}
+                    self.section_names.append(section)
+                continue
+
+            if section:
+                if key not in self.sections[section]["keys"]:
+                    self.sections[section]["keys"].append(key)
+                if key not in self.sections[section]["data"]:
+                    self.sections[section]["data"][key] = []
+                self.sections[section]["data"][key].append(value)
+            else:
+                if key not in self.keys:
+                    self.keys.append(key)
+                if key not in self.data:
+                    self.data[key] = []
+                self.data[key].append(value)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
