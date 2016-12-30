@@ -82,12 +82,11 @@ def fork(func, args=None, kwargs=None, serialize=False, delay=300):
         os._exit(1)
 
     obj = args[0]
-    if hasattr(obj, "svc") and obj.svc:
-        # svc compliance
-        self = obj.svc
-    elif hasattr(obj, "node"):
-        # node compliance
-        self = obj.node
+    if obj.__class__.__name__ == "Compliance":
+        if obj.svc:
+            self = obj.svc
+        else:
+            self = obj.node
     else:
         # svc or node
         self = obj
