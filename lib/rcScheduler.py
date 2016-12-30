@@ -220,7 +220,7 @@ class Scheduler(object):
             return
 
         try:
-            task = ".".join(task.split(".")[1:])
+            task = task.replace(self.name + ".", "")
         except:
             pass
 
