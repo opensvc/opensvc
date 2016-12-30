@@ -476,11 +476,7 @@ class Asset(object):
         print("  %s"%s)
 
     def get_version(self):
-        try:
-            import version
-            s = version.version
-        except:
-            s = "0"
+        s = self.node.agent_version()
         self.print_version(s)
         return s
 

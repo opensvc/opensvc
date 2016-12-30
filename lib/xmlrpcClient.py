@@ -301,12 +301,6 @@ class Collector(object):
         self.log.info("worker started")
 
     def begin_action(self, svc, action, begin, sync=True):
-        try:
-            import version
-            version = version.version
-        except:
-            version = "0";
-
         args = [['svcname',
              'action',
              'hostname',
@@ -318,7 +312,7 @@ class Collector(object):
              str(action),
              str(rcEnv.nodename),
              str(hostid),
-             str(version),
+             str(svc.node.agent_version()),
              str(begin),
              '1' if svc.options.cron else '0']
         ]

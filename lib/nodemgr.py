@@ -19,11 +19,6 @@ from nodemgr_parser import NodemgrOptParser
 
 node_mod = ximport('node')
 
-try:
-    from version import version
-except:
-    version = "dev"
-
 def do_symcli_db_file(options):
     try:
         symcli_db_file = options.symcli_db_file

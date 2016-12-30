@@ -2537,3 +2537,31 @@ class Node(object):
         from rcColor import print_color_config
         print_color_config(rcEnv.authconf)
 
+    def agent_version(self):
+        try:
+            import version
+        except ImportError:
+            return "dev"
+
+        try:
+            reload(version)
+            return version.version
+        except:
+            pass
+
+        try:
+            import imp
+            imp.reload(version)
+            return version.version
+        except:
+            pass
+
+        try:
+            import importlib
+            importlib.reload(version)
+            return version.version
+        except:
+            pass
+
+        return "dev"
+
