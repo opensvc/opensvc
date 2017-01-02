@@ -395,7 +395,7 @@ class Svc(object):
         self.clustertype = "failover"
         self.show_disabled = False
         self.svc_env = rcEnv.node_env
-        self.nodes = set()
+        self.nodes = set([rcEnv.nodename])
         self.drpnodes = set()
         self.drpnode = ""
         self.encapnodes = set()
@@ -4775,7 +4775,7 @@ class Svc(object):
         """
         if action in ACTIONS_ALLOW_ON_INVALID_NODE:
             return
-        if self.svcmode in rcEnv.vt_cloud:
+        if self.type in rcEnv.vt_cloud:
             return
         if rcEnv.nodename in self.nodes:
             return
