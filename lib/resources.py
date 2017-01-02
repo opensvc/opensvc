@@ -447,7 +447,7 @@ class Resource(object):
         """
         verbose = kwargs.get("verbose", False)
         refresh = kwargs.get("refresh", False)
-        restart = kwargs.get("restart", False)
+        restart = kwargs.get("restart", True)
         ignore_nostatus = kwargs.get("ignore_nostatus", False)
 
         if self.disabled:
