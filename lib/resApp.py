@@ -26,7 +26,7 @@ def run_as_popen_kwargs(fpath):
     user_gid = st[stat.ST_GID]
     import pwd
     try:
-        user_name = pwd.getpwuid(st[user_uid])[0]
+        user_name = pwd.getpwuid(user_uid)[0]
     except:
         user_name = "unknown"
     try:
