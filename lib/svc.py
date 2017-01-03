@@ -652,7 +652,7 @@ class Svc(object):
         except:
             pass
 
-    def svclock(self, action=None, timeout=30, delay=5):
+    def svclock(self, action=None, timeout=30, delay=1):
         """
         Acquire the service action lock.
         """
@@ -3679,8 +3679,13 @@ class Svc(object):
         """
 
         err = 0
+        if options.waitlock >= 0:
+            waitlock = options.waitlock
+        else:
+            waitlock = self.lock_timeout
+
         try:
-            self.svclock(action, timeout=options.waitlock)
+            self.svclock(action, timeout=waitlock)
         except ex.excError as exc:
             self.log.error(str(exc))
             return 1
