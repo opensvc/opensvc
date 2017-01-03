@@ -3290,98 +3290,6 @@ def add_app(svc, conf, s):
     r.pg_settings = get_pg_settings(svc, s)
     svc += r
 
-def add_apps_sysv(svc, conf):
-    """
-    SysV-like launchers support.
-    Translate to app#n resources.
-    """
-    resApp = ximport('resApp')
-
-    s = "app"
-    try:
-        initd = conf_get_string_scope(svc, conf, s, 'dir')
-    except ex.OptNotFound:
-        initd = svc.initd
-
-    disabled = get_disabled(conf, s, svc)
-    #optional = get_optional(conf, s, svc)
-    monitor = get_monitor(conf, s, svc)
-    restart = get_restart(conf, s, svc)
-
-    allocated = []
-
-    def get_next_rid():
-        rid_index = 0
-        _rid = "app#%d" % rid_index
-        while _rid in list(svc.resources_by_id.keys()) + allocated:
-            rid_index += 1
-            _rid = "app#%d" % rid_index
-        allocated.append(_rid)
-        return _rid
-
-    def init_app(script):
-        d = {
-          'script': script,
-          'rid': get_next_rid(),
-          'info': 50,
-          'optional': True,
-          'disabled': disabled,
-          'monitor': monitor,
-          'restart': restart,
-        }
-        return d
-
-    def find_app(script):
-        for r in svc.get_resources("app", discard_disabled=False):
-            if r.script.startswith(os.sep):
-                rscript = r.script
-            else:
-                rscript = os.path.join(initd, r.script)
-            rscript = os.path.realpath(rscript)
-            if rscript == script:
-                return r
-        return
-
-    def get_seq(s):
-        s = s[1:]
-        i = 0
-        while s[i].isdigit() or i == len(s):
-            i += 1
-        s = int(s[:i])
-        return s
-
-    h = {}
-    for f in glob.glob(os.path.join(initd, 'S[0-9]*')):
-        script = os.path.realpath(f)
-        if find_app(script) is not None:
-            continue
-        if script not in h:
-            h[script] = init_app(script)
-        h[script]['start'] = get_seq(os.path.basename(f))
-
-    for f in glob.glob(os.path.join(initd, 'K[0-9]*')):
-        script = os.path.realpath(f)
-        if find_app(script) is not None:
-            continue
-        if script not in h:
-            h[script] = init_app(script)
-        h[script]['stop'] = get_seq(os.path.basename(f))
-
-    for f in glob.glob(os.path.join(initd, 'C[0-9]*')):
-        script = os.path.realpath(f)
-        if find_app(script) is not None:
-            continue
-        if script not in h:
-            h[script] = init_app(script)
-        h[script]['check'] = get_seq(os.path.basename(f))
-
-    if "app" not in svc.resourcesets_by_type:
-        svc += resApp.RsetApps("app")
-
-    for script, kwargs in h.items():
-        r = resApp.App(**kwargs)
-        svc += r
-
 def get_pg_settings(svc, s):
     d = {}
     if not os.path.exists(svc.paths.cf):
@@ -3807,9 +3715,6 @@ def build(name, minimal=False, svcconf=None):
     add_resources('drbd', svc, conf)
     add_resources('vg', svc, conf)
     add_resources('pool', svc, conf)
-
-    # deprecated, folded into "app"
-    add_apps_sysv(svc, conf)
 
     add_syncs(svc, conf)
 
