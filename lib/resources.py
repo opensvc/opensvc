@@ -314,6 +314,14 @@ class Resource(object):
             self.status_log(s)
             return
 
+        if self.svc.lockfd is None:
+            try:
+                self.svc.svclock("resource_restart", timeout=0)
+            except ex.excError:
+                self.log.info("resource restart skipped: an action is running")
+                return
+            self.svc.svcunlock()
+
         for i in range(self.nb_restart):
             try:
                 self.log.info("restart resource %s. try number %d/%d"%(self.rid, i+1, self.nb_restart))
