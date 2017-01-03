@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2016\-12\-22
+.TH NODEMGR 1 2017\-01\-03
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -622,6 +622,9 @@ run compliance checks. --ruleset <md5> instruct the collector to provide an hist
 .B --attach
 attach the modulesets specified during a compliance check/fix/fixable command
 .TP
+.B --force
+force action
+.TP
 .B --module=MODULE
 compliance, set module list
 .TP
@@ -762,6 +765,9 @@ run compliance fixes. --ruleset <md5> instruct the collector to provide an histo
 .B --attach
 attach the modulesets specified during a compliance check/fix/fixable command
 .TP
+.B --force
+force action
+.TP
 .B --module=MODULE
 compliance, set module list
 .TP
@@ -795,6 +801,9 @@ verify compliance fixes prerequisites. --ruleset <md5> instruct the collector to
 .TP
 .B --attach
 attach the modulesets specified during a compliance check/fix/fixable command
+.TP
+.B --force
+force action
 .TP
 .B --module=MODULE
 compliance, set module list

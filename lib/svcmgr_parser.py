@@ -311,13 +311,13 @@ GLOBAL_OPTS = SVCMGR_OPTS + [
     OPT.parallel,
     OPT.waitlock,
     OPT.help,
+    OPT.remote,
 ]
 
 ACTION_OPTS = [
     OPT.dry_run,
     OPT.force,
     OPT.master,
-    OPT.remote,
     OPT.rid,
     OPT.slave,
     OPT.slaves,

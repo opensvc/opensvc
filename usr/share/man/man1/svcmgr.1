@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2016\-12\-22
+.TH SVCMGR 1 2017\-01\-03
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -58,6 +58,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector ack unavailability\fP
@@ -119,6 +122,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector alerts\fP
@@ -127,6 +133,9 @@ show this help message and exit
 display service alerts
 
 .TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+.TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
 .TP
@@ -162,6 +171,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector asset\fP
@@ -170,6 +182,9 @@ show this help message and exit
 display asset information known to the collector
 
 .TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+.TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
 .TP
@@ -205,6 +220,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector checks\fP
@@ -213,6 +231,9 @@ show this help message and exit
 display service checks
 
 .TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+.TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
 .TP
@@ -248,6 +269,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector create tag\fP
@@ -294,6 +318,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector disks\fP
@@ -301,6 +328,9 @@ show this help message and exit
 
 display service disks
 
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json or table.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -337,6 +367,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector events\fP
@@ -351,6 +384,9 @@ a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unava
 .B --end=END
 a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
 .TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+.TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
 .TP
@@ -386,6 +422,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector list actions\fP
@@ -400,6 +439,9 @@ a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unava
 .B --end=END
 a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
 .TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+.TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
 .TP
@@ -435,6 +477,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector list tags\fP
@@ -442,6 +487,9 @@ show this help message and exit
 
 list all available tags. use --like to filter the output.
 
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json or table.
 .TP
 .B --like=LIKE
 a sql like filtering expression. leading and trailing wildcards are automatically set.
@@ -481,6 +529,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector list unavailability ack\fP
@@ -536,6 +587,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector log\fP
@@ -582,6 +636,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector networks\fP
@@ -589,6 +646,9 @@ show this help message and exit
 
 display network information known to the collector for each service ip
 
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json or table.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -625,6 +685,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector show actions\fP
@@ -642,6 +705,9 @@ specify an object id to act on
 .B --end=END
 a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
 .TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+.TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
 .TP
@@ -677,6 +743,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector show tags\fP
@@ -685,6 +754,9 @@ show this help message and exit
 list all service tags
 
 .TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+.TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
 .TP
@@ -720,6 +792,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector tag\fP
@@ -766,6 +841,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector untag\fP
@@ -812,6 +890,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 \fRCOMPLIANCE\fP
 
@@ -863,6 +944,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance attach moduleset\fP
@@ -909,6 +993,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance attach ruleset\fP
@@ -955,6 +1042,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance check\fP
@@ -965,6 +1055,9 @@ run compliance checks. --ruleset <md5> instruct the collector to provide an hist
 .TP
 .B --attach
 attach the modulesets specified during a compliance check/fix/fixable command
+.TP
+.B -f, --force
+force action, ignore sanity check warnings
 .TP
 .B --module=MODULE
 compliance, set module list
@@ -1010,6 +1103,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance detach\fP
@@ -1059,6 +1155,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance detach moduleset\fP
@@ -1105,6 +1204,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance detach ruleset\fP
@@ -1151,6 +1253,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance env\fP
@@ -1200,6 +1305,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance fix\fP
@@ -1211,6 +1319,9 @@ run compliance fixes. --ruleset <md5> instruct the collector to provide an histo
 .B --attach
 attach the modulesets specified during a compliance check/fix/fixable command
 .TP
+.B -f, --force
+force action, ignore sanity check warnings
+.TP
 .B --module=MODULE
 compliance, set module list
 .TP
@@ -1255,6 +1366,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance fixable\fP
@@ -1266,6 +1380,9 @@ verify compliance fixes prerequisites. --ruleset <md5> instruct the collector to
 .B --attach
 attach the modulesets specified during a compliance check/fix/fixable command
 .TP
+.B -f, --force
+force action, ignore sanity check warnings
+.TP
 .B --module=MODULE
 compliance, set module list
 .TP
@@ -1310,6 +1427,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance list moduleset\fP
@@ -1353,6 +1473,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance list ruleset\fP
@@ -1396,6 +1519,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance show moduleset\fP
@@ -1439,6 +1565,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance show ruleset\fP
@@ -1482,6 +1611,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance show status\fP
@@ -1525,6 +1657,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 \fRSERVICE ACTIONS\fP
 
@@ -1543,9 +1678,6 @@ force action, ignore sanity check warnings
 .TP
 .B --master
 option to set to limit the action scope to the master service resources
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -1597,6 +1729,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr disable\fP
@@ -1649,6 +1784,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr dns update\fP
@@ -1665,9 +1803,6 @@ force action, ignore sanity check warnings
 .TP
 .B --master
 option to set to limit the action scope to the master service resources
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -1719,6 +1854,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr docker\fP
@@ -1762,6 +1900,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr enable\fP
@@ -1814,6 +1955,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr freeze\fP
@@ -1857,6 +2001,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr frozen\fP
@@ -1900,6 +2047,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr logs\fP
@@ -1943,6 +2093,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr migrate\fP
@@ -1959,9 +2112,6 @@ force action, ignore sanity check warnings
 .TP
 .B --master
 option to set to limit the action scope to the master service resources
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -2016,6 +2166,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr pg freeze\fP
@@ -2033,9 +2186,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -2086,6 +2236,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr pg kill\fP
@@ -2103,9 +2256,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -2156,6 +2306,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr pg thaw\fP
@@ -2173,9 +2326,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -2226,6 +2376,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr postsync\fP
@@ -2243,9 +2396,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -2296,6 +2446,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr presync\fP
@@ -2313,9 +2466,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -2366,6 +2516,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print config mtime\fP
@@ -2409,6 +2562,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print devlist\fP
@@ -2455,6 +2611,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print disklist\fP
@@ -2501,6 +2660,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print resource status\fP
@@ -2553,6 +2715,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print schedule\fP
@@ -2602,6 +2767,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print status\fP
@@ -2657,6 +2825,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr provision\fP
@@ -2674,9 +2845,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -2727,6 +2895,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr prstart\fP
@@ -2744,9 +2915,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -2797,6 +2965,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr prstatus\fP
@@ -2840,6 +3011,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr prstop\fP
@@ -2856,9 +3030,6 @@ force action, ignore sanity check warnings
 .TP
 .B --master
 option to set to limit the action scope to the master service resources
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -2910,6 +3081,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr pull\fP
@@ -2917,6 +3091,9 @@ show this help message and exit
 
 pull a service configuration from the collector
 
+.TP
+.B --provision
+with the install or create actions, provision the service resources after config file creation. defaults to False.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -2953,6 +3130,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr push\fP
@@ -2996,6 +3176,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr push resinfo\fP
@@ -3039,6 +3222,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr push service status\fP
@@ -3082,6 +3268,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr resource monitor\fP
@@ -3099,9 +3288,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -3152,6 +3338,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr restart\fP
@@ -3169,9 +3358,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -3222,6 +3408,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr resync\fP
@@ -3239,9 +3428,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -3292,6 +3478,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr run\fP
@@ -3309,9 +3498,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -3362,6 +3548,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr scheduler\fP
@@ -3405,6 +3594,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr shutdown\fP
@@ -3422,9 +3614,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -3475,6 +3664,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr start\fP
@@ -3492,9 +3684,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -3545,6 +3734,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startapp\fP
@@ -3562,9 +3754,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -3615,6 +3804,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startcontainer\fP
@@ -3632,9 +3824,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -3685,6 +3874,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startdisk\fP
@@ -3702,9 +3894,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -3755,6 +3944,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startfs\fP
@@ -3772,9 +3964,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -3825,6 +4014,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startip\fP
@@ -3842,9 +4034,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -3895,6 +4084,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startshare\fP
@@ -3912,9 +4104,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -3965,6 +4154,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startstandby\fP
@@ -3982,9 +4174,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -4035,6 +4224,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr status\fP
@@ -4081,6 +4273,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stonith\fP
@@ -4098,9 +4293,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -4151,6 +4343,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stop\fP
@@ -4168,9 +4363,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -4221,6 +4413,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stopapp\fP
@@ -4238,9 +4433,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -4291,6 +4483,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stopcontainer\fP
@@ -4308,9 +4503,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -4361,6 +4553,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stopdisk\fP
@@ -4378,9 +4573,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -4431,6 +4623,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stopfs\fP
@@ -4448,9 +4643,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -4501,6 +4693,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stopip\fP
@@ -4518,9 +4713,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -4571,6 +4763,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stopshare\fP
@@ -4588,9 +4783,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -4641,6 +4833,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr switch\fP
@@ -4657,9 +4852,6 @@ force action, ignore sanity check warnings
 .TP
 .B --master
 option to set to limit the action scope to the master service resources
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4714,6 +4906,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync all\fP
@@ -4731,9 +4926,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -4784,6 +4976,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync break\fP
@@ -4801,9 +4996,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -4854,6 +5046,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync drp\fP
@@ -4871,9 +5066,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -4924,6 +5116,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync establish\fP
@@ -4941,9 +5136,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -4994,6 +5186,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync full\fP
@@ -5011,9 +5206,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -5064,6 +5256,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync nodes\fP
@@ -5081,9 +5276,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -5134,6 +5326,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync quiesce\fP
@@ -5151,9 +5346,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -5204,6 +5396,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync restore\fP
@@ -5221,9 +5416,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -5274,6 +5466,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync resume\fP
@@ -5291,9 +5486,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -5344,6 +5536,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync resync\fP
@@ -5361,9 +5556,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -5414,6 +5606,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync revert\fP
@@ -5431,9 +5626,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -5484,6 +5676,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync split\fP
@@ -5501,9 +5696,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -5554,6 +5746,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync update\fP
@@ -5571,9 +5766,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -5624,6 +5816,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync verify\fP
@@ -5641,9 +5836,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -5694,6 +5886,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr thaw\fP
@@ -5737,6 +5932,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr unprovision\fP
@@ -5753,9 +5951,6 @@ force action, ignore sanity check warnings
 .TP
 .B --master
 option to set to limit the action scope to the master service resources
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5807,6 +6002,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 \fRSERVICE CONFIGURATION\fP
 
@@ -5826,9 +6024,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -5844,7 +6039,7 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --config=PARAM_CONFIG
+.B --config=PARM_CONFIG
 the configuration file to use when creating or installing a service
 .TP
 .B --env=ENV
@@ -5859,7 +6054,7 @@ with the install or create actions, provision the service resources after config
 .B --resource=RESOURCE
 a resource definition in json dictionary format fed to create or update
 .TP
-.B --template=PARAM_TEMPLATE
+.B --template=PARM_TEMPLATE
 the configuration file template name or id, served by the collector, to use when creating or installing a service
 .TP
 .B --onlyprimary
@@ -5897,6 +6092,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr delete\fP
@@ -5913,9 +6111,6 @@ force action, ignore sanity check warnings
 .TP
 .B --master
 option to set to limit the action scope to the master service resources
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5970,6 +6165,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr edit config\fP
@@ -6019,6 +6217,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr get\fP
@@ -6068,6 +6269,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print config\fP
@@ -6114,6 +6318,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr set\fP
@@ -6163,6 +6370,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr unset\fP
@@ -6209,6 +6419,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr update\fP
@@ -6226,9 +6439,6 @@ force action, ignore sanity check warnings
 .B --master
 option to set to limit the action scope to the master service resources
 .TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
-.TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
@@ -6243,6 +6453,12 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B -i, --interactive
+prompt user for a choice instead of going for defaults or failing
+.TP
+.B --provision
+with the install or create actions, provision the service resources after config file creation. defaults to False.
 .TP
 .B --resource=RESOURCE
 a resource definition in json dictionary format fed to create or update
@@ -6282,6 +6498,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr validate config\fP
@@ -6325,6 +6544,9 @@ comma-separated list of resource tags to limit action to
 .TP
 .B -h, --help
 show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 .SH OPTIONS
 .SH SEE ALSO
 .BR nodemgr (1)
