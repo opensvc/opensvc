@@ -1,18 +1,18 @@
 from subprocess import *
 from datetime import datetime
 import os
-import glob
 import sys
 import pwd
 import time
 import stat
 
-from rcUtilities import justcall, which
+from rcUtilities import justcall, which, lazy
 from rcGlobalEnv import rcEnv
 from resources import Resource
 from resourceset import ResourceSet
 import rcStatus
 import rcExceptions as ex
+import lock
 
 def run_as_popen_kwargs(fpath):
     if rcEnv.sysname == "Windows":
@@ -24,22 +24,21 @@ def run_as_popen_kwargs(fpath):
     cwd = rcEnv.pathtmp
     user_uid = st[stat.ST_UID]
     user_gid = st[stat.ST_GID]
-    import pwd
     try:
         user_name = pwd.getpwuid(user_uid)[0]
     except:
         user_name = "unknown"
     try:
         pw_record = pwd.getpwnam(user_name)
-        user_name      = pw_record.pw_name
-        user_home_dir  = pw_record.pw_dir
+        user_name = pw_record.pw_name
+        user_home_dir = pw_record.pw_dir
     except:
-        user_home_dir  = rcEnv.pathtmp
+        user_home_dir = rcEnv.pathtmp
     env = os.environ.copy()
     env['HOME']  = user_home_dir
     env['LOGNAME']  = user_name
-    env['PWD']  = cwd
-    env['USER']  = user_name
+    env['PWD'] = cwd
+    env['USER'] = user_name
     return {'preexec_fn': demote(user_uid, user_gid), 'cwd': cwd, 'env': env}
 
 def demote(user_uid, user_gid):
@@ -71,11 +70,6 @@ class RsetApps(ResourceSet):
                                  tags=tags)
 
     def action(self, action, tags=set([]), xtags=set([])):
-        if action == 'start' and self.type == "app":
-            import svcBuilder
-            svcBuilder.add_apps_sysv(self.svc, self.svc.config)
-            self.resources = self.svc.get_resources("app")
-
         try:
             ResourceSet.action(self, action, tags=tags, xtags=xtags)
         except Exception as e:
@@ -127,8 +121,15 @@ class App(Resource):
         self.timeout = timeout
         self.label = os.path.basename(script)
         self.always_on = always_on
+        self.lockfd = None
 
         self.script_exec = True
+
+    @lazy
+    def lockfile(self):
+        lockfile = os.path.join(rcEnv.pathlock, self.svc.svcname)
+        lockfile = ".".join((lockfile, self.rid))
+        return lockfile
 
     def __lt__(self, other):
         if other.start_seq is None:
@@ -237,6 +238,52 @@ class App(Resource):
         if r != 0:
             raise ex.excError()
 
+    def unlock(self):
+        """
+        Release the app action lock.
+        """
+        self.log.debug("release app lock")
+        lock.unlock(self.lockfd)
+        try:
+            os.unlink(self.lockfile)
+        except OSError:
+            pass
+        self.lockfd = None
+
+    def lock(self, action=None, timeout=0, delay=1):
+        """
+        Acquire the app action lock.
+        """
+        if self.lockfd is not None:
+            return
+
+        details = "(timeout %d, delay %d, action %s, lockfile %s)" % \
+                  (timeout, delay, action, self.lockfile)
+        self.log.debug("acquire app lock %s", details)
+        try:
+            lockfd = lock.lock(
+                timeout=timeout,
+                delay=delay,
+                lockfile=self.lockfile,
+                intent=action
+            )
+        except lock.lockTimeout as exc:
+            raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
+        except lock.lockNoLockFile:
+            raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
+        except lock.lockCreateError:
+            raise ex.excError("can not create lock file %s" % details)
+        except lock.lockAcquire as exc:
+            raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
+        except ex.excSignal:
+            raise ex.excError("interrupted by signal %s" % details)
+        except Exception as exc:
+            self.save_exc()
+            raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
+
+        if lockfd is not None:
+            self.lockfd = lockfd
+
     def _status(self, verbose=False):
         self.validate_on_action()
 
@@ -255,6 +302,13 @@ class App(Resource):
             return rcStatus.WARN
         except StatusNA:
             return rcStatus.NA
+        except ex.excError as exc:
+            msg = str(exc)
+            if "intent '" in msg:
+                action = msg.split("intent '")[-1].split("'")[0]
+                self.status_log("%s in progress" % action, "info")
+            self.log.debug("resource status forced to n/a: an action is running")
+            return rcStatus.NA
 
         if r == 0:
             return self.status_stdby(rcStatus.UP)
@@ -272,6 +326,15 @@ class App(Resource):
         self.vcall(['chmod', '+x', self.script])
 
     def run(self, action, dedicated_log=True, return_out=False):
+        self.lock(action)
+        if action == "status":
+            self.unlock()
+        try:
+            return self._run(action, dedicated_log=dedicated_log, return_out=return_out)
+        finally:
+            self.unlock()
+
+    def _run(self, action, dedicated_log=True, return_out=False):
         if self.script is None:
             return 1
 
@@ -357,6 +420,3 @@ class App(Resource):
            return 1
 
 
-if __name__ == "__main__":
-    for c in (Apps,) :
-        help(c)
