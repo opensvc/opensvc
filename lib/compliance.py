@@ -305,8 +305,6 @@ class Compliance(object):
         else:
             self.svc = None
             self.node = o
-        self.skip_action = o.sched.skip_action
-        self.sched_log = o.sched.sched_log
         self.options = o.options
         self.module_o = {}
         self.module = []
@@ -344,14 +342,8 @@ class Compliance(object):
         os.environ.clear()
         os.environ.update(self.env_bkp)
 
-    def compliance_auto(self):
-        if self.skip_action is not None and \
-           self.skip_action("compliance_auto"):
-            return
-        self.task_compliance_auto()
-
     @scheduler_fork
-    def task_compliance_auto(self):
+    def compliance_auto(self):
         if self.updatecomp and self.svc is None:
             self.node.updatecomp()
         self.do_auto()

@@ -747,9 +747,19 @@ ACTIONS = {
         },
     },
     'Compliance': {
+        'compliance_auto': {
+            'msg': 'run compliance checks or fixes depending on the autofix'
+                   'module property values.',
+            'options': [
+                OPT.attach,
+                OPT.force,
+                OPT.module,
+                OPT.moduleset,
+                OPT.ruleset_date,
+            ],
+        },
         'compliance_check': {
-            'msg': 'run compliance checks. --ruleset <md5> instruct the '
-                   'collector to provide an historical ruleset.',
+            'msg': 'run compliance checks.',
             'options': [
                 OPT.attach,
                 OPT.force,
@@ -759,8 +769,7 @@ ACTIONS = {
             ],
         },
         'compliance_fix': {
-            'msg': 'run compliance fixes. --ruleset <md5> instruct the '
-                   'collector to provide an historical ruleset.',
+            'msg': 'run compliance fixes.',
             'options': [
                 OPT.attach,
                 OPT.force,
@@ -770,8 +779,7 @@ ACTIONS = {
             ],
         },
         'compliance_fixable': {
-            'msg': 'verify compliance fixes prerequisites. --ruleset <md5>'
-                   ' instruct the collector to provide an historical ruleset.',
+            'msg': 'verify compliance fixes prerequisites.',
             'options': [
                 OPT.attach,
                 OPT.force,

@@ -285,6 +285,12 @@ class Node(object):
             rcos = __import__('rcOs')
         return rcos.Os()
 
+    @lazy
+    def compliance(self):
+        from compliance import Compliance
+        comp = Compliance(self)
+        return comp
+
     @staticmethod
     def check_privs(action):
         """
@@ -689,14 +695,12 @@ class Node(object):
             action = "print" + action[4:]
 
         if action.startswith("compliance_"):
-            from compliance import Compliance
-            comp = Compliance(self)
             if self.options.cron and action == "compliance_auto" and \
                self.config.has_option('compliance', 'auto_update') and \
                self.config.getboolean('compliance', 'auto_update'):
-                comp.updatecomp = True
-                comp.node = self
-            return getattr(comp, action)()
+                self.compliance.updatecomp = True
+                self.compliance.node = self
+            return getattr(self.compliance, action)()
         elif action.startswith("collector_") and action != "collector_cli":
             from collector import Collector
             coll = Collector(self.options, self)
@@ -738,7 +742,10 @@ class Node(object):
         self.options.cron = True
         for action in self.sched.scheduler_actions:
             try:
-                self.action(action)
+                if action == "compliance_auto":
+                    self.compliance_auto()
+                else:
+                    self.action(action)
             except:
                 self.log.exception("")
 
@@ -2120,6 +2127,8 @@ class Node(object):
                         if ret is not None:
                             data.outs[svc.svcname] = ret
                     else:
+                        if ret is None:
+                            ret = 0
                         err += ret
                 except ex.MonitorAction:
                     svc.action('toc')
@@ -2564,4 +2573,9 @@ class Node(object):
             pass
 
         return "dev"
+
+    def compliance_auto(self):
+        if self.sched.skip_action("compliance_auto"):
+            return
+        self.action("compliance_auto")
 

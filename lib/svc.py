@@ -478,6 +478,12 @@ class Svc(object):
         """
         return Freezer(self.svcname)
 
+    @lazy
+    def compliance(self):
+        from compliance import Compliance
+        comp = Compliance(self)
+        return comp
+
     def __lt__(self, other):
         """
         Order by service name
@@ -507,6 +513,8 @@ class Svc(object):
                     self.sched_sync_all()
                 elif action.startswith("task#"):
                     self.run_task(action)
+                elif action == "compliance_auto":
+                    self.compliance_auto()
                 else:
                     self.action(action)
             except ex.excError as exc:
@@ -3694,9 +3702,7 @@ class Svc(object):
 
         try:
             if action.startswith("compliance_"):
-                from compliance import Compliance
-                compliance = Compliance(self)
-                err = getattr(compliance, action)()
+                err = getattr(self.compliance, action)()
             elif hasattr(self, action):
                 self.running_action = action
                 err = getattr(self, action)()
@@ -4790,5 +4796,10 @@ class Svc(object):
                           "'%s' is not a member of DEFAULT.nodes, "
                           "DEFAULT.drpnode nor DEFAULT.drpnodes" % \
                           (action, rcEnv.nodename))
+
+    def compliance_auto(self):
+        if self.sched.skip_action("compliance_auto"):
+            return
+        self.action("compliance_auto")
 
 
