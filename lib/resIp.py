@@ -188,7 +188,7 @@ class Ip(Res.Resource):
 
     def lock(self):
         import lock
-        if self.svc.options.waitlock is not None:
+        if self.svc.options.waitlock >= 0:
             timeout = self.svc.options.waitlock
         else:
             timeout = 120
