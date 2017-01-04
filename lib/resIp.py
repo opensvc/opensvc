@@ -40,6 +40,7 @@ class Ip(Res.Resource):
         self.mask = mask
         self.gateway = gateway
         self.set_label()
+        self.lockfd = None
 
     def set_label(self):
         self.label = str(self.ipName) + '@' + self.ipDev
@@ -198,7 +199,7 @@ class Ip(Res.Resource):
         lockfile = os.path.join(rcEnv.pathlock, action)
         details = "(timeout %d, delay %d, action %s, lockfile %s)" % \
                   (timeout, delay, action, lockfile)
-        self.log.debug("acquire service lock %s", details)
+        self.log.debug("acquire startip lock %s", details)
 
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile, intent="startip")
