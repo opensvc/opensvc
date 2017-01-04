@@ -2494,16 +2494,23 @@ class Node(object):
             return " ".join(elements)
 
         try:
+            pipe = os.popen('TERM=xterm less -R', 'w')
+        except:
+            pipe = sys.stdout
+        try:
             with open(logfile, "r") as ofile:
                 for line in ofile.readlines():
                     line = highlighter(line)
                     if line:
-                        print(line)
+                        pipe.write(line+'\n')
         except BrokenPipeError:
             try:
                 sys.stdout = os.fdopen(1)
             except (AttributeError, OSError, IOError):
                 pass
+        finally:
+            if pipe != sys.stdout:
+                pipe.close()
 
     @formatter
     def print_config_data(self, src_config):

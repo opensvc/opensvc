@@ -1072,16 +1072,24 @@ class Svc(object):
             return " ".join(elements)
 
         try:
+            pipe = os.popen('TERM=xterm less -R', 'w')
+        except:
+            pipe = sys.stdout
+
+        try:
             with open(logfile, "r") as ofile:
                 for line in ofile.readlines():
                     buff = fmt(line)
                     if buff:
-                        print(buff)
+                        pipe.write(buff+"\n")
         except BrokenPipeError:
             try:
                 sys.stdout = os.fdopen(1)
-            except:
+            except (AttributeError, OSError, IOError):
                 pass
+        finally:
+            if pipe != sys.stdout:
+                pipe.close()
 
     def print_resource_status(self):
         """
