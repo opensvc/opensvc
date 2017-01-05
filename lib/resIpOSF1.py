@@ -13,16 +13,16 @@ class Ip(Res.Ip):
 
     def startip_cmd(self):
         if ':' in self.addr:
-            cmd = ['ifconfig', self.ipDev, 'inet6', '/'.join([self.addr, to_cidr(self.mask)]), 'add']
+            cmd = ['ifconfig', self.ipdev, 'inet6', '/'.join([self.addr, to_cidr(self.mask)]), 'add']
         else:
-            cmd = ['ifconfig', self.ipDev, 'inet', 'alias', self.addr, 'netmask', to_dotted(self.mask)]
+            cmd = ['ifconfig', self.ipdev, 'inet', 'alias', self.addr, 'netmask', to_dotted(self.mask)]
         return self.vcall(cmd)
 
     def stopip_cmd(self):
         if ':' in self.addr:
-            cmd = ['ifconfig', self.ipDev, 'inet6', self.addr, 'delete']
+            cmd = ['ifconfig', self.ipdev, 'inet6', self.addr, 'delete']
         else:
-            cmd = ['ifconfig', self.ipDev, 'inet', '-alias', self.addr]
+            cmd = ['ifconfig', self.ipdev, 'inet', '-alias', self.addr]
         return self.vcall(cmd)
 
 

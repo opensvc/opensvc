@@ -12,8 +12,8 @@ rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 class Ip(resIp.Ip, rcGce.Gce):
     def __init__(self,
                  rid=None,
-                 ipName=None,
-                 ipDev=None,
+                 ipname=None,
+                 ipdev=None,
                  eip=None,
                  routename=None,
                  gce_zone=None,
@@ -26,8 +26,8 @@ class Ip(resIp.Ip, rcGce.Gce):
                  subset=None):
         resIp.Ip.__init__(self,
                           rid=rid,
-                          ipName=ipName,
-                          ipDev=ipDev,
+                          ipname=ipname,
+                          ipdev=ipdev,
                           always_on=always_on,
                           optional=optional,
                           disabled=disabled,
@@ -35,7 +35,7 @@ class Ip(resIp.Ip, rcGce.Gce):
                           monitor=monitor,
                           restart=restart,
                           subset=subset)
-        self.label = "gce ip %s@%s" % (ipName, ipDev)
+        self.label = "gce ip %s@%s" % (ipname, ipdev)
         if eip:
             self.label += ", eip %s" % eip
 
@@ -48,26 +48,26 @@ class Ip(resIp.Ip, rcGce.Gce):
 
     def start_local_route(self):
         if self.has_local_route():
-            self.log.info("ip route %s/32 dev %s is already installed" % (self.addr, self.ipDev))
+            self.log.info("ip route %s/32 dev %s is already installed" % (self.addr, self.ipdev))
             return
         self.add_local_route()
 
     def stop_local_route(self):
         if not self.has_local_route():
-            self.log.info("ip route %s/32 dev %s is already uninstalled" % (self.addr, self.ipDev))
+            self.log.info("ip route %s/32 dev %s is already uninstalled" % (self.addr, self.ipdev))
             return
         self.del_local_route()
 
     def add_local_route(self):
-        cmd = ["ip", "route", "replace", self.addr+"/32", "dev", self.ipDev]
+        cmd = ["ip", "route", "replace", self.addr+"/32", "dev", self.ipdev]
         self.vcall(cmd)
 
     def del_local_route(self):
-        cmd = ["ip", "route", "del", self.addr+"/32", "dev", self.ipDev]
+        cmd = ["ip", "route", "del", self.addr+"/32", "dev", self.ipdev]
         self.vcall(cmd)
 
     def has_local_route(self):
-        cmd = ["ip", "route", "list", self.addr+"/32", "dev", self.ipDev]
+        cmd = ["ip", "route", "list", self.addr+"/32", "dev", self.ipdev]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return False

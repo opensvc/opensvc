@@ -115,7 +115,7 @@ class ProvisioningKvm(Provisioning):
         except ex.excError:
             pass
         for resource in self.r.svc.get_resources("ip"):
-            s = ';'.join((resource.rid, resource.ipDev, resource.addr, resource.mask))
+            s = ';'.join((resource.rid, resource.ipdev, resource.addr, resource.mask))
             cf.append(s)
         cf.append('')
         return '\n'.join(cf)

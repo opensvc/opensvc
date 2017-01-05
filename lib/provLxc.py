@@ -215,8 +215,8 @@ DEVICE=%(ipdev)s
 IPADDR=%(ipaddr)s
 NETMASK=%(netmask)s
 ONBOOT=yes
-"""%dict(ipdev=r.ipDev, netmask=r.mask, ipaddr=r.addr)
-        intf = os.path.join(self.network, 'ifcfg-'+r.ipDev)
+"""%dict(ipdev=r.ipdev, netmask=r.mask, ipaddr=r.addr)
+        intf = os.path.join(self.network, 'ifcfg-'+r.ipdev)
         with open(intf, 'w') as f:
             f.write(buff)
 
@@ -231,7 +231,7 @@ iface %(ipdev)s inet static
     address %(ipaddr)s
     netmask %(netmask)s
 
-"""%dict(ipdev=r.ipDev, netmask=r.mask, ipaddr=r.addr)
+"""%dict(ipdev=r.ipdev, netmask=r.mask, ipaddr=r.addr)
         with open(self.interfaces, 'w') as f:
             f.write(buff)
 

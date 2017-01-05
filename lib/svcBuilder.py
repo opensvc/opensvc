@@ -568,13 +568,13 @@ def add_ip_gce(svc, conf, s):
         return
 
     try:
-        kwargs['ipName'] = conf_get_string_scope(svc, conf, s, 'ipname')
+        kwargs['ipname'] = conf_get_string_scope(svc, conf, s, 'ipname')
     except ex.OptNotFound:
         svc.log.error("ipname must be defined in config file section %s" % s)
         return
 
     try:
-        kwargs['ipDev'] = conf_get_string_scope(svc, conf, s, 'ipdev')
+        kwargs['ipdev'] = conf_get_string_scope(svc, conf, s, 'ipdev')
     except ex.OptNotFound:
         svc.log.error("ipdev must be defined in config file section %s" % s)
         return
@@ -620,13 +620,13 @@ def add_ip_amazon(svc, conf, s):
         return
 
     try:
-        kwargs['ipName'] = conf_get_string_scope(svc, conf, s, 'ipname')
+        kwargs['ipname'] = conf_get_string_scope(svc, conf, s, 'ipname')
     except ex.OptNotFound:
         svc.log.error("nor ipname and ipname@%s defined in config file section %s"%(rcEnv.nodename, s))
         return
 
     try:
-        kwargs['ipDev'] = conf_get_string_scope(svc, conf, s, 'ipdev')
+        kwargs['ipdev'] = conf_get_string_scope(svc, conf, s, 'ipdev')
     except ex.OptNotFound:
         svc.log.error("ipdev must be defined in config file section %s" % s)
         return
@@ -667,18 +667,18 @@ def add_ip(svc, conf, s):
     kwargs = {}
 
     try:
-        kwargs['ipName'] = conf_get_string_scope(svc, conf, s, 'ipname')
+        kwargs['ipname'] = conf_get_string_scope(svc, conf, s, 'ipname')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['ipDev'] = conf_get_string_scope(svc, conf, s, 'ipdev')
+        kwargs['ipdev'] = conf_get_string_scope(svc, conf, s, 'ipdev')
     except ex.OptNotFound:
         svc.log.error('ipdev not found in ip section %s'%s)
         return
 
     try:
-        kwargs['ipDevExt'] = conf_get_string_scope(svc, conf, s, 'ipdevext')
+        kwargs['ipdevExt'] = conf_get_string_scope(svc, conf, s, 'ipdevext')
     except ex.OptNotFound:
         pass
 

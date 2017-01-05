@@ -9,8 +9,8 @@ from rcUtilities import which, justcall, to_cidr
 class Ip(Res.Ip, rcDocker.DockerLib):
     def __init__(self,
                  rid=None,
-                 ipDev=None,
-                 ipName=None,
+                 ipdev=None,
+                 ipname=None,
                  mask=None,
                  gateway=None,
                  network=None,
@@ -25,8 +25,8 @@ class Ip(Res.Ip, rcDocker.DockerLib):
                  subset=None):
         Res.Ip.__init__(self,
                         rid,
-                        ipDev=ipDev,
-                        ipName=ipName,
+                        ipdev=ipdev,
+                        ipname=ipname,
                         mask=mask,
                         optional=optional,
                         disabled=disabled,
@@ -39,7 +39,7 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         self.network = network
         self.del_net_route = del_net_route
         self.container_rid = str(container_rid)
-        self.label = str(ipName) + '@' + ipDev
+        self.label = str(ipname) + '@' + ipdev
         self.tags.add("docker")
         self.tags.add(container_rid)
         self.guest_dev = "eth1"
@@ -105,7 +105,7 @@ class Ip(Res.Ip, rcDocker.DockerLib):
             return self.startip_cmd_shared()
 
     def startip_cmd_shared(self):
-        if os.path.exists("/sys/class/net/%s/bridge" % self.ipDev):
+        if os.path.exists("/sys/class/net/%s/bridge" % self.ipdev):
             self.log.info("bridge mode")
             return self.startip_cmd_shared_bridge()
         else:
@@ -117,7 +117,7 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         self.create_netns_link(nspid=nspid)
 
         # assign interface to the nspid
-        cmd = ["ip", "link", "set", self.ipDev, "netns", nspid, "name", self.guest_dev]
+        cmd = ["ip", "link", "set", self.ipdev, "netns", nspid, "name", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -164,7 +164,7 @@ class Ip(Res.Ip, rcDocker.DockerLib):
             return ret, out, err
 
         # activate the parent dev
-        cmd = ["ip", "link", "set", tmp_local_dev, "master", self.ipDev]
+        cmd = ["ip", "link", "set", tmp_local_dev, "master", self.ipdev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -205,13 +205,13 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         mtu = self.ip_get_mtu()
 
         # create a macvlan interface
-        cmd = ["ip", "link", "add", "link", self.ipDev, "dev", tmp_guest_dev, "mtu", mtu, "type", "macvlan", "mode", "bridge"]
+        cmd = ["ip", "link", "add", "link", self.ipdev, "dev", tmp_guest_dev, "mtu", mtu, "type", "macvlan", "mode", "bridge"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # activate the parent dev
-        cmd = ["ip", "link", "set", self.ipDev, "up"]
+        cmd = ["ip", "link", "set", self.ipdev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -243,10 +243,10 @@ class Ip(Res.Ip, rcDocker.DockerLib):
 
     def ip_get_mtu(self):
         # get mtu
-        cmd = ["ip", "link", "show", self.ipDev]
+        cmd = ["ip", "link", "show", self.ipdev]
         ret, out, err = self.call(cmd)
         if ret != 0:
-            raise ex.excError("failed to get %s mtu: %s" % (self.ipDev, err))
+            raise ex.excError("failed to get %s mtu: %s" % (self.ipdev, err))
         mtu = out.split()[4]
         return mtu
 

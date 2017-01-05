@@ -30,10 +30,10 @@ class ProvisioningIp(Provisioning):
                 self.r.log.warning("misformatted cascade entry: %s (rid does not exist)" % e)
                 continue
             need_write = True
-            self.r.log.info("cascade %s to %s" % (self.r.ipName, e))
-            self.r.svc.config.set(rid, param, self.r.ipName)
-            self.r.svc.resources_by_id[rid].ipName = conf_get_string_scope(self.r.svc, self.r.svc.config, rid, param)
-            self.r.svc.resources_by_id[rid].addr = self.r.svc.resources_by_id[rid].ipName
+            self.r.log.info("cascade %s to %s" % (self.r.ipname, e))
+            self.r.svc.config.set(rid, param, self.r.ipname)
+            self.r.svc.resources_by_id[rid].ipname = conf_get_string_scope(self.r.svc, self.r.svc.config, rid, param)
+            self.r.svc.resources_by_id[rid].addr = self.r.svc.resources_by_id[rid].ipname
         if need_write:
             self.r.svc.write_config()
 
@@ -46,7 +46,7 @@ class ProvisioningIp(Provisioning):
             args = self.r.svc.config.get("DEFAULT", "docker_daemon_args")
         except:
             args = ""
-        args += " --ip "+self.r.ipName
+        args += " --ip "+self.r.ipname
         self.r.svc.config.set("DEFAULT", "docker_daemon_args", args)
         self.r.svc.write_config()
         for r in self.r.svc.get_resources("container.docker"):
@@ -54,13 +54,13 @@ class ProvisioningIp(Provisioning):
             r.on_add()
 
     def provisioner_private(self):
-        if self.r.ipName != "<allocate>":
+        if self.r.ipname != "<allocate>":
             self.r.log.info("private ip already provisioned")
             return
 
         eni = self.r.get_network_interface()
         if eni is None:
-            raise ex.excError("could not find ec2 network interface for %s" % self.ipDev)
+            raise ex.excError("could not find ec2 network interface for %s" % self.ipdev)
 
         ips1 = set(self.r.get_instance_private_addresses())
         data = self.r.aws([
@@ -73,7 +73,7 @@ class ProvisioningIp(Provisioning):
 
         self.r.svc.config.set(self.r.rid, "ipname", new_ip)
         self.r.svc.write_config()
-        self.r.ipName = new_ip
+        self.r.ipname = new_ip
 
     def provisioner_public(self):
         if self.r.eip != "<allocate>":

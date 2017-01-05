@@ -13,7 +13,7 @@ class Ip(Res.Ip):
 
     def startip_cmd(self):
         if ':' in self.addr:
-            cmd = ['ifconfig', self.ipDev, 'inet6', 'up']
+            cmd = ['ifconfig', self.ipdev, 'inet6', 'up']
             (ret, out, err) = self.vcall(cmd)
             if ret != 0:
                 raise ex.excError

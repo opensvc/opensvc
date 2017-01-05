@@ -8,8 +8,8 @@ rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 class Ip(Res.Ip):
     def __init__(self,
                  rid=None,
-                 ipDev=None,
-                 ipName=None,
+                 ipdev=None,
+                 ipname=None,
                  zone=None,
                  mask=None,
                  always_on=set([]),
@@ -22,8 +22,8 @@ class Ip(Res.Ip):
                  gateway=None):
         Res.Ip.__init__(self,
                         rid=rid,
-                        ipDev=ipDev,
-                        ipName=ipName,
+                        ipdev=ipdev,
+                        ipname=ipname,
                         mask=mask,
                         always_on=always_on,
                         disabled=disabled,
@@ -54,16 +54,16 @@ class Ip(Res.Ip):
         if 'noalias' not in self.tags:
             for i in range(retry):
                 ifconfig = rcIfconfig.ifconfig()
-                intf = ifconfig.interface(self.ipDev)
+                intf = ifconfig.interface(self.ipdev)
                 if intf is not None and intf.flag_up:
                     ok = True
                     break
                 time.sleep(interval)
             if not ok:
-                self.log.error("Interface %s is not up. Cannot stack over it." % self.ipDev)
-                raise ex.IpDevDown(self.ipDev)
+                self.log.error("Interface %s is not up. Cannot stack over it." % self.ipdev)
+                raise ex.IpDevDown(self.ipdev)
         if self.is_up() is True:
-            self.log.info("%s is already up on %s" % (self.addr, self.ipDev))
+            self.log.info("%s is already up on %s" % (self.addr, self.ipdev))
             raise ex.IpAlreadyUp(self.addr)
         if not hasattr(self, 'abort_start_done') and 'nonrouted' not in self.tags and self.check_ping():
             self.log.error("%s is already up on another host" % (self.addr))

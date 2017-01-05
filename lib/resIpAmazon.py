@@ -11,8 +11,8 @@ rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 class Ip(resIp.Ip, Amazon):
     def __init__(self,
                  rid=None,
-                 ipName=None,
-                 ipDev=None,
+                 ipname=None,
+                 ipdev=None,
                  eip=None,
                  optional=False,
                  disabled=False,
@@ -23,8 +23,8 @@ class Ip(resIp.Ip, Amazon):
                  subset=None):
         resIp.Ip.__init__(self,
                           rid=rid,
-                          ipName=ipName,
-                          ipDev=ipDev,
+                          ipname=ipname,
+                          ipdev=ipdev,
                           always_on=always_on,
                           optional=optional,
                           disabled=disabled,
@@ -32,7 +32,7 @@ class Ip(resIp.Ip, Amazon):
                           monitor=monitor,
                           restart=restart,
                           subset=subset)
-        self.label = "ec2 ip %s@%s" % (ipName, ipDev)
+        self.label = "ec2 ip %s@%s" % (ipname, ipdev)
         if eip:
             self.label += ", eip %s" % eip
 
@@ -59,7 +59,7 @@ class Ip(resIp.Ip, Amazon):
 
     def get_network_interface(self):
         ifconfig = rcIfconfig.ifconfig()
-        intf = ifconfig.interface(self.ipDev)
+        intf = ifconfig.interface(self.ipdev)
         ips = set(intf.ipaddr + intf.ip6addr)
         instance_data = self.get_instance_data(refresh=True)
         if instance_data is None:
@@ -105,7 +105,7 @@ class Ip(resIp.Ip, Amazon):
             return
         eni = self.get_network_interface()
         if eni is None:
-            raise ex.excError("could not find ec2 network interface for %s" % self.ipDev)
+            raise ex.excError("could not find ec2 network interface for %s" % self.ipdev)
         data = self.aws([
          "ec2", "assign-private-ip-addresses",
          "--network-interface-id", eni,
@@ -142,7 +142,7 @@ class Ip(resIp.Ip, Amazon):
             return
         eni = self.get_network_interface()
         if eni is None:
-            raise ex.excError("could not find ec2 network interface for %s" % self.ipDev)
+            raise ex.excError("could not find ec2 network interface for %s" % self.ipdev)
         data = self.aws([
          "ec2", "unassign-private-ip-addresses",
          "--network-interface-id", eni,

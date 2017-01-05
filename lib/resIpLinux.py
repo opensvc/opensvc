@@ -10,16 +10,16 @@ class Ip(Res.Ip):
 
     def start_link(self):
         if which("ip"):
-           cmd = ['ip', 'link', 'set', 'dev', self.ipDev, 'up']
+           cmd = ['ip', 'link', 'set', 'dev', self.ipdev, 'up']
         else:
-           cmd = ['ifconfig', self.ipDev, 'up']
+           cmd = ['ifconfig', self.ipdev, 'up']
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
     def startip_cmd(self):
         if ':' in self.addr:
-            cmd = ['ifconfig', self.ipDev, 'inet6', 'add', '/'.join([self.addr, to_cidr(self.mask)])]
+            cmd = ['ifconfig', self.ipdev, 'inet6', 'add', '/'.join([self.addr, to_cidr(self.mask)])]
         else:
             cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', to_dotted(self.mask), 'up']
 
@@ -37,7 +37,7 @@ class Ip(Res.Ip):
 
     def stopip_cmd(self):
         if ':' in self.addr:
-            cmd = ['ifconfig', self.ipDev, 'inet6', 'del', '/'.join([self.addr, to_cidr(self.mask)])]
+            cmd = ['ifconfig', self.ipdev, 'inet6', 'del', '/'.join([self.addr, to_cidr(self.mask)])]
         else:
             if self.stacked_dev is None:
                 return 1, "", "no stacked dev found"

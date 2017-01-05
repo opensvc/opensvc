@@ -74,8 +74,8 @@ class ProvisioningZone(Provisioning):
             netmask = r.svc.config.get(r.rid, "netmask")
 
             if s == "":
-                s += "network_interface=%s {primary\n"%r.ipDev
-                s += " hostname=%s\n"%r.ipName
+                s += "network_interface=%s {primary\n"%r.ipdev
+                s += " hostname=%s\n"%r.ipname
                 s += " ip_address=%s\n"%r.addr
                 s += " netmask=%s\n"%netmask
                 s += " protocol_ipv6=no\n"
@@ -211,9 +211,9 @@ class ProvisioningZone(Provisioning):
             zone = self.r
         cmds = []
         for r in self.r.svc.get_resources(["ip"]):
-            if not self.test_net_interface(r.ipDev):
-                raise excError("Missing interface: %s" % r.ipDev)
-            cmds.append("add net ; set physical=%s ; end" % r.ipDev)
+            if not self.test_net_interface(r.ipdev):
+                raise excError("Missing interface: %s" % r.ipdev)
+            cmds.append("add net ; set physical=%s ; end" % r.ipdev)
         for cmd in cmds:
             zone.zonecfg([cmd])
 

@@ -9,8 +9,8 @@ rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 class Ip(Res.Ip):
     def __init__(self,
                  rid=None,
-                 ipDev=None,
-                 ipName=None,
+                 ipdev=None,
+                 ipname=None,
                  mask=None,
                  always_on=set([]),
                  monitor=False,
@@ -20,12 +20,12 @@ class Ip(Res.Ip):
                  tags=set([]),
                  optional=False,
                  gateway=None,
-                 ipDevExt="v4"):
-        self.ipDevExt = ipDevExt
+                 ipdevExt="v4"):
+        self.ipdevExt = ipdevExt
         Res.Ip.__init__(self,
                         rid=rid,
-                        ipDev=ipDev,
-                        ipName=ipName,
+                        ipdev=ipdev,
+                        ipname=ipname,
                         mask=mask,
                         always_on=always_on,
                         disabled=disabled,
@@ -35,7 +35,7 @@ class Ip(Res.Ip):
                         restart=restart,
                         subset=subset,
                         gateway=gateway)
-        self.label = self.label + "/" + self.ipDevExt
+        self.label = self.label + "/" + self.ipdevExt
         self.type = "ip"
         if not which('ipadm'):
             raise ex.excInitError("crossbow ips are not supported on this system")
@@ -48,7 +48,7 @@ class Ip(Res.Ip):
             cmd=['route', '-q', 'delete', 'default', self.gateway]
             r, o, e = self.call(cmd, info=True, outlog=False, errlog=False)
             ret += r
-        cmd=['ipadm', 'delete-addr', self.stacked_dev+'/'+self.ipDevExt]
+        cmd=['ipadm', 'delete-addr', self.stacked_dev+'/'+self.ipdevExt]
         r, o, e =  self.vcall(cmd)
         ret += r
         out += o
@@ -99,7 +99,7 @@ class Ip(Res.Ip):
         if len(_out) == 0:
             cmd=['ipadm', 'create-ip', '-t', self.stacked_dev ]
             r, o, e = self.vcall(cmd)
-        cmd=['ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+"/"+to_cidr(self.mask), self.stacked_dev+'/'+self.ipDevExt]
+        cmd=['ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+"/"+to_cidr(self.mask), self.stacked_dev+'/'+self.ipdevExt]
         r, o, e = self.vcall(cmd)
         if r != 0:
             cmd=['ipadm', 'show-if' ]
@@ -122,7 +122,7 @@ class Ip(Res.Ip):
         import time
         ok = False
         if self.is_up() is True:
-            self.log.info("%s is already up on %s" % (self.addr, self.ipDev))
+            self.log.info("%s is already up on %s" % (self.addr, self.ipdev))
             raise ex.IpAlreadyUp(self.addr)
         if not hasattr(self, 'abort_start_done') and 'nonrouted' not in self.tags and self.check_ping():
             self.log.error("%s is already up on another host" % (self.addr))
