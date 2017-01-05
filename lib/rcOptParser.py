@@ -221,7 +221,7 @@ class OptParser(object):
         self.parser.set_usage(usage)
 
         if options.parm_help or action not in self.supported_actions():
-            self.print_context_help(action)
+            self.print_context_help(action, options)
 
         # parse a second time with only options supported by the action
         # so we can raise on options incompatible with the action
@@ -268,9 +268,13 @@ class OptParser(object):
         if self.args is None:
             self.parser.error("Missing action")
 
-    def print_context_help(self, action):
+    def print_context_help(self, action, options):
         """
         Trigger a parser error, which displays the help message contextualized
         for the action prefix.
         """
-        self.parser.error("Invalid service action: %s" % str(action))
+        if options.parm_help:
+            self.parser.print_help()
+            raise ex.excError
+        else:
+            self.parser.error("Invalid service action: %s" % str(action))
