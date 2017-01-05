@@ -382,6 +382,9 @@ def activate_systemd(launcher):
         except:
             logit("issue met while trying to create %s symlink" % system_call,stderr=True)
 
+    # set systemd call as ExecStart and ExecStop
+    os.system("sed -i 's@/usr/share/opensvc/bin/init/opensvc.init@"+systemd_call+"@' "+dst)
+
     # reload systemd configuration
     logit("reloading systemd configuration",stdout=True)
     cmd = ['systemctl', '-q', 'daemon-reload']
