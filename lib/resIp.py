@@ -574,7 +574,8 @@ class Ip(Res.Resource):
         except Exception as exc:
             raise ex.excError(str(exc))
         if "error" in data:
-            raise ex.excError(data["error"])
+            self.log.warning(data["error"])
+            return
 
         if "info" in data:
             self.log.info(data["info"])
