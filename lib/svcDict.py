@@ -122,10 +122,8 @@ class Keyword(object):
         return s
 
     def __str__(self):
-        for t in self.rtype:
-            key = ".".join((self.section, t, self.keyword))
-            if key in deprecated_keyword:
-                return ''
+        if self.deprecated():
+            return ''
 
         wrapper = TextWrapper(subsequent_indent="%15s"%"", width=78)
 
@@ -163,13 +161,13 @@ class Keyword(object):
         return s
 
     def form(self, d):
-        for t in self.rtype:
-            key = ".".join((self.section, t, self.keyword))
-            if key in deprecated_keyword:
-                return
+        if self.deprecated():
+            return
 
         # skip this form if dependencies are not met
         for d_keyword, d_value in self.depends:
+            if d is None:
+                return d
             if d_keyword not in d:
                 return d
             if d[d_keyword] not in d_value:
@@ -180,7 +178,7 @@ class Keyword(object):
 
         # if we got a json seed, use its values as default
         # else use the Keyword object default
-        if self.keyword in d:
+        if d and self.keyword in d:
             default = d[self.keyword]
         elif self.default is not None:
             default = self.default
