@@ -4114,13 +4114,26 @@ class Svc(object):
         if not os.isatty(0):
             raise ex.excError("--interactive is set but input fd is not a tty")
 
+        def get_href(ref):
+            ref = ref.strip("[]")
+            try:
+                response = node.urlopen(ref)
+                return response.read()
+            except:
+                return ""
+
+        def print_comment(comment):
+            import re
+            comment = re.sub("(\[.+://.+])", lambda m: get_href(m.group(1)), comment) 
+            print(comment)
+
         for key, default_val in self.env_section_keys().items():
             if key.endswith(".comment"):
                 continue
             if key in explicit_options:
                 continue
             if self.config.has_option("env", key+".comment"):
-                print(self.config.get("env", key+".comment"))
+                print_comment(self.config.get("env", key+".comment"))
             newval = raw_input("%s [%s] > " % (key, str(default_val)))
             if newval != "":
                 self._set("env", key, newval)
