@@ -587,7 +587,9 @@ class Resource(object):
             with open(self.fpath_status_last(), 'r') as ofile:
                 lines = ofile.read().splitlines()
         except (OSError, IOError) as exc:
-            self.log.debug(exc)
+            if exc.errno != 2:
+                # not EEXISTS
+                self.log.debug(exc)
             return
 
         try:
