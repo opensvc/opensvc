@@ -32,9 +32,20 @@ class check(checks.check):
                 l = [''] + l
             elif len(l) != 6:
                 continue
+            svcname = self.find_svc(l[5])
             r.append({
                       'chk_instance': l[5],
                       'chk_value': l[4],
-                      'chk_svcname': self.find_svc(l[5]),
+                      'chk_svcname': svcname,
+                     })
+            r.append({
+                      'chk_instance': l[5]+".free",
+                      'chk_value': l[3],
+                      'chk_svcname': svcname,
+                     })
+            r.append({
+                      'chk_instance': l[5]+".size",
+                      'chk_value': l[1],
+                      'chk_svcname': svcname,
                      })
         return r
