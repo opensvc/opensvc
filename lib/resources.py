@@ -594,7 +594,7 @@ class Resource(object):
 
         try:
             status = rcStatus.Status(lines[0])
-        except (AttributeError, ValueError) as exc:
+        except (IndexError, AttributeError, ValueError) as exc:
             self.log.debug(exc)
             return
 
