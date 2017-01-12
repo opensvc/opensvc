@@ -63,7 +63,10 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         if '/dev/mapper/control' in devpaths:
             devpaths.remove('/dev/mapper/control')
         for devpath in devpaths:
-            s = os.stat(devpath)
+            try:
+                s = os.stat(devpath)
+            except OSError:
+                continue
             minor = os.minor(s.st_rdev)
             self.dm_h[devpath.replace("/dev/mapper/", "")] = "dm-%d"%minor
 
