@@ -24,7 +24,6 @@ class Ip(Res.Ip):
                         gateway=gateway,
                         **kwargs)
         self.label = self.label + "/" + self.ipdevExt
-        self.type = "ip"
         if not which('ipadm'):
             raise ex.excInitError("crossbow ips are not supported on this system")
         if 'noalias' not in self.tags:
