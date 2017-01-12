@@ -76,9 +76,20 @@ class check(checks.check):
             avail = self.convert(l[2])
             total = used + avail
             pct = used / total * 100
+            svcname = self.find_svc(l[0], l[3])
             r.append({
                       'chk_instance': l[0],
                       'chk_value': str(pct),
-                      'chk_svcname': self.find_svc(l[0], l[3]),
+                      'chk_svcname': svcname,
+                     })
+            r.append({
+                      'chk_instance': l[0]+".free",
+                      'chk_value': str(avail),
+                      'chk_svcname': svcname,
+                     })
+            r.append({
+                      'chk_instance': l[0]+".size",
+                      'chk_value': str(total),
+                      'chk_svcname': svcname,
                      })
         return r
