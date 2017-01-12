@@ -16,11 +16,7 @@ class Sync(Res.Resource, Scheduler):
                  rid=None,
                  sync_max_delay=None,
                  schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 type=type,
-                 subset=None):
+                 **kwargs):
         if sync_max_delay is None:
             self.sync_max_delay = 1500
         else:
@@ -31,13 +27,7 @@ class Sync(Res.Resource, Scheduler):
         else:
             self.schedule = schedule
 
-        Res.Resource.__init__(self,
-                              rid=rid,
-                              type=type,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+        Res.Resource.__init__(self, rid=rid, **kwargs)
 
     def can_sync(self, target):
         return True

@@ -19,38 +19,23 @@ SVCS="/usr/bin/svcs"
 MULTI_USER_SMF="svc:/milestone/multi-user:default"
 
 class Zone(resContainer.Container):
+    """
+    Zone container resource driver.
+    """
     def __init__(self,
                  rid,
                  name,
                  guestos="SunOS",
                  delete_on_stop=False,
-                 optional=False,
-                 disabled=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None,
                  osvc_root_path=None,
-                 tags=set([]),
-                 always_on=set([])):
-        """define Zone object attribute :
-                name
-                label
-                state
-                zonepath
-        """
+                 **kwargs):
         resContainer.Container.__init__(self,
                                         rid=rid,
                                         name=name,
                                         type="container.zone",
                                         guestos=guestos,
-                                        optional=optional,
-                                        disabled=disabled,
-                                        monitor=monitor,
-                                        restart=restart,
-                                        subset=subset,
                                         osvc_root_path=osvc_root_path,
-                                        tags=tags,
-                                        always_on=always_on)
+                                        **kwargs)
         self.label = name
         self.state = None
         self.delete_on_stop = delete_on_stop

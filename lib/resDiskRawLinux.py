@@ -14,13 +14,7 @@ class Disk(resDiskRaw.Disk):
                  user=None,
                  group=None,
                  perm=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
 
         resDiskRaw.Disk.__init__(self,
                              rid=rid,
@@ -29,14 +23,7 @@ class Disk(resDiskRaw.Disk):
                              group=group,
                              perm=perm,
                              create_char_devices=create_char_devices,
-                             type="disk.raw",
-                             optional=optional,
-                             disabled=disabled,
-                             tags=tags,
-                             always_on=always_on,
-                             monitor=monitor,
-                             restart=restart,
-                             subset=subset)
+                             **kwargs)
         self.min_raw = 1
         self.raws = {}
         self.sys_devs = {}

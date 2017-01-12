@@ -5,24 +5,8 @@ from rcGlobalEnv import rcEnv
 class Hb(resHb.Hb):
     """ HeartBeat ressource
     """
-    def __init__(self,
-                 rid=None,
-                 name=None,
-                 always_on=set([]),
-                 optional=False,
-                 disabled=False,
-                 restart=0,
-                 subset=None,
-                 tags=set([])):
-        resHb.Hb.__init__(self,
-                          rid,
-                          "hb.sg",
-                          optional=optional,
-                          disabled=disabled,
-                          restart=restart,
-                          subset=subset,
-                          tags=tags,
-                          always_on=always_on)
+    def __init__(self, rid=None, name=None, **kwargs):
+        resHb.Hb.__init__(self, rid, type="hb.sg", **kwargs)
         self.label = name
 
     def __status(self, verbose=False):

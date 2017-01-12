@@ -14,24 +14,12 @@ class Disk(resDisk.Disk, Amazon):
                  volumes=set([]),
                  client_id=None,
                  keyring=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
 
         resDisk.Disk.__init__(self,
                           rid=rid,
                           type=type,
-                          optional=optional,
-                          disabled=disabled,
-                          tags=tags,
-                          always_on=always_on,
-                          monitor=monitor,
-                          restart=restart,
-                          subset=subset)
+                          **kwargs)
 
         self.volumes = volumes
         self.label = self.fmt_label()

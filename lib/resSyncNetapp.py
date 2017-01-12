@@ -273,22 +273,11 @@ class syncNetapp(resSync.Sync):
                  filers={},
                  path=None,
                  user=None,
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 internal=False,
-                 subset=None):
+                 **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
                               type="sync.netapp",
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              **kwargs)
         self.label = "netapp %s on %s"%(path, ', '.join(filers.values()))
         self.filers = filers
         self.path = path

@@ -423,22 +423,12 @@ class Rsync(resSync.Sync):
                  dstfs=None,
                  snap=False,
                  bwlimit=None,
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
                  internal=False,
-                 subset=None):
+                 **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
                               type="sync.rsync",
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              **kwargs)
 
         if internal:
             if rcEnv.drp_path in dst:

@@ -385,27 +385,15 @@ class Lxc(resContainer.Container):
                  guestos="Linux",
                  cf=None,
                  rcmd=None,
-                 optional=False,
-                 disabled=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None,
                  osvc_root_path=None,
-                 tags=set([]),
-                 always_on=set([])):
+                 **kwargs):
         resContainer.Container.__init__(self,
                                         rid=rid,
                                         name=name,
                                         type="container.lxc",
                                         guestos=guestos,
-                                        optional=optional,
-                                        disabled=disabled,
-                                        monitor=monitor,
-                                        restart=restart,
-                                        subset=subset,
                                         osvc_root_path=osvc_root_path,
-                                        tags=tags,
-                                        always_on=always_on)
+                                        **kwargs)
 
         if rcmd is not None:
             self.runmethod = rcmd

@@ -51,13 +51,7 @@ class Mount(Res.Mount):
                  fs_type,
                  mount_options,
                  snap_size=None,
-                 always_on=set([]),
-                 disabled=False,
-                 tags=set([]),
-                 optional=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
         self.Mounts = None
         Res.Mount.__init__(self,
                            rid,
@@ -66,15 +60,12 @@ class Mount(Res.Mount):
                            fs_type,
                            mount_options,
                            snap_size,
-                           always_on=always_on,
-                           disabled=disabled,
-                           tags=tags,
-                           optional=optional,
-                           monitor=monitor,
-                           restart=restart,
-                           subset=subset)
+                           **kwargs)
         self.fsck_h = {
-            'ufs': {'bin': 'fsck', 'cmd': ['fsck', '-t', 'ufs', '-p', self.device]},
+            'ufs': {
+                'bin': 'fsck',
+                'cmd': ['fsck', '-t', 'ufs', '-p', self.device]
+            },
         }
 
     def killfuser(self, dir):

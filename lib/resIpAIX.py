@@ -25,9 +25,3 @@ class Ip(Res.Ip):
             cmd = ['ifconfig', self.ipdev, self.addr, 'delete']
         return self.vcall(cmd)
 
-
-
-if __name__ == "__main__":
-    for c in (Ip,) :
-        help(c)
-

@@ -3,29 +3,10 @@ import rcStatus
 import rcExceptions as ex
 
 class Disk(Res.Resource):
-    def __init__(self,
-                 rid=None,
-                 vgname=None,
-                 lvname=None,
-                 always_on=set([]),
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
-        Res.Resource.__init__(self,
-                              rid,
-                              "disk.lv",
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              monitor=monitor,
-                              restart=restart,
-                              subset=subset)
+    def __init__(self, rid=None, vgname=None, lvname=None, **kwargs):
+        Res.Resource.__init__(self, rid, "disk.lv", **kwargs)
         self.name = '@'.join((lvname, vgname))
         self.label = self.name
-        self.always_on = always_on
 
     def start(self):
         pass

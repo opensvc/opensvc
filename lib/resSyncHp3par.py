@@ -15,22 +15,11 @@ class syncHp3par(resSync.Sync):
                  method=None,
                  mode=None,
                  rcg_names={},
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 internal=False,
-                 subset=None):
+                 **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
                               type="sync.hp3par",
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              **kwargs)
         self.array = array
         self.rcg_names = rcg_names
         self.rcg = rcg_names[array]
@@ -294,6 +283,3 @@ class syncHp3par(resSync.Sync):
 
         return rcStatus.UP
 
-if __name__ == "__main__":
-    o = syncHp3par(rid="sync#1", mode="async", array="baie-pra", rcg="RCG.SVCTEST1")
-    print(o)

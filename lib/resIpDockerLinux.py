@@ -16,26 +16,14 @@ class Ip(Res.Ip, rcDocker.DockerLib):
                  network=None,
                  del_net_route=False,
                  container_rid=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
         Res.Ip.__init__(self,
                         rid,
                         ipdev=ipdev,
                         ipname=ipname,
+                        gateway=gateway,
                         mask=mask,
-                        optional=optional,
-                        disabled=disabled,
-                        tags=tags,
-                        subset=subset,
-                        always_on=always_on,
-                        monitor=monitor,
-                        restart=restart)
-        self.gateway = gateway
+                        **kwargs)
         self.network = network
         self.del_net_route = del_net_route
         self.container_rid = str(container_rid)
@@ -339,8 +327,4 @@ class Ip(Res.Ip, rcDocker.DockerLib):
         ret, out, err = self.vcall(cmd)
         self.delete_netns_link(nspid=nspid)
         return ret, out, err
-
-
-if __name__ == "__main__":
-    help(Ip)
 

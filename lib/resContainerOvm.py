@@ -15,27 +15,15 @@ class Ovm(resContainer.Container):
                  name,
                  uuid,
                  guestos=None,
-                 optional=False,
-                 disabled=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None,
                  osvc_root_path=None,
-                 tags=set([]),
-                 always_on=set([])):
+                 **kwargs):
         resContainer.Container.__init__(self,
                                         rid=rid,
                                         name=name,
                                         type="container.ovm",
                                         guestos=guestos,
-                                        optional=optional,
-                                        disabled=disabled,
-                                        monitor=monitor,
-                                        restart=restart,
-                                        subset=subset,
                                         osvc_root_path=osvc_root_path,
-                                        tags=tags,
-                                        always_on=always_on)
+                                        **kwargs)
         self.uuid = uuid
         self.xen_d = os.path.join(os.sep, 'etc', 'xen')
         self.xen_auto_d = os.path.join(self.xen_d, 'auto')

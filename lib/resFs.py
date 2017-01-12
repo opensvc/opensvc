@@ -16,28 +16,16 @@ class Mount(Res.Resource):
                  fs_type=None,
                  mount_options=None,
                  snap_size=None,
-                 always_on=set([]),
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
         Res.Resource.__init__(self,
                               rid=rid,
                               type="fs",
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              monitor=monitor,
-                              restart=restart,
-                              subset=subset)
+                              **kwargs)
         self.mount_point = mount_point
         self.device = device
         self.fs_type = fs_type
         self.mount_options = mount_options
         self.snap_size = snap_size
-        self.always_on = always_on
         self.label = device + '@' + mount_point
         if self.fs_type != "none":
             self.label = self.fs_type + " " + self.label

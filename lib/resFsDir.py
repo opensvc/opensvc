@@ -17,23 +17,11 @@ class FsDir(Res.Resource):
                  user=None,
                  group=None,
                  perm=None,
-                 always_on=set([]),
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
         Res.Resource.__init__(self,
                               rid=rid,
                               type="fs",
-                              optional=optional,
-                              disabled=disabled,
-                              always_on=always_on,
-                              tags=tags,
-                              monitor=monitor,
-                              restart=restart,
-                              subset=subset)
+                              **kwargs)
         self.path = path
         self.mount_point = path # for fs ordering
         self.user = user

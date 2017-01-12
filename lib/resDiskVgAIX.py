@@ -15,28 +15,15 @@ class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  name=None,
-                 type=None,
-                 always_on=set([]),
                  dsf=True,
-                 monitor=False,
-                 restart=0,
-                 disabled=False,
-                 tags=set([]),
-                 optional=False,
-                 subset=None):
+                 **kwargs):
         self.label = "vg "+name
         self.dsf = dsf
         resDisk.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',
-                          always_on=always_on,
-                          optional=optional,
-                          disabled=disabled,
-                          tags=tags,
-                          monitor=monitor,
-                          restart=restart,
-                          subset=subset)
+                          **kwargs)
 
     def has_it(self):
         """ returns True if the volume is present

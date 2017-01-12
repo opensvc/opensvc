@@ -13,27 +13,15 @@ class Xen(resContainer.Container):
                  rid,
                  name,
                  guestos=None,
-                 optional=False,
-                 disabled=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None,
                  osvc_root_path=None,
-                 tags=set([]),
-                 always_on=set([])):
+                 **kwargs):
         resContainer.Container.__init__(self,
                                         rid=rid,
                                         name=name,
                                         type="container.xen",
                                         guestos=guestos,
-                                        optional=optional,
-                                        disabled=disabled,
-                                        monitor=monitor,
-                                        restart=0,
-                                        tags=tags,
-                                        subset=subset,
                                         osvc_root_path=osvc_root_path,
-                                        always_on=always_on)
+                                        **kwargs)
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

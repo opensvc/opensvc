@@ -134,21 +134,12 @@ class App(Resource):
                  check=None,
                  info=None,
                  timeout=None,
-                 optional=False,
-                 disabled=False,
-                 subset=None,
-                 tags=set([]),
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0):
+                 **kwargs):
 
         if script is None:
             raise ex.excInitError("script parameter must be defined in resource %s"%rid)
 
-        Resource.__init__(self, rid, "app", optional=optional,
-                          subset=subset,
-                          disabled=disabled, tags=tags,
-                          monitor=monitor, restart=restart)
+        Resource.__init__(self, rid, "app", **kwargs)
         self.rset_class = RsetApps
         self.script = script
         self.start_seq = start
@@ -157,7 +148,6 @@ class App(Resource):
         self.info_seq = info
         self.timeout = timeout
         self.label = os.path.basename(script)
-        self.always_on = always_on
         self.lockfd = None
 
         self.script_exec = True

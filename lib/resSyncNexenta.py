@@ -224,22 +224,11 @@ class syncNexenta(resSync.Sync):
                  path=None,
                  filers={},
                  reversible=False,
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 internal=False,
-                 subset=None):
+                 **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
                               type="sync.nexenta",
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              **kwargs)
         self.label = "nexenta autosync %s"%name
         self.autosync = name
         self.filers = filers

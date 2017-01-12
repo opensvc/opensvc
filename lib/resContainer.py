@@ -17,28 +17,16 @@ class Container(Res.Resource):
                  name,
                  guestos=None,
                  type=None,
-                 optional=False,
-                 disabled=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None,
                  osvc_root_path=None,
-                 tags=set([]),
-                 always_on=set([])):
+                 **kwargs):
         Res.Resource.__init__(self,
                               rid=rid,
                               type=type,
-                              optional=optional,
-                              disabled=disabled,
-                              monitor=monitor,
-                              restart=restart,
-                              subset=subset,
-                              tags=tags)
+                              **kwargs)
         self.osvc_root_path = osvc_root_path
         self.sshbin = '/usr/bin/ssh'
         self.name = name
         self.label = name
-        self.always_on = always_on
         self.guestos = guestos
         if guestos is not None:
             self.guestos = guestos.lower()

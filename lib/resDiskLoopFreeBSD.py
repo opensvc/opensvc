@@ -70,23 +70,5 @@ class Disk(Res.Disk):
         else:
             return self.status_stdby(rcStatus.DOWN)
 
-    def __init__(self,
-                 rid,
-                 loopFile,
-                 always_on=set([]),
-                 disabled=False,
-                 tags=set([]),
-                 optional=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None):
-        Res.Disk.__init__(self,
-                          rid,
-                          loopFile,
-                          always_on=always_on,
-                          disabled=disabled,
-                          tags=tags,
-                          optional=optional,
-                          monitor=monitor,
-                          restart=restart,
-                          subset=subset)
+    def __init__(self, rid, loopFile, **kwargs):
+        Res.Disk.__init__(self, rid, loopFile, **kwargs)

@@ -18,26 +18,14 @@ class Drbd(Res.Resource):
     def __init__(self,
                  rid=None,
                  res=None,
-                 always_on=set([]),
-                 optional=False,
-                 disabled=False,
-                 subset=None,
-                 tags=set([]),
-                 monitor=False,
-                 restart=0):
+                 **kwargs):
         Res.Resource.__init__(self,
                               rid,
                               "disk.drbd",
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset,
-                              monitor=monitor,
-                              restart=restart)
+                              **kwargs)
         self.res = res
         self.label = "drbd "+res
         self.drbdadm = None
-        self.always_on = always_on
         self.disks = set()
 
     def __str__(self):

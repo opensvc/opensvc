@@ -4,7 +4,6 @@ import rcStatus
 from rcUtilities import justcall
 
 class Ip(Res.Ip):
-
     def start(self):
         return 0
 
@@ -20,8 +19,4 @@ class Ip(Res.Ip):
         if " "+self.addr+"/" in out:
             return rcStatus.UP
         return rcStatus.DOWN
-
-if __name__ == "__main__":
-    for c in (Ip,) :
-        help(c)
 

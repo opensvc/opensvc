@@ -14,21 +14,11 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
     def __init__(self,
                  rid=None,
                  target=None,
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 subset=None):
+                 **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
                               type="sync.docker",
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              **kwargs)
 
         self.label = "docker img sync to %s" % ", ".join(target)
         self.target = target

@@ -11,26 +11,13 @@ class Disk(Res.Resource):
                  rid=None,
                  name=None,
                  devpath={},
-                 type=None,
-                 always_on=set([]),
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
         Res.Resource.__init__(self,
                               rid,
                               "disk.vdisk",
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              monitor=monitor,
-                              restart=restart,
-                              subset=subset)
+                              **kwargs)
         self.label = "vdisk "+name
         self.name = name
-        self.always_on = always_on
         self.disks = set()
         self.devpath = devpath
 

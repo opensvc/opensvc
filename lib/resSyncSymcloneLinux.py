@@ -63,13 +63,7 @@ class syncSymclone(symclone.syncSymclone):
                  pairs=[],
                  precopy=True,
                  consistent=True,
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 internal=False,
-                 subset=None):
+                 **kwargs):
         symclone.syncSymclone.__init__(self,
                                        rid=rid,
                                        type=type,
@@ -77,10 +71,5 @@ class syncSymclone(symclone.syncSymclone):
                                        pairs=pairs,
                                        precopy=precopy,
                                        consistent=consistent,
-                                       sync_max_delay=sync_max_delay,
-                                       optional=optional,
-                                       disabled=disabled,
-                                       tags=tags,
-                                       internal=internal,
-                                       subset=subset)
+                                       **kwargs)
 

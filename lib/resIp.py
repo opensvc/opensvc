@@ -14,31 +14,17 @@ import rcExceptions as ex
 IFCONFIG_MOD = __import__('rcIfconfig'+rcEnv.sysname)
 
 class Ip(Res.Resource):
-    """ basic ip resource
+    """
+    Base ip resource driver.
     """
     def __init__(self,
                  rid=None,
                  ipdev=None,
                  ipname=None,
                  mask=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None,
-                 gateway=None):
-        Res.Resource.__init__(self,
-                              rid,
-                              "ip",
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset,
-                              monitor=monitor,
-                              always_on=always_on,
-                              restart=restart)
+                 gateway=None,
+                 **kwargs):
+        Res.Resource.__init__(self, rid, "ip", **kwargs)
         self.ipdev = ipdev
         self.ipname = ipname
         self.mask = mask

@@ -9,29 +9,14 @@ from rcUtilities import justcall
 class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
-                 type="disk.vg",
                  images=set([]),
                  client_id=None,
                  keyring=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
-
+                 **kwargs):
         resDisk.Disk.__init__(self,
                           rid=rid,
-                          type=type,
-                          optional=optional,
-                          disabled=disabled,
-                          tags=tags,
-                          always_on=always_on,
-                          monitor=monitor,
-                          restart=restart,
-                          subset=subset)
-
+                          type="disk.vg",
+                          **kwargs)
         self.images = images
         self.keyring = keyring
         if not client_id.startswith("client."):

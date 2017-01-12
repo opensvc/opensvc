@@ -471,22 +471,11 @@ class syncSymSrdfS(resSync.Sync):
                  rdfg=None,
                  symdevs=[],
                  precopy_timeout=300,
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 internal=False,
-                 subset=None):
+                 **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
                               type="sync.symsrdfs",
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              **kwargs)
 
         self.rdf_query_cache = None
         self.label = "srdf/s symdg %s"%(symdg)

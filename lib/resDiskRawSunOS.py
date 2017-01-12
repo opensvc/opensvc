@@ -11,14 +11,7 @@ class Disk(resDiskRaw.Disk):
                  group=None,
                  perm=None,
                  create_char_devices=False,
-                 type=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
 
         devs = list(devs)
         for i, dev in enumerate(devs):
@@ -37,20 +30,13 @@ class Disk(resDiskRaw.Disk):
             devs[i] = dev + suffix
 
         resDiskRaw.Disk.__init__(self,
-                             rid=rid,
-                             devs=set(devs),
-                             user=user,
-                             group=group,
-                             perm=perm,
-                             create_char_devices=False,
-                             type=type,
-                             optional=optional,
-                             disabled=disabled,
-                             tags=tags,
-                             always_on=always_on,
-                             monitor=monitor,
-                             restart=restart,
-                             subset=subset)
+                                 rid=rid,
+                                 devs=set(devs),
+                                 user=user,
+                                 group=group,
+                                 perm=perm,
+                                 create_char_devices=False,
+                                 **kwargs)
 
     def disklist(self):
         l = set([])

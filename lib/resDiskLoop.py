@@ -4,26 +4,8 @@ from rcGlobalEnv import rcEnv
 class Disk(Res.Resource):
     """ basic loopback device resource
     """
-    def __init__(self,
-                 rid=None,
-                 loopFile=None,
-                 always_on=set([]),
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
-        Res.Resource.__init__(self,
-                              rid,
-                              "disk.loop",
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              monitor=monitor,
-                              restart=restart,
-                              always_on=always_on,
-                              subset=subset)
+    def __init__(self, rid=None, loopFile=None, **kwargs):
+        Res.Resource.__init__(self, rid, "disk.loop", **kwargs)
         self.loopFile = loopFile
         self.label = "loop "+loopFile
 

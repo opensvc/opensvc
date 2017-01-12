@@ -18,25 +18,13 @@ class Disk(resDisk.Disk):
                  user="root",
                  group="root",
                  perm="660",
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
         self.label = "gandi volume %s"%str(name)
         resDisk.Disk.__init__(self,
                           rid=rid,
                           name="gandi",
                           type='disk.gandi',
-                          always_on=always_on,
-                          optional=optional,
-                          disabled=disabled,
-                          tags=tags,
-                          monitor=monitor,
-                          restart=restart,
-                          subset=subset)
+                          **kwargs)
 
         self.name = name
         self.node = node

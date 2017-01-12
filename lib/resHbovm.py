@@ -12,21 +12,11 @@ class Hb(resHb.Hb):
     def __init__(self,
                  rid=None,
                  name=None,
-                 always_on=set([]),
-                 optional=False,
-                 disabled=False,
-                 restart=0,
-                 subset=None,
-                 tags=set([])):
+                 **kwargs):
         resHb.Hb.__init__(self,
                           rid,
                           "hb.ovm",
-                          optional=optional,
-                          disabled=disabled,
-                          restart=restart,
-                          subset=subset,
-                          tags=tags,
-                          always_on=always_on)
+                          **kwargs)
         self.ovsinit = os.path.join(os.sep, 'etc', 'init.d', 'ovs-agent')
 
     def process_running(self):

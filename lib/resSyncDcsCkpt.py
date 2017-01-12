@@ -154,23 +154,12 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
                  pairs=[],
                  manager=set([]),
                  dcs=set([]),
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 internal=False,
-                 subset=None):
+                 **kwargs):
         resSyncDcs.SyncDcs.__init__(self,
                                     rid=rid, type="sync.dcsckpt",
                                     manager=manager,
                                     dcs=dcs,
-                                    sync_max_delay=sync_max_delay,
-                                    schedule=schedule,
-                                    optional=optional,
-                                    disabled=disabled,
-                                    tags=tags,
-                                    subset=subset)
+                                    **kwargs)
 
         self.label = "DCS checkpoint snapshot of %s"%' ,'.join(map(lambda x: x['src'], pairs))
         self.pairs = pairs

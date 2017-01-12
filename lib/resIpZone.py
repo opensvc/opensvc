@@ -12,27 +12,15 @@ class Ip(Res.Ip):
                  ipname=None,
                  zone=None,
                  mask=None,
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None,
-                 disabled=False,
-                 tags=set([]),
-                 optional=False,
-                 gateway=None):
+                 gateway=None,
+                 **kwargs):
         Res.Ip.__init__(self,
                         rid=rid,
                         ipdev=ipdev,
                         ipname=ipname,
                         mask=mask,
-                        always_on=always_on,
-                        disabled=disabled,
-                        tags=tags,
-                        optional=optional,
-                        monitor=monitor,
-                        restart=restart,
-                        subset=subset,
-                        gateway=gateway)
+                        gateway=gateway,
+                        **kwargs)
         self.zone = zone
         self.tags.add(zone)
         self.tags.add('zone')

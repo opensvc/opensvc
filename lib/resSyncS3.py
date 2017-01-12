@@ -18,22 +18,8 @@ class syncS3(resSync.Sync):
                  bucket=None,
                  snar=None,
                  full_schedule="* sun",
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 subset=None,
-                 internal=False):
-        resSync.Sync.__init__(self,
-                              rid=rid, type="sync.s3",
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
-
+                 **kwargs):
+        resSync.Sync.__init__(self, rid=rid, type="sync.s3", **kwargs)
         self.label = "s3 backup"
         self.src = src
         self.bucket = bucket

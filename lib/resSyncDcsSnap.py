@@ -157,24 +157,13 @@ Internal                 : False
                  snapname=set([]),
                  manager=set([]),
                  dcs=set([]),
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 subset=None,
-                 internal=False):
+                 **kwargs):
         resSyncDcs.SyncDcs.__init__(self,
                                     rid=rid,
                                     type="sync.dcssnap",
                                     manager=manager,
                                     dcs=dcs,
-                                    sync_max_delay=sync_max_delay,
-                                    schedule=schedule,
-                                    optional=optional,
-                                    disabled=disabled,
-                                    subset=subset,
-                                    tags=tags)
+                                    **kwargs)
 
         self.label = "DCS snapshot %s"%', '.join(snapname)
         self.snapname = snapname

@@ -14,27 +14,15 @@ class HpVm(resContainer.Container):
                  rid,
                  name,
                  guestos="HP-UX",
-                 optional=False,
-                 disabled=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None,
                  osvc_root_path=None,
-                 tags=set([]),
-                 always_on=set([])):
+                 **kwargs):
         resContainer.Container.__init__(self,
                                         rid=rid,
                                         name=name,
                                         type="container.hpvm",
                                         guestos=guestos,
-                                        optional=optional,
-                                        disabled=disabled,
-                                        monitor=monitor,
-                                        restart=restart,
-                                        subset=subset,
                                         osvc_root_path=osvc_root_path,
-                                        tags=tags,
-                                        always_on=always_on)
+                                        **kwargs)
         self.vg = resVgHpVm.Vg(
           rid = 'vmdg#'+self.rid,
           name = 'vmdg_'+self.name,

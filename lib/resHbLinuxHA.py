@@ -11,21 +11,11 @@ class Hb(resHb.Hb):
     def __init__(self,
                  rid=None,
                  name=None,
-                 always_on=set([]),
-                 optional=False,
-                 disabled=False,
-                 restart=0,
-                 subset=set(),
-                 tags=set([])):
+                 **kwargs):
         resHb.Hb.__init__(self,
                           rid,
                           "hb.linuxha",
-                          optional=optional,
-                          disabled=disabled,
-                          restart=restart,
-                          subset=subset,
-                          always_on=always_on,
-                          tags=tags)
+                          **kwargs)
         self.status_cmd = 'cl_status'
         self.name = name
 

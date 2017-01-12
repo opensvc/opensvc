@@ -101,27 +101,8 @@ class Share(Resource):
                 out.append(e)
         return ','.join(out)
 
-    def __init__(self,
-                 rid,
-                 path,
-                 opts,
-                 always_on=set([]),
-                 disabled=False,
-                 tags=set([]),
-                 optional=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None):
-        Resource.__init__(self,
-                          rid,
-                          type="share.nfs",
-                          always_on=always_on,
-                          disabled=disabled,
-                          tags=tags,
-                          optional=optional,
-                          monitor=monitor,
-                          restart=restart,
-                          subset=subset)
+    def __init__(self, rid, path, opts, **kwargs):
+        Resource.__init__(self, rid, type="share.nfs", **kwargs)
         self.sharetab = "/etc/dfs/sharetab"
         self.dfstab = "/etc/dfs/dfstab"
 

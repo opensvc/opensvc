@@ -169,23 +169,11 @@ class syncRadosSnap(resSync.Sync):
                  images=[],
                  client_id=None,
                  keyring=None,
-                 type="sync.rados",
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 internal=False,
-                 subset=None):
+                 **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
-                              type=type,
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              type="sync.rados",
+                              **kwargs)
 
         self.fmt_label("snap", images)
         self.images = images

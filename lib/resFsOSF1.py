@@ -41,37 +41,14 @@ def try_umount(self):
 
 
 class Mount(Res.Mount):
-    def __init__(self,
-                 rid,
-                 mount_point,
-                 device,
-                 fs_type,
-                 mount_options,
-                 always_on=set([]),
-                 snap_size=None,
-                 disabled=False,
-                 tags=set([]),
-                 optional=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+    def __init__(self, **kwargs):
         self.Mounts = None
-        Res.Mount.__init__(self,
-                           rid,
-                           mount_point,
-                           device,
-                           fs_type,
-                           mount_options,
-                           snap_size,
-                           always_on,
-                           disabled=disabled,
-                           tags=tags,
-                           optional=optional,
-                           monitor=monitor,
-                           restart=restart,
-                           subset=subset)
+        Res.Mount.__init__(self, **kwargs)
         self.fsck_h = {
-            'ufs': {'bin': 'fsck', 'cmd': ['fsck', '-p', self.device], 'allowed_ret': []},
+            'ufs': {
+                'bin': 'fsck',
+                'cmd': ['fsck', '-p', self.device], 'allowed_ret': []
+            },
         }
 
     def is_up(self):

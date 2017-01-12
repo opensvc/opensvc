@@ -39,23 +39,8 @@ class Task(Res.Resource):
                  command=None,
                  user=None,
                  on_error=None,
-                 type="task",
-                 always_on=set([]),
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 subset=None,
-                 monitor=False,
-                 restart=0):
-        Res.Resource.__init__(self,
-                              rid, type,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset,
-                              monitor=monitor,
-                              restart=restart,
-                              always_on=always_on)
+                 **kwargs):
+        Res.Resource.__init__(self, rid, type="task", **kwargs)
         self.command = command
         self.on_error = on_error
         self.user = user

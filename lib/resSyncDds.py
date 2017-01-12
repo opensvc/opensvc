@@ -370,21 +370,11 @@ class syncDds(resSync.Sync):
                  delta_store=None,
                  sender=None,
                  snap_size=0,
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 subset=None):
+                 **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
                               type="sync.dds",
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              **kwargs)
 
         self.label = "dds of %s to %s"%(src, ", ".join(target))
         self.target = target

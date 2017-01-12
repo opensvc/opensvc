@@ -3,22 +3,8 @@ import rcStatus
 from rcGlobalEnv import rcEnv
 
 class Stonith(resStonith.Stonith):
-    def __init__(self,
-                 rid=None,
-                 name=None,
-                 always_on=set([]),
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 subset=None):
-        resStonith.Stonith.__init__(self,
-                                    rid,
-                                    "stonith.ilo",
-                                    optional=optional,
-                                    disabled=disabled,
-                                    always_on=always_on,
-                                    tags=tags,
-                                    subset=subset)
+    def __init__(self, rid=None, name=None, **kwargs):
+        resStonith.Stonith.__init__(self, rid, type="stonith.ilo", **kwargs)
         self.name = name
         self.username, self.password, self.key = self.creds()
 

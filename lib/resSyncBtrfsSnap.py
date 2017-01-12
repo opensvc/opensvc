@@ -15,21 +15,11 @@ class syncBtrfsSnap(resSync.Sync):
                  name=None,
                  subvol=[],
                  keep=1,
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 subset=None,
-                 internal=False):
+                 **kwargs):
         resSync.Sync.__init__(self,
-                              rid=rid, type="sync.btrfssnap",
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              rid=rid,
+                              type="sync.btrfssnap",
+                              **kwargs)
 
         if name:
             self.label = "btrfs '%s' snapshot %s" % (name, ", ".join(subvol))

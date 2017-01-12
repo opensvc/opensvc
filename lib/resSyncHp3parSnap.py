@@ -13,22 +13,11 @@ class syncHp3parSnap(resSync.Sync):
                  rid=None,
                  array=None,
                  vv_names=[],
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 internal=False,
-                 subset=None):
+                 **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
                               type="sync.hp3parsnap",
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              **kwargs)
         self.array = array
         self.vv_names = vv_names
         self.label = "hp3parsnap %s" % ", ".join(self.vv_names)
@@ -114,6 +103,3 @@ class syncHp3parSnap(resSync.Sync):
 
         return rcStatus.UP
 
-if __name__ == "__main__":
-    o = syncHp3parSnap(rid="sync#1", array="baie-pra", rcg="RCG.SVCTEST1")
-    print(o)

@@ -10,7 +10,9 @@ from rcZfs import zfs_getprop, zfs_setprop
 from rcUtilities import justcall
 
 class Mount(Res.Mount):
-    """ define SunOS mount/umount doAction """
+    """
+    SunOS fs resource driver.
+    """
     def __init__(self,
                  rid,
                  mount_point,
@@ -18,39 +20,29 @@ class Mount(Res.Mount):
                  fs_type,
                  mount_options,
                  snap_size=None,
-                 always_on=set([]),
-                 disabled=False,
-                 tags=set([]),
-                 optional=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
         self.rdevice = device.replace('/dsk/','/rdsk/',1)
         self.Mounts = rcMounts.Mounts()
         Res.Mount.__init__(self,
-                           rid,
-                           mount_point,
-                           device,
-                           fs_type,
-                           mount_options,
-                           snap_size,
-                           always_on,
-                           disabled=disabled,
-                           tags=tags,
-                           optional=optional,
-                           monitor=monitor,
-                           restart=restart,
-                           subset=subset)
+                           rid=rid,
+                           mount_point=mount_point,
+                           device=device,
+                           fs_type=fs_type,
+                           mount_options=mount_options,
+                           snap_size=snap_size,
+                           **kwargs)
         self.fsck_h = {
-            'ufs': {'bin': 'fsck',
-                    'cmd':       ['fsck', '-F', 'ufs', '-y', self.rdevice],
-                    'reportcmd': ['fsck', '-F', 'ufs', '-m', self.rdevice],
-                    'reportclean': [ 32 ],
+            'ufs': {
+                'bin': 'fsck',
+                'cmd':       ['fsck', '-F', 'ufs', '-y', self.rdevice],
+                'reportcmd': ['fsck', '-F', 'ufs', '-m', self.rdevice],
+                'reportclean': [ 32 ],
             },
-            'vxfs': {'bin': 'fsck',
-                    'cmd':       ['fsck', '-F', 'vxfs', '-y', self.rdevice],
-                    'reportcmd': ['fsck', '-F', 'vxfs', '-m', self.rdevice],
-                    'reportclean': [ 32 ],
+            'vxfs': {
+                'bin': 'fsck',
+                'cmd':       ['fsck', '-F', 'vxfs', '-y', self.rdevice],
+                'reportcmd': ['fsck', '-F', 'vxfs', '-m', self.rdevice],
+                'reportclean': [ 32 ],
             },
         }
 

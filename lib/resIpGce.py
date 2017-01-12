@@ -17,24 +17,12 @@ class Ip(resIp.Ip, rcGce.Gce):
                  eip=None,
                  routename=None,
                  gce_zone=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
         resIp.Ip.__init__(self,
                           rid=rid,
                           ipname=ipname,
                           ipdev=ipdev,
-                          always_on=always_on,
-                          optional=optional,
-                          disabled=disabled,
-                          tags=tags,
-                          monitor=monitor,
-                          restart=restart,
-                          subset=subset)
+                          **kwargs)
         self.label = "gce ip %s@%s" % (ipname, ipdev)
         if eip:
             self.label += ", eip %s" % eip

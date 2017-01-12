@@ -19,12 +19,7 @@ class ScsiReserv(Res.Resource):
                  peer_resource=None,
                  no_preempt_abort=False,
                  prkey=None,
-                 disabled=False,
-                 tags=set([]),
-                 optional=False,
-                 restart=0,
-                 monitor=False,
-                 subset=None):
+                 **kwargs):
         self.no_preempt_abort = no_preempt_abort
         self.disks = set([])
         self.preempt_timeout = 10
@@ -35,12 +30,7 @@ class ScsiReserv(Res.Resource):
         Res.Resource.__init__(self,
                               rid=rid+"pr",
                               type="disk.scsireserv",
-                              disabled=disabled,
-                              tags=tags,
-                              optional=optional,
-                              restart=restart,
-                              monitor=monitor,
-                              subset=subset)
+                              **kwargs)
 
     def set_label(self):
         self.get_disks()

@@ -10,28 +10,15 @@ class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  name=None,
-                 type=None,
-                 always_on=set([]),
                  dsf=True,
-                 disabled=False,
-                 tags=set([]),
-                 optional=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
         self.label = "vg "+name
         self.dsf = dsf
         resDisk.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',
-                          always_on=always_on,
-                          optional=optional,
-                          disabled=disabled,
-                          tags=tags,
-                          monitor=monitor,
-                          restart=restart,
-                          subset=subset)
+                          **kwargs)
 
     def is_child_dev(self, device):
         l = device.split("/")

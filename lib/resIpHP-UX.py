@@ -29,9 +29,3 @@ class Ip(Res.Ip):
             cmd = ['ifconfig', self.stacked_dev, "0.0.0.0"]
         return self.vcall(cmd)
 
-
-
-if __name__ == "__main__":
-    for c in (Ip,) :
-        help(c)
-

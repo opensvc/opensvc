@@ -4,7 +4,8 @@ import rcStatus
 
 class Loop(resources.Resource):
     def is_up(self):
-        """Returns True if the volume group is present and activated
+        """
+        Returns True if the volume group is present and activated
         """
         return True
 
@@ -20,6 +21,6 @@ class Loop(resources.Resource):
         else:
             return rcStatus.DOWN
 
-    def __init__(self, file, disabled=False, tags=set([]), optional=False):
+    def __init__(self, file, **kwargs):
+        resources.Resource.__init__(self, **kwargs)
         self.file = file
-        resources.Resource.__init__(self, disabled=disabled, tags=tags, optional=optional)

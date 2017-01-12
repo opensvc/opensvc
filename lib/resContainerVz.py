@@ -144,27 +144,15 @@ class Vz(resContainer.Container):
                  rid,
                  name,
                  guestos="Linux",
-                 optional=False,
-                 disabled=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None,
                  osvc_root_path=None,
-                 tags=set([]),
-                 always_on=set([])):
+                 **kwargs):
         resContainer.Container.__init__(self,
                                         rid=rid,
                                         name=name,
                                         type="container.vz",
                                         guestos=guestos,
-                                        optional=optional,
-                                        disabled=disabled,
-                                        monitor=monitor,
-                                        restart=restart,
-                                        tags=tags,
-                                        subset=subset,
                                         osvc_root_path=osvc_root_path,
-                                        always_on=always_on)
+                                        **kwargs)
         self._cf = os.path.join(os.sep, 'etc', 'vz', 'conf', name+'.conf')
         self.runmethod = ['vzctl', 'exec', name]
 

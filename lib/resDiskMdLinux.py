@@ -17,13 +17,7 @@ class Disk(resDisk.Disk):
                  rid=None,
                  uuid=None,
                  shared=False,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
         self.label = "md " + uuid
         self.uuid = uuid
         self.shared = shared
@@ -32,13 +26,7 @@ class Disk(resDisk.Disk):
                           rid=rid,
                           name=uuid,
                           type='disk.md',
-                          always_on=always_on,
-                          optional=optional,
-                          disabled=disabled,
-                          tags=tags,
-                          monitor=monitor,
-                          restart=restart,
-                          subset=subset)
+                          **kwargs)
 
     def info(self):
         data = [

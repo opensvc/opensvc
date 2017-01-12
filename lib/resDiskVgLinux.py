@@ -11,27 +11,14 @@ class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  name=None,
-                 type=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
         self.label = "vg "+name
         self.tag = rcEnv.nodename
         resDisk.Disk.__init__(self,
-                          rid=rid,
-                          name=name,
-                          type='disk.vg',
-                          always_on=always_on,
-                          optional=optional,
-                          disabled=disabled,
-                          tags=tags,
-                          monitor=monitor,
-                          restart=restart,
-                          subset=subset)
+                              rid=rid,
+                              name=name,
+                              type='disk.vg',
+                              **kwargs)
 
     def info(self):
         data = [

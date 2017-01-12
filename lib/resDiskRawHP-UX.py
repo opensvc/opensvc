@@ -12,14 +12,7 @@ class Disk(resDiskRaw.Disk):
                  group=None,
                  perm=None,
                  create_char_devices=False,
-                 type=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
 
         resDiskRaw.Disk.__init__(self,
                              rid=rid,
@@ -28,14 +21,7 @@ class Disk(resDiskRaw.Disk):
                              group=group,
                              perm=perm,
                              create_char_devices=False,
-                             type=type,
-                             optional=optional,
-                             disabled=disabled,
-                             tags=tags,
-                             always_on=always_on,
-                             monitor=monitor,
-                             restart=restart,
-                             subset=subset)
+                             **kwargs)
 
     def verify_dev(self, dev):
         cmd = ["diskinfo", dev]

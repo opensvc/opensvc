@@ -16,21 +16,10 @@ class syncZfsSnap(resSync.Sync):
                  dataset=[],
                  keep=1,
                  recursive=True,
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 subset=None,
-                 internal=False):
+                 **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid, type="sync.zfssnap",
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              **kwargs)
 
         if name:
             self.label = "zfs '%s' snapshot %s" % (name, ", ".join(dataset))

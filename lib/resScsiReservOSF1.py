@@ -15,21 +15,13 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
                  peer_resource=None,
                  no_preempt_abort=False,
                  prkey=None,
-                 disabled=False,
-                 tags=set([]),
-                 restart=0,
-                 monitor=False,
-                 optional=False):
+                 **kwargs):
         resScsiReserv.ScsiReserv.__init__(self,
                                           rid=rid,
                                           peer_resource=peer_resource,
                                           no_preempt_abort=no_preempt_abort,
                                           prkey=prkey,
-                                          disabled=disabled,
-                                          tags=tags,
-                                          restart=restart,
-                                          monitor=monitor,
-                                          optional=optional)
+                                          **kwargs)
         self.prtype = 'wero'
         self.disk_id = {}
         self.itn = {}
@@ -204,6 +196,3 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
             self.log.error("failed to preempt reservation for disk %s" % disk)
         return ret
 
-if __name__ == "__main__":
-    o = ScsiReserv(rid="vg#0", disks=set(["/dev/disk/dsk46c"]))
-    print(o.get_reservation_key("/dev/disk/dsk46c"))

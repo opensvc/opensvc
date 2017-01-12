@@ -23,21 +23,11 @@ class SyncBtrfs(resSync.Sync):
                  sender=None,
                  recursive=False,
                  snap_size=0,
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 subset=None):
+                 **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
                               type="sync.btrfs",
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              **kwargs)
 
         self.label = "btrfs of %s to %s"%(src, ", ".join(target))
         self.src = src

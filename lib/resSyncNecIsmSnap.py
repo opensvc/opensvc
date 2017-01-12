@@ -14,21 +14,10 @@ class syncNecIsmSnap(resSync.Sync):
                  rid=None,
                  array_name=None,
                  devs=[],
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 subset=None,
-                 internal=False):
+                 **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid, type="sync.necismsnap",
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              **kwargs)
 
         self.label = "NecIsm snapshot %s"%(rid)
         self.devs = devs

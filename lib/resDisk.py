@@ -1,4 +1,5 @@
-"""Module providing Generic device group resources
+"""
+Base disk resource driver module.
 """
 
 import os
@@ -8,28 +9,11 @@ import rcExceptions as exc
 from rcGlobalEnv import rcEnv
 
 class Disk(Res.Resource):
-    """ basic disk resource, must be extended for LVM, Veritas, ZFS, ...
     """
-    def __init__(self,
-                 rid=None,
-                 name=None,
-                 type=None,
-                 always_on=set([]),
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 subset=None,
-                 monitor=False,
-                 restart=0):
-        Res.Resource.__init__(self,
-                              rid, type,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset,
-                              monitor=monitor,
-                              restart=restart,
-                              always_on=always_on)
+    Base disk resource driver, derived for LVM, Veritas, ZFS, ...
+    """
+    def __init__(self, rid=None, name=None, **kwargs):
+        Res.Resource.__init__(self, rid, **kwargs)
         self.name = name
         self.disks = set()
         self.devs = set()

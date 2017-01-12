@@ -12,29 +12,17 @@ class Ip(Res.Ip):
                  ipdev=None,
                  ipname=None,
                  mask=None,
-                 always_on=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None,
-                 disabled=False,
-                 tags=set([]),
-                 optional=False,
                  gateway=None,
-                 ipdevExt="v4"):
+                 ipdevExt="v4",
+                 **kwargs):
         self.ipdevExt = ipdevExt
         Res.Ip.__init__(self,
                         rid=rid,
                         ipdev=ipdev,
                         ipname=ipname,
                         mask=mask,
-                        always_on=always_on,
-                        disabled=disabled,
-                        tags=tags,
-                        optional=optional,
-                        monitor=monitor,
-                        restart=restart,
-                        subset=subset,
-                        gateway=gateway)
+                        gateway=gateway,
+                        **kwargs)
         self.label = self.label + "/" + self.ipdevExt
         self.type = "ip"
         if not which('ipadm'):
@@ -127,8 +115,4 @@ class Ip(Res.Ip):
         if not hasattr(self, 'abort_start_done') and 'nonrouted' not in self.tags and self.check_ping():
             self.log.error("%s is already up on another host" % (self.addr))
             raise ex.IpConflict(self.addr)
-
-if __name__ == "__main__":
-    for c in (Ip,) :
-        help(c)
 

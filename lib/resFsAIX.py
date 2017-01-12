@@ -13,16 +13,14 @@ def try_umount(self):
     if ret == 0:
         return 0
 
-    """ don't try to kill process using the source of a
-        protected bind mount
-    """
+    # don't try to kill process using the source of a
+    # protected bind mount
     if protected_mount(self.mount_point):
         return 1
 
-    """ best effort kill of all processes that might block
-        the umount operation. The priority is given to mass
-        action reliability, ie don't contest oprator's will
-    """
+    # best effort kill of all processes that might block
+    # the umount operation. The priority is given to mass
+    # action reliability, ie don't contest oprator's will
     cmd = ['sync']
     (ret, out, err) = self.vcall(cmd, err_to_info=True)
 
@@ -39,7 +37,9 @@ def try_umount(self):
 
 
 class Mount(Res.Mount):
-    """ define Linux mount/umount doAction """
+    """
+    AIX fs resource driver.
+    """
     def __init__(self,
                  rid,
                  mount_point,
@@ -47,36 +47,30 @@ class Mount(Res.Mount):
                  fs_type,
                  mount_options,
                  snap_size=None,
-                 always_on=set([]),
-                 disabled=False,
-                 tags=set([]),
-                 optional=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None):
-        self.Mounts = None
+                 **kwargs):
+        self.mounts = None
         Res.Mount.__init__(self,
                            rid,
-                           mount_point,
-                           device,
-                           fs_type,
-                           mount_options,
-                           snap_size,
-                           always_on,
-                           disabled=disabled,
-                           tags=tags,
-                           optional=optional,
-                           monitor=monitor,
-                           restart=restart,
-                           subset=subset)
+                           mount_point=mount_point,
+                           device=device,
+                           fs_type=fs_type,
+                           mount_options=mount_options,
+                           snap_size=snap_size,
+                           **kwargs)
         self.fsck_h = {
-            'jfs': {'bin': 'fsck', 'cmd': ['fsck', '-p', '-V', 'jfs', self.device]},
-            'jfs2': {'bin': 'fsck', 'cmd': ['fsck', '-p', '-V', 'jfs2', self.device]},
+            'jfs': {
+                'bin': 'fsck',
+                'cmd': ['fsck', '-p', '-V', 'jfs', self.device]
+            },
+            'jfs2': {
+                'bin': 'fsck',
+                'cmd': ['fsck', '-p', '-V', 'jfs2', self.device]
+            },
         }
 
     def is_up(self):
-        self.Mounts = rcMounts.Mounts()
-        return self.Mounts.has_mount(self.device, self.mount_point)
+        self.mounts = rcMounts.Mounts()
+        return self.mounts.has_mount(self.device, self.mount_point)
 
     def realdev(self):
         try:
@@ -88,9 +82,9 @@ class Mount(Res.Mount):
             dev = self.device
         else:
             mnt = getmount(self.device)
-            if self.Mounts is None:
-                self.Mounts = rcMounts.Mounts()
-            m = self.Mounts.has_param("mnt", mnt)
+            if self.mounts is None:
+                self.mounts = rcMounts.Mounts()
+            m = self.mounts.has_param("mnt", mnt)
             if m is None:
                 self.log.debug("can't find dev %(dev)s mounted in %(mnt)s in mnttab"%dict(mnt=mnt, dev=self.device))
                 return None
@@ -119,8 +113,8 @@ class Mount(Res.Mount):
         return True
 
     def start(self):
-        if self.Mounts is None:
-            self.Mounts = rcMounts.Mounts()
+        if self.mounts is None:
+            self.mounts = rcMounts.Mounts()
         Res.Mount.start(self)
         if self.is_up() is True:
             self.log.info("%s is already mounted" % self.label)
@@ -140,12 +134,12 @@ class Mount(Res.Mount):
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
-        self.Mounts = None
+        self.mounts = None
         self.can_rollback = True
 
     def stop(self):
-        if self.Mounts is None:
-            self.Mounts = rcMounts.Mounts()
+        if self.mounts is None:
+            self.mounts = rcMounts.Mounts()
         if self.is_up() is False:
             self.log.info("%s is already umounted" % self.label)
             return
@@ -155,7 +149,7 @@ class Mount(Res.Mount):
         if ret != 0:
             self.log.error('failed to umount %s'%self.mount_point)
             raise ex.excError
-        self.Mounts = None
+        self.mounts = None
 
 if __name__ == "__main__":
     for c in (Mount,) :

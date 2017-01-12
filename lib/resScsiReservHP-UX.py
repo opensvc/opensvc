@@ -38,22 +38,12 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
                  rid=None,
                  peer_resource=None,
                  no_preempt_abort=False,
-                 disabled=False,
-                 tags=set([]),
-                 optional=False,
-                 restart=0,
-                 monitor=False,
-                 subset=None):
+                 **kwargs):
         resScsiReserv.ScsiReserv.__init__(self,
                                           rid=rid,
                                           peer_resource=peer_resource,
                                           no_preempt_abort=no_preempt_abort,
-                                          disabled=disabled,
-                                          tags=tags,
-                                          optional=optional,
-                                          restart=restart,
-                                          monitor=monitor,
-                                          subset=subset)
+                                          **kwargs)
         self.prtype = 'wero'
         self.leg_mpath_disable()
 

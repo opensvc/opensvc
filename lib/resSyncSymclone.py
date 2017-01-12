@@ -205,22 +205,11 @@ class syncSymclone(resSync.Sync):
                  pairs=[],
                  precopy=True,
                  consistent=True,
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 internal=False,
-                 subset=None):
+                 **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
                               type=type,
-                              sync_max_delay=sync_max_delay,
-                              schedule=schedule,
-                              optional=optional,
-                              disabled=disabled,
-                              tags=tags,
-                              subset=subset)
+                              **kwargs)
 
         if self.type == "sync.symclone":
             self.active_states = ["copied", "copyinprog"]

@@ -10,25 +10,14 @@ class Disk(m.Disk):
                  rid=None,
                  name=None,
                  container_id=None,
-                 type=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set([]),
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
         self.label = "vmdg "+str(name)
         self.container_id = container_id
         m.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',
-                          optional=optional,
-                          disabled=disabled,
-                          tags=tags,
-                          monitor=monitor,
-                          restart=restart,
-                          subset=subset)
+                          **kwargs)
 
     def has_it(self):
         return True
