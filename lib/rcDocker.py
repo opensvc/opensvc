@@ -9,29 +9,78 @@ from rcUtilities import which, justcall
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 
-from svcBuilder import conf_get_string_scope
+from svcBuilder import conf_get_string_scope, conf_get_boolean_scope
 from distutils.version import LooseVersion as V
 
 os.environ['LANG'] = 'C'
 
 class DockerLib(object):
-    def __init__(self, docker_exe=None):
-        if docker_exe:
-            self.docker_exe_init = docker_exe
+    def __init__(self, svc=None):
+        self.svc = svc
+        self.max_wait_for_dockerd = 5
+
+        try:
+            self.docker_daemon_private = conf_get_boolean_scope(svc, svc.config, 'DEFAULT', 'docker_daemon_private')
+        except ex.OptNotFound:
+            self.docker_daemon_private = True
+        if rcEnv.sysname != "Linux":
+            self.docker_daemon_private = False
+
+        try:
+            self.docker_exe_init = conf_get_string_scope(svc, svc.config, 'DEFAULT', 'docker_exe')
+        except ex.OptNotFound:
+            self.docker_exe_init = None
+
+        try:
+            self.docker_data_dir = conf_get_string_scope(svc, svc.config, 'DEFAULT', 'docker_data_dir')
+        except ex.OptNotFound:
+            self.docker_data_dir = None
+
+        try:
+            self.docker_daemon_args = conf_get_string_scope(svc, svc.config, 'DEFAULT', 'docker_daemon_args').split()
+        except ex.OptNotFound:
+            self.docker_daemon_args = []
+
+        if self.docker_data_dir:
+            if "--exec-opt" not in self.docker_daemon_args and self.docker_min_version("1.7"):
+                self.docker_daemon_args += ["--exec-opt", "native.cgroupdriver=cgroupfs"]
+
+        self.docker_var_d = os.path.join(rcEnv.pathvar, self.svc.svcname)
+
+        if not os.path.exists(self.docker_var_d):
+            os.makedirs(self.docker_var_d)
+        elif self.docker_daemon_private:
+            self.docker_socket = "unix://"+os.path.join(self.docker_var_d, 'docker.sock')
+        else:
+            self.docker_socket = None
+
+        if self.docker_daemon_private:
+            self.docker_pid_file = os.path.join(self.docker_var_d, 'docker.pid')
+        else:
+            self.docker_pid_file = None
+            l = [line for line in self.get_docker_info().split("\n") if "Root Dir" in line]
+            try:
+                self.docker_data_dir = l[0].split(":")[-1].strip()
+            except:
+                self.docker_data_dir = None
+
+        self.docker_cmd = [self.docker_exe()]
+        if self.docker_socket:
+            self.docker_cmd += ['-H', self.docker_socket]
 
     def get_ps(self, refresh=False):
-        if not refresh and hasattr(self.svc, "cache_docker_ps"):
-            return self.svc.cache_docker_ps
+        if not refresh and hasattr(self, "cache_docker_ps"):
+            return self.cache_docker_ps
         cmd = self.docker_cmd + ['ps', '-a', '--no-trunc']
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError(err)
-        self.svc.cache_docker_ps = out
+        self.cache_docker_ps = out
         return out
 
     def get_container_id_by_name_hash(self, refresh=False):
-        if not refresh and hasattr(self.svc, "cache_docker_container_id_by_name_hash"):
-            return self.svc.cache_docker_container_id_by_name_hash
+        if not refresh and hasattr(self, "cache_docker_container_id_by_name_hash"):
+            return self.cache_docker_container_id_by_name_hash
         out = self.get_ps(refresh=refresh)
         lines = out.split('\n')
         if len(lines) < 2:
@@ -60,16 +109,16 @@ class DockerLib(object):
                   "id": line.split()[0],
                   "swarm_node": swarm_node,
                 }
-        self.svc.cache_docker_container_id_by_name_hash = data
+        self.cache_docker_container_id_by_name_hash = data
         return data
 
-    def get_container_id_by_name(self, refresh=False):
+    def get_container_id_by_name(self, r, refresh=False):
         data = self.get_container_id_by_name_hash(refresh=refresh)
-        if data is None or not self.container_name in data:
+        if data is None or not r.container_name in data:
             return
-        d = data[self.container_name]
+        d = data[r.container_name]
         if d["swarm_node"]:
-            self.swarm_node = d["swarm_node"]
+            r.swarm_node = d["swarm_node"]
         return d["id"]
 
     def get_docker_info(self):
@@ -94,38 +143,20 @@ class DockerLib(object):
             return True
         return False
 
-    def docker(self, action):
-        cmd = self.docker_cmd + []
-        if action == 'start':
-            if self.container_id is None:
-                self.container_id = self.get_container_id_by_name()
-            if self.container_id is None:
-                cmd += ['run', '-d', '--name='+self.container_name]
-                cmd += self.add_run_args()
-                cmd += [self.run_image]
-                if self.run_command is not None and self.run_command != "":
-                    cmd += self.run_command.split()
-            else:
-                cmd += ['start', self.container_id]
-        elif action == 'stop':
-            cmd += ['stop', self.container_id]
-        elif action == 'kill':
-            cmd += ['kill', self.container_id]
-        else:
-            self.log.error("unsupported docker action: %s" % action)
-            return 1
+    def get_running_instance_ids(self, refresh=False):
+        if not refresh and hasattr(self, "docker_running_instance_ids_cache"):
+            return self.docker_running_instance_ids_cache
+        self.docker_running_instance_ids_cache = self._get_running_instance_ids()
+        return self.docker_running_instance_ids_cache
 
-        ret, out, err = self.vcall(cmd, warn_to_info=True)
-        if ret != 0:
-            raise ex.excError
+    def _get_running_instance_ids(self):
+        cmd = self.docker_cmd + ['ps', '-q', '--no-trunc']
+        out, err, ret = justcall(cmd)
+        return out.replace('\n', ' ').split()
 
-        if action == 'start':
-            self.container_id = self.get_container_id_by_name(refresh=True)
-        self.get_running_instance_ids(refresh=True)
-
-    def get_run_image_id(self, run_image=None):
-        if run_image is None and hasattr(self, "run_image"):
-            run_image = self.run_image
+    def get_run_image_id(self, resource, run_image=None):
+        if run_image is None and hasattr(resource, "run_image"):
+            run_image = resource.run_image
         if len(run_image) == 12 and re.match('^[a-f0-9]*$', run_image):
             return run_image
         try:
@@ -146,8 +177,8 @@ class DockerLib(object):
         return run_image
 
     def get_images(self):
-        if hasattr(self.svc, "docker_images_cache"):
-            return self.svc.docker_images_cache
+        if hasattr(self, "docker_images_cache"):
+            return self.docker_images_cache
         cmd = self.docker_cmd + ['images', '--no-trunc']
         out, err, ret = justcall(cmd)
         if ret != 0:
@@ -160,11 +191,11 @@ class DockerLib(object):
             if l[2] == "IMAGE":
                 continue
             data[l[2]] = l[0]+':'+l[1]
-        self.svc.docker_images_cache = data
+        self.docker_images_cache = data
         return data
 
     def docker_info(self):
-        if hasattr(self.svc, "docker_info_done"):
+        if hasattr(self, "docker_info_done"):
             return []
         data = []
         data += self.docker_info_version()
@@ -199,31 +230,31 @@ class DockerLib(object):
         h = {}
 
         # referenced images
-        for r in self.svc.get_resources("container.docker"):
-            image_id = r.get_run_image_id()
+        for resource in self.svc.get_resources("container.docker"):
+            image_id = self.get_run_image_id(resource)
             images_done.append(image_id)
-            data.append([r.rid, "run_image", r.run_image])
-            data.append([r.rid, "docker_image_id", image_id])
-            data.append([r.rid, "docker_instance_id", r.container_id])
+            data.append([resource.rid, "run_image", resource.run_image])
+            data.append([resource.rid, "docker_image_id", image_id])
+            data.append([resource.rid, "docker_instance_id", resource.container_id])
 
         # unreferenced images
         for image_id in images:
             if image_id in images_done:
                 continue
             data.append(["", "docker_image_id", image_id])
-        self.svc.docker_info_done = True
+        self.docker_info_done = True
 
         return data
 
-    def image_userfriendly_name(self):
-        if ':' in self.run_image:
-            return self.run_image
+    def image_userfriendly_name(self, resource):
+        if ':' in resource.run_image:
+            return resource.run_image
         images = self.get_images()
         if images is None:
-            return self.run_image
-        if self.run_image in images:
-            return images[self.run_image]
-        return self.run_image
+            return resource.run_image
+        if resource.run_image in images:
+            return images[resource.run_image]
+        return resource.run_image
 
     def docker_inspect(self, id):
         cmd = self.docker_cmd + ['inspect', id]
@@ -232,7 +263,7 @@ class DockerLib(object):
         return data[0]
 
     def docker_stop(self):
-        if not self.svc.docker_daemon_private:
+        if not self.docker_daemon_private:
             return
         if not self.docker_running():
             return
@@ -254,10 +285,10 @@ class DockerLib(object):
             with open(self.docker_pid_file, 'r') as f:
                 pid = int(f.read())
         except:
-            self.log.warning("can't read %s. skip docker daemon kill" % self.docker_pid_file)
+            self.svc.log.warning("can't read %s. skip docker daemon kill" % self.docker_pid_file)
             return
 
-        self.log.info("no more container handled by docker daemon (pid %d). shut it down" % pid)
+        self.svc.log.info("no more container handled by docker daemon (pid %d). shut it down" % pid)
         import signal
         import time
         tries = 10
@@ -266,7 +297,7 @@ class DockerLib(object):
             tries -= 1
             time.sleep(1)
         if tries == 0:
-            self.log.warning("dockerd did not stop properly. send a kill signal")
+            self.svc.log.warning("dockerd did not stop properly. send a kill signal")
             os.kill(pid, signal.SIGKILL)
    
 
@@ -285,15 +316,25 @@ class DockerLib(object):
         cmd += self.docker_daemon_args
         return cmd
 
+    def docker_data_dir_resource(self):
+        mntpts = []
+        mntpt_res = {}
+        for resource in self.svc.get_resources('fs'):
+            mntpts.append(resource.mount_point)
+            mntpt_res[resource.mount_point] = resource
+        for mntpt in sorted(mntpts, reverse=True):
+            if mntpt.startswith(self.docker_data_dir):
+                return mntpt_res[mntpt]
+
     def docker_start(self, verbose=True):
-        if not self.svc.docker_daemon_private:
+        if not self.docker_daemon_private:
             return
         import lock
         lockfile = os.path.join(rcEnv.pathlock, 'docker_start')
         try:
             lockfd = lock.lock(timeout=15, delay=1, lockfile=lockfile)
         except Exception as e:
-            self.log.error("dockerd start lock acquire failed: %s"%str(e))
+            self.svc.log.error("dockerd start lock acquire failed: %s"%str(e))
             return
 
         # Sanity checks before deciding to start the daemon
@@ -309,22 +350,22 @@ class DockerLib(object):
         if resource is not None:
             state = resource._status()
             if state not in (rcStatus.UP, rcStatus.STDBY_UP):
-                self.log.warning("the docker daemon data dir is handled by the %s "
+                self.svc.log.warning("the docker daemon data dir is handled by the %s "
                                  "resource in %s state. can't start the docker "
                                  "daemon" % (resource.rid, rcStatus.Status(state)))
                 lock.unlock(lockfd)
                 return
 
         if os.path.exists(self.docker_pid_file):
-            self.log.warning("removing leftover pid file %s" % self.docker_pid_file)
+            self.svc.log.warning("removing leftover pid file %s" % self.docker_pid_file)
             os.unlink(self.docker_pid_file)
 
         # Now we can start the daemon, creating its data dir if necessary
         cmd = self.dockerd_cmd()
 
         if verbose:
-            self.log.info("starting docker daemon")
-            self.log.info(" ".join(cmd))
+            self.svc.log.info("starting docker daemon")
+            self.svc.log.info(" ".join(cmd))
         import subprocess
         subprocess.Popen(['nohup'] + cmd,
                  stdout=open('/dev/null', 'w'),
@@ -333,16 +374,16 @@ class DockerLib(object):
                  )
 
         import time
-        for i in range(self.max_wait_for_dockerd):
-            if self.docker_working():
-                self.container_id = self.get_container_id_by_name()
-                lock.unlock(lockfd)
-                return
-            time.sleep(1)
-        lock.unlock(lockfd)
+        try:
+            for _ in range(self.max_wait_for_dockerd):
+                if self.docker_working():
+                    return
+                time.sleep(1)
+        finally:
+            lock.unlock(lockfd)
 
     def docker_running(self):
-        if self.svc.docker_daemon_private:
+        if self.docker_daemon_private:
             return self.docker_running_private()
         else:
             return self.docker_running_shared()
@@ -355,7 +396,7 @@ class DockerLib(object):
 
     def docker_running_private(self):
         if not os.path.exists(self.docker_pid_file):
-            self.log.debug("docker_running: no pid file %s" % self.docker_pid_file)
+            self.svc.log.debug("docker_running: no pid file %s" % self.docker_pid_file)
             return False
         try:
             with open(self.docker_pid_file, "r") as f:
@@ -364,19 +405,19 @@ class DockerLib(object):
             if exc.errno == 2:
                 return False
             return ex.excError("docker_running: "+str(exc))
-        self.log.debug("docker_running: pid found in pid file %s" % buff)
+        self.svc.log.debug("docker_running: pid found in pid file %s" % buff)
         exe = os.path.join(os.sep, "proc", buff, "exe")
         try:
             exe = os.path.realpath(exe)
         except OSError as e:
-            self.log.debug("docker_running: no proc info in %s" % "/proc/%s"%buff)
+            self.svc.log.debug("docker_running: no proc info in %s" % "/proc/%s"%buff)
             try:
                 os.unlink(self.docker_pid_file)
             except OSError:
                 pass
             return False
         if "docker" not in exe:
-            self.log.debug("docker_running: pid found but owned by a process that is not a docker (%s)" % exe)
+            self.svc.log.debug("docker_running: pid found but owned by a process that is not a docker (%s)" % exe)
             try:
                 os.unlink(self.docker_pid_file)
             except OSError:
@@ -391,40 +432,9 @@ class DockerLib(object):
             return False
         return True
 
-    def on_add(self):
-        self.docker_var_d = os.path.join(rcEnv.pathvar, self.svc.svcname)
-        if not os.path.exists(self.docker_var_d):
-            os.makedirs(self.docker_var_d)
-        if hasattr(self, "run_swarm") and self.run_swarm is not None:
-            if "://" not in self.run_swarm:
-                proto = "tcp://"
-            else:
-                proto = ""
-            self.docker_socket = proto + self.run_swarm
-        elif self.svc.docker_daemon_private:
-            self.docker_socket = "unix://"+os.path.join(self.docker_var_d, 'docker.sock')
-        else:
-            self.docker_socket = None
-        if self.svc.docker_daemon_private:
-            self.docker_pid_file = os.path.join(self.docker_var_d, 'docker.pid')
-            self.docker_data_dir = self.svc.docker_data_dir
-        else:
-            self.docker_pid_file = None
-            l = [line for line in self.get_docker_info().split("\n") if "Root Dir" in line]
-            try:
-                self.docker_data_dir = l[0].split(":")[-1].strip()
-            except:
-                self.docker_data_dir = None
-        self.docker_daemon_args = self.svc.docker_daemon_args
-        self.docker_cmd = [self.docker_exe()]
-        if self.docker_socket:
-            self.docker_cmd += ['-H', self.docker_socket]
-
     def docker_exe(self):
-        if hasattr(self, "docker_exe_init") and which(self.docker_exe_init):
+        if self.docker_exe_init and which(self.docker_exe_init):
             return self.docker_exe_init
-        elif hasattr(self, "svc") and hasattr(self.svc, "docker_exe") and which(self.svc.docker_exe):
-            return self.svc.docker_exe
         elif which("docker.io"):
             return "docker.io"
         elif which("docker"):

@@ -1,12 +1,11 @@
 import os
 import resIpLinux as Res
 import rcExceptions as ex
-import rcDocker
 import rcIfconfigLinux as rcIfconfig
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which, justcall, to_cidr
 
-class Ip(Res.Ip, rcDocker.DockerLib):
+class Ip(Res.Ip):
     def __init__(self,
                  rid=None,
                  ipdev=None,
@@ -35,9 +34,8 @@ class Ip(Res.Ip, rcDocker.DockerLib):
     def on_add(self):
         self.container_name = self.svc.svcname+'.'+self.container_rid
         self.container_name = self.container_name.replace('#', '.')
-        rcDocker.DockerLib.on_add(self)
         try:
-            self.container_id = self.get_container_id_by_name()
+            self.container_id = self.svc.dockerlib.get_container_id_by_name()
             self.label += '@' + self.container_id
         except Exception as e:
             self.container_id = None
@@ -268,13 +266,13 @@ class Ip(Res.Ip, rcDocker.DockerLib):
     def ip_wait(self):
         # ip activation may still be incomplete
         # wait for activation, to avoid startapp scripts to fail binding their listeners
-        for i in range(15, 0, -1):
+        for _ in range(15, 0, -1):
             if check_ping(self.addr, timeout=1, count=1):
                 return
         raise ex.excError("timed out waiting for ip activation")
 
     def get_nspid(self):
-        cmd = self.docker_cmd + ["inspect", "--format='{{ .State.Pid }}'", self.container_name]
+        cmd = self.svc.dockerlib.docker_cmd + ["inspect", "--format='{{ .State.Pid }}'", self.container_name]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError("failed to get nspid: %s" % err)

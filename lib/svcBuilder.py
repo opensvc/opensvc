@@ -3666,36 +3666,6 @@ def build(name, minimal=False, svcconf=None):
         pass
 
     #
-    # docker options
-    #
-    try:
-        svc.docker_daemon_private = conf_get_boolean_scope(svc, conf, 'DEFAULT', 'docker_daemon_private')
-    except ex.OptNotFound:
-        svc.docker_daemon_private = True
-    if rcEnv.sysname != "Linux":
-        svc.docker_daemon_private = False
-
-    try:
-        svc.docker_exe = conf_get_string_scope(svc, conf, 'DEFAULT', 'docker_exe')
-    except ex.OptNotFound:
-        svc.docker_exe = None
-
-    try:
-        svc.docker_data_dir = conf_get_string_scope(svc, conf, 'DEFAULT', 'docker_data_dir')
-    except ex.OptNotFound:
-        svc.docker_data_dir = None
-
-    try:
-        svc.docker_daemon_args = conf_get_string_scope(svc, conf, 'DEFAULT', 'docker_daemon_args').split()
-    except ex.OptNotFound:
-        svc.docker_daemon_args = []
-
-    if svc.docker_data_dir:
-        from rcDocker import DockerLib
-        if "--exec-opt" not in svc.docker_daemon_args and DockerLib(docker_exe=svc.docker_exe).docker_min_version("1.7"):
-            svc.docker_daemon_args += ["--exec-opt", "native.cgroupdriver=cgroupfs"]
-
-    #
     # instanciate resources
     #
     add_containers(svc, conf)

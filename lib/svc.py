@@ -472,6 +472,14 @@ class Svc(object):
         )
 
     @lazy
+    def dockerlib(self):
+        """
+        Lazy allocator for the dockerlib object.
+        """
+        import rcDocker
+        return rcDocker.DockerLib(self)
+
+    @lazy
     def freezer(self):
         """
         Lazy allocator for the freezer object.
@@ -4343,7 +4351,7 @@ class Svc(object):
         the service has such a daemon.
         """
         import subprocess
-        containers = self.get_resources('container')
+        containers = self.get_resources('container.docker')
         if self.options.docker_argv is None:
             print("no docker command arguments supplied", file=sys.stderr)
             return 1
@@ -4372,11 +4380,10 @@ class Svc(object):
                     del argv[idx]
                     argv[idx:idx] = ["-u", self.svcname+"@"+rcEnv.nodename]
                     argv[idx:idx] = ["-p", self.node.config.get("node", "uuid")]
-                    if len(containers) > 0:
-                        if containers[0].docker_min_version("1.12"):
-                            pass
-                        elif containers[0].docker_min_version("1.11"):
-                            argv[idx:idx] = ["--email", ""]
+                    if self.dockerlib.docker_min_version("1.12"):
+                        pass
+                    elif self.dockerlib.docker_min_version("1.11"):
+                        argv[idx:idx] = ["--email", ""]
             for idx, arg in enumerate(argv):
                 if re.match(r'\{container#\w+\}', arg):
                     container_name = self.svcname + "." + arg.strip("{}").replace("#", ".")
@@ -4384,15 +4391,15 @@ class Svc(object):
                     argv.insert(idx, container_name)
             return argv
 
-        for container in containers:
-            if hasattr(container, "docker_cmd"):
-                container.docker_start(verbose=False)
-                cmd = container.docker_cmd + subst(self.options.docker_argv)
-                proc = subprocess.Popen(cmd)
-                proc.communicate()
-                return proc.returncode
-        print("this service has no docker resource", file=sys.stderr)
-        return 1
+        if len(containers) == 0:
+            print("this service has no docker resource", file=sys.stderr)
+            return 1
+
+        self.dockerlib.docker_start(verbose=False)
+        cmd = self.dockerlib.docker_cmd + subst(self.options.docker_argv)
+        proc = subprocess.Popen(cmd)
+        proc.communicate()
+        return proc.returncode
 
     def freeze(self):
         """
