@@ -21,6 +21,13 @@ class lockAcquire(Exception):
     """ could not acquire lock on lockfile
     """
 
+LOCK_EXCEPTIONS = (
+    lockTimeout,
+    lockNoLockFile,
+    lockCreateError,
+    lockAcquire,
+)
+
 def monlock(timeout=0, delay=0, fname='svcmon.lock'):
     lockfile = os.path.join(rcEnv.pathlock, fname)
     try:
