@@ -152,7 +152,7 @@ class Docker(resContainer.Container):
         self.svc.dockerlib.docker_stop()
 
     def info(self):
-        data = self.svc.dockerlib.docker_info()
+        data = self.svc.dockerlib.info()
         return self.fmt_info(data)
 
     def _status(self, verbose=False):
