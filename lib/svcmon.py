@@ -195,7 +195,7 @@ def svcmon_cluster(node, options):
                print(fmt%inst)
 
 def svcmon_cluster_verbose_data(node, svc_ids):
-    data = node.collector_rest_get("/services_instances?props=svc_id,node_id,mon_availstatus,mon_overallstatus,mon_updated&meta=0&filters=svc_id (%s)&limit=0"%",".join(svc_ids))
+    data = node.collector_rest_get("/services_instances?props=svc_id,node_id,mon_availstatus,mon_overallstatus,mon_updated&meta=0&filters=svc_id (%s)&filters=mon_updated>-16m&limit=0"%",".join(svc_ids))
     if "error" in data:
         print("error fetching data from the collector rest api: %s" % data["error"], file=sys.stderr)
         return {}
