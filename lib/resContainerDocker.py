@@ -1,10 +1,9 @@
+"""
+Docker container resource driver module.
+"""
 import os
-from datetime import datetime
-from subprocess import *
-import sys
 import shlex
 
-import rcStatus
 import resources
 import resContainer
 import rcExceptions as ex
@@ -15,29 +14,91 @@ from rcGlobalEnv import rcEnv
 os.environ['LANG'] = 'C'
 
 class Docker(resContainer.Container):
+    """
+    Docker container resource driver.
+    """
+    def __init__(self,
+                 rid,
+                 run_image,
+                 run_command=None,
+                 run_args=None,
+                 run_swarm=None,
+                 guestos="Linux",
+                 osvc_root_path=None,
+                 **kwargs):
+        resContainer.Container.__init__(self,
+                                        rid=rid,
+                                        name="",
+                                        type="container.docker",
+                                        guestos=guestos,
+                                        osvc_root_path=osvc_root_path,
+                                        **kwargs)
+
+        self.run_image = run_image
+        self.run_command = run_command
+        self.run_args = run_args
+        self.run_swarm = run_swarm
+        self.container_id = None
+        self.container_name = None
+        self.swarm_node = None
+
+    def on_add(self):
+        """
+        Init done after self.svc is set.
+        """
+        self.container_name = self.svc.svcname+'.'+self.rid
+        self.container_name = self.container_name.replace('#', '.')
+        try:
+            self.container_id = self.svc.dockerlib.get_container_id_by_name(self)
+        except Exception:
+            self.container_id = None
+        self.label = "@".join((
+            self.container_name,
+            self.svc.dockerlib.image_userfriendly_name(self)
+        ))
+        if self.swarm_node:
+            self.label += " on " + self.swarm_node
+
+    def __str__(self):
+        return "%s name=%s" % (resources.Resource.__str__(self), self.name)
 
     def files_to_sync(self):
+        """
+        Files to contribute to sync#i0.
+        """
         return []
 
     def operational(self):
+        """
+        Always return True for docker containers.
+        """
         return True
 
     def vm_hostname(self):
+        """
+        Return an empty string, as we won't need that.
+        """
         return ""
 
     def get_rootfs(self):
+        """
+        Return the rootgs layer path.
+        """
         import glob
         inspect = self.svc.dockerlib.docker_inspect(self.container_id)
         instance_id = str(inspect['Id'])
         pattern = str(self.svc.dockerlib.docker_data_dir)+"/*/mnt/"+instance_id
-        l = glob.glob(pattern)
-        if len(l) == 0:
+        fpaths = glob.glob(pattern)
+        if len(fpaths) == 0:
             raise ex.excError("no candidates rootfs paths matching %s" % pattern)
-        elif len(l) != 1:
-            raise ex.excError("too many candidates rootfs paths: %s" % ', '.join(l))
-        return l[0]
+        elif len(fpaths) != 1:
+            raise ex.excError("too many candidates rootfs paths: %s" % ', '.join(fpaths))
+        return fpaths[0]
 
     def rcp_from(self, src, dst):
+        """
+        Copy <src> from the container's rootfs to <dst> in the host's fs.
+        """
         rootfs = self.get_rootfs()
         if len(rootfs) == 0:
             raise ex.excError()
@@ -45,10 +106,13 @@ class Docker(resContainer.Container):
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.excError("'%s' execution error:\n%s" % (' '.join(cmd), err))
         return out, err, ret
 
     def rcp(self, src, dst):
+        """
+        Copy <src> from the host's fs to the container's rootfs.
+        """
         rootfs = self.get_rootfs()
         if len(rootfs) == 0:
             raise ex.excError()
@@ -56,17 +120,20 @@ class Docker(resContainer.Container):
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.excError("'%s' execution error:\n%s" % (' '.join(cmd), err))
         return out, err, ret
 
-    def docker(self, resource, action):
+    def docker(self, action):
+        """
+        Wrap docker commands to honor <action>.
+        """
         cmd = self.svc.dockerlib.docker_cmd + []
         if action == 'start':
             if self.container_id is None:
                 self.container_id = self.svc.dockerlib.get_container_id_by_name(self)
             if self.container_id is None:
                 cmd += ['run', '-d', '--name='+self.container_name]
-                cmd += self.add_run_args()
+                cmd += self._add_run_args()
                 cmd += [self.run_image]
                 if self.run_command is not None and self.run_command != "":
                     cmd += self.run_command.split()
@@ -77,10 +144,10 @@ class Docker(resContainer.Container):
         elif action == 'kill':
             cmd += ['kill', self.container_id]
         else:
-            self.log.error("unsupported docker action: %s" % action)
+            self.log.error("unsupported docker action: %s", action)
             return 1
 
-        ret, out, err = self.vcall(cmd, warn_to_info=True)
+        ret = self.vcall(cmd, warn_to_info=True)[0]
         if ret != 0:
             raise ex.excError
 
@@ -88,29 +155,43 @@ class Docker(resContainer.Container):
             self.container_id = self.svc.dockerlib.get_container_id_by_name(self, refresh=True)
         self.svc.dockerlib.get_running_instance_ids(refresh=True)
 
-    def add_run_args(self):
+    def _add_run_args(self):
         if self.run_args is None:
             return []
-        l = shlex.split(self.run_args)
-        for e, i in enumerate(l):
-            if e != '-p':
+        args = shlex.split(self.run_args)
+        for arg, pos in enumerate(args):
+            if arg != '-p':
                 continue
-            if len(l) < i + 2:
+            if len(args) < pos + 2:
                 # bad
                 break
-            volarg = l[i+1]
+            volarg = args[pos+1]
             if ':' in volarg:
                 # mapping ... check source dir presence
-                v = volarg.split(':')
-                if len(v) != 3:
-                    raise ex.excError("mapping %s should be formatted as <src>:<dst>:<ro|rw>" % (volarg))
-                if not os.path.exists(v[0]):
-                    raise ex.excError("source dir of mapping %s does not exist" % (volarg))
+                elements = volarg.split(':')
+                if len(elements) != 3:
+                    raise ex.excError("mapping %s should be formatted as "
+                                      "<src>:<dst>:<ro|rw>" % (volarg))
+                if not os.path.exists(elements[0]):
+                    raise ex.excError("source dir of mapping %s does not "
+                                      "exist" % (volarg))
         if self.svc.dockerlib.docker_min_version("1.7"):
-            l += ["--cgroup-parent", os.path.join(os.sep, self.svc.svcname, self.rset.rid.replace(":", "."), self.rid.replace("#", "."))]
-        return l
+            args += ["--cgroup-parent", self._parent_cgroup_name()]
+        return args
 
-    def swarm_primary(self):
+    def _parent_cgroup_name(self):
+        """
+        Return the name of the container parent cgroup.
+        Ex: /<svcname>/<rset>/<rid> with invalid character replaced by dots.
+        """
+        return os.path.join(
+            os.sep,
+            self.svc.svcname,
+            self.rset.rid.replace(":", "."),
+            self.rid.replace("#", ".")
+        )
+
+    def _swarm_primary(self):
         if not hasattr(self.svc, "flex_primary"):
             return False
         if self.run_swarm is None:
@@ -122,11 +203,13 @@ class Docker(resContainer.Container):
     def container_start(self):
         self.svc.dockerlib.docker_start()
         self.container_id = self.svc.dockerlib.get_container_id_by_name(self)
-        self.docker(self, 'start')
+        self.docker('start')
 
     def _start(self):
-        if self.svc.running_action == "boot" and self.run_swarm and not self.swarm_primary():
-            self.log.info("skip boot: this container will be booted by the flex primary node, or through a start action from any flex node")
+        if self.svc.running_action == "boot" and self.run_swarm and not self._swarm_primary():
+            self.log.info("skip boot: this container will be booted by the "
+                          "flex primary node, or through a start action from "
+                          "any flex node")
             return
         resContainer.Container.start(self)
         self.svc.dockerlib.get_running_instance_ids(refresh=True)
@@ -136,7 +219,7 @@ class Docker(resContainer.Container):
         self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
 
     def container_stop(self):
-        self.docker(self, 'stop')
+        self.docker('stop')
 
     def stop(self):
         self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
@@ -144,38 +227,43 @@ class Docker(resContainer.Container):
 
     def _stop(self):
         self.status()
-        if hasattr(self, "swarm_node") and self.swarm_node != rcEnv.nodename:
-            self.log.info("skip stop: this container is handled by the %s node" % self.swarm_node)
+        if self.swarm_node is not None and self.swarm_node != rcEnv.nodename:
+            self.log.info("skip stop: this container is handled by the %s node",
+                          self.swarm_node)
             return
         resContainer.Container.stop(self)
         self.svc.dockerlib.get_running_instance_ids(refresh=True)
         self.svc.dockerlib.docker_stop()
 
     def info(self):
+        """
+        Return keys to contribute to resinfo.
+        """
         data = self.svc.dockerlib.info()
         return self.fmt_info(data)
 
     def _status(self, verbose=False):
-        s = resContainer.Container._status(self, verbose)
+        sta = resContainer.Container._status(self, verbose)
         try:
             inspect = self.svc.dockerlib.docker_inspect(self.container_id)
-        except Exception as e:
-            return s
+        except Exception:
+            return sta
         running_image_id = inspect['Image']
         run_image_id = self.svc.dockerlib.get_run_image_id(self)
 
         if run_image_id != running_image_id:
-            self.status_log("the current container is based on image '%s' instead of '%s'"%(running_image_id, run_image_id))
+            self.status_log("the current container is based on image '%s' "
+                            "instead of '%s'"%(running_image_id, run_image_id))
 
-        return s
+        return sta
 
     def container_forcestop(self):
-        self.docker(self, 'kill')
+        self.docker('kill')
 
     def _ping(self):
         return check_ping(self.addr, timeout=1)
 
-    def is_up(self, nodename=None):
+    def is_up(self):
         if self.svc.dockerlib.docker_daemon_private and \
            self.svc.dockerlib.docker_data_dir is None:
             self.status_log("DEFAULT.docker_data_dir must be defined")
@@ -200,42 +288,6 @@ class Docker(resContainer.Container):
 
     def check_capabilities(self):
         return True
-
-    def __init__(self,
-                 rid,
-                 run_image,
-                 run_command=None,
-                 run_args=None,
-                 run_swarm=None,
-                 guestos="Linux",
-                 osvc_root_path=None,
-                 **kwargs):
-        resContainer.Container.__init__(self,
-                                        rid=rid,
-                                        name="",
-                                        type="container.docker",
-                                        guestos=guestos,
-                                        osvc_root_path=osvc_root_path,
-                                        **kwargs)
-
-        self.run_image = run_image
-        self.run_command = run_command
-        self.run_args = run_args
-        self.run_swarm = run_swarm
-
-    def on_add(self):
-        self.container_name = self.svc.svcname+'.'+self.rid
-        self.container_name = self.container_name.replace('#', '.')
-        try:
-            self.container_id = self.svc.dockerlib.get_container_id_by_name(self)
-        except Exception as e:
-            self.container_id = None
-        self.label = "@".join((self.container_name, self.svc.dockerlib.image_userfriendly_name(self)))
-        if hasattr(self, "swarm_node"):
-            self.label += " on " + self.swarm_node
-
-    def __str__(self):
-        return "%s name=%s" % (resources.Resource.__str__(self), self.name)
 
     def provision(self):
         # docker resources are naturally provisioned
