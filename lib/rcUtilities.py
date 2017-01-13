@@ -59,6 +59,14 @@ def set_lazy(self, attr, value):
     attr_name = '_lazy_' + attr
     setattr(self, attr_name, value)
 
+def unset_lazy(self, attr):
+    """
+    Unset <attr> lazy property hidden property, iow flush the cache
+    """
+    attr_name = '_lazy_' + attr
+    if hasattr(self, attr_name):
+        delattr(self, attr_name)
+
 def bdecode(buff):
     if sys.version_info[0] < 3:
         return buff
