@@ -1,8 +1,7 @@
 import os
-from subprocess import *
+from subprocess import Popen, PIPE
 
 import rcStatus
-import rcDocker
 from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
 import resSync
@@ -10,7 +9,7 @@ import rcExceptions as ex
 
 os.environ['LANG'] = 'C'
 
-class SyncDocker(resSync.Sync, rcDocker.DockerLib):
+class SyncDocker(resSync.Sync):
     def __init__(self,
                  rid=None,
                  target=None,
@@ -24,13 +23,16 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
         self.target = target
         self.images = []
         self.image_id_name = {}
+        self.dstfs = None
+        self.dst = "docker images"
+        self.targets = set()
 
     def get_docker_data_dir_svc_fs(self):
         l = []
         for r in self.svc.get_resources("fs"):
             l.append(r.mount_point)
         l = sorted(l)
-        v = self.docker_data_dir.split("/")
+        v = self.svc.dockerlib.docker_data_dir.split("/")
         while len(v) > 0:
             path = "/".join(v)
             if path in l:
@@ -40,7 +42,7 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
     def get_images(self):
         for r in self.svc.get_resources("container.docker"):
             image = r.run_image
-            image_id = self.get_run_image_id(image)
+            image_id = self.svc.dockerlib.get_run_image_id(image)
             self.image_id_name[image_id] = r.run_image
             self.images.append(image_id)
 
@@ -59,9 +61,7 @@ class SyncDocker(resSync.Sync, rcDocker.DockerLib):
         return images
 
     def on_add(self):
-        rcDocker.DockerLib.on_add(self)
         self.dstfs = self.get_docker_data_dir_svc_fs()
-        self.dst = "docker images"
 
     def get_targets(self, action=None):
         self.targets = set()
