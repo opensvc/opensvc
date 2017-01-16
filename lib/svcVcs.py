@@ -92,7 +92,7 @@ class SvcVcs(svc.Svc):
     def load_hb(self):
         rid = 'hb#vcs0'
         m = __import__("resHbVcs")
-        r = m.Hb(rid, self.pkg_name)
+        r = m.Hb(rid, name=self.pkg_name)
         self += r
 
     def load_resources(self):
@@ -134,7 +134,8 @@ class SvcVcs(svc.Svc):
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
         rid = 'lv#vcs%d'%self.n_lv
         m = __import__("resDiskLvVcs"+rcEnv.sysname)
-        r = m.Disk(rid, vgname, lvname, disabled=disabled, monitor=monitor)
+        r = m.Disk(rid, vgname=vgname, lvname=lvname,
+                   disabled=disabled, monitor=monitor)
         r.vcs_name = name
         self += r
 
@@ -144,7 +145,7 @@ class SvcVcs(svc.Svc):
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
         rid = 'vg#vcs%d'%self.n_vg
         m = __import__("resDiskVgVcs"+rcEnv.sysname)
-        r = m.Disk(rid, vgname, disabled=disabled, monitor=monitor)
+        r = m.Disk(rid, name=vgname, disabled=disabled, monitor=monitor)
         r.vcs_name = name
         self += r
 
@@ -154,7 +155,7 @@ class SvcVcs(svc.Svc):
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
         rid = 'vg#vcs%d'%self.n_vg
         m = __import__("resDiskVgVcs"+rcEnv.sysname)
-        r = m.Disk(rid, vgname, disabled=disabled, monitor=monitor)
+        r = m.Disk(rid, name=vgname, disabled=disabled, monitor=monitor)
         r.vcs_name = name
         self += r
 
@@ -166,7 +167,8 @@ class SvcVcs(svc.Svc):
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
         rid = 'ip#vcs%d'%self.n_ip
         m = __import__("resIpVcs"+rcEnv.sysname)
-        r = m.Ip(rid, dev, ipaddr, netmask, disabled=disabled, monitor=monitor)
+        r = m.Ip(rid, ipdev=dev, ipname=ipaddr, mask=netmask,
+                 disabled=disabled, monitor=monitor)
         r.vcs_name = name
         self += r
 
@@ -179,7 +181,8 @@ class SvcVcs(svc.Svc):
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
         rid = 'fs#vcs%d'%self.n_fs
         m = __import__("resFsVcs"+rcEnv.sysname)
-        r = m.Mount(rid, mnt, dev, fstype, mntopt,
+        r = m.Mount(rid=rid, mount_point=mnt, device=dev, fs_type=fstype,
+                    mount_options=mntopt,
                     disabled=disabled, monitor=monitor)
         r.vcs_name = name
         self += r
@@ -193,7 +196,8 @@ class SvcVcs(svc.Svc):
         monitor = True if self.get_res_val(name, 'Critical') == "1" else False
         rid = 'fs#vcs%d'%self.n_fs
         m = __import__("resFsVcs"+rcEnv.sysname)
-        r = m.Mount(rid, mnt, dev, fstype, mntopt,
+        r = m.Mount(rid=rid, mount_point=mnt, device=dev, fs_type=fstype,
+                    mount_options=mntopt,
                     disabled=disabled, monitor=monitor)
         r.vcs_name = name
         self += r

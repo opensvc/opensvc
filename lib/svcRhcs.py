@@ -81,12 +81,12 @@ class SvcRhcs(svc.Svc):
     def load_hb(self):
         rid = 'hb#sg0'
         m = __import__("resHbRhcs")
-        r = m.Hb(rid, self.pkg_name)
+        r = m.Hb(rid, name=self.pkg_name)
         self += r
 
     def load_vg(self, e):
         """
-        r = m.Disk(rid, name)
+        r = m.Disk(rid, name=name)
         self += r
         r.monitor = True
         self.n_vg += 1
@@ -107,7 +107,7 @@ class SvcRhcs(svc.Svc):
         n = self.n_ip
         rid = 'ip#rhcs%d'%n
         m = __import__("resIpRhcs"+rcEnv.sysname)
-        r = m.Ip(rid, "", ipname, "")
+        r = m.Ip(rid, ipdev="", ipname=ipname, mask="")
         r.monitor = True
         self += r
         self.n_ip += 1
@@ -139,7 +139,8 @@ class SvcRhcs(svc.Svc):
         n = self.n_fs
         rid = 'fs#rhcs%d'%n
         m = __import__("resFsRhcs"+rcEnv.sysname)
-        r = m.Mount(rid, mnt, dev, fstype, mntopt)
+        r = m.Mount(rid=rid, mount_point=mnt, device=dev,
+                    fs_type=fstype, mount_options=mntopt)
         r.monitor = True
         self += r
         self.n_fs += 1
