@@ -194,7 +194,7 @@ class SvcSg(svc.Svc):
             return
         rid = 'hb#sg0'
         m = __import__("resHbSg")
-        r = m.Hb(rid, self.cmviewcl['name'])
+        r = m.Hb(rid, name=self.cmviewcl['name'])
         self += r
 
     def load_vgs(self):
@@ -221,7 +221,7 @@ class SvcSg(svc.Svc):
         except ImportError:
             self.log.error("module %s is not implemented"%modname)
             return
-        r = m.Disk(rid, name)
+        r = m.Disk(rid, name=name)
         if 'service' in self.cmviewcl:
            for data in self.cmviewcl['service'].values():
                if 'command' not in data:
@@ -243,7 +243,7 @@ class SvcSg(svc.Svc):
         n = self.n_ip_address
         rid = 'ip#sg%d'%n
         m = __import__("resIpSg"+rcEnv.sysname)
-        r = m.Ip(rid, "", ipname, "")
+        r = m.Ip(rid, ipdev="", ipname=ipname, mask="")
         if 'subnet' in self.cmviewcl and \
            subnet in self.cmviewcl['subnet']:
             r.monitor = True
@@ -275,7 +275,8 @@ class SvcSg(svc.Svc):
         n = self.n_resource
         rid = 'fs#sg%d'%n
         m = __import__("resFsSg"+rcEnv.sysname)
-        r = m.Mount(rid, mnt, dev, fstype, mntopt)
+        r = m.Mount(rid=rid, mount_point=mnt, device=dev,
+                    fs_type=fstype, mount_options=mntopt)
         r.mon_name = '/vg/%s/lv/status/%s'%(vgname, lvname)
         if 'resource' in self.cmviewcl and \
            r.mon_name in self.cmviewcl['resource']:
