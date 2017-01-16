@@ -3214,6 +3214,11 @@ def add_task(svc, conf, s):
     except ex.OptNotFound:
         pass
 
+    try:
+        kwargs['confirmation'] = conf_get_boolean_scope(svc, conf, s, 'confirmation')
+    except ex.OptNotFound:
+        pass
+
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(conf, s, svc)
     kwargs['tags'] = get_tags(conf, s, svc)

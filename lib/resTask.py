@@ -1,9 +1,13 @@
 import os
 import pwd
+import sys
 import resources as Res
 import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+
+if sys.version_info[0] >= 3:
+    raw_input = input
 
 def run_as_popen_kwargs(user):
     if rcEnv.sysname == "Windows":
@@ -39,11 +43,13 @@ class Task(Res.Resource):
                  command=None,
                  user=None,
                  on_error=None,
+                 confirmation=False,
                  **kwargs):
         Res.Resource.__init__(self, rid, type="task", **kwargs)
         self.command = command
         self.on_error = on_error
         self.user = user
+        self.confirmation = confirmation
 
     def __str__(self):
         return "%s command=%s user=%s" % (Res.Resource.__str__(self), self.command, str(self.user))
@@ -70,7 +76,35 @@ class Task(Res.Resource):
     def start(self):
         pass
 
+    @staticmethod
+    def alarm_handler(signum, frame):
+        raise ex.excSignal
+
+    def confirm(self):
+        """
+        Ask for an interactive confirmation. Raise if the user aborts or
+        if no input is given before timeout.
+        """
+        if not self.confirmation:
+            return
+        import signal
+        signal.signal(signal.SIGALRM, self.alarm_handler)
+        signal.alarm(30)
+
+        print("This task run requires confirmation.\nPlease make sure you fully "
+              "understand its role and effects before confirming the run.")
+        try:
+            buff = raw_input("Do you really want to run %s (yes/no) > " % self.rid)
+        except ex.excSignal:
+            raise ex.excError("timeout waiting for confirmation")
+
+        if buff == "yes":
+            self.log.info("run confirmed")
+        else:
+            raise ex.excError("run aborted")
+
     def run(self):
+        self.confirm()
         kwargs = {
           'blocking': True,
         }

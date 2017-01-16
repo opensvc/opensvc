@@ -3626,6 +3626,20 @@ class KeywordTaskCommand(Keyword):
                   example="/srv/{svcname}/data/scripts/backup.sh"
                 )
 
+class KeywordTaskConfirmation(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="task",
+                  keyword="confirmation",
+                  at=True,
+                  order=1,
+                  default=False,
+                  required=False,
+                  candidates=(True, False),
+                  text="If set to True, ask for an interactive confirmation to run the task. This flag can be used for dangerous tasks like data-restore.",
+                )
+
 class KeywordTaskOnError(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4353,6 +4367,7 @@ class KeyDict(KeywordStore):
         self += KeywordSharePath()
         self += KeywordShareNfsOpts()
         self += KeywordTaskCommand()
+        self += KeywordTaskConfirmation()
         self += KeywordTaskOnError()
         self += KeywordTaskUser()
         self += KeywordTaskSchedule()
