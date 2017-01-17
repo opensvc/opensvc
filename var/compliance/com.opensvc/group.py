@@ -6,11 +6,9 @@ data = {
 {
   "tibco": {
     "gid": 1000,
-    "members": "tibco,tibco1"
   },
   "tibco1": {
     "gid": 1001,
-    "members": "tibco1"
   }
 }
 """,
@@ -20,7 +18,7 @@ data = {
 """,
   "form_definition": """
 Desc: |
-  A rule defining a list of Unix groups and their properties. Used by the groups and group_membership compliance objects.
+  A rule defining a list of Unix groups and their properties. Used by the groups compliance objects.
 Css: comp48
 Outputs:
   -
@@ -46,13 +44,6 @@ Inputs:
     LabelCss: guys16
     Type: string or integer
     Help: The Unix gid of this group.
-  -
-    Id: members
-    Label: Group members
-    DisplayModeLabel: members
-    LabelCss: guy16
-    Type: list of string
-    Help: A comma-separed list of Unix user names members of this group.
 """,
 }
 
