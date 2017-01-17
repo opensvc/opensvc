@@ -26,18 +26,23 @@ class Module(object):
         self.executable = None
         self.autofix = autofix
         self.python_link_d = os.path.dirname(sys.executable)
+        self.ordering = 0
 
         dl = os.listdir(comp_dir)
         match = []
         for e in dl:
             if re.match(self.pattern%dict(name=name), e) is not None:
                 match.append(e)
-        if len(match) == 0:
-            raise ex.excInitError('module %s not found in %s'%(name, comp_dir))
+        #if len(match) == 0:
+        #    raise ex.excInitError('module %s not found in %s'%(name, comp_dir))
         if len(match) > 1:
             raise ex.excError('module %s matches too many entries in %s'%(name,
                               comp_dir))
-        base = match[0]
+        if len(match) == 1:
+            self.init_module_exe(match[0])
+
+    def init_module_exe(self, fpath):
+        base = fapth
         if base[0] == 'S':
             base == base[1:]
         for i, c in enumerate(base):
@@ -45,10 +50,10 @@ class Module(object):
                break
         self.ordering = int(base[0:i])
         regex2 = re.compile("^S*[0-9]+-*", re.UNICODE)
-        self.name = regex2.sub("", match[0])
+        self.name = regex2.sub("", fpath)
 
         locations = []
-        locations.append(os.path.join(comp_dir, match[0]))
+        locations.append(os.path.join(comp_dir, fpath))
         locations.append(os.path.join(locations[0], 'main'))
         locations.append(os.path.join(locations[0], 'scripts', 'main'))
 
@@ -65,8 +70,6 @@ class Module(object):
                 mode |= S_IXUSR
                 os.chmod(loc, mode)
             self.executable = loc
-        if self.executable is None:
-            raise ex.excError('executable not found for module %s'%(name))
 
     def __str__(self):
         a = []
@@ -143,13 +146,14 @@ class Module(object):
             for key, val in self.context.svc.env_section_keys_evaluated().items():
                 os.environ[self.context.format_rule_var("SVC_CONF_ENV_"+key.upper())] = self.context.format_rule_val(val)
 
-        for rule in self.ruleset.values():
-            if (rule["filter"] != "explicit attachment via moduleset" and \
-                "matching non-public contextual ruleset shown via moduleset" not in rule["filter"]) or ( \
+        for rset in self.ruleset.values():
+            if (rset["filter"] != "explicit attachment via moduleset" and \
+                "matching non-public contextual ruleset shown via moduleset" not in rset["filter"]) or ( \
                self.moduleset in self.context.data["modset_rset_relations"]  and \
-               rule['name'] in self.context.data["modset_rset_relations"][self.moduleset]
+               rset['name'] in self.context.data["modset_rset_relations"][self.moduleset]
                ):
-                for var, val in rule['vars']:
+                for rule in rset['vars']:
+                    var, val, var_class = self.context.parse_rule(rule)
                     os.environ[self.context.format_rule_var(var)] = self.context.format_rule_val(val)
 
 
@@ -190,13 +194,53 @@ class Module(object):
         return 0
 
     def do_action(self, action):
-        start = datetime.datetime.now()
-        cmd = [self.executable, action]
-        log = ''
         self.print_bold("ACTION:   %s"%action)
-        print("START:    %s"%str(start))
-        print("COMMAND:  %s"%' '.join(cmd))
-        print("LOG:")
+        if self.executable:
+            ret, log = self.do_action_exe(action, [self.executable])
+        else:
+            ret, log = self.do_action_automodule(action)
+        self.print_rcode(ret)
+        self.log_action(log, ret, action)
+        return ret
+
+    def do_action_automodule(self, action):
+        log = ''
+        ret = 0
+
+        self.setup_env()
+        for rset in self.ruleset.values():
+            if rset["filter"] != "explicit attachment via moduleset":
+                continue
+            for rule in sorted(rset['vars'], lambda x, y: cmp(x[0], y[0])):
+                var, val, var_class = self.context.parse_rule(rule)
+                if var_class == "raw":
+                    continue
+                obj = self.get_obj(var_class)
+                if obj is None:
+                    err = color.RED + 'ERR: ' + color.END + "no compliance object found to handle class '%s' for rule '%s'" % (var_class, var)
+                    log += err + "\n"
+                    print(err, file=sys.stderr)
+                    continue
+                _ret, _log = self.do_action_exe(action, [obj, self.context.format_rule_var(var)])
+                if _ret == 1:
+                    ret = 1
+                log += _log
+                if action == "fix":
+                    # stop at frist error in a 'fix' action
+                    break
+
+        return ret, log
+
+    def get_obj(self, var_class):
+        import glob
+        try:
+            return glob.glob(os.path.join(comp_dir, "*", var_class+".py"))[0]
+        except IndexError:
+            return None
+
+    def do_action_exe(self, action, executable):
+        cmd = executable + [action]
+        log = ''
 
         import tempfile
         import time
@@ -259,31 +303,31 @@ class Module(object):
             fo.close()
             fe.close()
             if e.errno == 2:
-                raise ex.excError("%s execution error (File not found or bad interpreter)"%self.executable)
+                raise ex.excError("%s execution error (File not found or bad interpreter)"%cmd[0])
             elif e.errno == 8:
-                raise ex.excError("%s execution error (Exec format error)"%self.executable)
+                raise ex.excError("%s execution error (Exec format error)"%cmd[0])
             else:
                 raise
         fo.close()
         fe.close()
         _fo.close()
         _fe.close()
-        end = datetime.datetime.now()
-        self.print_rcode(p.returncode)
-        print("DURATION: %s"%str(end-start))
-        self.log_action(log, p.returncode, action)
-        return p.returncode
+        return p.returncode, log
 
     def print_bold(self, s):
         print(colorize(s, color.BOLD))
 
     def print_rcode(self, r):
+        buff = "STATUS:   "
         if r == 1:
-            print(colorize("RCODE:    %d"%r, color.RED))
+            buff += colorize("nok", color.RED)
         elif r == 0:
-            print(colorize("RCODE:    %d"%r, color.GREEN))
+            buff += colorize("ok", color.GREEN)
+        elif r == 2:
+            buff += "n/a"
         else:
-            print("RCODE:    %d"%r)
+            buff += "%d" % r
+        print(buff)
 
     def env(self):
         return self.action('env')
@@ -325,17 +369,25 @@ class Compliance(object):
 
     def set_rset_md5(self):
         self.rset_md5 = ""
-        rs = self.ruleset.get("osvc_collector")
-        if rs is None:
+        rset = self.ruleset.get("osvc_collector")
+        if rset is None:
             return
-        for var, val in rs["vars"]:
+        for rule in rset["vars"]:
+            var, val, var_class = self.parse_rule(rule)
             if var == "ruleset_md5":
                 self.rset_md5 = val
                 break
 
+    def parse_rule(self, var):
+        if len(var) == 2:
+            return var[0], var[1], "raw"
+        else:
+            return var
+
     def setup_env(self):
-        for rule in self.ruleset.values():
-            for var, val in rule['vars']:
+        for rset in self.ruleset.values():
+            for rule in rset['vars']:
+                var, val, var_class = self.parse_rule(rule)
                 os.environ[self.format_rule_var(var)] = self.format_rule_val(val)
 
     def reset_env(self):
@@ -391,7 +443,7 @@ class Compliance(object):
 
         if self.data is None:
             try:
-                self.data = self.get_comp_data(self.options.moduleset.split(','))
+                self.data = self.get_comp_data()
             except Exception as e:
                 raise ex.excError(str(e))
             if self.data is None:
@@ -504,23 +556,27 @@ class Compliance(object):
     def str_ruleset(self):
         a = []
         a.append('rules:')
-        for rule in self.ruleset.values():
-            if len(rule['filter']) == 0:
-                a.append(' %s'%rule['name'])
+        for rset in self.ruleset.values():
+            if len(rset['filter']) == 0:
+                a.append(' %s'%rset['name'])
             else:
-                a.append(' %s (%s)'%(rule['name'],rule['filter']))
-            for var, val in rule['vars']:
+                a.append(' %s (%s)'%(rset['name'],rset['filter']))
+            for rule in rset['vars']:
+                var, val, var_class = self.parse_rule(rule)
                 val = self.format_rule_val(val)
                 if ' ' in val:
                     val = repr(val)
                 a.append('  %s=%s'%(self.format_rule_var(var), val))
         return '\n'.join(a)
 
-    def get_comp_data(self, modulesets=[]):
+    def get_comp_data(self):
         if self.svc:
-            return self.node.collector.call('comp_get_svc_data', self.svc.svcname, modulesets)
+            return self.node.collector.call('comp_get_svc_data',
+                                            self.svc.svcname,
+                                            modulesets=self.options.moduleset.split(','))
         else:
-            return self.node.collector.call('comp_get_data', modulesets)
+            return self.node.collector.call('comp_get_data',
+                                            modulesets=self.options.moduleset.split(','))
 
     def merge_moduleset_modules(self):
         l = []

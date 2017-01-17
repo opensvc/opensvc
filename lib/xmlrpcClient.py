@@ -1318,13 +1318,13 @@ class Collector(object):
         args = [rcEnv.nodename, modulesets]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        return self.comp_proxy.comp_get_data(*args)
+        return self.comp_proxy.comp_get_data_v2(*args)
 
     def comp_get_svc_data(self, svcname, modulesets=[], sync=True):
         args = [rcEnv.nodename, svcname, modulesets]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        return self.comp_proxy.comp_get_svc_data(*args)
+        return self.comp_proxy.comp_get_svc_data_v2(*args)
 
     def comp_get_data_moduleset(self, sync=True):
         args = [rcEnv.nodename]
