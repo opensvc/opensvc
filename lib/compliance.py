@@ -391,7 +391,7 @@ class Compliance(object):
 
         if self.data is None:
             try:
-                self.data = self.get_comp_data()
+                self.data = self.get_comp_data(self.options.moduleset.split(','))
             except Exception as e:
                 raise ex.excError(str(e))
             if self.data is None:
