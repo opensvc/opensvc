@@ -68,6 +68,9 @@ def main(argv=None):
 
     try:
         return _main(node, argv=argv)
+    except ex.excError as exc:
+        print(exc, file=sys.stderr)
+        return 1
     finally:
         node.close()
 
