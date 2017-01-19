@@ -38,13 +38,17 @@ class EndRecursion(Exception):
      pass
 
 def pinfo(*args, **kwargs):
-    if len(args) == 0 or len(args[0]) == 0:
+    if is_string(args) and len(args):
+        return
+    if isinstance(args, list) and (len(args) == 0 or len(args[0]) == 0):
         return
     kwargs["file"] = sys.stdout
     print(*args, **kwargs)
 
 def perror(*args, **kwargs):
-    if len(args) == 0 or len(args[0]) == 0:
+    if is_string(args) and len(args):
+        return
+    if isinstance(args, list) and (len(args) == 0 or len(args[0]) == 0):
         return
     kwargs["file"] = sys.stderr
     print(*args, **kwargs)
