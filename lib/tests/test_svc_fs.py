@@ -23,7 +23,7 @@ class TestSvc:
     def setUp(self):
         rcLogger.DEFAULT_HANDLERS = []
         self.svc = svc.Svc(SVCNAME)
-        r = resFsLinux.Mount("fs#1",
+        r = resFsLinux.Mount(rid="fs#1",
                              mount_point="/srv/"+SVCNAME,
                              device="/tmp",
                              mount_options="bind,rw",
