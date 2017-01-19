@@ -227,7 +227,7 @@ class Module(object):
                 if _ret == 1:
                     ret = 1
                 log += _log
-                if action == "fix":
+                if action == "fix" and _ret not in (0, 2):
                     # stop at frist error in a 'fix' action
                     break
 
