@@ -42,7 +42,7 @@ class Module(object):
             self.init_module_exe(match[0])
 
     def init_module_exe(self, fpath):
-        base = fapth
+        base = fpath
         if base[0] == 'S':
             base == base[1:]
         for i, c in enumerate(base):
@@ -209,6 +209,8 @@ class Module(object):
 
         self.setup_env()
         for rset in self.ruleset.values():
+            if rset["name"] != self.moduleset:
+                continue
             if rset["filter"] != "explicit attachment via moduleset":
                 continue
             for rule in sorted(rset['vars'], lambda x, y: cmp(x[0], y[0])):
