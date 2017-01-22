@@ -1778,7 +1778,7 @@ class Node(object):
 
             if 'type' in data:
                 rtype += data['type'][0].upper() + data['type'][1:].lower()
-            modname = 'prov' + rtype
+            modname = 'provDisk' + rtype
             try:
                 mod = __import__(modname)
             except ImportError:
