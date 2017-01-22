@@ -440,10 +440,15 @@ class App(Resource):
                     raise StatusWARN()
                 else:
                     self.log.error("%s execution error (Exec format error)", self.script)
-                return 1
+            elif exc.errno == 13:
+                if not return_out and not dedicated_log:
+                    self.status_log("permission denied")
+                    raise StatusWARN()
+                else:
+                    self.log.error("%s execution error (Permission Denied)", self.script)
             else:
                 self.svc.save_exc()
-                return 1
+            return 1
         except:
             self.svc.save_exc()
             return 1
