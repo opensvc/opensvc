@@ -88,6 +88,9 @@ def colorize_status(status, lpad=10):
     """
     if isinstance(status, Status):
         status = str(status)
+    elif isinstance(status, int):
+        status = str(Status(status))
+
     fmt = "%-"+str(lpad)+"s"
     if status == "warn":
         return colorize(fmt % status, color.BROWN)
