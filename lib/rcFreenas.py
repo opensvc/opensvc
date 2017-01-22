@@ -167,13 +167,16 @@ class Freenas(object):
         d = {
           "iscsi_target_extent_type": "File",
           "iscsi_target_extent_name": data["name"],
-#          "iscsi_target_extent_insecure_tpc": True,
-#          "iscsi_target_extent_blocksize": 512,
+          "iscsi_target_extent_insecure_tpc": data.get("insecure_tpc", True),
+          "iscsi_target_extent_blocksize": data.get("blocksize", 512),
           "iscsi_target_extent_filesize": str(data["size"])+"MB",
           "iscsi_target_extent_path": "/mnt/%s/%s" % (data["volume"], data["name"]),
         }
         buff = self.post("/services/iscsi/extent", d)
-        extent_id = json.loads(buff)["id"]
+        try:
+            extent_id = json.loads(buff)["id"]
+        except KeyError:
+            raise ex.excError
         return extent_id
 
     def add_iscsi_targets_to_extent(self, extent_id, data):
