@@ -317,7 +317,7 @@ class Resource(object):
         if self.svc.lockfd is None:
             try:
                 self.svc.svclock("resource_restart", timeout=0)
-            except ex.excError:
+            except exc.excError:
                 self.log.info("resource restart skipped: an action is running")
                 return
             self.svc.svcunlock()
