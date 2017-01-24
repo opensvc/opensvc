@@ -16,6 +16,18 @@ import rcColor
 from rcUtilities import term_width, is_string
 import rcExceptions as ex
 
+class OptionParserNoHelpOptions(optparse.OptionParser):
+    def format_help(self, formatter=None):
+        if formatter is None:
+            formatter = self.formatter
+        result = []
+        if self.usage:
+            result.append(self.get_usage() + "\n")
+        if self.description:
+            result.append(self.format_description(formatter) + "\n")
+        result.append(self.format_epilog(formatter))
+        return "".join(result)
+
 class OptParser(object):
     """
     A class wrapping the optparse module use, adding some features:
@@ -71,7 +83,7 @@ class OptParser(object):
         Format the possible options for a spectific action.
         """
         desc = ""
-        parser = optparse.OptionParser(formatter=self.formatter, add_help_option=False)
+        parser = OptionParserNoHelpOptions(formatter=self.formatter, add_help_option=False)
         for option in self.actions[section][action].get("options", []):
             parser.add_option(option)
         for option in self.global_options:
@@ -182,7 +194,7 @@ class OptParser(object):
 
         self.version = self.prog + " version " + version
 
-        self.parser = optparse.OptionParser(
+        self.parser = OptionParserNoHelpOptions(
             version=self.version,
             add_help_option=False,
         )
@@ -225,7 +237,7 @@ class OptParser(object):
 
         # parse a second time with only options supported by the action
         # so we can raise on options incompatible with the action
-        parser = optparse.OptionParser(
+        parser = OptionParserNoHelpOptions(
             version=self.version,
             usage=usage,
             add_help_option=False,
