@@ -52,7 +52,18 @@ OPT = Storage({
     "naa": Option(
         "--naa", default=None, action="store", dest="naa",
         help="The disk naa identifier"),
-
+    "initiator": Option(
+        "--initiator", action="append", dest="initiators",
+        help="An initiator iqn. Can be specified multiple times."),
+    "auth_network": Option(
+        "--auth-network", default="ALL", action="store", dest="auth_network",
+        help="Network authorized to access to the iSCSI target. ip or cidr addresses or 'ALL' for any ips"),
+    "comment": Option(
+        "--comment", action="store", dest="comment",
+        help="Description for your reference"),
+    "id": Option(
+        "--id", action="store", type=int, dest="id",
+        help="An object id, as reported by a list action"),
 })
 
 GLOBAL_OPTS = [
@@ -87,6 +98,14 @@ ACTIONS = {
                 OPT.dedup,
             ],
         },
+        "add_iscsi_authorizedinitiator": {
+            "msg": "Declare a iscsi initiator iqn, for use in targets which are portal-initiator relations",
+            "options": [
+                OPT.initiator,
+                OPT.comment,
+                OPT.auth_network,
+            ],
+        },
     },
     "Delete actions": {
         "del_iscsi_file": {
@@ -101,6 +120,12 @@ ACTIONS = {
             "options": [
                 OPT.name,
                 OPT.naa,
+            ],
+        },
+        "del_iscsi_authorizedinitiator": {
+            "msg": "Delete a iscsi initiator iqn, used in targets which are portal-initiator relations",
+            "options": [
+                OPT.id,
             ],
         },
     },
@@ -264,6 +289,10 @@ class Freenas(object):
         buff = self.get("/services/iscsi/authorizedinitiator")
         return buff
 
+    def get_iscsi_authorizedinitiator_id(self, id):
+        buff = self.get("/services/iscsi/authorizedinitiator/%d" % id)
+        return buff
+
     def get_iscsi_target_ids(self, target_names):
         buff = self.get_iscsi_targets()
         data = json.loads(buff)
@@ -376,6 +405,46 @@ class Freenas(object):
         except ValueError:
             raise ex.excError(buff)
 
+    def del_iscsi_authorizedinitiator(self, id=None, **kwargs):
+        content = self.get_iscsi_authorizedinitiator_id(id)
+        try:
+            data = json.loads(content)
+        except ValueError:
+            raise ex.excError("authorizedinitiator not found")
+        self._del_iscsi_authorizedinitiator(id=id, **kwargs)
+        print(json.dumps(data, indent=8))
+        return data
+
+    def _del_iscsi_authorizedinitiator(self, id=None, **kwargs):
+        if id is None:
+            raise ex.excError("'id' in mandatory")
+        response = self.delete('/services/iscsi/authorizedinitiator/%d' % id)
+        if response.status_code != 204:
+            raise ex.excError(buff)
+
+    def add_iscsi_authorizedinitiator(self, **kwargs):
+        data = self._add_iscsi_authorizedinitiator(**kwargs)
+        print(json.dumps(data, indent=8))
+        return data
+
+    def _add_iscsi_authorizedinitiator(self, initiators=None, auth_network="ALL", comment=None,
+                 **kwargs):
+        for key in ["initiators"]:
+            if locals()[key] is None:
+                 raise ex.excError("'%s' key is mandatory" % key)
+        d = {
+          "iscsi_target_initiator_initiators": ",".join(initiators),
+          "iscsi_target_initiator_auth_network": auth_network,
+        }
+        if comment:
+            d["iscsi_target_initiator_comment"] = comment
+
+        buff = self.post('/services/iscsi/authorizedinitiator/', d)
+        try:
+            return json.loads(buff)
+        except ValueError:
+            raise ex.excError(buff)
+
     def add_iscsi_file(self, name=None, size=None, volume=None, targets=None,
                        insecure_tpc=True, blocksize=512, **kwargs):
         for key in ["name", "size", "volume", "targets"]:
@@ -464,6 +533,8 @@ def do_action(action, array_name=None, **kwargs):
     array = o.get_freenas(array_name)
     if array is None:
         raise ex.excError("array %s not found" % array_name)
+    if not hasattr(array, action):
+        raise ex.excError("not implemented")
     getattr(array, action)(**kwargs)
 
 def main():
