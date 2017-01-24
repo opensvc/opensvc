@@ -67,6 +67,23 @@ OPT = Storage({
     "alias": Option(
         "--alias", action="store", dest="alias",
         help="An object name alias"),
+    "target_id": Option(
+        "--target-id", action="store", type=int, dest="target_id",
+        help="The target object id"),
+    "authgroup_id": Option(
+        "--auth-group-id", action="store", type=int, dest="authgroup_id",
+        help="The auth group object id"),
+    "authtype": Option(
+        "--auth-type", action="store", default="None", dest="authtype",
+        choices=["None", "CHAP", "CHAP Mutual"],
+        help="None, CHAP, CHAP Mutual"),
+    "portal_id": Option(
+        "--portal-id", action="store", type=int, dest="portal_id",
+        help="The portal object id"),
+    "initiatorgroup_id": Option(
+        "--initiatorgroup-id", action="store", type=int, dest="initiatorgroup_id",
+        help="The initiator group object id"),
+
 })
 
 GLOBAL_OPTS = [
@@ -101,8 +118,8 @@ ACTIONS = {
                 OPT.dedup,
             ],
         },
-        "add_iscsi_authorizedinitiator": {
-            "msg": "Declare a iscsi initiator iqn, for use in targetgroups which are portal-target-initiator relations",
+        "add_iscsi_initiatorgroup": {
+            "msg": "Declare a group of iscsi initiator iqn, for use in targetgroups which are portal-target-initiator relations",
             "options": [
                 OPT.initiator,
                 OPT.comment,
@@ -114,6 +131,16 @@ ACTIONS = {
             "options": [
                 OPT.name,
                 OPT.alias,
+            ],
+        },
+        "add_iscsi_targetgroup": {
+            "msg": "Declare a iscsi target group, which is a portal-target-initiator relation",
+            "options": [
+                OPT.portal_id,
+                OPT.target_id,
+                OPT.initiatorgroup_id,
+                OPT.authgroup_id,
+                OPT.authtype,
             ],
         },
     },
@@ -132,14 +159,20 @@ ACTIONS = {
                 OPT.naa,
             ],
         },
-        "del_iscsi_authorizedinitiator": {
-            "msg": "Delete a iscsi initiator iqn, used in targets which are portal-target-initiator relations",
+        "del_iscsi_initiatorgroup": {
+            "msg": "Delete a group of iscsi initiator iqn, used in targets which are portal-target-initiator relations",
             "options": [
                 OPT.id,
             ],
         },
         "del_iscsi_target": {
             "msg": "Delete a iscsi target, used in targets which are portal-target-initiator relations",
+            "options": [
+                OPT.id,
+            ],
+        },
+        "del_iscsi_targetgroup": {
+            "msg": "Delete a iscsi target group, which is a portal-target-initiator relation",
             "options": [
                 OPT.id,
             ],
@@ -164,8 +197,8 @@ ACTIONS = {
         "list_iscsi_extent": {
             "msg": "List configured extents",
         },
-        "list_iscsi_authorizedinitiator": {
-            "msg": "List configured authorized initiator",
+        "list_iscsi_initiatorgroup": {
+            "msg": "List configured initiator groups",
         },
     },
 }
@@ -305,6 +338,10 @@ class Freenas(object):
         buff = self.get("/services/iscsi/targetgroup")
         return buff
 
+    def get_iscsi_targetgroup_id(self, id):
+        buff = self.get("/services/iscsi/targetgroup/%d" % id)
+        return buff
+
     def get_iscsi_authorizedinitiator(self):
         buff = self.get("/services/iscsi/authorizedinitiator")
         return buff
@@ -425,29 +462,29 @@ class Freenas(object):
         except ValueError:
             raise ex.excError(buff)
 
-    def del_iscsi_authorizedinitiator(self, id=None, **kwargs):
+    def del_iscsi_initiatorgroup(self, id=None, **kwargs):
         content = self.get_iscsi_authorizedinitiator_id(id)
         try:
             data = json.loads(content)
         except ValueError:
-            raise ex.excError("authorizedinitiator not found")
-        self._del_iscsi_authorizedinitiator(id=id, **kwargs)
+            raise ex.excError("initiator group not found")
+        self._del_iscsi_initiatorgroup(id=id, **kwargs)
         print(json.dumps(data, indent=8))
         return data
 
-    def _del_iscsi_authorizedinitiator(self, id=None, **kwargs):
+    def _del_iscsi_initiatorgroup(self, id=None, **kwargs):
         if id is None:
             raise ex.excError("'id' in mandatory")
         response = self.delete('/services/iscsi/authorizedinitiator/%d' % id)
         if response.status_code != 204:
             raise ex.excError(buff)
 
-    def add_iscsi_authorizedinitiator(self, **kwargs):
-        data = self._add_iscsi_authorizedinitiator(**kwargs)
+    def add_iscsi_initiatorgroup(self, **kwargs):
+        data = self._add_iscsi_initiatorgroup(**kwargs)
         print(json.dumps(data, indent=8))
         return data
 
-    def _add_iscsi_authorizedinitiator(self, initiators=None, auth_network="ALL", comment=None,
+    def _add_iscsi_initiatorgroup(self, initiators=None, auth_network="ALL", comment=None,
                  **kwargs):
         for key in ["initiators"]:
             if locals()[key] is None:
@@ -465,6 +502,54 @@ class Freenas(object):
         except ValueError:
             raise ex.excError(buff)
 
+    # targetgroup
+    def del_iscsi_targetgroup(self, id=None, **kwargs):
+        content = self.get_iscsi_targetgroup_id(id)
+        try:
+            data = json.loads(content)
+        except ValueError:
+            raise ex.excError("target group not found")
+        self._del_iscsi_targetgroup(id=id, **kwargs)
+        print(json.dumps(data, indent=8))
+        return data
+
+    def _del_iscsi_targetgroup(self, id=None, **kwargs):
+        if id is None:
+            raise ex.excError("'id' in mandatory")
+        response = self.delete('/services/iscsi/targetgroup/%d' % id)
+        if response.status_code != 204:
+            raise ex.excError(buff)
+
+    def add_iscsi_targetgroup(self, **kwargs):
+        data = self._add_iscsi_targetgroup(**kwargs)
+        print(json.dumps(data, indent=8))
+        return data
+
+    def _add_iscsi_targetgroup(self, portal_id=None, initiatorgroup_id=None,
+                               target_id=None, authtype="None",
+                               authgroup_id=None,  **kwargs):
+        for key in ["portal_id", "initiatorgroup_id", "target_id"]:
+            if locals()[key] is None:
+                 raise ex.excError("'%s' key is mandatory" % key)
+        d = {
+          "iscsi_target": target_id,
+          "iscsi_target_initiatorgroup": initiatorgroup_id,
+          "iscsi_target_portalgroup": portal_id,
+          "iscsi_target_authtype": authtype,
+          "iscsi_target_authgroup": -1,
+          "iscsi_target_initialdigest": "Auto",
+        }
+        if authgroup_id:
+            d["iscsi_target_authgroup"] = authgroup_id
+
+        print(d)
+        buff = self.post('/services/iscsi/targetgroup/', d)
+        try:
+            return json.loads(buff)
+        except ValueError:
+            raise ex.excError(buff)
+
+    # target
     def del_iscsi_target(self, id=None, **kwargs):
         content = self.get_iscsi_target_id(id)
         try:
@@ -582,7 +667,7 @@ class Freenas(object):
         data = json.loads(self.get_iscsi_extents())
         print(json.dumps(data, indent=8))
 
-    def list_iscsi_authorizedinitiator(self, **kwargs):
+    def list_iscsi_initiatorgroup(self, **kwargs):
         data = json.loads(self.get_iscsi_authorizedinitiator())
         print(json.dumps(data, indent=8))
 
