@@ -26,7 +26,7 @@ OPT = Storage({
         help="The name of the array, as defined in auth.conf"),
     "name": Option(
         "--name", default=None, action="store", dest="name",
-        help="The disk symbolic name"),
+        help="The object name"),
     "volume": Option(
         "--volume", default=None, action="store", dest="volume",
         help="The volume to create the disk into"),
@@ -64,6 +64,9 @@ OPT = Storage({
     "id": Option(
         "--id", action="store", type=int, dest="id",
         help="An object id, as reported by a list action"),
+    "alias": Option(
+        "--alias", action="store", dest="alias",
+        help="An object name alias"),
 })
 
 GLOBAL_OPTS = [
@@ -99,11 +102,18 @@ ACTIONS = {
             ],
         },
         "add_iscsi_authorizedinitiator": {
-            "msg": "Declare a iscsi initiator iqn, for use in targets which are portal-initiator relations",
+            "msg": "Declare a iscsi initiator iqn, for use in targetgroups which are portal-target-initiator relations",
             "options": [
                 OPT.initiator,
                 OPT.comment,
                 OPT.auth_network,
+            ],
+        },
+        "add_iscsi_target": {
+            "msg": "Declare a iscsi target, for use in targetgroups which are portal-target-initiator relations",
+            "options": [
+                OPT.name,
+                OPT.alias,
             ],
         },
     },
@@ -123,7 +133,13 @@ ACTIONS = {
             ],
         },
         "del_iscsi_authorizedinitiator": {
-            "msg": "Delete a iscsi initiator iqn, used in targets which are portal-initiator relations",
+            "msg": "Delete a iscsi initiator iqn, used in targets which are portal-target-initiator relations",
+            "options": [
+                OPT.id,
+            ],
+        },
+        "del_iscsi_target": {
+            "msg": "Delete a iscsi target, used in targets which are portal-target-initiator relations",
             "options": [
                 OPT.id,
             ],
@@ -263,6 +279,10 @@ class Freenas(object):
 
     def get_volumes(self):
         buff = self.get("/storage/volume")
+        return buff
+
+    def get_iscsi_target_id(self, id):
+        buff = self.get("/services/iscsi/target/%d" % id)
         return buff
 
     def get_iscsi_targets(self):
@@ -440,6 +460,44 @@ class Freenas(object):
             d["iscsi_target_initiator_comment"] = comment
 
         buff = self.post('/services/iscsi/authorizedinitiator/', d)
+        try:
+            return json.loads(buff)
+        except ValueError:
+            raise ex.excError(buff)
+
+    def del_iscsi_target(self, id=None, **kwargs):
+        content = self.get_iscsi_target_id(id)
+        try:
+            data = json.loads(content)
+        except ValueError:
+            raise ex.excError("target not found")
+        self._del_iscsi_target(id=id, **kwargs)
+        print(json.dumps(data, indent=8))
+        return data
+
+    def _del_iscsi_target(self, id=None, **kwargs):
+        if id is None:
+            raise ex.excError("'id' in mandatory")
+        response = self.delete('/services/iscsi/target/%d' % id)
+        if response.status_code != 204:
+            raise ex.excError(buff)
+
+    def add_iscsi_target(self, **kwargs):
+        data = self._add_iscsi_target(**kwargs)
+        print(json.dumps(data, indent=8))
+        return data
+
+    def _add_iscsi_target(self, name=None, alias=None, **kwargs):
+        for key in ["name"]:
+            if locals()[key] is None:
+                 raise ex.excError("'%s' key is mandatory" % key)
+        d = {
+          "iscsi_target_name": name,
+        }
+        if alias:
+            d["iscsi_target_alias"] = alias
+
+        buff = self.post('/services/iscsi/target/', d)
         try:
             return json.loads(buff)
         except ValueError:
