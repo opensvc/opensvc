@@ -1,5 +1,5 @@
 """
-svcmgr command line actions and options
+nodemgr command line actions and options
 """
 from rcGlobalEnv import Storage
 from rcOptParser import OptParser
@@ -237,6 +237,10 @@ ACTIONS = {
         },
         'unschedule_reboot': {
             'msg': 'unmark the node for reboot at the next allowed period.',
+        },
+        'array': {
+            'msg': 'pass a command to a supported array whose access method '
+                   'and credentials are defined in auth.conf',
         },
         'provision': {
             'msg': 'provision the resources described in --resource arguments',
