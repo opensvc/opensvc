@@ -118,6 +118,7 @@ class Node(object):
             broadcast=None,
             param=None,
             value=None,
+            extra_argv=[],
         )
         self.set_collector_env()
         self.log = rcLogger.initLogger(rcEnv.nodename)
@@ -1754,46 +1755,35 @@ class Node(object):
             svc.set_run_flag()
         return 0
 
-    def provision(self):
+    def array(self):
         """
-        Execute a provisionner outside the scope of a service.
+        Execute a array command, passing extra_argv to the array driver.
         """
-        provision_resource = []
-        for definition in self.options.resource:
-            try:
-                data = json.loads(definition)
-            except ValueError:
-                print("JSON read error: %s", definition, file=sys.stderr)
-                return 1
-            if 'rtype' not in data:
-                print("'rtype' key must be set in resource dictionary: %s",
-                      definition, file=sys.stderr)
-                return 1
+        array_name = None
+        for idx, arg in enumerate(self.options.extra_argv):
+            if arg.startswith("--array="):
+                array_name = arg[arg.index("=")+1:]
+                break
+            if (arg == "-a" or arg == "--array") and idx+1 < len(self.options.extra_argv):
+                array_name = self.options.extra_argv[idx+1]
+                break
 
-            rtype = data['rtype']
-            if len(rtype) < 2:
-                print("invalid 'rtype' value: %s", definition, file=sys.stderr)
-                return 1
-            rtype = rtype[0].upper() + rtype[1:].lower()
+        if array_name is None:
+            raise ex.excError("can not determine array driver (no --array)")
 
-            if 'type' in data:
-                rtype += data['type'][0].upper() + data['type'][1:].lower()
-            modname = 'provDisk' + rtype
-            try:
-                mod = __import__(modname)
-            except ImportError:
-                print("provisioning is not available for resource type:",
-                      data['rtype'], "(%s)" % modname, file=sys.stderr)
-                return 1
-            if not hasattr(mod, "d_provisioner"):
-                print("provisioning with nodemgr is not available for this "
-                      "resource type:", data['rtype'], file=sys.stderr)
-                return 1
+        self.load_auth_config()
+        if not self.auth_config.has_section(array_name):
+            raise ex.excError("%s must have a '%s' section" % (rcEnv.authconf, array_name))
 
-            provision_resource.append((mod, data))
+        if not self.auth_config.has_option(array_name, "type"):
+            raise ex.excError("%s must have a '%s.type' option" % (rcEnv.authconf, array_name))
 
-        for mod, data in provision_resource:
-            getattr(mod, "d_provisioner")(data)
+        driver = self.auth_config.get(array_name, "type")
+        rtype = driver[0].upper() + driver[1:].lower()
+        exe = os.path.join(rcEnv.paths.pathlib, 'rc' + rtype + '.py')
+        from subprocess import Popen
+        proc = Popen([sys.executable, exe] + self.options.extra_argv)
+        proc.communicate()
 
     def get_ruser(self, node):
         """

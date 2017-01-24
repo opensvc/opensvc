@@ -19,6 +19,27 @@ from nodemgr_parser import NodemgrOptParser
 
 node_mod = ximport('node')
 
+def get_extra_argv(argv=None):
+    """
+    Extract extra argv from nodemgr argv.
+
+    nodemgr can act as a wrapper for other commands (storage drivers for
+    example).
+    """
+    if argv is None:
+        argv = sys.argv[1:]
+    if len(argv) < 2:
+        return argv, []
+    if "array" not in argv:
+        return argv, []
+    pos = argv.index('array')
+    if len(argv) > pos + 1:
+        extra_argv = argv[pos+1:]
+    else:
+        extra_argv = []
+    argv = argv[:pos+1]
+    return argv, extra_argv
+
 def do_symcli_db_file(options):
     try:
         symcli_db_file = options.symcli_db_file
@@ -33,8 +54,10 @@ def do_symcli_db_file(options):
     os.environ['SYMCLI_OFFLINE'] = '1'
 
 def _main(node, argv=None):
-    optparser = NodemgrOptParser()
+    argv, extra_argv = get_extra_argv(argv)
+    optparser = NodemgrOptParser(argv)
     options, action = optparser.parse_args(argv)
+    options.extra_argv = extra_argv
 
     rcColor.use_color = options.color
     node.options.update(options.__dict__)

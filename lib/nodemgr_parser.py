@@ -145,11 +145,6 @@ OPT = Storage({
         "--refresh-api", default=False,
         action="store_true", dest="refresh_api",
         help="The OpenSVC collector api url"),
-    "resource": Option(
-        "--resource", default=[],
-        action="append",
-        help="a resource definition in json dictionary format "
-             "fed to the provision action"),
     "ruleset": Option(
         "--ruleset", default="",
         action="store", dest="ruleset",
@@ -241,12 +236,6 @@ ACTIONS = {
         'array': {
             'msg': 'pass a command to a supported array whose access method '
                    'and credentials are defined in auth.conf',
-        },
-        'provision': {
-            'msg': 'provision the resources described in --resource arguments',
-            'options': [
-                OPT.resource,
-            ],
         },
         'updatepkg': {
             'msg': 'upgrade the opensvc agent version. the packages must be '
