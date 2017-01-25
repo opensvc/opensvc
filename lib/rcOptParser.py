@@ -291,4 +291,4 @@ class OptParser(object):
             self.parser.print_help()
             raise ex.excError
         else:
-            self.parser.error("Invalid service action: %s" % str(action))
+            self.parser.error("Invalid action: %s" % str(action))
