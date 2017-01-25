@@ -1026,6 +1026,26 @@ DEPRECATED_ACTIONS = [
     "syncverify",
 ]
 
+ACTIONS_TRANSLATIONS = {
+    "push_env_mtime": "push_config_mtime",
+    "push_env": "push_config",
+    "json_env": "json_config",
+    "syncall": "sync_all",
+    "syncbreak": "sync_break",
+    "syncdrp": "sync_drp",
+    "syncestablish": "sync_establish",
+    "syncfullsync": "sync_full",
+    "syncnodes": "sync_nodes",
+    "syncquiesce": "sync_quiesce",
+    "syncrestore": "sync_restore",
+    "syncresume": "sync_resume",
+    "syncresync": "sync_resync",
+    "syncrevert": "sync_revert",
+    "syncsplit": "sync_split",
+    "syncupdate": "sync_update",
+    "syncverify": "sync_verify",
+}
+
 class SvcmgrOptParser(OptParser):
     """
     The svcmgr-specific options parser class
@@ -1035,6 +1055,7 @@ class SvcmgrOptParser(OptParser):
         OptParser.__init__(self, args=args, prog=PROG, options=OPT,
                            actions=ACTIONS,
                            deprecated_actions=DEPRECATED_ACTIONS,
+                           actions_translations=ACTIONS_TRANSLATIONS,
                            global_options=GLOBAL_OPTS,
                            svcmgr_options=SVCMGR_OPTS,
                            colorize=colorize, width=width,

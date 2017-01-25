@@ -37,15 +37,16 @@ class OptParser(object):
     """
 
     def __init__(self, args=None, prog="", options=None, actions=None,
-                 deprecated_actions=None, global_options=None,
-                 svcmgr_options=None, colorize=True, width=None,
-                 formatter=None, indent=6):
+                 deprecated_actions=None, actions_translations=None,
+                 global_options=None, svcmgr_options=None, colorize=True,
+                 width=None, formatter=None, indent=6):
         self.parser = None
         self.args = args
         self.prog = prog
         self.options = options
         self.actions = actions
         self.deprecated_actions = deprecated_actions if deprecated_actions else []
+        self.actions_translations = actions_translations if actions_translations else {}
         self.global_options = global_options if global_options else []
         self.svcmgr_options = svcmgr_options if svcmgr_options else []
         self.colorize = colorize
@@ -164,8 +165,6 @@ class OptParser(object):
         Check if the parsed command args list has at least one element to be
         interpreted as an action. Raise if not, else return the action name
         formatted as a '_' joined string.
-
-        Also raise if the action is not supported.
         """
         if len(args) is 0:
             if options.parm_help:
@@ -177,6 +176,9 @@ class OptParser(object):
 
         if action.startswith("collector_cli"):
             action = "collector_cli"
+
+        if action in self.actions_translations:
+            action = self.actions_translations[action]
 
         return action
 

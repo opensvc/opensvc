@@ -59,26 +59,6 @@ CONFIG_DEFAULTS = {
     'no_schedule': '',
 }
 
-ACTIONS_TRANSLATIONS = {
-    "push_env_mtime": "push_config_mtime",
-    "push_env": "push_config",
-    "json_env": "json_config",
-    "syncall": "sync_all",
-    "syncbreak": "sync_break",
-    "syncdrp": "sync_drp",
-    "syncestablish": "sync_establish",
-    "syncfullsync": "sync_full",
-    "syncnodes": "sync_nodes",
-    "syncquiesce": "sync_quiesce",
-    "syncrestore": "sync_restore",
-    "syncresume": "sync_resume",
-    "syncresync": "sync_resync",
-    "syncrevert": "sync_revert",
-    "syncsplit": "sync_split",
-    "syncupdate": "sync_update",
-    "syncverify": "sync_verify",
-}
-
 ACTIONS_ALLOW_ON_FROZEN = [
     "autopush",
     "delete",
@@ -3333,17 +3313,6 @@ class Svc(object):
                            ",".join(retained_rids))
         return retained_rids
 
-    @staticmethod
-    def action_translate(action):
-        """
-        Return the supported action name corresponding to the specified
-        action. Deprecated actions are thus translated into their supported
-        action name.
-        """
-        if action in ACTIONS_TRANSLATIONS:
-            return ACTIONS_TRANSLATIONS[action]
-        return action
-
     def always_on_resources(self):
         """
         Return the list of resources flagged always on on this node
@@ -3472,8 +3441,6 @@ class Svc(object):
         if self.svc_env != 'PRD' and rcEnv.node_env == 'PRD':
             self.log.error("Abort action for non PRD service on PRD node")
             return 1
-
-        action = self.action_translate(action)
 
         if action not in ACTIONS_ALLOW_ON_FROZEN and \
            'compliance' not in action and \
