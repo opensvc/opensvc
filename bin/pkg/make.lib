@@ -85,7 +85,7 @@ function prepare_chroot {
 	rm -f $CHROOT/opt/opensvc/bin/postinstall.cmd
 
 	DOCDIR=$CHROOT/usr/share/doc/opensvc
-	which rpm >/dev/null 2>&1 && {
+	rpm --test >/dev/null 2>&1 && {
 		DOCDIR=$CHROOT/$(rpm --eval '%{_defaultdocdir}')/opensvc
 	}
 
