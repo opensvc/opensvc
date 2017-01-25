@@ -1784,6 +1784,7 @@ class Node(object):
         from subprocess import Popen
         proc = Popen([sys.executable, exe] + self.options.extra_argv)
         proc.communicate()
+        return proc.returncode
 
     def get_ruser(self, node):
         """
