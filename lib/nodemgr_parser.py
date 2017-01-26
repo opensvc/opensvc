@@ -406,6 +406,12 @@ ACTIONS = {
                 OPT.opt_object,
             ],
          },
+        'pushxtremio': {
+            'msg': 'push XtremIO configuration to collector',
+            'options': [
+                OPT.opt_object,
+            ],
+         },
         'pushibmsvc': {
             'msg': 'push IBM SVC configuration to collector',
             'options': [

@@ -195,6 +195,10 @@ class Node(object):
                     "freenas",
                     schedule_option="no_schedule"
                 ),
+                "pushxtremio": SchedOpts(
+                    "xtremio",
+                    schedule_option="no_schedule"
+                ),
                 "pushgcedisks": SchedOpts(
                     "gcedisks",
                     schedule_option="no_schedule"
@@ -1025,6 +1029,22 @@ class Node(object):
         The pushfreenas scheduler task.
         """
         self.collector.call('push_freenas', self.options.objects)
+
+    def pushxtremio(self):
+        """
+        The pushxtremio action entrypoint.
+        Inventories XtremIO storage arrays.
+        """
+        if self.sched.skip_action("pushxtremio"):
+            return
+        self.task_pushxtremio()
+
+    @scheduler_fork
+    def task_pushxtremio(self):
+        """
+        The pushxtremio scheduler task.
+        """
+        self.collector.call('push_xtremio', self.options.objects)
 
     def pushdcs(self):
         """

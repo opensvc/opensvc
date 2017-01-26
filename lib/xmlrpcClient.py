@@ -1210,6 +1210,29 @@ class Collector(object):
             except:
                 print("error pushing", array.name)
 
+    def push_xtremio(self, objects=[], sync=True):
+        if 'update_xtremio' not in self.proxy_methods:
+           print("'update_xtremio' method is not exported by the collector")
+           return
+        m = __import__('rcXtremio')
+        try:
+            arrays = m.Arrays(objects)
+        except:
+            return
+        for array in arrays:
+            vals = []
+            for key in array.keys:
+                vals.append(getattr(array, 'get_'+key)())
+            args = [array.name, array.keys, vals]
+            if self.auth_node:
+                args += [(rcEnv.uuid, rcEnv.nodename)]
+            try:
+                self.proxy.update_xtremio(*args)
+            except Exception as exc:
+                print("error pushing", array.name, file=sys.stderr)
+                print(exc, file=sys.stderr)
+                raise ex.excError
+
     def push_dcs(self, objects=[], sync=True):
         if 'update_dcs' not in self.proxy_methods:
            print("'update_dcs' method is not exported by the collector")
