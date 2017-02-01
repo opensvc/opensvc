@@ -65,9 +65,15 @@ OPT = Storage({
     "naa": Option(
         "--naa", action="store", dest="naa",
         help="The volume naa identifier"),
+    "mappings": Option(
+        "--mappings", action="append", dest="mappings",
+        help="A <hba_id>:<tgt_id>,<tgt_id>,... mapping used in add map in replacement of --targetgroup and --initiatorgroup. Can be specified multiple times."),
+    "initiators": Option(
+        "--initiators", action="append", dest="initiators",
+        help="An initiator id. Can be specified multiple times."),
     "initiator": Option(
-        "--initiator", action="append", dest="initiators",
-        help="An initiator iqn. Can be specified multiple times."),
+            "--initiator", action="store", dest="initiator",
+            help="An initiator id"),
     "targets": Option(
         "--targets", action="append", dest="targets",
         help="A target name to export the disk through. Can be set multiple times."),
@@ -113,12 +119,14 @@ ACTIONS = {
                 OPT.unaligned_io_alerts,
                 OPT.vaai_tp_alerts,
                 OPT.access,
+                OPT.mappings,
             ],
         },
         "add_map": {
             "msg": "Map a volume to an initiator group and target group",
             "options": [
                 OPT.volume,
+                OPT.mappings,
                 OPT.initiatorgroup,
                 OPT.targetgroup,
             ],
@@ -134,7 +142,6 @@ ACTIONS = {
         "del_map": {
             "msg": "Unmap a volume from an initiator group and target group",
             "options": [
-                OPT.cluster,
                 OPT.mapping,
                 OPT.volume,
                 OPT.initiatorgroup,
@@ -142,11 +149,35 @@ ACTIONS = {
             ],
         },
     },
+    "Modify actions": {
+        "resize_volume": {
+            "msg": "Resize a volume",
+            "options": [
+                OPT.volume,
+                OPT.size,
+            ],
+        },
+    },
     "List actions": {
-        "list_initiatorgroups": {
+        "list_initiators": {
+            "msg": "List configured initiators",
+            "options": [
+                OPT.initiator,
+            ],
+        },
+        "list_initiator_groups": {
             "msg": "List configured initiator groups",
             "options": [
                 OPT.initiatorgroup,
+            ],
+        },
+        "list_initiators_connectivity": {
+            "msg": "List configured initiator groups",
+        },
+        "list_mappings": {
+            "msg": "List configured mappings",
+            "options": [
+                OPT.mapping,
             ],
         },
         "list_targets": {
@@ -155,7 +186,7 @@ ACTIONS = {
                 OPT.target,
             ],
         },
-        "list_targetgroups": {
+        "list_target_groups": {
             "msg": "List configured target groups",
             "options": [
                 OPT.targetgroup,
@@ -240,61 +271,78 @@ class Array(object):
             'targets_details',
         ]
 
-    def delete(self, uri, data=None):
-        if not uri.startswith("http"):
-            uri = self.api + uri
-        api = uri+"/"
-        headers = {'Content-Type': 'application/json'}
-        print(api, data)
-        return
-        response = requests.delete(api, data=json.dumps(data), auth=self.auth, verify=verify, headers=headers)
-        if response.status_code == 200:
-            return
-        data = json.loads(response.content)
+    def convert_ids(self, data):
+        if data is None:
+            return data
+        for key in data:
+            if not isinstance(key, str):
+                continue
+            if not key.endswith("-id"):
+                continue
+	    try:
+                data[key] = int(data[key])
+            except ValueError:
+                pass
         return data
 
-    def post(self, uri, data=None):
+    def delete(self, uri, params=None, data=None):
+        headers = {"Cache-Control": "no-cache"}
+        data = self.convert_ids(data)
         if not uri.startswith("http"):
             uri = self.api + uri
-        api = uri+"/"
-        headers = {'Content-Type': 'application/json'}
-        print(api, data)
-        return
-        r = requests.post(api, data=json.dumps(data), auth=self.auth, verify=verify, headers=headers)
-        data = json.loads(r.content)
-        return self.get(data["links"]["href"])
+        response = requests.delete(uri, params=params, data=json.dumps(data),
+                                   auth=self.auth, verify=verify,
+                                   headers=headers)
+        if response.status_code == 200:
+            return
+        raise ex.excError(response.content)
 
-    def get(self, uri):
+    def put(self, uri, params=None, data=None):
+        headers = {"Cache-Control": "no-cache"}
+        data = self.convert_ids(data)
         if not uri.startswith("http"):
             uri = self.api + uri
-        r = requests.get(uri, auth=self.auth, verify=verify)
+        response = requests.put(uri, params=params, data=json.dumps(data), auth=self.auth,
+                                verify=verify, headers=headers)
+        if response.status_code == 200:
+            return
+        raise ex.excError(response.content)
+
+    def post(self, uri, params=None, data=None):
+        headers = {"Cache-Control": "no-cache"}
+        data = self.convert_ids(data)
+        if not uri.startswith("http"):
+            uri = self.api + uri
+        response = requests.post(uri, params=params, data=json.dumps(data), auth=self.auth,
+                                 verify=verify, headers=headers)
+        ret = json.loads(response.content)
+        if response.status_code == 201:
+            return self.get(ret["links"][0]["href"])
+        raise ex.excError(response.content)
+
+    def get(self, uri, params=None):
+        headers = {"Cache-Control": "no-cache"}
+        if not uri.startswith("http"):
+            uri = self.api + uri
+        r = requests.get(uri, params=params, auth=self.auth, verify=verify)
         return json.loads(r.content)
 
-    def get_dereference(self, uri, key="children"):
-        data = self.get(uri)
-        if key not in data:
-            return data
-        for idx, child in enumerate(data[key]):
-            if "href" in child:
-                data[key][idx] = self.get(child["href"])
-        return data[key]
-
     def get_clusters_details(self):
-        data = self.get_dereference("/clusters", "clusters")
+        data = self.get("/clusters", params={"full": 1})
         return json.dumps(data, indent=8)
 
     def get_targets_details(self):
-        data = self.get_dereference("/targets", "targets")
+        data = self.get("/targets", params={"full": 1})
         return json.dumps(data, indent=8)
 
     def get_volumes_details(self):
-        data = self.get_dereference("/volumes", "volumes")
+        data = self.get("/volumes", params={"full": 1})
         return json.dumps(data, indent=8)
 
     def add_volume(self, name=None, size=None, blocksize=None, tags=None,
                    cluster=None, access=None, vaai_tp_alerts=None,
                    small_io_alerts=None, unaligned_io_alerts=None,
-                   alignment_offset=None, **kwargs):
+                   alignment_offset=None, mappings=None, **kwargs):
         if name is None:
             raise ex.excError("--name is mandatory")
         if size == 0 or size is None:
@@ -305,8 +353,6 @@ class Array(object):
         }
         if cluster is not None:
             d["cluster-id"] = cluster
-        if tags is not None:
-            d["tags"] = tags
         if blocksize is not None:
             d["lb-size"] = blocksize
         if small_io_alerts is not None:
@@ -319,31 +365,140 @@ class Array(object):
             d["vaai-tp-alerts"] = vaai_tp_alerts
         if alignment_offset is not None:
             d["alignment-offset"] = alignment_offset
-        return self.post("/volumes", d)
+        self.post("/volumes", data=d)
+        if mappings:
+            self.add_map(volume=name, mappings=mappings, cluster=cluster)
+        ret = self.get_volumes(volume=name, cluster=cluster)
+        print(json.dumps(ret, indent=4))
 
-    def del_volumes(self, cluster=None, volume=None, **kwargs):
+    def resize_volume(self, volume=None, size=None, cluster=None, **kwargs):
         if volume is None:
             raise ex.excError("--volume is mandatory")
-        if volume == "":
-            raise ex.excError("mapping can not be empty")
-        args = []
+        if volume is "":
+            raise ex.excError("--volume can not be empty")
+        if size == 0 or size is None:
+            raise ex.excError("--size is mandatory")
+        if size.startswith("+"):
+            incr = convert_size(size.lstrip("+"), _to="KB")
+            data = self.get_volumes(cluster=cluster, volume=volume)
+            current_size = int(data["content"]["vol-size"])
+            size = str(current_size + incr)+"K"
+        d = {
+            "vol-size": str(convert_size(size, _to="MB"))+"M",
+        }
         uri = "/volumes"
+        params = {}
         if volume is not None:
             try:
                 int(volume)
                 uri += "/"+str(volume)
             except ValueError:
-                args.append("name=" + volume)
+                params["name"] = volume
         if cluster is not None:
-            args.append("cluster-id=" + cluster)
-        if len(args) > 0:
-            uri += "?" + "&".join(args)
-        return self.delete(uri)
+            d["cluster-id"] = cluster
+        self.put(uri, params=params, data=d)
 
-    def add_map(self, volume=None, initiatorgroup=None, targetgroup=None,
+    def get_volume_mappings(self, cluster=None, volume=None, **kwargs):
+        params = {"full": 1}
+        uri = "/lun-maps"
+        if volume is None:
+            raise ex.excError("--volume is mandatory")
+        data = self.get_volumes(cluster=cluster, volume=volume)
+        vol_name = data["content"]["name"]
+        params["filter"] = "vol-name:eq:"+vol_name
+        if cluster is not None:
+            params["cluster-id"] = cluster
+        data = self.get(uri, params=params)
+        return data
+
+    def del_volume_mappings(self, cluster=None, volume=None, **kwargs):
+        data = self.get_volume_mappings(cluster=cluster, volume=volume)
+        for mapping in data["lun-maps"]:
+            self.del_map(cluster=cluster, mapping=mapping["index"])
+
+    def del_volume(self, cluster=None, volume=None, **kwargs):
+        if volume is None:
+            raise ex.excError("--volume is mandatory")
+        if volume == "":
+            raise ex.excError("volume can not be empty")
+        self.del_volume_mappings(cluster=cluster, volume=volume)
+        params = {}
+        uri = "/volumes"
+        try:
+            int(volume)
+            uri += "/"+str(volume)
+        except ValueError:
+            params["name"] = volume
+        if cluster is not None:
+            params["cluster-id"] = cluster
+        return self.delete(uri, params=params)
+
+    def convert_hba_id(self, hba_id):
+        hba_id = hba_id[0:2] + ":" + \
+                 hba_id[2:4] + ":" + \
+                 hba_id[4:6] + ":" + \
+                 hba_id[6:8] + ":" + \
+                 hba_id[8:10] + ":" + \
+                 hba_id[10:12] + ":" + \
+                 hba_id[12:14] + ":" + \
+                 hba_id[14:16]
+        return hba_id
+
+    def get_hba_initiatorgroup(self, hba_id, cluster=None):
+        params = {"full": 1}
+        uri = "/initiators"
+        hba_id = self.convert_hba_id(hba_id)
+        params["filter"] = "port-address:eq:"+hba_id
+        if cluster is not None:
+            params["cluster-id"] = cluster
+        data = self.get(uri, params=params)
+        if len(data["initiators"]) == 0:
+            raise ex.excError("no initiator found with port-address=%s" % hba_id)
+        if len(data["initiators"][0]["ig-id"]) == 0:
+            raise ex.excError("initiator %s found in no initiatorgroup" % hba_id)
+        return data["initiators"][0]["ig-id"][-1]
+
+    def get_target_targetgroup(self, hba_id, cluster=None):
+        params = {"full": 1}
+        uri = "/targets"
+        hba_id = self.convert_hba_id(hba_id)
+        params["filter"] = "port-address:eq:"+hba_id
+        if cluster is not None:
+            params["cluster-id"] = cluster
+        data = self.get(uri, params=params)
+        if len(data["targets"]) == 0:
+            raise ex.excError("no target found with port-address=%s" % hba_id)
+        if len(data["targets"][0]["tg-id"]) == 0:
+            raise ex.excError("target %s found in no targetgroup" % hba_id)
+        return data["targets"][0]["tg-id"][-1]
+
+    def translate_mappings(self, mappings, cluster=None):
+        internal_mappings = {}
+        for mapping in mappings:
+            elements = mapping.split(":")
+            hba_id = elements[0]
+            targets = elements[-1].split(",")
+            ig = self.get_hba_initiatorgroup(hba_id)
+            internal_mappings[ig] = set([self.get_target_targetgroup(target, cluster=cluster) for target in targets])
+        return internal_mappings
+
+    def add_map(self, volume=None, mappings=None, initiatorgroup=None, targetgroup=None,
                 cluster=None, lun=None, **kwargs):
         if volume is None:
             raise ex.excError("--volume is mandatory")
+        results = []
+        if mappings is not None and initiatorgroup is None:
+            internal_mappings = self.translate_mappings(mappings, cluster=cluster)
+            for ig, tgs in internal_mappings.items():
+                for tg in tgs:
+                    results.append(self._add_map(volume=volume, initiatorgroup=ig, targetgroup=tg, cluster=cluster, lun=lun, **kwargs))
+        else:
+            results.append(self._add_map(volume=volume, initiatorgroup=initiatorgroup, targetgroup=targetgroup, cluster=cluster, lun=lun, **kwargs))
+        print(json.dumps(results, indent=4))
+        return results
+
+    def _add_map(self, volume=None, initiatorgroup=None, targetgroup=None,
+                 cluster=None, lun=None, **kwargs):
         if initiatorgroup is None:
             raise ex.excError("--initiatorgroup is mandatory")
         d = {
@@ -356,41 +511,37 @@ class Array(object):
             d["cluster-id"] = cluster
         if lun is not None:
             d["lun"] = lun
-        return self.post("/lun-maps", d)
+        return self.post("/lun-maps", data=d)
 
     def del_map(self, mapping=None, cluster=None, **kwargs):
         if mapping is None:
             raise ex.excError("--mapping is mandatory")
         if mapping == "":
             raise ex.excError("mapping can not be empty")
-        args = []
+        params = {}
         uri = "/lun-maps"
         if mapping is not None:
             try:
                 int(mapping)
                 uri += "/"+str(mapping)
             except ValueError:
-                args.append("name=" + mapping)
+                params["name"] = mapping
         if cluster is not None:
-            args.append("cluster-id=" + cluster)
-        if len(args) > 0:
-            uri += "?" + "&".join(args)
-        return self.delete(uri)
+            params["cluster-id"] = cluster
+        return self.delete(uri, params=params)
 
-    def list_targetgroups(self, cluster=None, targetgroup=None, **kwargs):
-        args = []
+    def list_target_groups(self, cluster=None, targetgroup=None, **kwargs):
+        params = {"full": 1}
         uri = "/target-groups"
         if targetgroup is not None:
             try:
                 int(targetgroup)
                 uri += "/"+str(targetgroup)
             except ValueError:
-                args.append("name=" + targetgroup)
+                params["name"] = targetgroup
         if cluster is not None:
-            args.append("cluster-id=" + cluster)
-        if len(args) > 0:
-            uri += "?" + "&".join(args)
-        data = self.get(uri)
+            params["cluster-id"] = cluster
+        data = self.get(uri, params=params)
         if "target-groups" in data:
             print(json.dumps(data["target-groups"], indent=8))
         elif "content" in data:
@@ -398,20 +549,71 @@ class Array(object):
         else:
             print(json.dumps(data, indent=8))
 
+    def get_initiators(self, cluster=None, initiator=None, **kwargs):
+        params = {"full": 1}
+        uri = "/initiators"
+        if initiator is not None:
+            try:
+                int(initiator)
+                uri += "/"+str(initiator)
+            except ValueError:
+                params["name"] = initiator
+        if cluster is not None:
+            params["cluster-id"] = cluster
+        data = self.get(uri, params=params)
+        return data
+
+    def list_initiators(self, cluster=None, initiator=None, **kwargs):
+        data = self.get_initiators(cluster=cluster, initiator=initiator, **kwargs)
+        if "initiators" in data:
+            print(json.dumps(data["initiators"], indent=8))
+        elif "content" in data:
+            print(json.dumps(data["content"], indent=8))
+        else:
+            print(json.dumps(data, indent=8))
+
+    def list_initiator_groups(self, cluster=None, initiatorgroup=None, **kwargs):
+        params = {"full": 1}
+        uri = "/initiator-groups"
+        if initiatorgroup is not None:
+            try:
+                int(initiatorgroup)
+                uri += "/"+str(initiatorgroup)
+            except ValueError:
+                params["name"] = initiatorgroup
+        if cluster is not None:
+            params["cluster-id"] = cluster
+        data = self.get(uri, params=params)
+        if "initiator-groups" in data:
+            print(json.dumps(data["initiator-groups"], indent=8))
+        elif "content" in data:
+            print(json.dumps(data["content"], indent=8))
+        else:
+            print(json.dumps(data, indent=8))
+
+    def list_initiators_connectivity(self, cluster=None, **kwargs):
+        params = {}
+        uri = "/initiators-connectivity"
+        if cluster is not None:
+            params["cluster-id"] = cluster
+        data = self.get(uri, params=params)
+        if "content" in data:
+            print(json.dumps(data["content"], indent=8))
+        else:
+            print(json.dumps(data, indent=8))
+
     def list_targets(self, cluster=None, target=None, **kwargs):
-        args = []
+        params = {"full": 1}
         uri = "/targets"
         if target is not None:
             try:
                 int(target)
                 uri += "/"+str(target)
             except ValueError:
-                args.append("name=" + target)
+                params["name"] = target
         if cluster is not None:
-            args.append("cluster-id=" + cluster)
-        if len(args) > 0:
-            uri += "?" + "&".join(args)
-        data = self.get(uri)
+            params["cluster-id"] = cluster
+        data = self.get(uri, params=params)
         if "targets" in data:
             print(json.dumps(data["targets"], indent=8))
         elif "content" in data:
@@ -419,20 +621,41 @@ class Array(object):
         else:
             print(json.dumps(data, indent=8))
 
-    def list_volumes(self, cluster=None, volume=None, **kwargs):
-        args = []
+    def list_mappings(self, cluster=None, mapping=None, **kwargs):
+        params = {"full": 1}
+        uri = "/lun-maps"
+        if mapping is not None:
+            try:
+                int(mapping)
+                uri += "/"+str(mapping)
+            except ValueError:
+                params["name"] = mapping
+        if cluster is not None:
+            params["cluster-id"] = cluster
+        data = self.get(uri, params=params)
+        if "targets" in data:
+            print(json.dumps(data["lun-maps"], indent=8))
+        elif "content" in data:
+            print(json.dumps(data["content"], indent=8))
+        else:
+            print(json.dumps(data, indent=8))
+
+    def get_volumes(self, cluster=None, volume=None, **kwargs):
+        params = {"full": 1}
         uri = "/volumes"
         if volume is not None:
             try:
                 int(volume)
                 uri += "/"+str(volume)
             except ValueError:
-                args.append("name=" + volume)
+                params["name"] = volume
         if cluster is not None:
-            args.append("cluster-id=" + cluster)
-        if len(args) > 0:
-            uri += "?" + "&".join(args)
-        data = self.get(uri)
+            params["cluster-id"] = cluster
+        data = self.get(uri, params=params)
+        return data
+
+    def list_volumes(self, cluster=None, volume=None, **kwargs):
+        data = self.get_volumes(cluster=cluster, volume=volume, **kwargs)
         if "volumes" in data:
             print(json.dumps(data["volumes"], indent=8))
         elif "content" in data:
