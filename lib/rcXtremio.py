@@ -329,15 +329,15 @@ class Array(object):
 
     def get_clusters_details(self):
         data = self.get("/clusters", params={"full": 1})
-        return json.dumps(data, indent=8)
+        return json.dumps(data["clusters"], indent=8)
 
     def get_targets_details(self):
         data = self.get("/targets", params={"full": 1})
-        return json.dumps(data, indent=8)
+        return json.dumps(data["targets"], indent=8)
 
     def get_volumes_details(self):
         data = self.get("/volumes", params={"full": 1})
-        return json.dumps(data, indent=8)
+        return json.dumps(data["volumes"], indent=8)
 
     def add_volume(self, name=None, size=None, blocksize=None, tags=None,
                    cluster=None, access=None, vaai_tp_alerts=None,
