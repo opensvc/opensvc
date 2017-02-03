@@ -3,8 +3,10 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import os
 import sys
 import json
+import socket
 from StringIO import StringIO
 
 import svcmgr
@@ -81,6 +83,8 @@ def test_create_empty():
 def test_set_default():
     ret = svcmgr.main(argv=["-s", "unittest", "set", "--param", "comment", "--value", UNICODE_STRING])
     assert ret == 0
+    ret = svcmgr.main(argv=["-s", "unittest", "set", "--param", "env.list_entry_ref_indirect_eval2", "--value", "{nodes[$(0//(3//{#nodes}))]}"])
+    assert ret == 0
 
 def test_get_default():
     _stdout = sys.stdout
@@ -104,7 +108,7 @@ def test_unset_default():
     assert ret == 0
 
 def test_get_default_not_found():
-    _stderr = sys.stdout
+    _stderr = sys.stderr
 
     try:
         err = StringIO()
@@ -116,6 +120,21 @@ def test_get_default_not_found():
 
     assert ret == 1
     assert "not found" in output
+
+def test_get_list_entry_ref_indirect_eval2():
+    nodename = socket.gethostname().lower()
+    _stdout = sys.stdout
+
+    try:
+        out = StringIO()
+        sys.stdout = out
+        ret = svcmgr.main(argv=["-s", "unittest", "get", "--param", "env.list_entry_ref_indirect_eval2", "--eval"])
+        output = out.getvalue().strip()
+    finally:
+        sys.stdout = _stdout
+
+    assert ret == 0
+    assert output == nodename
 
 def test_validate_config():
     ret = svcmgr.main(argv=["validate", "config", "-s", "unittest"])
