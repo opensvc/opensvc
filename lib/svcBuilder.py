@@ -3793,8 +3793,9 @@ def create(svcname, resources=[], interactive=False, provision=False):
         return {"ret": 1}
     cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
     if os.path.exists(cf):
-        print(cf, "already exists", file=sys.stderr)
-        return {"ret": 1}
+        import shutil
+        print(cf, "already exists. save as "+svcname+".conf.bak", file=sys.stderr)
+        shutil.move(cf, os.path.join(rcEnv.paths.pathtmp, svcname+".conf.bak"))
     try:
        f = open(cf, 'w')
     except:
