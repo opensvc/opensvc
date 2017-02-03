@@ -83,7 +83,9 @@ OPT = Storage({
     "initiatorgroup_id": Option(
         "--initiatorgroup-id", action="store", type=int, dest="initiatorgroup_id",
         help="The initiator group object id"),
-
+    "mappings": Option(
+        "--mappings", action="append", dest="mappings",
+        help="A <hba_id>:<tgt_id>,<tgt_id>,... mapping used in add map in replacement of --targetgroup and --initiatorgroup. Can be specified multiple times."),
 })
 
 GLOBAL_OPTS = [
@@ -103,6 +105,7 @@ ACTIONS = {
                 OPT.target,
                 OPT.blocksize,
                 OPT.secure_tpc,
+                OPT.mappings,
             ],
         },
         "add_iscsi_zvol": {
@@ -116,6 +119,7 @@ ACTIONS = {
                 OPT.secure_tpc,
                 OPT.compression,
                 OPT.dedup,
+                OPT.mappings,
             ],
         },
         "add_iscsi_initiatorgroup": {
@@ -589,10 +593,16 @@ class Freenas(object):
             raise ex.excError(buff)
 
     def add_iscsi_file(self, name=None, size=None, volume=None, targets=None,
-                       insecure_tpc=True, blocksize=512, **kwargs):
-        for key in ["name", "size", "volume", "targets"]:
+                       mappings=None, insecure_tpc=True, blocksize=512, **kwargs):
+        for key in ["name", "size", "volume"]:
             if locals()[key] is None:
                  raise ex.excError("'%s' key is mandatory" % key)
+
+        if targets is None and mappings is None:
+            raise ex.excError("'targets' or 'mappings' must be specified")
+
+        if mappings is not None and targets is None:
+            targets = self.translate_mappings(mappings)
 
         data = self.add_iscsi_file_extent(name=name, size=size, volume=volume, **kwargs)
 
@@ -614,11 +624,24 @@ class Freenas(object):
         self.del_iscsi_extent(data["id"])
         print(json.dumps(data, indent=8))
 
+    def translate_mappings(self, mappings):
+        targets = set()
+        for mapping in mappings:
+            elements = mapping.split(":")
+            targets |= set(elements[-1].split(","))
+        targets = list(targets)
+        return targets
+
     def add_iscsi_zvol(self, name=None, size=None, volume=None, targets=None,
-                       insecure_tpc=True, blocksize=512, **kwargs):
-        for key in ["name", "size", "volume", "targets"]:
+                       mappings=None, insecure_tpc=True, blocksize=512, **kwargs):
+        for key in ["name", "size", "volume"]:
             if locals()[key] is None:
                  raise ex.excError("'%s' key is mandatory" % key)
+        if targets is None and mappings is None:
+            raise ex.excError("'targets' or 'mappings' must be specified")
+
+        if mappings is not None and targets is None:
+            targets = self.translate_mappings(mappings)
 
         data = self.add_iscsi_zvol_extent(name=name, size=size, volume=volume, **kwargs)
 
