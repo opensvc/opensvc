@@ -182,6 +182,16 @@ ACTIONS = {
             ],
         },
     },
+    "Modify actions": {
+        "resize_zvol": {
+            "msg": "Resize a zvol",
+            "options": [
+                OPT.name,
+                OPT.naa,
+                OPT.size,
+            ],
+        },
+    },
     "List actions": {
         "list_volume": {
             "msg": "List configured volumes",
@@ -282,6 +292,12 @@ class Freenas(object):
         headers = {'Content-Type': 'application/json'}
         r = requests.delete(api, data=json.dumps(data), auth=self.auth, verify=verify, headers=headers)
         return r
+
+    def put(self, uri, data=None):
+        api = self.api+uri+"/"
+        headers = {'Content-Type': 'application/json'}
+        r = requests.put(api, data=json.dumps(data), auth=self.auth, verify=verify, headers=headers)
+        return r.content
 
     def post(self, uri, data=None):
         api = self.api+uri+"/"
@@ -461,6 +477,39 @@ class Freenas(object):
           "dedup": dedup,
         }
         buff = self.post('/storage/volume/%s/zvols/' % volume, d)
+        try:
+            return json.loads(buff)
+        except ValueError:
+            raise ex.excError(buff)
+
+    def get_zvol(self, volume=None, name=None):
+        buff = self.get('/storage/volume/%s/zvols/%s' % (volume, name))
+        try:
+            return json.loads(buff)
+        except ValueError:
+            raise ex.excError(buff)
+
+    def resize_zvol(self, name=None, naa=None, size=None, **kwargs):
+        if size is None:
+            raise ex.excError("'size' key is mandatory" % key)
+        if name is None and naa is None:
+            raise ex.excError("'name' or 'naa' must be specified" % key)
+        data = self.get_iscsi_extent(name=name, naa=naa)
+        volume = self.extent_volume(data)
+        if data is None:
+            raise ex.excError("zvol not found")
+        if size.startswith("+"):
+            incr = convert_size(size.lstrip("+"), _to="MB")
+            zvol_data = self.get_zvol(volume=volume, name=data["iscsi_target_extent_name"])
+            current_size = convert_size(int(zvol_data["volsize"]), _to="MB")
+            size = str(current_size + incr) + "MB"
+        else:
+            size = str(convert_size(size, _to="MB")) + "MB"
+
+        d = {
+          "volsize": size,
+        }
+        buff = self.put('/storage/volume/%s/zvols/%s' % (volume, data["iscsi_target_extent_name"]), d)
         try:
             return json.loads(buff)
         except ValueError:
@@ -660,11 +709,15 @@ class Freenas(object):
         data = self.get_iscsi_extent(name=name, naa=naa)
         if data is None:
             return
-        path = data["iscsi_target_extent_path"].split("/")
-        volume = path[path.index("zvol")+1]
+        volume = self.extent_volume(data)
         self.del_iscsi_extent(data["id"])
         self.del_zvol(name=name, volume=volume)
         print(json.dumps(data, indent=8))
+
+    def extent_volume(self, data):
+        path = data["iscsi_target_extent_path"].split("/")
+        volume = path[path.index("zvol")+1]
+        return volume
 
     def list_volume(self, **kwargs):
         data = json.loads(self.get_volumes())

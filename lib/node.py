@@ -2338,9 +2338,12 @@ class Node(object):
         and installs it as the service configuration file.
         """
         fpath = os.path.join(rcEnv.pathetc, svcname+'.conf')
-        data = self.collector_rest_get(
-            "/provisioning_templates/"+template+"?props=tpl_definition&meta=0"
-        )
+        try:
+            int(template)
+            url = "/provisioning_templates/"+str(template)+"?props=tpl_definition&meta=0"
+        except ValueError:
+            url = "/provisioning_templates?filters=tpl_name="+template+"&props=tpl_definition&meta=0"
+        data = self.collector_rest_get(url)
         if "error" in data:
             raise ex.excError(data["error"])
         if len(data["data"]) == 0:
