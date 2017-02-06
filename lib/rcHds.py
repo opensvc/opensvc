@@ -1,3 +1,4 @@
+from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall
 import rcExceptions as ex
 import os
@@ -46,6 +47,11 @@ class Hdss(object):
             except:
                 bin = None
             try:
+                jre_path = conf.get(s, 'jre_path')
+                os.environ["HDVM_CLI_JRE_PATH"] = jre_path
+            except:
+                path
+            try:
                 url = conf.get(s, 'url')
                 arrays = conf.get(s, 'array').split()
                 username = conf.get(s, 'username')
@@ -77,7 +83,7 @@ class Hdss(object):
 
 class Hds(object):
     def __init__(self, serial, url, username, password, bin=None):
-        self.keys = ['lu', 'arraygroup', 'port']
+        self.keys = ['lu', 'arraygroup', 'port', 'pool']
         self.name = serial
         self.serial = serial
         self.url = url
@@ -93,6 +99,12 @@ class Hds(object):
 
     def get_lu(self):
         cmd = ['GetStorageArray', 'subtarget=Logicalunit', 'lusubinfo=Path,LDEV,VolumeConnection']
+        print(' '.join(cmd))
+        out, err, ret = self._cmd(cmd)
+        return out
+
+    def get_pool(self):
+        cmd = ['GetStorageArray', 'subtarget=Pool']
         print(' '.join(cmd))
         out, err, ret = self._cmd(cmd)
         return out
