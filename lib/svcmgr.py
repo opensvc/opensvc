@@ -230,6 +230,8 @@ def _main(node, argv=None):
         node.options.format = options.format
     except AttributeError:
         pass
+    node.options.single_service = options.svcs is not None and \
+                                  len(options.svcs.split(",")) == 1
 
     build_kwargs = get_build_kwargs(optparser, options, action)
 

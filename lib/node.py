@@ -2158,7 +2158,7 @@ class Node(object):
                     err += ret
 
         if need_aggregate:
-            if len(self.svcs) == 1:
+            if self.options.single_service:
                 svcname = self.svcs[0].svcname
                 if svcname not in data.outs:
                     return 1
