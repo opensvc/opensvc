@@ -369,7 +369,7 @@ class Array(object):
         if mappings:
             self.add_map(volume=name, mappings=mappings, cluster=cluster)
         ret = self.get_volumes(volume=name, cluster=cluster)
-        print(json.dumps(ret, indent=4))
+        return ret
 
     def resize_volume(self, volume=None, size=None, cluster=None, **kwargs):
         if volume is None:
@@ -397,6 +397,8 @@ class Array(object):
         if cluster is not None:
             d["cluster-id"] = cluster
         self.put(uri, params=params, data=d)
+        ret = self.get_volumes(volume=volume, cluster=cluster)
+        return ret
 
     def get_volume_mappings(self, cluster=None, volume=None, **kwargs):
         params = {"full": 1}
@@ -494,7 +496,6 @@ class Array(object):
                     results.append(self._add_map(volume=volume, initiatorgroup=ig, targetgroup=tg, cluster=cluster, lun=lun, **kwargs))
         else:
             results.append(self._add_map(volume=volume, initiatorgroup=initiatorgroup, targetgroup=targetgroup, cluster=cluster, lun=lun, **kwargs))
-        print(json.dumps(results, indent=4))
         return results
 
     def _add_map(self, volume=None, initiatorgroup=None, targetgroup=None,
@@ -670,7 +671,9 @@ def do_action(action, array_name=None, **kwargs):
         raise ex.excError("array %s not found" % array_name)
     if not hasattr(array, action):
         raise ex.excError("not implemented")
-    getattr(array, action)(**kwargs)
+    ret = getattr(array, action)(**kwargs)
+    if ret is not None:
+        print(json.dumps(ret, indent=4))
 
 def main():
     parser = OptParser(prog=PROG, options=OPT, actions=ACTIONS,
