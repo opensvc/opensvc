@@ -1001,7 +1001,7 @@ class Collector(object):
             return
         m = __import__('rcHds')
         try:
-            hdss = m.Hdss(objects)
+            hdss = m.Arrays(objects)
         except Exception as e:
             print(e, file=sys.stderr)
             return

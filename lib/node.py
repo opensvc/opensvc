@@ -1792,13 +1792,25 @@ class Node(object):
             raise ex.excError("can not determine array driver (no --array)")
 
         self.load_auth_config()
-        if not self.auth_config.has_section(array_name):
-            raise ex.excError("%s must have a '%s' section" % (rcEnv.authconf, array_name))
 
-        if not self.auth_config.has_option(array_name, "type"):
-            raise ex.excError("%s must have a '%s.type' option" % (rcEnv.authconf, array_name))
+        section = None
 
-        driver = self.auth_config.get(array_name, "type")
+        for _section in self.auth_config.sections():
+            if section == array_name:
+                section = _section
+                break
+            if self.auth_config.has_option(_section, "array") and \
+               array_name in self.auth_config.get(_section, "array").split():
+                section = _section
+                break
+
+        if section is None:
+            raise ex.excError("array '%s' not found in %s" % (array_name, rcEnv.authconf))
+
+        if not self.auth_config.has_option(section, "type"):
+            raise ex.excError("%s must have a '%s.type' option" % (rcEnv.authconf, section))
+
+        driver = self.auth_config.get(section, "type")
         rtype = driver[0].upper() + driver[1:].lower()
         exe = os.path.join(rcEnv.paths.pathlib, 'rc' + rtype + '.py')
         from subprocess import Popen
