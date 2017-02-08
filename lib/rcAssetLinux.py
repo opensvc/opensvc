@@ -492,10 +492,13 @@ class Asset(rcAsset.Asset):
         for hba_id, hba_type, host in hbas:
             if not hba_type.startswith('fc'):
                 continue
-            for target in glob.glob('/sys/class/fc_transport/target%s:*/port_name'%host):
+	    targets = glob.glob('/sys/class/fc_transport/target%s:*/port_name'%host)
+	    targets += glob.glob('/sys/class/fc_remote_ports/rport-%s:*/port_name'%host)
+            for target in targets:
                 with open(target, 'r') as f:
                     tgt_id = f.read().strip('0x').strip('\n')
-                l.append((hba_id, tgt_id))
+                if (hba_id, tgt_id) not in l:
+                    l.append((hba_id, tgt_id))
 
         # iscsi
         hba_id = self.get_iscsi_hba_id()
