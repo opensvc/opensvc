@@ -34,7 +34,7 @@ OPT = Storage({
         help="A <hba_id>:<tgt_id>,<tgt_id>,... mapping used in add map in replacement of --targetgroup and --initiatorgroup. Can be specified multiple times."),
     "name": Option(
         "--name", action="store", dest="name",
-        help="A ldev name"),
+        help="A logical unit label"),
     "devnum": Option(
         "--devnum", action="store", dest="devnum",
         help="A XX:CU:LDEV logical unit name"),
@@ -57,20 +57,42 @@ ACTIONS = {
                 OPT.mappings,
             ],
         },
+        "add_map": {
+            "msg": "Present a disk",
+            "options": [
+                OPT.devnum,
+                OPT.mappings,
+                OPT.lun,
+            ],
+        },
     },
     "Delete actions": {
         "del_disk": {
             "msg": "Delete a disk",
             "options": [
-                OPT.name,
+                OPT.devnum,
+            ],
+        },
+        "del_map": {
+            "msg": "Unpresent a disk",
+            "options": [
+                OPT.devnum,
+                OPT.mappings,
             ],
         },
     },
     "Modify actions": {
+        "rename_disk": {
+            "msg": "Rename a disk",
+            "options": [
+                OPT.devnum,
+                OPT.name,
+            ],
+        },
         "resize_disk": {
             "msg": "Resize a disk",
             "options": [
-                OPT.name,
+                OPT.devnum,
                 OPT.size,
             ],
         },
@@ -179,15 +201,18 @@ class Array(object):
         else:
             self.bin = bin
 
-    def cmd(self, cmd, scoped=True):
+    def cmd(self, cmd, scoped=True, xml=True):
         if which(self.bin) is None:
             raise ex.excError("Can not find %s"%self.bin)
         l = [
             self.bin, self.url, cmd[0],
             "-u", self.username,
             "-p", self.password,
-            "-f", "xml",
         ]
+        if xml:
+            l += [
+                "-f", "xml",
+            ]
         if scoped:
             l += [
                 "serialnum="+self.serial,
@@ -200,6 +225,66 @@ class Array(object):
         if ret != 0:
             raise ex.excError(err)
         return out, err, ret
+
+    def parse(self, out):
+        lines = out.splitlines()
+
+        if lines[0] == "RESPONSE:":
+            # discard the "RESPONSE:" first line
+            lines = lines[1:]
+
+        def get_key_val(line):
+            idx = line.index("=")
+            key = line[:idx].strip()
+            val = line[idx+1:].strip()
+            try:
+                val = int(val.replace(" ", "").replace(",", ""))
+            except ValueError:
+                pass
+            return key, val
+
+        def _parse_instance(lines, start, ref_indent):
+            #print("parse instance", start, lines[start-1])
+            data = {}
+            nidx = -1
+            for idx, line in enumerate(lines[start:]):
+                if nidx > 0 and start+idx < nidx:
+                    continue
+                indent = len(line) - len(line.lstrip())
+                if indent < ref_indent:
+                    return data, start+idx
+                if line.strip().startswith("List of "):
+                    obj_type = line.strip().split()[3]
+                    data[obj_type], nidx = _parse_list(lines, start+idx+1)
+                try:
+                    key, val = get_key_val(line)
+                    data[key] = val
+                except ValueError:
+                    pass
+            return data, start+idx
+
+        def _parse_list(lines, start=0):
+            #if start > 0:
+            #    print("parse list    ", start, lines[start-1])
+            data = []
+            nidx = -1
+            ref_indent = len(lines[start]) - len(lines[start].lstrip())
+            marker = lines[start]
+            for idx, line in enumerate(lines[start:]):
+                if nidx > 0 and start+idx < nidx:
+                    continue
+                indent = len(line) - len(line.lstrip())
+                if indent < ref_indent:
+                    return data, start+idx
+                if indent > ref_indent:
+                    continue
+                if line == marker:
+                    instance, nidx = _parse_instance(lines, start+idx+1, indent)
+                    data.append(instance)
+            return data, start+idx
+
+        data, nidx =_parse_list(lines)
+        return data
 
     def get_array_data(self, scoped=True):
         cmd = ['GetStorageArray']
@@ -218,12 +303,45 @@ class Array(object):
         out, err, ret = self.cmd(cmd)
         tree = fromstring(out)
         data = []
-        for elem in tree.getiterator("LogicalUnit"):
-            data.append(elem.attrib)
+        for e_lu in tree.getiterator("LogicalUnit"):
+            lu = e_lu.attrib
+            for e_ldev in e_lu.getiterator("LDEV"):
+                ldev = e_ldev.attrib
+                for e_label in e_ldev.getiterator("ObjectLabel"):
+                    lu["label"] = e_label.attrib["label"]
+            data.append(lu)
         return data
 
     def get_lu(self):
         return json.dumps(self.get_lu_data(), indent=4)
+
+    @lazy
+    def lu_data(self):
+        return self.get_lu_data()
+
+    def to_devnum(self, devnum):
+        devnum = str(devnum)
+        if ":" in devnum:
+            # 00:00:00 or 00:00 format
+            devnum = devnum.replace(":", "")
+            return str(int(devnum, 16))
+        if "." in devnum:
+            # <serial>.<culd> format (collector inventory fmt)
+            devnum = devnum.split(".")[-1]
+            return str(int(devnum, 16))
+        if len(devnum) in (32, 33):
+            # wwid format
+            devnum = devnum[-4:]
+            return str(int(devnum, 16))
+
+        return devnum
+
+    def get_logicalunit(self, devnum=None):
+        if devnum is None:
+            return
+        for lu in self.lu_data:
+            if lu["devNum"] == devnum:
+                return lu
 
     def get_pool_data(self):
         cmd = ['GetStorageArray', 'subtarget=Pool']
@@ -260,7 +378,7 @@ class Array(object):
         data = []
         for elem in tree.getiterator("Port"):
             port = elem.attrib
-            port["worldWidePortName"] = port["worldWidePortName"].replace(".", "")
+            port["worldWidePortName"] = port["worldWidePortName"].replace(".", "").lower()
             data.append(port)
         return data
 
@@ -272,17 +390,21 @@ class Array(object):
         return json.dumps(self.get_port_data(), indent=4)
 
     def get_domain_data(self):
-        cmd = ['GetStorageArray', 'subtarget=HostStorageDomain', 'hsdsubinfo=WWN']
+        cmd = ['GetStorageArray', 'subtarget=HostStorageDomain', 'hsdsubinfo=WWN,Path']
         out, err, ret = self.cmd(cmd)
         tree = fromstring(out)
         data = []
         for elem in tree.getiterator("HostStorageDomain"):
             d = elem.attrib
             d["WWN"] = []
+            d["Path"] = []
             for subelem in elem.getiterator("WWN"):
                 wwn = subelem.attrib
-                wwn["WWN"] = wwn["WWN"].replace(".", "")
+                wwn["WWN"] = wwn["WWN"].replace(".", "").lower()
                 d["WWN"].append(wwn)
+            for subelem in elem.getiterator("Path"):
+                path = subelem.attrib
+                d["Path"].append(path)
             data.append(d)
         return data
 
@@ -291,15 +413,27 @@ class Array(object):
         return self.get_domain_data()
 
     def get_target_port(self, target):
-        for port in self.port_data():
+        for port in self.port_data:
             if target == port["worldWidePortName"]:
                 return port
 
+    def get_hba_domain_used_lun_ids(self, hba_id):
+        domain = self.get_hba_domain(hba_id)
+        return [int(path["LUN"]) for path in domain["Path"]]
+
+    def get_hba_free_lun_id(self, hba_ids):
+        used_lun_ids = set()
+        for hba_id in hba_ids:
+            used_lun_ids |= set(self.get_hba_domain_used_lun_ids(hba_id))
+        for lun_id in range(65536):
+            if lun_id not in used_lun_ids:
+                return lun_id
+
     def get_hba_domain(self, hba_id):
-        for hg in self.domain_data():
-            for wwn in hg["WWN"]:
+        for domain in self.domain_data:
+            for wwn in domain["WWN"]:
                 if hba_id == wwn["WWN"]:
-                    return hg
+                    return domain
 
     def get_pool_id(self, poolname):
         for pool in self.pool_data:
@@ -341,23 +475,81 @@ class Array(object):
             hba_id = elements[0]
             targets = elements[-1].split(",")
             domain = self.get_hba_domain(hba_id)["domainID"]
-            internal_mappings[domain] = set([self.get_target_port(target)["displayName"] for target in targets])
+            if domain not in internal_mappings:
+                internal_mappings[domain] = set()
+            for target in targets:
+                tgt = self.get_target_port(target)
+                if tgt is None:
+                    continue
+                internal_mappings[domain].add(tgt["displayName"])
         return internal_mappings
 
-    def add_map(self, devnum=None, mappings=None, lun=None, name=None, **kwargs):
+    def del_map(self, devnum=None, mappings=None, **kwargs):
         if devnum is None:
             raise ex.excError("--devnum is mandatory")
+        devnum = self.to_devnum(devnum)
+        results = []
+        if mappings is not None:
+            internal_mappings = self.translate_mappings(mappings)
+        else:
+            internal_mappings = {}
+            for dom in self.domain_data:
+                for path in dom["Path"]:
+                    if devnum == path["devNum"]:
+                        domain = path["domainID"]
+                        portname = path["portName"]
+                        if domain not in internal_mappings:
+                            internal_mappings[domain] = set()
+                        internal_mappings[domain].add(portname)
+
+        for domain, portnames in internal_mappings.items():
+            for portname in portnames:
+                result = self._del_map(devnum=devnum, domain=domain, portname=portname, **kwargs)
+                if result is not None:
+                    results.append(result)
+        if len(results) > 0:
+            return results
+
+    def _del_map(self, devnum=None, domain=None, portname=None, **kwargs):
+        if devnum is None:
+            raise ex.excError("--devnum is mandatory")
+        if domain is None:
+            raise ex.excError("--domain is mandatory")
+        if portname is None:
+            raise ex.excError("--portname is mandatory")
+        cmd = [
+            "deletelun",
+            "devnum="+str(devnum),
+            "portname="+portname,
+            "domain="+domain,
+        ]
+        out, err, ret = self.cmd(cmd, xml=False)
+        if ret != 0:
+            raise ex.excError(err)
+
+    def add_map(self, devnum=None, mappings=None, lun=None, **kwargs):
+        if devnum is None:
+            raise ex.excError("--devnum is mandatory")
+        devnum = self.to_devnum(devnum)
         if mappings is None:
             raise ex.excError("--mappings is mandatory")
+        if lun is None:
+            hba_ids = [mapping.split(":")[0] for mapping in mappings]
+            lun = self.get_hba_free_lun_id(hba_ids)
+        if lun is None:
+            raise ex.excError("Unable to find a free lun id")
         results = []
         if mappings is not None:
             internal_mappings = self.translate_mappings(mappings)
             for domain, portnames in internal_mappings.items():
                 for portname in portnames:
-                    results.append(self._add_map(devnum=devnum, domain=domain, portname=portname, lun=lun, name=name, **kwargs))
-        return results
+                    result = self._add_map(devnum=devnum, domain=domain, portname=portname, lun=lun, **kwargs)
+                    if result is not None:
+                        results.append(result)
+        if len(results) > 0:
+            return results
 
-    def _add_map(self, devnum=None, domain=None, portname=None, lun=None, name=None, **kwargs):
+    def _add_map(self, devnum=None, domain=None, portname=None, lun=None, **kwargs):
         if devnum is None:
             raise ex.excError("--devnum is mandatory")
         if domain is None:
@@ -366,20 +558,27 @@ class Array(object):
             raise ex.excError("--portname is mandatory")
         if lun is None:
             raise ex.excError("--lun is mandatory")
+        domain = str(domain)
+        devnum = str(devnum)
+        for dom in self.domain_data:
+            for path in dom["Path"]:
+                if portname == path["portName"] and \
+                   domain == path["domainID"] and \
+                   devnum == path["devNum"]:
+                    print("Device %s is already mapped to port %s in domain %s" % (devnum, portname, domain))
+                    return
         cmd = [
             "addlun",
-            "devnum="+devnum,
+            "devnum="+str(devnum),
             "portname="+portname,
             "domain="+domain,
             "lun="+str(lun),
         ]
-        if name:
-            cmd.append("name="+name)
-        out, err, ret = self.cmd(cmd)
-        print(out)
-        tree = fromstring(out)
+        out, err, ret = self.cmd(cmd, xml=False)
         if ret != 0:
             raise ex.excError(err)
+        data = self.parse(out)
+        return data[0]["Path"][0]
 
     def add_disk(self, name=None, pool=None, size=None, lun=None, mappings=None, **kwargs):
         if pool is None:
@@ -393,16 +592,69 @@ class Array(object):
             "capacitytype=KB",
             "poolid="+str(pool_id),
         ]
-        out, err, ret = self.cmd(cmd)
-        print(out)
-        tree = fromstring(out)
-        data = tree.find("LogicalUnit").attrib
+        out, err, ret = self.cmd(cmd, xml=False)
+        data = self.parse(out)
+        lun_data = data[0]["ArrayGroup"][0]["Lu"][0]
         if ret != 0:
             raise ex.excError(err)
+        if name:
+            self.rename_disk(devnum=lun_data["devNum"], name=name)
         if mappings:
-            self.add_map(name=name, devnum=data["displayName"], lun=lun, mappings=mappings)
-        #ret = self.get_volumes(volume=name, cluster=cluster)
-        return out
+            self.add_map(name=name, devnum=lun_data["devNum"], lun=lun, mappings=mappings)
+        return lun_data
+
+    def resize_disk(self, devnum=None, size=None, **kwargs):
+        if devnum is None:
+            raise ex.excError("--devnum is mandatory")
+        devnum = self.to_devnum(devnum)
+        if size == 0 or size is None:
+            raise ex.excError("--size is mandatory")
+        if size.startswith("+"):
+            incr = convert_size(size.lstrip("+"), _to="KB")
+            data = self.get_logicalunit(devnum=devnum)
+            current_size = int(data["capacityInKB"])
+            size = str(current_size + incr)
+        else:
+            size = str(convert_size(size, _to="KB"))
+        cmd = [
+            "modifyvirtualvolume",
+            "capacity="+size,
+            "capacitytype=KB",
+            "devnums="+str(devnum),
+        ]
+        out, err, ret = self.cmd(cmd, xml=False)
+        if ret != 0:
+            raise ex.excError(err)
+
+    def del_disk(self, devnum=None, **kwargs):
+        if devnum is None:
+            raise ex.excError("--devnum is mandatory")
+        devnum = self.to_devnum(devnum)
+        self.del_map(devnum=devnum)
+        cmd = [
+            "deletevirtualvolume",
+            "devnums="+str(devnum),
+        ]
+        out, err, ret = self.cmd(cmd, xml=False)
+        if ret != 0:
+            raise ex.excError(err)
+
+    def rename_disk(self, devnum=None, name=None, **kwargs):
+        if devnum is None:
+            raise ex.excError("--devnum is mandatory")
+        if name is None:
+            raise ex.excError("--name is mandatory")
+        devnum = self.to_devnum(devnum)
+        cmd = [
+            "modifylabel",
+            "devnums="+str(devnum),
+            "label="+str(name),
+        ]
+        out, err, ret = self.cmd(cmd, xml=False)
+        if ret != 0:
+            raise ex.excError(err)
+        data = self.parse(out)
+        return data[0]
 
 def do_action(action, array_name=None, **kwargs):
     o = Arrays()
@@ -429,6 +681,12 @@ if __name__ == "__main__":
     except ex.excError as exc:
         print(exc, file=sys.stderr)
         ret = 1
+    except IOError as exc:
+        if exc.errno == 32:
+            # broken pipe
+            ret = 1
+        else:
+            raise
     sys.exit(ret)
 
 
