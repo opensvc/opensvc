@@ -1796,7 +1796,7 @@ class Node(object):
         section = None
 
         for _section in self.auth_config.sections():
-            if section == array_name:
+            if _section == array_name:
                 section = _section
                 break
             if self.auth_config.has_option(_section, "array") and \
