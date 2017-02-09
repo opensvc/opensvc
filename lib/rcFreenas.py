@@ -747,26 +747,27 @@ class Freenas(object):
         data = json.loads(self.get_iscsi_authorizedinitiator())
         print(json.dumps(data, indent=8))
 
-def do_action(action, array_name=None, **kwargs):
+def do_action(action, array_name=None, node=None, **kwargs):
     o = Freenass()
     array = o.get_freenas(array_name)
     if array is None:
         raise ex.excError("array %s not found" % array_name)
+    array.node = node
     if not hasattr(array, action):
         raise ex.excError("not implemented")
     getattr(array, action)(**kwargs)
 
-def main():
+def main(argv, node=None):
     parser = OptParser(prog=PROG, options=OPT, actions=ACTIONS,
                        deprecated_actions=DEPRECATED_ACTIONS,
                        global_options=GLOBAL_OPTS)
-    options, action = parser.parse_args()
+    options, action = parser.parse_args(argv)
     kwargs = vars(options)
-    do_action(action, **kwargs)
+    do_action(action, node=node, **kwargs)
 
 if __name__ == "__main__":
     try:
-        ret = main()
+        ret = main(sys.argv)
     except ex.excError as exc:
         print(exc, file=sys.stderr)
         ret = 1

@@ -1812,11 +1812,8 @@ class Node(object):
 
         driver = self.auth_config.get(section, "type")
         rtype = driver[0].upper() + driver[1:].lower()
-        exe = os.path.join(rcEnv.paths.pathlib, 'rc' + rtype + '.py')
-        from subprocess import Popen
-        proc = Popen([sys.executable, exe] + self.options.extra_argv)
-        proc.communicate()
-        return proc.returncode
+        mod = __import__('rc'+rtype)
+        return mod.main(self.options.extra_argv, node=self)
 
     def get_ruser(self, node):
         """
@@ -2268,7 +2265,13 @@ class Node(object):
         """
         Make a POST request to the collector's rest api
         """
-        return self.collector_rest_request(path, data, svcname=svcname)
+        return self.collector_rest_request(path, data, svcname=svcname, get_method="POST")
+
+    def collector_rest_delete(self, path, data=None, svcname=None):
+        """
+        Make a DELETE request to the collector's rest api
+        """
+        return self.collector_rest_request(path, data, svcname=svcname, get_method="DELETE")
 
     @staticmethod
     def set_ssl_context(kwargs):
@@ -2298,11 +2301,13 @@ class Node(object):
                 ofile.write(chunk)
         ufile.close()
 
-    def collector_rest_request(self, path, data=None, svcname=None):
+    def collector_rest_request(self, path, data=None, svcname=None, get_method=None):
         """
         Make a request to the collector's rest api
         """
         request = self.collector_request(path, svcname=svcname)
+        if get_method:
+            request.get_method = lambda: get_method
         if data is not None:
             try:
                 request.add_data(urlencode(data))

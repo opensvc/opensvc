@@ -369,6 +369,7 @@ class Array(object):
         if mappings:
             self.add_map(volume=name, mappings=mappings, cluster=cluster)
         ret = self.get_volumes(volume=name, cluster=cluster)
+        self.push_diskinfo(ret)
         return ret
 
     def resize_volume(self, volume=None, size=None, cluster=None, **kwargs):
@@ -423,6 +424,10 @@ class Array(object):
             raise ex.excError("--volume is mandatory")
         if volume == "":
             raise ex.excError("volume can not be empty")
+        data = self.get_volumes(cluster=cluster, volume=volume)
+        if "content" not in data:
+            raise ex.excError("volume %s does not exist" % volume)
+        disk_id = data["content"]["naa-name"]
         self.del_volume_mappings(cluster=cluster, volume=volume)
         params = {}
         uri = "/volumes"
@@ -433,7 +438,9 @@ class Array(object):
             params["name"] = volume
         if cluster is not None:
             params["cluster-id"] = cluster
-        return self.delete(uri, params=params)
+	ret = self.delete(uri, params=params)
+        self.del_diskinfo(disk_id)
+        return ret
 
     def convert_hba_id(self, hba_id):
         hba_id = hba_id[0:2] + ":" + \
@@ -664,28 +671,63 @@ class Array(object):
         else:
             print(json.dumps(data, indent=8))
 
-def do_action(action, array_name=None, **kwargs):
+    def del_diskinfo(self, disk_id):
+        if disk_id in (None, ""):
+            return
+        if self.node is None:
+            return
+        try:
+            ret = self.node.collector_rest_delete("/disks/%s" % disk_id)
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in ret:
+            raise ex.excError(ret["error"])
+        return ret
+
+    def push_diskinfo(self, data):
+        if self.node is None:
+            return
+        if data["content"]["naa-name"] in (None, ""):
+            data["content"]["naa-name"] = self.name+"."+str(data["content"]["index"])
+        try:
+            ret = self.node.collector_rest_post("/disks", {
+                "disk_id": data["content"]["naa-name"],
+                "disk_devid": data["content"]["index"],
+                "disk_name": data["content"]["name"],
+                "disk_size": int(data["content"]["vol-size"]) // 1024,
+                "disk_alloc": int(data["content"]["logical-space-in-use"]) // 1024,
+                "disk_arrayid": self.name,
+                "disk_group": "default",
+            })
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(ret["error"])
+        return ret
+
+def do_action(action, array_name=None, node=None, **kwargs):
     o = Arrays()
     array = o.get_array(array_name)
     if array is None:
         raise ex.excError("array %s not found" % array_name)
     if not hasattr(array, action):
         raise ex.excError("not implemented")
+    array.node = node
     ret = getattr(array, action)(**kwargs)
     if ret is not None:
         print(json.dumps(ret, indent=4))
 
-def main():
+def main(argv, node=None):
     parser = OptParser(prog=PROG, options=OPT, actions=ACTIONS,
                        deprecated_actions=DEPRECATED_ACTIONS,
                        global_options=GLOBAL_OPTS)
-    options, action = parser.parse_args()
+    options, action = parser.parse_args(argv)
     kwargs = vars(options)
-    do_action(action, **kwargs)
+    do_action(action, node=node, **kwargs)
 
 if __name__ == "__main__":
     try:
-        ret = main()
+        ret = main(sys.argv)
     except ex.excError as exc:
         print(exc, file=sys.stderr)
         ret = 1

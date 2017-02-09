@@ -438,9 +438,14 @@ class Array(object):
                 if hba_id == wwn["WWN"]:
                     return domain
 
-    def get_pool_id(self, poolname):
+    def get_pool_by_name(self, poolname):
         for pool in self.pool_data:
             if pool["name"] == poolname:
+                return pool
+
+    def get_pool_by_id(self, pool_id):
+        for pool in self.pool_data:
+            if pool["poolID"] == pool_id:
                 return pool
 
     def list_array(self, **kwargs):
@@ -588,7 +593,7 @@ class Array(object):
             raise ex.excError("--pool is mandatory")
         if size == 0 or size is None:
             raise ex.excError("--size is mandatory")
-        pool_id = self.get_pool_id(pool)["poolID"]
+        pool_id = self.get_pool_by_name(pool)["poolID"]
         cmd = [
             "addvirtualvolume",
             "capacity="+str(convert_size(size, _to="KB")),
@@ -604,6 +609,7 @@ class Array(object):
             self.rename_disk(devnum=lun_data["devNum"], name=name)
         if mappings:
             self.add_map(name=name, devnum=lun_data["devNum"], lun=lun, mappings=mappings)
+        self.push_diskinfo(lun_data)
         return lun_data
 
     def resize_disk(self, devnum=None, size=None, **kwargs):
@@ -641,6 +647,7 @@ class Array(object):
         out, err, ret = self.cmd(cmd, xml=False)
         if ret != 0:
             raise ex.excError(err)
+        self.del_diskinfo(devnum)
 
     def rename_disk(self, devnum=None, name=None, **kwargs):
         if devnum is None:
@@ -659,28 +666,61 @@ class Array(object):
         data = self.parse(out)
         return data[0]
 
-def do_action(action, array_name=None, **kwargs):
+    def del_diskinfo(self, disk_id):
+        if disk_id in (None, ""):
+            return
+        if self.node is None:
+            return
+        try:
+            ret = self.node.collector_rest_delete("/disks/%s" % disk_id)
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in ret:
+            raise ex.excError(ret["error"])
+        return ret
+
+    def push_diskinfo(self, data):
+        if self.node is None:
+            return
+        try:
+            ret = self.node.collector_rest_post("/disks", {
+                "disk_id": self.serial+"."+str(data["devNum"]),
+                "disk_devid": data["devNum"],
+                "disk_name": data["label"] if "label" in data else "",
+                "disk_size": int(data["capacityInKB"]) // 1024,
+                "disk_alloc": int(data["consumedCapacityInKB"]) // 1024,
+                "disk_arrayid": self.name,
+                "disk_group": self.get_pool_by_id(data["dpPoolID"]),
+            })
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(ret["error"])
+        return ret
+
+def do_action(action, array_name=None, node=None, **kwargs):
     o = Arrays()
     array = o.get_array(array_name)
     if array is None:
         raise ex.excError("array %s not found" % array_name)
+    array.node = node
     if not hasattr(array, action):
         raise ex.excError("not implemented")
     ret = getattr(array, action)(**kwargs)
     if ret is not None:
         print(json.dumps(ret, indent=4))
 
-def main():
+def main(argv, node=None):
     parser = OptParser(prog=PROG, options=OPT, actions=ACTIONS,
                        deprecated_actions=DEPRECATED_ACTIONS,
                        global_options=GLOBAL_OPTS)
-    options, action = parser.parse_args()
+    options, action = parser.parse_args(argv)
     kwargs = vars(options)
-    do_action(action, **kwargs)
+    do_action(action, node=node, **kwargs)
 
 if __name__ == "__main__":
     try:
-        ret = main()
+        ret = main(sys.argv)
     except ex.excError as exc:
         print(exc, file=sys.stderr)
         ret = 1
