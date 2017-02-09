@@ -57,7 +57,7 @@ class ResourceSet(object):
         return self
 
     def __str__(self):
-        output = "resSet %s [" % Resource.__str__(self)
+        output = "resSet %s [" % str(self.type)
         for resource in self.resources:
             output += " (%s)" % (resource.__str__())
         return "%s]" % output
