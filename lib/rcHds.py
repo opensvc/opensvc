@@ -305,6 +305,9 @@ class Array(object):
         data = []
         for e_lu in tree.getiterator("LogicalUnit"):
             lu = e_lu.attrib
+            lu["Path"] = []
+            for e_path in e_lu.getiterator("Path"):
+                lu["Path"].append(e_path.attrib)
             for e_ldev in e_lu.getiterator("LDEV"):
                 ldev = e_ldev.attrib
                 for e_label in e_ldev.getiterator("ObjectLabel"):
