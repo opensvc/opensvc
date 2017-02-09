@@ -596,12 +596,18 @@ ACTIONS = {
             'msg': 'print service disk list',
             'options': [
                 OPT.format,
+                OPT.rid,
+                OPT.tags,
+                OPT.subsets,
             ],
         },
         'print_devlist': {
             'msg': 'print service device list',
             'options': [
                 OPT.format,
+                OPT.rid,
+                OPT.tags,
+                OPT.subsets,
             ],
         },
         'switch': {
