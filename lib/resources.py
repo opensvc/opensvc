@@ -338,6 +338,7 @@ class Resource(object):
         actions = (
             "provision",
             "unprovision",
+            "run",
         )
         if not self.skip:
             return False
