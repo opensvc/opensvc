@@ -701,6 +701,7 @@ class Freenas(object):
                 raise ex.excError(data["iscsi_target_extent_name"])
             raise ex.excError(str(data))
         self.add_iscsi_targets_to_extent(extent_id=data["id"], targets=targets, **kwargs)
+        self.add_diskinfo(data, size, volume)
         print(json.dumps(data, indent=8))
 
     def del_iscsi_zvol(self, name=None, naa=None, **kwargs):
@@ -712,6 +713,7 @@ class Freenas(object):
         volume = self.extent_volume(data)
         self.del_iscsi_extent(data["id"])
         self.del_zvol(name=name, volume=volume)
+        self.del_diskinfo(data["iscsi_target_extent_naa"].replace("0x", ""))
         print(json.dumps(data, indent=8))
 
     def extent_volume(self, data):
@@ -746,6 +748,38 @@ class Freenas(object):
     def list_iscsi_initiatorgroup(self, **kwargs):
         data = json.loads(self.get_iscsi_authorizedinitiator())
         print(json.dumps(data, indent=8))
+
+    def del_diskinfo(self, disk_id):
+        if disk_id in (None, ""):
+            return
+        if self.node is None:
+            return
+        try:
+            ret = self.node.collector_rest_delete("/disks/%s" % disk_id)
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in ret:
+            raise ex.excError(ret["error"])
+        return ret
+
+    def add_diskinfo(self, data, size=None, volume=None):
+        if self.node is None:
+            return
+        try:
+            ret = self.node.collector_rest_post("/disks", {
+                "disk_id": data["iscsi_target_extent_naa"].replace("0x", ""),
+                "disk_devid": data["id"],
+                "disk_name": data["iscsi_target_extent_name"],
+                "disk_size": convert_size(size, _to="MB"),
+                "disk_alloc": 0,
+                "disk_arrayid": self.name,
+                "disk_group": volume,
+            })
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(ret["error"])
+        return ret
 
 def do_action(action, array_name=None, node=None, **kwargs):
     o = Freenass()
