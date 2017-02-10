@@ -111,7 +111,7 @@ def _handle_reference(svc, conf, ref, _section, _v, scope=False, impersonate=Non
 
 def _handle_references(svc, conf, s, scope=False, impersonate=None):
     while True:
-        m = re.search(r'{[\w#][\w\.\[\]]*}', s)
+        m = re.search(r'{\w*[\w#][\w\.\[\]]*}', s)
         if m is None:
             return s
         ref = m.group(0).strip("{}")
