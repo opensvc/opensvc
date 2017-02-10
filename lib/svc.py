@@ -4472,7 +4472,7 @@ class Svc(object):
             Fetch the value and convert it to expected type.
             """
             _option = option.split("@")[0]
-            value = conf_get_string_scope(self, self.config, section, _option)
+            value = conf_get_string_scope(self, config, section, _option)
             if isinstance(key.default, bool):
                 return bool(value)
             elif isinstance(key.default, int):
