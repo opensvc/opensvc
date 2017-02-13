@@ -239,6 +239,9 @@ class Collector(object):
     def collector_create_tag(self):
         opts = {}
         opts['tag_name'] = self.options.tag
+        if opts['tag_name'] is None:
+		print("no parameter. set --tag", file=sys.stderr)
+		return 1
         if self.svcname:
             opts['svcname'] = self.svcname
         d = self.collector.call('collector_create_tag', opts)
