@@ -277,6 +277,8 @@ class Ip(Res.Ip):
         if ret != 0:
             raise ex.excError("failed to get nspid: %s" % err)
         nspid = out.strip()
+        if "'" in nspid:
+            nspid = nspid.replace("'","")
         if nspid == "0":
             raise ex.excError("nspid is 0")
         return nspid
