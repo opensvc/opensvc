@@ -178,8 +178,16 @@ class Mount(Res.Resource):
         return "%s mnt=%s dev=%s fs_type=%s mount_options=%s" % (Res.Resource.__str__(self),\
                 self.mount_point, self.device, self.fs_type, self.mount_options)
 
+    def __lt__(self, other):
+        """
+        Order so that deepest mountpoint can be umount first.
+        Seems sort() now relies on __lt__ rather than __cmp__.
+        """
+        return not cmp(self.mount_point, other.mount_point)
+
     def __cmp__(self, other):
-        """order so that deepest mountpoint can be umount first
+        """
+        Order so that deepest mountpoint can be umount first
         """
         return cmp(self.mount_point, other.mount_point)
 
