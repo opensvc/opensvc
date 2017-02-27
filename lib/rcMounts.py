@@ -50,7 +50,7 @@ class Mounts:
             return
         if key not in ('mnt', 'dev', 'type'):
             return
-        self.mounts.sort(lambda x, y: cmp(getattr(x, key), getattr(y, key)), reverse=reverse)
+        self.mounts.sort(key=lambda x: getattr(x, key), reverse=reverse)
 
     def get_fpath_dev(self, fpath):
         last = False

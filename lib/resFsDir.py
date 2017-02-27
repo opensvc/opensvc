@@ -111,10 +111,11 @@ class FsDir(Res.Resource):
         return "%s path=%s user=%s group=%s perm=%s" % (Res.Resource.__str__(self),\
                 self.path, str(self.user), str(self.group), str(self.perm))
 
-    def __cmp__(self, other):
-        """order so that deepest mountpoint can be umount first
+    def __lt__(self, other):
         """
-        return cmp(self.mount_point, other.mount_point)
+        Order so that deepest mountpoint can be umount first
+        """
+        return self.mount_point < other.mount_point
 
     def provision(self):
         self.create()

@@ -181,15 +181,8 @@ class Mount(Res.Resource):
     def __lt__(self, other):
         """
         Order so that deepest mountpoint can be umount first.
-        Seems sort() now relies on __lt__ rather than __cmp__.
         """
-        return not cmp(self.mount_point, other.mount_point)
-
-    def __cmp__(self, other):
-        """
-        Order so that deepest mountpoint can be umount first
-        """
-        return cmp(self.mount_point, other.mount_point)
+        return self.mount_point < other.mount_point
 
     def provision(self):
         m = mimport("prov", "fs", self.fs_type, fallback=True)

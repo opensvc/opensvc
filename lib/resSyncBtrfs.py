@@ -12,7 +12,7 @@ class SyncBtrfs(resSync.Sync):
     """define btrfs sync resource to be btrfs send/btrfs receive between nodes
     """
     def sort_rset(self, rset):
-        rset.resources.sort(lambda x, y: cmp(x.src_subvol, y.src_subvol))
+        rset.resources.sort(key=lambda x: x.src_subvol)
 
     def __init__(self,
                  rid=None,

@@ -56,7 +56,7 @@ class ProvisioningSrp(Provisioning):
 
     def cleanup(self):
         rs = self.r.svc.get_resources('fs')
-        rs.sort(lambda x, y: cmp(x.mount_point, y.mount_point), reverse=True)
+        rs.sort(key=lambda x: x.mount_point, reverse=True)
         for r in rs:
             if r.mount_point == self.rootpath:
                 continue

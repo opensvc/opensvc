@@ -213,7 +213,7 @@ class Module(object):
                 continue
             if rset["filter"] != "explicit attachment via moduleset":
                 continue
-            for rule in sorted(rset['vars'], lambda x, y: cmp(x[0], y[0])):
+            for rule in sorted(rset['vars'], key=lambda x: x[0]):
                 var, val, var_class = self.context.parse_rule(rule)
                 if var_class == "raw":
                     continue
