@@ -4349,8 +4349,8 @@ class Svc(object):
                     argv[idx:idx] = ["-p", self.node.config.get("node", "uuid")]
                     if self.dockerlib.docker_min_version("1.12"):
                         pass
-                    elif self.dockerlib.docker_min_version("1.11"):
-                        argv[idx:idx] = ["--email", ""]
+                    elif self.dockerlib.docker_min_version("1.10"):
+                        argv[idx:idx] = ["--email", self.svcname+"@"+rcEnv.nodename]
             for idx, arg in enumerate(argv):
                 if re.match(r'\{container#\w+\}', arg):
                     container_name = self.svcname + "." + arg.strip("{}").replace("#", ".")
