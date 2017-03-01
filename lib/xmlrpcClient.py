@@ -865,8 +865,8 @@ class Collector(object):
                 continue
             h[stat] = sp.get(stat)
             print("%s stats: %d samples" % (stat, len(h[stat][1])))
-        import cPickle
-        args = [cPickle.dumps(h)]
+        import json
+        args = [json.dumps(h)]
         if self.auth_node:
              args += [(rcEnv.uuid, rcEnv.nodename)]
         print("pushing")
