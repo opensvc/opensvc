@@ -6,13 +6,17 @@ import sys
 from textwrap import wrap
 from rcColor import color, colorize
 from rcUtilities import term_width
+import rcExceptions as ex
 
 if sys.version_info[0] >= 3:
     from functools import reduce
     unicode = str
 
 def parse_data(data):
-    lines = data.splitlines()
+    try:
+        lines = data.splitlines()
+    except AttributeError:
+        raise ex.excError
     if len(lines) < 2:
         return []
     labels = list(map(lambda x: x.split('.')[-1], lines[0].split(',')))
@@ -151,9 +155,8 @@ def print_table_default(data):
 def print_table_csv(data):
     try:
         data = validate_format(data)
-    except Exception as e:
-        print(e)
-        return
+    except ex.excError:
+        raise ex.excError("unsupported format for this action")
 
     for d in data:
         print(";".join(map(lambda x: "'%s'" % unicode(x), d)))
