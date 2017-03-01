@@ -109,7 +109,7 @@ OPT = Storage({
         "--format", default=None,
         action="store", dest="format",
         help="specify a data formatter for output of the print*"
-             " and collector* commands. possible values are json"
+             " and collector* commands. possible values are json, csv"
              " or table."),
     "help": Option(
         "-h", "--help", default=None,
