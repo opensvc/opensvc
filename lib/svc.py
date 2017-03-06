@@ -1092,6 +1092,10 @@ class Svc(Resource, Scheduler):
         # now we known we'll execute a command in the slave, so purge the encap cache
         self.purge_cache_encap_json_status(container.rid)
 
+        # wait for the container multi-user state
+        if cmd[0] in ["start", "boot"] and hasattr(container, "wait_multi_user"):
+            container.wait_multi_user()
+
         options = []
         if self.options.dry_run:
             options.append('--dry-run')
