@@ -436,7 +436,7 @@ class DockerLib(object):
             if state not in (rcStatus.UP, rcStatus.STDBY_UP):
                 self.svc.log.warning("the docker daemon data dir is handled by the %s "
                                      "resource in %s state. can't start the docker "
-                                     "daemon", (resource.rid, rcStatus.Status(state)))
+                                     "daemon", resource.rid, rcStatus.Status(state))
                 lock.unlock(lockfd)
                 return
 
