@@ -1280,7 +1280,7 @@ class Collector(object):
             return 1
         m = __import__('rcSymmetrix')
         try:
-            syms = m.Syms(objects)
+            syms = m.Arrays(objects)
         except Exception as e:
             print(e)
             return 1
@@ -1291,7 +1291,11 @@ class Collector(object):
             for key in sym.keys:
                 print(" extract", key)
                 vars = [key]
-                vals = [xmlrpclib.Binary(zlib.compress(getattr(sym, 'get_'+key)()))]
+                try:
+                    vals = [xmlrpclib.Binary(zlib.compress(getattr(sym, 'get_'+key)()))]
+                except Exception as e:
+                    print(e)
+                    continue
                 args = [sym.sid, vars, vals]
                 if self.auth_node:
                     args += [(rcEnv.uuid, rcEnv.nodename)]

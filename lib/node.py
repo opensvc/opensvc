@@ -779,7 +779,7 @@ class Node(object):
             return self.options.objects
         if self.config and self.config.has_option(section, "objects"):
             return self.config.get(section, "objects").split(",")
-        return ["magix123456"]
+        return []
 
     def collect_stats(self):
         """
@@ -1812,7 +1812,11 @@ class Node(object):
 
         driver = self.auth_config.get(section, "type")
         rtype = driver[0].upper() + driver[1:].lower()
-        mod = __import__('rc'+rtype)
+        modname = "rc" + rtype
+        try:
+            mod = __import__(modname)
+        except ImportError as e:
+            raise ex.excError("driver not found (%s)" % modname)
         return mod.main(self.options.extra_argv, node=self)
 
     def get_ruser(self, node):
