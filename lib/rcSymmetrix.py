@@ -20,9 +20,15 @@ OPT = Storage({
     "array": Option(
         "-a", "--array", action="store", dest="array_name",
         help="The name of the array, as defined in auth.conf"),
+    "dev": Option(
+        "--dev", action="store", dest="dev",
+        help="The device id (ex: 0A04)"),
     "mappings": Option(
         "--mappings", action="append", dest="mappings",
         help="A <hba_id>:<tgt_id>,<tgt_id>,... mapping used in add map in replacement of --targetgroup and --initiatorgroup. Can be specified multiple times."),
+    "pools": Option(
+        "--pools", action="append", dest="pools",
+        help="A pool hosting the TDEV. Multiple --pools can be set."),
 })
 
 GLOBAL_OPTS = [
@@ -39,6 +45,7 @@ ACTIONS = {
                 OPT.name,
                 OPT.size,
                 OPT.mappings,
+                OPT.pools,
             ],
         },
     },
@@ -47,6 +54,7 @@ ACTIONS = {
             "msg": "Unpresent and delete a thin device",
             "options": [
                 OPT.name,
+                OPT.dev,
             ],
         },
     },
@@ -55,6 +63,7 @@ ACTIONS = {
             "msg": "Resize a thin device",
             "options": [
                 OPT.name,
+                OPT.dev,
                 OPT.size,
             ],
         },
@@ -191,15 +200,15 @@ class Sym(object):
         return justcall(cmd)
 
     def symcfg(self, cmd):
-        cmd = [self.symcli_connect, '/usr/symcli/bin/symcfg'] + cmd
+        cmd = ['/usr/symcli/bin/symcfg'] + cmd
         return self.symcmd(cmd)
 
     def symdisk(self, cmd):
-        cmd = [self.symcli_connect, '/usr/symcli/bin/symdisk'] + cmd
+        cmd = ['/usr/symcli/bin/symdisk'] + cmd
         return self.symcmd(cmd)
 
     def symdev(self, cmd):
-        cmd = [self.symcli_connect, '/usr/symcli/bin/symdev'] + cmd
+        cmd = ['/usr/symcli/bin/symdev'] + cmd
         return self.symcmd(cmd)
 
     def get_sym_info(self):
@@ -305,6 +314,18 @@ class Vmax(Sym):
         cmd = ['list', 'view', '-detail']
         out, err, ret = self.symaccesscmd(cmd)
         return out
+
+    def add_tdev(self, name, size):
+        out, err, ret = self.symdev(["create", "-tdev", "-cap", size, "-captype", "mb"])
+        return out, err, ret
+
+    def modify_tdev(self, dev, size):
+        out, err, ret = self.symdev(["modify", dev, "-tdev", "-cap", size, "-captype", "mb"])
+        return out, err, ret
+
+    def delete_dev(self, dev, size):
+        out, err, ret = self.symdev(["delete", dev])
+        return out, err, ret
 
 class Dmx(Sym):
     def __init__(self, sid):
