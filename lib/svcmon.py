@@ -52,7 +52,10 @@ def max_len(svcs):
                 _len = l
     return _len
 
-def svcmon_normal1(svc, options, fmt=None, queue=None, lock=None):
+def svcmon_get_status(svc):
+    svc.group_status()
+
+def svcmon_normal1(svc, options, fmt=None):
     # don't schedule svcmon updates for encap services.
     # those are triggered by the master node
     status = svc.group_status()
@@ -132,21 +135,10 @@ def svcmon_normal1(svc, options, fmt=None, queue=None, lock=None):
             buff = fmt % tuple(data)
             l.append(buff)
 
-    if lock is not None:
-        lock.acquire()
     print('\n'.join(l))
-    if lock is not None:
-        lock.release()
 
-    if options.upddb:
-        o = svc.svcmon_push_lists(status)
-        _size = len(str(o))
-        if queue is None or _size > 30000:
-            # multiprocess Queue not supported, can't combine results
-            g_vars, g_vals, r_vars, r_vals = svc.svcmon_push_lists(status)
-            svc.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals)
-        else:
-            queue.put(svc.svcmon_push_lists(status))
+    o = svc.svcmon_push_lists(status)
+    return svc.svcmon_push_lists(status)
 
 def svcmon_cluster(node, options):
     svcnames = ",".join([r.svcname for r in node.svcs])
@@ -256,48 +248,37 @@ def svcmon_normal(svcs, options):
         print(" "*svcname_len+" -----------------------------------+-----------------+-----------------------")
 
     ps = []
-    queues = {}
-    try:
-        lock = Lock()
-    except:
-        lock = None
 
-    for svc in svcs:
-        if svc.encap and options.upddb:
-            continue
-        if not mp:
-            svcmon_normal1(svc, options, fmt, None)
-            continue
-        try:
-            queues[svc.svcname] = Queue(maxsize=32000)
-        except:
-            # some platform don't support Queue's synchronize (bug 3770)
-            queues[svc.svcname] = None
-        p = Process(target=svcmon_normal1, args=(svc, options, fmt, queues[svc.svcname], lock))
-        p.start()
-        ps.append(p)
-    for p in ps:
-        p.join()
+    if mp and options.refresh:
+        #
+        # parallelize the slow path, ie the status refresh
+        #
+        for svc in svcs:
+            if svc.encap and options.upddb:
+                continue
+            p = Process(target=svcmon_get_status, args=(svc,))
+            p.start()
+            ps.append(p)
+        for p in ps:
+            p.join()
 
-    if options.upddb and mp:
-        g_vals = []
-        r_vals = []
+    g_vals = []
+    r_vals = []
+
+    for svc in sorted(svcs, key=lambda x: x.svcname):
+        g_vars, _g_vals, r_vars, _r_vals = svcmon_normal1(svc, options, fmt)
+        if options.upddb:
+            g_vals.append(_g_vals)
+            r_vals.append(_r_vals)
+
+    if options.upddb and len(g_vals) > 0:
         if options.delay > 0:
             import random
             import time
             delay = int(random.random()*options.delay)
             time.sleep(delay)
 
-        for svc in svcs:
-            if svc.svcname not in queues or queues[svc.svcname] is None:
-                continue
-            if queues[svc.svcname].empty():
-                continue
-            g_vars, _g_vals, r_vars, _r_vals = queues[svc.svcname].get()
-            g_vals.append(_g_vals)
-            r_vals.append(_r_vals)
-        if len(g_vals) > 0:
-            svc.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals)
+        svc.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals)
 
 __ver = prog + " version " + version
 __usage = prog + " [ OPTIONS ]\n"
