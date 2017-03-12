@@ -547,10 +547,20 @@ def add_resources(restype, svc, conf):
             continue
         if s != 'app' and s != restype and re.match(restype+'#', s, re.I) is None:
             continue
-        if svc.encap and 'encap' not in get_tags(conf, s, svc):
+        tags = get_tags(conf, s, svc)
+        if svc.encap and 'encap' not in tags:
             continue
-        if not svc.encap and 'encap' in get_tags(conf, s, svc):
+        if not svc.encap and 'encap' in tags:
             svc.has_encap_resources = True
+            try:
+                subset = conf_get_string_scope(svc, conf, s, 'subset')
+            except ex.OptNotFound:
+                subset = None
+            svc.encap_resources[s] = Storage({
+                "rid": s,
+                "tags": tags,
+                "subset": subset,
+            })
             continue
         if s in svc.resources_by_id:
             continue

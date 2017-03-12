@@ -297,6 +297,10 @@ def _slave_action(func):
     def _func(self):
         if self.encap or not self.has_encap_resources:
             return
+        if self.command_is_scoped() and \
+           len(set(self.action_rid) & set(self.encap_resources.keys())) == 0:
+            self.log.info("skip action on slaves: no encap resources are selected")
+            return
         need_specifier(self)
         if self.options.slaves or \
            self.options.slave is not None or \
@@ -349,6 +353,7 @@ class Svc(object):
             run_flag=os.path.join(os.sep, "var", "run", "opensvc."+self.svcname),
         )
         self.resources_by_id = {}
+        self.encap_resources = {}
         self.resourcesets = []
         self.resourcesets_by_type = {}
         self.disks = set()
@@ -3212,6 +3217,10 @@ class Svc(object):
         for resource in self.get_resources():
             resource.setup_environ()
 
+    def all_rids(self):
+        return [rid for rid in self.resources_by_id if rid is not None] + \
+               list(self.encap_resources.keys())
+
     def expand_rid(self, rid):
         """
         Given a rid return a set containing either the rid itself if it is
@@ -3219,10 +3228,8 @@ class Svc(object):
         matches the name given as rid.
         """
         retained_rids = set()
-        for _rid in self.resources_by_id.keys():
-            if _rid is None:
-                continue
-            if '#' not in _rid:
+        for _rid in self.all_rids():
+            if '#' in rid:
                 if _rid == rid:
                     retained_rids.add(_rid)
                 else:
@@ -3247,11 +3254,6 @@ class Svc(object):
             return
         retained_rids = set()
         for rid in set(rids):
-            if '#' in rid:
-                if rid not in self.resources_by_id:
-                    continue
-                retained_rids.add(rid)
-                continue
             retained_rids |= self.expand_rid(rid)
         if len(retained_rids) > 0:
             self.log.debug("rids added from --rid %s: %s", ",".join(rids),
@@ -3263,10 +3265,10 @@ class Svc(object):
         Parse the --subsets value and return the retained corresponding resource
         ids.
         """
-        if len(subsets) == 0 or subsets is None:
+        if subsets is None or self.options.subsets is None:
             return
         retained_rids = set()
-        for resource in self.resources_by_id.values():
+        for resource in self.resources_by_id.values() + self.encap_resources.values():
             if resource.subset in subsets:
                 retained_rids.add(resource.rid)
         if len(retained_rids) > 0:
@@ -3309,7 +3311,7 @@ class Svc(object):
                     unions.append(intersection)
 
         for intersection in unions:
-            for resource in self.resources_by_id.values():
+            for resource in self.resources_by_id.values() + self.encap_resources.values():
                 if set(intersection) & resource.tags == set(intersection):
                     retained_rids.add(resource.rid)
         if len(retained_rids) > 0:
@@ -3392,7 +3394,7 @@ class Svc(object):
             xtags = xtags.split(',')
 
         if len(self.resources_by_id.keys()) > 0:
-            rids = set(self.resources_by_id.keys()) - set([None])
+            rids = set(self.all_rids())
 
             # --rid
             retained_rids = self.expand_rids(rid)
@@ -3411,12 +3413,11 @@ class Svc(object):
 
             rids = list(rids)
             self.log.debug("rids retained after expansions intersection: %s",
-                           ";".join(rids))
+                           ",".join(rids))
 
-            if not options.slaves and options.slave is None and \
-               self.command_is_scoped(options) and len(rids) == 0:
-                raise ex.excError("no resource match the given --rid, --subset "
-                                  "and --tags specifiers")
+            if self.command_is_scoped(options) and len(rids) == 0:
+                raise ex.excAbortAction("no resource match the given --rid, --subset "
+                                        "and --tags specifiers")
         else:
             # no resources certainly mean the build was done with minimal=True
             # let the action go on. 'delete', for one, takes a --rid but does
@@ -3436,7 +3437,11 @@ class Svc(object):
         self.allow_on_this_node(action)
         options = self.prepare_options(options)
 
-        self.action_rid = self.options_to_rids(options)
+        try:
+            self.action_rid = self.options_to_rids(options)
+        except ex.excAbortAction as exc:
+            self.log.info(exc)
+            return
         self.action_start_date = datetime.datetime.now()
 
         if self.node is None:
