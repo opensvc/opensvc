@@ -40,6 +40,12 @@ class DockerLib(object):
             self.docker_exe_init = None
 
         try:
+            self.dockerd_exe_init = \
+                conf_get_string_scope(svc, svc.config, 'DEFAULT', 'dockerd_exe')
+        except ex.OptNotFound:
+            self.dockerd_exe_init = None
+
+        try:
             self.docker_data_dir = \
                 conf_get_string_scope(svc, svc.config, 'DEFAULT', 'docker_data_dir')
         except ex.OptNotFound:
@@ -374,7 +380,14 @@ class DockerLib(object):
         """
         The docker daemon startup command, adapted to the docker version.
         """
-        if self.docker_min_version("1.8"):
+        if self.docker_min_version("1.13"):
+            cmd = [
+                self.dockerd_exe,
+                '-H', self.docker_socket,
+                '-g', self.docker_data_dir,
+                '-p', self.docker_pid_file
+            ]
+        elif self.docker_min_version("1.8"):
             cmd = [
                 self.docker_exe, 'daemon',
                 '-H', self.docker_socket,
@@ -545,4 +558,11 @@ class DockerLib(object):
         else:
             raise ex.excInitError("docker executable not found")
 
-
+    @lazy
+    def dockerd_exe(self):
+        if self.dockerd_exe_init and which(self.dockerd_exe_init):
+            return self.dockerd_exe_init
+        elif which("dockerd"):
+            return "dockerd"
+        else:
+            raise ex.excInitError("dockerd executable not found")
