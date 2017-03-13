@@ -59,6 +59,7 @@ ACTIONS = {
             "options": [
                 OPT.name,
                 OPT.size,
+                OPT.pools,
             ],
         },
     },
@@ -333,6 +334,10 @@ class Sym(object):
 
         return data
 
+    def get_sym_dev_wwn(self, dev):
+        out, err, ret = self.symdev(['list', '-devs', dev, '-wwn'])
+        return self.parse_xml(out, key="Device")
+
     def list_pools(self, **kwargs):
         print(json.dumps(self.get_pools(), indent=4))
 
@@ -448,7 +453,7 @@ class Vmax(Sym):
         out, err, ret = self.symaccesscmd(cmd)
         return out
 
-    def add_tdev(self, name=None, size=None, **kwargs):
+    def add_tdev(self, name=None, size=None, pools=None, **kwargs):
         """
 	     create dev count=<n>,
 		  size = <n> [MB | GB | CYL],
@@ -468,6 +473,8 @@ class Vmax(Sym):
 		  [, device_name='<DeviceName>'[,number=<n | SYMDEV> ]];
         """
 
+        if pools is None:
+            pools = []
         if size is None:
             raise ex.excError("The '--size' parameter is mandatory")
         size = convert_size(size, _to="MB")
@@ -485,7 +492,12 @@ class Vmax(Sym):
                 l = line.split()
                 if len(l) < 3:
                     raise ex.excError("unable to determine the created SymDevName")
-                return {"dev_name": l[2]}
+                dev = l[2]
+                data = self.get_sym_dev_wwn(dev)[0]
+                for pool in pools:
+                    self.add_tdev_to_pool(data["dev_name"], pool)
+                self.push_diskinfo(data, name, size, pools)
+                return data
         raise ex.excError("unable to determine the created SymDevName")
 
     def resize_tdev(self, dev=None, size=None, **kwargs):
@@ -502,21 +514,38 @@ class Vmax(Sym):
     def del_tdev(self, dev=None, **kwargs):
         if dev is None:
             raise ex.excError("The '--dev' parameter is mandatory")
+        data = self.get_sym_dev_wwn(dev)[0]
         cmd = ["delete", dev, "-noprompt"]
         out, err, ret = self.symdev(cmd, xml=False)
         if ret != 0:
             raise ex.excError(err)
+        self.del_diskinfo(data["wwn"])
 
-    def add_tdev_to_pool(self, dev, pool):
-        cmd = ["bind", dev, "-pool", pool, "-noprompt"]
-        out, err, ret = self.symdev(cmd)
+    def add_tdev_to_pool_5876(self, dev, pool, preallocate=None):
+	_cmd = "bind tdev %s to pool %s" % (dev, pool)
+        if preallocate:
+            _cmd += ", preallocate size=%dMB" % convert_size(preallocate, _to="MB")
+	_cmd += ";"
+        cmd = ["-cmd", _cmd, "commit", "-noprompt"]
+        out, err, ret = self.symconfigure(cmd, xml=False)
+        print(out, err, ret)
         if ret != 0:
             raise ex.excError(err)
         return out, err, ret
 
+    def add_tdev_to_pool_5977(self, dev, pool, preallocate=None):
+        cmd = ["bind", "-devs", dev, "-pool", pool, "-noprompt"]
+        out, err, ret = self.symdev(cmd, xml=False)
+        if ret != 0:
+            raise ex.excError(err)
+        return out, err, ret
+
+    def add_tdev_to_pool(self, *args, **kwargs):
+        return
+
     def add_tdev_to_sg(self, dev, sg):
         cmd = ["-name", sg, "-type", "storage", "add", dev, "-noprompt"]
-        out, err, ret = self.symaccess(cmd)
+        out, err, ret = self.symaccess(cmd, xml=False)
         return out, err, ret
 
     def add_disk(self, name=None, size=None, pools=[], mappings={}, **kwargs):
@@ -524,11 +553,42 @@ class Vmax(Sym):
         if len(sgs) == 0:
             raise ex.excError("no storage group found for the requested mappings")
         data = self.add_tdev(name, size, **kwargs)
-        for pool in pools:
-            self.add_tdev_to_pool(data["dev_name"], pool)
         for sg in sgs:
             self.add_tdev_to_sg(data["dev_name"], sg)
         return data
+
+    def del_diskinfo(self, disk_id):
+        if disk_id in (None, ""):
+            return
+        if self.node is None:
+            return
+        try:
+            ret = self.node.collector_rest_delete("/disks/%s" % disk_id)
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in ret:
+            raise ex.excError(ret["error"])
+        return ret
+
+    def push_diskinfo(self, data, name, size, pools):
+        if self.node is None:
+            return
+        try:
+            ret = self.node.collector_rest_post("/disks", {
+                "disk_id": data["wwn"],
+                "disk_devid": data["dev_name"],
+                "disk_name": name if name else "",
+                "disk_size": convert_size(size, _to="MB"),
+                "disk_alloc": 0,
+                "disk_arrayid": self.sid,
+                "disk_group": ", ".join(pools),
+            })
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(ret["error"])
+        return ret
+
 
 class Dmx(Sym):
     def __init__(self, sid):
