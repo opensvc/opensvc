@@ -91,6 +91,9 @@ ACTIONS = {
         },
         "list_tdevs": {
             "msg": "List thin devices.",
+            "options": [
+                OPT.dev,
+            ],
         },
         "list_views": {
             "msg": "List views, eg. groups of initiators/targets/devices.",
@@ -338,11 +341,14 @@ class Sym(object):
         data = self.parse_xml(out, key="DevicePool")
         return data
 
-    def list_tdevs(self, **kwargs):
-        print(json.dumps(self.get_tdevs(), indent=4))
+    def list_tdevs(self, dev=None, **kwargs):
+        print(json.dumps(self.get_tdevs(dev), indent=4))
 
-    def get_tdevs(self, **kwargs):
-        out = self.get_sym_tdev_info()
+    def get_tdevs(self, dev=None, **kwargs):
+        if dev:
+            out, err, ret = self.symcfg(['list', '-devs', dev, '-tdev', '-detail'])
+        else:
+            out, err, ret = self.symcfg(['list', '-tdev', '-detail'])
         data = self.parse_xml(out, key="Device", as_list=["pool"])
         return data
 
@@ -490,18 +496,22 @@ class Vmax(Sym):
         size = convert_size(size, _to="MB")
         cmd = ["modify", dev, "-tdev", "-cap", str(size), "-captype", "mb", "-noprompt"]
         out, err, ret = self.symdev(cmd, xml=False)
-        return out, err, ret
+        if ret != 0:
+            raise ex.excError(err)
 
     def del_tdev(self, dev=None, **kwargs):
         if dev is None:
             raise ex.excError("The '--dev' parameter is mandatory")
         cmd = ["delete", dev, "-noprompt"]
         out, err, ret = self.symdev(cmd, xml=False)
-        return out, err, ret
+        if ret != 0:
+            raise ex.excError(err)
 
     def add_tdev_to_pool(self, dev, pool):
         cmd = ["bind", dev, "-pool", pool, "-noprompt"]
         out, err, ret = self.symdev(cmd)
+        if ret != 0:
+            raise ex.excError(err)
         return out, err, ret
 
     def add_tdev_to_sg(self, dev, sg):
