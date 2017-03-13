@@ -20,6 +20,9 @@ OPT = Storage({
     "array": Option(
         "-a", "--array", action="store", dest="array_name",
         help="The name of the array, as defined in auth.conf"),
+    "name": Option(
+        "--name", action="store", dest="dev",
+        help="The device identifier name (ex: mysvc_1)"),
     "dev": Option(
         "--dev", action="store", dest="dev",
         help="The device id (ex: 0A04)"),
@@ -45,6 +48,7 @@ ACTIONS = {
         "add_disk": {
             "msg": "Add and present a thin device.",
             "options": [
+                OPT.name,
                 OPT.size,
                 OPT.mappings,
                 OPT.pools,
@@ -53,6 +57,7 @@ ACTIONS = {
         "add_tdev": {
             "msg": "Add a thin device. No pool bindings, no masking.",
             "options": [
+                OPT.name,
                 OPT.size,
             ],
         },
@@ -199,6 +204,7 @@ class Sym(object):
                      'sym_dir_info',
                      'sym_dev_info',
                      'sym_dev_wwn_info',
+                     'sym_dev_name_info',
                      'sym_devrdfa_info',
                      'sym_ficondev_info',
                      'sym_meta_info',
@@ -225,7 +231,6 @@ class Sym(object):
         cmd += ['-sid', self.sid]
         if xml:
             cmd += ['-output', 'xml_element']
-        print(cmd)
         return justcall(cmd)
 
     def symcfg(self, cmd, xml=True):
@@ -270,6 +275,10 @@ class Sym(object):
 
     def get_sym_meta_info(self):
         out, err, ret = self.symdev(['list', '-meta', '-v'])
+        return out
+
+    def get_sym_dev_name_info(self):
+        out, err, ret = self.symdev(['list', '-identifier', 'device_name'])
         return out
 
     def get_sym_disk_info(self):
@@ -411,7 +420,6 @@ class Vmax(Sym):
             cmd += ['-file', self.aclx]
         if xml:
             cmd += ['-output', 'xml_element']
-        print(cmd)
         return justcall(cmd)
 
     def get_sym_pg_aclx(self):
@@ -434,7 +442,7 @@ class Vmax(Sym):
         out, err, ret = self.symaccesscmd(cmd)
         return out
 
-    def add_tdev(self, size=None, **kwargs):
+    def add_tdev(self, name=None, size=None, **kwargs):
         """
 	     create dev count=<n>,
 		  size = <n> [MB | GB | CYL],
@@ -455,9 +463,12 @@ class Vmax(Sym):
         """
 
         if size is None:
-            raise Exception("The '--size' parameter is mandatory")
+            raise ex.excError("The '--size' parameter is mandatory")
         size = convert_size(size, _to="MB")
-	_cmd = "create dev count=1, size= %d MB, emulation=FBA, config=TDEV;" % (size)
+	_cmd = "create dev count=1, size= %d MB, emulation=FBA, config=TDEV, device_attr=SCSI3_PERSIST_RESERV" % (size)
+        if name:
+            _cmd += ", device_name=%s" % name
+	_cmd += ";"
         cmd = ["-cmd", _cmd, "commit", "-noprompt"]
         out, err, ret = self.symconfigure(cmd, xml=False)
         if ret != 0:
@@ -473,9 +484,9 @@ class Vmax(Sym):
 
     def resize_tdev(self, dev=None, size=None, **kwargs):
         if dev is None:
-            raise Exception("The '--dev' parameter is mandatory")
+            raise ex.excError("The '--dev' parameter is mandatory")
         if size is None:
-            raise Exception("The '--size' parameter is mandatory")
+            raise ex.excError("The '--size' parameter is mandatory")
         size = convert_size(size, _to="MB")
         cmd = ["modify", dev, "-tdev", "-cap", str(size), "-captype", "mb", "-noprompt"]
         out, err, ret = self.symdev(cmd, xml=False)
@@ -483,7 +494,7 @@ class Vmax(Sym):
 
     def del_tdev(self, dev=None, **kwargs):
         if dev is None:
-            raise Exception("The '--dev' parameter is mandatory")
+            raise ex.excError("The '--dev' parameter is mandatory")
         cmd = ["delete", dev, "-noprompt"]
         out, err, ret = self.symdev(cmd, xml=False)
         return out, err, ret
@@ -498,11 +509,11 @@ class Vmax(Sym):
         out, err, ret = self.symaccess(cmd)
         return out, err, ret
 
-    def add_disk(self, size=None, pools=[], mappings={}, **kwargs):
+    def add_disk(self, name=None, size=None, pools=[], mappings={}, **kwargs):
         sgs = self.translate_mappings(mappings)
         if len(sgs) == 0:
             raise ex.excError("no storage group found for the requested mappings")
-        data = self.add_tdev(size, **kwargs)
+        data = self.add_tdev(name, size, **kwargs)
         for pool in pools:
             self.add_tdev_to_pool(data["dev_name"], pool)
         for sg in sgs:
