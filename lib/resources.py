@@ -218,6 +218,11 @@ class Resource(object):
         Executes a resource trigger. Guess if the shell mode is needed from
         the trigger syntax.
         """
+        if action == "startstandby":
+            action = "start"
+        elif action == "shutdown":
+            action = "stop"
+
         if "blocking" in kwargs:
             blocking = kwargs["blocking"]
             del kwargs["blocking"]
