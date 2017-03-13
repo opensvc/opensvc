@@ -131,6 +131,11 @@ class Resource(object):
     def enable(self):  self.disabled=False
 
     def action_triggers(self, type, action, blocking=False):
+        if action == "startstandby":
+            action = "start"
+        elif action == "shutdown":
+            action = "stop"
+
         attr = type+"_"+action
         if hasattr(self, attr):
             cmd = getattr(self, attr)
