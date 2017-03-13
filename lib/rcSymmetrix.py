@@ -35,6 +35,9 @@ OPT = Storage({
     "size": Option(
         "--size", action="store", dest="size",
         help="The disk size, expressed as a size expression like 1g, 100mib, ..."),
+    "slo": Option(
+        "--slo", action="store", dest="slo",
+        help="The thin device Service Level Objective."),
 })
 
 GLOBAL_OPTS = [
@@ -51,15 +54,15 @@ ACTIONS = {
                 OPT.name,
                 OPT.size,
                 OPT.mappings,
-                OPT.pools,
+                OPT.slo,
             ],
         },
         "add_tdev": {
-            "msg": "Add a thin device. No pool bindings, no masking.",
+            "msg": "Add a thin device. No masking.",
             "options": [
                 OPT.name,
                 OPT.size,
-                OPT.pools,
+                OPT.slo,
             ],
         },
     },
@@ -88,7 +91,10 @@ ACTIONS = {
     },
     "List actions": {
         "list_pools": {
-            "msg": "List device pools.",
+            "msg": "List thin pools.",
+        },
+        "list_sgs": {
+            "msg": "List storage groups.",
         },
         "list_tdevs": {
             "msg": "List thin devices.",
@@ -204,20 +210,18 @@ class Arrays(object):
 
 class Sym(object):
     def __init__(self, sid, symcli_path, symcli_connect, username, password):
-        self.keys = ['sym_info',
-                     'sym_dir_info',
-                     'sym_dev_info',
-                     'sym_dev_wwn_info',
-                     'sym_dev_name_info',
-                     'sym_devrdfa_info',
-                     'sym_ficondev_info',
-                     'sym_meta_info',
-                     'sym_disk_info',
-                     'sym_diskgroup_info',
-                     'sym_pool_info',
-                     'sym_tdev_info',
-                     'sym_srp_info',
-                     'sym_slo_info']
+        self.keys = [
+            'sym_info',
+            'sym_dir_info',
+            'sym_dev_info',
+            'sym_dev_wwn_info',
+            'sym_dev_name_info',
+            'sym_devrdfa_info',
+            'sym_ficondev_info',
+            'sym_meta_info',
+            'sym_disk_info',
+            'sym_diskgroup_info',
+        ]
         self.sid = sid
         self.symcli_path = symcli_path
         self.symcli_connect = symcli_connect
@@ -236,6 +240,10 @@ class Sym(object):
         if xml:
             cmd += ['-output', 'xml_element']
         return justcall(cmd)
+
+    def symsg(self, cmd, xml=True):
+        cmd = ['/usr/symcli/bin/symsg'] + cmd
+        return self.symcmd(cmd, xml=xml)
 
     def symcfg(self, cmd, xml=True):
         cmd = ['/usr/symcli/bin/symcfg'] + cmd
@@ -309,6 +317,10 @@ class Sym(object):
         out, err, ret = self.symcfg(['list', '-slo', '-detail', '-v'])
         return out
 
+    def get_sym_sg_info(self):
+        out, err, ret = self.symsg(['list', '-v'])
+        return out
+
     def parse_xml(self, buff, key=None, as_list=[], exclude=[]):
         tree = fromstring(buff)
         data = []
@@ -345,6 +357,14 @@ class Sym(object):
         out = self.get_sym_pool_info()
         data = self.parse_xml(out, key="DevicePool")
         return data
+
+    def get_sgs(self, **kwargs):
+        out = self.get_sym_sg_info()
+        data = self.parse_xml(out, key="SG_Info")
+        return data
+
+    def list_sgs(self, **kwargs):
+        print(json.dumps(self.get_sgs(), indent=4))
 
     def list_tdevs(self, dev=None, **kwargs):
         print(json.dumps(self.get_tdevs(dev), indent=4))
@@ -402,10 +422,17 @@ class Sym(object):
 class Vmax(Sym):
     def __init__(self, sid, symcli_path, symcli_connect, username, password):
         Sym.__init__(self, sid, symcli_path, symcli_connect, username, password)
-        self.keys += ['sym_ig_aclx',
-                      'sym_pg_aclx',
-                      'sym_sg_aclx',
-                      'sym_view_aclx']
+        self.keys += [
+            'sym_ig_aclx',
+            'sym_pg_aclx',
+            'sym_sg_aclx',
+            'sym_view_aclx',
+            'sym_pool_info',
+            'sym_tdev_info',
+            'sym_sg_info',
+            'sym_srp_info',
+            'sym_slo_info',
+        ]
 
         if 'SYMCLI_DB_FILE' in os.environ:
             dir = os.path.dirname(os.environ['SYMCLI_DB_FILE'])
@@ -548,7 +575,7 @@ class Vmax(Sym):
         out, err, ret = self.symaccess(cmd, xml=False)
         return out, err, ret
 
-    def add_disk(self, name=None, size=None, pools=[], mappings={}, **kwargs):
+    def add_disk(self, name=None, size=None, slo=None, mappings={}, **kwargs):
         sgs = self.translate_mappings(mappings)
         if len(sgs) == 0:
             raise ex.excError("no storage group found for the requested mappings")
