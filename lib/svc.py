@@ -4436,6 +4436,11 @@ class Svc(object):
         from svcDict import KeyDict, deprecated_sections
         from svcBuilder import build, handle_references
         from rcUtilities import convert_size
+        try:
+            import ConfigParser
+        except ImportError:
+            import configparser as ConfigParser
+
 
         data = KeyDict(provision=True)
         ret = {
@@ -4447,7 +4452,11 @@ class Svc(object):
             config = self.config
         else:
             config = RawConfigParser()
-            config.read(path)
+            try:
+                config.read(path)
+            except ConfigParser.ParsingError:
+                self.log.error("error parsing %s" % path)
+                ret["errors"] += 1
 
         def check_scoping(key, section, option):
             """
