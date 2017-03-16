@@ -1141,13 +1141,7 @@ def convert_to_lsb():
         svcname = os.path.basename(p)[:-4]
         shutil.copy(os.path.realpath(p), pathetc)
         os.symlink("/usr/bin/svcmgr", os.path.join(pathetc, svcname))
-    for p in glob.glob("/opt/opensvc/etc/*.dir"):
-        bp = os.path.basename(p)
-        svcname = bp[:-4]
-        dst = os.path.join(pathetc, bp)
-        logit("migrate " + p)
-        shutil.copytree(p, dst, symlinks=True)
-    for p in glob.glob("/opt/opensvc/etc/*.d"):
+    for p in glob.glob("/opt/opensvc/etc/*.d") + glob.glob("/opt/opensvc/etc/*.dir"):
         logit("migrate " + p)
         if os.path.islink(p):
             bp = os.path.basename(p)
