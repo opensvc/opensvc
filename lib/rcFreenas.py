@@ -13,7 +13,10 @@ from rcOptParser import OptParser
 from optparse import Option
 
 
-requests.packages.urllib3.disable_warnings()
+try:
+    requests.packages.urllib3.disable_warnings()
+except:
+    pass
 verify = False
 
 PROG = "nodemgr array"
