@@ -8,7 +8,7 @@ import stat
 import sys
 import glob
 import rcExceptions as ex
-from rcUtilities import which, is_string
+from rcUtilities import which, is_string, lazy
 
 class Disk(resDisk.Disk):
     def __init__(self,
@@ -30,10 +30,8 @@ class Disk(resDisk.Disk):
         self.group = group
         self.perm = perm
         self.create_char_devices = create_char_devices
-
-        self.get_uid()
-        self.get_gid()
         self.original_devs = devs
+
         self.devs = set([])
         self.devs_not_found = set([])
         self.dst_devs_not_found = set([])
@@ -117,23 +115,27 @@ class Disk(resDisk.Disk):
         self.name = self.svc.svcname+".raw"+n
         self.label = self.name
 
-    def get_uid(self):
-        self.uid = self.user
-        if is_string(self.uid):
+    @lazy
+    def uid(self):
+        uid = self.user
+        if is_string(uid):
             try:
-                info=pwd.getpwnam(self.uid)
-                self.uid = info[2]
+                info=pwd.getpwnam(uid)
+                uid = info[2]
             except:
                 pass
+        return uid
 
-    def get_gid(self):
-        self.gid = self.group
-        if is_string(self.gid):
+    @lazy
+    def gid(self):
+        gid = self.group
+        if is_string(gid):
             try:
-                info=grp.getgrnam(self.gid)
-                self.gid = info[2]
+                info=grp.getgrnam(gid)
+                gid = info[2]
             except:
                 pass
+        return gid
 
     def check_uid(self, rdev, verbose=False):
         if not os.path.exists(rdev):
