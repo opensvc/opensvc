@@ -4,6 +4,7 @@ import sys
 import os
 import ConfigParser
 import json
+import time
 from xml.etree.ElementTree import XML, fromstring
 
 import rcExceptions as ex
@@ -449,7 +450,7 @@ class Vmax(Sym):
                 if len(files) == 1:
                     self.aclx = files[0]
             if not os.path.exists(self.aclx):
-                print("missing file %s"%self.aclx)
+                print("missing file %s"%self.aclx, file=sys.stderr)
         else:
             self.aclx = None
 
@@ -547,10 +548,45 @@ class Vmax(Sym):
             raise ex.excError(err)
         self.del_diskinfo(data["wwn"])
 
+    def del_disk(self, dev=None, **kwargs):
+        for sg in self.get_dev_sgs(dev):
+            self.del_tdev_from_sg(dev, sg)
+        self.free_tdev(dev)
+        self.del_tdev(dev=dev, **kwargs)
+
+    def free_tdev(self, dev):
+        out, err, ret = self.symdev(["free", "-devs", dev, "-all", "-noprompt"], xml=False)
+        while True:
+            if self.tdev_freed(dev):
+                break
+            time.sleep(5)
+
+    def tdev_freed(self, dev):
+        out, err, ret = self.symcfg(["verify", "-tdevs", "-devs", dev, "-freeingall"], xml=False)
+        if out.strip().split()[0] == "None":
+            return True
+        return False
+
     def add_tdev_to_sg(self, dev, sg):
-        cmd = ["-name", sg, "-type", "storage", "add", dev, "-noprompt"]
-        out, err, ret = self.symaccess(cmd, xml=False)
+        cmd = ["-name", sg, "-type", "storage", "add", "dev", dev]
+        out, err, ret = self.symaccesscmd(cmd, xml=False)
+        if ret != 0:
+            print(err, file=sys.stderr)
         return out, err, ret
+
+    def del_tdev_from_sg(self, dev, sg):
+        cmd = ["-name", sg, "-type", "storage", "remove", "dev", dev, "-unmap"]
+	print(" ".join(cmd))
+        out, err, ret = self.symaccesscmd(cmd, xml=False)
+        if ret != 0:
+            print(err, file=sys.stderr)
+        return out, err, ret
+
+    def get_dev_sgs(self, dev):
+        out, err, ret = self.symaccesscmd(["list", "-type", "storage", "-devs", dev])
+        data = self.parse_xml(out, key="Group_Info")
+	print(data)
+        return [d["group_name"] for d in data]
 
     def get_sg(self, sg):
         out, err, ret = self.symsg(["show", sg])
@@ -577,7 +613,6 @@ class Vmax(Sym):
         sgs = self.filter_sgs(sgs, srp=srp, slo=slo)
         if len(sgs) == 0:
             raise ex.excError("no storage group found for the requested SRP and SLO")
-        raise ex.excError("stop")
         data = self.add_tdev(name, size, **kwargs)
         for sg in sgs:
             self.add_tdev_to_sg(data["dev_name"], sg)
@@ -600,9 +635,6 @@ class Vmax(Sym):
     def push_diskinfo(self, data, name, size, srp, sgs):
         if self.node is None:
             return
-        group = srp
-        if len(sgs) > 0:
-            group = group + "/" + sgs[0]
         try:
             ret = self.node.collector_rest_post("/disks", {
                 "disk_id": data["wwn"],
@@ -611,7 +643,7 @@ class Vmax(Sym):
                 "disk_size": convert_size(size, _to="MB"),
                 "disk_alloc": 0,
                 "disk_arrayid": self.sid,
-                "disk_group": group,
+                "disk_group": srp,
             })
         except Exception as exc:
             raise ex.excError(str(exc))
@@ -633,7 +665,7 @@ class Dmx(Sym):
                 # emc grab format
                 self.maskdb = os.path.join(dir, sid, 'symmaskdb_backup.bin')
             if not os.path.exists(self.maskdb):
-                print("missing file %s"%self.maskdb)
+                print("missing file %s"%self.maskdb, file=sys.stderr)
         else:
             self.maskdb = None
 
