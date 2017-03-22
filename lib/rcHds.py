@@ -685,7 +685,7 @@ class Array(object):
         try:
             ret = self.node.collector_rest_post("/disks", {
                 "disk_id": self.serial+"."+str(data["devNum"]),
-                "disk_devid": data["devNum"],
+                "disk_devid": data["displayName"],
                 "disk_name": data["label"] if "label" in data else "",
                 "disk_size": int(data["capacityInKB"]) // 1024,
                 "disk_alloc": int(data["consumedCapacityInKB"]) // 1024,
