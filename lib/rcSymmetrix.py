@@ -29,15 +29,15 @@ OPT = Storage({
     "mappings": Option(
         "--mappings", action="append", dest="mappings",
         help="A <hba_id>:<tgt_id>,<tgt_id>,... mapping used in add map in replacement of --targetgroup and --initiatorgroup. Can be specified multiple times."),
-    "pools": Option(
-        "--pools", action="append", dest="pools",
-        help="A pool hosting the TDEV. Multiple --pools can be set."),
     "size": Option(
         "--size", action="store", dest="size",
         help="The disk size, expressed as a size expression like 1g, 100mib, ..."),
     "slo": Option(
         "--slo", action="store", dest="slo",
         help="The thin device Service Level Objective."),
+    "srp": Option(
+        "--srp", action="store", dest="srp",
+        help="The Storage Resource Pool hosting the device."),
 })
 
 GLOBAL_OPTS = [
@@ -55,6 +55,7 @@ ACTIONS = {
                 OPT.size,
                 OPT.mappings,
                 OPT.slo,
+                OPT.srp,
             ],
         },
         "add_tdev": {
@@ -62,7 +63,6 @@ ACTIONS = {
             "options": [
                 OPT.name,
                 OPT.size,
-                OPT.slo,
             ],
         },
     },
@@ -382,21 +382,25 @@ class Sym(object):
 
     def get_views(self, **kwargs):
         out = self.get_sym_view_aclx()
+        if out.strip() == "":
+            return []
         data = self.parse_xml(out, key="View_Info", as_list=["Initiators", "Director_Identification", "SG", "Device", "dev_port_info"], exclude=["Initiator_List"])
         return data
 
     def get_initiator_views(self, wwn):
-        out = self.get_symaccess(["list", "-type", "initiator", "-wwn", wwn])
-        data = self.parse_xml(out, key="view_name")
-        return data
+        out, err, ret = self.symaccesscmd(["list", "-type", "initiator", "-wwn", wwn])
+        if out.strip() == "":
+            return []
+        data = self.parse_xml(out, key="Mask_View_Names")
+        return [d["view_name"] for d in data]
 
     def get_view(self, view):
-        out = self.get_symaccess(["show", "view", view])
-        data = self.parse_xml(out, key="View_Info")
-        return data
+        out, err, ret = self.symaccesscmd(["show", "view", view])
+        data = self.parse_xml(out, key="View_Info", as_list=["Director_Identification", "SG_Child_info", "Initiator", "Device", "dev_port_info"], exclude=["Initiators"])
+        return data[0]
 
     def get_mapping_storage_groups(self, wwn, target):
-        l = []
+        l = set()
         for view in self.get_initiator_views(wwn):
             view_data = self.get_view(view)
             if "port_info" not in view_data:
@@ -406,17 +410,17 @@ class Sym(object):
             ports = [e["port_wwn"] for e in view_data["port_info"]["Director_Identification"]]
             if target not in ports:
                 continue
-            l.append(view_data["stor_grpname"])
+            l.add(view_data["stor_grpname"])
         return l
 
     def translate_mappings(self, mappings):
-        sgs = []
+        sgs = set()
         for mapping in mappings:
             elements = mapping.split(":")
             hba_id = elements[0]
             targets = elements[-1].split(",")
             for target in targets:
-                sgs += self.get_mapping_storage_groups(hba_id, target)
+                sgs |= self.get_mapping_storage_groups(hba_id, target)
         return sgs
 
 class Vmax(Sym):
@@ -480,7 +484,7 @@ class Vmax(Sym):
         out, err, ret = self.symaccesscmd(cmd)
         return out
 
-    def add_tdev(self, name=None, size=None, pools=None, **kwargs):
+    def add_tdev(self, name=None, size=None, **kwargs):
         """
 	     create dev count=<n>,
 		  size = <n> [MB | GB | CYL],
@@ -500,8 +504,6 @@ class Vmax(Sym):
 		  [, device_name='<DeviceName>'[,number=<n | SYMDEV> ]];
         """
 
-        if pools is None:
-            pools = []
         if size is None:
             raise ex.excError("The '--size' parameter is mandatory")
         size = convert_size(size, _to="MB")
@@ -521,9 +523,6 @@ class Vmax(Sym):
                     raise ex.excError("unable to determine the created SymDevName")
                 dev = l[2]
                 data = self.get_sym_dev_wwn(dev)[0]
-                for pool in pools:
-                    self.add_tdev_to_pool(data["dev_name"], pool)
-                self.push_diskinfo(data, name, size, pools)
                 return data
         raise ex.excError("unable to determine the created SymDevName")
 
@@ -548,40 +547,41 @@ class Vmax(Sym):
             raise ex.excError(err)
         self.del_diskinfo(data["wwn"])
 
-    def add_tdev_to_pool_5876(self, dev, pool, preallocate=None):
-	_cmd = "bind tdev %s to pool %s" % (dev, pool)
-        if preallocate:
-            _cmd += ", preallocate size=%dMB" % convert_size(preallocate, _to="MB")
-	_cmd += ";"
-        cmd = ["-cmd", _cmd, "commit", "-noprompt"]
-        out, err, ret = self.symconfigure(cmd, xml=False)
-        print(out, err, ret)
-        if ret != 0:
-            raise ex.excError(err)
-        return out, err, ret
-
-    def add_tdev_to_pool_5977(self, dev, pool, preallocate=None):
-        cmd = ["bind", "-devs", dev, "-pool", pool, "-noprompt"]
-        out, err, ret = self.symdev(cmd, xml=False)
-        if ret != 0:
-            raise ex.excError(err)
-        return out, err, ret
-
-    def add_tdev_to_pool(self, *args, **kwargs):
-        return
-
     def add_tdev_to_sg(self, dev, sg):
         cmd = ["-name", sg, "-type", "storage", "add", dev, "-noprompt"]
         out, err, ret = self.symaccess(cmd, xml=False)
         return out, err, ret
 
-    def add_disk(self, name=None, size=None, slo=None, mappings={}, **kwargs):
+    def get_sg(self, sg):
+        out, err, ret = self.symsg(["show", sg])
+        data = self.parse_xml(out, key="SG_Info")
+        return data[0]
+
+    def filter_sgs(self, sgs, srp=None, slo=None):
+        filtered_sgs = []
+	if srp is None and slo is None:
+            return sgs
+        for sg in sgs:
+            data = self.get_sg(sg)
+            if srp and data["SRP_name"] != srp:
+                continue
+            if slo and data["SLO_name"] != slo:
+                continue
+            filtered_sgs.append(sg)
+        return filtered_sgs
+
+    def add_disk(self, name=None, size=None, slo=None, srp=None, mappings={}, **kwargs):
         sgs = self.translate_mappings(mappings)
         if len(sgs) == 0:
             raise ex.excError("no storage group found for the requested mappings")
+        sgs = self.filter_sgs(sgs, srp=srp, slo=slo)
+        if len(sgs) == 0:
+            raise ex.excError("no storage group found for the requested SRP and SLO")
+        raise ex.excError("stop")
         data = self.add_tdev(name, size, **kwargs)
         for sg in sgs:
             self.add_tdev_to_sg(data["dev_name"], sg)
+        self.push_diskinfo(data, name, size, srp, sgs)
         return data
 
     def del_diskinfo(self, disk_id):
@@ -597,9 +597,12 @@ class Vmax(Sym):
             raise ex.excError(ret["error"])
         return ret
 
-    def push_diskinfo(self, data, name, size, pools):
+    def push_diskinfo(self, data, name, size, srp, sgs):
         if self.node is None:
             return
+        group = srp
+        if len(sgs) > 0:
+            group = group + "/" + sgs[0]
         try:
             ret = self.node.collector_rest_post("/disks", {
                 "disk_id": data["wwn"],
@@ -608,7 +611,7 @@ class Vmax(Sym):
                 "disk_size": convert_size(size, _to="MB"),
                 "disk_alloc": 0,
                 "disk_arrayid": self.sid,
-                "disk_group": ", ".join(pools),
+                "disk_group": group,
             })
         except Exception as exc:
             raise ex.excError(str(exc))
