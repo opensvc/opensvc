@@ -576,7 +576,6 @@ class Vmax(Sym):
 
     def del_tdev_from_sg(self, dev, sg):
         cmd = ["-name", sg, "-type", "storage", "remove", "dev", dev, "-unmap"]
-	print(" ".join(cmd))
         out, err, ret = self.symaccesscmd(cmd, xml=False)
         if ret != 0:
             print(err, file=sys.stderr)
@@ -585,7 +584,6 @@ class Vmax(Sym):
     def get_dev_sgs(self, dev):
         out, err, ret = self.symaccesscmd(["list", "-type", "storage", "-devs", dev])
         data = self.parse_xml(out, key="Group_Info")
-	print(data)
         return [d["group_name"] for d in data]
 
     def get_sg(self, sg):
