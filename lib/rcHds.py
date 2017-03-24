@@ -114,7 +114,10 @@ ACTIONS = {
             "msg": "List ports",
         },
         "list_logicalunits": {
-            "msg": "List ports",
+            "msg": "List logical units",
+            "options": [
+                OPT.devnum,
+            ],
         },
     },
 }
@@ -200,6 +203,8 @@ class Array(object):
             self.bin = "HiCommandCLI"
         else:
             self.bin = bin
+        self.domain_portname = {}
+        self.port_portname = {}
 
     def cmd(self, cmd, scoped=True, xml=True):
         if which(self.bin) is None:
@@ -298,8 +303,10 @@ class Array(object):
     def get_array(self):
         return json.dumps(self.get_array_data(scoped=True), indent=4)
 
-    def get_lu_data(self):
+    def get_lu_data(self, devnum=None):
         cmd = ['GetStorageArray', 'subtarget=Logicalunit', 'lusubinfo=Path,LDEV,VolumeConnection']
+        if devnum:
+            cmd += ["displayname="+str(devnum)]
         out, err, ret = self.cmd(cmd)
         tree = fromstring(out)
         data = []
@@ -468,8 +475,8 @@ class Array(object):
         data = self.get_port_data()
         print(json.dumps(data, indent=4))
 
-    def list_logicalunits(self, **kwargs):
-        data = self.get_lu_data()
+    def list_logicalunits(self, devnum=None, **kwargs):
+        data = self.get_lu_data(devnum=devnum)
         print(json.dumps(data, indent=4))
 
     def list_domains(self, **kwargs):
@@ -483,13 +490,19 @@ class Array(object):
             hba_id = elements[0]
             targets = elements[-1].split(",")
             domain = self.get_hba_domain(hba_id)["domainID"]
+            if domain not in self.domain_portname:
+                self.domain_portname[domain] = []
+            self.domain_portname[domain].append(hba_id)
             if domain not in internal_mappings:
                 internal_mappings[domain] = set()
-            for target in targets:
-                tgt = self.get_target_port(target)
-                if tgt is None:
+            for tgt_id in targets:
+                port = self.get_target_port(tgt_id)["displayName"]
+                if port is None:
                     continue
-                internal_mappings[domain].add(tgt["displayName"])
+                if port not in self.port_portname:
+                    self.port_portname[port] = []
+                self.port_portname[port].append(tgt_id)
+                internal_mappings[domain].add(port)
         return internal_mappings
 
     def del_map(self, devnum=None, mappings=None, **kwargs):
@@ -601,16 +614,41 @@ class Array(object):
             "poolid="+str(pool_id),
         ]
         out, err, ret = self.cmd(cmd, xml=False)
-        data = self.parse(out)
-        lun_data = data[0]["ArrayGroup"][0]["Lu"][0]
         if ret != 0:
             raise ex.excError(err)
+        data = self.parse(out)
+        ret = data[0]["ArrayGroup"][0]["Lu"][0]
+
         if name:
-            self.rename_disk(devnum=lun_data["devNum"], name=name)
+            self.rename_disk(devnum=ret["devNum"], name=name)
         if mappings:
-            self.add_map(name=name, devnum=lun_data["devNum"], lun=lun, mappings=mappings)
-        self.push_diskinfo(lun_data)
-        return lun_data
+            self.add_map(name=name, devnum=ret["devNum"], lun=lun, mappings=mappings)
+        lun_data = self.get_lu_data(devnum=ret["displayName"])[0]
+        self.push_diskinfo(lun_data, name, size)
+        mappings = {}
+        for path in lun_data["Path"]:
+            domain = path["domainID"]
+            port = path["portName"]
+            if domain not in self.domain_portname:
+                continue
+            if port not in self.port_portname:
+                continue
+            for hba_id in self.domain_portname[domain]:
+                for tgt_id in self.port_portname[port]:
+                    mappings[hba_id+":"+tgt_id] = {
+                        "hba_id": hba_id,
+                        "tgt_id": tgt_id,
+                        "lun": int(path["LUN"]),
+                    }
+        results = {
+            "disk_id": ".".join(lun_data["objectID"].split(".")[-2:]),
+            "disk_devid": lun_data["displayName"],
+            "mappings": mappings,
+            "driver_data": {
+                 "lu": lun_data,
+            },
+        }
+        return results
 
     def resize_disk(self, devnum=None, size=None, **kwargs):
         if devnum is None:
@@ -679,16 +717,16 @@ class Array(object):
             raise ex.excError(ret["error"])
         return ret
 
-    def push_diskinfo(self, data):
+    def push_diskinfo(self, data, name, size):
         if self.node is None:
             return
         try:
             ret = self.node.collector_rest_post("/disks", {
                 "disk_id": self.serial+"."+str(data["devNum"]),
-                "disk_devid": data["displayName"],
-                "disk_name": data["label"] if "label" in data else "",
-                "disk_size": int(data["capacityInKB"]) // 1024,
-                "disk_alloc": int(data["consumedCapacityInKB"]) // 1024,
+                "disk_devid": data["devNum"],
+                "disk_name": str(name),
+                "disk_size": convert_size(size, _to="MB"),
+                "disk_alloc": 0,
                 "disk_arrayid": self.name,
                 "disk_group": self.get_pool_by_id(data["dpPoolID"]),
             })
