@@ -112,7 +112,7 @@ class syncBtrfsSnap(resSync.Sync):
 
     def _status_one(self, label, subvol):
         if self.test_btrfs(label) != 0:
-            self.status_log("snap of %s suspended: not writable"%label, "warn")
+            self.status_log("snap of %s suspended: not writable"%label, "info")
             return
         try:
             btrfs = self.get_btrfs(label)
