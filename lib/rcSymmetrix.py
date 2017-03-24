@@ -400,17 +400,26 @@ class Sym(object):
         data = self.parse_xml(out, key="View_Info", as_list=["Director_Identification", "SG_Child_info", "Initiator", "Device", "dev_port_info"], exclude=["Initiators"])
         return data[0]
 
-    def get_mapping_storage_groups(self, wwn, target):
+    def get_mapping_storage_groups(self, hba_id, tgt_id):
         l = set()
-        for view in self.get_initiator_views(wwn):
+        for view in self.get_initiator_views(hba_id):
             view_data = self.get_view(view)
             if "port_info" not in view_data:
                 continue
             if "Director_Identification" not in view_data["port_info"]:
                 continue
             ports = [e["port_wwn"] for e in view_data["port_info"]["Director_Identification"]]
-            if target not in ports:
+            if tgt_id not in ports:
                 continue
+            sg = view_data["stor_grpname"]
+            if sg not in self.sg_mappings:
+                self.sg_mappings[sg] = []
+            self.sg_mappings[sg].append({
+	    	"sg": sg,
+	    	"view_name": view_data["view_name"],
+		"hba_id": hba_id,
+		"tgt_id": tgt_id,
+            })
             l.add(view_data["stor_grpname"])
         return l
 
@@ -420,8 +429,8 @@ class Sym(object):
             elements = mapping.split(":")
             hba_id = elements[0]
             targets = elements[-1].split(",")
-            for target in targets:
-                sgs |= self.get_mapping_storage_groups(hba_id, target)
+            for tgt_id in targets:
+                sgs |= self.get_mapping_storage_groups(hba_id, tgt_id)
         return sgs
 
 class Vmax(Sym):
@@ -438,6 +447,7 @@ class Vmax(Sym):
             'sym_srp_info',
             'sym_slo_info',
         ]
+        self.sg_mappings = {}
 
         if 'SYMCLI_DB_FILE' in os.environ:
             dir = os.path.dirname(os.environ['SYMCLI_DB_FILE'])
@@ -604,6 +614,33 @@ class Vmax(Sym):
             filtered_sgs.append(sg)
         return filtered_sgs
 
+    def get_lun(self, dev, hba_id, tgt_id, view_name):
+        view = self.get_view(view_name)
+        port = None
+        for port in view["port_info"]["Director_Identification"]:
+            if port["port_wwn"] == tgt_id:
+                port_id = port["port"]
+                break
+        if port is None:
+            return
+        for device in view["Device"]:
+            if device["dev_name"] != dev:
+                continue
+            for port in device["dev_port_info"]:
+                if port_id == port["port"]:
+                    return port["host_lun"]
+
+    def get_mappings(self, dev):
+        mappings = {}
+        for sg in self.get_dev_sgs(dev):
+            for sg, l in self.sg_mappings.items():
+		for d in l:
+                    d["lun"] = self.get_lun(dev, d["hba_id"], d["tgt_id"], d["view_name"])
+                    if d["lun"] is None:
+                        continue
+                    mappings[d["hba_id"] + ":" + d["tgt_id"]] = d
+        return mappings
+
     def add_disk(self, name=None, size=None, slo=None, srp=None, mappings={}, **kwargs):
         sgs = self.translate_mappings(mappings)
         if len(sgs) == 0:
@@ -611,11 +648,20 @@ class Vmax(Sym):
         sgs = self.filter_sgs(sgs, srp=srp, slo=slo)
         if len(sgs) == 0:
             raise ex.excError("no storage group found for the requested SRP and SLO")
-        data = self.add_tdev(name, size, **kwargs)
+        dev_data = self.add_tdev(name, size, **kwargs)
         for sg in sgs:
-            self.add_tdev_to_sg(data["dev_name"], sg)
-        self.push_diskinfo(data, name, size, srp, sgs)
-        return data
+            self.add_tdev_to_sg(dev_data["dev_name"], sg)
+        self.push_diskinfo(dev_data, name, size, srp, sgs)
+        mappings = {}
+        results = {
+            "disk_id": dev_data["wwn"],
+            "disk_devid": dev_data["dev_name"],
+            "mappings": self.get_mappings(dev_data["dev_name"]),
+            "driver_data": {
+                "dev": dev_data,
+            },
+        }
+        return results
 
     def del_diskinfo(self, disk_id):
         if disk_id in (None, ""):
