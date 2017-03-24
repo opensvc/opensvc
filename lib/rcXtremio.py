@@ -181,6 +181,7 @@ ACTIONS = {
             "msg": "List configured mappings",
             "options": [
                 OPT.mapping,
+                OPT.volume,
             ],
         },
         "list_targets": {
@@ -273,6 +274,9 @@ class Array(object):
             'volumes_details',
             'targets_details',
         ]
+
+        self.tg_portname = {}
+        self.ig_portname = {}
 
     def convert_ids(self, data):
         if data is None:
@@ -369,11 +373,31 @@ class Array(object):
         if alignment_offset is not None:
             d["alignment-offset"] = alignment_offset
         self.post("/volumes", data=d)
+        driver_data = {}
         if mappings:
-            self.add_map(volume=name, mappings=mappings, cluster=cluster)
-        ret = self.get_volumes(volume=name, cluster=cluster)
-        self.push_diskinfo(ret)
-        return ret
+            mappings_data = self.add_map(volume=name, mappings=mappings, cluster=cluster)
+        driver_data["volume"] = self.get_volumes(volume=name, cluster=cluster)["content"]
+        driver_data["mappings"] = mappings_data.values()
+        results = {
+            "driver_data": driver_data,
+            "disk_id": driver_data["volume"]["naa-name"],
+            "disk_devid": driver_data["volume"]["index"],
+            "mappings": {},
+        }
+        for ig, tg in list(mappings_data.keys()):
+            if ig not in self.ig_portname:
+                continue
+            for hba_id in self.ig_portname[ig]:
+                if tg not in self.tg_portname:
+                    continue
+                for tgt_id in self.tg_portname[tg]:
+                    results["mappings"][hba_id+":"+tgt_id] = {
+                        "hba_id": hba_id,
+                        "tgt_id": tgt_id,
+                        "lun": mappings_data[(ig, tg)]["lun"],
+                    }
+        self.push_diskinfo(results, name, size)
+        return results
 
     def resize_volume(self, volume=None, size=None, cluster=None, **kwargs):
         if volume is None:
@@ -491,21 +515,32 @@ class Array(object):
             hba_id = elements[0]
             targets = elements[-1].split(",")
             ig = self.get_hba_initiatorgroup(hba_id)
-            internal_mappings[ig] = set([self.get_target_targetgroup(target, cluster=cluster) for target in targets])
+            if ig not in self.ig_portname:
+                self.ig_portname[ig] = []
+            self.ig_portname[ig].append(hba_id)
+            internal_mappings[ig] = set()
+            for target in targets:
+                tg = self.get_target_targetgroup(target, cluster=cluster)
+                if tg not in self.tg_portname:
+                    self.tg_portname[tg] = []
+                self.tg_portname[tg].append(target)
+                internal_mappings[ig].add(tg)
         return internal_mappings
 
     def add_map(self, volume=None, mappings=None, initiatorgroup=None, targetgroup=None,
                 cluster=None, lun=None, **kwargs):
         if volume is None:
             raise ex.excError("--volume is mandatory")
-        results = []
+        results = {}
         if mappings is not None and initiatorgroup is None:
             internal_mappings = self.translate_mappings(mappings, cluster=cluster)
             for ig, tgs in internal_mappings.items():
                 for tg in tgs:
-                    results.append(self._add_map(volume=volume, initiatorgroup=ig, targetgroup=tg, cluster=cluster, lun=lun, **kwargs))
+                    map_data = self._add_map(volume=volume, initiatorgroup=ig, targetgroup=tg, cluster=cluster, lun=lun, **kwargs)
+                    results[(ig, tg)] = map_data
         else:
-            results.append(self._add_map(volume=volume, initiatorgroup=initiatorgroup, targetgroup=targetgroup, cluster=cluster, lun=lun, **kwargs))
+            map_data = self._add_map(volume=volume, initiatorgroup=initiatorgroup, targetgroup=targetgroup, cluster=cluster, lun=lun, **kwargs)
+            results[(initiatorgroup, targetgroup)] = map_data
         return results
 
     def _add_map(self, volume=None, initiatorgroup=None, targetgroup=None,
@@ -522,7 +557,8 @@ class Array(object):
             d["cluster-id"] = cluster
         if lun is not None:
             d["lun"] = lun
-        return self.post("/lun-maps", data=d)
+        ret = self.post("/lun-maps", data=d)
+        return ret["content"]
 
     def del_map(self, mapping=None, cluster=None, **kwargs):
         if mapping is None:
@@ -632,7 +668,7 @@ class Array(object):
         else:
             print(json.dumps(data, indent=8))
 
-    def list_mappings(self, cluster=None, mapping=None, **kwargs):
+    def list_mappings(self, cluster=None, mapping=None, volume=None, **kwargs):
         params = {"full": 1}
         uri = "/lun-maps"
         if mapping is not None:
@@ -641,6 +677,13 @@ class Array(object):
                 uri += "/"+str(mapping)
             except ValueError:
                 params["name"] = mapping
+        if volume is not None:
+            try:
+                int(volume)
+                params["filter"] = "vol-index:eq:"+str(volume)
+                print(params)
+            except ValueError:
+                params["filter"] = "vol-name:eq:"+volume
         if cluster is not None:
             params["cluster-id"] = cluster
         data = self.get(uri, params=params)
@@ -687,18 +730,18 @@ class Array(object):
             raise ex.excError(ret["error"])
         return ret
 
-    def push_diskinfo(self, data):
+    def push_diskinfo(self, data, name, size):
         if self.node is None:
             return
-        if data["content"]["naa-name"] in (None, ""):
-            data["content"]["naa-name"] = self.name+"."+str(data["content"]["index"])
+        if data["disk_id"] in (None, ""):
+            data["disk_id"] = self.name+"."+str(data["driver_info"]["volume"]["index"])
         try:
             ret = self.node.collector_rest_post("/disks", {
-                "disk_id": data["content"]["naa-name"],
-                "disk_devid": data["content"]["index"],
-                "disk_name": data["content"]["name"],
-                "disk_size": int(data["content"]["vol-size"]) // 1024,
-                "disk_alloc": int(data["content"]["logical-space-in-use"]) // 1024,
+                "disk_id": data["disk_id"],
+                "disk_devid": data["disk_devid"],
+                "disk_name": name,
+                "disk_size": convert_size(size, _to="MB"),
+                "disk_alloc": 0,
                 "disk_arrayid": self.name,
                 "disk_group": "default",
             })
