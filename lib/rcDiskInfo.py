@@ -1,3 +1,5 @@
+import rcExceptions as ex
+
 class diskInfo(object):
     """Parent class for diskInfo OS"""
 
@@ -24,4 +26,8 @@ class diskInfo(object):
           "vendor",
           "model",
         ))
+
+    def scanscsi(self, hba=None, target=None, lun=None):
+        raise ex.excError("not implemented")
+
 

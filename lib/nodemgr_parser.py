@@ -88,6 +88,10 @@ OPT = Storage({
         help="specify a data formatter for output of the print* "
              "and collector* commands. possible values are json, csv "
              "or table."),
+    "hba": Option(
+        "--hba", default=None, action="store", dest="hba",
+        help="specify a hba to scan for new block devices. Example: "
+             "5001438002432430 or iqn.1993-08.org.debian:01:659b4bbd68bd"),
     "help": Option(
         "-h", "--help", default=None,
         action="store_true", dest="parm_help",
@@ -106,6 +110,10 @@ OPT = Storage({
         action="store", dest="like",
         help="a sql like filtering expression. leading and "
              "trailing wildcards are automatically set."),
+    "lun": Option(
+        "--lun", default=None, action="store", dest="lun",
+        help="specify a logical unit number to scan for new block devices. "
+             "Example: 1"),
     "mac": Option(
         "--mac", default=None,
         action="store", dest="mac",
@@ -177,6 +185,10 @@ OPT = Storage({
         action="store", dest="tag",
         help="a tag specifier used by 'collector create tag', "
              "'collector add tag', 'collector del tag'"),
+    "target": Option(
+        "--target", default=None, action="store", dest="target",
+        help="specify a target to scan for new block devices. Example: "
+             "5000097358185088 or iqn.clementine.tgt1"),
     "user": Option(
         "--user", default=None, action="store", dest="user",
         help="authenticate with the collector using the "
@@ -248,6 +260,11 @@ ACTIONS = {
         },
         'scanscsi': {
             'msg': 'scan the scsi hosts in search of new disks',
+            'options': [
+                OPT.hba,
+                OPT.target,
+                OPT.lun,
+            ],
         },
         'dequeue_actions': {
             'msg': "dequeue and execute actions from the collector's action "

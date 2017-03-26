@@ -1926,8 +1926,7 @@ class Node(object):
         pwd_len = 16
         return ''.join(chars[ord(c) % len(chars)] for c in os.urandom(pwd_len))
 
-    @staticmethod
-    def scanscsi():
+    def scanscsi(self):
         """
         Rescans the scsi host buses for new logical units discovery.
         """
@@ -1940,7 +1939,11 @@ class Node(object):
         if not hasattr(diskinfo, 'scanscsi'):
             print("scanscsi is not implemented on", rcEnv.sysname, file=sys.stderr)
             return 1
-        return diskinfo.scanscsi()
+        return diskinfo.scanscsi(
+            hba=self.options.hba,
+            target=self.options.target,
+            lun=self.options.lun,
+        )
 
     def discover(self):
         """

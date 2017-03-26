@@ -263,25 +263,77 @@ class diskInfo(rcDiskInfo.diskInfo):
           info['device/model'],
         ))
 
-    def scanscsi(self):
+    def hba_num(self, hba=None):
+        if hba is None:
+            return
+        if hba.startswith("iqn"):
+            for path in glob.glob("/sys/class/scsi_host/host*"):
+                for _path in glob.glob(path+"/device/session*/iscsi_session/session*/initiatorname"):
+                    with open(_path, "r") as f:
+                        content = f.read().strip()
+                    if content == hba:
+                        return os.path.basename(path).replace("host", "")
+        for path in glob.glob("/sys/class/fc_host/host*"):
+            for _path in glob.glob(path+"/port_name"):
+                with open(_path, "r") as f:
+                    content = f.read().strip()
+                if content == hba or "0x"+content == hba:
+                    return os.path.basename(path).replace("host", "")
+
+    def target_num(self, host_num, target=None):
+        if target is None:
+            return
+        if target.startswith("iqn"):
+            for path in glob.glob("/sys/class/scsi_host/host"+str(host_num)+"/device/session*"):
+                for _path in glob.glob(path+"/iscsi_session/session1/targetname"):
+                    with open(_path, "r") as f:
+                        content = f.read().strip()
+                    if content == target:
+                        path = glob.glob(path+"/target*:*:*")[0]
+                        return path.split(":")[-1]
+        for path in glob.glob("/sys/class/fc_transport/target%s:*:*" % str(host_num)):
+            for _path in glob.glob(path+"/port_name"):
+                with open(_path, "r") as f:
+                    content = f.read().strip()
+                if content == target or "0x"+content == target:
+                    return os.path.basename(path).split(":")[-1]
+
+    def scanscsi(self, hba=None, target=None, lun=None):
         if not os.path.exists('/sys') or not os.path.ismount('/sys'):
             print("scanscsi is not supported without /sys mounted", file=sys.stderr)
             return 1
 
         disks_before = glob.glob('/sys/block/sd*')
         disks_before += glob.glob('/sys/block/vd*')
-        hosts = glob.glob('/sys/class/scsi_host/host*')
+
+        hba_num = self.hba_num(hba)
+        if hba_num is not None:
+            hosts = glob.glob('/sys/class/scsi_host/host'+str(hba_num))
+            target_num = self.target_num(hba_num, target)
+        else:
+            hosts = glob.glob('/sys/class/scsi_host/host*')
+            target_num = None
+
+        if target_num is None:
+            target_num = '-'
+
+        if lun is None:
+            lun = '-'
 
         for host in hosts:
             scan_f = host+'/scan'
             if not os.path.exists(scan_f):
                 continue
-            print("scan", os.path.basename(host))
-            os.system('echo - - - >'+scan_f)
+            print("scan", os.path.basename(host), "target"+target_num, "lun"+lun)
+            os.system('echo - ' + target_num + ' ' + lun + ' >' + scan_f)
 
         disks_after = glob.glob('/sys/block/sd*')
         disks_after += glob.glob('/sys/block/vd*')
         new_disks = set(disks_after) - set(disks_before)
+
+        if len(new_disks) == 0:
+            print("no new disk found")
+            return 0
 
         self.print_diskinfo_header()
         #for disk in disks_before:

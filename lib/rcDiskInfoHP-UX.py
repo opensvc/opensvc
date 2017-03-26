@@ -142,7 +142,7 @@ class diskInfo(rcDiskInfo.diskInfo):
           '',
         ))
 
-    def scanscsi(self):
+    def scanscsi(self, hba=None, target=None, lun=None):
         ioscan_before = self.load_ioscan()
         disks_before = map(lambda x: x['devname'], ioscan_before)
 
