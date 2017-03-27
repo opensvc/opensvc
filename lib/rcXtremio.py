@@ -149,7 +149,7 @@ ACTIONS = {
                 OPT.targetgroup,
             ],
         },
-        "resize_volume": {
+        "resize_disk": {
             "msg": "Resize a volume",
             "options": [
                 OPT.volume,
@@ -395,7 +395,7 @@ class Array(object):
         self.push_diskinfo(results, name, size)
         return results
 
-    def resize_volume(self, volume=None, size=None, cluster=None, **kwargs):
+    def resize_disk(self, volume=None, size=None, cluster=None, **kwargs):
         if volume is None:
             raise ex.excError("--volume is mandatory")
         if volume is "":
