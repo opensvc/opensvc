@@ -47,7 +47,7 @@ GLOBAL_OPTS = [
 DEPRECATED_ACTIONS = []
 
 ACTIONS = {
-    "Add actions": {
+    "Generic actions": {
         "add_disk": {
             "msg": "Add and present a disk",
             "options": [
@@ -65,8 +65,6 @@ ACTIONS = {
                 OPT.lun,
             ],
         },
-    },
-    "Delete actions": {
         "del_disk": {
             "msg": "Delete a disk",
             "options": [
@@ -80,8 +78,6 @@ ACTIONS = {
                 OPT.mappings,
             ],
         },
-    },
-    "Modify actions": {
         "rename_disk": {
             "msg": "Rename a disk",
             "options": [
@@ -97,7 +93,7 @@ ACTIONS = {
             ],
         },
     },
-    "List actions": {
+    "Low-level actions": {
         "list_arrays": {
             "msg": "List arrays",
         },

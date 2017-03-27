@@ -48,7 +48,7 @@ GLOBAL_OPTS = [
 DEPRECATED_ACTIONS = []
 
 ACTIONS = {
-    "Add actions": {
+    "Generic actions": {
         "add_disk": {
             "msg": "Add and present a thin device.",
             "options": [
@@ -59,19 +59,41 @@ ACTIONS = {
                 OPT.srp,
             ],
         },
+        "add_map": {
+            "msg": "Present a device.",
+            "options": [
+                OPT.dev,
+                OPT.mappings,
+                OPT.slo,
+                OPT.srp,
+            ],
+        },
+        "del_disk": {
+            "msg": "Unpresent and delete a thin device.",
+            "options": [
+                OPT.dev,
+            ],
+        },
+        "del_map": {
+            "msg": "Unpresent a device.",
+            "options": [
+                OPT.dev,
+            ],
+        },
+        "resize_disk": {
+            "msg": "Resize a thin device.",
+            "options": [
+                OPT.dev,
+                OPT.size,
+            ],
+        },
+    },
+    "Low-level actions": {
         "add_tdev": {
             "msg": "Add a thin device. No masking.",
             "options": [
                 OPT.name,
                 OPT.size,
-            ],
-        },
-    },
-    "Delete actions": {
-        "del_disk": {
-            "msg": "Unpresent and delete a thin device.",
-            "options": [
-                OPT.dev,
             ],
         },
         "del_tdev": {
@@ -80,17 +102,6 @@ ACTIONS = {
                 OPT.dev,
             ],
         },
-    },
-    "Modify actions": {
-        "resize_tdev": {
-            "msg": "Resize a thin device.",
-            "options": [
-                OPT.dev,
-                OPT.size,
-            ],
-        },
-    },
-    "List actions": {
         "list_pools": {
             "msg": "List thin pools.",
         },
@@ -105,6 +116,9 @@ ACTIONS = {
         },
         "list_views": {
             "msg": "List views, eg. groups of initiators/targets/devices.",
+            "options": [
+                OPT.dev,
+            ],
         },
     },
 }
@@ -165,7 +179,7 @@ class Arrays(object):
 
             if conf.has_option(s, 'symcli_connect'):
                 symcli_connect = conf.get(s, 'symcli_connect')
-		os.environ["SYMCLI_CONNECT"] = symcli_connect
+                os.environ["SYMCLI_CONNECT"] = symcli_connect
             else:
                 symcli_connect = None
 
@@ -232,7 +246,7 @@ class Sym(object):
     def set_environ(self):
         if self.symcli_connect:
             os.environ["SYMCLI_CONNECT"] = self.symcli_connect
-	elif "SYMCLI_CONNECT" in os.environ:
+        elif "SYMCLI_CONNECT" in os.environ:
             del os.environ["SYMCLI_CONNECT"]
 
     def symcmd(self, cmd, xml=True):
@@ -378,8 +392,18 @@ class Sym(object):
         data = self.parse_xml(out, key="Device", as_list=["pool"])
         return data
 
-    def list_views(self, **kwargs):
-        print(json.dumps(self.get_views(), indent=4))
+    def list_views(self, dev=None, **kwargs):
+        if dev is None:
+            print(json.dumps(self.get_views(), indent=4))
+            return
+        views = self.get_dev_views(dev)
+        l = []
+        for view in views:
+            out, err, ret = self.symaccesscmd(["show", "view", view])
+            if out.strip() == "":
+                continue
+            l.append(self.parse_xml(out, key="View_Info", as_list=["Initiators", "Director_Identification", "SG", "Device", "dev_port_info"], exclude=["Initiator_List"]))
+        print(json.dumps(l, indent=4))
 
     def get_views(self, **kwargs):
         out = self.get_sym_view_aclx()
@@ -387,6 +411,17 @@ class Sym(object):
             return []
         data = self.parse_xml(out, key="View_Info", as_list=["Initiators", "Director_Identification", "SG", "Device", "dev_port_info"], exclude=["Initiator_List"])
         return data
+
+    def get_dev_views(self, dev):
+        sgs = self.get_dev_sgs(dev)
+        views = set()
+        for sg in sgs:
+            out, err, ret = self.symaccesscmd(["show", sg, "-type", "storage"])
+            if out.strip() == "":
+                continue
+            data = self.parse_xml(out, key="Mask_View_Names")
+            views |= set([d["view_name"] for d in data])
+        return views
 
     def get_initiator_views(self, wwn):
         out, err, ret = self.symaccesscmd(["list", "-type", "initiator", "-wwn", wwn])
@@ -415,10 +450,10 @@ class Sym(object):
             if sg not in self.sg_mappings:
                 self.sg_mappings[sg] = []
             self.sg_mappings[sg].append({
-	    	"sg": sg,
-	    	"view_name": view_data["view_name"],
-		"hba_id": hba_id,
-		"tgt_id": tgt_id,
+                "sg": sg,
+                "view_name": view_data["view_name"],
+                "hba_id": hba_id,
+                "tgt_id": tgt_id,
             })
             l.add(view_data["stor_grpname"])
         return l
@@ -518,7 +553,7 @@ class Vmax(Sym):
         if size is None:
             raise ex.excError("The '--size' parameter is mandatory")
         size = convert_size(size, _to="MB")
-	_cmd = "create dev count=1, size= %d MB, emulation=FBA, config=TDEV, device_attr=SCSI3_PERSIST_RESERV" % (size)
+        _cmd = "create dev count=1, size= %d MB, emulation=FBA, config=TDEV, device_attr=SCSI3_PERSIST_RESERV" % (size)
         if name:
             _cmd += ", device_name=%s" % name
 	_cmd += ";"
@@ -537,7 +572,7 @@ class Vmax(Sym):
                 return data
         raise ex.excError("unable to determine the created SymDevName")
 
-    def resize_tdev(self, dev=None, size=None, **kwargs):
+    def resize_disk(self, dev=None, size=None, **kwargs):
         if dev is None:
             raise ex.excError("The '--dev' parameter is mandatory")
         if size is None:
@@ -559,10 +594,13 @@ class Vmax(Sym):
         self.del_diskinfo(data["wwn"])
 
     def del_disk(self, dev=None, **kwargs):
-        for sg in self.get_dev_sgs(dev):
-            self.del_tdev_from_sg(dev, sg)
+        self.del_map(dev)
         self.free_tdev(dev)
         self.del_tdev(dev=dev, **kwargs)
+
+    def del_map(self, dev, **kwargs):
+        for sg in self.get_dev_sgs(dev):
+            self.del_tdev_from_sg(dev, sg)
 
     def free_tdev(self, dev):
         out, err, ret = self.symdev(["free", "-devs", dev, "-all", "-noprompt"], xml=False)
@@ -603,7 +641,7 @@ class Vmax(Sym):
 
     def filter_sgs(self, sgs, srp=None, slo=None):
         filtered_sgs = []
-	if srp is None and slo is None:
+        if srp is None and slo is None:
             return sgs
         for sg in sgs:
             data = self.get_sg(sg)
@@ -634,7 +672,7 @@ class Vmax(Sym):
         mappings = {}
         for sg in self.get_dev_sgs(dev):
             for sg, l in self.sg_mappings.items():
-		for d in l:
+                for d in l:
                     d["lun"] = self.get_lun(dev, d["hba_id"], d["tgt_id"], d["view_name"])
                     if d["lun"] is None:
                         continue
@@ -642,15 +680,9 @@ class Vmax(Sym):
         return mappings
 
     def add_disk(self, name=None, size=None, slo=None, srp=None, mappings={}, **kwargs):
-        sgs = self.translate_mappings(mappings)
-        if len(sgs) == 0:
-            raise ex.excError("no storage group found for the requested mappings")
-        sgs = self.filter_sgs(sgs, srp=srp, slo=slo)
-        if len(sgs) == 0:
-            raise ex.excError("no storage group found for the requested SRP and SLO")
+        sgs = self.mappings_to_sgs(mappings, slo, srp)
         dev_data = self.add_tdev(name, size, **kwargs)
-        for sg in sgs:
-            self.add_tdev_to_sg(dev_data["dev_name"], sg)
+        self.add_map(dev_data["dev_name"], mappings, slo, srp, sgs)
         self.push_diskinfo(dev_data, name, size, srp, sgs)
         mappings = {}
         results = {
@@ -662,6 +694,19 @@ class Vmax(Sym):
             },
         }
         return results
+
+    def add_map(self, dev, mappings={}, slo=None, srp=None, sgs=None, **kwargs):
+        if sgs is None:
+            sgs = self.mappings_to_sgs(mappings, slo, srp)
+        for sg in sgs:
+            self.add_tdev_to_sg(dev, sg)
+
+    def mappings_to_sgs(self, mappings, slo, srp):
+        sgs = self.translate_mappings(mappings)
+        if len(sgs) == 0:
+            raise ex.excError("no storage group found for the requested mappings")
+        sgs = self.filter_sgs(sgs, srp=srp, slo=slo)
+        return sgs
 
     def del_diskinfo(self, disk_id):
         if disk_id in (None, ""):

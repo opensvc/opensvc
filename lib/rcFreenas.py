@@ -705,7 +705,12 @@ class Freenas(object):
             raise ex.excError(str(data))
         self.add_iscsi_targets_to_extent(extent_id=data["id"], targets=targets, **kwargs)
         self.add_diskinfo(data, size, volume)
-        print(json.dumps(data, indent=8))
+        results = {
+            "driver_data": data,
+            "disk_id": data["iscsi_target_extent_naa"].replace("0x", ""),
+            "disk_devid": data["id"],
+        }
+        return results
 
     def del_iscsi_zvol(self, name=None, naa=None, **kwargs):
         if name is None and naa is None:
@@ -793,6 +798,8 @@ def do_action(action, array_name=None, node=None, **kwargs):
     if not hasattr(array, action):
         raise ex.excError("not implemented")
     getattr(array, action)(**kwargs)
+    if ret is not None:
+        print(json.dumps(ret, indent=4))
 
 def main(argv, node=None):
     parser = OptParser(prog=PROG, options=OPT, actions=ACTIONS,

@@ -110,7 +110,7 @@ DEPRECATED_ACTIONS = []
 
 ACTIONS = {
     "Add actions": {
-        "add_volume": {
+        "add_disk": {
             "msg": "Add a volume",
             "options": [
                 OPT.name,
@@ -134,9 +134,7 @@ ACTIONS = {
                 OPT.targetgroup,
             ],
         },
-    },
-    "Delete actions": {
-        "del_volume": {
+        "del_disk": {
             "msg": "Delete a volume",
             "options": [
                 OPT.volume,
@@ -151,8 +149,6 @@ ACTIONS = {
                 OPT.targetgroup,
             ],
         },
-    },
-    "Modify actions": {
         "resize_volume": {
             "msg": "Resize a volume",
             "options": [
@@ -161,7 +157,7 @@ ACTIONS = {
             ],
         },
     },
-    "List actions": {
+    "Low-level actions": {
         "list_initiators": {
             "msg": "List configured initiators",
             "options": [
@@ -286,7 +282,7 @@ class Array(object):
                 continue
             if not key.endswith("-id"):
                 continue
-	    try:
+        try:
                 data[key] = int(data[key])
             except ValueError:
                 pass
@@ -346,10 +342,10 @@ class Array(object):
         data = self.get("/volumes", params={"full": 1})
         return json.dumps(data["volumes"], indent=8)
 
-    def add_volume(self, name=None, size=None, blocksize=None, tags=None,
-                   cluster=None, access=None, vaai_tp_alerts=None,
-                   small_io_alerts=None, unaligned_io_alerts=None,
-                   alignment_offset=None, mappings=None, **kwargs):
+    def add_disk(self, name=None, size=None, blocksize=None, tags=None,
+                 cluster=None, access=None, vaai_tp_alerts=None,
+                 small_io_alerts=None, unaligned_io_alerts=None,
+                 alignment_offset=None, mappings=None, **kwargs):
         if name is None:
             raise ex.excError("--name is mandatory")
         if size == 0 or size is None:
@@ -446,7 +442,7 @@ class Array(object):
         for mapping in data["lun-maps"]:
             self.del_map(cluster=cluster, mapping=mapping["index"])
 
-    def del_volume(self, cluster=None, volume=None, **kwargs):
+    def del_disk(self, cluster=None, volume=None, **kwargs):
         if volume is None:
             raise ex.excError("--volume is mandatory")
         if volume == "":
@@ -465,7 +461,7 @@ class Array(object):
             params["name"] = volume
         if cluster is not None:
             params["cluster-id"] = cluster
-	ret = self.delete(uri, params=params)
+        ret = self.delete(uri, params=params)
         self.del_diskinfo(disk_id)
         return ret
 
