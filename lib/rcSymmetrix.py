@@ -22,7 +22,7 @@ OPT = Storage({
         "-a", "--array", action="store", dest="array_name",
         help="The name of the array, as defined in auth.conf"),
     "name": Option(
-        "--name", action="store", dest="dev",
+        "--name", action="store", dest="name",
         help="The device identifier name (ex: mysvc_1)"),
     "dev": Option(
         "--dev", action="store", dest="dev",
@@ -78,6 +78,13 @@ ACTIONS = {
             "msg": "Unpresent a device.",
             "options": [
                 OPT.dev,
+            ],
+        },
+        "rename_disk": {
+            "msg": "Rename a device.",
+            "options": [
+                OPT.dev,
+                OPT.name,
             ],
         },
         "resize_disk": {
@@ -381,8 +388,21 @@ class Sym(object):
     def list_sgs(self, **kwargs):
         print(json.dumps(self.get_sgs(), indent=4))
 
+    def load_names(self):
+        out = self.get_sym_dev_name_info()
+        l = self.parse_xml(out, key="Dev_Info")
+        self.dev_names = {}
+        for d in l:
+            self.dev_names[d["dev_name"]] = d["dev_ident_name"]
+
     def list_tdevs(self, dev=None, **kwargs):
-        print(json.dumps(self.get_tdevs(dev), indent=4))
+        self.load_names()
+        data = self.get_tdevs(dev)
+        for i, d in enumerate(data):
+            if d["dev_name"] not in self.dev_names:
+                continue
+            data[i]["dev_ident_name"] = self.dev_names[d["dev_name"]]
+        print(json.dumps(data, indent=4))
 
     def get_tdevs(self, dev=None, **kwargs):
         if dev:
@@ -556,7 +576,7 @@ class Vmax(Sym):
         _cmd = "create dev count=1, size= %d MB, emulation=FBA, config=TDEV, device_attr=SCSI3_PERSIST_RESERV" % (size)
         if name:
             _cmd += ", device_name=%s" % name
-	_cmd += ";"
+        _cmd += ";"
         cmd = ["-cmd", _cmd, "commit", "-noprompt"]
         out, err, ret = self.symconfigure(cmd, xml=False)
         if ret != 0:
@@ -571,6 +591,17 @@ class Vmax(Sym):
                 data = self.get_sym_dev_wwn(dev)[0]
                 return data
         raise ex.excError("unable to determine the created SymDevName")
+
+    def rename_disk(self, dev=None, name=None, **kwargs):
+        if dev is None:
+            raise ex.excError("--dev is mandatory")
+        if name is None:
+            raise ex.excError("--name is mandatory")
+        _cmd = "set dev %s device_name='%s';" % (dev, name)
+        cmd = ["-cmd", _cmd, "commit", "-noprompt"]
+        out, err, ret = self.symconfigure(cmd, xml=False)
+        if ret != 0:
+            raise ex.excError(err)
 
     def resize_disk(self, dev=None, size=None, **kwargs):
         if dev is None:
