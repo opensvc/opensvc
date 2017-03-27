@@ -282,7 +282,7 @@ class Array(object):
                 continue
             if not key.endswith("-id"):
                 continue
-        try:
+            try:
                 data[key] = int(data[key])
             except ValueError:
                 pass
