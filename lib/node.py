@@ -2262,17 +2262,23 @@ class Node(object):
         request.add_header("Authorization", "Basic %s" % base64string)
         return request
 
-    def collector_rest_get(self, path, svcname=None):
+    def collector_rest_get(self, path, data=None, svcname=None):
         """
         Make a GET request to the collector's rest api
         """
-        return self.collector_rest_request(path, svcname=svcname)
+        return self.collector_rest_request(path, data=data, svcname=svcname)
 
     def collector_rest_post(self, path, data=None, svcname=None):
         """
         Make a POST request to the collector's rest api
         """
         return self.collector_rest_request(path, data, svcname=svcname, get_method="POST")
+
+    def collector_rest_put(self, path, data=None, svcname=None):
+        """
+        Make a PUT request to the collector's rest api
+        """
+        return self.collector_rest_request(path, data, svcname=svcname, get_method="PUT")
 
     def collector_rest_delete(self, path, data=None, svcname=None):
         """
@@ -2308,10 +2314,17 @@ class Node(object):
                 ofile.write(chunk)
         ufile.close()
 
-    def collector_rest_request(self, path, data=None, svcname=None, get_method=None):
+    def collector_rest_request(self, path, data=None, svcname=None, get_method="GET"):
         """
         Make a request to the collector's rest api
         """
+        if data is not None and get_method == "GET":
+            if len(data) == 0 or not isinstance(data, dict):
+                data = None
+            else:
+                path += "?" + urlencode(data)
+                data = None
+
         request = self.collector_request(path, svcname=svcname)
         if get_method:
             request.get_method = lambda: get_method

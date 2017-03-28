@@ -797,7 +797,7 @@ def do_action(action, array_name=None, node=None, **kwargs):
     array.node = node
     if not hasattr(array, action):
         raise ex.excError("not implemented")
-    getattr(array, action)(**kwargs)
+    ret = getattr(array, action)(**kwargs)
     if ret is not None:
         print(json.dumps(ret, indent=4))
 

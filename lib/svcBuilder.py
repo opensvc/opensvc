@@ -964,6 +964,28 @@ def add_loop(svc, conf, s):
     svc += r
 
 
+def add_disk_disk(svc, conf, s):
+    kwargs = {}
+    try:
+        kwargs['disk_id'] = conf_get_string_scope(svc, conf, s, 'disk_id')
+    except ex.OptNotFound:
+        pass
+
+    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['rid'] = s
+    kwargs['subset'] = get_subset(conf, s, svc)
+    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['disabled'] = get_disabled(conf, s, svc)
+    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['monitor'] = get_monitor(conf, s, svc)
+    kwargs['restart'] = get_restart(conf, s, svc)
+
+    m = __import__('resDiskDisk'+rcEnv.sysname)
+
+    r = m.Disk(**kwargs)
+    add_triggers_and_requires(svc, r, conf, s)
+    svc += r
+
 def add_disk_gce(svc, conf, s):
     kwargs = {}
     try:
@@ -1216,6 +1238,9 @@ def add_disk_compat(svc, conf, s):
     if disk_type == 'Gce':
         add_disk_gce(svc, conf, s)
         return
+    if disk_type == 'Disk':
+        add_disk_disk(svc, conf, s)
+        return
     if disk_type == 'Amazon':
         add_disk_amazon(svc, conf, s)
         return
@@ -1346,6 +1371,9 @@ def add_disk(svc, conf, s):
         return
     if disk_type == 'Gce':
         add_disk_gce(svc, conf, s)
+        return
+    if disk_type == 'Disk':
+        add_disk_disk(svc, conf, s)
         return
     if disk_type == 'Amazon':
         add_disk_amazon(svc, conf, s)

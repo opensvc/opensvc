@@ -21,6 +21,12 @@ class diskInfo(rcDiskInfo.diskInfo):
     def disk_id(self, dev):
         if 'cciss' in dev:
             id = self.cciss_id(dev)
+        elif dev.startswith('/dev/disk/by-id/wwn-0x'):
+            id = dev.replace('/dev/disk/by-id/wwn-0x', '')
+        elif dev.startswith('/dev/disk/by-id/scsi-2'):
+            id = dev.replace('/dev/disk/by-id/scsi-2', '')
+        elif dev.startswith('/dev/disk/by-id/scsi-3'):
+            id = dev.replace('/dev/disk/by-id/scsi-3', '')
         elif dev.startswith('/dev/mapper/3'):
             id = dev.replace('/dev/mapper/3', '')
         elif dev.startswith('/dev/mapper/2'):

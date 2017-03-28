@@ -2490,8 +2490,67 @@ class KeywordDiskType(Keyword):
                   order=9,
                   required=False,
                   default="vg",
-                  candidates=['veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'zpool', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm', 'vg', 'amazon', 'gce'],
+                  candidates=['disk', 'veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'zpool', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm', 'vg', 'amazon', 'gce'],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
+                )
+
+class KeywordDiskDiskDiskId(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="disk",
+                  keyword="disk_id",
+                  order=10,
+                  at=True,
+                  required=False,
+                  text="The wwn of the disk.",
+                  example="6589cfc00000097484f0728d8b2118a6"
+                )
+
+class KeywordDiskDiskSize(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="disk",
+                  keyword="size",
+                  order=11,
+                  at=True,
+                  required=False,
+                  provisioning=True,
+                  text="The size of the disk to provision.",
+                  example="15g"
+                )
+
+class KeywordDiskDiskArray(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="disk",
+                  keyword="array",
+                  order=11,
+                  at=True,
+                  required=False,
+                  provisioning=True,
+                  text="The array to provision the disk from.",
+                  example="xtremio-prod1"
+                )
+
+class KeywordDiskDiskDiskGroup(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="disk",
+                  keyword="diskgroup",
+                  order=11,
+                  at=True,
+                  required=False,
+                  provisioning=True,
+                  text="The array disk group to provision the disk from.",
+                  example="default"
                 )
 
 class KeywordDiskAmazonVolumes(Keyword):
@@ -4237,6 +4296,10 @@ class KeyDict(KeywordStore):
         self += KeywordDiskGceSourceSnapshot()
         self += KeywordDiskGceDiskType()
         self += KeywordDiskType()
+        self += KeywordDiskDiskDiskId()
+        self += KeywordDiskDiskSize()
+        self += KeywordDiskDiskArray()
+        self += KeywordDiskDiskDiskGroup()
         self += KeywordDiskAmazonVolumes()
         self += KeywordDiskRawDevs()
         self += KeywordDiskRawZone()

@@ -3882,6 +3882,22 @@ class Svc(object):
         self.stop()
         self.remote_action(nodename=self.options.destination_node, action='start')
 
+    def collector_rest_get(self, *args, **kwargs):
+        kwargs["svcname"] = self.svcname
+        return self.node.collector_rest_get(*args, **kwargs)
+
+    def collector_rest_post(self, *args, **kwargs):
+        kwargs["svcname"] = self.svcname
+        return self.node.collector_rest_post(*args, **kwargs)
+
+    def collector_rest_put(self, *args, **kwargs):
+        kwargs["svcname"] = self.svcname
+        return self.node.collector_rest_put(*args, **kwargs)
+
+    def collector_rest_delete(self, *args, **kwargs):
+        kwargs["svcname"] = self.svcname
+        return self.node.collector_rest_delete(*args, **kwargs)
+
     def collector_outdated(self):
         """
         Return True if the configuration file has changed since last push.
