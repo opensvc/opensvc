@@ -3470,7 +3470,7 @@ def build(name, minimal=False, svcconf=None):
 
         if "pkg_name" in defaults:
             if svcmode in ["sg", "rhcs", "vcs"]:
-                kwargs['pkg_name'] = defaults["pkg_name"]
+                kwargs['pkg_name'] = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "pkg_name")
 
 
     #

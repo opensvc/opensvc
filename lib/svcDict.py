@@ -556,6 +556,7 @@ class KeywordPkgName(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="pkg_name",
+                  at=True,
                   required=False,
                   order=11,
                   depends=[('mode', ["vcs", "sg", "rhcs"])],
