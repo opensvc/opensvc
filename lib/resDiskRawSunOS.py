@@ -31,8 +31,8 @@ class Disk(resDiskRaw.Disk):
         for dev in self.devs:
             if not os.path.exists(dev):
                 continue
-            if os.path.islink(dev) and not dev.startswith("/dev"):
-                dev = os.readlink(dev)
+            if os.path.islink(dev) and not dev.startswith("/devices"):
+                dev = os.path.realpath(dev)
             l.add(dev)
         return l
 
