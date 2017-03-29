@@ -130,33 +130,12 @@ function create_pkg {
 	return $STATUS
 }
 
-prepare_chroot_sunos {
-	case $(uname -r) in
-	5.11)
-		prepare_chroot_sunos_11
-		;;
-	5.10)
-		prepare_chroot_sunos_10
-		;;
-	esac
-}
-
-prepare_chroot_sunos_11 {
+function prepare_chroot_sunos {
 	[ "$CHROOT" == "" ] && return
-	chown 0:0 $CHROOT/etc
 	chown 0:1 $CHROOT/usr/share/doc $CHROOT/var/lib
-	chown 0:2 $CHROOT/usr/bin $CHROOT/usr/share/man $CHROOT/usr/share/man1
+	chown 0:2 $CHROOT/usr/bin $CHROOT/usr/share/man $CHROOT/usr/share/man/man1
 	chown 0:3 $CHROOT/opt $CHROOT/usr $CHROOT/usr/share $CHROOT/var $CHROOT/var/log
-	chmod 755 $CHROOT/etc $CHROOT/usr/share/doc $CHROOT/var/lib $CHROOT/usr/bin $CHROOT/usr/share/man $CHROOT/usr/share/man1 $CHROOT/ $CHROOT/opt $CHROOT/usr $CHROOT/usr/share $CHROOT/var $CHROOT/var/log
-}
-
-prepare_chroot_sunos_10 {
-	[ "$CHROOT" == "" ] && return
-	chown 0:0 $CHROOT/etc $CHROOT/
-	chown 0:1 $CHROOT/usr/share/doc $CHROOT/var/lib
-	chown 0:2 $CHROOT/usr/bin $CHROOT/usr/share/man $CHROOT/usr/share/man1
-	chown 0:3 $CHROOT/ $CHROOT/opt $CHROOT/usr $CHROOT/usr/share $CHROOT/var $CHROOT/var/log
-	chmod 755 $CHROOT/etc $CHROOT/usr/share/doc $CHROOT/var/lib $CHROOT/usr/bin $CHROOT/usr/share/man $CHROOT/usr/share/man1 $CHROOT/ $CHROOT/opt $CHROOT/usr $CHROOT/usr/share $CHROOT/var $CHROOT/var/log
+	chmod 755 $CHROOT/ $CHROOT/etc $CHROOT/usr/share/doc $CHROOT/var/lib $CHROOT/usr/bin $CHROOT/usr/share/man $CHROOT/usr/share/man/man1 $CHROOT/ $CHROOT/opt $CHROOT/usr $CHROOT/usr/share $CHROOT/var $CHROOT/var/log
 }
 
 echo "----- git archive current to $CHROOT ..."
