@@ -146,6 +146,10 @@ class Disk(Res.Resource):
             size = conf_get_string_scope(self.svc, self.svc.config, self.rid, "size")
         except:
             raise ex.excError("disk %s: missing the 'size' provisioning parameter" % self.rid)
+        try:
+            slo = conf_get_string_scope(self.svc, self.svc.config, self.rid, "slo")
+        except:
+            slo = None
 
         handler = "/services/self/disks"
         data = {
@@ -154,6 +158,8 @@ class Disk(Res.Resource):
             "array_name": self.array_name,
             "diskgroup": self.diskgroup,
         }
+        if slo is not None:
+            data["slo"] = slo
         results = self.svc.collector_rest_put(handler, data)
         if "error" in results:
             raise ex.excError(results["error"])

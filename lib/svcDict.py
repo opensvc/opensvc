@@ -2553,6 +2553,21 @@ class KeywordDiskDiskDiskGroup(Keyword):
                   example="default"
                 )
 
+class KeywordDiskDiskSlo(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="disk",
+                  keyword="slo",
+                  order=11,
+                  at=True,
+                  required=False,
+                  provisioning=True,
+                  text="The provisionned disk service level objective. This keyword is honored on arrays supporting this (ex: EMC VMAX)",
+                  example="Optimized"
+                )
+
 class KeywordDiskAmazonVolumes(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4300,6 +4315,7 @@ class KeyDict(KeywordStore):
         self += KeywordDiskDiskSize()
         self += KeywordDiskDiskArray()
         self += KeywordDiskDiskDiskGroup()
+        self += KeywordDiskDiskSlo()
         self += KeywordDiskAmazonVolumes()
         self += KeywordDiskRawDevs()
         self += KeywordDiskRawZone()
