@@ -43,9 +43,17 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             partsize = self.di.get_part_size(partpath)
             p = self.add_dev(partname, partsize, "linear")
             p.set_devpath(partpath)
+            self.add_device_devpath(p, partpath)
             p.set_devpath(partpath.replace("/dev/rdsk/", "/dev/dsk/"))
+            self.add_device_devpath(p, partpath)
             d.add_child(partname)
             p.add_parent(d.devname)
+
+    def add_device_devpath(self, dev, path):
+        if os.path.islink(path):
+            altpath = os.path.realpath(path)
+            if altpath != path:
+                dev.set_devpath(altpath)
 
     def load_disks(self):
         self.load_vxdisk_cache()
@@ -65,6 +73,8 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             d.set_devpath(data["devpath"])
             d.set_devpath(devpath)
             d.set_devpath(bdevpath)
+            self.add_device_devpath(d, devpath)
+            self.add_device_devpath(d, bdevpath)
             self.load_partitions(d)
 
     def load_format(self):
@@ -88,6 +98,8 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             d = self.add_dev(devname, size, "linear")
             d.set_devpath(devpath)
             d.set_devpath(bdevpath)
+            self.add_device_devpath(d, devpath)
+            self.add_device_devpath(d, bdevpath)
             self.load_partitions(d)
 
     def load_sds(self):
