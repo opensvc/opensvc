@@ -2462,8 +2462,7 @@ class Node(object):
     @staticmethod
     def install_service_files(svcname):
         """
-        Given a service name, install the symlink to svcmgr, create the
-        <svcname>.dir and install the <svcname>.d symlink pointing it.
+        Given a service name, install the symlink to svcmgr.
         """
         if rcEnv.sysname == 'Windows':
             return
