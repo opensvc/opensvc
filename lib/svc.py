@@ -527,7 +527,12 @@ class Svc(object):
                 schedule_option="push_schedule"
             )
 
-        if self.ha and "flex" not in self.clustertype:
+        try:
+            monitor_schedule = conf_get_string_scope(self, self.config, 'DEFAULT', 'monitor_schedule')
+        except ex.OptNotFound:
+            monitor_scheduler = None
+
+        if (self.ha and "flex" not in self.clustertype) or monitor_schedule is not None:
             self.sched.scheduler_actions["resource_monitor"] = SchedOpts(
                 "DEFAULT",
                 fname=self.svcname+os.sep+"last_resource_monitor",
