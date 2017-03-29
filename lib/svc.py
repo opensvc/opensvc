@@ -4030,7 +4030,7 @@ class Svc(object):
         if not need_write:
             raise ex.excError("option '%s' not found in section %s" % (option, section))
 
-        buff = "\n".join(lines)
+        buff = "\n".join(lines) + "\n"
 
         try:
             self._write_cf(buff)
@@ -4216,7 +4216,7 @@ class Svc(object):
                 lines.append(section)
             lines.append("%s = %s" % (option, value))
 
-        buff = "\n".join(lines)
+        buff = "\n".join(lines) + "\n"
 
         try:
             self._write_cf(buff)
