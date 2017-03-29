@@ -4,7 +4,6 @@ import time
 import rcExceptions as ex
 from rcUtilities import justcall, getaddr
 from rcGlobalEnv import rcEnv
-from subprocess import *
 
 class Container(Res.Resource):
     """ in seconds
@@ -41,9 +40,8 @@ class Container(Res.Resource):
             self.vmhostname = self.name
             return self.vmhostname
         cmd = self.runmethod + ['hostname']
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
+        out, err, ret = justcall(cmd)
+        if ret != 0:
             self.vmhostname = self.name
         else:
             self.vmhostname = out.strip()
