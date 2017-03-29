@@ -1146,6 +1146,8 @@ def convert_to_lsb():
         if os.path.islink(p):
             bp = os.path.basename(p)
             linkto = os.readlink(p)
+            if linkto.startswith("/opt/opensvc/etc"):
+                linkto.replace("/opt/opensvc/etc/", "")
             dst = os.path.join(pathetc, bp)
             os.symlink(linkto, dst)
         elif os.path.isdir(p):
