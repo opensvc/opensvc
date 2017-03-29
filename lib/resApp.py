@@ -353,7 +353,7 @@ class App(Resource):
             "disk.drbd",
             "hb"
         ]))
-        if n_ref_res > 0 and str(status["overall"]) != "up":
+        if n_ref_res > 0 and str(status["overall"]) not in ("up", "n/a"):
             self.log.debug("abort resApp status because ip+fs status is %s", status["overall"])
             if verbose:
                 self.status_log("ip+fs status is %s, skip check"%status["overall"], "info")
