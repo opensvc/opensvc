@@ -530,7 +530,7 @@ class Svc(object):
         try:
             monitor_schedule = conf_get_string_scope(self, self.config, 'DEFAULT', 'monitor_schedule')
         except ex.OptNotFound:
-            monitor_scheduler = None
+            monitor_schedule = None
 
         if (self.ha and "flex" not in self.clustertype) or monitor_schedule is not None:
             self.sched.scheduler_actions["resource_monitor"] = SchedOpts(
