@@ -46,6 +46,8 @@ def handle_reference(svc, conf, ref, scope=False, impersonate=None):
         # hardcoded references
         if ref == "nodename":
             return rcEnv.nodename
+        if ref == "short_nodename":
+            return rcEnv.nodename.split(".")[0]
         if ref == "svcname":
             return svc.svcname
         if ref == "short_svcname":
