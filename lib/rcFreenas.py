@@ -2,22 +2,23 @@ from __future__ import print_function
 
 import sys
 import os
-import requests
-import ConfigParser
 import json
+from optparse import Option
+import requests
 
+from rcConfigParser import RawConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage
-from rcUtilities import justcall,convert_size
+from rcUtilities import convert_size, bdecode
 from rcOptParser import OptParser
-from optparse import Option
 
 
 try:
     requests.packages.urllib3.disable_warnings()
 except:
     pass
-verify = False
+
+VERIFY = False
 
 PROG = "nodemgr array"
 OPT = Storage({
@@ -225,15 +226,12 @@ class Freenass(object):
 
     def __init__(self, objects=[]):
         self.objects = objects
-        if len(objects) > 0:
-            self.filtering = True
-        else:
-            self.filtering = False
+        self.filtering = len(objects) > 0
         self.index = 0
         cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
-        conf = ConfigParser.RawConfigParser()
+        conf = RawConfigParser()
         conf.read(cf)
         m = []
         for s in conf.sections():
@@ -251,8 +249,7 @@ class Freenass(object):
                 m += [(name, api, username, password)]
             except:
                 print("error parsing section", s)
-                pass
-        del(conf)
+        del conf
         done = []
         for name, api, username, password in m:
             if self.filtering and name not in self.objects:
@@ -279,6 +276,7 @@ class Freenass(object):
 
 class Freenas(object):
     def __init__(self, name, api, username, password):
+        self.node = None
         self.name = name
         self.api = api
         self.username = username
@@ -293,20 +291,20 @@ class Freenas(object):
     def delete(self, uri, data=None):
         api = self.api+uri+"/"
         headers = {'Content-Type': 'application/json'}
-        r = requests.delete(api, data=json.dumps(data), auth=self.auth, verify=verify, headers=headers)
+        r = requests.delete(api, data=json.dumps(data), auth=self.auth, verify=VERIFY, headers=headers)
         return r
 
     def put(self, uri, data=None):
         api = self.api+uri+"/"
         headers = {'Content-Type': 'application/json'}
-        r = requests.put(api, data=json.dumps(data), auth=self.auth, verify=verify, headers=headers)
-        return r.content
+        r = requests.put(api, data=json.dumps(data), auth=self.auth, verify=VERIFY, headers=headers)
+        return bdecode(r.content)
 
     def post(self, uri, data=None):
         api = self.api+uri+"/"
         headers = {'Content-Type': 'application/json'}
-        r = requests.post(api, data=json.dumps(data), auth=self.auth, verify=verify, headers=headers)
-        return r.content
+        r = requests.post(api, data=json.dumps(data), auth=self.auth, verify=VERIFY, headers=headers)
+        return bdecode(r.content)
 
     def post2(self, uri, data=None):
         api = self.api.replace("api/v1.0", "")+uri
@@ -314,12 +312,12 @@ class Freenas(object):
         r = s.get(api)
         csrf_token = r.cookies['csrftoken']
         data["csrfmiddlewaretoken"] = csrf_token
-        r = requests.post(api, data=data, auth=self.auth, verify=verify)
-        return r.content
+        r = requests.post(api, data=data, auth=self.auth, verify=VERIFY)
+        return bdecode(r.content)
 
     def get(self, uri):
-        r = requests.get(self.api+uri+"/?format=json", auth=self.auth, verify=verify)
-        return r.content
+        r = requests.get(self.api+uri+"/?format=json", auth=self.auth, verify=VERIFY)
+        return bdecode(r.content)
 
     def get_version(self):
         buff = self.get("/system/version")
@@ -337,8 +335,8 @@ class Freenas(object):
         buff = self.get("/storage/volume")
         return buff
 
-    def get_iscsi_target_id(self, id):
-        buff = self.get("/services/iscsi/target/%d" % id)
+    def get_iscsi_target_id(self, tgt_id):
+        buff = self.get("/services/iscsi/target/%d" % tgt_id)
         return buff
 
     def get_iscsi_targets(self):
@@ -361,16 +359,16 @@ class Freenas(object):
         buff = self.get("/services/iscsi/targetgroup")
         return buff
 
-    def get_iscsi_targetgroup_id(self, id):
-        buff = self.get("/services/iscsi/targetgroup/%d" % id)
+    def get_iscsi_targetgroup_id(self, tg_id):
+        buff = self.get("/services/iscsi/targetgroup/%d" % tg_id)
         return buff
 
     def get_iscsi_authorizedinitiator(self):
         buff = self.get("/services/iscsi/authorizedinitiator")
         return buff
 
-    def get_iscsi_authorizedinitiator_id(self, id):
-        buff = self.get("/services/iscsi/authorizedinitiator/%d" % id)
+    def get_iscsi_authorizedinitiator_id(self, initiator_id):
+        buff = self.get("/services/iscsi/authorizedinitiator/%d" % initiator_id)
         return buff
 
     def get_iscsi_target_ids(self, target_names):
@@ -405,14 +403,14 @@ class Freenas(object):
                               insecure_tpc=True, blocksize=512, **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
-                 raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.excError("'%s' key is mandatory" % key)
         data = self.add_zvol(name=name, size=size, volume=volume, **kwargs)
         d = {
-          "iscsi_target_extent_type": "Disk",
-          "iscsi_target_extent_name": name,
-          "iscsi_target_extent_insecure_tpc": insecure_tpc,
-          "iscsi_target_extent_blocksize": blocksize,
-          "iscsi_target_extent_disk": "zvol/%s/%s" % (volume, name),
+            "iscsi_target_extent_type": "Disk",
+            "iscsi_target_extent_name": name,
+            "iscsi_target_extent_insecure_tpc": insecure_tpc,
+            "iscsi_target_extent_blocksize": blocksize,
+            "iscsi_target_extent_disk": "zvol/%s/%s" % (volume, name),
         }
         buff = self.post("/services/iscsi/extent", d)
         data = json.loads(buff)
@@ -423,15 +421,15 @@ class Freenas(object):
                               insecure_tpc=True, blocksize=512, **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
-                 raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.excError("'%s' key is mandatory" % key)
         size = convert_size(size, _to="MB")
         d = {
-          "iscsi_target_extent_type": "File",
-          "iscsi_target_extent_name": name,
-          "iscsi_target_extent_insecure_tpc": insecure_tpc,
-          "iscsi_target_extent_blocksize": blocksize,
-          "iscsi_target_extent_filesize": str(size)+"MB",
-          "iscsi_target_extent_path": "/mnt/%s/%s" % (volume, name),
+            "iscsi_target_extent_type": "File",
+            "iscsi_target_extent_name": name,
+            "iscsi_target_extent_insecure_tpc": insecure_tpc,
+            "iscsi_target_extent_blocksize": blocksize,
+            "iscsi_target_extent_filesize": str(size)+"MB",
+            "iscsi_target_extent_path": "/mnt/%s/%s" % (volume, name),
         }
         buff = self.post("/services/iscsi/extent", d)
         data = json.loads(buff)
@@ -441,7 +439,7 @@ class Freenas(object):
                                     **kwargs):
         for key in ["extent_id", "targets"]:
             if locals()[key] is None:
-                 raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.excError("'%s' key is mandatory" % key)
         target_ids = self.get_iscsi_target_ids(targets)
         data = []
         for target_id in target_ids:
@@ -450,8 +448,8 @@ class Freenas(object):
 
     def add_iscsi_target_to_extent(self, target_id, extent_id):
         d = {
-          "iscsi_target": target_id,
-          "iscsi_extent": extent_id,
+            "iscsi_target": target_id,
+            "iscsi_extent": extent_id,
         }
         buff = self.post("/services/iscsi/targettoextent", d)
         data = json.loads(buff)
@@ -460,7 +458,7 @@ class Freenas(object):
     def del_zvol(self, name=None, volume=None, **kwargs):
         for key in ["name", "volume"]:
             if locals()[key] is None:
-                 raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.excError("'%s' key is mandatory" % key)
         path = '/storage/volume/%s/zvols/%s' % (volume, name)
         response = self.delete(path)
         if response.status_code != 204:
@@ -471,13 +469,13 @@ class Freenas(object):
                  **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
-                 raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.excError("'%s' key is mandatory" % key)
         size = convert_size(size, _to="MB")
         d = {
-          "name": name,
-          "volsize": str(size)+"MB",
-          "compression": compression,
-          "dedup": dedup,
+            "name": name,
+            "volsize": str(size)+"MB",
+            "compression": compression,
+            "dedup": dedup,
         }
         buff = self.post('/storage/volume/%s/zvols/' % volume, d)
         try:
@@ -494,9 +492,9 @@ class Freenas(object):
 
     def resize_zvol(self, name=None, naa=None, size=None, **kwargs):
         if size is None:
-            raise ex.excError("'size' key is mandatory" % key)
+            raise ex.excError("'size' key is mandatory")
         if name is None and naa is None:
-            raise ex.excError("'name' or 'naa' must be specified" % key)
+            raise ex.excError("'name' or 'naa' must be specified")
         data = self.get_iscsi_extent(name=name, naa=naa)
         volume = self.extent_volume(data)
         if data is None:
@@ -510,7 +508,7 @@ class Freenas(object):
             size = str(convert_size(size, _to="MB")) + "MB"
 
         d = {
-          "volsize": size,
+            "volsize": size,
         }
         buff = self.put('/storage/volume/%s/zvols/%s' % (volume, data["iscsi_target_extent_name"]), d)
         try:
@@ -518,22 +516,22 @@ class Freenas(object):
         except ValueError:
             raise ex.excError(buff)
 
-    def del_iscsi_initiatorgroup(self, id=None, **kwargs):
-        content = self.get_iscsi_authorizedinitiator_id(id)
+    def del_iscsi_initiatorgroup(self, ig_id=None, **kwargs):
+        content = self.get_iscsi_authorizedinitiator_id(ig_id)
         try:
             data = json.loads(content)
         except ValueError:
             raise ex.excError("initiator group not found")
-        self._del_iscsi_initiatorgroup(id=id, **kwargs)
+        self._del_iscsi_initiatorgroup(ig_id=ig_id, **kwargs)
         print(json.dumps(data, indent=8))
         return data
 
-    def _del_iscsi_initiatorgroup(self, id=None, **kwargs):
+    def _del_iscsi_initiatorgroup(self, ig_id=None, **kwargs):
         if id is None:
             raise ex.excError("'id' in mandatory")
-        response = self.delete('/services/iscsi/authorizedinitiator/%d' % id)
+        response = self.delete('/services/iscsi/authorizedinitiator/%d' % ig_id)
         if response.status_code != 204:
-            raise ex.excError(buff)
+            raise ex.excError(str(response))
 
     def add_iscsi_initiatorgroup(self, **kwargs):
         data = self._add_iscsi_initiatorgroup(**kwargs)
@@ -541,13 +539,13 @@ class Freenas(object):
         return data
 
     def _add_iscsi_initiatorgroup(self, initiators=None, auth_network="ALL", comment=None,
-                 **kwargs):
+                                  **kwargs):
         for key in ["initiators"]:
             if locals()[key] is None:
-                 raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.excError("'%s' key is mandatory" % key)
         d = {
-          "iscsi_target_initiator_initiators": ",".join(initiators),
-          "iscsi_target_initiator_auth_network": auth_network,
+            "iscsi_target_initiator_initiators": ",".join(initiators),
+            "iscsi_target_initiator_auth_network": auth_network,
         }
         if comment:
             d["iscsi_target_initiator_comment"] = comment
@@ -559,22 +557,22 @@ class Freenas(object):
             raise ex.excError(buff)
 
     # targetgroup
-    def del_iscsi_targetgroup(self, id=None, **kwargs):
-        content = self.get_iscsi_targetgroup_id(id)
+    def del_iscsi_targetgroup(self, tg_id=None, **kwargs):
+        content = self.get_iscsi_targetgroup_id(tg_id)
         try:
             data = json.loads(content)
         except ValueError:
             raise ex.excError("target group not found")
-        self._del_iscsi_targetgroup(id=id, **kwargs)
+        self._del_iscsi_targetgroup(tg_id=tg_id, **kwargs)
         print(json.dumps(data, indent=8))
         return data
 
-    def _del_iscsi_targetgroup(self, id=None, **kwargs):
-        if id is None:
-            raise ex.excError("'id' in mandatory")
-        response = self.delete('/services/iscsi/targetgroup/%d' % id)
+    def _del_iscsi_targetgroup(self, tg_id=None, **kwargs):
+        if tg_id is None:
+            raise ex.excError("'tg_id' is mandatory")
+        response = self.delete('/services/iscsi/targetgroup/%d' % tg_id)
         if response.status_code != 204:
-            raise ex.excError(buff)
+            raise ex.excError(str(response))
 
     def add_iscsi_targetgroup(self, **kwargs):
         data = self._add_iscsi_targetgroup(**kwargs)
@@ -583,17 +581,17 @@ class Freenas(object):
 
     def _add_iscsi_targetgroup(self, portal_id=None, initiatorgroup_id=None,
                                target_id=None, authtype="None",
-                               authgroup_id=None,  **kwargs):
+                               authgroup_id=None, **kwargs):
         for key in ["portal_id", "initiatorgroup_id", "target_id"]:
             if locals()[key] is None:
-                 raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.excError("'%s' key is mandatory" % key)
         d = {
-          "iscsi_target": target_id,
-          "iscsi_target_initiatorgroup": initiatorgroup_id,
-          "iscsi_target_portalgroup": portal_id,
-          "iscsi_target_authtype": authtype,
-          "iscsi_target_authgroup": -1,
-          "iscsi_target_initialdigest": "Auto",
+            "iscsi_target": target_id,
+            "iscsi_target_initiatorgroup": initiatorgroup_id,
+            "iscsi_target_portalgroup": portal_id,
+            "iscsi_target_authtype": authtype,
+            "iscsi_target_authgroup": -1,
+            "iscsi_target_initialdigest": "Auto",
         }
         if authgroup_id:
             d["iscsi_target_authgroup"] = authgroup_id
@@ -606,22 +604,22 @@ class Freenas(object):
             raise ex.excError(buff)
 
     # target
-    def del_iscsi_target(self, id=None, **kwargs):
-        content = self.get_iscsi_target_id(id)
+    def del_iscsi_target(self, target_id=None, **kwargs):
+        content = self.get_iscsi_target_id(target_id)
         try:
             data = json.loads(content)
         except ValueError:
             raise ex.excError("target not found")
-        self._del_iscsi_target(id=id, **kwargs)
+        self._del_iscsi_target(target_id=target_id, **kwargs)
         print(json.dumps(data, indent=8))
         return data
 
-    def _del_iscsi_target(self, id=None, **kwargs):
-        if id is None:
-            raise ex.excError("'id' in mandatory")
-        response = self.delete('/services/iscsi/target/%d' % id)
+    def _del_iscsi_target(self, target_id=None, **kwargs):
+        if target_id is None:
+            raise ex.excError("'target_id' is mandatory")
+        response = self.delete('/services/iscsi/target/%d' % target_id)
         if response.status_code != 204:
-            raise ex.excError(buff)
+            raise ex.excError(str(response))
 
     def add_iscsi_target(self, **kwargs):
         data = self._add_iscsi_target(**kwargs)
@@ -631,9 +629,9 @@ class Freenas(object):
     def _add_iscsi_target(self, name=None, alias=None, **kwargs):
         for key in ["name"]:
             if locals()[key] is None:
-                 raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.excError("'%s' key is mandatory" % key)
         d = {
-          "iscsi_target_name": name,
+            "iscsi_target_name": name,
         }
         if alias:
             d["iscsi_target_alias"] = alias
@@ -648,7 +646,7 @@ class Freenas(object):
                        mappings=None, insecure_tpc=True, blocksize=512, **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
-                 raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.excError("'%s' key is mandatory" % key)
 
         if targets is None and mappings is None:
             raise ex.excError("'targets' or 'mappings' must be specified")
@@ -669,7 +667,7 @@ class Freenas(object):
 
     def del_iscsi_file(self, name=None, naa=None, **kwargs):
         if name is None and naa is None:
-            raise ex.excError("'name' or 'naa' must be specified" % key)
+            raise ex.excError("'name' or 'naa' must be specified")
         data = self.get_iscsi_extent(name=name, naa=naa)
         if data is None:
             return
@@ -688,7 +686,7 @@ class Freenas(object):
                        mappings=None, insecure_tpc=True, blocksize=512, **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
-                 raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.excError("'%s' key is mandatory" % key)
         if targets is None and mappings is None:
             raise ex.excError("'targets' or 'mappings' must be specified")
 
@@ -714,7 +712,7 @@ class Freenas(object):
 
     def del_iscsi_zvol(self, name=None, naa=None, **kwargs):
         if name is None and naa is None:
-            raise ex.excError("'name' or 'naa' must be specified" % key)
+            raise ex.excError("'name' or 'naa' must be specified")
         data = self.get_iscsi_extent(name=name, naa=naa)
         if data is None:
             return
@@ -763,18 +761,18 @@ class Freenas(object):
         if self.node is None:
             return
         try:
-            ret = self.node.collector_rest_delete("/disks/%s" % disk_id)
+            result = self.node.collector_rest_delete("/disks/%s" % disk_id)
         except Exception as exc:
             raise ex.excError(str(exc))
-        if "error" in ret:
-            raise ex.excError(ret["error"])
-        return ret
+        if "error" in result:
+            raise ex.excError(result["error"])
+        return result
 
     def add_diskinfo(self, data, size=None, volume=None):
         if self.node is None:
             return
         try:
-            ret = self.node.collector_rest_post("/disks", {
+            result = self.node.collector_rest_post("/disks", {
                 "disk_id": data["iscsi_target_extent_naa"].replace("0x", ""),
                 "disk_devid": data["id"],
                 "disk_name": data["iscsi_target_extent_name"],
@@ -786,8 +784,8 @@ class Freenas(object):
         except Exception as exc:
             raise ex.excError(str(exc))
         if "error" in data:
-            raise ex.excError(ret["error"])
-        return ret
+            raise ex.excError(result["error"])
+        return result
 
 def do_action(action, array_name=None, node=None, **kwargs):
     o = Freenass()
@@ -797,9 +795,9 @@ def do_action(action, array_name=None, node=None, **kwargs):
     array.node = node
     if not hasattr(array, action):
         raise ex.excError("not implemented")
-    ret = getattr(array, action)(**kwargs)
-    if ret is not None:
-        print(json.dumps(ret, indent=4))
+    result = getattr(array, action)(**kwargs)
+    if result is not None:
+        print(json.dumps(result, indent=4))
 
 def main(argv, node=None):
     parser = OptParser(prog=PROG, options=OPT, actions=ACTIONS,
@@ -811,7 +809,8 @@ def main(argv, node=None):
 
 if __name__ == "__main__":
     try:
-        ret = main(sys.argv)
+        main(sys.argv)
+        ret = 0
     except ex.excError as exc:
         print(exc, file=sys.stderr)
         ret = 1
