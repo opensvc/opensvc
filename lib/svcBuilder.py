@@ -3677,12 +3677,12 @@ def build(name, minimal=False, svcconf=None):
     try:
         svc.drp_type = conf_get_string_scope(svc, conf, 'DEFAULT', 'drp_type')
     except ex.OptNotFound:
-        svc.drp_type = ''
+        pass
 
     try:
         svc.comment = conf_get_string_scope(svc, conf, 'DEFAULT', 'comment')
     except ex.OptNotFound:
-        svc.comment = ''
+        pass
 
     try:
         svc.monitor_action = conf_get_string_scope(svc, conf, 'DEFAULT', "monitor_action")
@@ -3692,12 +3692,12 @@ def build(name, minimal=False, svcconf=None):
     try:
         svc.app = conf_get_string_scope(svc, conf, 'DEFAULT', "app")
     except ex.OptNotFound:
-        svc.app = ''
+        pass
 
     try:
         svc.drnoaction = conf_get_boolean_scope(svc, conf, 'DEFAULT', "drnoaction")
     except ex.OptNotFound:
-        svc.drnoaction = False
+        pass
 
     try:
         svc.bwlimit = conf_get_int_scope(svc, conf, 'DEFAULT', "bwlimit")

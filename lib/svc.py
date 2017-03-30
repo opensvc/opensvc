@@ -377,6 +377,10 @@ class Svc(object):
         # set by the builder
         self.conf = os.path.join(rcEnv.pathetc, svcname+".conf")
         self.node = None
+        self.comment = ""
+        self.drp_type = ""
+        self.app = ""
+        self.drnoaction = False
         self.clustertype = "failover"
         self.show_disabled = False
         self.svc_env = rcEnv.node_env
@@ -4128,6 +4132,10 @@ class Svc(object):
                 return ""
 
         def print_comment(comment):
+            """
+            Print a env keyword comment. For use in the interactive service
+            create codepath.
+            """
             import re
             comment = re.sub("(\[.+://.+])", lambda m: get_href(m.group(1)), comment) 
             print(comment)
