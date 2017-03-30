@@ -60,18 +60,6 @@ class Disk(Res.Resource):
             raise ex.excError("array %s has %d matching candidates" % (self.array_name, data["meta"]["total"]))
         return data["data"][0]["id"]
 
-    @lazy
-    def dg_id(self):
-        data = self.svc.collector_rest_get("/arrays/%d/diskgroups" % self.array_id, {
-            "filters": "dg_name "+self.diskgroup,
-            "props": "id",
-        })
-        if "error" in data:
-            raise ex.excError(data["error"])
-        if data["meta"]["total"] != 1:
-            raise ex.excError("diskgroup %s has %d matching candidates" % (self.diskgroup, data["meta"]["total"]))
-        return data["data"][0]["id"]
-
     def get_form_id(self, form_name):
         data = self.svc.collector_rest_get("/forms", {
             "filters": "form_name "+form_name,
@@ -140,7 +128,7 @@ class Disk(Res.Resource):
 
     def provision(self):
         if self.disk_id is not None:
-            self.log("skip provision: 'disk_id' is already set")
+            self.log.info("skip provision: 'disk_id' is already set")
             return
         try:
             size = conf_get_string_scope(self.svc, self.svc.config, self.rid, "size")
@@ -185,5 +173,7 @@ class Disk(Res.Resource):
         self.log.info("disk unprovision request sent to the collector (id %d). "
                       "waiting for completion." % results["results_id"])
         results = self.wait_results(results)
+        self.svc.config.set(self.rid, "disk_id", "")
+        self.svc.write_config()
         self.log.info("unprovisionned")
 
