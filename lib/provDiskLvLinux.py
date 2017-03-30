@@ -117,7 +117,7 @@ class ProvisioningDisk(Provisioning):
         try:
             self.size = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "size")
             self.size = str(self.size).upper()
-            if "%FREE" not in self.size:
+            if "%" not in self.size:
                 size_parm = ["-L", str(convert_size(self.size, _to="m"))+'M']
             else:
                 size_parm = ["-l", self.size]
