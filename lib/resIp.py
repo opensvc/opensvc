@@ -396,7 +396,7 @@ class Ip(Res.Resource):
                 svcname=self.svc.svcname,
             )
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.excError("dns update failed: "+str(exc))
         if "error" in data:
             raise ex.excError(data["error"])
 
@@ -502,7 +502,7 @@ class Ip(Res.Resource):
                 svcname=self.svc.svcname,
             )
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.excError("ip allocation failed: "+str(exc))
         if "error" in data:
             raise ex.excError(data["error"])
 
@@ -558,7 +558,7 @@ class Ip(Res.Resource):
                 svcname=self.svc.svcname,
             )
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.excError("ip release failed: "+str(exc))
         if "error" in data:
             self.log.warning(data["error"])
             return

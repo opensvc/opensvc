@@ -2344,6 +2344,10 @@ class Node(object):
             except (ValueError, TypeError):
                 pass
             raise exc
+        except IOError as exc:
+            if hasattr(exc, "reason"):
+                raise ex.excError(exc.reason)
+            raise ex.excError(str(exc))
         data = json.loads(ufile.read().decode("utf-8"))
         ufile.close()
         return data
