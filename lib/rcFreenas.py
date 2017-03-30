@@ -197,6 +197,13 @@ ACTIONS = {
         },
     },
     "List actions": {
+        "list_mappings": {
+            "msg": "List configured volumes",
+            "options": [
+                OPT.name,
+                OPT.naa,
+            ],
+        },
         "list_volume": {
             "msg": "List configured volumes",
         },
@@ -315,8 +322,8 @@ class Freenas(object):
         r = requests.post(api, data=data, auth=self.auth, verify=VERIFY)
         return bdecode(r.content)
 
-    def get(self, uri):
-        r = requests.get(self.api+uri+"/?format=json", auth=self.auth, verify=VERIFY)
+    def get(self, uri, params=None):
+        r = requests.get(self.api+uri+"/?format=json", params=params, auth=self.auth, verify=VERIFY)
         return bdecode(r.content)
 
     def get_version(self):
@@ -324,15 +331,15 @@ class Freenas(object):
         return buff
 
     def get_volume(self, name):
-        buff = self.get("/storage/volume/%s" % name)
+        buff = self.get("/storage/volume/%s" % name, {"limit": 0})
         return buff
 
     def get_volume_datasets(self, name):
-        buff = self.get("/storage/volume/%s/datasets" % name)
+        buff = self.get("/storage/volume/%s/datasets" % name, {"limit": 0})
         return buff
 
     def get_volumes(self):
-        buff = self.get("/storage/volume")
+        buff = self.get("/storage/volume", {"limit": 0})
         return buff
 
     def get_iscsi_target_id(self, tgt_id):
@@ -340,23 +347,23 @@ class Freenas(object):
         return buff
 
     def get_iscsi_targets(self):
-        buff = self.get("/services/iscsi/target")
+        buff = self.get("/services/iscsi/target", {"limit": 0})
         return buff
 
     def get_iscsi_targettoextents(self):
-        buff = self.get("/services/iscsi/targettoextent")
+        buff = self.get("/services/iscsi/targettoextent", {"limit": 0})
         return buff
 
     def get_iscsi_extents(self):
-        buff = self.get("/services/iscsi/extent")
+        buff = self.get("/services/iscsi/extent", {"limit": 0})
         return buff
 
     def get_iscsi_portal(self):
-        buff = self.get("/services/iscsi/portal")
+        buff = self.get("/services/iscsi/portal", {"limit": 0})
         return buff
 
     def get_iscsi_targetgroup(self):
-        buff = self.get("/services/iscsi/targetgroup")
+        buff = self.get("/services/iscsi/targetgroup", {"limit": 0})
         return buff
 
     def get_iscsi_targetgroup_id(self, tg_id):
@@ -364,7 +371,7 @@ class Freenas(object):
         return buff
 
     def get_iscsi_authorizedinitiator(self):
-        buff = self.get("/services/iscsi/authorizedinitiator")
+        buff = self.get("/services/iscsi/authorizedinitiator", {"limit": 0})
         return buff
 
     def get_iscsi_authorizedinitiator_id(self, initiator_id):
@@ -387,6 +394,8 @@ class Freenas(object):
 
     def get_iscsi_extent(self, naa=None, name=None):
         data = self.get_iscsi_extents_data()
+        if naa and not naa.startswith("0x"):
+            naa = "0x" + naa
         for extent in data:
             if name and name == extent["iscsi_target_extent_name"]:
                 return extent
@@ -490,15 +499,53 @@ class Freenas(object):
         except ValueError:
             raise ex.excError(buff)
 
+    def list_mappings(self, name=None, naa=None, **kwargs):
+        tte_data = json.loads(self.get_iscsi_targettoextents())
+        if name is not None or naa is not None:
+            data = self.get_iscsi_extent(name=name, naa=naa)
+            if data is None:
+                raise ex.excError("extent not found")
+            extent_id = data["id"]
+            tte_data = [d for d in tte_data if d["iscsi_extent"] == extent_id]
+        extent_data = {}
+        for d in json.loads(self.get_iscsi_extents()):
+            extent_data[d["id"]] = d
+        target_data = {}
+        for d in json.loads(self.get_iscsi_targets()):
+            target_data[d["id"]] = d
+        tg_by_target = {}
+        for d in json.loads(self.get_iscsi_targetgroup()):
+            if d["iscsi_target"] in tg_by_target:
+                tg_by_target[d["iscsi_target"]].append(d)
+            else:
+                tg_by_target[d["iscsi_target"]] = [d]
+        ig_data = {}
+        for d in json.loads(self.get_iscsi_authorizedinitiator()):
+            ig_data[d["id"]] = d
+        mappings = []
+        for d in tte_data:
+            for tg in tg_by_target[d["iscsi_target"]]:
+                ig_id = tg["iscsi_target_initiatorgroup"]
+                ig = ig_data[ig_id]
+                for hba_id in ig["iscsi_target_initiator_initiators"].split("\n"):
+                    mappings.append({
+                       "disk_id": extent_data[d["iscsi_extent"]]["iscsi_target_extent_naa"].replace("0x", ""),
+                       "tgt_id": target_data[tg["iscsi_target"]]["iscsi_target_name"],
+                       "hba_id": hba_id,
+                    })
+        return mappings
+
     def resize_zvol(self, name=None, naa=None, size=None, **kwargs):
         if size is None:
             raise ex.excError("'size' key is mandatory")
         if name is None and naa is None:
             raise ex.excError("'name' or 'naa' must be specified")
         data = self.get_iscsi_extent(name=name, naa=naa)
-        volume = self.extent_volume(data)
         if data is None:
-            raise ex.excError("zvol not found")
+            raise ex.excError("extent not found")
+        volume = self.extent_volume(data)
+        if volume is None:
+            raise ex.excError("volume not found")
         if size.startswith("+"):
             incr = convert_size(size.lstrip("+"), _to="MB")
             zvol_data = self.get_zvol(volume=volume, name=data["iscsi_target_extent_name"])
@@ -663,7 +710,14 @@ class Freenas(object):
                 raise ex.excError(data["iscsi_target_extent_name"])
             raise ex.excError(str(data))
         self.add_iscsi_targets_to_extent(extent_id=data["id"], targets=targets, **kwargs)
-        print(json.dumps(data, indent=8))
+        disk_id = data["iscsi_target_extent_naa"].replace("0x", "")
+        results = {
+            "driver_data": data,
+            "disk_id": disk_id,
+            "disk_devid": data["id"],
+            "mappings": self.list_mappings(naa=disk_id),
+        }
+        return results
 
     def del_iscsi_file(self, name=None, naa=None, **kwargs):
         if name is None and naa is None:
@@ -703,10 +757,12 @@ class Freenas(object):
             raise ex.excError(str(data))
         self.add_iscsi_targets_to_extent(extent_id=data["id"], targets=targets, **kwargs)
         self.add_diskinfo(data, size, volume)
+        disk_id = data["iscsi_target_extent_naa"].replace("0x", "")
         results = {
             "driver_data": data,
-            "disk_id": data["iscsi_target_extent_naa"].replace("0x", ""),
+            "disk_id": disk_id,
             "disk_devid": data["id"],
+            "mappings": self.list_mappings(naa=disk_id),
         }
         return results
 
