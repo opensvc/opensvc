@@ -516,17 +516,18 @@ class Freenas(object):
         ig_data = {}
         for d in json.loads(self.get_iscsi_authorizedinitiator()):
             ig_data[d["id"]] = d
-        mappings = []
+        mappings = {}
         for d in tte_data:
             for tg in tg_by_target[d["iscsi_target"]]:
                 ig_id = tg["iscsi_target_initiatorgroup"]
                 ig = ig_data[ig_id]
                 for hba_id in ig["iscsi_target_initiator_initiators"].split("\n"):
-                    mappings.append({
+                    tgt_id = target_data[tg["iscsi_target"]]["iscsi_target_name"]
+                    mappings[hba_id+":"+tgt_id] = {
                        "disk_id": extent_data[d["iscsi_extent"]]["iscsi_target_extent_naa"].replace("0x", ""),
-                       "tgt_id": target_data[tg["iscsi_target"]]["iscsi_target_name"],
+                       "tgt_id": tgt_id,
                        "hba_id": hba_id,
-                    })
+                    }
         return mappings
 
     def resize_zvol(self, name=None, naa=None, size=None, **kwargs):
