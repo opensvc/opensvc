@@ -287,23 +287,17 @@ class NecIsms(Nec):
             self.filtering = True
         else:
             self.filtering = False
-        self.index = 0
         self.get_arrays()
 
     def __iter__(self):
-        return self
+        for array in self.arrays:
+            yield(array)
 
     def refresh_vollist(self):
         if which('iSMvollist') is None:
             return
         cmd = ['iSMvollist', '-r']
         out, err, ret = justcall(cmd)
-
-    def next(self):
-        if self.index == len(self.arrays):
-            raise StopIteration
-        self.index += 1
-        return self.arrays[self.index-1]
 
 class NecIsm(Nec):
     def __init__(self, name):

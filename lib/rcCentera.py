@@ -18,7 +18,6 @@ class Centeras(object):
         else:
             self.filtering = False
         self.arrays = []
-        self.index = 0
         cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
@@ -52,13 +51,8 @@ class Centeras(object):
         del(conf)
 
     def __iter__(self):
-        return self
-
-    def next(self):
-        if self.index == len(self.arrays):
-            raise StopIteration
-        self.index += 1
-        return self.arrays[self.index-1]
+        for array in self.arrays:
+            yield(array)
 
 class Centera(object):
     def __init__(self, name, server=None, username=None, password=None, java_bin=None, jcass_dir=None):

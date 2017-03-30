@@ -7,17 +7,11 @@ class GceDiskss(object):
     arrays = []
 
     def __init__(self, objects=[]):
-        self.index = 0
         self.arrays.append(GceDisks())
 
     def __iter__(self):
-        return self
-
-    def next(self):
-        if self.index == len(self.arrays):
-            raise StopIteration
-        self.index += 1
-        return self.arrays[self.index-1]
+        for array in self.arrays:
+            yield(array)
 
 class GceDisks(object):
     def __init__(self):

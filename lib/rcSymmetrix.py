@@ -157,7 +157,6 @@ class Arrays(object):
         conf = ConfigParser.RawConfigParser()
         conf.read(cf)
 
-        self.index = 0
         self.symms = []
         for s in conf.sections():
             if self.filtering and s not in self.objects:

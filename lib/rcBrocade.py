@@ -43,7 +43,6 @@ class Brocades(object):
     switchs = []
 
     def __init__(self, objects=[]):
-        self.index = 0
         self.objects = objects
         if len(objects) > 0:
             self.filtering = True
@@ -89,13 +88,8 @@ class Brocades(object):
             self.switchs.append(Brocade(name, username, key, password))
 
     def __iter__(self):
-        return self
-
-    def next(self):
-        if self.index == len(self.switchs):
-            raise StopIteration
-        self.index += 1
-        return self.switchs[self.index-1]
+        for switch in self.switchs:
+            yield(switch)
 
 class Brocade(object):
     def __init__(self, name, username, key, password):

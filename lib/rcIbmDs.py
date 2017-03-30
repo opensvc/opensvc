@@ -43,7 +43,6 @@ class IbmDss(object):
         else:
             self.filtering = False
         self.arrays = []
-        self.index = 0
         cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
@@ -74,19 +73,14 @@ class IbmDss(object):
             self.arrays.append(IbmDs(name, hmc1, hmc2, username, pwfile))
 
     def __iter__(self):
-        return self
+        for array in self.arrays:
+            yield(array)
 
     def get(self, array):
         for o in self.arrays:
             if o.name == array:
                 return o
         raise ex.excError("%s not defined in auth.conf or not usable" % array)
-
-    def next(self):
-        if self.index == len(self.arrays):
-            raise StopIteration
-        self.index += 1
-        return self.arrays[self.index-1]
 
 class IbmDs(object):
     def __init__(self, name, hmc1, hmc2, username, pwfile):

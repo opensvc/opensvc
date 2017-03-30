@@ -44,7 +44,6 @@ class Hp3pars(object):
         else:
             self.filtering = False
         self.arrays = []
-        self.index = 0
         if not os.path.exists(rcEnv.authconf):
             raise ex.excError("%s not found" % rcEnv.authconf)
         conf = ConfigParser.RawConfigParser()
@@ -107,13 +106,8 @@ class Hp3pars(object):
         del(conf)
 
     def __iter__(self):
-        return self
-
-    def next(self):
-        if self.index == len(self.arrays):
-            raise StopIteration
-        self.index += 1
-        return self.arrays[self.index-1]
+        for array in self.arrays:
+            yield(array)
 
 class Hp3par(object):
     def __init__(self, name, method, manager=None, username=None, key=None, pwf=None, cli="cli", svcname="", log=None):

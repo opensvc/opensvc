@@ -37,7 +37,6 @@ class Evas(object):
             self.filtering = True
         else:
             self.filtering = False
-        self.index = 0
         cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
@@ -82,13 +81,8 @@ class Evas(object):
                 done.append(name)
 
     def __iter__(self):
-        return self
-
-    def next(self):
-        if self.index == len(self.arrays):
-            raise StopIteration
-        self.index += 1
-        return self.arrays[self.index-1]
+        for array in self.arrays:
+            yield(array)
 
 class Eva(object):
     def __init__(self, name, manager, username, password, sssubin=None):

@@ -234,7 +234,6 @@ class Freenass(object):
     def __init__(self, objects=[]):
         self.objects = objects
         self.filtering = len(objects) > 0
-        self.index = 0
         cf = rcEnv.authconf
         if not os.path.exists(cf):
             return
@@ -267,13 +266,8 @@ class Freenass(object):
             done.append(name)
 
     def __iter__(self):
-        return self
-
-    def next(self):
-        if self.index == len(self.arrays):
-            raise StopIteration
-        self.index += 1
-        return self.arrays[self.index-1]
+        for array in self.arrays:
+            yield(array)
 
     def get_freenas(self, name):
         for array in self.arrays:

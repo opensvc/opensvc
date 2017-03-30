@@ -126,7 +126,6 @@ class Arrays(object):
             self.filtering = True
         else:
             self.filtering = False
-        self.index = 0
 
         cf = rcEnv.authconf
         if not os.path.exists(cf):
@@ -172,13 +171,8 @@ class Arrays(object):
                 done.append(name)
 
     def __iter__(self):
-        return self
-
-    def next(self):
-        if self.index == len(self.arrays):
-            raise StopIteration
-        self.index += 1
-        return self.arrays[self.index-1]
+        for array in self.arrays:
+            yield(array)
 
     def get_array(self, name):
         for array in self.arrays:
