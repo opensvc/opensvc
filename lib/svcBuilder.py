@@ -3661,9 +3661,6 @@ def build(name, minimal=False, svcconf=None):
     if svc.flex_cpu_high_threshold > 100:
         raise ex.excInitError("invalid flex_cpu_high_threshold '%d' (>100)."%svc.flex_cpu_high_threshold)
 
-    if minimal:
-        return svc
-
     try:
         svc.show_disabled = conf_get_boolean_scope(svc, conf, 'DEFAULT', 'show_disabled')
     except ex.OptNotFound:
@@ -3708,6 +3705,9 @@ def build(name, minimal=False, svcconf=None):
         svc.clustername = conf_get_string_scope(svc, conf, 'DEFAULT', "cluster")
     except ex.OptNotFound:
         pass
+
+    if minimal:
+        return svc
 
     #
     # instanciate resources
