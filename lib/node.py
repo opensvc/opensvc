@@ -1815,8 +1815,8 @@ class Node(object):
         modname = "rc" + rtype
         try:
             mod = __import__(modname)
-        except ImportError as e:
-            raise ex.excError("driver not found (%s)" % modname)
+        except ImportError as exc:
+            raise ex.excError("driver %s load error: %s" % (modname, str(exc)))
         return mod.main(self.options.extra_argv, node=self)
 
     def get_ruser(self, node):
