@@ -2,7 +2,7 @@ import os
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import protected_mount, justcall, which
-from rcUtilitiesLinux import lv_info, lv_exists
+from rcUtilitiesLinux import lv_info, lv_exists, udevadm_settle
 import rcExceptions as ex
 import snap
 
@@ -74,12 +74,6 @@ class Snap(snap.Snap):
                                         snap_mnt=snap_mnt,
                                         snap_dev=snap_dev)
 
-    def udev_settle(self):
-        if which('udevadm') is None:
-            return
-        cmd = ['udevadm', 'settle']
-        self.vcall(cmd)
-
     def snapdestroykey(self, s):
         if protected_mount(self.snaps[s]['snap_mnt']):
             self.log.error("the snapshot is no longer mounted in %s. panic."%self.snaps[s]['snap_mnt'])
@@ -89,7 +83,7 @@ class Snap(snap.Snap):
         cmd = ['umount', self.snaps[s]['snap_mnt']]
         (ret, out, err) = self.vcall(cmd)
 
-        self.udev_settle()
+        udevadm_settle()
         cmd = ['lvremove', '-A', 'n', '-f', self.snaps[s]['snap_dev']]
         self.log.info(' '.join(cmd))
         for i in range(1, 30):

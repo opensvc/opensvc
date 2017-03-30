@@ -5,6 +5,12 @@ from rcUtilities import call, qcall, justcall, which
 
 label_to_dev_cache = {}
 
+def udevadm_settle():
+    if not which("udevadm"):
+        return
+    cmd = ["udevadm", "settle"]
+    justcall(cmd)
+
 def dev_to_paths(dev, log=None):
     cmd = ['multipath', '-l', dev]
     out, err, ret = justcall(cmd)

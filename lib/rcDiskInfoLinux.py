@@ -3,6 +3,7 @@ import sys
 import os
 import re
 from rcUtilities import justcall, which
+from rcUtilitiesLinux import udevadm_settle
 import rcDiskInfo
 import math
 from rcGlobalEnv import rcEnv
@@ -333,6 +334,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             print("scan", os.path.basename(host), "target"+target_num, "lun"+lun)
             os.system('echo - ' + target_num + ' ' + lun + ' >' + scan_f)
 
+        udevadm_settle()
         disks_after = glob.glob('/sys/block/sd*')
         disks_after += glob.glob('/sys/block/vd*')
         new_disks = set(disks_after) - set(disks_before)
