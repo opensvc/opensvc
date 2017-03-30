@@ -22,7 +22,7 @@ class Disk(resDiskDisk.Disk):
 
     def devlist(self):
         try:
-            dev = os.path.realpath(os.path.join(os.path.dirname(self.devpath), os.readlink(self.devpath)))
+            dev = os.path.realpath(self.devpath)
             return set([dev])
         except Exception as exc:
             print(exc)
