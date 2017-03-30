@@ -102,8 +102,8 @@ def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
     except Exception as e:
         _e = datetime.now()
         _d = _e - _b
-        err = str(e)
-    log.error("call %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, err))
+        log.exception("call %s error after %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
+        print("a stack has been saved to the rpc log", file=sys.stderr)
 
 def call_worker(q, node):
     e = "foo"
