@@ -263,7 +263,7 @@ def get_optional(conf, section, svc):
         for i in l:
             if i == 'nodes': nodes |= svc.nodes
             elif i == 'drpnodes': nodes |= svc.drpnodes
-            else: nodes |= set([i])
+            else: nodes |= set([i.lower()])
         if rcEnv.nodename in nodes:
             return True
         return False
@@ -287,7 +287,7 @@ def get_monitor(conf, section, svc):
         for i in l:
             if i == 'nodes': nodes |= svc.nodes
             elif i == 'drpnodes': nodes |= svc.drpnodes
-            else: nodes |= set([i])
+            else: nodes |= set([i.lower()])
         if rcEnv.nodename in nodes:
             return True
         return False
@@ -358,7 +358,7 @@ def get_disabled(conf, section, svc):
         for i in l:
             if i == 'nodes': nodes |= svc.nodes
             elif i == 'drpnodes': nodes |= svc.drpnodes
-            else: nodes |= set([i])
+            else: nodes |= set([i.lower()])
         if rcEnv.nodename in nodes:
             return False
 
@@ -380,7 +380,7 @@ def get_disabled(conf, section, svc):
         for i in l:
             if i == 'nodes': nodes |= svc.nodes
             elif i == 'drpnodes': nodes |= svc.drpnodes
-            else: nodes |= set([i])
+            else: nodes |= set([i.lower()])
     if rcEnv.nodename in nodes:
         return True
 
