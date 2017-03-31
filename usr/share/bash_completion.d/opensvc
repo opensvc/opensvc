@@ -7,7 +7,7 @@ svcmgr_collector_create="tag"
 svcmgr_collector_list="actions tags unavailability"
 svcmgr_collector_list_unavailability="ack"
 svcmgr_collector_show="actions tags"
-svcmgr_compliance="attach check detach env fix fixable list show"
+svcmgr_compliance="attach auto check detach env fix fixable list show"
 svcmgr_compliance_attach="moduleset ruleset"
 svcmgr_compliance_detach="moduleset ruleset"
 svcmgr_compliance_list="moduleset ruleset"
@@ -32,21 +32,22 @@ svcmgr_validate_config="--color --cron --daemon --debug --onlyprimary --onlyseco
 svcmgr_create="--color --config --cron --daemon --debug --dry-run --env --master --onlyprimary --onlysecondary --provision --remote --resource --rid --slave --slaves --status --subsets --tags --template --waitlock -c --cluster -f --force -h --help -i --interactive -p --parallel -s --service"
 svcmgr_print_config="--color --cron --daemon --debug --format --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_update="--color --cron --daemon --debug --dry-run --master --onlyprimary --onlysecondary --provision --remote --resource --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -i --interactive -p --parallel -s --service"
-svcmgr_compliance_fix="--attach --color --cron --daemon --debug --module --moduleset --onlyprimary --onlysecondary --remote --ruleset-date --status --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
-svcmgr_compliance_list_moduleset="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
-svcmgr_compliance_detach_ruleset="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --ruleset --status --waitlock -c --cluster -h --help -p --parallel -s --service"
-svcmgr_compliance_detach="--color --cron --daemon --debug --moduleset --onlyprimary --onlysecondary --remote --ruleset --status --waitlock -c --cluster -h --help -p --parallel -s --service"
-svcmgr_compliance_attach="--color --cron --daemon --debug --moduleset --onlyprimary --onlysecondary --remote --ruleset --status --waitlock -c --cluster -h --help -p --parallel -s --service"
-svcmgr_compliance_show_ruleset="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
-svcmgr_compliance_env="--color --cron --daemon --debug --module --moduleset --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
-svcmgr_compliance_show_status="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_compliance_list_ruleset="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
-svcmgr_compliance_detach_moduleset="--color --cron --daemon --debug --moduleset --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_compliance_fixable="--attach --color --cron --daemon --debug --module --moduleset --onlyprimary --onlysecondary --remote --ruleset-date --status --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
+svcmgr_compliance_list_moduleset="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_compliance_detach_moduleset="--color --cron --daemon --debug --moduleset --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_compliance_fix="--attach --color --cron --daemon --debug --module --moduleset --onlyprimary --onlysecondary --remote --ruleset-date --status --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_compliance_attach_ruleset="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --ruleset --status --waitlock -c --cluster -h --help -p --parallel -s --service"
-svcmgr_compliance_show_moduleset="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_compliance_env="--color --cron --daemon --debug --module --moduleset --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_compliance_detach="--color --cron --daemon --debug --moduleset --onlyprimary --onlysecondary --remote --ruleset --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_compliance_detach_ruleset="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --ruleset --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_compliance_check="--attach --color --cron --daemon --debug --module --moduleset --onlyprimary --onlysecondary --remote --ruleset-date --status --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
+svcmgr_compliance_show_status="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_compliance_show_ruleset="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_compliance_attach="--color --cron --daemon --debug --moduleset --onlyprimary --onlysecondary --remote --ruleset --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_compliance_attach_moduleset="--color --cron --daemon --debug --moduleset --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_compliance_show_moduleset="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_compliance_auto="--attach --color --cron --daemon --debug --module --moduleset --onlyprimary --onlysecondary --remote --ruleset-date --status --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_collector_disks="--color --cron --daemon --debug --format --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_collector_log="--color --cron --daemon --debug --message --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_collector_networks="--color --cron --daemon --debug --format --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
@@ -72,7 +73,7 @@ svcmgr_print_resource_status="--color --cron --daemon --debug --format --onlypri
 svcmgr_presync="--color --cron --daemon --debug --dry-run --master --onlyprimary --onlysecondary --remote --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_sync_resync="--color --cron --daemon --debug --dry-run --master --onlyprimary --onlysecondary --remote --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_freeze="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
-svcmgr_print_devlist="--color --cron --daemon --debug --format --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_print_devlist="--color --cron --daemon --debug --format --onlyprimary --onlysecondary --remote --rid --status --subsets --tags --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_prstart="--color --cron --daemon --debug --dry-run --master --onlyprimary --onlysecondary --remote --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_print_config_mtime="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_resync="--color --cron --daemon --debug --dry-run --master --onlyprimary --onlysecondary --remote --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
@@ -99,7 +100,7 @@ svcmgr_dns_update="--color --cron --daemon --debug --dry-run --master --onlyprim
 svcmgr_print_status="--color --cron --daemon --debug --format --hide-disabled --onlyprimary --onlysecondary --refresh --remote --show-disabled --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_enable="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --rid --status --subsets --tags --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_thaw="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
-svcmgr_print_disklist="--color --cron --daemon --debug --format --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_print_disklist="--color --cron --daemon --debug --format --onlyprimary --onlysecondary --remote --rid --status --subsets --tags --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_resource_monitor="--color --cron --daemon --debug --dry-run --master --onlyprimary --onlysecondary --remote --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_stopcontainer="--color --cron --daemon --debug --dry-run --master --onlyprimary --onlysecondary --remote --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_pg_thaw="--color --cron --daemon --debug --dry-run --master --onlyprimary --onlysecondary --remote --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
@@ -132,7 +133,7 @@ svcmgr_sync_full="--color --cron --daemon --debug --dry-run --master --onlyprima
 svcmgr_print_schedule="--color --cron --daemon --debug --format --onlyprimary --onlysecondary --remote --status --verbose --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_docker="--color --cron --daemon --debug --onlyprimary --onlysecondary --remote --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_pg_freeze="--color --cron --daemon --debug --dry-run --master --onlyprimary --onlysecondary --remote --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
-nodemgr="checks collect collector compliance dequeue discover edit get logs print prkey provision pushasset pushbrocade pushcentera pushdcs pushdisks pushemcvnx pusheva pushfreenas pushgcedisks pushhds pushhp3par pushibmds pushibmsvc pushnecism pushnetapp pushnsr pushpatch pushpkg pushstats pushsym pushvioserver reboot register rotate scanscsi schedule scheduler schedulers set shutdown sysreport unschedule unset updatecomp updatepkg wol"
+nodemgr="array checks collect collector compliance dequeue discover edit get logs print prkey pushasset pushbrocade pushcentera pushdcs pushdisks pushemcvnx pusheva pushfreenas pushgcedisks pushhds pushhp3par pushibmds pushibmsvc pushnecism pushnetapp pushnsr pushpatch pushpkg pushstats pushsym pushvioserver pushxtremio reboot register rotate scanscsi schedule scheduler schedulers set shutdown sysreport unschedule unset updatecomp updatepkg wol"
 nodemgr_collect="stats"
 nodemgr_collector="ack alerts asset checks cli create disks events list log networks search show tag untag"
 nodemgr_collector_ack="action"
@@ -156,6 +157,7 @@ nodemgr_pushnsr="--color --cron --debug --format --object -h --help"
 nodemgr_pushcentera="--color --cron --debug --format --object -h --help"
 nodemgr_pushibmds="--color --cron --debug --format --object -h --help"
 nodemgr_pushhp3par="--color --cron --debug --format --object -h --help"
+nodemgr_pushxtremio="--color --cron --debug --format --object -h --help"
 nodemgr_pushpatch="--color --cron --debug --format -h --help"
 nodemgr_pushpkg="--color --cron --debug --format -h --help"
 nodemgr_pushvioserver="--color --cron --debug --format --object -h --help"
@@ -236,11 +238,11 @@ nodemgr_shutdown="--color --cron --debug --format -h --help"
 nodemgr_print_schedule="--color --cron --debug --format --verbose -h --help"
 nodemgr_schedule_reboot_status="--color --cron --debug --format -h --help"
 nodemgr_dequeue_actions="--color --cron --debug --format -h --help"
+nodemgr_array="--color --cron --debug --format -h --help"
 nodemgr_wol="--broadcast --color --cron --debug --format --mac -h --help"
-nodemgr_provision="--color --cron --debug --format --resource -h --help"
-nodemgr_scanscsi="--color --cron --debug --format -h --help"
+nodemgr_scanscsi="--color --cron --debug --format --hba --lun --target -h --help"
 
-opts_with_arg=( "--api" "--app" "--author" "--begin" "--broadcast" "--color" "--comment" "--config" "--duration" "--end" "--env" "--format" "--id" "--like" "--mac" "--message" "--module" "--moduleset" "--object" "--param" "--password" "--resource" "--rid" "--ruleset" "--ruleset-date" "--service" "--slave" "--stats-dir" "--status" "--subsets" "--symcli-db-file" "--tag" "--tags" "--template" "--to" "--user" "--value" "--waitlock" "-s" )
+opts_with_arg=( "--api" "--app" "--author" "--begin" "--broadcast" "--color" "--comment" "--config" "--duration" "--end" "--env" "--format" "--hba" "--id" "--like" "--lun" "--mac" "--message" "--module" "--moduleset" "--object" "--param" "--password" "--resource" "--rid" "--ruleset" "--ruleset-date" "--service" "--slave" "--stats-dir" "--status" "--subsets" "--symcli-db-file" "--tag" "--tags" "--target" "--template" "--to" "--user" "--value" "--waitlock" "-s" )
 
 
 
@@ -304,15 +306,22 @@ _comp_handler()
 
     action="${action[@]}"
     action="${action// /_}"
-    opts="${!action}"
+    opts=""
 
     while [ "$action" != "" -a "$opts" == "" ]
     do
         opts="${!action}"
-        action="${action:0:(-1)}"
+        action=${action%_*}
     done
 
+    extra_opts="${!action}"
+    if [ "$a" != "" -a "$opts" != "" ]
+    then
+        opts="$opts $extra_opts"
+    fi
+
     COMPREPLY=($(compgen -W "${opts}" -- ${a}))
+
     return 0
 }
 

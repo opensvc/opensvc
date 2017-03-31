@@ -77,15 +77,22 @@ _comp_handler()
 
     action="${action[@]}"
     action="${action// /_}"
-    opts="${!action}"
+    opts=""
 
     while [ "$action" != "" -a "$opts" == "" ]
     do
         opts="${!action}"
-        action="${action:0:(-1)}"
+        action=${action%%_*}
     done
 
+    extra_opts="${!action}"
+    if [ "$a" != "" -a "$opts" != "" ]
+    then
+        opts="$opts $extra_opts"
+    fi
+
     COMPREPLY=($(compgen -W "${opts}" -- ${a}))
+
     return 0
 }
 
