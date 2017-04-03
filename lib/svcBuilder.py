@@ -3623,9 +3623,6 @@ def build(name, minimal=False, svcconf=None):
 
     if 'flex' in svc.clustertype:
         svc.ha = True
-    allowed_clustertype = ['failover', 'flex', 'autoflex']
-    if svc.clustertype not in allowed_clustertype:
-        raise ex.excInitError("invalid cluster type '%s'. allowed: %s"%(svc.clustertype, ', '.join(allowed_clustertype)))
 
     try:
         svc.flex_min_nodes = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_min_nodes')

@@ -279,6 +279,13 @@ ACTIONS_NEED_SNAP_TRIGGER = [
     "sync_update",
 ]
 
+CLUSTER_TYPES = [
+    "failover",
+    "flex",
+    "autoflex",
+    "swarmflex",
+]
+
 os.environ['LANG'] = 'C'
 
 def _slave_action(func):
@@ -3686,6 +3693,12 @@ class Svc(object):
         If --cluster is set, and the service is a flex, and we are
         flex_primary run the action on all remote nodes.
         """
+
+        if action not in ACTIONS_NO_LOCK and self.clustertype not in CLUSTER_TYPES:
+            raise ex.exError("invalid cluster type '%s'. allowed: %s" % (
+                self.clustertype,
+                ', '.join(CLUSTER_TYPES),
+            ))
 
         err = 0
         if options.waitlock >= 0:
