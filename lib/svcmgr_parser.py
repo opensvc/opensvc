@@ -325,7 +325,7 @@ ACTION_OPTS = [
     OPT.tags,
 ]
 
-START_ACTION_OPTS = ACTION_OPTS + [
+START_ACTION_OPTS = [
     OPT.disable_rollback,
     OPT.ignore_affinity,
 ]
@@ -336,7 +336,7 @@ ACTIONS = {
             'msg': 'start a service if executed on the primary node (or one of'
                    ' the primary nodes in case of a flex service), '
                    'startstandby if not',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS,
         },
         'dns_update': {
             'msg': 'update the collector dns records for the service',
@@ -348,19 +348,19 @@ ACTIONS = {
         },
         'start': {
             'msg': 'start all service resources',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS,
         },
         'startstandby': {
             'msg': 'start service resources flagged always on',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS,
         },
         'startip': {
             'msg': 'configure service ip addresses',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS,
         },
         'startshare': {
             'msg': 'start network shares',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS,
         },
         'stopshare': {
             'msg': 'stop network shares',
@@ -369,11 +369,11 @@ ACTIONS = {
         'startfs': {
             'msg': 'prepare devices, logical volumes, mount service '
                    'filesystems, bootstrap containers',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS,
         },
         'startapp': {
             'msg': 'execute service application startup script',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS,
         },
         'stop': {
             'msg': 'stop all service resources not flagged always on. With '
@@ -396,7 +396,7 @@ ACTIONS = {
         },
         'startcontainer': {
             'msg': 'start the container resource',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS,
         },
         'stopcontainer': {
             'msg': 'stop the container resource',
@@ -404,7 +404,7 @@ ACTIONS = {
         },
         'provision': {
             'msg': 'provision and start the service',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS,
         },
         'unprovision': {
             'msg': 'stop and unprovision the service. beware: data will be '
@@ -476,7 +476,7 @@ ACTIONS = {
             'msg': 'combo action, activating standby disks, taking '
                    'reservations, starting loopback devices and volume '
                    'groups',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS,
         },
         'stopdisk': {
             'msg': 'combo action, stopping volume groups and loopback '
@@ -493,7 +493,7 @@ ACTIONS = {
         },
         'prstart': {
             'msg': 'reserve scsi disks held by this service',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS,
         },
         'prstop': {
             'msg': 'release scsi disks held by this service',
@@ -505,11 +505,11 @@ ACTIONS = {
         },
         'restart': {
             'msg': 'combo action, chaining stop-start',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS,
         },
         'resync': {
             'msg': 'combo action, chaining stop-sync_resync-start',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS,
         },
         'sync_nodes': {
             'msg': 'send to peer nodes the service config files and '
@@ -614,7 +614,7 @@ ACTIONS = {
             'msg': 'stop the service on the local node and start on the '
                    'remote node. --to <node> specify the remote node to '
                    'switch the service to.',
-            'options': ACTION_OPTS + [
+            'options': ACTION_OPTS + START_ACTION_OPTS + [
                 OPT.to,
             ],
         },
@@ -622,7 +622,7 @@ ACTIONS = {
             'msg': 'live migrate the service to the remote node. '
                    '--to <node> specify the remote node to migrate the '
                    'service to.',
-            'options': ACTION_OPTS + [
+            'options': ACTION_OPTS + START_ACTION_OPTS + [
                 OPT.to,
             ],
         },
