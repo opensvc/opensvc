@@ -121,7 +121,7 @@ class CompCron(CompObject):
         for loc in self.crontab_locs:
             if not os.path.exists(loc):
                 continue
-            if loc == '/etc/cron.d':
+            if loc == '/etc/cron.d' and "file" in e and e["file"] not in (None, ""):
                  cron_file = os.path.join(loc, e['file'])
             else:
                  cron_file = os.path.join(loc, e['user'])
@@ -161,8 +161,13 @@ class CompCron(CompObject):
                      break
             if not found and e['action'] == 'add':
                 raise ComplianceError("wanted cron entry not found: '%s' in '%s'"%(s, cron_file))
+            elif found and e['action'] == 'add':
+                pinfo("'%s' is in '%s'"%(s, cron_file))
+
             if found and e['action'] == 'del':
                 raise ComplianceError("unwanted cron entry found: '%s' in '%s'"%(s, cron_file))
+            elif not found and e['action'] == 'del':
+                pinfo("'%s' not in '%s'"%(s, cron_file))
 
     def _del_cron(self, e):
         cron_file = self.get_cron_file(e)
