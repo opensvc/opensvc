@@ -62,6 +62,10 @@ class ResourceSet(object):
             output += " (%s)" % (resource.__str__())
         return "%s]" % output
 
+    def __iter__(self):
+        for resource in self.resources:
+            yield(resource)
+
     def pre_action(self, action):
         """
         Call the pre_action of each resource driver in the resource set.
