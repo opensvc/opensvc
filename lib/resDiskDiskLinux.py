@@ -1,10 +1,11 @@
 from __future__ import print_function
 
 import os
+import time
 
 import rcExceptions as ex
 import resDiskDisk
-from rcUtilities import lazy
+from rcUtilities import lazy, which, justcall
 import rcStatus
 
 class Disk(resDiskDisk.Disk):
@@ -28,3 +29,20 @@ class Disk(resDiskDisk.Disk):
             print(exc)
             pass
         return set()
+
+    def provision(self):
+        resDiskDisk.Disk.provision(self)
+        self.wait_udev()
+        if which("multipath"):
+            dev = os.path.realpath(self.devpath)
+            cmd = ["multipath", "-v1", dev]
+            ret, out, err = self.vcall(cmd)
+
+    def wait_udev(self):
+        for retry in range(30):
+            if os.path.exists(self.devpath):
+                self.log.info("%s now exists", self.devpath)
+                return
+            time.sleep(1)
+        raise ex.excError("time out waiting for %s to appear" % self.devpath)
+
