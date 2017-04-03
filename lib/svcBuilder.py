@@ -540,14 +540,18 @@ def get_sync_args(conf, s, svc):
     return kwargs
 
 def add_resources(restype, svc, conf):
+    if restype == "pool":
+        restype = "zpool"
+        match = "[z]{0,1}pool#"
+    else:
+        match = restype+"#"
+
     for s in conf.sections():
-        if restype == "pool":
-            restype = "zpool"
-        if restype in ("disk", "vg", "zpool") and re.match(restype+'#.+pr', s, re.I) is not None:
+        if restype in ("disk", "vg", "zpool") and re.match(match+'.+pr', s, re.I) is not None:
             # persistent reserv resource are declared by their peer resource:
             # don't add them from here
             continue
-        if s != 'app' and s != restype and re.match(restype+'#', s, re.I) is None:
+        if s != 'app' and s != restype and re.match(match, s, re.I) is None:
             continue
         tags = get_tags(conf, s, svc)
         if svc.encap and 'encap' not in tags:
@@ -1211,10 +1215,10 @@ def add_gandi(svc, conf, s):
 def add_disk_compat(svc, conf, s):
     try:
         disk_type = conf_get_string_scope(svc, conf, s, 'type')
-        if len(disk_type) >= 2:
-            disk_type = disk_type[0].upper() + disk_type[1:].lower()
     except ex.OptNotFound:
-        disk_type = rcEnv.sysname
+        disk_type = s.split("#")[0]
+    if len(disk_type) >= 2:
+        disk_type = disk_type[0].upper() + disk_type[1:].lower()
 
     if disk_type == 'Drbd':
         add_drbd(svc, conf, s)
@@ -1345,10 +1349,11 @@ def add_disk(svc, conf, s):
 
     try:
         disk_type = conf_get_string_scope(svc, conf, s, 'type')
-        if len(disk_type) >= 2:
-            disk_type = disk_type[0].upper() + disk_type[1:].lower()
     except ex.OptNotFound:
-        disk_type = rcEnv.sysname
+        disk_type = s.split("#")[0]
+
+    if len(disk_type) >= 2:
+        disk_type = disk_type[0].upper() + disk_type[1:].lower()
 
     if disk_type == 'Drbd':
         add_drbd(svc, conf, s)
