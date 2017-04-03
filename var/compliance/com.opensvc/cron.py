@@ -35,6 +35,7 @@ class CompCron(CompObject):
                 '/var/spool/cron/crontabs',
                 '/var/spool/cron',
                 '/var/cron/tabs',
+                '/var/spool/cron/tabs',
             ]
 
         self.ce = []
