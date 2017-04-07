@@ -682,6 +682,18 @@ class KeywordDrpFlexPrimary(Keyword):
                   text="The drpnode in charge of syncing the other drpnodes. --cluster actions on the drp_flex_primary are execute on all drpnodes (ie, not pri nodes)."
                 )
 
+class KeywordDockerSwarmManagers(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="docker_swarm_managers",
+                  order=20,
+                  at=True,
+                  required=False,
+                  text="List of nodes promoted as docker swarm managers.The flex primary node is implicitely a manager. Whitespace separated."
+                )
+
 class KeywordDockerExe(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -733,6 +745,19 @@ class KeywordDockerDaemonArgs(Keyword):
                   order=12,
                   text="If the service has docker-type container resources, the service handles the startup of a private docker daemon. OpenSVC sets the socket and data dir parameters. Admins can set extra parameters using this keyword. For example, it can be useful to set the --ip parameter for a docker registry service.",
                   example="--ip 1.2.3.4"
+                )
+
+class KeywordDockerSwarmArgs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="docker_swarm_args",
+                  at=True,
+                  required=False,
+                  order=12,
+                  text="The arguments passed to docker swarm init on the flex primary, and to docker swarm join on the the other nodes. The --token argument must not be specified, as it is handled by the agent. Scoping this parameter permits to set additional parameters on the flex_primary for use with swarm init only, like --autolock.",
+                  example="--advertize-addr {ip#0.ipname} --listen-addr {ip#0.ipname}",
                 )
 
 class KeywordSubsetParallel(Keyword):
@@ -815,6 +840,22 @@ class KeywordContainerZoneDeleteOnStop(Keyword):
                   order=1
                 )
 
+class KeywordDockerDockerService(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="docker_service",
+                  at=True,
+                  order=9,
+                  required=False,
+                  rtype="docker",
+                  default=False,
+                  candidates=(True, False),
+                  text="If set to True, run this container as a docker service, which is possible if the cluster_type is set to flex and the docker swarm properly initialized.",
+                  example=False
+                )
+
 class KeywordDockerRunImage(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -855,20 +896,6 @@ class KeywordDockerRunArgs(Keyword):
                   rtype="docker",
                   text="Extra arguments to pass to the docker run command, like volume and port mappings.",
                   example="-v /opt/docker.opensvc.com/vol1:/vol1:rw -p 37.59.71.25:8080:8080"
-                )
-
-class KeywordDockerRunSwarm(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="container",
-                  keyword="run_swarm",
-                  at=True,
-                  order=2,
-                  required=False,
-                  rtype="docker",
-                  text="The ip:port at which the swarm manager listens. If swarm is not used, this parameter should not be used, in which case, the service-private dockerd is used through its unix socket.",
-                  example="1.2.3.4:2374"
                 )
 
 class KeywordVirtinst(Keyword):
@@ -1233,7 +1260,7 @@ class KeywordFlexMinNodes(Keyword):
                   order=16,
                   required=False,
                   default=1,
-                  depends=[('cluster_type', ['flex', 'autoflex'])],
+                  depends=[("cluster_type", ["flex", "autoflex"])],
                   text="Minimum number of active nodes in the cluster. Below this number alerts are raised by the collector, and the collector won't stop any more service instances."
                 )
 
@@ -1246,7 +1273,7 @@ class KeywordFlexMaxNodes(Keyword):
                   order=16,
                   required=False,
                   default=10,
-                  depends=[('cluster_type', ['flex', 'autoflex'])],
+                  depends=[("cluster_type", ["flex", "autoflex"])],
                   text="Maximum number of active nodes in the cluster. Above this number alerts are raised by the collector, and the collector won't start any more service instances. 0 means unlimited."
                 )
 
@@ -1259,7 +1286,7 @@ class KeywordFlexCpuMinThreshold(Keyword):
                   order=16,
                   required=False,
                   default=10,
-                  depends=[('cluster_type', ['flex', 'autoflex'])],
+                  depends=[("cluster_type", ["flex", "autoflex"])],
                   text="Average CPU usage across the active cluster nodes below which the collector raises alerts and decides to stop service instances with autoflex cluster type."
                 )
 
@@ -1272,7 +1299,7 @@ class KeywordFlexCpuMaxThreshold(Keyword):
                   order=16,
                   required=False,
                   default=70,
-                  depends=[('cluster_type', ['flex', 'autoflex'])],
+                  depends=[("cluster_type", ["flex", "autoflex"])],
                   text="Average CPU usage across the active cluster nodes above which the collector raises alerts and decides to start new service instances with autoflex cluster type."
                 )
 
@@ -4207,6 +4234,8 @@ class KeyDict(KeywordStore):
         self += KeywordDockerExe()
         self += KeywordDockerDataDir()
         self += KeywordDockerDaemonArgs()
+        self += KeywordDockerSwarmArgs()
+        self += KeywordDockerSwarmManagers()
         self += KeywordAntiAffinity()
         self += KeywordNoPreemptAbort()
         self += KeywordShowDisabled()
@@ -4433,10 +4462,10 @@ class KeyDict(KeywordStore):
         self += KeywordCloudId()
         self += KeywordVmUuid()
         self += KeywordVirtinst()
+        self += KeywordDockerDockerService()
         self += KeywordDockerRunCommand()
         self += KeywordDockerRunImage()
         self += KeywordDockerRunArgs()
-        self += KeywordDockerRunSwarm()
         self += KeywordSnap()
         self += KeywordSnapof()
         self += KeywordContainerOrigin()

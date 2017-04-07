@@ -2179,7 +2179,7 @@ def add_containers_docker(svc, conf, s):
         pass
 
     try:
-        kwargs['run_swarm'] = conf_get_string_scope(svc, conf, s, 'run_swarm')
+        kwargs['docker_service'] = conf_get_boolean_scope(svc, conf, s, 'docker_service')
     except ex.OptNotFound:
         pass
 
@@ -2310,8 +2310,6 @@ def add_mandatory_syncs(svc, conf):
         src = add_file(src, os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
         src = add_file(src, os.path.join(rcEnv.pathetc, svc.svcname+'.cluster'))
         src = add_file(src, os.path.join(rcEnv.pathetc, svc.svcname+'.dir'))
-        for resource in svc.get_resources():
-            src += resource.files_to_sync()
         dst = os.path.join("/")
         exclude = ['--exclude=*.core']
         targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}

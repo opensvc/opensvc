@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 """
 The module implementing the DockerLib class.
 """
@@ -57,9 +59,24 @@ class DockerLib(object):
         except ex.OptNotFound:
             self.docker_daemon_args = []
 
+        try:
+            self.docker_swarm_args = \
+                conf_get_string_scope(svc, svc.config, 'DEFAULT', 'docker_swarm_args').split()
+        except ex.OptNotFound:
+            self.docker_swarm_args = []
+
+        try:
+            self.docker_swarm_managers = \
+                conf_get_string_scope(svc, svc.config, 'DEFAULT', 'docker_swarm_managers').split()
+        except ex.OptNotFound:
+            self.docker_swarm_managers = []
+
         if self.docker_data_dir:
             if "--exec-opt" not in self.docker_daemon_args and self.docker_min_version("1.7"):
                 self.docker_daemon_args += ["--exec-opt", "native.cgroupdriver=cgroupfs"]
+
+        if "--token" in self.docker_swarm_args:
+            raise ex.excError("--token must not be specified in DEFAULT.docker_swarm_args")
 
         self.docker_var_d = os.path.join(rcEnv.pathvar, self.svc.svcname)
 
@@ -103,6 +120,121 @@ class DockerLib(object):
         if ret != 0:
             raise ex.excError(err)
         return out
+
+    def docker_node_rm(self, ref):
+        """
+        Execute "docker node rm <ref>"
+        """
+        cmd = self.docker_cmd + ['node', 'rm', ref]
+        self.svc.log.debug("remove replaced node %s" % ref)
+        self.svc.log.debug(" ".join(cmd))
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+
+    @lazy
+    def docker_service_ls(self):
+        """
+        The "docker service ls" output.
+        """
+        cmd = self.docker_cmd + ['service', 'ls']
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        return out
+
+    def docker_service_ps(self, service):
+        """
+        The "docker service ps <service>" output.
+        """
+        if service is None:
+            return ""
+        cmd = self.docker_cmd + ['service', 'ps', service]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        return out
+
+    def service_ps_data(self, service):
+        lines = self.docker_service_ps(service).splitlines()
+        if len(lines) < 2:
+            return []
+        ids = []
+        for line in lines[1:]:
+            if "\_" in line:
+                # don't care about "history" lines
+                continue
+            line = line.strip().split()
+            if len(line) == 0:
+                continue
+            ids.append(line[0])
+        data = self.docker_inspect(ids)
+
+        # discard lines with left nodes
+        node_ids = self.node_ids()
+        data = [inst for inst in data if "NodeID" in inst and inst["NodeID"] in node_ids]
+        return data
+
+    def docker_node_ls(self):
+        """
+        The "docker node ls" output.
+        """
+        cmd = self.docker_cmd + ['node', 'ls', '-q']
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        return out
+
+    def node_ids(self):
+        return self.docker_node_ls().strip().splitlines()
+
+    def node_ls_data(self):
+        cmd = self.docker_cmd + ['node', 'inspect'] + self.node_ids()
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        return json.loads(out)
+
+    def node_data(self):
+        cmd = self.docker_cmd + ['node', 'inspect', rcEnv.nodename]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        return json.loads(out)[0]
+
+    @lazy
+    def service_ls_data(self):
+        """
+        A hash of services data as found in "docker service ls",
+        indexed by service name.
+        """
+        lines = self.docker_service_ls.splitlines()
+        if len(lines) < 2:
+            return
+        header = lines[0].strip().split()
+        try:
+            service_id_idx = header.index('ID')
+            service_name_idx = header.index('NAME')
+            service_mode_idx = header.index('MODE')
+            service_replicas_idx = header.index('REPLICAS')
+            service_image_idx = header.index('IMAGE')
+        except (IndexError, ValueError):
+            return
+        ref_len = len(header)
+        data = {}
+        for line in lines[1:]:
+            line = line.strip().split()
+            if len(line) != ref_len:
+                continue
+            service_name = line[service_name_idx].strip()
+            data[service_name] = {
+                "name": service_name,
+                "id": line[service_id_idx].strip(),
+                "mode": line[service_mode_idx].strip(),
+                "replicas": line[service_replicas_idx].strip().split("/"),
+                "image": line[service_image_idx].strip(),
+            }
+        return data
 
     @lazy
     def container_id_by_name(self):
@@ -152,9 +284,23 @@ class DockerLib(object):
            resource.container_name not in self.container_id_by_name:
             return
         data = self.container_id_by_name[resource.container_name]
-        if data["swarm_node"]:
-            resource.swarm_node = data["swarm_node"]
         return data["id"]
+
+    def get_service_id_by_name(self, resource, refresh=False):
+        """
+        Return the service id for the <resource> container resource.
+        Lookup in docker service ls by docker name <svcname>_container_<n>
+        where <n> is the identifier part of the resource id.
+        """
+        if refresh:
+            unset_lazy(self, "docker_service_ls")
+            unset_lazy(self, "service_ls_data")
+        if self.service_ls_data is None or \
+           resource.service_name not in self.service_ls_data:
+            return
+        data = self.service_ls_data[resource.service_name]
+        return data["id"]
+
 
     @lazy
     def docker_info(self):
@@ -184,6 +330,25 @@ class DockerLib(object):
             return True
         return False
 
+    def get_running_service_ids(self, refresh=False):
+        """
+        Return the list of running docker services id.
+        """
+        if refresh:
+            unset_lazy(self, "running_service_ids")
+            unset_lazy(self, "docker_service_ls")
+            unset_lazy(self, "service_ls_data")
+        return self.running_service_ids
+
+    @lazy
+    def running_service_ids(self):
+        """
+        The list of running docker services id.
+        """
+        if self.service_ls_data is None:
+            return []
+        return [service["id"] for service in self.service_ls_data.values()]
+
     def get_running_instance_ids(self, refresh=False):
         """
         Return the list of running docker instances id.
@@ -203,17 +368,28 @@ class DockerLib(object):
 
     def get_run_image_id(self, resource, run_image=None):
         """
-        Return the docker image data, as a dict containing the
-        information reported by "docker images".
+        Return the full docker image id
         """
         if run_image is None and hasattr(resource, "run_image"):
             run_image = resource.run_image
         if len(run_image) == 12 and re.match('^[a-f0-9]*$', run_image):
             return run_image
+        if run_image.startswith("sha256:"):
+            return run_image
+
         try:
             image_name, image_tag = run_image.split(':')
         except ValueError:
-            image_name, image_tag = [run_image, "latest"]
+            return
+
+        if self.docker_min_version("1.13"):
+            data = self.docker_image_inspect(run_image)
+            if data is None:
+                self.docker_pull(run_image)
+                data = self.docker_image_inspect(run_image)
+            if data is None:
+                raise ValueError("image %s not pullable" % run_image)
+            return data["Id"]
 
         cmd = self.docker_cmd + ['images', '--no-trunc', image_name]
         results = justcall(cmd)
@@ -226,6 +402,13 @@ class DockerLib(object):
             if elements[0] == image_name and elements[1] == image_tag:
                 return elements[2]
         return run_image
+
+    def docker_pull(self, ref):
+        self.svc.log.info("pulling docker image %s" % ref)
+        cmd = self.docker_cmd + ['pull', ref]
+        results = justcall(cmd)
+        if results[2] != 0:
+            raise ex.excError(results[1])
 
     @lazy
     def images(self):
@@ -325,10 +508,42 @@ class DockerLib(object):
         """
         Return the "docker inspect" data dict.
         """
-        cmd = self.docker_cmd + ['inspect', container_id]
+        if isinstance(container_id, list):
+            cmd = self.docker_cmd + ['inspect'] + container_id
+            out = justcall(cmd)[0]
+            data = json.loads(out)
+            return data
+        else:
+            cmd = self.docker_cmd + ['inspect', container_id]
+            out = justcall(cmd)[0]
+            data = json.loads(out)
+            return data[0]
+
+    def docker_service_inspect(self, service_id):
+        """
+        Return the "docker service inspect" data dict.
+        """
+        cmd = self.docker_cmd + ['service', 'inspect', service_id]
         out = justcall(cmd)[0]
         data = json.loads(out)
         return data[0]
+
+    def docker_image_inspect(self, image_id):
+        """
+        Return the "docker image inspect" data dict.
+        """
+        cmd = self.docker_cmd + ['image', 'inspect', image_id]
+        out = justcall(cmd)[0]
+        data = json.loads(out)
+        if len(data) == 0:
+            return
+        return data[0]
+
+    def repotag_to_image_id(self, repotag):
+        data = self.docker_image_inspect(repotag)
+        if data is None:
+            return
+        return data["Id"]
 
     def docker_stop(self):
         """
@@ -566,3 +781,154 @@ class DockerLib(object):
             return "dockerd"
         else:
             raise ex.excInitError("dockerd executable not found")
+
+    def join_token(self, ttype):
+        self.docker_start()
+        cmd = self.docker_cmd + ["swarm", "join-token", ttype]
+        results = justcall(cmd)
+        if results[2] != 0:
+            raise ex.excError(results[1])
+        token = None
+        for line in results[0].splitlines():
+            if "--token" in line:
+                token = line.split()[1]
+                continue
+            if token and ":" in line:
+                addr = line.strip()
+                return {"token": token, "addr": addr}
+        raise ex.excError("unable to determine the swarm worker join token")
+
+    def swarm_initialized(self):
+        if self.swarm_node_role == "none":
+            return False
+        return True
+
+    def join_token_dump_file(self, ttype):
+        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, "swarm_" + ttype + "_join_token")
+
+    def dump_join_tokens(self):
+        for ttype in ("manager", "worker"):
+            with open(self.join_token_dump_file(ttype), "w") as fp:
+                fp.write(json.dumps(self.join_token(ttype)))
+
+    def load_join_token(self, ttype):
+        fpath = self.join_token_dump_file(ttype)
+        if not os.path.exists(fpath):
+            raise ex.excError("the join token has not been transfered by the flex primary node")
+        with open(fpath, "r") as fp:
+            data = json.load(fp)
+        return data
+
+    @lazy
+    def files_to_sync(self):
+        fpaths = []
+        self.dump_join_tokens()
+        for ttype in ("manager", "worker"):
+            fpath = self.join_token_dump_file(ttype)
+            if os.path.exists(fpath):
+                fpaths.append(fpath)
+        return fpaths
+
+    def init_swarm(self):
+        if self.swarm_initialized():
+            return
+        if rcEnv.nodename == self.svc.flex_primary:
+            self.init_swarm_leader()
+        elif rcEnv.nodename in self.docker_swarm_managers:
+            self.init_swarm_manager()
+        else:
+            self.init_swarm_worker()
+        unset_lazy(self, "swarm_node_role")
+
+    def init_swarm_leader(self):
+        cmd = self.docker_cmd + ['swarm', 'init']
+        if len(self.docker_swarm_args) > 0:
+            cmd += self.docker_swarm_args
+        self.svc.log.info(" ".join(cmd))
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+
+    def init_swarm_manager(self):
+        data = self.load_join_token("manager")
+        cmd = self.docker_cmd + ['swarm', 'join', '--token', data["token"], data["addr"]]
+        if len(self.docker_swarm_args) > 0:
+            cmd += self.docker_swarm_args
+        self.svc.log.info(" ".join(cmd))
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+
+    def init_swarm_worker(self):
+        data = self.load_join_token("worker")
+        cmd = self.docker_cmd + ['swarm', 'join', '--token', data["token"], data["addr"]]
+        if len(self.docker_swarm_args) > 0:
+            cmd += self.docker_swarm_args
+        self.svc.log.info(" ".join(cmd))
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+
+    def docker_swarm_leave(self):
+        if self.swarm_node_role == "none":
+            return
+        cmd = self.docker_cmd + ['swarm', 'leave']
+        ret, out, err = self.svc.vcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        unset_lazy(self, "swarm_node_role")
+
+    @lazy
+    def swarm_node_role(self):
+        """
+        Return
+        * none : no role in the swarm, not joined yet
+        * worker
+        * leader
+        * reachable
+        """
+        if not self.docker_running():
+            return "none"
+        cmd = self.docker_cmd + ['node', 'ls']
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            if "docker swarm" in err:
+                return "none"
+            else:
+                return "worker"
+        for line in out.splitlines():
+            line = line.replace(" * ", " ")
+            line = line.strip().split()
+            if len(line) < 4:
+                continue
+            if line[1] != rcEnv.nodename:
+                continue
+            if line[-1] in ("Leader", "Reachable"):
+                return line[-1].lower()
+            else:
+                return "unknown"
+
+    def nodes_purge(self):
+        """
+        Remove lingering nodes, ie those in down state and
+        with an active instance matching the hostname.
+        """
+        if self.swarm_node_role != "leader":
+            return
+        nodes = self.node_ls_data()
+        down = {}
+        for node in nodes:
+            nodename = node["Description"]["Hostname"]
+            if node["Status"]["State"] != "down":
+                continue
+            if nodename not in down:
+                down[nodename] = []
+            down[nodename].append(node["ID"])
+        for node in nodes:
+            nodename = node["Description"]["Hostname"]
+            if node["Status"]["State"] != "ready":
+                continue
+            if nodename not in down:
+                continue
+            for node_id in down[nodename]:
+                self.docker_node_rm(node_id)

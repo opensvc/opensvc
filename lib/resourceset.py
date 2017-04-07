@@ -265,6 +265,9 @@ class ResourceSet(object):
                     if msg is not "":
                         resource.log.info(msg)
                     resource.log.info("continue action on resource set")
+                except ex.excError as exc:
+                    resource.log.error(str(exc))
+                    raise
 
     def action_job(self, resource, action):
         """

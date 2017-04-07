@@ -212,6 +212,7 @@ class Rsync(resSync.Sync):
         self.call(cmd)
 
     def sync(self, target):
+        self.add_resource_files_to_sync()
         if target not in self.target.keys():
             if not self.svc.options.cron:
                 self.log.info('%s => %s sync not applicable to %s', 
@@ -451,7 +452,14 @@ class Rsync(resSync.Sync):
         self.timeout = 3600
         self.options = options
 
+    def add_resource_files_to_sync(self):
+        if self.rid != "sync#i0":
+            return
+        for resource in self.svc.get_resources():
+            self.src += resource.files_to_sync()
+
     def info(self):
+        self.add_resource_files_to_sync()
         data = [
           ["src", " ".join(self.src)],
           ["dst", self.dst],

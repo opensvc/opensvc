@@ -283,7 +283,6 @@ CLUSTER_TYPES = [
     "failover",
     "flex",
     "autoflex",
-    "swarmflex",
 ]
 
 os.environ['LANG'] = 'C'
@@ -3739,9 +3738,7 @@ class Svc(object):
             err = 0
         except ex.excError as exc:
             msg = "'%s' action stopped on execution error" % action
-            if len(str(exc)) > 0:
-                msg += ": %s" % str(exc)
-            self.log.error(msg)
+            self.log.debug(msg)
             err = 1
             self.rollback_handler(action)
         except ex.excSignal:
