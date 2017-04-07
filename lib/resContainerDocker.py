@@ -153,6 +153,7 @@ class Docker(resContainer.Container):
         return out, err, ret
 
     def service_create(self):
+        self.service_id = self.svc.dockerlib.get_service_id_by_name(self, refresh=True)
         if self.service_id is not None:
             return
         if self.swarm_node_role() not in ("leader", "reachable"):
@@ -172,6 +173,7 @@ class Docker(resContainer.Container):
         """
         Remove the resource docker service.
         """
+        self.service_id = self.svc.dockerlib.get_service_id_by_name(self, refresh=True)
         if self.service_id is None:
             self.log.info("skip: service already removed")
             return
@@ -181,8 +183,8 @@ class Docker(resContainer.Container):
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError(err)
-        self.service_id = self.svc.dockerlib.get_service_id_by_name(self, refresh=True)
         self.svc.dockerlib.get_running_service_ids(refresh=True)
+        self.service_id = self.svc.dockerlib.get_service_id_by_name(self)
 
     def docker(self, action):
         """
@@ -338,13 +340,9 @@ class Docker(resContainer.Container):
 
     def _stop(self):
         self.svc.dockerlib.docker_start()
-        if self.docker_service:
-            self.service_stop()
-        else:
-            self.status()
-            resContainer.Container.stop(self)
-            self.svc.dockerlib.get_running_instance_ids(refresh=True)
-        self.svc.dockerlib.docker_stop()
+        self.status()
+        resContainer.Container.stop(self)
+        self.svc.dockerlib.get_running_instance_ids(refresh=True)
 
     def info(self):
         """
@@ -388,6 +386,14 @@ class Docker(resContainer.Container):
     @lazy
     def ready_nodes(self):
         return [node["ID"] for node in self.svc.dockerlib.node_ls_data() if node["Status"]["State"] == "ready"]
+
+    def post_action(self, action):
+        """
+        Executed after executing <action> on the resourceset
+        """
+        if action not in ("stop", "unprovision"):
+            return
+        self.svc.dockerlib.docker_stop()
 
     def service_running_instances(self, refresh=False):
         if refresh:
