@@ -134,7 +134,7 @@ class Rsync(resSync.Sync):
             return set([])
 
         """Accept to sync from here only if the service is up
-           Also accept n/a status, because it's what the overall status
+           Also accept n/a status, because it's what the avail status
            ends up to be when only sync#* are specified using --rid
 
            sync#i1 is an exception, because we want all prd nodes to
@@ -143,12 +143,12 @@ class Rsync(resSync.Sync):
         """
         s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
         if not self.svc.options.force and \
-           s['overall'].status not in [rcStatus.UP, rcStatus.NA] and \
+           s['avail'].status not in [rcStatus.UP, rcStatus.NA] and \
            self.rid != "sync#i1":
-            if s['overall'].status == rcStatus.WARN:
+            if s['avail'].status == rcStatus.WARN:
                 if not self.svc.options.cron:
                     self.log.info("won't sync this resource service in warn status")
-            if not self.svc.options.cron:
+            elif not self.svc.options.cron:
                 self.log.info("won't sync this resource for a service not up")
             return set([])
 
@@ -368,10 +368,10 @@ class Rsync(resSync.Sync):
         """ sync state on nodes where the service is not UP
         """
         s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
-        if s['overall'].status != rcStatus.UP or \
+        if s['avail'].status != rcStatus.UP or \
            (self.svc.clustertype in ['flex', 'autoflex'] and \
             rcEnv.nodename != self.svc.flex_primary and \
-            s['overall'].status == rcStatus.UP):
+            s['avail'].status == rcStatus.UP):
             if rcEnv.nodename not in target:
                 self.status_log("passive node not in destination nodes", "info")
                 return rcStatus.NA
