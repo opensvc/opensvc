@@ -84,7 +84,7 @@ class Container(Res.Resource):
         return False
 
     def wait_for_startup(self):
-        self.log.info("wait for container up status")
+        self.log.info("wait for up status")
         self.wait_for_fn(self.is_up, self.startup_timeout, 2)
         if hasattr(self, 'ping'):
             self.log.info("wait for container ping")
@@ -93,7 +93,7 @@ class Container(Res.Resource):
         self.wait_for_fn(self.operational, self.startup_timeout, 2)
 
     def wait_for_shutdown(self):
-        self.log.info("wait for container down status")
+        self.log.info("wait for down status")
         for tick in range(self.shutdown_timeout):
             if self.is_down():
                 return

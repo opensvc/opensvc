@@ -3,7 +3,7 @@ import resIpLinux as Res
 import rcExceptions as ex
 import rcIfconfigLinux as rcIfconfig
 from rcUtilitiesLinux import check_ping
-from rcUtilities import which, justcall, to_cidr
+from rcUtilities import which, justcall, to_cidr, lazy
 
 class Ip(Res.Ip):
     def __init__(self,
@@ -26,20 +26,45 @@ class Ip(Res.Ip):
         self.network = network
         self.del_net_route = del_net_route
         self.container_rid = str(container_rid)
-        self.label = str(ipname) + '@' + ipdev
+        self.label = str(ipname) + '@' + ipdev + '@' + self.container_rid
         self.tags.add("docker")
         self.tags.add(container_rid)
-        self.guest_dev = "eth1"
 
-    def on_add(self):
-        self.container_name = self.svc.svcname+'.'+self.container_rid
-        self.container_name = self.container_name.replace('#', '.')
-        try:
-            self.container_id = self.svc.dockerlib.get_container_id_by_name()
-            self.label += '@' + self.container_id
-        except Exception as e:
-            self.container_id = None
-            self.label += '@' + self.container_rid
+    @lazy
+    def guest_dev(self):
+        """
+        Find a free eth netdev.
+
+        Execute a ip link command in the container net namespace to parse
+        used eth netdevs.
+        """
+        nspid = self.get_nspid()
+        cmd = ["ip", "netns", "exec", nspid, "ip" , "link"]
+        out, err, ret = justcall(cmd)
+        used = []
+        for line in out.splitlines():
+            if ": eth" not in line:
+                continue
+            idx = line.split()[1].replace(":", "").replace("eth", "")
+            if "@" in idx:
+                # strip "@if<n>" suffix
+                idx = idx[:idx.index("@")]
+            used.append(int(idx))
+        idx = 0
+        while True:
+            idx += 1
+            if idx not in used:
+                return "eth%d" % idx
+
+    @lazy
+    def resource(self):
+        if self.container_rid not in self.svc.resources_by_id:
+            raise ex.excError("rid %s not found" % self.container_rid)
+        return self.svc.resources_by_id[self.container_rid]
+
+    @lazy
+    def container_id(self):
+        return self.svc.dockerlib.get_container_id_by_name(self.resource)
 
     def arp_announce(self):
         """ disable the generic arping. We do that in the guest namespace.
@@ -272,7 +297,7 @@ class Ip(Res.Ip):
         raise ex.excError("timed out waiting for ip activation")
 
     def get_nspid(self):
-        cmd = self.svc.dockerlib.docker_cmd + ["inspect", "--format='{{ .State.Pid }}'", self.container_name]
+        cmd = self.svc.dockerlib.docker_cmd + ["inspect", "--format='{{ .State.Pid }}'", self.container_id]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError("failed to get nspid: %s" % err)
@@ -320,7 +345,7 @@ class Ip(Res.Ip):
         nspid = self.get_nspid()
         self.create_netns_link(nspid=nspid)
         if intf is None:
-            raise ex.excContinueAction("can't find on which interface %s is plumbed in %s" % (self.addr, self.container_name))
+            raise ex.excContinueAction("can't find on which interface %s is plumbed in container %s" % (self.addr, self.container_id))
         if self.mask is None:
             raise ex.excContinueAction("netmask is not set")
         cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]

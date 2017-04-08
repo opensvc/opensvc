@@ -280,11 +280,19 @@ class DockerLib(object):
         if refresh:
             unset_lazy(self, "docker_ps")
             unset_lazy(self, "container_id_by_name")
-        if self.container_id_by_name is None or \
-           resource.container_name not in self.container_id_by_name:
-            return
-        data = self.container_id_by_name[resource.container_name]
-        return data["id"]
+        if resource.docker_service:
+            prefix = resource.service_name+"."
+            if self.container_id_by_name is None:
+                return
+            for container_name, data in self.container_id_by_name.items():
+                if container_name.startswith(prefix):
+                    return data["id"]
+        else:
+            if self.container_id_by_name is None or \
+                resource.container_name not in self.container_id_by_name:
+                return
+            data = self.container_id_by_name[resource.container_name]
+            return data["id"]
 
     def get_service_id_by_name(self, resource, refresh=False):
         """
