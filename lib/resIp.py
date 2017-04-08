@@ -23,8 +23,9 @@ class Ip(Res.Resource):
                  ipname=None,
                  mask=None,
                  gateway=None,
+                 type="ip",
                  **kwargs):
-        Res.Resource.__init__(self, rid, "ip", **kwargs)
+        Res.Resource.__init__(self, rid, type=type, **kwargs)
         self.ipdev = ipdev
         self.ipname = ipname
         self.mask = mask

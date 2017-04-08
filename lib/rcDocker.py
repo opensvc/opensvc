@@ -284,7 +284,10 @@ class DockerLib(object):
             prefix = resource.service_name+"."
             if self.container_id_by_name is None:
                 return
+            running = self.get_running_instance_ids()
             for container_name, data in self.container_id_by_name.items():
+                if data["id"] not in running:
+                    continue
                 if container_name.startswith(prefix):
                     return data["id"]
         else:

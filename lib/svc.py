@@ -232,6 +232,7 @@ STATUS_TYPES = [
     "hb.sg",
     "hb.vcs",
     "ip",
+    "ip.docker",
     "share.nfs",
     "sync.btrfs",
     "sync.btrfssnap",
@@ -376,6 +377,9 @@ class Svc(object):
         self.has_encap_resources = False
         self.encap = False
         self.action_rid = []
+        self.action_rid_before_depends = []
+        self.action_rid_depends = []
+        self.dependencies = {}
         self.running_action = None
         self.config = None
         self.need_postsync = set()
@@ -492,6 +496,41 @@ class Svc(object):
         Order by service name
         """
         return self.svcname < other.svcname
+
+    def register_dependency(self, action, _from, _to):
+        if action not in self.dependencies:
+            self.dependencies[action] = {}
+        if _from not in self.dependencies[action]:
+            self.dependencies[action][_from] = set()
+        self.dependencies[action][_from].add(_to)
+
+    def action_rid_dependencies(self, action, rid):
+        if action in ("boot", "provision", "start"):
+            action = "start"
+        elif action in ("shutdown", "unprovision", "stop"):
+            action = "stop"
+        else:
+            return set()
+        if action not in self.dependencies:
+            return set()
+        if rid not in self.dependencies[action]:
+            return set()
+        return self.dependencies[action][rid]
+
+    def action_rid_dependency_of(self, action, rid):
+        if action in ("boot", "provision", "start"):
+            action = "start"
+        elif action in ("shutdown", "unprovision", "stop"):
+            action = "stop"
+        else:
+            return set()
+        if action not in self.dependencies:
+            return set()
+        dependency_of = set()
+        for _rid, dependencies in self.dependencies[action].items():
+            if rid in dependencies:
+                dependency_of.add(_rid)
+        return dependency_of
 
     def print_schedule(self):
         """
@@ -3453,10 +3492,23 @@ class Svc(object):
         options = self.prepare_options(options)
 
         try:
-            self.action_rid = self.options_to_rids(options)
+            self.action_rid_before_depends = self.options_to_rids(options)
         except ex.excAbortAction as exc:
             self.log.info(exc)
             return
+
+        depends = set()
+        for rid in self.action_rid_before_depends:
+            depends |= self.action_rid_dependencies(action, rid) - set(self.action_rid_before_depends)
+
+        if len(depends) > 0:
+            self.log.info("add rid %s to satisfy dependencies" % ", ".join(depends))
+            self.action_rid = list(set(self.action_rid_before_depends) | depends)
+        else:
+            self.action_rid = list(self.action_rid_before_depends)
+
+        self.action_rid_depends = list(depends)
+
         self.action_start_date = datetime.datetime.now()
 
         if self.node is None:

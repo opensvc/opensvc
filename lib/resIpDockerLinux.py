@@ -2,6 +2,7 @@ import os
 import resIpLinux as Res
 import rcExceptions as ex
 import rcIfconfigLinux as rcIfconfig
+import rcStatus
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which, justcall, to_cidr, lazy
 
@@ -18,6 +19,7 @@ class Ip(Res.Ip):
                  **kwargs):
         Res.Ip.__init__(self,
                         rid,
+                        type="ip.docker",
                         ipdev=ipdev,
                         ipname=ipname,
                         gateway=gateway,
@@ -29,6 +31,11 @@ class Ip(Res.Ip):
         self.label = str(ipname) + '@' + ipdev + '@' + self.container_rid
         self.tags.add("docker")
         self.tags.add(container_rid)
+
+    def on_add(self):
+        self.svc.register_dependency("start", self.rid, self.container_rid)
+        self.svc.register_dependency("start", self.container_rid, self.rid)
+        self.svc.register_dependency("stop", self.container_rid, self.rid)
 
     @lazy
     def guest_dev(self):
@@ -57,14 +64,13 @@ class Ip(Res.Ip):
                 return "eth%d" % idx
 
     @lazy
-    def resource(self):
+    def container(self):
         if self.container_rid not in self.svc.resources_by_id:
             raise ex.excError("rid %s not found" % self.container_rid)
         return self.svc.resources_by_id[self.container_rid]
 
-    @lazy
-    def container_id(self):
-        return self.svc.dockerlib.get_container_id_by_name(self.resource)
+    def container_id(self, refresh=False):
+        return self.svc.dockerlib.get_container_id_by_name(self.container, refresh=refresh)
 
     def arp_announce(self):
         """ disable the generic arping. We do that in the guest namespace.
@@ -75,6 +81,8 @@ class Ip(Res.Ip):
         try:
             nspid = self.get_nspid()
         except ex.excError as e:
+            return
+        if nspid is None:
             return
         self.create_netns_link(nspid=nspid, verbose=False)
 
@@ -108,7 +116,24 @@ class Ip(Res.Ip):
                 return name
         return
 
+    def container_running_elsewhere(self):
+        if not self.container.docker_service:
+            return False
+        if len(self.container.service_hosted_instances()) == 0 and \
+           len(self.container.service_running_instances()) > 0:
+            return True
+        return False
+
+    def _status(self, verbose=False):
+        if self.container_running_elsewhere():
+            self.status_log("%s is hosted by another host" % self.container_rid, "info")
+            return rcStatus.NA
+        return Res.Ip._status(self)
+
     def startip_cmd(self):
+        if self.container_running_elsewhere():
+            return 0, "", ""
+
         if "dedicated" in self.tags:
             self.log.info("dedicated mode")
             return self.startip_cmd_dedicated()
@@ -297,7 +322,10 @@ class Ip(Res.Ip):
         raise ex.excError("timed out waiting for ip activation")
 
     def get_nspid(self):
-        cmd = self.svc.dockerlib.docker_cmd + ["inspect", "--format='{{ .State.Pid }}'", self.container_id]
+        container_id = self.container_id(refresh=True)
+        if container_id is None:
+            return
+        cmd = self.svc.dockerlib.docker_cmd + ["inspect", "--format='{{ .State.Pid }}'", container_id]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError("failed to get nspid: %s" % err)
@@ -325,6 +353,8 @@ class Ip(Res.Ip):
     def create_netns_link(self, nspid=None, verbose=True):
         if nspid is None:
             nspid = self.get_nspid()
+        if nspid is None:
+            raise ex.excError("can not determine nspid")
         run_d = "/var/run/netns"
         if not os.path.exists(run_d):
             os.makedirs(run_d)
@@ -345,7 +375,7 @@ class Ip(Res.Ip):
         nspid = self.get_nspid()
         self.create_netns_link(nspid=nspid)
         if intf is None:
-            raise ex.excContinueAction("can't find on which interface %s is plumbed in container %s" % (self.addr, self.container_id))
+            raise ex.excContinueAction("can't find on which interface %s is plumbed in container %s" % (self.addr, self.container_id()))
         if self.mask is None:
             raise ex.excContinueAction("netmask is not set")
         cmd = ["ip", "netns", "exec", nspid, "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]

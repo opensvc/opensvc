@@ -177,8 +177,17 @@ class ResourceSet(object):
         """
         Return resources to execute the action on.
         """
-        if len(xtags) > 0 and not self.svc.command_is_scoped():
-            resources = [res for res in self.resources if not self.tag_match(res.tags, xtags)]
+        if len(xtags) > 0:
+            resources = []
+            for res in self.resources:
+                if not self.tag_match(res.tags, xtags):
+                    resources.append(res)
+                    continue
+                if self.svc.command_is_scoped() and \
+                   res.rid in self.svc.action_rid_before_depends and \
+                   len(self.svc.action_rid_dependencies(action, res.rid)) == 0:
+                    resources.append(res)
+                    continue
         else:
             resources = self.resources
 
