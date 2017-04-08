@@ -41,7 +41,7 @@ class Docker(resContainer.Container):
         self.docker_service = docker_service
         self.service_id = None
         self.container_id = None
-        self.startup_timeout = 15
+        self.startup_timeout = 30
 
     @lazy
     def container_name(self):
