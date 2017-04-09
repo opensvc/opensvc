@@ -2196,6 +2196,8 @@ class Node(object):
                 data["user"] = user
                 data["password"] = password
             if self.options.api is None:
+                if rcEnv.dbopensvc is None:
+                    raise ex.excError("node.dbopensvc is not set in node.conf")
                 data["api"] = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
         from rcCollectorCli import Cli
         cli = Cli(**data)
@@ -2206,6 +2208,8 @@ class Node(object):
         Prepare the authentication info, either as node or as user.
         Fetch and cache the collector's exposed rest api metadata.
         """
+        if rcEnv.dbopensvc is None:
+            raise ex.excError("node.dbopensvc is not set in node.conf")
         data = {}
         if self.options.user is None:
             username, password = self.collector_auth_node()
@@ -2223,6 +2227,8 @@ class Node(object):
         Returns the authentcation info for login as node
         """
         username = rcEnv.nodename
+        if not self.config.has_option("node", "uuid"):
+            raise ex.excError("the node is not registered yet. use 'nodemgr register [--user <user>]'")
         password = self.config.get("node", "uuid")
         return username, password
 
