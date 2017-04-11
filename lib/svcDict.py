@@ -4172,7 +4172,7 @@ class KeyDict(KeywordStore):
 
         self += kw_disable("DEFAULT")
 
-        for r in ["sync", "ip", "fs", "disk", "hb", "share", "container", "app", "task"]:
+        for r in ["sync", "ip", "fs", "disk", "hb", "share", "container", "app", "task", "stonith"]:
             self += kw_restart(r)
             self += kw_tags(r)
             self += kw_subset(r)
