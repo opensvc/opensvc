@@ -2703,6 +2703,7 @@ class KeywordDiskVgname(Keyword):
                   rtype=["lvm", "vg"],
                   keyword="vgname",
                   order=10,
+                  at=True,
                   required=True,
                   text="The name of the volume group"
                 )
@@ -2715,6 +2716,7 @@ class KeywordDiskVgName(Keyword):
                   rtype=["lvm", "vg"],
                   keyword="name",
                   order=10,
+                  at=True,
                   required=True,
                   text="The name of the volume group"
                 )
@@ -2727,6 +2729,7 @@ class KeywordDiskOptions(Keyword):
                   rtype=["lvm", "vg"],
                   keyword="options",
                   default="",
+                  at=True,
                   required=False,
                   provisioning=True,
                   text="The vgcreate options to use upon vg provisioning."
