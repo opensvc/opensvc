@@ -3068,6 +3068,7 @@ class KeywordFsVg(Keyword):
                   section="fs",
                   keyword="vg",
                   required=True,
+                  at=True,
                   text="The name of the disk group the filesystem device should be provisioned from.",
                   provisioning=True
                 )
@@ -3079,6 +3080,7 @@ class KeywordFsSize(Keyword):
                   section="fs",
                   keyword="size",
                   required=True,
+                  at=True,
                   text="The size in MB of the logical volume to provision for this filesystem.",
                   provisioning=True
                 )
@@ -3090,6 +3092,7 @@ class KeywordFsMnt(Keyword):
                   section="fs",
                   keyword="mnt",
                   order=12,
+                  at=True,
                   required=True,
                   text="The mount point where to mount the filesystem."
                 )
@@ -3125,6 +3128,7 @@ class KeywordFsType(Keyword):
                   section="fs",
                   keyword="type",
                   order=14,
+                  at=True,
                   required=True,
                   strict_candidates=False,
                   candidates=["directory"],
@@ -3138,6 +3142,7 @@ class KeywordFsSnapSize(Keyword):
                   section="fs",
                   keyword="snap_size",
                   order=14,
+                  at=True,
                   text="If this filesystem is build on a snapable logical volume or is natively snapable (jfs, vxfs, ...) this setting overrides the default 10% of the filesystem size to compute the snapshot size. The snapshot is created by snap-enabled rsync-type sync resources. The unit is Megabytes."
                 )
 
