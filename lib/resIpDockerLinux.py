@@ -128,7 +128,14 @@ class Ip(Res.Ip):
         if self.container_running_elsewhere():
             self.status_log("%s is hosted by another host" % self.container_rid, "info")
             return rcStatus.NA
-        return Res.Ip._status(self)
+        ret = Res.Ip._status(self)
+        if self.container.docker_service and ret == rcStatus.DOWN:
+            if check_ping(self.addr, timeout=1, count=1):
+                return rcStatus.STDBY_UP
+            else:
+                self.status_log("ip is not up in the swarm. declare ourself 'stdby down' so we can takeover.")
+                return rcStatus.STDBY_DOWN
+        return ret
 
     def startip_cmd(self):
         if self.container_running_elsewhere():
