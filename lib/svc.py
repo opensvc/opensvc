@@ -3549,7 +3549,8 @@ class Svc(object):
             # purge the resource status file cache, so that we don't take
             # decision on outdated information
             #
-            if not options.dry_run and action != "resource_monitor":
+            if not options.dry_run and action != "resource_monitor" and \
+               not action.startswith("docker"):
                 self.log.debug("purge all resource status file caches")
                 self.purge_status_last()
 
