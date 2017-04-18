@@ -30,7 +30,7 @@ start)
 	fi
 	${OSVC_ROOT_PATH}/bin/nodemgr collect stats
         ${OSVC_ROOT_PATH}/bin/nodemgr pushasset
-	[ "${OSVC_BACKGROUND}" == "true" ] && {
+	[ "${OSVC_BACKGROUND}" = "true" ] && {
 		${allservices} ${OSVC_BOOT_OPTS} boot &
 	} || {
 		${allservices} ${OSVC_BOOT_OPTS} boot

@@ -24,7 +24,7 @@ allservices=${OSVC_ROOT_PATH}/bin/svcmgr
 case $1 in
 start)
         ${OSVC_ROOT_PATH}/bin/nodemgr pushasset
-	[ "${OSVC_BACKGROUND}" == "true" ] && {
+	[ "${OSVC_BACKGROUND}" = "true" ] && {
 		${allservices} ${OSVC_BOOT_OPTS} boot &
 	} || {
 		${allservices} ${OSVC_BOOT_OPTS} boot
