@@ -124,6 +124,18 @@ class DevTreeVeritas(rcDevTree.DevTree):
                 mp_h[name] = wwid
         return mp_h
 
+    def vx_vid(self, dev):
+        self.load_vxdisk_cache()
+        if dev in self.vxdisk_cache:
+            return self.vxdisk_cache[dev].get("vid", "")
+        return ""
+
+    def vx_pid(self, dev):
+        self.load_vxdisk_cache()
+        if dev in self.vxdisk_cache:
+            return self.vxdisk_cache[dev].get("pid", "")
+        return ""
+
     def vx_inq(self, dev):
         self.load_vxdisk_cache()
         if dev in self.vxdisk_cache:
@@ -153,6 +165,10 @@ class DevTreeVeritas(rcDevTree.DevTree):
                 self.vxdisk_cache[_key]["size"] = int(l[1].strip())/2048
             elif key == "DMP_SINGLE_PATH":
                 self.vxdisk_cache[_key]["devpath"] = l[1].strip()
+            elif key == "PID":
+                self.vxdisk_cache[_key]["pid"] = l[1].replace("-SUN", "").strip()
+            elif key == "VID":
+                self.vxdisk_cache[_key]["vid"] = l[1].strip()
 
     def load_vx_dmp(self):
         self.load_vxdisk_cache()

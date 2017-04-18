@@ -115,9 +115,10 @@ class diskInfo(rcDiskInfo.diskInfo):
     def scan_dev(self, dev):
         dev = dev.replace("/dev/vx/dmp/", "/dev/vx/rdmp/")
         if "dmp/" in dev:
-            wwid = rcDevTreeVeritas.DevTreeVeritas().vx_inq(dev)
-            vid = ""
-            pid = ""
+            tree = rcDevTreeVeritas.DevTreeVeritas()
+            wwid = tree.vx_inq(dev)
+            vid = tree.vx_vid(dev)
+            pid = tree.vx_pid(dev)
             size = 0
         else:
             cmd = ["mpathadm", "show", "lu", dev]
