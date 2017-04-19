@@ -46,6 +46,8 @@ def get_minimal(action, options):
     """
     if action in ("set", "unset"):
         return True
+    if action == "ls" and not options.status:
+        return True
     if action == "get" and not options.eval:
         return True
     if action == "edit_config":
@@ -248,6 +250,8 @@ def _main(node, argv=None):
         svcnames = build_kwargs["svcnames"]
 
     if len(svcnames) == 0:
+        if action == "ls":
+            return
         if not build_err:
             sys.stderr.write("No service specified. Try:\n"
                              " svcmgr -s <svcname>[,<svcname>]\n"

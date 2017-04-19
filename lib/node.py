@@ -2117,6 +2117,11 @@ class Node(object):
         * parallelization of the action in per-service subprocesses
         * collection and aggregation of returned data and errors
         """
+        if action == "ls":
+            for svc in self.svcs:
+                print(svc.svcname)
+            return
+
         err = 0
         data = Storage()
         data.outs = {}

@@ -3763,8 +3763,9 @@ def list_services():
 
 def build_services(status=None, svcnames=None, create_instance=False,
                    onlyprimary=False, onlysecondary=False, minimal=False):
-    """returns a list of all services of status matching the specified status.
-    If no status is specified, returns all services
+    """
+    Returns a list of all services of status matching the specified status.
+    If no status is specified, returns all services.
     """
     import svc
 

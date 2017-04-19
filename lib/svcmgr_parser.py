@@ -431,6 +431,9 @@ ACTIONS = {
                 OPT.subsets,
             ],
         },
+        'ls': {
+            'msg': 'display the installed service list',
+        },
         'status': {
             'msg': 'return service overall status code',
             'options': [
