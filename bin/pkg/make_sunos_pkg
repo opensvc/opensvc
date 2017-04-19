@@ -104,7 +104,15 @@ function create_pkg {
 	[ "$POST_REMOVE" != "" ] && echo "i postremove=$POST_REMOVE" >> $PROTOTYPE
 	[ ! -s $PROTOTYPE ] && my_log "warning $PROTOTYPE size null" && return 1
 
-	pkgproto $RULES >> $PROTOTYPE
+	pkgproto $RULES \
+		| grep -v "d none / " \
+		| grep -v "d none /usr " \
+		| grep -v "d none /usr/bin " \
+		| grep -v "d none /var " \
+		| grep -v "d none /var/lib " \
+		| grep -v "d none /etc " \
+		| grep -v "d none /opt " \
+		>> $PROTOTYPE
 
 	my_log "creating pkginfo file : $PKGINFO"
 	echo "PKG=$PKG\nNAME=$NAME\nARCH=$ARCH\nVERSION=$VERSION\nCATEGORY=$CATEGORY" > $PKGINFO
