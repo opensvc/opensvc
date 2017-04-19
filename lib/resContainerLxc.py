@@ -6,7 +6,7 @@ import sys
 import rcStatus
 import resources as Res
 from rcUtilitiesLinux import check_ping
-from rcUtilities import which, justcall
+from rcUtilities import which, justcall, lazy
 from rcGlobalEnv import rcEnv
 import resContainer
 import rcExceptions as ex
@@ -370,14 +370,15 @@ class Lxc(resContainer.Container):
         self.cf = None
         raise ex.excError("unable to find the container configuration file")
 
-    def find_prefix(self):
+    @lazy
+    def prefix(self):
         prefixes = [os.path.join(os.sep),
                     os.path.join(os.sep, 'usr'),
                     os.path.join(os.sep, 'usr', 'local')]
         for prefix in prefixes:
              if os.path.exists(os.path.join(prefix, 'bin', 'lxc-start')):
                  return prefix
-        return None
+        raise ex.excError("lxc install prefix not found")
 
     def __init__(self,
                  rid,
@@ -414,11 +415,6 @@ class Lxc(resContainer.Container):
     def dummy(self, cache_fallback=False):
         pass
 
-    def on_add(self):
-        self.prefix = self.find_prefix()
-        if self.prefix is None:
-            self.log.error("lxc install prefix not found")
-            raise ex.excInitError
 
     def operational(self):
         if not resContainer.Container.operational(self):
