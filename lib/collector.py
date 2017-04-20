@@ -315,6 +315,8 @@ class Collector(object):
             s = self.options.like
             path += "substring=%s" % s
         d = self.node.collector_rest_get(path)
+        if "data" not in d:
+            raise ex.excError("unexpected collector response: %s" % str(d))
         data = []
         for t, _d in d["data"].items():
             if _d["total"] == 0:
