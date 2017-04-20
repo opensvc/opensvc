@@ -2249,7 +2249,9 @@ class Svc(object):
     def run_task(self, rid):
         if self.sched.skip_action(rid):
             return
-        self.resources_by_id[rid].run()
+        options = Storage(self.options)
+        options.rid = [rid]
+        self.action("run", options)
 
     def run(self):
         self.master_run()
