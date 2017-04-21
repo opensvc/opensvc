@@ -3794,6 +3794,9 @@ class Svc(object):
         except ex.excError as exc:
             msg = "'%s' action stopped on execution error" % action
             self.log.debug(msg)
+            msg = str(exc)
+            if len(msg) > 0:
+                self.log.error(msg)
             err = 1
             self.rollback_handler(action)
         except ex.excSignal:
