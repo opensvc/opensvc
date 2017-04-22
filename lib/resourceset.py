@@ -275,8 +275,12 @@ class ResourceSet(object):
                         resource.log.info(msg)
                     resource.log.info("continue action on resource set")
                 except ex.excError as exc:
-                    resource.log.error(str(exc))
-                    raise
+                    msg = str(exc)
+                    if msg is not "":
+                        resource.log.error(msg)
+                        # prevent re-logging
+                        exc.value = ""
+                    raise exc
 
     def action_job(self, resource, action):
         """
