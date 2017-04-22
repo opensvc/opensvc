@@ -534,7 +534,7 @@ class KeywordLockTimeout(Keyword):
                   required=False,
                   order=10,
                   default=60,
-                  text="The duration in seconds the agent wait for the action lock acquisition before aborting the action. The svcmgr --waitlock parameter overides this option."
+                  text="The duration in seconds the agent wait for the action lock acquisition before aborting the action. The svcmgr --waitlock parameter overrides this option."
                 )
 
 class KeywordMode(Keyword):
