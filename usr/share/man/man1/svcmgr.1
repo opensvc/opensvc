@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2017\-01\-03
+.TH SVCMGR 1 2017\-04\-22
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -134,7 +134,7 @@ display service alerts
 
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -183,7 +183,7 @@ display asset information known to the collector
 
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -232,7 +232,7 @@ display service checks
 
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -330,7 +330,7 @@ display service disks
 
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -385,7 +385,7 @@ a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unava
 a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -440,7 +440,7 @@ a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unava
 a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -489,7 +489,7 @@ list all available tags. use --like to filter the output.
 
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --like=LIKE
 a sql like filtering expression. leading and trailing wildcards are automatically set.
@@ -648,7 +648,7 @@ display network information known to the collector for each service ip
 
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -706,7 +706,7 @@ specify an object id to act on
 a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -755,7 +755,7 @@ list all service tags
 
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -1047,10 +1047,71 @@ show this help message and exit
 flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
+\fBsvcmgr compliance auto\fP
+.RS
+
+run compliance checks or fixes depending on the autofixmodule property values.
+
+.TP
+.B --attach
+attach the modulesets specified during a compliance check/fix/fixable command
+.TP
+.B -f, --force
+force action, ignore sanity check warnings
+.TP
+.B --module=MODULE
+compliance, set module list
+.TP
+.B --moduleset=MODULESET
+compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+.TP
+.B --ruleset-date=RULESET_DATE
+compliance, use rulesets valid on specified date
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
+
+.RE
 \fBsvcmgr compliance check\fP
 .RS
 
-run compliance checks. --ruleset <md5> instruct the collector to provide an historical ruleset.
+run compliance checks.
 
 .TP
 .B --attach
@@ -1313,7 +1374,7 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 \fBsvcmgr compliance fix\fP
 .RS
 
-run compliance fixes. --ruleset <md5> instruct the collector to provide an historical ruleset.
+run compliance fixes.
 
 .TP
 .B --attach
@@ -1374,7 +1435,7 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 \fBsvcmgr compliance fixable\fP
 .RS
 
-verify compliance fixes prerequisites. --ruleset <md5> instruct the collector to provide an historical ruleset.
+verify compliance fixes prerequisites.
 
 .TP
 .B --attach
@@ -1693,6 +1754,12 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -2098,6 +2165,52 @@ show this help message and exit
 flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
+\fBsvcmgr ls\fP
+.RS
+
+display the installed service list
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
+
+.RE
 \fBsvcmgr migrate\fP
 .RS
 
@@ -2127,6 +2240,12 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
 .TP
 .B --to=PARM_DESTINATION_NODE
 remote node to start or migrate the service to
@@ -2574,7 +2693,16 @@ print service device list
 
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+.TP
+.B --rid=PARM_RID
+comma-separated list of resource to limit action to
+.TP
+.B --tags=PARM_TAGS
+comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --subsets=PARM_SUBSETS
+comma-separated list of resource subsets to limit action to
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -2623,7 +2751,16 @@ print service disk list
 
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+.TP
+.B --rid=PARM_RID
+comma-separated list of resource to limit action to
+.TP
+.B --tags=PARM_TAGS
+comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --subsets=PARM_SUBSETS
+comma-separated list of resource subsets to limit action to
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -2672,7 +2809,7 @@ display a specific service resource status, pointed by --rid
 
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --refresh
 drop last resource status cache and re-evaluate before printing with the 'print [json] status' commands
@@ -2727,7 +2864,7 @@ print the service tasks schedule
 
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --verbose
 add more information to some print commands: +next in 'print schedule'
@@ -2779,7 +2916,7 @@ display service resource status
 
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --hide-disabled
 tell print|json status action to not include the disabled resources in the output, irrespective of the show_disabled service configuration setting.
@@ -2860,6 +2997,12 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
+.TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
 .TP
@@ -2929,6 +3072,12 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -3373,6 +3522,12 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
+.TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
 .TP
@@ -3442,6 +3597,12 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -3699,6 +3860,12 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
+.TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
 .TP
@@ -3768,6 +3935,12 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -3839,6 +4012,12 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
+.TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
 .TP
@@ -3908,6 +4087,12 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -3979,6 +4164,12 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
+.TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
 .TP
@@ -4048,6 +4239,12 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -4119,6 +4316,12 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
+.TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
 .TP
@@ -4188,6 +4391,12 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -4867,6 +5076,12 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B --ignore-affinity
+ignore service anti-affinity with other services check
 .TP
 .B --to=PARM_DESTINATION_NODE
 remote node to start or migrate the service to
@@ -6281,7 +6496,7 @@ display service current configuration
 
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node

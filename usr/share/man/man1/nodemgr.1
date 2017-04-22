@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2017\-01\-03
+.TH NODEMGR 1 2017\-04\-22
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -33,7 +33,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -55,7 +55,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -77,7 +77,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -99,7 +99,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -139,7 +139,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -164,7 +164,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -186,7 +186,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -214,7 +214,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -242,7 +242,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -251,7 +251,7 @@ show this help message and exit
 \fBnodemgr collector list filtersets\fP
 .RS
 
-show the list of filtersets available on the collector. if specified, --filterset <pattern> limits the resulset to filtersets matching <pattern>
+show the list of filtersets available on the collector. if specified, --filterset <pattern> limits the resultset to filtersets matching <pattern>
 
 .TP
 .B --color=COLOR
@@ -264,7 +264,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -286,7 +286,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -308,7 +308,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -333,7 +333,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -358,7 +358,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -380,7 +380,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -405,7 +405,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -436,7 +436,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -458,7 +458,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -483,7 +483,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -505,7 +505,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -535,7 +535,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -560,7 +560,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -585,7 +585,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -594,7 +594,7 @@ show this help message and exit
 \fBnodemgr compliance auto\fP
 .RS
 
-run compliance checks or fix, according to the autofix property of each module. --ruleset <md5> instruct the collector to provide an historical ruleset.
+run compliance checks or fix, according to the autofix property of each module.
 
 .TP
 .B --color=COLOR
@@ -607,7 +607,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -616,7 +616,7 @@ show this help message and exit
 \fBnodemgr compliance check\fP
 .RS
 
-run compliance checks. --ruleset <md5> instruct the collector to provide an historical ruleset.
+run compliance checks.
 
 .TP
 .B --attach
@@ -644,7 +644,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -672,7 +672,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -697,7 +697,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -722,7 +722,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -750,7 +750,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -759,7 +759,7 @@ show this help message and exit
 \fBnodemgr compliance fix\fP
 .RS
 
-run compliance fixes. --ruleset <md5> instruct the collector to provide an historical ruleset.
+run compliance fixes.
 
 .TP
 .B --attach
@@ -787,7 +787,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -796,7 +796,7 @@ show this help message and exit
 \fBnodemgr compliance fixable\fP
 .RS
 
-verify compliance fixes prerequisites. --ruleset <md5> instruct the collector to provide an historical ruleset.
+verify compliance fixes prerequisites.
 
 .TP
 .B --attach
@@ -824,7 +824,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -846,7 +846,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -868,7 +868,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -890,7 +890,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -912,7 +912,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -934,7 +934,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -956,7 +956,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -980,12 +980,34 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
 
 \fRNODE ACTIONS\fP
+
+.RE
+\fBnodemgr array\fP
+.RS
+
+pass a command to a supported array whose access method and credentials are defined in auth.conf
+
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+cron mode
+.TP
+.B --debug
+debug mode
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+.TP
+.B -h, --help
+show this help message and exit
 
 .RE
 \fBnodemgr collect stats\fP
@@ -1004,7 +1026,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1026,7 +1048,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1048,7 +1070,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1073,32 +1095,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr provision\fP
-.RS
-
-provision the resources described in --resource arguments
-
-.TP
-.B --resource=RESOURCE
-a resource definition in json dictionary format fed to the provision action
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1120,7 +1117,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1142,7 +1139,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1154,6 +1151,15 @@ show this help message and exit
 scan the scsi hosts in search of new disks
 
 .TP
+.B --hba=HBA
+specify a hba to scan for new block devices. Example: 5001438002432430 or iqn.1993-08.org.debian:01:659b4bbd68bd
+.TP
+.B --target=TARGET
+specify a target to scan for new block devices. Example: 5000097358185088 or iqn.clementine.tgt1
+.TP
+.B --lun=LUN
+specify a logical unit number to scan for new block devices. Example: 1
+.TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
 .TP
@@ -1164,7 +1170,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1186,7 +1192,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1208,7 +1214,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1230,7 +1236,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1252,7 +1258,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1274,7 +1280,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1296,7 +1302,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1318,7 +1324,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1340,7 +1346,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1368,7 +1374,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1392,7 +1398,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1414,7 +1420,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1439,7 +1445,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1461,7 +1467,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1483,7 +1489,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1514,7 +1520,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1542,7 +1548,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1567,7 +1573,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1591,7 +1597,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1616,7 +1622,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1641,7 +1647,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1666,7 +1672,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1691,7 +1697,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1713,7 +1719,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1738,7 +1744,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1763,7 +1769,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1788,7 +1794,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1813,7 +1819,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1838,7 +1844,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1863,7 +1869,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1888,7 +1894,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1913,7 +1919,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1938,7 +1944,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1963,7 +1969,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1988,7 +1994,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2010,7 +2016,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2032,7 +2038,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2063,7 +2069,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2091,7 +2097,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2116,7 +2122,32 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+.TP
+.B -h, --help
+show this help message and exit
+
+.RE
+\fBnodemgr pushxtremio\fP
+.RS
+
+push XtremIO configuration to collector
+
+.TP
+.B --object=OBJECTS
+an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+cron mode
+.TP
+.B --debug
+debug mode
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2138,7 +2169,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2162,7 +2193,7 @@ cron mode
 debug mode
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json or table.
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -h, --help
 show this help message and exit

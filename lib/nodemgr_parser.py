@@ -661,7 +661,7 @@ ACTIONS = {
         },
         'collector_list_filtersets': {
             'msg': 'show the list of filtersets available on the collector. '
-                   'if specified, --filterset <pattern> limits the resulset '
+                   'if specified, --filterset <pattern> limits the resultset '
                    'to filtersets matching <pattern>',
         },
         'collector_log': {
