@@ -270,7 +270,17 @@ class Disk(resDisk.Disk):
         if len(self.devs_map) > 0:
             r |= not self.has_it_devs_map()
         if len(self.devs_not_found) > 0:
-            self.status_log("%s not found"%', '.join(self.devs_not_found))
+            status = self.svc.group_status(excluded_groups=set([
+                "sync",
+                "app",
+                "disk",
+                "hb"
+            ]))
+            msg = "%s not found"%', '.join(self.devs_not_found)
+            if str(status["avail"]) not in ("up", "n/a"):
+                self.status_log(msg, "info")
+            else:
+                self.status_log(msg, "warn")
             r |= True
         if len(self.major_minor_errs) > 0:
             self.status_log("%s have major:minor diff with their src"%', '.join(self.devs_not_found))
