@@ -92,8 +92,7 @@ class check(checks.check):
         out, err, ret = justcall(cmd)
         if ret != 0:
             return ""
-        lines = out.split('\n')
-        for line in lines:
+        for line in out.splitlines():
             if len(line) == 0:
                 break
             v = line.split(':')
@@ -147,10 +146,23 @@ class check(checks.check):
             out, err, ret = justcall(cmd)
             if ret != 0:
                 return self.undef
-            lines = out.split('\n')
+            """
+            public0:up:1000:full:bnx0
+            """
+            self.phys = {}
             if len(lines) == 0:
                 return self.undef
-            self.phys = lines
+            for line in out.splitlines():
+                l = line.split(':')
+                if len(l) != 5:
+                    continue
+                self.phys[l[0]] = {
+                    "link": l[0],
+                    "state": l[1],
+                    "speed": l[2],
+                    "duplex": l[3],
+                    "device": l[4],
+                }
 
         r = []
         r += self.do_check_speed()
@@ -163,15 +175,12 @@ class check(checks.check):
         if self.osver >= 11:
             for ifn in self.ifs:
                 for phy in self.l[ifn]:
-                    for line in self.phys:
-                        if line.startswith(phy+':'):
-                            l = line.split(':')
-                            val = l[2]
-                            r.append({
-                                      'chk_instance': '%s.%s.speed'%(ifn,l[4]),
-                                      'chk_value': str(val),
-                                      'chk_svcname': '',
-                                     })
+                    if phy in self.phys:
+                        r.append({
+                            'chk_instance': '%s.%s.speed' % (ifn, self.phys[phy]["device"]),
+                            'chk_value': str(self.phys[phy]["speed"]),
+                            'chk_svcname': '',
+                        })
             return r
         for ifn in self.ifs:
             val = self.get_param(ifn, 'link_speed')
@@ -187,18 +196,16 @@ class check(checks.check):
         if self.osver >= 11:
             for ifn in self.ifs:
                 for phy in self.l[ifn]:
-                    for line in self.phys:
-                        if line.startswith(phy+':'):
-                            l = line.split(':')
-                            if l[3] != 'full':
-                                val = 1
-                            else:
-                                val = 0
-                            r.append({
-                                      'chk_instance': '%s.%s.duplex'%(ifn,l[4]),
-                                      'chk_value': str(val),
-                                      'chk_svcname': '',
-                                     })
+                    if phy in self.phys:
+                        if self.phys[phy]["duplex"] == 'full':
+                            val = "1"
+                        else:
+                            val = "0"
+                        r.append({
+                            'chk_instance': '%s.%s.duplex' % (ifn, self.phys[phy]["device"]),
+                            'chk_value': val,
+                            'chk_svcname': '',
+                        })
             return r
         for ifn in self.ifs:
             val = self.get_param(ifn, 'link_duplex')
@@ -214,18 +221,16 @@ class check(checks.check):
         if self.osver >= 11:
             for ifn in self.ifs:
                 for phy in self.l[ifn]:
-                    for line in self.phys:
-                        if line.startswith(phy+':'):
-                            l = line.split(':')
-                            if l[1] != 'up':
-                                val = 1
-                            else:
-                                val = 0
-                            r.append({
-                                      'chk_instance': '%s.%s.link'%(ifn,l[4]),
-                                      'chk_value': str(val),
-                                      'chk_svcname': '',
-                                     })
+                    if phy in self.phys:
+                        if self.phys[phy]["state"] == 'up':
+                            val = "1"
+                        else:
+                            val = "0"
+                        r.append({
+                            'chk_instance': '%s.%s.link' % (ifn, self.phys[phy]["device"]),
+                            'chk_value': val,
+                            'chk_svcname': '',
+                        })
             return r
         for ifn in self.ifs:
             val = self.get_param(ifn, 'link_status')
