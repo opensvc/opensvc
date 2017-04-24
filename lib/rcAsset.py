@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from rcGlobalEnv import rcEnv
 import os
 from subprocess import *
@@ -48,7 +50,7 @@ class Asset(object):
 
     def print_mem_banks(self, s, source):
         print("mem banks (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_mem_slots(self):
         s = '0'
@@ -67,7 +69,7 @@ class Asset(object):
 
     def print_mem_slots(self, s, source):
         print("mem slots (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_os_vendor(self):
         s = 'Unknown'
@@ -86,7 +88,7 @@ class Asset(object):
 
     def print_os_vendor(self, s, source):
         print("os vendor (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_os_release(self):
         s = 'Unknown'
@@ -105,7 +107,7 @@ class Asset(object):
 
     def print_os_release(self, s, source):
         print("os release (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_os_kernel(self):
         s = 'Unknown'
@@ -124,7 +126,7 @@ class Asset(object):
 
     def print_os_kernel(self, s, source):
         print("os kernel (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_os_arch(self):
         s = 'Unknown'
@@ -143,7 +145,7 @@ class Asset(object):
 
     def print_os_arch(self, s, source):
         print("os arch (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_cpu_freq(self):
         s = '0'
@@ -181,7 +183,7 @@ class Asset(object):
 
     def print_cpu_threads(self, s, source):
         print("cpu threads (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_cpu_cores(self):
         s = '0'
@@ -200,7 +202,7 @@ class Asset(object):
 
     def print_cpu_cores(self, s, source):
         print("cpu cores (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_cpu_dies(self):
         s = '0'
@@ -219,7 +221,7 @@ class Asset(object):
 
     def print_cpu_dies(self, s, source):
         print("cpu dies (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_cpu_model(self):
         s = 'Unknown'
@@ -238,7 +240,7 @@ class Asset(object):
 
     def print_cpu_model(self, s, source):
         print("cpu model (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_serial(self):
         s = 'Unknown'
@@ -257,7 +259,7 @@ class Asset(object):
 
     def print_serial(self, s, source):
         print("serial (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
 
     def get_bios_version(self):
@@ -277,7 +279,7 @@ class Asset(object):
 
     def print_bios_version(self, s, source):
         print("bios version (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_sp_version(self):
         s = ''
@@ -296,7 +298,7 @@ class Asset(object):
 
     def print_sp_version(self, s, source):
         print("sp version (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_enclosure(self):
         s = 'Unknown'
@@ -315,7 +317,7 @@ class Asset(object):
 
     def print_enclosure(self, s, source):
         print("enclosure (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_tz(self):
         s = None
@@ -344,7 +346,7 @@ class Asset(object):
 
     def print_tz(self, s, source):
         print("timezone (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_connect_to(self):
         s = None
@@ -399,7 +401,7 @@ class Asset(object):
 
     def print_connect_to(self, s, source):
         print("connect to address (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_model(self):
         s = 'Unknown'
@@ -418,7 +420,7 @@ class Asset(object):
 
     def print_model(self, s, source):
         print("model (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_node_env(self):
         s = 'TST'
@@ -438,7 +440,7 @@ class Asset(object):
 
     def print_node_env(self, s, source):
         print("environment (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_sec_zone(self):
         s = None
@@ -455,7 +457,7 @@ class Asset(object):
         if s is None:
             return
         print("security zone (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_asset_env(self):
         s = None
@@ -473,7 +475,7 @@ class Asset(object):
         if s is None:
             return
         print("asset environment (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def get_version(self):
         s = self.node.agent_version()
@@ -482,7 +484,7 @@ class Asset(object):
 
     def print_version(self, s):
         print("agent version")
-        print("  %s"%s)
+        print(" ", s)
 
     def get_listener_port(self):
         s = str(rcEnv.listener_port)
@@ -499,13 +501,13 @@ class Asset(object):
         if s is None:
             return
         print("listener port (%s)"%source)
-        print("  %s"%s)
+        print(" ", s)
 
     def print_generic_cf(self, s, source, title):
         if s is None:
             return
         print("%s (%s)"%(title, source))
-        print("  %s"%s)
+        print(" ", s)
 
     def get_loc_country(self):
         s = None
