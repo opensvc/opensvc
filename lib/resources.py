@@ -925,9 +925,12 @@ class Resource(object):
         resource = self.svc.resources_by_id[rid]
         current_state = rcStatus.Status(resource.status())
         if current_state not in states:
-            raise ex.excError("requires on resource %s in state %s, "
-                              "current state %s" % \
-                              (rid, " or ".join(states), current_state))
+            msg = "requires on resource %s in state %s, current state %s" % \
+                  (rid, " or ".join(states), current_state)
+            if self.svc.options.cron:
+                raise ex.excContinueAction(msg)
+            else:
+                raise ex.excError(msg)
 
     def dns_update(self):
         """
