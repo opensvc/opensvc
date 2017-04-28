@@ -36,12 +36,11 @@ class Disk(Res.Resource):
         self.do_start()
 
     def _status(self, verbose=False):
-        if rcEnv.nodename in self.always_on:
-            if self.is_up(): return rcStatus.STDBY_UP
-            else: return rcStatus.STDBY_DOWN
+        if self.is_up():
+            state = rcStatus.UP
         else:
-            if self.is_up(): return rcStatus.UP
-            else: return rcStatus.DOWN
+            state = rcStatus.DOWN
+        return self.status_stdby(state)
 
     def create_static_name(self, dev, suffix="0"):
         d = self.create_dev_dir()
