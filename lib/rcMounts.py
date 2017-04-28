@@ -57,6 +57,8 @@ class Mounts:
         d = fpath
         while not last:
             d = os.path.dirname(d)
+            if d in ("", None):
+                return
             m = self.has_param("mnt", d)
             if m:
                 return m.dev
