@@ -177,7 +177,7 @@ class Arrays(object):
             if conf.has_option(s, 'symcli_path'):
                 symcli_path = conf.get(s, 'symcli_path')
             else:
-                symcli_path = find_symcli_path()
+                symcli_path = self.find_symcli_path()
 
             if symcli_path is None:
                 print("symcli path not found for array", s, file=sys.stderr)
