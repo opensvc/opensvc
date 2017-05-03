@@ -148,7 +148,7 @@ class Arrays(object):
                 jre_path = conf.get(s, 'jre_path')
                 os.environ["HDVM_CLI_JRE_PATH"] = jre_path
             except:
-                path
+                pass
             try:
                 url = conf.get(s, 'url')
                 arrays = conf.get(s, 'array').split()
