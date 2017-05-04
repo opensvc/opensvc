@@ -249,12 +249,21 @@ class Cmd(object):
     def set_parser_options_from_words(self, words):
         if len(words) == 0:
             return
-        paths = [w for w in words if w.startswith("/")]
-        if len(paths) == 0:
+        _path = None
+        for i, w in enumerate(words):
+            if i == 0:
+                # command word
+                continue
+            if i == 1 and not w.startswith("-"):
+                _path = w
+                break
+            if i > 1 and not words[i-1].startswith("-"):
+                _path = w
+                break
+        if _path is None:
             return
-        path = paths[0]
         try:
-            self.set_parser_options(path)
+            self.set_parser_options(_path)
         except Exception as e:
             print(e)
 
@@ -453,10 +462,12 @@ class Cmd(object):
             return True
         return False
 
-    def set_parser_options(self, path):
+    def set_parser_options(self, _path):
+        if not _path.startswith("/"):
+            _path = os.path.join(path, _path)
         try:
-            h = self.get_handler(self.command.upper(), path)
-        except:
+            h = self.get_handler(self.command.upper(), _path)
+        except Exception as e:
             return
         if h is None:
             return self.parser
