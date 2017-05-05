@@ -98,7 +98,8 @@ class FsDir(Res.Resource):
 
     def _status(self, verbose=False):
         if not os.path.exists(self.path):
-            self.status_log("dir %s does not exist" % self.path)
+            self.log.debug("dir %s does not exist" % self.path)
+            return rcStatus.DOWN
         self.check_uid()
         self.check_gid()
         self.check_perm()
