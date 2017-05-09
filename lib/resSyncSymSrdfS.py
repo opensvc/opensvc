@@ -383,7 +383,7 @@ class syncSymSrdfS(resSync.Sync):
             self.status_log(str(e))
             return rcStatus.WARN
         state = self.get_dg_state()
-        self.status_log("current state %s"%state)
+        self.status_log("current state %s"%state, "info")
         if self.is_synchronous_and_synchronized_state():
             return rcStatus.UP
         self.status_log("expecting Synchronous/Synchronized")
