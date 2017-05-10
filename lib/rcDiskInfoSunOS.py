@@ -1,3 +1,4 @@
+import os
 import rcDiskInfo
 import rcDevTreeVeritas
 from rcUtilities import justcall
@@ -172,3 +173,5 @@ class diskInfo(rcDiskInfo.diskInfo):
     def disk_size(self, dev):
         return self.get(dev, 'size')
 
+    def scanscsi(self, hba=None, target=None, lun=None):
+        os.system("cfgadm -al")
