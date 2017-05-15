@@ -2134,9 +2134,6 @@ def path_match_handler(p, d):
     pattern = d["pattern"]
     if re.match(pattern, p) is not None:
         return True
-    p += "/foo"
-    if re.match(pattern, p) is not None:
-        return True
     return False
 
 def path_match_handler_or_parents(p, d):
