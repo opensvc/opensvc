@@ -545,6 +545,7 @@ class Docker(resContainer.Container):
                 return True
         else:
             if self.container_id is None:
+                self.status_log("can not find container id", "info")
                 return False
             if self.container_id in self.svc.dockerlib.get_running_instance_ids(refresh=True):
                 return True
