@@ -39,6 +39,15 @@ class syncBtrfsSnap(resSync.Sync):
         if ret != 0:
             return ret
         dev = out.strip()
+        dev = os.path.realpath(dev)
+        import glob
+        holders = glob.glob("/sys/block/%s/holders/*" % os.path.basename(dev))
+        if len(holders) == 1:
+            hdev = "/dev/%s" % os.path.basename(holders[0])
+        else:
+            hdev = None
+        if hdev and os.path.exists(hdev):
+            dev = hdev
         cmd = ["btrfs", "fi", "show", dev]
         out, err, ret = justcall(cmd)
         return ret
