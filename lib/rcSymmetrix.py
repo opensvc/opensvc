@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import logging
 import sys
 import os
 import ConfigParser
@@ -26,7 +27,10 @@ OPT = Storage({
         help="The device identifier name (ex: mysvc_1)"),
     "dev": Option(
         "--dev", action="store", dest="dev",
-        help="The device id (ex: 0A04)"),
+        help="The device id (ex: 00A04)"),
+    "pair": Option(
+        "--pair", action="store", dest="pair",
+        help="The device id pair (ex: 00A04:00A04)"),
     "mappings": Option(
         "--mappings", action="append", dest="mappings",
         help="A <hba_id>:<tgt_id>,<tgt_id>,... mapping used in add map in replacement of --targetgroup and --initiatorgroup. Can be specified multiple times."),
@@ -39,6 +43,24 @@ OPT = Storage({
     "srp": Option(
         "--srp", action="store", dest="srp",
         help="The Storage Resource Pool hosting the device."),
+    "srdf": Option(
+        "--srdf", action="store_true", dest="srdf",
+        help="Create a SRDF mirrored device pair. The array pointed by --array is will host the R1 member."),
+    "rdfg": Option(
+        "--rdfg", action="store", dest="rdfg",
+        help="The RDF / RA Group number, required if --srdf is set."),
+    "sg": Option(
+        "--sg", action="store", dest="sg",
+        help="As an alternative to --mappings, specify the storage group to put the dev into."),
+    "invalidate": Option(
+        "--invalidate", action="store", dest="invalidate",
+        help="The SRDF mirror member to invalidate upon createpair (ex: R2). Don't set to just establish."),
+    "srdf_type": Option(
+        "--srdf-type", action="store", dest="srdf_type",
+        help="The device role in the SRDF mirror (ex: R1)"),
+    "srdf_mode": Option(
+        "--srdf-mode", action="store", dest="srdf_mode",
+        help="Device mirroring mode. Either sync, acp_wp or acp_disk"),
 })
 
 GLOBAL_OPTS = [
@@ -57,6 +79,8 @@ ACTIONS = {
                 OPT.mappings,
                 OPT.slo,
                 OPT.srp,
+                OPT.srdf,
+                OPT.rdfg,
             ],
         },
         "add_map": {
@@ -66,6 +90,7 @@ ACTIONS = {
                 OPT.mappings,
                 OPT.slo,
                 OPT.srp,
+                OPT.sg,
             ],
         },
         "del_disk": {
@@ -103,8 +128,24 @@ ACTIONS = {
                 OPT.size,
             ],
         },
+        "createpair": {
+            "msg": "Delete the SRDF pairing for device.",
+            "options": [
+                OPT.pair,
+                OPT.rdfg,
+                OPT.invalidate,
+                OPT.srdf_mode,
+                OPT.srdf_type,
+            ],
+        },
         "del_tdev": {
             "msg": "Delete a thin device. No unmasking.",
+            "options": [
+                OPT.dev,
+            ],
+        },
+        "deletepair": {
+            "msg": "Delete the SRDF pairing for device.",
             "options": [
                 OPT.dev,
             ],
@@ -125,6 +166,13 @@ ACTIONS = {
             "msg": "List views, eg. groups of initiators/targets/devices.",
             "options": [
                 OPT.dev,
+            ],
+        },
+        "set_mode": {
+            "msg": "Set the device pair rdf mode.",
+            "options": [
+                OPT.dev,
+                OPT.srdf_mode,
             ],
         },
     },
@@ -234,6 +282,7 @@ class Sym(object):
         self.keys = [
             'sym_info',
             'sym_dir_info',
+            'sym_rdfg_info',
             'sym_dev_info',
             'sym_dev_wwn_info',
             'sym_dev_name_info',
@@ -248,6 +297,7 @@ class Sym(object):
         self.symcli_connect = symcli_connect
         self.username = username
         self.password = password
+        self.log = logging.getLogger(rcEnv.nodename+".array.sym."+self.sid)
 
     def set_environ(self):
         if self.symcli_connect:
@@ -255,35 +305,45 @@ class Sym(object):
         elif "SYMCLI_CONNECT" in os.environ:
             del os.environ["SYMCLI_CONNECT"]
 
-    def symcmd(self, cmd, xml=True):
+    def symcmd(self, cmd, xml=True, log=False):
         self.set_environ()
         cmd += ['-sid', self.sid]
         if xml:
             cmd += ['-output', 'xml_element']
+        if log and self.node:
+            self.log.info(" ".join(cmd))
         return justcall(cmd)
 
-    def symsg(self, cmd, xml=True):
+    def symsg(self, cmd, xml=True, log=False):
         cmd = ['/usr/symcli/bin/symsg'] + cmd
-        return self.symcmd(cmd, xml=xml)
+        return self.symcmd(cmd, xml=xml, log=log)
 
-    def symcfg(self, cmd, xml=True):
+    def symcfg(self, cmd, xml=True, log=False):
         cmd = ['/usr/symcli/bin/symcfg'] + cmd
-        return self.symcmd(cmd, xml=xml)
+        return self.symcmd(cmd, xml=xml, log=log)
 
     def symdisk(self, cmd, xml=True):
         cmd = ['/usr/symcli/bin/symdisk'] + cmd
         return self.symcmd(cmd, xml=xml)
 
-    def symconfigure(self, cmd, xml=True):
+    def symconfigure(self, cmd, xml=True, log=False):
         cmd = ['/usr/symcli/bin/symconfigure'] + cmd
-        return self.symcmd(cmd, xml=xml)
+        return self.symcmd(cmd, xml=xml, log=log)
 
-    def symdev(self, cmd, xml=True):
+    def symdev(self, cmd, xml=True, log=False):
         cmd = ['/usr/symcli/bin/symdev'] + cmd
-        return self.symcmd(cmd, xml=xml)
+        return self.symcmd(cmd, xml=xml, log=log)
+
+    def symrdf(self, cmd, xml=True, log=False):
+        cmd = ['/usr/symcli/bin/symrdf'] + cmd
+        return self.symcmd(cmd, xml=xml, log=log)
 
     def get_sym_info(self):
         out, err, ret = self.symcfg(["list"])
+        return out
+
+    def get_sym_rdfg_info(self):
+        out, err, ret = self.symcfg(['-rdfg', 'all', 'list'])
         return out
 
     def get_sym_dir_info(self):
@@ -359,7 +419,12 @@ class Sym(object):
                     else:
                         d[e.tag] = child
                 else:
-                    d[e.tag] = e.text
+                    if e.tag in as_list:
+                        if e.tag not in d:
+                            d[e.tag] = []
+                        d[e.tag].append(e.text)
+                    else:
+                        d[e.tag] = e.text
             return d
 
         for elem in tree.getiterator(key):
@@ -369,6 +434,10 @@ class Sym(object):
 
     def get_sym_dev_wwn(self, dev):
         out, err, ret = self.symdev(['list', '-devs', dev, '-wwn'])
+        return self.parse_xml(out, key="Device")
+
+    def get_sym_dev_show(self, dev):
+        out, err, ret = self.symdev(['show', dev])
         return self.parse_xml(out, key="Device")
 
     def list_pools(self, **kwargs):
@@ -438,26 +507,39 @@ class Sym(object):
             out, err, ret = self.symaccesscmd(["show", sg, "-type", "storage"])
             if out.strip() == "":
                 continue
-            data = self.parse_xml(out, key="Mask_View_Names")
-            views |= set([d["view_name"] for d in data])
+            data = self.parse_xml(out, key="Mask_View_Names", as_list=["view_name"])
+	    for d in data:
+                if "view_name" not in d:
+                    continue
+                views |= set(d["view_name"])
         return views
 
     def get_initiator_views(self, wwn):
         out, err, ret = self.symaccesscmd(["list", "-type", "initiator", "-wwn", wwn])
         if out.strip() == "":
             return []
-        data = self.parse_xml(out, key="Mask_View_Names")
-        return [d["view_name"] for d in data]
+        data = self.parse_xml(out, key="Mask_View_Names", as_list=["view_name"])
+	views = set()
+	for d in data:
+	    if "view_name" not in d:
+	        continue
+            for view_name in d["view_name"]:
+	        views.add(view_name.rstrip(" *"))
+        return views
 
     def get_view(self, view):
         out, err, ret = self.symaccesscmd(["show", "view", view])
-        data = self.parse_xml(out, key="View_Info", as_list=["Director_Identification", "SG_Child_info", "Initiator", "Device", "dev_port_info"], exclude=["Initiators"])
+        data = self.parse_xml(out, key="View_Info", as_list=["Director_Identification", "SG", "Initiator", "Device", "dev_port_info"], exclude=["Initiators"])
+        if len(data) == 0:
+            return
         return data[0]
 
     def get_mapping_storage_groups(self, hba_id, tgt_id):
         l = set()
         for view in self.get_initiator_views(hba_id):
             view_data = self.get_view(view)
+            if view_data is None:
+                continue
             if "port_info" not in view_data:
                 continue
             if "Director_Identification" not in view_data["port_info"]:
@@ -465,26 +547,52 @@ class Sym(object):
             ports = [e["port_wwn"] for e in view_data["port_info"]["Director_Identification"]]
             if tgt_id not in ports:
                 continue
-            sg = view_data["stor_grpname"]
-            if sg not in self.sg_mappings:
-                self.sg_mappings[sg] = []
-            self.sg_mappings[sg].append({
-                "sg": sg,
-                "view_name": view_data["view_name"],
-                "hba_id": hba_id,
-                "tgt_id": tgt_id,
-            })
-            l.add(view_data["stor_grpname"])
+            view_sgs = []
+            if "SG_Child_info" in view_data and "SG" in view_data["SG_Child_info"] and len(view_data["SG_Child_info"]["SG"]) > 0:
+                for sg_data in view_data["SG_Child_info"]["SG"]:
+                    view_sgs.append(sg_data["group_name"])
+            else:
+                view_sgs.append(view_data["stor_grpname"])
+            for sg in view_sgs:
+                if sg not in self.sg_mappings:
+                    self.sg_mappings[sg] = []
+                if sg not in self.sg_initiator_count:
+                    self.sg_initiator_count[sg] = 0
+                self.sg_initiator_count[sg] += len(view_data["Initiator_List"]["Initiator"])
+                self.sg_mappings[sg].append({
+                    "sg": sg,
+                    "view_name": view_data["view_name"],
+                    "hba_id": hba_id,
+                    "tgt_id": tgt_id,
+                })
+                l.add(sg)
         return l
 
+    def narrowest_sg(self, sgs):
+        if len(sgs) == 0:
+            return
+        if len(sgs) == 1:
+            return sgs[0]
+        narrowest = sgs[0]
+        for sg in sgs[1:]:
+            if self.sg_initiator_count[sg] < self.sg_initiator_count[narrowest]:
+                narrowest = sg
+        return narrowest
+
     def translate_mappings(self, mappings):
-        sgs = set()
+        sgs = None
+        if mappings is None:
+            return sgs
         for mapping in mappings:
             elements = mapping.split(":")
             hba_id = elements[0]
             targets = elements[-1].split(",")
             for tgt_id in targets:
-                sgs |= self.get_mapping_storage_groups(hba_id, tgt_id)
+                _sgs = self.get_mapping_storage_groups(hba_id, tgt_id)
+                if sgs is None:
+                    sgs = _sgs
+                else:
+                    sgs &= _sgs
         return sgs
 
 class Vmax(Sym):
@@ -502,6 +610,7 @@ class Vmax(Sym):
             'sym_slo_info',
         ]
         self.sg_mappings = {}
+        self.sg_initiator_count = {}
 
         if 'SYMCLI_DB_FILE' in os.environ:
             dir = os.path.dirname(os.environ['SYMCLI_DB_FILE'])
@@ -518,7 +627,7 @@ class Vmax(Sym):
         else:
             self.aclx = None
 
-    def symaccesscmd(self, cmd, xml=True):
+    def symaccesscmd(self, cmd, xml=True, log=False):
         self.set_environ()
         cmd = ['/usr/symcli/bin/symaccess'] + cmd
         if self.aclx is None:
@@ -527,6 +636,8 @@ class Vmax(Sym):
             cmd += ['-file', self.aclx]
         if xml:
             cmd += ['-output', 'xml_element']
+        if log and self.node:
+            self.log.info(" ".join(cmd))
         return justcall(cmd)
 
     def get_sym_pg_aclx(self):
@@ -549,7 +660,19 @@ class Vmax(Sym):
         out, err, ret = self.symaccesscmd(cmd)
         return out
 
-    def add_tdev(self, name=None, size=None, **kwargs):
+    def write_temp_file(self, content):
+        import tempfile
+        try:
+            tmpf = tempfile.NamedTemporaryFile()
+            fpath = tmpf.name
+            tmpf.close()
+            with open(fpath, "w") as tmpf:
+                tmpf.write(content)
+        except (OSError, IOError) as exc:
+            raise ex.excError("failed to write temp file: %s" % str(exc))
+        return fpath
+
+    def add_tdev(self, name=None, size=None, srdf=False, rdfg=None, **kwargs):
         """
 	     create dev count=<n>,
 		  size = <n> [MB | GB | CYL],
@@ -572,14 +695,28 @@ class Vmax(Sym):
         if size is None:
             raise ex.excError("The '--size' parameter is mandatory")
         size = convert_size(size, _to="MB")
-        _cmd = "create dev count=1, size= %d MB, emulation=FBA, config=TDEV, device_attr=SCSI3_PERSIST_RESERV" % (size)
+        _cmd = "create dev count=1, size= %d MB, emulation=FBA, device_attr=SCSI3_PERSIST_RESERV" % size
+
+        if srdf and rdfg:
+            _cmd += ", config=RDF1+TDEV, remote_config=RDF2+TDEV, ra_group=%s" % str(rdfg)
+        elif srdf and rdfg is None:
+            raise ex.excError("--srdf is specified but --rdfg is not") 
+        else:
+            _cmd += ", config=TDEV"
+
         if name:
             _cmd += ", device_name=%s" % name
         _cmd += ";"
         cmd = ["-cmd", _cmd, "commit", "-noprompt"]
-        out, err, ret = self.symconfigure(cmd, xml=False)
+        out, err, ret = self.symconfigure(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.excError(err)
+        """
+            out contains:
+            ...
+            New symdev:  003AF [TDEV]     
+            ...
+        """
         for line in out.splitlines():
             line = line.strip()
             if line.startswith("New symdev:"):
@@ -587,9 +724,87 @@ class Vmax(Sym):
                 if len(l) < 3:
                     raise ex.excError("unable to determine the created SymDevName")
                 dev = l[2]
+                if srdf:
+                    self.set_mode(dev)
                 data = self.get_sym_dev_wwn(dev)[0]
                 return data
         raise ex.excError("unable to determine the created SymDevName")
+
+    def get_dev_rdf(self, dev):
+        data = self.get_sym_dev_show(dev)
+        if len(data) != 1:
+            raise ex.excError("device %s does not exist" % dev)
+        data = data[0]
+        if "RDF" not in data or "Local" not in data["RDF"] or "Remote" not in data["RDF"]:
+            raise ex.excError("device %s is not handled by srdf" % dev)
+        return data["RDF"]
+
+    def write_dev_pairfile(self, dev, rdev):
+        content = dev + " " + rdev + "\n"
+        self.log.info("write pair file with content: %s" % content.strip())
+        fpath = self.write_temp_file(content)
+        return fpath
+
+    def set_mode(self, dev, **kwargs):
+        data = self.get_dev_rdf(dev)
+        rdfg = data["Local"]["ra_group_num"]
+        rdev = data["Remote"]["dev_name"]
+        fpath = self.write_dev_pairfile(dev, rdev)
+        cmd = ["-f", fpath, "-rdfg", rdfg, "set", "mode", "sync", "-noprompt"]
+        out, err, ret = self.symrdf(cmd, xml=False, log=True)
+        os.unlink(fpath)
+        if ret != 0:
+            raise ex.excError(out+err)
+
+    def createpair(self, pair=None, rdfg=None, srdf_mode=None, srdf_type=None, invalidate=None, **kwargs):
+        if pair is None:
+            raise ex.excError("the --pair argument is mandatory")
+        if srdf_type is None:
+            raise ex.excError("the --srdf-type argument is mandatory")
+        if srdf_mode is None:
+            raise ex.excError("the --srdf-mode argument is mandatory")
+        if pair.count(":") != 1:
+            raise ex.excError("misformatted pair %s" % pair)
+        dev, rdev = pair.split(":")
+        try:
+            rdf_data = self.get_dev_rdf(dev)
+        except ex.excError:
+            rdf_data = None
+        if rdf_data is not None:
+            raise ex.excError("dev %s is already is in a RDF relation" % dev)
+        fpath = self.write_dev_pairfile(dev, rdev)
+        cmd = ["-f", fpath, "-rdfg", rdfg, "createpair", "-noprompt", "-rdf_mode", srdf_mode, "-type", srdf_type]
+        if invalidate in ("R1", "R2"):
+            cmd += ["-invalidate", invalidate]
+        else:
+            cmd += ["-establish"]
+        out, err, ret = self.symrdf(cmd, xml=False, log=True)
+        if ret != 0:
+            os.unlink(fpath)
+            raise ex.excError(out+err)
+        os.unlink(fpath)
+
+    def deletepair(self, dev=None, **kwargs):
+        try:
+            data = self.get_dev_rdf(dev)
+        except ex.excError:
+            return
+        rdfg = data["Local"]["ra_group_num"]
+        rdev = data["Remote"]["dev_name"]
+        fpath = self.write_dev_pairfile(dev, rdev)
+        if data["RDF_Info"]["pair_state"] != "Suspended":
+            cmd = ["-f", fpath, "-rdfg", rdfg, "suspend", "-noprompt"]
+            out, err, ret = self.symrdf(cmd, xml=False, log=True)
+            if ret != 0:
+                os.unlink(fpath)
+                raise ex.excError(out+err)
+        cmd = ["-f", fpath, "-rdfg", rdfg, "deletepair", "-noprompt", "-force"]
+        out, err, ret = self.symrdf(cmd, xml=False, log=True)
+        if ret != 0:
+            os.unlink(fpath)
+            raise ex.excError(out+err)
+        os.unlink(fpath)
+        return data
 
     def rename_disk(self, dev=None, name=None, **kwargs):
         if dev is None:
@@ -598,7 +813,7 @@ class Vmax(Sym):
             raise ex.excError("--name is mandatory")
         _cmd = "set dev %s device_name='%s';" % (dev, name)
         cmd = ["-cmd", _cmd, "commit", "-noprompt"]
-        out, err, ret = self.symconfigure(cmd, xml=False)
+        out, err, ret = self.symconfigure(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.excError(err)
 
@@ -607,62 +822,137 @@ class Vmax(Sym):
             raise ex.excError("The '--dev' parameter is mandatory")
         if size is None:
             raise ex.excError("The '--size' parameter is mandatory")
-        size = convert_size(size, _to="MB")
+        dev_data = self.get_sym_dev_show(dev)
+        if len(dev_data) != 1:
+            raise ex.excError("device %s does not exist" % dev)
+        dev_data = dev_data[0]
+        if size.startswith("+"):
+            incr = convert_size(size.lstrip("+"), _to="MB")
+            current_size = int(dev_data["Capacity"]["megabytes"])
+            size = str(current_size + incr)
+        else:
+            size = str(convert_size(size, _to="MB"))
+        if "RDF" in dev_data:
+            rdf_data = dev_data["RDF"]
+        else:
+            rdf_data = None
+        if rdf_data:
+            self.deletepair(dev)
         cmd = ["modify", dev, "-tdev", "-cap", str(size), "-captype", "mb", "-noprompt"]
-        out, err, ret = self.symdev(cmd, xml=False)
+        out, err, ret = self.symdev(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.excError(err)
+        results = {
+            "driver_data": {
+            },
+        }
+        if rdf_data:
+            results["driver_data"]["rdf"] = rdf_data
+        return results
 
     def del_tdev(self, dev=None, **kwargs):
         if dev is None:
             raise ex.excError("The '--dev' parameter is mandatory")
-        data = self.get_sym_dev_wwn(dev)[0]
+        data = self.get_sym_dev_wwn(dev)
+        if len(data) == 0:
+            self.log.info("%s does not exist" % dev)
+            return
+        data = data[0]
+        self.deletepair(dev)
         cmd = ["delete", dev, "-noprompt"]
-        out, err, ret = self.symdev(cmd, xml=False)
+        out, err, ret = self.symdev(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.excError(err)
         self.del_diskinfo(data["wwn"])
 
     def del_disk(self, dev=None, **kwargs):
         self.del_map(dev)
-        self.free_tdev(dev)
-        self.del_tdev(dev=dev, **kwargs)
+        retry = 5
+        try:
+            rdf_data = self.get_dev_rdf(dev)
+        except ex.excError:
+            rdf_data = None
+        while retry > 0:
+            self.free_tdev(dev)
+            try:
+                self.del_tdev(dev=dev, **kwargs)
+                break
+            except ex.excError as exc:
+                if "A free of all allocations is required" in str(exc):
+                    if retry == 1:
+                        raise ex.excError("dev %s is still not free of all allocations after 5 tries")
+                    # retry
+                    retry -= 1
+                    time.sleep(5)
+                    continue
+                raise
+        results = {
+            "driver_data": {
+            },
+        }
+        if rdf_data:
+            results["driver_data"]["rdf"] = rdf_data
+        return results
 
     def del_map(self, dev, **kwargs):
         for sg in self.get_dev_sgs(dev):
             self.del_tdev_from_sg(dev, sg)
 
     def free_tdev(self, dev):
-        out, err, ret = self.symdev(["free", "-devs", dev, "-all", "-noprompt"], xml=False)
+        out, err, ret = self.symdev(["free", "-devs", dev, "-all", "-noprompt"], xml=False, log=True)
         while True:
-            if self.tdev_freed(dev):
+            if self.tdev_freed(dev) and not self.tdev_deallocating(dev) and not self.tdev_freeingall(dev):
                 break
             time.sleep(5)
 
     def tdev_freed(self, dev):
-        out, err, ret = self.symcfg(["verify", "-tdevs", "-devs", dev, "-freeingall"], xml=False)
-        if out.strip().split()[0] == "None":
+        out, err, ret = self.symcfg(["list", "-tdevs", "-devs", dev], xml=True)
+        data = self.parse_xml(out, key="Device")
+        if len(data) == 0:
+            return True
+        data = data[0]
+        self.log.info("device %s has %s tracks allocated" % (dev, str(data["alloc_tracks"])))
+        if data["alloc_tracks"] in ("0", 0):
             return True
         return False
 
+    def tdev_freeingall(self, dev):
+        return self.tdev_status(dev, "-freeingall")
+
+    def tdev_deallocating(self, dev):
+        return self.tdev_status(dev, "-deallocating")
+
+    def tdev_status(self, dev, status):
+        out, err, ret = self.symcfg(["verify", "-tdevs", "-devs", dev, status], xml=False)
+        outv = out.strip().split()
+        if len(outv) == 0:
+            raise ex.excError("unexpected verify output: %s" % out+err)
+        if outv[0] == "None":
+            self.log.info("device %s is not %s" % (dev, status))
+            return False
+        self.log.info("device %s is %s" % (dev, status))
+        return True
+
     def add_tdev_to_sg(self, dev, sg):
+        if sg is None:
+            return
         cmd = ["-name", sg, "-type", "storage", "add", "dev", dev]
-        out, err, ret = self.symaccesscmd(cmd, xml=False)
+        out, err, ret = self.symaccesscmd(cmd, xml=False, log=True)
         if ret != 0:
-            print(err, file=sys.stderr)
+            self.log.error(err)
         return out, err, ret
 
     def del_tdev_from_sg(self, dev, sg):
         cmd = ["-name", sg, "-type", "storage", "remove", "dev", dev, "-unmap"]
-        out, err, ret = self.symaccesscmd(cmd, xml=False)
+        out, err, ret = self.symaccesscmd(cmd, xml=False, log=True)
         if ret != 0:
-            print(err, file=sys.stderr)
+            self.log.error(err)
         return out, err, ret
 
     def get_dev_sgs(self, dev):
         out, err, ret = self.symaccesscmd(["list", "-type", "storage", "-devs", dev])
         data = self.parse_xml(out, key="Group_Info")
-        return [d["group_name"] for d in data]
+        return [d["group_name"] for d in data if d["Status"] != "IsParent"]
 
     def get_sg(self, sg):
         out, err, ret = self.symsg(["show", sg])
@@ -684,6 +974,8 @@ class Vmax(Sym):
 
     def get_lun(self, dev, hba_id, tgt_id, view_name):
         view = self.get_view(view_name)
+        if view is None:
+            return
         port = None
         for port in view["port_info"]["Director_Identification"]:
             if port["port_wwn"] == tgt_id:
@@ -691,6 +983,8 @@ class Vmax(Sym):
                 break
         if port is None:
             return
+	if "Device" not in view:
+	    return
         for device in view["Device"]:
             if device["dev_name"] != dev:
                 continue
@@ -709,11 +1003,11 @@ class Vmax(Sym):
                     mappings[d["hba_id"] + ":" + d["tgt_id"]] = d
         return mappings
 
-    def add_disk(self, name=None, size=None, slo=None, srp=None, mappings={}, **kwargs):
-        sgs = self.mappings_to_sgs(mappings, slo, srp)
-        dev_data = self.add_tdev(name, size, **kwargs)
-        self.add_map(dev_data["dev_name"], mappings, slo, srp, sgs)
-        self.push_diskinfo(dev_data, name, size, srp, sgs)
+    def add_disk(self, name=None, size=None, slo=None, srp=None, srdf=False, rdfg=None, mappings=None, **kwargs):
+        sg = self.mappings_to_sg(mappings, slo, srp)
+        dev_data = self.add_tdev(name, size, srdf, rdfg, **kwargs)
+        self._add_map(dev_data["dev_name"], mappings, slo, srp, sg)
+        self.push_diskinfo(dev_data, name, size, srp, sg)
         mappings = {}
         results = {
             "disk_id": dev_data["wwn"],
@@ -725,18 +1019,37 @@ class Vmax(Sym):
         }
         return results
 
-    def add_map(self, dev, mappings={}, slo=None, srp=None, sgs=None, **kwargs):
-        if sgs is None:
-            sgs = self.mappings_to_sgs(mappings, slo, srp)
-        for sg in sgs:
-            self.add_tdev_to_sg(dev, sg)
+    def _add_map(self, dev=None, mappings=None, slo=None, srp=None, sg=None, **kwargs):
+        if dev is None:
+            raise ex.excError("--dev is mandatory")
+        if sg is None:
+            sg = self.mappings_to_sg(mappings, slo, srp)
+        self.add_tdev_to_sg(dev, sg)
 
-    def mappings_to_sgs(self, mappings, slo, srp):
+    def add_map(self, dev=None, mappings=None, slo=None, srp=None, sg=None, **kwargs):
+        self._add_map(dev, mappings, slo, srp, sg)
+        dev_data = self.get_sym_dev_wwn(dev)[0]
+        results = {
+            "disk_id": dev_data["wwn"],
+            "disk_devid": dev_data["dev_name"],
+            "mappings": self.get_mappings(dev_data["dev_name"]),
+            "driver_data": {
+                "dev": dev_data,
+            },
+        }
+        return results
+
+    def mappings_to_sg(self, mappings, slo, srp):
+        if mappings is None:
+            return
         sgs = self.translate_mappings(mappings)
         if len(sgs) == 0:
             raise ex.excError("no storage group found for the requested mappings")
         sgs = self.filter_sgs(sgs, srp=srp, slo=slo)
-        return sgs
+        if len(sgs) == 0:
+            raise ex.excError("no storage group found for the requested mappings")
+        #print("candidates sgs:", sgs, "retain:", self.narrowest_sg(sgs))
+        return self.narrowest_sg(sgs)
 
     def del_diskinfo(self, disk_id):
         if disk_id in (None, ""):
@@ -751,7 +1064,7 @@ class Vmax(Sym):
             raise ex.excError(ret["error"])
         return ret
 
-    def push_diskinfo(self, data, name, size, srp, sgs):
+    def push_diskinfo(self, data, name, size, srp, sg):
         if self.node is None:
             return
         try:
@@ -788,7 +1101,7 @@ class Dmx(Sym):
         else:
             self.maskdb = None
 
-    def symaccesscmd(self, cmd, xml=True):
+    def symaccesscmd(self, cmd, xml=True, log=False):
         self.set_environ()
         cmd = ['/usr/symcli/bin/symaccess'] + cmd
         if self.maskdb is None:
@@ -797,6 +1110,8 @@ class Dmx(Sym):
             cmd += ['-f', self.maskdb]
         if xml:
             cmd += ['-output', 'xml_element']
+        if log and self.node:
+            self.log.info(" ".join(cmd))
         return justcall(cmd)
 
     def get_sym_maskdb(self):
@@ -814,6 +1129,7 @@ def do_action(action, array_name=None, node=None, **kwargs):
     if not hasattr(array, action):
         raise ex.excError("not implemented")
     array.node = node
+    node.log.handlers[1].setLevel(logging.CRITICAL)
     ret = getattr(array, action)(**kwargs)
     if ret is not None:
         print(json.dumps(ret, indent=4))
