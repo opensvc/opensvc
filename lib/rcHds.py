@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import logging
 import os
 import ConfigParser
 import sys
@@ -195,8 +196,9 @@ class Array(object):
             self.bin = bin
         self.domain_portname = {}
         self.port_portname = {}
+        self.log = logging.getLogger(rcEnv.nodename+".array.sym."+self.name)
 
-    def cmd(self, cmd, scoped=True, xml=True):
+    def cmd(self, cmd, scoped=True, xml=True, log=False):
         if which(self.bin) is None:
             raise ex.excError("Can not find %s"%self.bin)
         l = [
@@ -215,9 +217,13 @@ class Array(object):
             ]
         if len(cmd) > 1:
             l += cmd[1:]
-        #print(" ".join(l))
+        if log:
+            _l = [] + l
+            _l[6] = "xxxx"
+            self.log.info(" ".join(_l))
         out, err, ret = justcall(l)
         if ret != 0:
+            self.log.error(err)
             raise ex.excError(err)
         return out, err, ret
 
@@ -534,7 +540,7 @@ class Array(object):
             "portname="+portname,
             "domain="+domain,
         ]
-        out, err, ret = self.cmd(cmd, xml=False)
+        out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.excError(err)
 
@@ -585,7 +591,7 @@ class Array(object):
             "domain="+domain,
             "lun="+str(lun),
         ]
-        out, err, ret = self.cmd(cmd, xml=False)
+        out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.excError(err)
         data = self.parse(out)
@@ -603,7 +609,7 @@ class Array(object):
             "capacitytype=KB",
             "poolid="+str(pool_id),
         ]
-        out, err, ret = self.cmd(cmd, xml=False)
+        out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.excError(err)
         data = self.parse(out)
@@ -659,7 +665,7 @@ class Array(object):
             "capacitytype=KB",
             "devnums="+str(devnum),
         ]
-        out, err, ret = self.cmd(cmd, xml=False)
+        out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.excError(err)
 
@@ -672,7 +678,7 @@ class Array(object):
             "deletevirtualvolume",
             "devnums="+str(devnum),
         ]
-        out, err, ret = self.cmd(cmd, xml=False)
+        out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.excError(err)
         self.del_diskinfo(devnum)
@@ -688,7 +694,7 @@ class Array(object):
             "devnums="+str(devnum),
             "label="+str(name),
         ]
-        out, err, ret = self.cmd(cmd, xml=False)
+        out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.excError(err)
         data = self.parse(out)
@@ -732,6 +738,7 @@ def do_action(action, array_name=None, node=None, **kwargs):
     if array is None:
         raise ex.excError("array %s not found" % array_name)
     array.node = node
+    node.log.handlers[1].setLevel(logging.CRITICAL)
     if not hasattr(array, action):
         raise ex.excError("not implemented")
     ret = getattr(array, action)(**kwargs)
