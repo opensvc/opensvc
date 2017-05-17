@@ -4368,6 +4368,7 @@ class Svc(object):
         dpaths = [
             os.path.join(rcEnv.pathetc, self.svcname+".dir"),
             os.path.join(rcEnv.pathetc, self.svcname+".d"),
+            os.path.join(rcEnv.pathvar, self.svcname),
         ]
         fpaths = [
             self.paths.cf,
