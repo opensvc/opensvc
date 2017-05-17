@@ -4350,41 +4350,46 @@ class Svc(object):
         """
         return self.set_disable(self.action_rid, True)
 
-    def delete(self):
+    def delete_service_logs(self):
         """
-        The 'delete' action entrypoint.
-        If --unprovision is set, call the unprovision method.
-        Then if no resource specifier is set, remove all service files in
-        <pathetc>.
-        If a resource specifier is set, only delete the corresponding
-        sections in the configuration file.
+        Delete the service configuration logs
         """
-        if self.options.unprovision:
-            self.unprovision()
-        if not self.command_is_scoped() or \
-           len(self.action_rid) == len(self.resources_by_id.keys()):
-            import shutil
-            dpaths = [
-                os.path.join(rcEnv.pathetc, self.svcname+".dir"),
-                os.path.join(rcEnv.pathetc, self.svcname+".d"),
-            ]
-            fpaths = [
-                self.paths.cf,
-                os.path.join(rcEnv.pathetc, self.svcname),
-                os.path.join(rcEnv.pathetc, self.svcname+".d"),
-                os.path.join(rcEnv.pathetc, self.svcname+".cluster"),
-                os.path.join(rcEnv.pathetc, self.svcname+".stonith"),
-            ]
-            for fpath in fpaths:
-                if os.path.exists(fpath) and \
-                   (os.path.islink(fpath) or os.path.isfile(fpath)):
-                    self.log.info("remove %s", fpath)
-                    os.unlink(fpath)
-            for dpath in dpaths:
-                if os.path.exists(dpath):
-                    self.log.info("remove %s", dpath)
-                    shutil.rmtree(dpath)
-            return 0
+        import glob
+        pattern = os.path.join(rcEnv.paths.pathlog, self.svcname+".log*")
+        for fpath in glob.glob(pattern):
+            self.log.info("remove %s", fpath)
+            os.unlink(fpath)
+
+    def delete_service_conf(self):
+        """
+        Delete the service configuration files
+        """
+        import shutil
+        dpaths = [
+            os.path.join(rcEnv.pathetc, self.svcname+".dir"),
+            os.path.join(rcEnv.pathetc, self.svcname+".d"),
+        ]
+        fpaths = [
+            self.paths.cf,
+            os.path.join(rcEnv.pathetc, self.svcname),
+            os.path.join(rcEnv.pathetc, self.svcname+".d"),
+            os.path.join(rcEnv.pathetc, self.svcname+".cluster"),
+            os.path.join(rcEnv.pathetc, self.svcname+".stonith"),
+        ]
+        for fpath in fpaths:
+            if os.path.exists(fpath) and \
+               (os.path.islink(fpath) or os.path.isfile(fpath)):
+                self.log.info("remove %s", fpath)
+                os.unlink(fpath)
+        for dpath in dpaths:
+            if os.path.exists(dpath):
+                self.log.info("remove %s", dpath)
+                shutil.rmtree(dpath)
+
+    def delete_resources(self):
+        """
+        Delete service resources from its configuration file
+        """
         lines = self._read_cf().splitlines()
         need_write = False
 
@@ -4404,16 +4409,33 @@ class Svc(object):
                 print("service", self.svcname, "has no resource", rid, file=sys.stderr)
 
         if not need_write:
-            return 0
+            return
 
         buff = "\n".join(lines)
 
         try:
             self._write_cf(buff)
         except (IOError, OSError):
-            print("failed to rewrite", self.paths.cf, file=sys.stderr)
-            return 1
-        return 0
+            raise ex.excError("failed to rewrite %s" % self.paths.cf)
+
+    def delete(self):
+        """
+        The 'delete' action entrypoint.
+        If --unprovision is set, call the unprovision method.
+        Then if no resource specifier is set, remove all service files in
+        <pathetc>.
+        If a resource specifier is set, only delete the corresponding
+        sections in the configuration file.
+        """
+        if self.options.unprovision:
+            self.unprovision()
+
+        if not self.command_is_scoped() or \
+           len(self.action_rid) == len(self.resources_by_id.keys()):
+            self.delete_service_conf()
+            self.delete_service_logs()
+        else:
+            self.delete_resources()
 
     def docker(self):
         """
