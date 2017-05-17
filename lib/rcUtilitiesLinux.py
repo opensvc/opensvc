@@ -80,6 +80,14 @@ def promote_dev_rw(dev, log=None):
        if count > 0:
            refresh_multipath(dev, log=log)
 
+def loop_is_deleted(dev):
+    if not which("losetup"):
+        raise ex.excError("losetup must be installed")
+    out, err, ret = justcall(["losetup", dev])
+    if "(deleted)" in out:
+        return True
+    return False
+
 def label_to_dev(label):
     """
        blkid can return a device slave of a drbd, as drbd is
@@ -99,7 +107,10 @@ def label_to_dev(label):
         if len(line) == 0:
             continue
         devp = line.split(":")[0]
+        if devp.startswith("/dev/loop") and loop_is_deleted(devp):
+            continue
         devps.append(devp)
+
     if len(devps) == 0:
         return
     elif len(devps) == 1:

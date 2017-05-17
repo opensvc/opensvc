@@ -94,6 +94,13 @@ class Mount(Res.Mount):
 
         return ret
 
+    def loop_dev_to_file(self, dev):
+        cmd = ["losetup", dev, "-O", "BACK-FILE", "-n"]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return
+        return out.replace(" (deleted)", "").strip()
+
     def is_up(self):
         self.mounts = rcMounts.Mounts()
         ret = self.mounts.has_mount(self.device, self.mount_point)
@@ -112,6 +119,12 @@ class Mount(Res.Mount):
         if ret:
             return True
 
+        # might be a loop device seen in mounts as its backing file
+        if self.device.startswith("/dev/loop"):
+            backfile = self.loop_dev_to_file(self.device)
+            if backfile and self.mounts.has_mount(backfile, os.path.realpath(self.mount_point)):
+                return True
+
         # might be a mount by label or uuid
         for dev in self.devlist():
             ret = self.mounts.has_mount(dev, self.mount_point)
@@ -120,7 +133,10 @@ class Mount(Res.Mount):
             ret = self.mounts.has_mount(dev, os.path.realpath(self.mount_point))
             if ret:
                 return True
-
+            if dev.startswith("/dev/loop"):
+                backfile = self.loop_dev_to_file(dev)
+                if backfile and self.mounts.has_mount(backfile, os.path.realpath(self.mount_point)):
+                    return True
 
         # might be mount using a /dev/mapper/ name too
         elements = self.device.split('/')
