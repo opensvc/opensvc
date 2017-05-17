@@ -105,8 +105,10 @@ def initLogger(name, handlers=None):
 
     if name == rcEnv.nodename:
         logfile = os.path.join(rcEnv.pathlog, "node") + '.log'
+        debuglogfile = os.path.join(rcEnv.pathlog, "node") + '.debug.log'
     else:
         logfile = os.path.join(rcEnv.pathlog, name) + '.log'
+        debuglogfile = os.path.join(rcEnv.pathlog, name) + '.debug.log'
     log = logging.getLogger(name)
     log.handlers = []
 
@@ -114,10 +116,10 @@ def initLogger(name, handlers=None):
         try:
             fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             filehandler = logging.handlers.RotatingFileHandler(logfile,
-                                                               maxBytes=5242880,
-                                                               backupCount=5)
+                                                               maxBytes=1*5242880,
+                                                               backupCount=1)
             filehandler.setFormatter(fileformatter)
-            filehandler.setLevel(logging.DEBUG)
+            filehandler.setLevel(logging.INFO)
             log.addHandler(filehandler)
         except PermissionError:
             pass
@@ -189,6 +191,18 @@ def initLogger(name, handlers=None):
             sysloghandler.setLevel(logging.INFO)
             sysloghandler.setFormatter(syslogformatter)
             log.addHandler(sysloghandler)
+
+    if "file" in handlers:
+        try:
+            fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+            filehandler = logging.handlers.RotatingFileHandler(debuglogfile,
+                                                               maxBytes=3*5242880,
+                                                               backupCount=1)
+            filehandler.setFormatter(fileformatter)
+            filehandler.setLevel(logging.DEBUG)
+            log.addHandler(filehandler)
+        except PermissionError:
+            pass
 
     log.setLevel(logging.DEBUG)
     return log

@@ -2517,16 +2517,13 @@ class Node(object):
         logs node action entrypoint.
         Read the node.log file, colorize its content and print.
         """
-        logfile = self.log.handlers[0].stream.name
+        if self.options.debug:
+            logfile = os.path.join(rcEnv.paths.pathlog, "node.debug.log")
+        else:
+            logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
         if not os.path.exists(logfile):
             return
         from rcColor import color, colorize
-
-        class Shared(object):
-            """
-            A class to store a shared flag
-            """
-            skip = False
 
         def highlighter(line):
             """
@@ -2537,16 +2534,7 @@ class Node(object):
 
             if len(elements) < 3 or elements[2] not in ("DEBUG", "INFO", "WARNING", "ERROR"):
                 # this is a log line continuation (command output for ex.)
-                if Shared.skip:
-                    return
-                else:
-                    return line
-
-            if not self.options.debug and elements[2] == "DEBUG":
-                Shared.skip = True
-                return
-            else:
-                Shared.skip = False
+                return line
 
             if len(elements[1]) > rcLogger.namelen:
                 elements[1] = "*"+elements[1][-(rcLogger.namelen-1):]
@@ -2563,11 +2551,14 @@ class Node(object):
         except:
             pipe = sys.stdout
         try:
-            with open(logfile, "r") as ofile:
-                for line in ofile.readlines():
-                    line = highlighter(line)
-                    if line:
-                        pipe.write(line+'\n')
+            for _logfile in [logfile+".1", logfile]:
+                if not os.path.exists(_logfile):
+                    continue
+                with open(_logfile, "r") as ofile:
+                    for line in ofile.readlines():
+                        line = highlighter(line)
+                        if line:
+                            pipe.write(line+'\n')
         except BrokenPipeError:
             try:
                 sys.stdout = os.fdopen(1)

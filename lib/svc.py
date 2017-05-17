@@ -1074,17 +1074,16 @@ class Svc(object):
         """
         if len(self.log.handlers) == 0:
             return
-        logfile = self.log.handlers[0].stream.name
+
+        if self.options.debug:
+            logfile = os.path.join(rcEnv.pathlog, self.svcname+".debug.log")
+        else:
+            logfile = os.path.join(rcEnv.pathlog, self.svcname+".log")
+
         if not os.path.exists(logfile):
             return
 
         from rcColor import color, colorize
-        class Shared(object):
-            """
-            A bare class to store a persistent flag.
-            """
-            skip = False
-
         def fmt(line):
             """
             Format a log line, colorizing the log level.
@@ -1095,16 +1094,7 @@ class Svc(object):
 
             if len(elements) < 3 or elements[2] not in ("DEBUG", "INFO", "WARNING", "ERROR"):
                 # this is a log line continuation (command output for ex.)
-                if Shared.skip:
-                    return
-                else:
-                    return line
-
-            if not self.options.debug and elements[2] == "DEBUG":
-                Shared.skip = True
-                return
-            else:
-                Shared.skip = False
+                return line
 
             if not rcLogger.include_svcname:
                 elements[1] = elements[1].replace(self.svcname, "").lstrip(".")
@@ -1124,11 +1114,14 @@ class Svc(object):
             pipe = sys.stdout
 
         try:
-            with open(logfile, "r") as ofile:
-                for line in ofile.readlines():
-                    buff = fmt(line)
-                    if buff:
-                        pipe.write(buff+"\n")
+            for _logfile in [logfile+".1", logfile]:
+                if not os.path.exists(_logfile):
+                    continue
+                with open(_logfile, "r") as ofile:
+                    for line in ofile.readlines():
+                        buff = fmt(line)
+                        if buff:
+                            pipe.write(buff+"\n")
         except BrokenPipeError:
             try:
                 sys.stdout = os.fdopen(1)
@@ -4355,10 +4348,14 @@ class Svc(object):
         Delete the service configuration logs
         """
         import glob
-        pattern = os.path.join(rcEnv.paths.pathlog, self.svcname+".log*")
-        for fpath in glob.glob(pattern):
-            self.log.info("remove %s", fpath)
-            os.unlink(fpath)
+        patterns = [
+            os.path.join(rcEnv.paths.pathlog, self.svcname+".log*"),
+            os.path.join(rcEnv.paths.pathlog, self.svcname+".debug.log*"),
+        ]
+        for pattern in patterns:
+            for fpath in glob.glob(pattern):
+                self.log.info("remove %s", fpath)
+                os.unlink(fpath)
 
     def delete_service_conf(self):
         """
