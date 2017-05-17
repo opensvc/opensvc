@@ -540,37 +540,46 @@ def get_sync_args(conf, s, svc):
     return kwargs
 
 def add_resources(restype, svc, conf):
+    for s in conf.sections():
+        add_resource(restype, svc, conf, s)
+
+def add_resource(restype, svc, conf, s):
     if restype == "pool":
         restype = "zpool"
         match = "[z]{0,1}pool#"
     else:
         match = restype+"#"
 
-    for s in conf.sections():
-        if restype in ("disk", "vg", "zpool") and re.match(match+'.+pr', s, re.I) is not None:
-            # persistent reserv resource are declared by their peer resource:
-            # don't add them from here
-            continue
-        if s != 'app' and s != restype and re.match(match, s, re.I) is None:
-            continue
-        tags = get_tags(conf, s, svc)
-        if svc.encap and 'encap' not in tags:
-            continue
-        if not svc.encap and 'encap' in tags:
-            svc.has_encap_resources = True
-            try:
-                subset = conf_get_string_scope(svc, conf, s, 'subset')
-            except ex.OptNotFound:
-                subset = None
-            svc.encap_resources[s] = Storage({
-                "rid": s,
-                "tags": tags,
-                "subset": subset,
-            })
-            continue
-        if s in svc.resources_by_id:
-            continue
-        globals()['add_'+restype](svc, conf, s)
+    if restype in ("disk", "vg", "zpool") and re.match(match+'.+pr', s, re.I) is not None:
+        # persistent reserv resource are declared by their peer resource:
+        # don't add them from here
+        return
+
+    if s != 'app' and s != restype and re.match(match, s, re.I) is None:
+        return
+
+    tags = get_tags(conf, s, svc)
+
+    if svc.encap and 'encap' not in tags:
+        return
+
+    if not svc.encap and 'encap' in tags:
+        svc.has_encap_resources = True
+        try:
+            subset = conf_get_string_scope(svc, conf, s, 'subset')
+        except ex.OptNotFound:
+            subset = None
+        svc.encap_resources[s] = Storage({
+            "rid": s,
+            "tags": tags,
+            "subset": subset,
+        })
+        return
+
+    if s in svc.resources_by_id:
+        return
+
+    globals()['add_'+restype](svc, conf, s)
 
 def add_ip_gce(svc, conf, s):
     kwargs = {}
@@ -1341,6 +1350,17 @@ def add_vg(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
+def add_sync(svc, conf, s):
+    try:
+        rtype = conf_get_string_scope(svc, conf, s, 'type')
+    except ex.OptNotFound:
+        rtype = "rsync"
+    globals()["add_sync_"+rtype](svc, conf, s)
+
+def add_container(svc, conf, s):
+    rtype = conf_get_string_scope(svc, conf, s, 'type')
+    globals()["add_container_"+rtype](svc, conf, s)
+
 def add_disk(svc, conf, s):
     """Parse the configuration file and add a disk object for each [disk#n]
     section. Disk objects are stored in a list in the service object.
@@ -1686,7 +1706,7 @@ def add_fs(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_esx(svc, conf, s):
+def add_container_esx(svc, conf, s):
     kwargs = {}
 
     try:
@@ -1716,7 +1736,7 @@ def add_containers_esx(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_hpvm(svc, conf, s):
+def add_container_hpvm(svc, conf, s):
     kwargs = {}
 
     try:
@@ -1746,7 +1766,7 @@ def add_containers_hpvm(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_ldom(svc, conf, s):
+def add_container_ldom(svc, conf, s):
     kwargs = {}
 
     try:
@@ -1776,7 +1796,7 @@ def add_containers_ldom(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_vbox(svc, conf, s):
+def add_container_vbox(svc, conf, s):
     kwargs = {}
 
     try:
@@ -1807,7 +1827,7 @@ def add_containers_vbox(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_xen(svc, conf, s):
+def add_container_xen(svc, conf, s):
     kwargs = {}
 
     try:
@@ -1838,7 +1858,7 @@ def add_containers_xen(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_zone(svc, conf, s):
+def add_container_zone(svc, conf, s):
     kwargs = {}
 
     try:
@@ -1875,7 +1895,7 @@ def add_containers_zone(svc, conf, s):
 
 
 
-def add_containers_vcloud(svc, conf, s):
+def add_container_vcloud(svc, conf, s):
     kwargs = {}
 
     try:
@@ -1917,7 +1937,7 @@ def add_containers_vcloud(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_amazon(svc, conf, s):
+def add_container_amazon(svc, conf, s):
     kwargs = {}
 
     # mandatory keywords
@@ -1976,7 +1996,7 @@ def add_containers_amazon(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_openstack(svc, conf, s):
+def add_container_openstack(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2029,7 +2049,7 @@ def add_containers_openstack(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_vz(svc, conf, s):
+def add_container_vz(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2060,7 +2080,7 @@ def add_containers_vz(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_kvm(svc, conf, s):
+def add_container_kvm(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2092,7 +2112,7 @@ def add_containers_kvm(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_srp(svc, conf, s):
+def add_container_srp(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2122,7 +2142,7 @@ def add_containers_srp(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_lxc(svc, conf, s):
+def add_container_lxc(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2159,7 +2179,7 @@ def add_containers_lxc(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_docker(svc, conf, s):
+def add_container_docker(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2201,7 +2221,7 @@ def add_containers_docker(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_ovm(svc, conf, s):
+def add_container_ovm(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2239,7 +2259,7 @@ def add_containers_ovm(svc, conf, s):
     svc += r
     add_scsireserv(svc, r, conf, s)
 
-def add_containers_jail(svc, conf, s):
+def add_container_jail(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2280,13 +2300,6 @@ def add_containers_jail(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
     add_scsireserv(svc, r, conf, s)
-
-def add_containers(svc, conf):
-    for t in rcEnv.vt_supported:
-        add_containers_resources(t, svc, conf)
-
-def add_containers_resources(subtype, svc, conf):
-    add_sub_resources('container', subtype, svc, conf)
 
 def add_mandatory_syncs(svc, conf):
     """Mandatory files to sync:
@@ -2359,54 +2372,7 @@ def add_mandatory_syncs(svc, conf):
         r = resSyncRsync.Rsync(**kwargs)
         svc += r
 
-def add_syncs_resources(subtype, svc, conf):
-    add_sub_resources('sync', subtype, svc, conf, default_subtype="rsync")
-
-def add_sub_resources(restype, subtype, svc, conf, default_subtype=None):
-    for s in conf.sections():
-        if re.match(restype+'#', s, re.I) is None:
-            continue
-        if svc.encap and 'encap' not in get_tags(conf, s, svc):
-            continue
-        if not svc.encap and 'encap' in get_tags(conf, s, svc):
-            svc.has_encap_resources = True
-            continue
-        try:
-            res_subtype = conf_get_string_scope(svc, conf, s, "type")
-        except ex.OptNotFound:
-            res_subtype = default_subtype
-
-        if subtype != res_subtype:
-            continue
-
-        globals()['add_'+restype+'s_'+subtype](svc, conf, s)
-
-def add_syncs(svc, conf):
-    add_syncs_resources('rsync', svc, conf)
-    add_syncs_resources('netapp', svc, conf)
-    add_syncs_resources('nexenta', svc, conf)
-    add_syncs_resources('radossnap', svc, conf)
-    add_syncs_resources('radosclone', svc, conf)
-    add_syncs_resources('symclone', svc, conf)
-    add_syncs_resources('symsnap', svc, conf)
-    add_syncs_resources('symsrdfs', svc, conf)
-    add_syncs_resources('hp3par', svc, conf)
-    add_syncs_resources('hp3parsnap', svc, conf)
-    add_syncs_resources('ibmdssnap', svc, conf)
-    add_syncs_resources('evasnap', svc, conf)
-    add_syncs_resources('necismsnap', svc, conf)
-    add_syncs_resources('btrfssnap', svc, conf)
-    add_syncs_resources('zfssnap', svc, conf)
-    add_syncs_resources('s3', svc, conf)
-    add_syncs_resources('dcssnap', svc, conf)
-    add_syncs_resources('dcsckpt', svc, conf)
-    add_syncs_resources('dds', svc, conf)
-    add_syncs_resources('zfs', svc, conf)
-    add_syncs_resources('btrfs', svc, conf)
-    add_syncs_resources('docker', svc, conf)
-    add_mandatory_syncs(svc, conf)
-
-def add_syncs_docker(svc, conf, s):
+def add_sync_docker(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2425,7 +2391,7 @@ def add_syncs_docker(svc, conf, s):
     r = m.SyncDocker(**kwargs)
     svc += r
 
-def add_syncs_btrfs(svc, conf, s):
+def add_sync_btrfs(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2462,7 +2428,7 @@ def add_syncs_btrfs(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_zfs(svc, conf, s):
+def add_sync_zfs(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2499,7 +2465,7 @@ def add_syncs_zfs(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_dds(svc, conf, s):
+def add_sync_dds(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2551,7 +2517,7 @@ def add_syncs_dds(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_dcsckpt(svc, conf, s):
+def add_sync_dcsckpt(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2592,7 +2558,7 @@ def add_syncs_dcsckpt(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_dcssnap(svc, conf, s):
+def add_sync_dcssnap(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2627,7 +2593,7 @@ def add_syncs_dcssnap(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_s3(svc, conf, s):
+def add_sync_s3(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2668,7 +2634,7 @@ def add_syncs_s3(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_zfssnap(svc, conf, s):
+def add_sync_zfssnap(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2703,7 +2669,7 @@ def add_syncs_zfssnap(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_btrfssnap(svc, conf, s):
+def add_sync_btrfssnap(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2733,7 +2699,7 @@ def add_syncs_btrfssnap(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_necismsnap(svc, conf, s):
+def add_sync_necismsnap(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2761,7 +2727,7 @@ def add_syncs_necismsnap(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_evasnap(svc, conf, s):
+def add_sync_evasnap(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2799,7 +2765,7 @@ def add_syncs_evasnap(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_hp3parsnap(svc, conf, s):
+def add_sync_hp3parsnap(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2834,7 +2800,7 @@ def add_syncs_hp3parsnap(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_hp3par(svc, conf, s):
+def add_sync_hp3par(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2875,7 +2841,7 @@ def add_syncs_hp3par(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_symsrdfs(svc, conf, s):
+def add_sync_symsrdfs(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2906,7 +2872,7 @@ def add_syncs_symsrdfs(svc, conf, s):
     svc += r
 
 
-def add_syncs_radosclone(svc, conf, s):
+def add_sync_radosclone(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2939,7 +2905,7 @@ def add_syncs_radosclone(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_radossnap(svc, conf, s):
+def add_sync_radossnap(svc, conf, s):
     kwargs = {}
 
     try:
@@ -2972,13 +2938,13 @@ def add_syncs_radossnap(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_symsnap(svc, conf, s):
-    _add_syncs_symclone(svc, conf, s, "sync.symsnap")
+def add_sync_symsnap(svc, conf, s):
+    _add_sync_symclone(svc, conf, s, "sync.symsnap")
 
-def add_syncs_symclone(svc, conf, s):
-    _add_syncs_symclone(svc, conf, s, "sync.symclone")
+def add_sync_symclone(svc, conf, s):
+    _add_sync_symclone(svc, conf, s, "sync.symclone")
 
-def _add_syncs_symclone(svc, conf, s, t):
+def _add_sync_symclone(svc, conf, s, t):
     kwargs = {}
     kwargs['type'] = t
     try:
@@ -3022,7 +2988,7 @@ def _add_syncs_symclone(svc, conf, s, t):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_ibmdssnap(svc, conf, s):
+def add_sync_ibmdssnap(svc, conf, s):
     kwargs = {}
 
     try:
@@ -3063,7 +3029,7 @@ def add_syncs_ibmdssnap(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_nexenta(svc, conf, s):
+def add_sync_nexenta(svc, conf, s):
     kwargs = {}
 
     try:
@@ -3116,7 +3082,7 @@ def add_syncs_nexenta(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_netapp(svc, conf, s):
+def add_sync_netapp(svc, conf, s):
     kwargs = {}
 
     try:
@@ -3164,7 +3130,7 @@ def add_syncs_netapp(svc, conf, s):
     add_triggers_and_requires(svc, r, conf, s)
     svc += r
 
-def add_syncs_rsync(svc, conf, s):
+def add_sync_rsync(svc, conf, s):
     if s.startswith("sync#i"):
         # internal syncs have their own dedicated add function
         return
@@ -3712,7 +3678,7 @@ def build(name, minimal=False, svcconf=None):
     #
     # instanciate resources
     #
-    add_containers(svc, conf)
+    add_resources('container', svc, conf)
     add_resources('hb', svc, conf)
     add_resources('stonith', svc, conf)
     add_resources('ip', svc, conf)
@@ -3730,7 +3696,8 @@ def build(name, minimal=False, svcconf=None):
     add_resources('vg', svc, conf)
     add_resources('pool', svc, conf)
 
-    add_syncs(svc, conf)
+    add_resources('sync', svc, conf)
+    add_mandatory_syncs(svc, conf)
 
     svc.post_build()
     return svc

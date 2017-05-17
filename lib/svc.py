@@ -4886,9 +4886,9 @@ class Svc(object):
             if is_resource:
                 try:
                     sections[section].update(keys.update(section, data))
-                except (MissKeyNoDefault, KeyInvalidValue):
+                except (MissKeyNoDefault, KeyInvalidValue) as exc:
                     if not self.options.interactive:
-                        raise ex.excError("missing parameters")
+                        raise ex.excError(str(exc))
                 rid.append(section)
 
         for section, data in sections.items():
@@ -4899,9 +4899,9 @@ class Svc(object):
 
         self.write_config()
 
-        for section, data in sections.items():
+        for section in rid:
             group = section.split("#")[0]
-            getattr(svcBuilder, 'add_'+group)(self, self.config, section)
+            svcBuilder.add_resource(group, self, self.config, section)
 
         if self.options.provision and len(rid) > 0:
             options = Storage(self.options)

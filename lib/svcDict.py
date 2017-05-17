@@ -406,14 +406,15 @@ class KeywordStore(dict):
         for keyword, value in d.items():
             if section == "env":
                 break
+            if section not in self.sections:
+                raise KeyInvalidValue("'%s' driver family is not valid in section '%s'"%(section, rid))
             key = self.sections[section].getkey(keyword)
             if key is None and rtype is not None:
                 key = self.sections[section].getkey(keyword, rtype)
             if key is None:
                 continue
             if key.strict_candidates and key.candidates is not None and value not in key.candidates:
-                print("'%s' keyword has invalid value '%s' in section '%s'"%(keyword, str(value), rid))
-                raise KeyInvalidValue()
+                raise KeyInvalidValue("'%s' keyword has invalid value '%s' in section '%s'"%(keyword, str(value), rid))
 
         # add missing required keys if they have a known default value
         for key in self.required_keys(section, rtype):
@@ -426,8 +427,7 @@ class KeywordStore(dict):
             if key.keyword in map(lambda x: x.split('@')[0], d.keys()):
                 continue
             if key.default is None:
-                sys.stderr.write("No default value for required key '%s' in section '%s'\n"%(key.keyword, rid))
-                raise MissKeyNoDefault()
+                raise MissKeyNoDefault("No default value for required key '%s' in section '%s'"%(key.keyword, rid))
             print("Implicitely add [%s] %s = %s" % (rid, key.keyword, str(key.default)))
             completion[key.keyword] = key.default
 
