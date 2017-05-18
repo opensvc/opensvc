@@ -508,7 +508,7 @@ class Sym(object):
             if out.strip() == "":
                 continue
             data = self.parse_xml(out, key="Mask_View_Names", as_list=["view_name"])
-	    for d in data:
+            for d in data:
                 if "view_name" not in d:
                     continue
                 views |= set(d["view_name"])
@@ -519,12 +519,12 @@ class Sym(object):
         if out.strip() == "":
             return []
         data = self.parse_xml(out, key="Mask_View_Names", as_list=["view_name"])
-	views = set()
-	for d in data:
-	    if "view_name" not in d:
-	        continue
+        views = set()
+        for d in data:
+            if "view_name" not in d:
+                continue
             for view_name in d["view_name"]:
-	        views.add(view_name.rstrip(" *"))
+                views.add(view_name.rstrip(" *"))
         return views
 
     def get_view(self, view):
@@ -741,7 +741,7 @@ class Vmax(Sym):
 
     def write_dev_pairfile(self, dev, rdev):
         content = dev + " " + rdev + "\n"
-        self.log.info("write pair file with content: %s" % content.strip())
+        self.log.info("write pair file with content: %s", content.strip())
         fpath = self.write_temp_file(content)
         return fpath
 
@@ -855,7 +855,7 @@ class Vmax(Sym):
             raise ex.excError("The '--dev' parameter is mandatory")
         data = self.get_sym_dev_wwn(dev)
         if len(data) == 0:
-            self.log.info("%s does not exist" % dev)
+            self.log.info("%s does not exist", dev)
             return
         data = data[0]
         self.deletepair(dev)
@@ -911,7 +911,7 @@ class Vmax(Sym):
         if len(data) == 0:
             return True
         data = data[0]
-        self.log.info("device %s has %s tracks allocated" % (dev, str(data["alloc_tracks"])))
+        self.log.info("device %s has %s tracks allocated", dev, str(data["alloc_tracks"]))
         if data["alloc_tracks"] in ("0", 0):
             return True
         return False
@@ -928,9 +928,9 @@ class Vmax(Sym):
         if len(outv) == 0:
             raise ex.excError("unexpected verify output: %s" % out+err)
         if outv[0] == "None":
-            self.log.info("device %s is not %s" % (dev, status))
+            self.log.info("device %s is not %s", dev, status)
             return False
-        self.log.info("device %s is %s" % (dev, status))
+        self.log.info("device %s is %s", dev, status)
         return True
 
     def add_tdev_to_sg(self, dev, sg):
@@ -966,8 +966,10 @@ class Vmax(Sym):
         for sg in sgs:
             data = self.get_sg(sg)
             if srp and data["SRP_name"] != srp:
+                self.log.info("discard sg %s (srp %s, required %s)", sg, data["SRP_name"], srp)
                 continue
             if slo and data["SLO_name"] != slo:
+                self.log.info("discard sg %s (slo %s, required %s)", sg, data["SLO_name"], slo)
                 continue
             filtered_sgs.append(sg)
         return filtered_sgs
@@ -983,8 +985,8 @@ class Vmax(Sym):
                 break
         if port is None:
             return
-	if "Device" not in view:
-	    return
+        if "Device" not in view:
+            return
         for device in view["Device"]:
             if device["dev_name"] != dev:
                 continue
@@ -1048,8 +1050,9 @@ class Vmax(Sym):
         sgs = self.filter_sgs(sgs, srp=srp, slo=slo)
         if len(sgs) == 0:
             raise ex.excError("no storage group found for the requested mappings")
-        #print("candidates sgs:", sgs, "retain:", self.narrowest_sg(sgs))
-        return self.narrowest_sg(sgs)
+        narrowest = self.narrowest_sg(sgs)
+        self.log.info("candidates sgs: %s, retain: %s", str(sgs), narrowest)
+        return narrowest
 
     def del_diskinfo(self, disk_id):
         if disk_id in (None, ""):
