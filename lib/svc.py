@@ -1334,9 +1334,9 @@ class Svc(object):
             status = self.group_status()
 
         if self.frozen():
-            frozen = "1"
+            frozen = 1
         else:
-            frozen = "0"
+            frozen = 0
 
         r_vars = [
             "svcname",
@@ -1468,6 +1468,17 @@ class Svc(object):
                 if 'avail' not in status or 'avail' not in ers:
                     continue
 
+                #
+                # 0: global thawed + encap thawed
+                # 1: global frozen + encap thawed
+                # 2: global thawed + encap frozen
+                # 3: global frozen + encap frozen
+                #
+                if ers.get("frozen"):
+                    e_frozen = frozen + 2
+                else:
+                    e_frozen = frozen
+
                 g_vals.append([
                     self.svcname,
                     self.svc_env,
@@ -1487,7 +1498,7 @@ class Svc(object):
                     str(rcStatus.Status(status["overall"])+rcStatus.Status(ers['overall'])),
                     str(now),
                     ' '.join(self.nodes),
-                    frozen,
+                    e_frozen,
                 ])
 
         return g_vars, g_vals, r_vars, r_vals
