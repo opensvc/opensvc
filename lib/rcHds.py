@@ -710,7 +710,7 @@ class Array(object):
         except Exception as exc:
             raise ex.excError(str(exc))
         if "error" in ret:
-            raise ex.excError(ret["error"])
+            self.log.error("failed to delete the disk object in the collector: %s", ret["error"])
         return ret
 
     def push_diskinfo(self, data, name, size):
