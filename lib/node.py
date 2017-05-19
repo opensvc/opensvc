@@ -759,6 +759,7 @@ class Node(object):
         schedulers node action entrypoint.
         Run the node scheduler and each configured service scheduler.
         """
+        purge_cache()
         self.scheduler()
 
         self.build_services()
