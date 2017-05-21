@@ -371,6 +371,19 @@ class CompObject(object):
                 hash.update(chunk)
         return hash.hexdigest()
 
+    #
+    # Placeholders, to override in child class
+    #
+    def check(self):
+        return RET_NA
+
+    def fixable(self):
+        return RET_NA
+
+    def fix(self):
+        return RET_NA
+
+
 
 def main(co):
     syntax =  "syntax:\n"
