@@ -83,6 +83,8 @@ class ProvisioningFs(provFs.ProvisioningFs):
         try:
             self.write_label(mnt)
             self._create_subvol(mnt)
+            self.r.log.info("provisioned")
+            self.r.start()
         finally:
             self.cleanup(mnt)
 
@@ -102,8 +104,6 @@ class ProvisioningFs(provFs.ProvisioningFs):
         else:
             provFs.ProvisioningFs.provisioner_fs(self)
         self.create_subvol()
-        self.r.log.info("provisioned")
-        self.r.start()
 
 
 
