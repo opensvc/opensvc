@@ -559,6 +559,9 @@ class Svc(object):
                     self.compliance_auto()
                 else:
                     self.action(action)
+            except ex.MonitorAction as exc:
+                self.svcunlock()
+                self.action("toc")
             except ex.excError as exc:
                 self.log.error(exc)
             except:
@@ -1529,7 +1532,6 @@ class Svc(object):
             return
         self.task_resource_monitor()
 
-    @scheduler_fork
     def task_resource_monitor(self):
         """
         The resource monitor action.
@@ -1562,7 +1564,7 @@ class Svc(object):
                     rstatus_log = ''
                 self.log.info("monitored resource %s is in state %s%s",
                               resource.rid,
-                              str(resource.rstatus),
+                              str(rcStatus.Status(resource.rstatus)),
                               rstatus_log)
 
                 if self.monitor_action is not None and \
