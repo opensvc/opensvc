@@ -20,15 +20,6 @@ import rcColor
 
 sysname, nodename, x, x, machine, x = platform.uname()
 
-if sysname == "Windows":
-    mp = False
-else:
-    try:
-        from multiprocessing import Process, Queue, Lock
-        mp = True
-    except:
-        mp = False
-
 try:
     from version import version
 except:
@@ -248,6 +239,17 @@ def svcmon_normal(svcs, options):
         print(" "*svcname_len+" -----------------------------------+-----------------+-----------------------")
 
     ps = []
+
+    if len(svcs) < 2:
+        mp = False
+    elif sysname == "Windows":
+        mp = False
+    else:
+        try:
+            from multiprocessing import Process
+            mp = True
+        except:
+            mp = False
 
     if mp and options.refresh:
         #
