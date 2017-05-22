@@ -522,6 +522,13 @@ class Node(object):
             self.collector.stop_worker()
         if lazy_initialized(self, "cmdworker"):
             self.cmdworker.stop_worker()
+        import gc
+        import threading
+        gc.collect()
+        for thr in threading.enumerate():
+            if thr.name == 'QueueFeederThread' and thr.ident is not None:
+                thr.join(1)
+
 
     def edit_config(self):
         """
