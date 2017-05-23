@@ -707,6 +707,19 @@ class KeywordDockerExe(Keyword):
                   example="/usr/bin/docker-1.8"
                 )
 
+class KeywordDockerdExe(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="dockerd_exe",
+                  at=True,
+                  required=False,
+                  order=12,
+                  text="If you have multiple docker versions installed and want the service to stick to a version whatever the PATH definition, you should set this parameter to the full path to the docker daemon executable.",
+                  example="/usr/bin/dockerd-1.8"
+                )
+
 class KeywordDockerDataDir(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4240,6 +4253,7 @@ class KeyDict(KeywordStore):
         self += KeywordPkgName()
         self += KeywordDockerDaemonPrivate()
         self += KeywordDockerExe()
+        self += KeywordDockerdExe()
         self += KeywordDockerDataDir()
         self += KeywordDockerDaemonArgs()
         self += KeywordDockerSwarmArgs()
