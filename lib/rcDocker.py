@@ -410,7 +410,7 @@ class DockerLib(object):
             elements = line.split()
             if len(elements) < 3:
                 continue
-            if elements[0] == image_name and elements[1] == image_tag:
+            if elements[1] == image_tag:
                 return elements[2]
         return run_image
 
