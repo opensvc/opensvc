@@ -1,5 +1,6 @@
 from subprocess import *
 from rcUtilities import which, cidr_to_dotted
+from rcGlobalEnv import rcEnv
 
 import rcIfconfig
 import copy
@@ -203,8 +204,8 @@ class ifconfig(rcIfconfig.ifconfig):
             cmd = ['netstat', '-gn']
             out = Popen(cmd, stdout=PIPE).communicate()[0].decode()
             return self.parse_mcast_netstat(out)
-        elif which('ip'):
-            cmd = ['ip', 'maddr']
+        elif which(rcEnv.syspaths.ip):
+            cmd = [rcEnv.syspaths.ip, 'maddr']
             out = Popen(cmd, stdout=PIPE).communicate()[0].decode()
             return self.parse_mcast_ip(out)
 
@@ -261,8 +262,8 @@ class ifconfig(rcIfconfig.ifconfig):
             self.mcast_data = {}
         if ip_out:
             self.parse_ip(ip_out)
-        elif which('ip'):
-            out = Popen(['ip', 'addr'], stdout=PIPE).communicate()[0].decode()
+        elif which(rcEnv.syspaths.ip):
+            out = Popen([rcEnv.syspaths.ip, 'addr'], stdout=PIPE).communicate()[0].decode()
             self.parse_ip(out)
         else:
             out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0].decode()

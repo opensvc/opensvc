@@ -1,4 +1,5 @@
 from rcUtilities import justcall
+from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 import snap
 from rcZfs import dataset_exists
@@ -19,10 +20,10 @@ class Snap(snap.Snap):
         mount_point = m.mount_point
         snap_mount_point= mount_point + '/.zfs/snapshot/osvc_sync/'
         if dataset_exists(snapdev, 'snapshot'):
-            (ret, buff, err) = self.vcall(['zfs', 'destroy', snapdev ])
+            (ret, buff, err) = self.vcall([rcEnv.syspaths.zfs, 'destroy', snapdev ])
             if ret != 0:
                 raise ex.syncSnapDestroyError
-        (ret, buff, err) = self.vcall(['zfs', 'snapshot', snapdev ])
+        (ret, buff, err) = self.vcall([rcEnv.syspaths.zfs, 'snapshot', snapdev ])
         if ret != 0:
             raise ex.syncSnapCreateError
         self.snaps[mount_point]={'snap_mnt' : snap_mount_point, \
@@ -34,6 +35,6 @@ class Snap(snap.Snap):
         snapdev = self.snaps[snap_key]['snapdev']
         if not dataset_exists(snapdev, 'snapshot'):
             return
-        (ret, buff, err) = self.vcall(['zfs', 'destroy', snapdev ])
+        (ret, buff, err) = self.vcall([rcEnv.syspaths.zfs, 'destroy', snapdev ])
         if ret != 0:
             raise ex.syncSnapDestroyError

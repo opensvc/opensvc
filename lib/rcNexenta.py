@@ -2,7 +2,9 @@ import json
 import urllib2
 import base64
 import os
+
 import rcExceptions as ex
+from rcGlobalEnv import rcEnv
 
 class logger(object):
     def __init__(self):

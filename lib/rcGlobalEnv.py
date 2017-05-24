@@ -239,4 +239,32 @@ class rcEnv:
     dbcompliance_host = None
     paths = get_osvc_paths(sysname=sysname, detect=True)
 
+    syspaths = Storage(
+        df="/bin/df",
+        mount="/bin/mount",
+        umount="/bin/umount",
+        zfs="/sbin/zfs",
+        zpool="/sbin/zpool",
+    )
+    if sysname == "Linux":
+        syspaths.blkid = "/sbin/blkid"
+        syspaths.dmsetup = "/sbin/dmsetup"
+        syspaths.ip = "/sbin/ip"
+        syspaths.losetup = "/sbin/losetup"
+        syspaths.lsmod = "/sbin/lsmod"
+        syspaths.lvs = "/sbin/lvs"
+        syspaths.multipath = "/sbin/multipath"
+        syspaths.multipathd = "/sbin/multipathd"
+        syspaths.vgs = "/sbin/vgs"
+    elif sysname == "SunOS":
+        syspaths.df = "/usr/sbin/df"
+        syspaths.mount = "/usr/sbin/mount"
+        syspaths.umount = "/usr/sbin/umount"
+        syspaths.zfs = "/usr/sbin/zfs"
+        syspaths.zpool = "/usr/sbin/zpool"
+    elif sysname == "AIX":
+        syspaths.df = "/usr/sbin/df"
+        syspaths.mount = "/usr/sbin/mount"
+        syspaths.umount = "/usr/sbin/umount"
+
     create_or_update_dir(paths.pathtmp)

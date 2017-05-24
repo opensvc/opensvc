@@ -21,7 +21,7 @@ class Disk(Res.Disk):
         if self.is_up():
             self.log.info("%s is already up" % self.label)
             return
-        cmd = [ 'losetup', '-f', self.loopFile ]
+        cmd = [rcEnv.syspaths.losetup, '-f', self.loopFile]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -34,7 +34,7 @@ class Disk(Res.Disk):
             self.log.info("%s is already down" % self.label)
             return 0
         for loop in self.loop:
-            cmd = [ 'losetup', '-d', loop ]
+            cmd = [rcEnv.syspaths.losetup, '-d', loop]
             (ret, out, err) = self.vcall(cmd)
             if ret != 0:
                 raise ex.excError

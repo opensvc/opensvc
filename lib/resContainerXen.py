@@ -1,3 +1,4 @@
+from rcGlobalEnv import rcEnv
 import resources as Res
 import os
 import rcExceptions as ex

@@ -2,7 +2,7 @@ import os
 import logging
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall
+from rcUtilities import which, justcall, lazy, cache
 import rcExceptions as ex
 import rcStatus
 import datetime
@@ -175,7 +175,7 @@ class Rsync(resSync.Sync):
         return bwlimit
 
     def mangle_options(self, ruser):
-        options = self.get_options()
+        options = [] + self.full_options
         if ruser != "root":
             options = add_sudo_rsync_path(options)
         options += self.bwlimit_option()
@@ -360,7 +360,7 @@ class Rsync(resSync.Sync):
             return rcStatus.NA
 
         try:
-            self.get_options()
+            options = [] + self.full_options
         except ex.excError as e:
             self.status_log(str(e))
             return rcStatus.WARN
@@ -398,20 +398,24 @@ class Rsync(resSync.Sync):
         self.status_log("%s need update"%', '.join(nodes))
         return rcStatus.DOWN
 
-    def get_options(self):
+    @cache("rsync.version")
+    def rsync_version(self):
         if which("rsync") is None:
             raise ex.excError("rsync not found")
-        baseopts = '-HAXpogDtrlvx'
         cmd = ['rsync', '--version']
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError("can not determine rsync capabilities")
+        return out
 
+    @lazy
+    def full_options(self):
+        baseopts = '-HAXpogDtrlvx'
+        out = self.rsync_version()
         if 'no xattrs' in out:
             baseopts = baseopts.replace('X', '')
         if 'no ACLs' in out:
             baseopts = baseopts.replace('A', '')
-
         options = [baseopts, '--stats', '--delete', '--force', '--timeout='+str(self.timeout)] + self.options
         return options
 
@@ -474,5 +478,5 @@ class Rsync(resSync.Sync):
 
     def __str__(self):
         return "%s src=%s dst=%s options=%s target=%s" % (resSync.Sync.__str__(self),\
-                self.src, self.dst, self.get_options(), str(self.target))
+                self.src, self.dst, str(self.full_options), str(self.target))
 

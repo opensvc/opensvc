@@ -89,7 +89,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         return self.mpath_h(dev)
 
     def load_mpath_native(self):
-        cmd = ['multipath', '-l']
+        cmd = [rcEnv.syspaths.multipath, '-l']
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
@@ -124,7 +124,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         if hasattr(self, "mpath_h"):
             return self.mpath_h
         self.mpath_h = {}
-        if which('multipath'):
+        if which(rcEnv.syspaths.multipath):
             self.load_mpath_native()
         return self.mpath_h
 

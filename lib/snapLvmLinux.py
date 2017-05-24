@@ -62,9 +62,9 @@ class Snap(snap.Snap):
         snap_dev = os.path.join(os.sep, 'dev', vg_name, snap_name)
         if m.fs_type != "xfs":
             self.vcall(['fsck', '-a', snap_dev], err_to_warn=True)
-        (ret, buff, err) = self.vcall(['mount', '-t', m.fs_type, '-o', self.mntopt_and_ro(m), snap_dev, snap_mnt])
+        (ret, buff, err) = self.vcall([rcEnv.syspaths.mount, '-t', m.fs_type, '-o', self.mntopt_and_ro(m), snap_dev, snap_mnt])
         if ret != 0:
-            self.vcall(["mount"])
+            self.vcall([rcEnv.syspaths.mount])
             self.vcall(["fuser", "-v", snap_mnt])
             self.vcall(['lvremove', '-A', 'n', '-f', snap_dev])
             raise ex.syncSnapMountError
@@ -80,7 +80,7 @@ class Snap(snap.Snap):
             raise ex.excError
         cmd = ['fuser', '-kmv', self.snaps[s]['snap_mnt']]
         (ret, out, err) = self.vcall(cmd, err_to_info=True)
-        cmd = ['umount', self.snaps[s]['snap_mnt']]
+        cmd = [rcEnv.syspaths.umount, self.snaps[s]['snap_mnt']]
         (ret, out, err) = self.vcall(cmd)
 
         udevadm_settle()

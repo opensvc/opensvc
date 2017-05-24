@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 
+from rcGlobalEnv import rcEnv
 import rcStatus
 import resources as Res
 from rcUtilitiesFreeBSD import check_ping

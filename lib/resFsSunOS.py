@@ -8,6 +8,7 @@ import resFs as Res
 import rcExceptions as ex
 from rcZfs import zfs_getprop, zfs_setprop
 from rcUtilities import justcall
+from rcGlobalEnv import rcEnv
 
 class Mount(Res.Mount):
     """
@@ -84,9 +85,9 @@ class Mount(Res.Mount):
                 return
 
             (stdout,stderr,returncode)= justcall(['rm', self.mount_point+"/.opensvc" ])
-            ret, out, err = self.vcall(['zfs', 'mount', self.device ])
+            ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'mount', self.device ])
             if ret != 0:
-                ret, out, err = self.vcall(['zfs', 'mount', '-O', self.device ])
+                ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'mount', '-O', self.device ])
                 if ret != 0:
                     raise ex.excError
             return
@@ -120,7 +121,7 @@ class Mount(Res.Mount):
         if self.fs_type != 'zfs':
             return True
         pool = self.device.split("/")[0]
-        cmd = ["zpool", "status", pool]
+        cmd = [rcEnv.syspaths.zpool, "status", pool]
         out, err, ret = justcall(cmd)
         if "state: SUSPENDED" in out:
             self.status_log("pool %s is suspended")

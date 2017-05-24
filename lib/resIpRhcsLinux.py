@@ -2,6 +2,7 @@ Res = __import__("resIpLinux")
 
 import rcStatus
 from rcUtilities import justcall
+from rcGlobalEnv import rcEnv
 
 class Ip(Res.Ip):
     def start(self):
@@ -11,7 +12,7 @@ class Ip(Res.Ip):
         return 0
 
     def _status(self, verbose=False):
-        cmd = ['ip', 'addr', 'ls']
+        cmd = [rcEnv.syspaths.ip, 'addr', 'ls']
         out, err, ret = justcall(cmd)
         if ret != 0:
             self.status_log("%s exec failed"%' '.join(cmd))

@@ -6,6 +6,7 @@ import time
 import rcExceptions as ex
 import resDiskDisk
 from rcUtilities import lazy, which, justcall
+from rcGlobalEnv import rcEnv
 import rcStatus
 
 class Disk(resDiskDisk.Disk):
@@ -33,9 +34,9 @@ class Disk(resDiskDisk.Disk):
     def provision(self):
         resDiskDisk.Disk.provision(self)
         self.wait_udev()
-        if which("multipath"):
+        if which(rcEnv.syspaths.multipath):
             dev = os.path.realpath(self.devpath)
-            cmd = ["multipath", "-v1", dev]
+            cmd = [rcEnv.syspaths.multipath, "-v1", dev]
             ret, out, err = self.vcall(cmd)
 
     def wait_udev(self):

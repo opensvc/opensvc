@@ -1,5 +1,6 @@
 import checks
 from rcUtilities import justcall
+from rcGlobalEnv import rcEnv
 
 class check(checks.check):
     chk_type = "vg_u"
@@ -14,7 +15,7 @@ class check(checks.check):
         return ''
 
     def do_check(self):
-        cmd = ['vgs', '--units', 'b', '--noheadings',
+        cmd = [rcEnv.syspaths.vgs, '--units', 'b', '--noheadings',
                '-o', 'vg_name,vg_size,vg_free']
         (out,err,ret) = justcall(cmd)
         if ret != 0:

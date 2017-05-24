@@ -41,7 +41,7 @@ class Disk(resDisk.Disk):
     def modprobe(self):
         if self.modprobe_done:
             return
-        cmd = ["lsmod"]
+        cmd = [rcEnv.syspaths.lsmod]
         ret, out, err = self.call(cmd)
         if ret != 0:
             raise ex.excError("lsmod failed")

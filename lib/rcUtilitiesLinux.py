@@ -1,6 +1,7 @@
 import os
 import re
 import glob
+from rcGlobalEnv import rcEnv
 from rcUtilities import call, qcall, justcall, which
 
 label_to_dev_cache = {}
@@ -12,7 +13,7 @@ def udevadm_settle():
     justcall(cmd)
 
 def dev_to_paths(dev, log=None):
-    cmd = ['multipath', '-l', dev]
+    cmd = [rcEnv.syspaths.multipath, '-l', dev]
     out, err, ret = justcall(cmd)
     if ret != 0:
         raise ex.excError
@@ -44,7 +45,7 @@ def dev_rescan(dev, log=None):
         s.write("1")
 
 def refresh_multipath(dev, log=None):
-    cmd = ['multipath', '-v0', '-r', dev]
+    cmd = [rcEnv.syspaths.multipath, '-v0', '-r', dev]
     (ret, out, err) = call(cmd, info=True, outlog=True, log=log)
     if ret != 0:
         raise ex.excError
@@ -81,9 +82,9 @@ def promote_dev_rw(dev, log=None):
            refresh_multipath(dev, log=log)
 
 def loop_is_deleted(dev):
-    if not which("losetup"):
+    if not which(rcEnv.syspaths.losetup):
         raise ex.excError("losetup must be installed")
-    out, err, ret = justcall(["losetup", dev])
+    out, err, ret = justcall([rcEnv.syspaths.losetup, dev])
     if "(deleted)" in out:
         return True
     return False
@@ -97,9 +98,9 @@ def label_to_dev(label):
     if label in label_to_dev_cache:
         return label_to_dev_cache[label]
 
-    if not which("blkid"):
+    if not which(rcEnv.syspaths.blkid):
         return
-    out, err, ret = justcall(["blkid", "-t", label])
+    out, err, ret = justcall([rcEnv.syspaths.blkid, "-t", label])
     if ret != 0:
         return
     devps = []
@@ -175,12 +176,12 @@ def check_ping(addr, timeout=5, count=1):
     return False
 
 def lv_exists(self, device):
-    if qcall(['lvs', device]) == 0:
+    if qcall([rcEnv.syspaths.lvs, device]) == 0:
         return True
     return False
 
 def lv_info(self, device):
-    (ret, buff, err) = self.call(['lvs', '-o', 'vg_name,lv_name,lv_size', '--noheadings', '--units', 'm', device])
+    (ret, buff, err) = self.call([rcEnv.syspaths.lvs, '-o', 'vg_name,lv_name,lv_size', '--noheadings', '--units', 'm', device])
     if ret != 0:
         return (None, None, None)
     info = buff.split()

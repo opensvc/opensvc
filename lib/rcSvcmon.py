@@ -2,6 +2,7 @@ import os
 
 import rcExceptions as ex
 from rcUtilities import *
+from rcGlobalEnv import rcEnv
 
 
 if rcEnv.sysname == "Windows":

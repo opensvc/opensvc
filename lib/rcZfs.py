@@ -1,4 +1,5 @@
 from rcUtilities import justcall, call, vcall
+from rcGlobalEnv import rcEnv
 import logging
 import sys
 """
@@ -10,7 +11,7 @@ def dataset_exists(device, type):
 
 def zfs_getprop(dataset='undef_ds', propname='undef_prop'):
     "return zfs dataset property propname value"
-    cmd = [ 'zfs', 'get', '-Hp', '-o', 'value', propname, dataset ]
+    cmd = [rcEnv.syspaths.zfs, 'get', '-Hp', '-o', 'value', propname, dataset]
     (stdout, stderr, retcode) = justcall(cmd)
     if retcode == 0 :
         return stdout.split("\n")[0]
@@ -21,7 +22,7 @@ def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val'):
     "set zfs dataset property propname to value propval"
     if zfs_getprop(dataset, propname) == propval :
         return True
-    cmd = [ 'zfs', 'set', propname + '='+ propval, dataset ]
+    cmd = [rcEnv.syspaths.zfs, 'set', propname + '='+ propval, dataset]
     print(' '.join(cmd))
     (retcode, stdout, stderr) = vcall(cmd)
     if retcode == 0 :
@@ -38,7 +39,7 @@ def a2pool_dataset(s):
         return ("", "")
     ss = s
     if s[0] == '/':
-        cmd = ['zfs', 'list', '-H',  '-o', 'name', s]
+        cmd = [rcEnv.syspaths.zfs, 'list', '-H',  '-o', 'name', s]
         (ret, out, err) = call(cmd)
         if ret != 0:
             return ("", "")
@@ -63,9 +64,9 @@ class Dataset(object):
             self.log = log
     def __str__(self, option=None):
         if option is None:
-            cmd = ['zfs', 'list', self.name ]
+            cmd = [rcEnv.syspaths.zfs, 'list', self.name ]
         else:
-            cmd = ['zfs', 'list'] + option + [ self.name ]
+            cmd = [rcEnv.syspaths.zfs, 'list'] + option + [ self.name ]
         (retcode, stdout, stderr) = call(cmd, log=self.log)
         if retcode == 0:
             return stdout
@@ -86,9 +87,9 @@ class Dataset(object):
     def create(self, option = None):
         "create dataset with options"
         if option is None:
-            cmd = ['zfs', 'create', self.name ]
+            cmd = [rcEnv.syspaths.zfs, 'create', self.name ]
         else:
-            cmd = ['zfs', 'create'] + option + [ self.name ]
+            cmd = [rcEnv.syspaths.zfs, 'create'] + option + [ self.name ]
         (retcode, stdout, stderr) = vcall(cmd, log=self.log)
         if retcode == 0:
             return True
@@ -97,7 +98,7 @@ class Dataset(object):
 
     def destroy(self, options=[]):
         "destroy dataset"
-        cmd = ['zfs', 'destroy'] + options + [self.name]
+        cmd = [rcEnv.syspaths.zfs, 'destroy'] + options + [self.name]
         (retcode, stdout, stderr) = vcall(cmd, log=self.log)
         if retcode == 0:
             return True
@@ -109,7 +110,7 @@ class Dataset(object):
         If success return propperty value
         else return ''
         """
-        cmd = [ 'zfs', 'get', '-Hp', '-o', 'value', propname, self.name ]
+        cmd = [rcEnv.syspaths.zfs, 'get', '-Hp', '-o', 'value', propname, self.name]
         (stdout, stderr, retcode) = justcall(cmd)
         if retcode == 0 :
             return stdout.rstrip('\n')
@@ -120,7 +121,7 @@ class Dataset(object):
         """set Dataset property value
         Return True is success else return False
         """
-        cmd = [ 'zfs', 'set', propname + '='+ propval, self.name ]
+        cmd = [rcEnv.syspaths.zfs, 'set', propname + '='+ propval, self.name]
         (retcode, stdout, stderr) = vcall(cmd, log=self.log,
                                         err_to_warn=err_to_warn,
                                         err_to_info=err_to_info)
@@ -147,7 +148,7 @@ class Dataset(object):
         if snapname is None:
             raise(rcExceptions.excBug("snapname should be defined"))
         snapdataset = self.name + "@" + snapname
-        cmd = ['zfs', 'snapshot']
+        cmd = [rcEnv.syspaths.zfs, 'snapshot']
         if recursive:
             cmd.append("-r")
         cmd.append(snapdataset)
@@ -163,9 +164,9 @@ class Dataset(object):
         return False if failure
         """
         if option is None:
-            cmd = ['zfs', 'clone', self.name, name]
+            cmd = [rcEnv.syspaths.zfs, 'clone', self.name, name]
         else:
-            cmd = ['zfs', 'clone'] + option + [ self.name, name ]
+            cmd = [rcEnv.syspaths.zfs, 'clone'] + option + [ self.name, name ]
         (retcode, stdout, stderr) = vcall(cmd, log=self.log)
         if retcode == 0:
             return Dataset(name)

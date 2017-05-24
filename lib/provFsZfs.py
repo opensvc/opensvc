@@ -1,12 +1,13 @@
 import os
 import provFs
 from rcUtilities import which, convert_size
+from rcGlobalEnv import rcEnv
 from rcZfs import Dataset
 from svcBuilder import conf_get_string_scope
 
 class ProvisioningFs(provFs.ProvisioningFs):
     def unprovision_dev(self):
-        if not which('zfs'):
+        if not which(rcEnv.syspaths.zfs):
             self.r.log.error("zfs command not found")
             raise ex.excError
         ds = Dataset(self.r.device, log=self.r.log)
@@ -16,7 +17,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
             os.rmdir(self.r.mount_point)
 
     def provision_dev(self):
-        if not which('zfs'):
+        if not which(rcEnv.syspaths.zfs):
             self.r.log.error("zfs command not found")
             raise ex.excError
         ds = Dataset(self.r.device, log=self.r.log)

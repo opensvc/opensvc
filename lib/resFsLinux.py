@@ -4,6 +4,7 @@ Linux Fs resource driver module
 import os
 from stat import ST_MODE, S_ISREG, S_ISBLK
 
+from rcGlobalEnv import rcEnv
 import rcMountsLinux as rcMounts
 import resFs as Res
 from rcUtilities import qcall, protected_mount, getmount, justcall
@@ -95,7 +96,7 @@ class Mount(Res.Mount):
         return ret
 
     def loop_dev_to_file(self, dev):
-        cmd = ["losetup", dev, "-O", "BACK-FILE", "-n"]
+        cmd = [rcEnv.syspaths.losetup, dev, "-O", "BACK-FILE", "-n"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
@@ -256,7 +257,7 @@ class Mount(Res.Mount):
 
     def is_multipath(self, minor):
         cmd = [
-            'dmsetup', '-j', str(self.dm_major),
+            rcEnv.syspaths.dmsetup, '-j', str(self.dm_major),
             '-m', str(minor),
             'table'
         ]
@@ -271,7 +272,7 @@ class Mount(Res.Mount):
         if 'queue_if_no_path' not in elements:
             return False
         cmd = [
-            'dmsetup', '-j', str(self.dm_major),
+            rcEnv.syspaths.dmsetup, '-j', str(self.dm_major),
             '-m', str(minor),
             'status'
         ]
@@ -390,7 +391,7 @@ class Mount(Res.Mount):
 
     def _can_check_zfs_writable(self):
         pool = self.device.split("/")[0]
-        cmd = ["zpool", "status", pool]
+        cmd = [rcEnv.syspaths.zpool, "status", pool]
         out, err, ret = justcall(cmd)
         if "state: SUSPENDED" in out:
             self.status_log("pool %s is suspended" % pool)
@@ -404,9 +405,9 @@ class Mount(Res.Mount):
                           "canmount=noauto %s)", self.label, self.device)
 
     def umount_zfs(self):
-        ret, out, err = self.vcall(['zfs', 'umount', self.device], err_to_info=True)
+        ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'umount', self.device], err_to_info=True)
         if ret != 0:
-            ret, out, err = self.vcall(['zfs', 'umount', '-f', self.device], err_to_info=True)
+            ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'umount', '-f', self.device], err_to_info=True)
         return ret, out, err
 
     def mount_zfs(self):
@@ -423,9 +424,9 @@ class Mount(Res.Mount):
             os.unlink(self.mount_point+"/.opensvc")
         except:
             pass
-        ret, out, err = self.vcall(['zfs', 'mount', self.device])
+        ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'mount', self.device])
         if ret != 0:
-            ret, out, err = self.vcall(['zfs', 'mount', '-O', self.device])
+            ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'mount', '-O', self.device])
             if ret != 0:
                 raise ex.excError
 

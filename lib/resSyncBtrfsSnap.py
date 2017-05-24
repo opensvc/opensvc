@@ -34,7 +34,7 @@ class syncBtrfsSnap(resSync.Sync):
         pass
 
     def test_btrfs(self, label):
-        cmd = ["blkid", "-L", label]
+        cmd = [rcEnv.syspaths.blkid, "-L", label]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return ret

@@ -16,6 +16,8 @@ class Mount:
             (self.dev,self.mnt,self.type,self.mnt_opt)
 
 class Mounts:
+    src_dir_devs_cache = {}
+
     def __init__(self):
         """ OS dependent """
         self.mounts = []
@@ -68,12 +70,15 @@ class Mounts:
     def get_src_dir_dev(self, dev):
         """Given a directory path, return its hosting device
         """
+        if dev in self.src_dir_devs_cache:
+            return self.src_dir_devs_cache[dev]
         p = Popen(self.df_one_cmd + [dev], stdout=PIPE, stderr=STDOUT, close_fds=True)
         out, err = p.communicate()
         if p.returncode != 0:
             return
         out = bdecode(out).lstrip()
-        return out.split()[0]
+        self.src_dir_devs_cache[dev] = out.split()[0]
+        return self.src_dir_devs_cache[dev]
 
     def __str__(self):
         output="%s" % (self.__class__.__name__)

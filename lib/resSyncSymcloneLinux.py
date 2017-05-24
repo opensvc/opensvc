@@ -19,9 +19,9 @@ class syncSymclone(symclone.syncSymclone):
             s.write("1")
 
     def refresh_multipath(self, dev):
-        if which("multipath") is None:
+        if which(rcEnv.syspaths.multipath) is None:
             return
-        cmd = ['multipath', '-v0', '-r', dev]
+        cmd = [rcEnv.syspaths.multipath, '-v0', '-r', dev]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError

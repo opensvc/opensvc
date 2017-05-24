@@ -49,7 +49,7 @@ class syncDds(resSync.Sync):
         if not os.path.exists(dev):
             self.log.debug('dev path does not exist')
             return False
-        cmd = ['lvs', '--noheadings', '-o', 'snap_percent', dev]
+        cmd = [rcEnv.syspaths.lvs, '--noheadings', '-o', 'snap_percent', dev]
         (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0:
             return False
@@ -150,7 +150,7 @@ class syncDds(resSync.Sync):
         self.push_statefile(node)
 
     def get_snap1_uuid(self):
-        cmd = ['lvs', '--noheadings', '-o', 'uuid', self.snap1]
+        cmd = [rcEnv.syspaths.lvs, '--noheadings', '-o', 'uuid', self.snap1]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError

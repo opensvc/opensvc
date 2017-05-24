@@ -1,5 +1,6 @@
 import checks
 from rcUtilities import justcall, printplus
+from rcGlobalEnv import rcEnv
 
 class check(checks.check):
     chk_type = "mpath"
@@ -32,7 +33,7 @@ class check(checks.check):
 	 \_ 1:0:3:2 sdh 8:112 [active]
 	 \_ 1:0:2:2 sdb 8:16  [active]
         """
-        cmd = ['multipath', '-l']
+        cmd = [rcEnv.syspaths.multipath, '-l']
         (out, err, ret) = justcall(cmd)
         lines = out.split('\n')
         if len(lines) < 1:
@@ -71,7 +72,7 @@ class check(checks.check):
         return r
 
     def do_check(self):
-        cmd = ['multipathd', '-kshow topo']
+        cmd = [rcEnv.syspaths.multipathd, '-kshow topo']
         (out, err, ret) = justcall(cmd)
         if 'list|show' in out:
             # multipathd does not support 'show topo'

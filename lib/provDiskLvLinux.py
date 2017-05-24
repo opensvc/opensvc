@@ -150,7 +150,7 @@ class ProvisioningDisk(Provisioning):
 
         # /dev/mapper/$vg-$lv and /dev/$vg/$lv creation is delayed ... refresh
         try:
-            cmd = ['dmsetup', 'mknodes']
+            cmd = [rcEnv.syspaths.dmsetup, 'mknodes']
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             p.communicate()
         except:

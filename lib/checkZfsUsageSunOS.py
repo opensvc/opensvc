@@ -1,6 +1,7 @@
 import re
 import checks
 from rcUtilities import justcall, which
+from rcGlobalEnv import rcEnv
 
 class check(checks.check):
     def __init__(self, svcs=[]):
@@ -51,7 +52,7 @@ class check(checks.check):
         return ''
 
     def do_check(self):
-        cmd = ['zfs', 'list', '-o', 'name,used,avail,mountpoint', '-H']
+        cmd = [rcEnv.syspaths.zfs, 'list', '-o', 'name,used,avail,mountpoint', '-H']
         (out,err,ret) = justcall(cmd)
         if ret != 0:
             return self.undef

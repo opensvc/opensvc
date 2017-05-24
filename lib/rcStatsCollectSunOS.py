@@ -8,6 +8,7 @@ import time
 import datetime
 import subprocess
 from rcUtilities import justcall, which
+from rcGlobalEnv import rcEnv
 
 def collect(node):
     now = str(datetime.datetime.now())
@@ -168,9 +169,9 @@ def collect(node):
         return vals
 
     def fs_u_zfs():
-        if not which('zfs'):
+        if not which(rcEnv.syspaths.zfs):
             return []
-        cmd = ['zfs', 'list', '-o', 'name,used,avail,mountpoint', '-H']
+        cmd = [rcEnv.syspaths.zfs, 'list', '-o', 'name,used,avail,mountpoint', '-H']
         (out,err,ret) = justcall(cmd)
         if ret != 0:
             return []

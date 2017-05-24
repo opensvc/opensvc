@@ -1,11 +1,13 @@
-from provisioning import Provisioning
-from svcBuilder import conf_get_string_scope
 import os
 import json
-import rcExceptions as ex
-from stat import *
-from rcUtilities import justcall
 import glob
+from stat import *
+
+from rcGlobalEnv import rcEnv
+from provisioning import Provisioning
+from svcBuilder import conf_get_string_scope
+import rcExceptions as ex
+from rcUtilities import justcall
 
 class ProvisioningDisk(Provisioning):
     def __init__(self, r):
@@ -50,7 +52,7 @@ class ProvisioningDisk(Provisioning):
             if S_ISBLK(mode):
                 continue
             elif S_ISREG(mode):
-                cmd = ['losetup', '-j', pv]
+                cmd = [rcEnv.syspaths.losetup, '-j', pv]
                 out, err, ret = justcall(cmd)
                 if ret != 0 or not out.startswith('/dev/loop'):
                     self.r.log.error("pv %s a regular file but not a loop"%pv)

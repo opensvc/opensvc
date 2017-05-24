@@ -83,7 +83,7 @@ class SyncZfs(resSync.Sync):
                 self.target, self.src)
 
     def snap_exists(self, snapname, node=None):
-        cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'list', '-t', 'snapshot', snapname]
+        cmd = [rcEnv.syspaths.zfs, 'list', '-t', 'snapshot', snapname]
         if node is not None:
             cmd = rcEnv.rsh.split() + [node] + cmd
         (ret, out, err) = self.call(cmd, errlog=False)
@@ -98,9 +98,9 @@ class SyncZfs(resSync.Sync):
             self.log.error('%s should not exist'%snap)
             raise ex.excError
         if self.recursive :
-            cmd = ['zfs', 'snapshot' , '-r' , snap ]
+            cmd = [rcEnv.syspaths.zfs, 'snapshot' , '-r' , snap ]
         else:
-            cmd = ['zfs', 'snapshot' , snap ]
+            cmd = [rcEnv.syspaths.zfs, 'snapshot' , snap ]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -154,13 +154,13 @@ class SyncZfs(resSync.Sync):
 
     def zfs_send_incremental(self, node):
         if self.recursive:
-            send_cmd = ['zfs', 'send', '-R', '-i',
+            send_cmd = [rcEnv.syspaths.zfs, 'send', '-R', '-i',
                             self.src_snap_sent, self.src_snap_tosend]
         else:
-            send_cmd = ['zfs', 'send', '-i',
+            send_cmd = [rcEnv.syspaths.zfs, 'send', '-i',
                             self.src_snap_sent, self.src_snap_tosend]
 
-        receive_cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'receive', '-dF', self.dst_pool]
+        receive_cmd = [rcEnv.syspaths.zfs, 'receive', '-dF', self.dst_pool]
         if node is not None:
             receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
 
@@ -178,11 +178,11 @@ class SyncZfs(resSync.Sync):
 
     def zfs_send_initial(self, node=None):
         if self.recursive:
-            send_cmd = ['zfs', 'send', '-R', self.src_snap_tosend]
+            send_cmd = [rcEnv.syspaths.zfs, 'send', '-R', self.src_snap_tosend]
         else:
-            send_cmd = ['zfs', 'send', self.src_snap_tosend]
+            send_cmd = [rcEnv.syspaths.zfs, 'send', self.src_snap_tosend]
 
-        receive_cmd = ['env', 'PATH=/usr/sbin:/sbin', 'zfs', 'receive', '-dF', self.dst_pool ]
+        receive_cmd = [rcEnv.syspaths.zfs, 'receive', '-dF', self.dst_pool ]
         if node is not None:
             receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
 
@@ -208,11 +208,11 @@ class SyncZfs(resSync.Sync):
         if check_exists and not self.snap_exists(snap, node=node):
             return
         if self.recursive :
-            cmd = ['zfs', 'destroy', '-r', snap]
+            cmd = [rcEnv.syspaths.zfs, 'destroy', '-r', snap]
         else:
-            cmd = ['zfs', 'destroy', snap]
+            cmd = [rcEnv.syspaths.zfs, 'destroy', snap]
         if node is not None:
-            cmd = rcEnv.rsh.split() + [node, 'env', 'PATH=/usr/sbin:/sbin'] + cmd
+            cmd = rcEnv.rsh.split() + [node] + cmd
         if check_exists:
             err_to_info = False
         else:
@@ -226,12 +226,12 @@ class SyncZfs(resSync.Sync):
             self.log.error("%s should not exist"%dst)
             raise ex.excError
         if self.recursive :
-            cmd = ['zfs', 'rename', '-r', src, dst]
+            cmd = [rcEnv.syspaths.zfs, 'rename', '-r', src, dst]
         else:
-            cmd = ['zfs', 'rename', src, dst]
+            cmd = [rcEnv.syspaths.zfs, 'rename', src, dst]
 
         if node is not None:
-            cmd = rcEnv.rsh.split() + [node, 'env', 'PATH=/usr/sbin:/sbin'] + cmd
+            cmd = rcEnv.rsh.split() + [node] + cmd
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -339,7 +339,7 @@ class SyncZfs(resSync.Sync):
         return self.parse_statefile(out)
 
     def get_snap_uuid(self, snap):
-        cmd = ['zfs', 'list', '-H', '-o', 'creation', '-t', 'snapshot', snap]
+        cmd = [rcEnv.syspaths.zfs, 'list', '-H', '-o', 'creation', '-t', 'snapshot', snap]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError

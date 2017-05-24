@@ -1,5 +1,6 @@
 import resIp as Res
 import rcExceptions as ex
+from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which, to_cidr, to_dotted
 
@@ -9,8 +10,8 @@ class Ip(Res.Ip):
         return check_ping(self.addr, timeout=timeout, count=count)
 
     def start_link(self):
-        if which("ip"):
-           cmd = ['ip', 'link', 'set', 'dev', self.ipdev, 'up']
+        if which(rcEnv.syspaths.ip):
+           cmd = [rcEnv.syspaths.ip, 'link', 'set', 'dev', self.ipdev, 'up']
         else:
            cmd = ['ifconfig', self.ipdev, 'up']
         ret, out, err = self.vcall(cmd)

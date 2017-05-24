@@ -70,7 +70,7 @@ class Disk(resDisk.Disk):
 
     @cache("vg.lvs.attr")
     def get_lvs_attr(self):
-        cmd = ['lvs', '-o', 'vg_name,lv_name,lv_attr', '--noheadings', '--separator=;']
+        cmd = [rcEnv.syspaths.lvs, '-o', 'vg_name,lv_name,lv_attr', '--noheadings', '--separator=;']
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -89,7 +89,7 @@ class Disk(resDisk.Disk):
 
     @cache("vg.tags")
     def get_tags(self):
-        cmd = ['vgs', '-o', 'vg_name,tags', '--noheadings', '--separator=;']
+        cmd = [rcEnv.syspaths.vgs, '-o', 'vg_name,tags', '--noheadings', '--separator=;']
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -214,7 +214,7 @@ class Disk(resDisk.Disk):
 
     @cache("vg.lvs")
     def vg_lvs(self):
-        cmd = ['vgs', '--noheadings', '-o', 'vg_name,lv_name', '--separator', ';']
+        cmd = [rcEnv.syspaths.vgs, '--noheadings', '-o', 'vg_name,lv_name', '--separator', ';']
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -233,7 +233,7 @@ class Disk(resDisk.Disk):
 
     @cache("vg.pvs")
     def vg_pvs(self):
-        cmd = ['vgs', '--noheadings', '-o', 'vg_name,pv_name', '--separator', ';']
+        cmd = [rcEnv.syspaths.vgs, '--noheadings', '-o', 'vg_name,pv_name', '--separator', ';']
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError

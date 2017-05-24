@@ -10,13 +10,13 @@ def file_to_loop(f):
     """Given a file path, returns the loop device associated. For example,
     /path/to/file => /dev/loop0
     """
-    if which('losetup') is None:
+    if which(rcEnv.syspaths.losetup) is None:
         return []
     if not os.path.isfile(f):
         return []
     if rcEnv.sysname != 'Linux':
         return []
-    (ret, out, err) = call(['losetup', '-j', f])
+    (ret, out, err) = call([rcEnv.syspaths.losetup, '-j', f])
     if len(out) == 0:
         return []
     """ It's possible multiple loopdev are associated with the same file

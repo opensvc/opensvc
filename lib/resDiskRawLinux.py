@@ -4,7 +4,7 @@ import rcStatus
 import re
 import rcExceptions as ex
 from rcGlobalEnv import *
-from rcUtilities import justcall
+from rcUtilities import justcall, cache, lazy, unset_lazy
 
 class Disk(resDiskRaw.Disk):
     def __init__(self,
@@ -25,30 +25,43 @@ class Disk(resDiskRaw.Disk):
                              create_char_devices=create_char_devices,
                              **kwargs)
         self.min_raw = 1
-        self.raws = {}
         self.sys_devs = {}
 
-    def get_devs_t(self):
-        self.devs_t = {}
+    @lazy
+    def devs_t(self):
+        devs_t = {}
         for dev in self.devs:
             d = os.stat(dev)
-            self.devs_t[dev] = (os.major(d.st_rdev), os.minor(d.st_rdev))
+            devs_t[dev] = (os.major(d.st_rdev), os.minor(d.st_rdev))
+        return devs_t
 
-    def get_rdevnames(self):
-        self.rdevs_t = {}
+    @cache("raw.rdevs_t")
+    def _rdevs_t(self):
+        rdevs_t = {}
         for dirpath, dirnames, filenames in os.walk('/dev/raw'):
             for filename in filenames:
                 f = os.path.join(dirpath, filename)
                 d = os.stat(f)
-                self.rdevs_t[(os.major(d.st_rdev), os.minor(d.st_rdev))] = filename
+                key = "%d:%d" % (os.major(d.st_rdev), os.minor(d.st_rdev))
+                rdevs_t[key] = filename
+        return rdevs_t
 
+    @lazy
+    def rdevs_t(self):
+        return self._rdevs_t()
+
+    @cache("raw.modprobe")
     def modprobe(self):
+        """
+        Load the raw driver if necessary.
+        Cached to execute only once per run. The result is of no interest.
+        """
         cmd = ["raw", "-qa"]
         err, ret, out = justcall(cmd)
         if ret == 0:
             # no need to load (already loaded or compiled-in)
             return
-        cmd = ["lsmod"]
+        cmd = [rcEnv.syspaths.lsmod]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -60,10 +73,12 @@ class Disk(resDiskRaw.Disk):
             self.log.error("failed to load raw device driver")
             raise ex.excError
 
+    @cache("raw.list")
     def get_raws(self):
         self.modprobe()
-        self.sysfs_raw_path = os.path.join(os.sep, 'sys', 'class', 'raw')
-        for dirpath, dirnames, filenames in os.walk(self.sysfs_raw_path):
+        raws = {}
+        sysfs_raw_path = os.path.join(os.sep, 'sys', 'class', 'raw')
+        for dirpath, dirnames, filenames in os.walk(sysfs_raw_path):
             for dirname in dirnames:
                 if dirname == 'rawctl':
                     continue
@@ -76,7 +91,7 @@ class Disk(resDiskRaw.Disk):
                     major, minor = buff.strip().split(':')
                 except:
                     continue
-                self.raws[dirname] = {'rdev': (int(major), int(minor))}
+                raws[dirname] = {'rdev': (int(major), int(minor))}
 
         cmd = ['raw', '-qa']
         out, err, ret = justcall(cmd)
@@ -90,20 +105,23 @@ class Disk(resDiskRaw.Disk):
             raw = l[0].strip(':').replace('/dev/raw/','')
             major = int(l[4].strip(','))
             minor = int(l[6])
-            if raw in self.raws:
-                self.raws[raw]['bdev'] = (major, minor)
+            if raw in raws:
+                raws[raw]['bdev'] = (major, minor)
+        return raws
 
-        self.get_devs_t()
+    @lazy
+    def raws(self):
+        raws = self.get_raws()
         for dev, dev_t in self.devs_t.items():
-            for raw, d in self.raws.items():
-                if dev_t == d['bdev']:
-                    self.raws[raw]['devname'] = dev
+            for raw, d in raws.items():
+                if list(dev_t) == list(d['bdev']):
+                    raws[raw]['devname'] = dev
 
-        self.get_rdevnames()
-        for raw, d in self.raws.items():
-            if d['rdev'] in self.rdevs_t:
-                self.raws[raw]['rdevname'] = self.rdevs_t[d['rdev']]
-
+        for raw, d in raws.items():
+            key = "%d:%d" % (d['rdev'][0], d['rdev'][1])
+            if key in self.rdevs_t:
+                raws[raw]['rdevname'] = self.rdevs_t[key]
+        return raws
 
     def find_next_raw(self):
         allocated = set(map(lambda x: x['rdev'][1], self.raws.values()))
@@ -152,7 +170,6 @@ class Disk(resDiskRaw.Disk):
 
     def has_it_char_devices(self):
         r = False
-        self.get_raws()
         l = []
         for dev in self.devs:
             raw = self.find_raw(dev)
@@ -164,7 +181,6 @@ class Disk(resDiskRaw.Disk):
         return not r
 
     def mangle_devs_map(self):
-        self.get_raws()
         if not self.create_char_devices:
             return
         for dev in self.devs:
@@ -178,7 +194,6 @@ class Disk(resDiskRaw.Disk):
         if not self.create_char_devices:
             return
         self.lock()
-        self.get_raws()
         for dev in self.devs:
             raw = self.find_raw(dev)
             if raw is not None:
@@ -197,12 +212,19 @@ class Disk(resDiskRaw.Disk):
                   'bdev': self.devs_t[dev]
                 }
 
+        self.clear_caches()
         self.unlock()
+
+    def clear_caches(self):
+        self.clear_cache("raw.list")
+        self.clear_cache("raw.rdevs_t")
+        unset_lazy(self, "devs_t")
+        unset_lazy(self, "rdevs_t")
+        unset_lazy(self, "raws")
 
     def do_stop_char_devices(self):
         if not self.create_char_devices:
             return
-        self.get_raws()
         for dev in self.devs:
             raw = self.find_raw(dev)
             if raw is not None:
@@ -211,6 +233,7 @@ class Disk(resDiskRaw.Disk):
                 if ret != 0:
                     raise ex.excError
                 del(self.raws[raw])
+        self.clear_caches()
 
     def load_sys_devs(self):
         import glob
@@ -237,7 +260,6 @@ class Disk(resDiskRaw.Disk):
             return self.devs
         sys_devs = set([])
         self.load_sys_devs()
-        self.get_devs_t()
         for dev in self.devs:
             if dev not in self.devs_t:
                 continue

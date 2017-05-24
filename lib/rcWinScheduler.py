@@ -30,6 +30,7 @@ from subprocess import *
 
 import sys
 from rcListener import listener
+from rcGlobalEnv import rcEnv
 
 class OsvcSched(win32serviceutil.ServiceFramework):
 
