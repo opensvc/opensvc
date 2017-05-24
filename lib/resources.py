@@ -24,8 +24,6 @@ class Resource(object):
     """
     Resource drivers parent class
     """
-    label = None
-
     def __init__(self,
                  rid=None,
                  type=None,
@@ -53,8 +51,11 @@ class Resource(object):
         self.nb_restart = restart
         self.rstatus = None
         self.always_on = always_on
-        if self.label is None:
+        try:
             self.label = type
+        except AttributeError:
+            # label is a lazy prop of the child class
+            pass
         self.status_logs = []
         self.can_rollback = False
 

@@ -25,7 +25,11 @@ class Container(Res.Resource):
         self.osvc_root_path = osvc_root_path
         self.sshbin = '/usr/bin/ssh'
         self.name = name
-        self.label = name
+        try:
+            self.label = name
+        except AttributeError:
+            # label is a lazy prop of the child class
+            pass
         self.guestos = guestos
         if guestos is not None:
             self.guestos = guestos.lower()

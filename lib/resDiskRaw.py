@@ -19,13 +19,13 @@ class Disk(resDisk.Disk):
                  perm=None,
                  create_char_devices=False,
                  **kwargs):
-        self.label = "raw"
         resDisk.Disk.__init__(self,
                           rid=rid,
                           name="raw",
                           type='disk.raw',
                           **kwargs)
 
+        self.label = "raw"
         self.user = user
         self.group = group
         self.perm = perm

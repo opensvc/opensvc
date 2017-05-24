@@ -14,13 +14,13 @@ class Disk(resVg.Disk):
                  name=None,
                  container_name=None,
                  **kwargs):
-        self.label = "vmdg "+str(name)
-        self.container_name = container_name
         resVg.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',
                           **kwargs)
+        self.label = "vmdg "+str(name)
+        self.container_name = container_name
 
     def has_it(self):
         return True

@@ -15,12 +15,12 @@ class Disk(resDisk.Disk):
                  rid=None,
                  name=None,
                  **kwargs):
-        self.label = 'pool ' + name
         resDisk.Disk.__init__(self,
                               rid=rid,
                               name=name,
                               type='disk.zpool',
                               **kwargs)
+        self.label = 'pool ' + name
 
     def info(self):
         data = [

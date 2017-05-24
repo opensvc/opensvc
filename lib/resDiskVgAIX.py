@@ -17,13 +17,13 @@ class Disk(resDisk.Disk):
                  name=None,
                  dsf=True,
                  **kwargs):
-        self.label = "vg "+name
-        self.dsf = dsf
         resDisk.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',
                           **kwargs)
+        self.label = "vg "+name
+        self.dsf = dsf
 
     def has_it(self):
         """ returns True if the volume is present

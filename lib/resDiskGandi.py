@@ -19,13 +19,13 @@ class Disk(resDisk.Disk):
                  group="root",
                  perm="660",
                  **kwargs):
-        self.label = "gandi volume %s"%str(name)
         resDisk.Disk.__init__(self,
                           rid=rid,
                           name="gandi",
                           type='disk.gandi',
                           **kwargs)
 
+        self.label = "gandi volume %s"%str(name)
         self.name = name
         self.node = node
         self.cloud_id = cloud_id

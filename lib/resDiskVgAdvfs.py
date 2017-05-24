@@ -11,12 +11,12 @@ class Disk(resDisk.Disk):
                  rid=None,
                  name=None,
                  **kwargs):
-        self.label = 'fdmn ' + name
         resDisk.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',
                           **kwargs)
+        self.label = 'fdmn ' + name
 
     def disklist_name(self):
         return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.disklist')

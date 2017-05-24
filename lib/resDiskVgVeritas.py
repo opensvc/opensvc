@@ -9,12 +9,12 @@ class Disk(resDisk.Disk):
                  rid=None,
                  name=None,
                  **kwargs):
-        self.label = "vg "+str(name)
         resDisk.Disk.__init__(self,
                               rid=rid,
                               name=name,
                               type='disk.vg',
                               **kwargs)
+        self.label = "vg "+str(name)
 
     def has_it(self):
         """Returns True if the vg is present

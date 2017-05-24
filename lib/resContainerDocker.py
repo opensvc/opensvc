@@ -39,8 +39,6 @@ class Docker(resContainer.Container):
         self.run_command = run_command
         self.run_args = run_args
         self.docker_service = docker_service
-        self.service_id = None
-        self.container_id = None
         self.startup_timeout = 30
 
     @lazy
@@ -58,30 +56,29 @@ class Docker(resContainer.Container):
         """
         return self.container_name.replace(".", "_")
 
-    def on_add(self):
-        """
-        Init done after self.svc is set.
-        """
-        if self.docker_service:
-            try:
-                self.service_id = self.svc.dockerlib.get_service_id_by_name(self)
-            except Exception:
-                self.service_id = None
-        else:
-            try:
-                self.container_id = self.svc.dockerlib.get_container_id_by_name(self)
-            except Exception:
-                self.container_id = None
-        self.set_label()
+    @lazy
+    def container_id(self):
+        try:
+            return self.svc.dockerlib.get_container_id_by_name(self, refresh=True)
+        except:
+            return
 
-    def set_label(self):
+    @lazy
+    def service_id(self):
+        try:
+            return self.svc.dockerlib.get_service_id_by_name(self, refresh=True)
+        except Exception:
+            return
+
+    @lazy
+    def label(self):
         if self.docker_service:
-            self.label = "docker service " + "@".join((
+            return "docker service " + "@".join((
                 self.service_name,
                 self.svc.dockerlib.image_userfriendly_name(self)
             ))
         else:
-            self.label = "docker container " + "@".join((
+            return "docker container " + "@".join((
                 self.container_name,
                 self.svc.dockerlib.image_userfriendly_name(self)
             ))
@@ -153,7 +150,7 @@ class Docker(resContainer.Container):
         return out, err, ret
 
     def service_create(self):
-        self.service_id = self.svc.dockerlib.get_service_id_by_name(self, refresh=True)
+        unset_lazy(self, "service_id")
         if self.service_id is not None:
             return
         if self.swarm_node_role() not in ("leader", "reachable"):
@@ -166,14 +163,14 @@ class Docker(resContainer.Container):
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError(err)
+        unset_lazy(self, "service_id")
         self.svc.dockerlib.get_running_service_ids(refresh=True)
-        self.service_id = self.svc.dockerlib.get_service_id_by_name(self)
 
     def service_rm(self):
         """
         Remove the resource docker service.
         """
-        self.service_id = self.svc.dockerlib.get_service_id_by_name(self, refresh=True)
+        unset_lazy(self, "service_id")
         if self.service_id is None:
             self.log.info("skip: service already removed")
             return
@@ -183,8 +180,8 @@ class Docker(resContainer.Container):
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError(err)
+        unset_lazy(self, "service_id")
         self.svc.dockerlib.get_running_service_ids(refresh=True)
-        self.service_id = self.svc.dockerlib.get_service_id_by_name(self)
 
     def docker(self, action):
         """
@@ -197,7 +194,7 @@ class Docker(resContainer.Container):
                 return
             else:
                 if self.container_id is None:
-                    self.container_id = self.svc.dockerlib.get_container_id_by_name(self, refresh=True)
+                    unset_lazy(self, "container_id")
                 if self.container_id is None:
                     cmd += ['run', '-d', '--name='+self.container_name]
                     cmd += self._add_run_args()
@@ -226,7 +223,7 @@ class Docker(resContainer.Container):
             raise ex.excError
 
         if action == 'start':
-            self.container_id = self.svc.dockerlib.get_container_id_by_name(self, refresh=True)
+            unset_lazy(self, "container_id")
             self.svc.dockerlib.get_running_instance_ids(refresh=True)
 
     def service_stop(self):

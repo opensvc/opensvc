@@ -12,13 +12,13 @@ class Disk(resDisk.Disk):
                  rid=None,
                  name=None,
                  **kwargs):
-        self.label = "vg "+name
-        self.tag = rcEnv.nodename
         resDisk.Disk.__init__(self,
                               rid=rid,
                               name=name,
                               type='disk.vg',
                               **kwargs)
+        self.label = "vg "+name
+        self.tag = rcEnv.nodename
 
     def info(self):
         data = [
