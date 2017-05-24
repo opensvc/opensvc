@@ -7,8 +7,8 @@ from rcUtilities import which
 import tempfile
 from rcGlobalEnv import rcEnv
 
-if rcEnv.pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+rcEnv.pathbin
+if rcEnv.paths.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.paths.pathbin
 
 class Centeras(object):
     def __init__(self, objects=[]):
@@ -18,7 +18,7 @@ class Centeras(object):
         else:
             self.filtering = False
         self.arrays = []
-        cf = rcEnv.authconf
+        cf = rcEnv.paths.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()
@@ -78,7 +78,7 @@ class Centera(object):
         return out, err
 
     def get_discover(self):
-        f = tempfile.NamedTemporaryFile(prefix="centera.discover.", suffix=".xml", dir=rcEnv.pathtmp)
+        f = tempfile.NamedTemporaryFile(prefix="centera.discover.", suffix=".xml", dir=rcEnv.paths.pathtmp)
         tmp_fpath = f.name
         f.close()
         buff = "monitorDiscoverToFile %s" % tmp_fpath

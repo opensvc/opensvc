@@ -30,7 +30,7 @@ class Ldom(resContainer.Container):
     def files_to_sync(self):
         import glob
         a = []
-        ldomf = os.path.join(rcEnv.pathvar, 'ldom_'+self.name+'.*')
+        ldomf = os.path.join(rcEnv.paths.pathvar, 'ldom_'+self.name+'.*')
         files = glob.glob(ldomf)
         if len(files) > 0:
             a += files

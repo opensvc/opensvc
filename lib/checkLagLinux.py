@@ -72,7 +72,7 @@ class check(checks.check):
         return uptime_seconds
 
     def cache_path(self, bond, slave):
-        cache_p = os.path.join(rcEnv.pathtmp, "checkLagLinux.cache."+os.path.basename(bond)+"."+slave)
+        cache_p = os.path.join(rcEnv.paths.pathtmp, "checkLagLinux.cache."+os.path.basename(bond)+"."+slave)
         return cache_p
 
     def write_cache(self, bond, slave, val, uptime):

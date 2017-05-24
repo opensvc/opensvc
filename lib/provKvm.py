@@ -123,7 +123,7 @@ class ProvisioningKvm(Provisioning):
     def setup_cfdisk(self):
         config = self.get_config()
         block = len(config)//512 + 1
-        cfdisk = os.path.join(rcEnv.pathtmp, self.r.svc.svcname+'.cfdisk')
+        cfdisk = os.path.join(rcEnv.paths.pathtmp, self.r.svc.svcname+'.cfdisk')
         try:
             with open(cfdisk, 'w') as f:
                 f.write(config)

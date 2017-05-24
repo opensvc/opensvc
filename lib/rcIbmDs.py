@@ -6,8 +6,8 @@ import sys
 from subprocess import *
 from rcGlobalEnv import rcEnv
 
-if rcEnv.pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+rcEnv.pathbin
+if rcEnv.paths.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.paths.pathbin
 
 def dscli(cmd, hmc1, hmc2, username, pwfile, log=None):
     if len(hmc1) != 0:
@@ -43,7 +43,7 @@ class IbmDss(object):
         else:
             self.filtering = False
         self.arrays = []
-        cf = rcEnv.authconf
+        cf = rcEnv.paths.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()
@@ -55,7 +55,7 @@ class IbmDss(object):
                 continue
             if self.filtering and not s in self.objects:
                 continue
-            pwfile = os.path.join(rcEnv.pathvar, s+'.pwfile')
+            pwfile = os.path.join(rcEnv.paths.pathvar, s+'.pwfile')
             if not os.path.exists(pwfile):
                 raise ex.excError("%s does not exists. create it with 'dscli managepwfile ...'"%pwfile)
 

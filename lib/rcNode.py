@@ -10,9 +10,9 @@ except ImportError:
 def node_get_node_env():
     import codecs
     config = ConfigParser.RawConfigParser()
-    if not os.path.exists(rcEnv.nodeconf):
+    if not os.path.exists(rcEnv.paths.nodeconf):
         return 'TST'
-    with codecs.open(rcEnv.nodeconf, "r", "utf8") as f:
+    with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as f:
         if sys.version_info[0] >= 3:
             config.read_file(f)
         else:

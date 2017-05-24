@@ -78,7 +78,7 @@ class DockerLib(object):
         if "--token" in self.docker_swarm_args:
             raise ex.excError("--token must not be specified in DEFAULT.docker_swarm_args")
 
-        self.docker_var_d = os.path.join(rcEnv.pathvar, self.svc.svcname)
+        self.docker_var_d = os.path.join(rcEnv.paths.pathvar, self.svc.svcname)
 
         if not os.path.exists(self.docker_var_d):
             os.makedirs(self.docker_var_d)
@@ -652,7 +652,7 @@ class DockerLib(object):
         if not self.docker_daemon_private:
             return
         import lock
-        lockfile = os.path.join(rcEnv.pathlock, 'docker_start')
+        lockfile = os.path.join(rcEnv.paths.pathlock, 'docker_start')
         try:
             lockfd = lock.lock(timeout=15, delay=1, lockfile=lockfile)
         except lock.LOCK_EXCEPTIONS as exc:

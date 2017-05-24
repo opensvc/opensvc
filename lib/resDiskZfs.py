@@ -29,7 +29,7 @@ class Disk(resDisk.Disk):
         return self.fmt_info(data)
 
     def disklist_name(self):
-        return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.disklist')
+        return os.path.join(rcEnv.paths.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.disklist')
 
     def files_to_sync(self):
         return [self.disklist_name()]
@@ -71,15 +71,15 @@ class Disk(resDisk.Disk):
         if self.is_up():
             self.log.info("%s is already up" % self.name)
             return 0
-        devzp = os.path.join(rcEnv.pathvar, self.svc.svcname, 'dev', 'dsk')
+        devzp = os.path.join(rcEnv.paths.pathvar, self.svc.svcname, 'dev', 'dsk')
         if os.path.isdir(devzp):
-            cmd = [ 'zpool', 'import', '-f', '-o', 'cachefile='+os.path.join(rcEnv.pathvar, 'zpool.cache'), '-d', devzp, self.name ]
+            cmd = [ 'zpool', 'import', '-f', '-o', 'cachefile='+os.path.join(rcEnv.paths.pathvar, 'zpool.cache'), '-d', devzp, self.name ]
             (ret, out, err) = self.vcall(cmd)
             if ret == 0:
                 return ret
             else:
                 self.log.info("import %s: FallBack Long Way" %self.name)
-        cmd = [ 'zpool', 'import', '-f', '-o', 'cachefile='+os.path.join(rcEnv.pathvar, 'zpool.cache'), self.name ]
+        cmd = [ 'zpool', 'import', '-f', '-o', 'cachefile='+os.path.join(rcEnv.paths.pathvar, 'zpool.cache'), self.name ]
         (ret, out, err) = self.vcall(cmd)
         self.can_rollback = True
         return ret
@@ -154,7 +154,7 @@ class Disk(resDisk.Disk):
                 # vdev entry
                 disk = line.split()[0]
                 if rcEnv.sysname == "SunOS":
-                    if disk.startswith(rcEnv.pathvar):
+                    if disk.startswith(rcEnv.paths.pathvar):
                         disk = disk.split('/')[-1]
                     if re.match("^.*", disk) is None:
                         continue

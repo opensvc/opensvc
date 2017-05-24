@@ -7,7 +7,7 @@ import datetime
 class check(checks.check):
     chk_type = "mcelog"
     mcelog_p = "/var/log/mcelog"
-    marker_p = os.path.join(rcEnv.pathtmp, "checkMceLinunx.marker")
+    marker_p = os.path.join(rcEnv.paths.pathtmp, "checkMceLinunx.marker")
 
     def get_last_marker(self):
         try:

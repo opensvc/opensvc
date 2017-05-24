@@ -29,10 +29,10 @@ class check(checks.check):
         megacli = self.find_megacli()
         if megacli is None:
             return self.undef
-        os.chdir(rcEnv.pathtmp)
-        logs = [os.path.join(rcEnv.pathtmp, 'MegaSAS.log'),
-                os.path.join(rcEnv.pathtmp, 'MegaCli.log'),
-                os.path.join(rcEnv.pathtmp, 'MegaRaid.log')]
+        os.chdir(rcEnv.paths.pathtmp)
+        logs = [os.path.join(rcEnv.paths.pathtmp, 'MegaSAS.log'),
+                os.path.join(rcEnv.paths.pathtmp, 'MegaCli.log'),
+                os.path.join(rcEnv.paths.pathtmp, 'MegaRaid.log')]
         for log in logs:
             if not os.path.exists(log):
                 continue
@@ -73,10 +73,10 @@ class check(checks.check):
         megacli = self.find_megacli()
         if megacli is None:
             return self.undef
-        os.chdir(rcEnv.pathtmp)
-        logs = [os.path.join(rcEnv.pathtmp, 'MegaSAS.log'),
-                os.path.join(rcEnv.pathtmp, 'MegaCli.log'),
-                os.path.join(rcEnv.pathtmp, 'MegaRaid.log')]
+        os.chdir(rcEnv.paths.pathtmp)
+        logs = [os.path.join(rcEnv.paths.pathtmp, 'MegaSAS.log'),
+                os.path.join(rcEnv.paths.pathtmp, 'MegaCli.log'),
+                os.path.join(rcEnv.paths.pathtmp, 'MegaRaid.log')]
         for log in logs:
             if not os.path.exists(log):
                 continue

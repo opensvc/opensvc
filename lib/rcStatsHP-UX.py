@@ -5,7 +5,7 @@ import rcStats
 
 class StatsProvider(rcStats.StatsProvider):
     def glancefile(self, day):
-        f = os.path.join(rcEnv.pathvar, 'glance'+day)
+        f = os.path.join(rcEnv.paths.pathvar, 'glance'+day)
         if os.path.exists(f):
             return f
         return None

@@ -25,5 +25,5 @@ def update(fpath):
     except:
         pass
 
-    cmd = sys.executable + ' ' + rcEnv.postinstall
+    cmd = sys.executable + ' ' + rcEnv.paths.postinstall
     return os.system(cmd)

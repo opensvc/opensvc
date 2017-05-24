@@ -5,7 +5,7 @@ import rcStats
 
 class StatsProvider(rcStats.StatsProvider):
     def customfile(self, metric, day):
-        f = os.path.join(rcEnv.pathvar, 'stats', metric+day)
+        f = os.path.join(rcEnv.paths.pathvar, 'stats', metric+day)
         if os.path.exists(f):
             return f
         return None

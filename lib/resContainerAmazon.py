@@ -40,10 +40,10 @@ class CloudVm(resContainer.Container):
         self.addr = None
 
     def keyfile(self):
-        kf = [os.path.join(rcEnv.pathetc, self.key_name+'.pem'),
-              os.path.join(rcEnv.pathetc, self.key_name+'.pub'),
-              os.path.join(rcEnv.pathvar, self.key_name+'.pem'),
-              os.path.join(rcEnv.pathvar, self.key_name+'.pub')]
+        kf = [os.path.join(rcEnv.paths.pathetc, self.key_name+'.pem'),
+              os.path.join(rcEnv.paths.pathetc, self.key_name+'.pub'),
+              os.path.join(rcEnv.paths.pathvar, self.key_name+'.pem'),
+              os.path.join(rcEnv.paths.pathvar, self.key_name+'.pub')]
         for k in kf:
             if os.path.exists(k):
                 return k

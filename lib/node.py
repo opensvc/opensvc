@@ -94,7 +94,7 @@ class Node(object):
         self.clusters = None
         self.clouds = None
         self.paths = Storage(
-            reboot_flag=os.path.join(rcEnv.pathvar, "REBOOT_FLAG"),
+            reboot_flag=os.path.join(rcEnv.paths.pathvar, "REBOOT_FLAG"),
         )
         self.services = None
         self.load_config()
@@ -534,14 +534,14 @@ class Node(object):
         """
         edit_config node action entrypoint
         """
-        fpath = os.path.join(rcEnv.pathetc, "node.conf")
+        fpath = os.path.join(rcEnv.paths.pathetc, "node.conf")
         return self.edit_cf(fpath)
 
     def edit_authconfig(self):
         """
         edit_authconfig node action entrypoint
         """
-        fpath = os.path.join(rcEnv.pathetc, "auth.conf")
+        fpath = os.path.join(rcEnv.paths.pathetc, "auth.conf")
         return self.edit_cf(fpath)
 
     @staticmethod
@@ -580,13 +580,13 @@ class Node(object):
             tmpf.close()
             with open(fpath, "w") as tmpf:
                 self.config.write(tmpf)
-            shutil.move(fpath, rcEnv.nodeconf)
+            shutil.move(fpath, rcEnv.paths.nodeconf)
         except (OSError, IOError) as exc:
-            print("failed to write new %s (%s)" % (rcEnv.nodeconf, str(exc)),
+            print("failed to write new %s (%s)" % (rcEnv.paths.nodeconf, str(exc)),
                   file=sys.stderr)
             raise ex.excError
         try:
-            os.chmod(rcEnv.nodeconf, 0o0600)
+            os.chmod(rcEnv.paths.nodeconf, 0o0600)
         except OSError:
             pass
         self.load_config()
@@ -626,7 +626,7 @@ class Node(object):
         value before use.
         """
         try:
-            self.config = self.read_cf(rcEnv.nodeconf, CONFIG_DEFAULTS)
+            self.config = self.read_cf(rcEnv.paths.nodeconf, CONFIG_DEFAULTS)
         except IOError:
             # some action don't need self.config
             pass
@@ -640,7 +640,7 @@ class Node(object):
         """
         if self.auth_config is not None:
             return
-        self.auth_config = self.read_cf(rcEnv.authconf)
+        self.auth_config = self.read_cf(rcEnv.paths.authconf)
 
     @staticmethod
     def setup_sync_outdated():
@@ -649,8 +649,8 @@ class Node(object):
         else return False
         """
         import glob
-        setup_sync_flag = os.path.join(rcEnv.pathvar, 'last_setup_sync')
-        fpaths = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
+        setup_sync_flag = os.path.join(rcEnv.paths.pathvar, 'last_setup_sync')
+        fpaths = glob.glob(os.path.join(rcEnv.paths.pathetc, '*.conf'))
         if not os.path.exists(setup_sync_flag):
             return True
         for fpath in fpaths:
@@ -1711,9 +1711,9 @@ class Node(object):
             if self.options.cron:
                 return 0
             return 1
-        tmpp = os.path.join(rcEnv.pathtmp, 'compliance')
-        backp = os.path.join(rcEnv.pathtmp, 'compliance.bck')
-        compp = os.path.join(rcEnv.pathvar, 'compliance')
+        tmpp = os.path.join(rcEnv.paths.pathtmp, 'compliance')
+        backp = os.path.join(rcEnv.paths.pathtmp, 'compliance.bck')
+        compp = os.path.join(rcEnv.paths.pathvar, 'compliance')
         if not os.path.exists(compp):
             os.makedirs(compp, 0o755)
         import shutil
@@ -1721,10 +1721,10 @@ class Node(object):
             shutil.rmtree(backp)
         except (OSError, IOError):
             pass
-        print("extract compliance in", rcEnv.pathtmp)
+        print("extract compliance in", rcEnv.paths.pathtmp)
         import tarfile
         tar = tarfile.open(fpath)
-        os.chdir(rcEnv.pathtmp)
+        os.chdir(rcEnv.paths.pathtmp)
         try:
             tar.extractall()
             tar.close()
@@ -1742,7 +1742,7 @@ class Node(object):
         packaging tools.
         """
         modname = 'rcUpdatePkg'+rcEnv.sysname
-        if not os.path.exists(os.path.join(rcEnv.pathlib, modname+'.py')):
+        if not os.path.exists(os.path.join(rcEnv.paths.pathlib, modname+'.py')):
             print("updatepkg not implemented on", rcEnv.sysname, file=sys.stderr)
             return 1
         mod = __import__(modname)
@@ -1813,10 +1813,10 @@ class Node(object):
                 break
 
         if section is None:
-            raise ex.excError("array '%s' not found in %s" % (array_name, rcEnv.authconf))
+            raise ex.excError("array '%s' not found in %s" % (array_name, rcEnv.paths.authconf))
 
         if not self.auth_config.has_option(section, "type"):
-            raise ex.excError("%s must have a '%s.type' option" % (rcEnv.authconf, section))
+            raise ex.excError("%s must have a '%s.type' option" % (rcEnv.paths.authconf, section))
 
         driver = self.auth_config.get(section, "type")
         rtype = driver[0].upper() + driver[1:].lower()
@@ -1886,9 +1886,9 @@ class Node(object):
         received from the collector's action queue.
         """
         if action.get("svcname") is None or action.get("svcname") == "":
-            cmd = [rcEnv.nodemgr]
+            cmd = [rcEnv.paths.nodemgr]
         else:
-            cmd = [rcEnv.svcmgr, "-s", action.get("svcname")]
+            cmd = [rcEnv.paths.svcmgr, "-s", action.get("svcname")]
         import shlex
         cmd += shlex.split(action.get("command", ""))
         print("dequeue action %s" % " ".join(cmd))
@@ -1984,22 +1984,22 @@ class Node(object):
 
         if not section.startswith("cloud#"):
             raise ex.excInitError("cloud sections must have a unique name in "
-                                  "the form '[cloud#n] in %s" % rcEnv.nodeconf)
+                                  "the form '[cloud#n] in %s" % rcEnv.paths.nodeconf)
 
         if self.clouds and section in self.clouds:
             return self.clouds[section]
 
         if not self.config.has_option(section, "type"):
             raise ex.excInitError("type option is mandatory in cloud section "
-                                  "in %s" % rcEnv.nodeconf)
+                                  "in %s" % rcEnv.paths.nodeconf)
         cloud_type = self.config.get(section, 'type')
 
         if len(cloud_type) == 0:
-            raise ex.excInitError("invalid cloud type in %s"%rcEnv.nodeconf)
+            raise ex.excInitError("invalid cloud type in %s"%rcEnv.paths.nodeconf)
 
         self.load_auth_config()
         if not self.auth_config.has_section(section):
-            raise ex.excInitError("%s must have a '%s' section" % (rcEnv.authconf, section))
+            raise ex.excInitError("%s must have a '%s' section" % (rcEnv.paths.authconf, section))
 
         auth_dict = {}
         for key, val in self.auth_config.items(section):
@@ -2041,7 +2041,7 @@ class Node(object):
         Purge a lingering service no longer detected in the cloud.
         """
         import glob
-        fpaths = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
+        fpaths = glob.glob(os.path.join(rcEnv.paths.pathetc, '*.conf'))
         for fpath in fpaths:
             svcname = os.path.basename(fpath)[:-5]
             if svcname.endswith(suffix) and svcname not in svcnames:
@@ -2053,8 +2053,8 @@ class Node(object):
         Init a service for a detected cloud instance.
         """
         import glob
-        fpaths = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
-        fpath = os.path.join(rcEnv.pathetc, svcname+'.conf')
+        fpaths = glob.glob(os.path.join(rcEnv.paths.pathetc, '*.conf'))
+        fpath = os.path.join(rcEnv.paths.pathetc, svcname+'.conf')
         if fpath in fpaths:
             print(svcname, "is already defined")
             return
@@ -2090,7 +2090,7 @@ class Node(object):
         except OSError:
             pass
         try:
-            os.symlink(rcEnv.svcmgr, basename)
+            os.symlink(rcEnv.paths.svcmgr, basename)
         except OSError:
             pass
 
@@ -2397,7 +2397,7 @@ class Node(object):
         Download a provisioning template from the collector's rest api,
         and installs it as the service configuration file.
         """
-        fpath = os.path.join(rcEnv.pathetc, svcname+'.conf')
+        fpath = os.path.join(rcEnv.paths.pathetc, svcname+'.conf')
         try:
             int(template)
             url = "/provisioning_templates/"+str(template)+"?props=tpl_definition&meta=0"
@@ -2446,7 +2446,7 @@ class Node(object):
 
         # install the configuration file in etc/
         src_cf = os.path.realpath(fpath)
-        dst_cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
+        dst_cf = os.path.join(rcEnv.paths.pathetc, svcname+'.conf')
         if dst_cf != src_cf:
             shutil.copy2(src_cf, dst_cf)
 
@@ -2491,12 +2491,12 @@ class Node(object):
             return
 
         # install svcmgr link
-        svcmgr_l = os.path.join(rcEnv.pathetc, svcname)
+        svcmgr_l = os.path.join(rcEnv.paths.pathetc, svcname)
         if not os.path.exists(svcmgr_l):
-            os.symlink(rcEnv.svcmgr, svcmgr_l)
-        elif os.path.realpath(rcEnv.svcmgr) != os.path.realpath(svcmgr_l):
+            os.symlink(rcEnv.paths.svcmgr, svcmgr_l)
+        elif os.path.realpath(rcEnv.paths.svcmgr) != os.path.realpath(svcmgr_l):
             os.unlink(svcmgr_l)
-            os.symlink(rcEnv.svcmgr, svcmgr_l)
+            os.symlink(rcEnv.paths.svcmgr, svcmgr_l)
 
     def set_rlimit(self):
         """
@@ -2605,7 +2605,7 @@ class Node(object):
         if self.options.format is not None:
             return self.print_config_data(self.config)
         from rcColor import print_color_config
-        print_color_config(rcEnv.nodeconf)
+        print_color_config(rcEnv.paths.nodeconf)
 
     def print_authconfig(self):
         """
@@ -2615,7 +2615,7 @@ class Node(object):
             self.load_auth_config()
             return self.print_config_data(self.auth_config)
         from rcColor import print_color_config
-        print_color_config(rcEnv.authconf)
+        print_color_config(rcEnv.paths.authconf)
 
     def agent_version(self):
         try:

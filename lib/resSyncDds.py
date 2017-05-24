@@ -71,7 +71,7 @@ class syncDds(resSync.Sync):
             raise ex.excError
 
     def set_statefile(self):
-        self.statefile = os.path.join(rcEnv.pathvar,
+        self.statefile = os.path.join(rcEnv.paths.pathvar,
                                       self.svc.svcname+'_'+self.rid+'_dds_state')
 
     def create_snap1(self):
@@ -382,7 +382,7 @@ class syncDds(resSync.Sync):
         self.dsts = dsts
         self.snap_size = snap_size
         if delta_store is None:
-            self.delta_store = rcEnv.pathvar
+            self.delta_store = rcEnv.paths.pathvar
         else:
             self.delta_store = delta_store
 

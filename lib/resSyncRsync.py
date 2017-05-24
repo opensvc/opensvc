@@ -23,7 +23,7 @@ def lookup_snap_mod():
         raise ex.excError
 
 def get_timestamp_filename(self, node):
-    sync_timestamp_d = os.path.join(rcEnv.pathvar, 'sync', node)
+    sync_timestamp_d = os.path.join(rcEnv.paths.pathvar, 'sync', node)
     sync_timestamp_f = os.path.join(sync_timestamp_d, self.svc.svcname+'!'+self.rid)
     return sync_timestamp_f
 
@@ -193,9 +193,9 @@ class Rsync(resSync.Sync):
     def sync_timestamp(self, node):
         sync_timestamp_f = get_timestamp_filename(self, node)
         sync_timestamp_d = os.path.dirname(sync_timestamp_f)
-        sync_timestamp_d_src = os.path.join(rcEnv.pathvar, 'sync', rcEnv.nodename)
+        sync_timestamp_d_src = os.path.join(rcEnv.paths.pathvar, 'sync', rcEnv.nodename)
         sync_timestamp_f_src = os.path.join(sync_timestamp_d_src, self.svc.svcname+'!'+self.rid)
-        sched_timestamp_f = os.path.join(rcEnv.pathvar, '_'.join(('last_sync', self.svc.svcname, self.rid)))
+        sched_timestamp_f = os.path.join(rcEnv.paths.pathvar, '_'.join(('last_sync', self.svc.svcname, self.rid)))
         if not os.path.isdir(sync_timestamp_d):
             os.makedirs(sync_timestamp_d, 0o755)
         if not os.path.isdir(sync_timestamp_d_src):
@@ -432,7 +432,7 @@ class Rsync(resSync.Sync):
                               **kwargs)
 
         if internal:
-            if rcEnv.drp_path in dst:
+            if rcEnv.paths.drp_path in dst:
                 self.label = "rsync system files to drpnodes"
             else:
                 self.label = "rsync svc config to %s"%(', '.join(target.keys()))

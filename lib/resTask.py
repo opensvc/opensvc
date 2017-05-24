@@ -14,7 +14,7 @@ def run_as_popen_kwargs(user):
         return {}
     if user is None:
         return {}
-    cwd = rcEnv.pathtmp
+    cwd = rcEnv.paths.pathtmp
     import pwd
     try:
         pw_record = pwd.getpwnam(user)

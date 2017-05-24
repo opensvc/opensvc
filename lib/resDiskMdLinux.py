@@ -36,7 +36,7 @@ class Disk(resDisk.Disk):
         return self.fmt_info(data)
 
     def md_config_file_name(self):
-        return os.path.join(rcEnv.pathvar, 'md_' + self.md_devname() + '.disklist')
+        return os.path.join(rcEnv.paths.pathvar, 'md_' + self.md_devname() + '.disklist')
 
     def md_config_import(self):
         p = self.md_config_file_name()

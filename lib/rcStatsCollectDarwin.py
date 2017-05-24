@@ -33,7 +33,7 @@ def collect(node):
         return (vars, vals)
     
     def mem_u():
-        basedir = os.path.join(rcEnv.pathvar, 'stats')
+        basedir = os.path.join(rcEnv.paths.pathvar, 'stats')
         if not os.path.exists(basedir):
             os.makedirs(basedir)
         fname = os.path.join(basedir, 'mem_u%0.2d'%now.day)

@@ -55,7 +55,7 @@ class Snap(snap.Snap):
             self.log.error(err)
         if ret != 0:
             raise ex.syncSnapCreateError
-        snap_mnt = os.path.join(rcEnv.pathtmp,
+        snap_mnt = os.path.join(rcEnv.paths.pathtmp,
                                 'osvc_sync_'+vg_name+'_'+lv_name)
         if not os.path.exists(snap_mnt):
             os.makedirs(snap_mnt, 0o755)

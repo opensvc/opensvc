@@ -21,7 +21,7 @@ import logging.handlers
 log = logging.getLogger("cmdworker")
 
 if os.getuid() == 0:
-    logfile = os.path.join(rcEnv.pathlog, 'cmdworker.log')
+    logfile = os.path.join(rcEnv.paths.pathlog, 'cmdworker.log')
     fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
                                                        maxBytes=5242880,

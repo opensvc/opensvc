@@ -14,15 +14,15 @@ from rcUtilities import which, cmdline2list
 class SysReport(object):
     def __init__(self, node=None):
         self.todo = [
-          ('INC', os.path.join(rcEnv.pathetc, 'node.conf')),
-          ('INC', os.path.join(rcEnv.pathetc, '*.conf')),
-          ('INC', os.path.join(rcEnv.pathetc, 'sysreport.conf.d')),
+          ('INC', os.path.join(rcEnv.paths.pathetc, 'node.conf')),
+          ('INC', os.path.join(rcEnv.paths.pathetc, '*.conf')),
+          ('INC', os.path.join(rcEnv.paths.pathetc, 'sysreport.conf.d')),
         ]
 
         self.changed = []
         self.deleted = []
-        self.sysreport_conf_d = os.path.join(rcEnv.pathetc, "sysreport.conf.d")
-        self.sysreport_d = os.path.join(rcEnv.pathvar, "sysreport")
+        self.sysreport_conf_d = os.path.join(rcEnv.paths.pathetc, "sysreport.conf.d")
+        self.sysreport_d = os.path.join(rcEnv.paths.pathvar, "sysreport")
         self.collect_d = os.path.join(self.sysreport_d, rcEnv.nodename)
         self.collect_cmd_d = os.path.join(self.collect_d, "cmd")
         self.collect_file_d = os.path.join(self.collect_d, "file")

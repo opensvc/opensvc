@@ -42,7 +42,7 @@ rcEnv.warned = False
 
 import logging
 import logging.handlers
-logfile = os.path.join(rcEnv.pathlog, 'xmlrpc.log')
+logfile = os.path.join(rcEnv.paths.pathlog, 'xmlrpc.log')
 log = logging.getLogger("xmlrpc")
 log.setLevel(logging.INFO)
 
@@ -530,7 +530,7 @@ class Collector(object):
     def push_service(self, svc, sync=True):
         def repr_config(svc):
             import codecs
-            cf = os.path.join(rcEnv.pathetc, svc+'.conf')
+            cf = os.path.join(rcEnv.paths.pathetc, svc+'.conf')
             if not os.path.exists(cf):
                 return
             with codecs.open(cf, 'r', encoding="utf8") as f:

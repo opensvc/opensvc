@@ -34,7 +34,7 @@ class Nexenta(object):
         if self.username is not None and self.password is not None:
             return
         import ConfigParser
-        cf = rcEnv.authconf
+        cf = rcEnv.paths.authconf
         self.conf = ConfigParser.RawConfigParser()
         self.conf.read(cf)
         if not self.conf.has_section(self.head):

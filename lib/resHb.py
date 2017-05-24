@@ -8,8 +8,8 @@ class Hb(Res.Resource):
     """ HeartBeat ressource
     """
     def cluster_files(self):
-        svcfile = os.path.join(rcEnv.pathetc, self.svc.svcname)
-        svcmgr = rcEnv.svcmgr
+        svcfile = os.path.join(rcEnv.paths.pathetc, self.svc.svcname)
+        svcmgr = rcEnv.paths.svcmgr
         cluster_f = '.'.join((svcfile, 'cluster'))
         stonith_f = '.'.join((svcfile, 'stonith'))
 

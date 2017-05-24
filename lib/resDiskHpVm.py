@@ -53,7 +53,7 @@ class Disk(resVg.Disk):
             self.write_share()
 
     def sharefile_name(self):
-        return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.share')
+        return os.path.join(rcEnv.paths.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.share')
 
     def get_devs(self):
         cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-l', 'all']

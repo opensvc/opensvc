@@ -104,11 +104,11 @@ def initLogger(name, handlers=None):
         handlers = DEFAULT_HANDLERS
 
     if name == rcEnv.nodename:
-        logfile = os.path.join(rcEnv.pathlog, "node") + '.log'
-        debuglogfile = os.path.join(rcEnv.pathlog, "node") + '.debug.log'
+        logfile = os.path.join(rcEnv.paths.pathlog, "node") + '.log'
+        debuglogfile = os.path.join(rcEnv.paths.pathlog, "node") + '.debug.log'
     else:
-        logfile = os.path.join(rcEnv.pathlog, name) + '.log'
-        debuglogfile = os.path.join(rcEnv.pathlog, name) + '.debug.log'
+        logfile = os.path.join(rcEnv.paths.pathlog, name) + '.log'
+        debuglogfile = os.path.join(rcEnv.paths.pathlog, name) + '.debug.log'
     log = logging.getLogger(name)
     log.handlers = []
 
@@ -150,7 +150,7 @@ def initLogger(name, handlers=None):
             import configparser as ConfigParser
         config = ConfigParser.RawConfigParser({})
         try:
-            config.read(rcEnv.nodeconf)
+            config.read(rcEnv.paths.nodeconf)
         except:
             pass
         try:

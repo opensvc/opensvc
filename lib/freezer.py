@@ -12,7 +12,7 @@ class Freezer(object):
     Provides methods to freeze, thaw a service and to test if
     the service is frozen.
     """
-    flag_dir = rcEnv.pathvar
+    flag_dir = rcEnv.paths.pathvar
     base_flag = os.path.join(flag_dir, 'FROZEN')
     flag = base_flag
 
@@ -46,7 +46,7 @@ class Freezer(object):
             os.unlink(self.flag)
 
     def __init__(self, name):
-        if not os.path.exists(os.path.join(rcEnv.pathetc, name)):
+        if not os.path.exists(os.path.join(rcEnv.paths.pathetc, name)):
             self.freeze = self._dummy
             self.thaw = self._dummy
             self.frozen = self._dummy

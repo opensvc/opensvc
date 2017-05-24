@@ -25,7 +25,7 @@ class Snap(snap.Snap):
             raise ex.syncNotSnapable
         clonefset = fset +'@osvc_sync'
         mount_point = m.mount_point
-        snap_mount_point = os.path.join(rcEnv.pathtmp, 'clonefset/%s/%s/osvc_sync'%(m.svc.svcname,mount_point))
+        snap_mount_point = os.path.join(rcEnv.paths.pathtmp, 'clonefset/%s/%s/osvc_sync'%(m.svc.svcname,mount_point))
         snap_mount_point = os.path.normpath(snap_mount_point)
         if not os.path.exists(snap_mount_point):
             try:

@@ -355,8 +355,8 @@ class Svc(object):
         self.svcname = svcname
         self.hostid = rcEnv.nodename
         self.paths = Storage(
-            cf=os.path.join(rcEnv.pathetc, self.svcname+'.conf'),
-            push_flag=os.path.join(rcEnv.pathvar, self.svcname, 'last_pushed_config'),
+            cf=os.path.join(rcEnv.paths.pathetc, self.svcname+'.conf'),
+            push_flag=os.path.join(rcEnv.paths.pathvar, self.svcname, 'last_pushed_config'),
             run_flag=os.path.join(os.sep, "var", "run", "opensvc."+self.svcname),
         )
         self.resources_by_id = {}
@@ -385,7 +385,7 @@ class Svc(object):
         self.need_postsync = set()
 
         # set by the builder
-        self.conf = os.path.join(rcEnv.pathetc, svcname+".conf")
+        self.conf = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
         self.node = None
         self.comment = ""
         self.drp_type = ""
@@ -730,7 +730,7 @@ class Svc(object):
         elif action.startswith("sync"):
             suffix = "sync"
 
-        lockfile = os.path.join(rcEnv.pathlock, self.svcname)
+        lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname)
         if suffix is not None:
             lockfile = ".".join((lockfile, suffix))
 
@@ -1079,9 +1079,9 @@ class Svc(object):
             return
 
         if self.options.debug:
-            logfile = os.path.join(rcEnv.pathlog, self.svcname+".debug.log")
+            logfile = os.path.join(rcEnv.paths.pathlog, self.svcname+".debug.log")
         else:
-            logfile = os.path.join(rcEnv.pathlog, self.svcname+".log")
+            logfile = os.path.join(rcEnv.paths.pathlog, self.svcname+".log")
 
         if not os.path.exists(logfile):
             return
@@ -1845,7 +1845,7 @@ class Svc(object):
         encapsulated in the container identified by <rid> will be written
         for caching.
         """
-        return os.path.join(rcEnv.pathvar, self.svcname, "encap.status."+rid)
+        return os.path.join(rcEnv.paths.pathvar, self.svcname, "encap.status."+rid)
 
     def purge_cache_encap_json_status(self, rid):
         """
@@ -2797,7 +2797,7 @@ class Svc(object):
             # in this context as it may hang
             sync = True
 
-        rcmd = [os.path.join(rcEnv.pathetc, self.svcname)]
+        rcmd = [os.path.join(rcEnv.paths.pathetc, self.svcname)]
         if self.options.debug:
             rcmd += ['--debug']
         if self.options.cluster and action_mode:
@@ -2951,7 +2951,7 @@ class Svc(object):
         or --recover options.
         """
         import shutil
-        path = os.path.join(rcEnv.pathtmp, self.svcname+".conf.tmp")
+        path = os.path.join(rcEnv.paths.pathtmp, self.svcname+".conf.tmp")
         if os.path.exists(path):
             if self.options.recover:
                 pass
@@ -3116,7 +3116,7 @@ class Svc(object):
         """
         Create the service-dedicated subdir in <pathvar>.
         """
-        var_d = os.path.join(rcEnv.pathvar, self.svcname)
+        var_d = os.path.join(rcEnv.paths.pathvar, self.svcname)
         if not os.path.exists(var_d):
             os.makedirs(var_d)
 
@@ -3202,9 +3202,9 @@ class Svc(object):
             local_mtime = int(os.stat(self.paths.cf).st_mtime)
             if encap_mtime > local_mtime:
                 if hasattr(container, 'rcp_from'):
-                    cmd_results = container.rcp_from(encap_cf, rcEnv.pathetc+'/')
+                    cmd_results = container.rcp_from(encap_cf, rcEnv.paths.pathetc+'/')
                 else:
-                    cmd = rcEnv.rcp.split() + [container.name+':'+encap_cf, rcEnv.pathetc+'/']
+                    cmd = rcEnv.rcp.split() + [container.name+':'+encap_cf, rcEnv.paths.pathetc+'/']
                     cmd_results = justcall(cmd)
                 os.utime(self.paths.cf, (encap_mtime, encap_mtime))
                 self.log.info("fetch %s from %s", encap_cf, container.name)
@@ -3882,7 +3882,7 @@ class Svc(object):
                                  sync=self.sync_dblogger)
 
         # Per action logfile to push to database at the end of the action
-        tmpfile = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.pathtmp,
+        tmpfile = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.paths.pathtmp,
                                               prefix=self.svcname+'.'+action)
         actionlogfile = tmpfile.name
         tmpfile.close()
@@ -4376,16 +4376,16 @@ class Svc(object):
         """
         import shutil
         dpaths = [
-            os.path.join(rcEnv.pathetc, self.svcname+".dir"),
-            os.path.join(rcEnv.pathetc, self.svcname+".d"),
-            os.path.join(rcEnv.pathvar, self.svcname),
+            os.path.join(rcEnv.paths.pathetc, self.svcname+".dir"),
+            os.path.join(rcEnv.paths.pathetc, self.svcname+".d"),
+            os.path.join(rcEnv.paths.pathvar, self.svcname),
         ]
         fpaths = [
             self.paths.cf,
-            os.path.join(rcEnv.pathetc, self.svcname),
-            os.path.join(rcEnv.pathetc, self.svcname+".d"),
-            os.path.join(rcEnv.pathetc, self.svcname+".cluster"),
-            os.path.join(rcEnv.pathetc, self.svcname+".stonith"),
+            os.path.join(rcEnv.paths.pathetc, self.svcname),
+            os.path.join(rcEnv.paths.pathetc, self.svcname+".d"),
+            os.path.join(rcEnv.paths.pathetc, self.svcname+".cluster"),
+            os.path.join(rcEnv.paths.pathetc, self.svcname+".stonith"),
         ]
         for fpath in fpaths:
             if os.path.exists(fpath) and \
@@ -4812,7 +4812,7 @@ class Svc(object):
         import codecs
         import tempfile
         import shutil
-        ofile = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.pathtmp, prefix=self.svcname)
+        ofile = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.paths.pathtmp, prefix=self.svcname)
         fpath = ofile.name
         os.chmod(fpath, 0o0644)
         ofile.close()

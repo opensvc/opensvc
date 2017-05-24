@@ -239,7 +239,7 @@ class Ip(Res.Resource):
         delay = 1
         lockfd = None
         action = "startip"
-        lockfile = os.path.join(rcEnv.pathlock, action)
+        lockfile = os.path.join(rcEnv.paths.pathlock, action)
         details = "(timeout %d, delay %d, action %s, lockfile %s)" % \
                   (timeout, delay, action, lockfile)
         self.log.debug("acquire startip lock %s", details)

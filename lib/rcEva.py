@@ -10,11 +10,11 @@ def sssu(cmd, manager, username, password, array=None, sssubin=None):
     if sssubin is None:
         if which("sssu"):
             sssubin = "sssu"
-        elif os.path.exists(os.path.join(rcEnv.pathbin, "sssu")):
-            sssubin = os.path.join(rcEnv.pathbin, "sssu")
+        elif os.path.exists(os.path.join(rcEnv.paths.pathbin, "sssu")):
+            sssubin = os.path.join(rcEnv.paths.pathbin, "sssu")
         else:
             raise ex.excError("sssu command not found. set 'bin' in auth.conf section.")
-    os.chdir(rcEnv.pathtmp)
+    os.chdir(rcEnv.paths.pathtmp)
     _cmd = [sssubin,
             "select manager %s username=%s password=%s"%(manager, username, password)]
     if array is not None:
@@ -37,7 +37,7 @@ class Evas(object):
             self.filtering = True
         else:
             self.filtering = False
-        cf = rcEnv.authconf
+        cf = rcEnv.paths.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()

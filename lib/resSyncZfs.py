@@ -34,7 +34,7 @@ class SyncZfs(resSync.Sync):
         (self.src_pool, self.src_ds) = a2pool_dataset(src)
         (self.dst_pool, self.dst_ds) = a2pool_dataset(dst)
         if delta_store is None:
-            self.delta_store = rcEnv.pathvar
+            self.delta_store = rcEnv.paths.pathvar
         else:
             self.delta_store = delta_store
 
@@ -346,7 +346,7 @@ class SyncZfs(resSync.Sync):
         self.snap_uuid = out.strip()
 
     def set_statefile(self):
-        self.statefile = os.path.join(rcEnv.pathvar,
+        self.statefile = os.path.join(rcEnv.paths.pathvar,
                                       self.svc.svcname+'_'+self.rid+'_zfs_state')
 
     def write_statefile(self):

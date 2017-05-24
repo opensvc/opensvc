@@ -56,7 +56,7 @@ class Disk(Res.Resource):
         os.symlink(dev, l)
 
     def create_dev_dir(self):
-        d = os.path.join(rcEnv.pathvar, self.svc.svcname, "dev")
+        d = os.path.join(rcEnv.paths.pathvar, self.svc.svcname, "dev")
         if os.path.exists(d):
             return d
         os.makedirs(d)

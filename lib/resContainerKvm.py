@@ -109,7 +109,7 @@ class Kvm(resContainer.Container):
         return True
 
     def install_drp_flag(self):
-        flag_disk_path = os.path.join(rcEnv.pathvar, 'drp_flag.vdisk')
+        flag_disk_path = os.path.join(rcEnv.paths.pathvar, 'drp_flag.vdisk')
 
         from xml.etree.ElementTree import ElementTree, SubElement
         tree = ElementTree()

@@ -238,24 +238,5 @@ class rcEnv:
     dbcompliance = "None"
     dbcompliance_host = None
     paths = get_osvc_paths(sysname=sysname, detect=True)
-    pathsvc = paths.pathsvc
-    pathlib = paths.pathlib
-    pathbin = paths.pathbin
-    pathetc = paths.pathetc
-    pathlog = paths.pathlog
-    pathtmp = paths.pathtmp
-    pathvar = paths.pathvar
-    pathdoc = paths.pathdoc
-    pathlock = paths.pathlock
-    pathcron = paths.pathcron
-    postinstall = paths.postinstall
-    svcmgr = paths.svcmgr
-    svcmon = paths.svcmon
-    nodemgr = paths.nodemgr
-    cron = paths.cron
-    nodeconf = paths.nodeconf
-    authconf = paths.authconf
-    pathcomp = paths.pathcomp
-    drp_path = paths.drp_path
 
     create_or_update_dir(paths.pathtmp)

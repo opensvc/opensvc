@@ -122,7 +122,7 @@ class Disk(resDiskRaw.Disk):
 
     def lock(self, timeout=30, delay=1):
         import lock
-        lockfile = os.path.join(rcEnv.pathlock, 'startvgraw')
+        lockfile = os.path.join(rcEnv.paths.pathlock, 'startvgraw')
         lockfd = None
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)

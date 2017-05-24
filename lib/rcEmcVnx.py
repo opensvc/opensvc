@@ -7,8 +7,8 @@ from rcUtilities import justcall, which
 import time
 from rcGlobalEnv import rcEnv
 
-if rcEnv.pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+rcEnv.pathbin
+if rcEnv.paths.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.paths.pathbin
 
 def naviseccli(cmd, scope=None, spa=None, spb=None, username=None, password=None):
     if which('/opt/Navisphere/bin/naviseccli') is None:
@@ -34,7 +34,7 @@ class EmcVnxs(object):
         else:
             self.filtering = False
         self.arrays = []
-        cf = rcEnv.authconf
+        cf = rcEnv.paths.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()

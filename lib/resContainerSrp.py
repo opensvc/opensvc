@@ -239,7 +239,7 @@ class Srp(resContainer.Container):
                                         guestos=guestos,
                                         osvc_root_path=osvc_root_path,
                                         **kwargs)
-        self.export_file = os.path.join(rcEnv.pathvar, name + '.xml')
+        self.export_file = os.path.join(rcEnv.paths.pathvar, name + '.xml')
         self.runmethod = ['srp_su', name, 'root', '-c']
 
     def provision(self):

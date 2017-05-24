@@ -29,7 +29,7 @@ LOCK_EXCEPTIONS = (
 )
 
 def monlock(timeout=0, delay=0, fname='svcmon.lock'):
-    lockfile = os.path.join(rcEnv.pathlock, fname)
+    lockfile = os.path.join(rcEnv.paths.pathlock, fname)
     try:
         lockfd = lock(timeout=timeout, delay=delay, lockfile=lockfile)
     except lockTimeout:

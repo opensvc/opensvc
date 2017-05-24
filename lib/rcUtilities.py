@@ -440,7 +440,7 @@ def try_decode(string, codecs=['utf8', 'latin1']):
     return string
 
 def getaddr_cache_set(name, addr):
-    cache_d = os.path.join(rcEnv.pathvar, "cache", "addrinfo")
+    cache_d = os.path.join(rcEnv.paths.pathvar, "cache", "addrinfo")
     if not os.path.exists(cache_d):
         os.makedirs(cache_d)
     cache_f = os.path.join(cache_d, name)
@@ -449,7 +449,7 @@ def getaddr_cache_set(name, addr):
     return addr
 
 def getaddr_cache_get(name):
-    cache_d = os.path.join(rcEnv.pathvar, "cache", "addrinfo")
+    cache_d = os.path.join(rcEnv.paths.pathvar, "cache", "addrinfo")
     if not os.path.exists(cache_d):
         os.makedirs(cache_d)
     cache_f = os.path.join(cache_d, name)
@@ -625,7 +625,7 @@ def term_width():
     return default
 
 def get_cache_d():
-    return os.path.join(rcEnv.pathvar, "cache", rcEnv.session_uuid)
+    return os.path.join(rcEnv.paths.pathvar, "cache", rcEnv.session_uuid)
 
 def cache(sig):
     def wrapper(fn):
@@ -716,7 +716,7 @@ def clear_cache(sig, o=None):
 def purge_cache():
     import time
     import shutil
-    cache_d = os.path.join(rcEnv.pathvar, "cache")
+    cache_d = os.path.join(rcEnv.paths.pathvar, "cache")
     if not os.path.exists(cache_d) or not os.path.isdir(cache_d):
         return
     for d in os.listdir(cache_d): 

@@ -32,7 +32,7 @@ class syncS3(resSync.Sync):
         dst = "s3://"+self.bucket + self.prefix
         self.label += " to " + dst
         if self.snar is None:
-            self.snar = os.path.join(rcEnv.pathvar, self.svc.svcname, self.rid.replace("#", "."))+".snar"
+            self.snar = os.path.join(rcEnv.paths.pathvar, self.svc.svcname, self.rid.replace("#", "."))+".snar"
 
     def sync_basename(self, n):
         return os.path.basename(self.sync_fullname(n))

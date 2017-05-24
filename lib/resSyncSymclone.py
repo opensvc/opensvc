@@ -19,7 +19,7 @@ class syncSymclone(resSync.Sync):
             suffix = ""
         else:
             suffix = "." + ",".join(pairs)
-        return os.path.join(rcEnv.pathvar, self.svc.svcname, "pairs."+self.rid+suffix)
+        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, "pairs."+self.rid+suffix)
 
     def write_pair_file(self, pairs=None):
         if pairs is None:

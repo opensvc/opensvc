@@ -128,7 +128,7 @@ class Arrays(object):
         else:
             self.filtering = False
 
-        cf = rcEnv.authconf
+        cf = rcEnv.paths.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()

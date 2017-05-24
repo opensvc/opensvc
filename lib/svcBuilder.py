@@ -53,9 +53,9 @@ def handle_reference(svc, conf, ref, scope=False, impersonate=None):
         if ref == "short_svcname":
             return svc.svcname.split(".")[0]
         if ref == "svcmgr":
-            return rcEnv.svcmgr
+            return rcEnv.paths.svcmgr
         if ref == "nodemgr":
-            return rcEnv.nodemgr
+            return rcEnv.paths.nodemgr
 
         if "[" in ref and ref.endswith("]"):
             i = ref.index("[")
@@ -2318,11 +2318,11 @@ def add_mandatory_syncs(svc, conf):
     if len(svc.nodes|svc.drpnodes) > 1:
         kwargs = {}
         src = []
-        src = add_file(src, os.path.join(rcEnv.pathetc, svc.svcname))
-        src = add_file(src, os.path.join(rcEnv.pathetc, svc.svcname+'.conf'))
-        src = add_file(src, os.path.join(rcEnv.pathetc, svc.svcname+'.d'))
-        src = add_file(src, os.path.join(rcEnv.pathetc, svc.svcname+'.cluster'))
-        src = add_file(src, os.path.join(rcEnv.pathetc, svc.svcname+'.dir'))
+        src = add_file(src, os.path.join(rcEnv.paths.pathetc, svc.svcname))
+        src = add_file(src, os.path.join(rcEnv.paths.pathetc, svc.svcname+'.conf'))
+        src = add_file(src, os.path.join(rcEnv.paths.pathetc, svc.svcname+'.d'))
+        src = add_file(src, os.path.join(rcEnv.paths.pathetc, svc.svcname+'.cluster'))
+        src = add_file(src, os.path.join(rcEnv.paths.pathetc, svc.svcname+'.dir'))
         dst = os.path.join("/")
         exclude = ['--exclude=*.core']
         targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
@@ -2348,7 +2348,7 @@ def add_mandatory_syncs(svc, conf):
     targethash = {'drpnodes': svc.drpnodes}
     """ Reparent all PRD backed-up file in drp_path/node on the drpnode
     """
-    dst = os.path.join(rcEnv.drp_path, rcEnv.nodename)
+    dst = os.path.join(rcEnv.paths.drp_path, rcEnv.nodename)
     i = 0
     for src, exclude in rcEnv.drp_sync_files:
         """'-R' triggers rsync relative mode
@@ -3393,8 +3393,8 @@ def build(name, minimal=False, svcconf=None):
     else it return new Svc instance
     """
     if svcconf is None:
-        svcconf = os.path.join(rcEnv.pathetc, name) + '.conf'
-    svcinitd = os.path.join(rcEnv.pathetc, name) + '.d'
+        svcconf = os.path.join(rcEnv.paths.pathetc, name) + '.conf'
+    svcinitd = os.path.join(rcEnv.paths.pathetc, name) + '.d'
 
     #
     # node discovery is hidden in a separate module to
@@ -3705,25 +3705,25 @@ def build(name, minimal=False, svcconf=None):
 def is_service(f):
     if os.name == 'nt':
         return True
-    if os.path.realpath(f) != os.path.realpath(rcEnv.svcmgr):
+    if os.path.realpath(f) != os.path.realpath(rcEnv.paths.svcmgr):
         return False
     if not os.path.exists(f + '.conf'):
         return False
     return True
 
 def list_services():
-    if not os.path.exists(rcEnv.pathetc):
-        print("create dir %s"%rcEnv.pathetc)
-        os.makedirs(rcEnv.pathetc)
+    if not os.path.exists(rcEnv.paths.pathetc):
+        print("create dir %s"%rcEnv.paths.pathetc)
+        os.makedirs(rcEnv.paths.pathetc)
 
-    s = glob.glob(os.path.join(rcEnv.pathetc, '*.conf'))
+    s = glob.glob(os.path.join(rcEnv.paths.pathetc, '*.conf'))
     s = list(map(lambda x: os.path.basename(x)[:-5], s))
 
     l = []
     for name in s:
         if len(s) == 0:
             continue
-        if not is_service(os.path.join(rcEnv.pathetc, name)):
+        if not is_service(os.path.join(rcEnv.paths.pathetc, name)):
             continue
         l.append(name)
     return l
@@ -3799,7 +3799,7 @@ def create(svcname, resources=[], interactive=False, provision=False):
     if svcname in list_services():
         print("service", svcname, "already exists", file=sys.stderr)
         return {"ret": 1}
-    cf = os.path.join(rcEnv.pathetc, svcname+'.conf')
+    cf = os.path.join(rcEnv.paths.pathetc, svcname+'.conf')
     if os.path.exists(cf):
         import shutil
         print(cf, "already exists. save as "+svcname+".conf.bak", file=sys.stderr)
@@ -3893,15 +3893,15 @@ def create(svcname, resources=[], interactive=False, provision=False):
     conf.write(f)
 
     initdir = svcname+'.dir'
-    svcinitdir = os.path.join(rcEnv.pathetc, initdir)
+    svcinitdir = os.path.join(rcEnv.paths.pathetc, initdir)
     if not os.path.exists(svcinitdir):
         os.makedirs(svcinitdir)
     fix_app_link(svcname)
-    fix_exe_link(rcEnv.svcmgr, svcname)
+    fix_exe_link(rcEnv.paths.svcmgr, svcname)
     return {"ret": 0, "rid": sections.keys()}
 
 def fix_app_link(svcname):
-    os.chdir(rcEnv.pathetc)
+    os.chdir(rcEnv.paths.pathetc)
     src = svcname+'.d'
     dst = svcname+'.dir'
     if os.name != 'posix':
@@ -3916,7 +3916,7 @@ def fix_app_link(svcname):
 def fix_exe_link(dst, src):
     if os.name != 'posix':
         return
-    os.chdir(rcEnv.pathetc)
+    os.chdir(rcEnv.paths.pathetc)
     try:
         p = os.readlink(src)
     except:

@@ -50,7 +50,7 @@ class ProvisioningZone(Provisioning):
           protocol_ipv6=no
           default_route=172.30.5.1}
         """
-        cf = os.path.join(rcEnv.pathetc, self.r.svc.svcname+'.conf')
+        cf = os.path.join(rcEnv.paths.pathetc, self.r.svc.svcname+'.conf')
         s = ""
 
         for r in self.r.svc.get_resources(["ip"]):
@@ -145,7 +145,7 @@ class ProvisioningZone(Provisioning):
                   ",".join(search)
                 )
 
-            sysidcfg_dir = os.path.join(rcEnv.pathvar, self.r.svc.svcname)
+            sysidcfg_dir = os.path.join(rcEnv.paths.pathvar, self.r.svc.svcname)
             sysidcfg_filename = os.path.join(sysidcfg_dir, 'sysidcfg')
             contents = ""
             contents += "keyboard=US-English\n"
@@ -372,7 +372,7 @@ class ProvisioningZone(Provisioning):
 
         if self.container_origin is not None:
             lockname='create_zone2clone-' + self.container_origin
-            lockfile = os.path.join(rcEnv.pathlock, lockname)
+            lockfile = os.path.join(rcEnv.paths.pathlock, lockname)
             self.log.info("wait get lock %s"%(lockname))
             try:
                 lockfd = lock.lock(timeout=1200, delay=5, lockfile=lockfile)

@@ -107,7 +107,7 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
             self.r.log.info("container is already created")
             return
         name = self.setup_lxc_config()
-        with open(os.path.join(rcEnv.pathlog, "%s.console.log"%self.vm_name), "a+") as f:
+        with open(os.path.join(rcEnv.paths.pathlog, "%s.console.log"%self.vm_name), "a+") as f:
             f.write("")
         cmd = ['lxc-create', '-n', self.vm_name, '-f', self.config]
         (ret, out, err) = self.r.vcall(cmd)
@@ -141,7 +141,7 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
 
     def get_template(self):
         self.template_fname = os.path.basename(self.template)
-        self.template_local = os.path.join(rcEnv.pathtmp, self.template_fname)
+        self.template_local = os.path.join(rcEnv.paths.pathtmp, self.template_fname)
         if os.path.exists(self.template_local):
             self.r.log.info("template %s already downloaded"%self.template_fname)
             return

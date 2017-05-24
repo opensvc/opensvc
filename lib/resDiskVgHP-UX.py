@@ -33,10 +33,10 @@ class Disk(resDisk.Disk):
         return [self.mapfile_name(), self.mkfsfile_name()]
 
     def mapfile_name(self):
-        return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.map')
+        return os.path.join(rcEnv.paths.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.map')
 
     def mkfsfile_name(self):
-        return os.path.join(rcEnv.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.mksf')
+        return os.path.join(rcEnv.paths.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.mksf')
 
     def has_it(self):
         """ returns True if the volume is present
@@ -329,7 +329,7 @@ class Disk(resDisk.Disk):
 
     def lock(self, timeout=30, delay=1):
         import lock
-        lockfile = os.path.join(rcEnv.pathlock, 'vgimport')
+        lockfile = os.path.join(rcEnv.paths.pathlock, 'vgimport')
         lockfd = None
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)

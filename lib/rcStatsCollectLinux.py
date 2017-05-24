@@ -25,7 +25,7 @@ def collect(node):
                 continue
             vals.append([now, node.nodename, l[5], l[1], l[4].replace('%','')])
     
-        stats_fs_u_p = os.path.join(rcEnv.pathvar, 'stats_fs_u.%d' % datetime.datetime.now().day)
+        stats_fs_u_p = os.path.join(rcEnv.paths.pathvar, 'stats_fs_u.%d' % datetime.datetime.now().day)
         if not os.path.exists(stats_fs_u_p):
             # create the stats file
             mode = 'w+'
@@ -63,7 +63,7 @@ def collect(node):
                     if hasattr(r, "uuid"):
                         containernames[r.uuid] = r.name
     
-        zs_d = os.path.join(rcEnv.pathlog, 'xentop')
+        zs_d = os.path.join(rcEnv.paths.pathlog, 'xentop')
         zs_prefix = 'xentop'
         zs_f = os.path.join(zs_d, zs_prefix + datetime.datetime.now().strftime("%d"))
         datenow = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

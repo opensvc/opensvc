@@ -26,8 +26,8 @@ class check(checks.check):
         sas2ircu = self.find_sas2ircu()
         if sas2ircu is None:
             return self.undef
-        os.chdir(rcEnv.pathtmp)
-        logs = [os.path.join(rcEnv.pathtmp, 'sas2ircu.log')]
+        os.chdir(rcEnv.paths.pathtmp)
+        logs = [os.path.join(rcEnv.paths.pathtmp, 'sas2ircu.log')]
         for log in logs:
             if not os.path.exists(log):
                 continue

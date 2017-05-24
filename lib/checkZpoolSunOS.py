@@ -50,7 +50,7 @@ class check(checks.check):
             if getdevs == 2:
                 l = line.split()
                 x = l[0]
-                if 'd0' in x and x.startswith(rcEnv.pathvar):
+                if 'd0' in x and x.startswith(rcEnv.paths.pathvar):
                     x = l[0].split('/')[-1]
                 if 'd0' in x and x.startswith('c'):
                     d = x

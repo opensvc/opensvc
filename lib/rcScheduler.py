@@ -98,7 +98,7 @@ def fork(func, args=None, kwargs=None, serialize=False, delay=300):
 
     if serialize:
         lockfile = title+".fork.lock"
-        lockfile = os.path.join(rcEnv.pathlock, lockfile)
+        lockfile = os.path.join(rcEnv.paths.pathlock, lockfile)
 
         from lock import lock, unlock
         try:
@@ -299,7 +299,7 @@ class Scheduler(object):
         Create missing parent directories if needed.
         """
         if not timestamp_f.startswith(os.sep):
-            timestamp_f = os.path.join(rcEnv.pathvar, timestamp_f)
+            timestamp_f = os.path.join(rcEnv.paths.pathvar, timestamp_f)
         timestamp_d = os.path.dirname(timestamp_f)
         if not os.path.isdir(timestamp_d):
             os.makedirs(timestamp_d, 0o755)
@@ -983,7 +983,7 @@ class Scheduler(object):
         Return the full path of the last run timestamp file with the <fname>
         basename.
         """
-        timestamp_f = os.path.realpath(os.path.join(rcEnv.pathvar, fname))
+        timestamp_f = os.path.realpath(os.path.join(rcEnv.paths.pathvar, fname))
         return timestamp_f
 
     def _is_croned(self):

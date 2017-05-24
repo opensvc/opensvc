@@ -16,8 +16,8 @@ try:
 except ImportError:
     import configparser as ConfigParser
 
-if rcEnv.pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+rcEnv.pathbin
+if rcEnv.paths.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.paths.pathbin
 
 def reformat(s):
     lines = s.split('\n')
@@ -44,10 +44,10 @@ class Hp3pars(object):
         else:
             self.filtering = False
         self.arrays = []
-        if not os.path.exists(rcEnv.authconf):
-            raise ex.excError("%s not found" % rcEnv.authconf)
+        if not os.path.exists(rcEnv.paths.authconf):
+            raise ex.excError("%s not found" % rcEnv.paths.authconf)
         conf = ConfigParser.RawConfigParser()
-        conf.read(rcEnv.authconf)
+        conf.read(rcEnv.paths.authconf)
         m = {}
 
         for s in conf.sections():
@@ -232,7 +232,7 @@ class Hp3par(object):
         if self.uuid is not None:
             return self.uuid
         config = ConfigParser.RawConfigParser()
-        config.read(rcEnv.nodeconf)
+        config.read(rcEnv.paths.nodeconf)
         try:
             self.uuid = config.get("node", "uuid")
         except:

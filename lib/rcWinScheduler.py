@@ -74,12 +74,12 @@ class OsvcSched(win32serviceutil.ServiceFramework):
             self.next_task10 = now + datetime.timedelta(minutes=10)
 
     def run_task10(self):
-        cmd = [rcEnv.svcmon, "--updatedb"]
+        cmd = [rcEnv.paths.svcmon, "--updatedb"]
         servicemanager.LogInfoMsg("run %s" % ' '.join(cmd))
         p = Popen(cmd, stdout=None, stderr=None, stdin=None)
         p.communicate()
         servicemanager.LogInfoMsg("run internal scheduler")
-        cmd = [rcEnv.cron]
+        cmd = [rcEnv.paths.cron]
         p = Popen(cmd, stdout=None, stderr=None, stdin=None)
         p.communicate()
 

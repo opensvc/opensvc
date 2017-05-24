@@ -172,7 +172,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             devname = l[0]
 
             # -d mode import ?
-            if hasattr(rcEnv, "pathvar") and devname.startswith(rcEnv.pathvar):
+            if hasattr(rcEnv, "pathvar") and devname.startswith(rcEnv.paths.pathvar):
                 devname = devname.split('/')[-1]
             d = self.get_dev(devname)
             if d is None:

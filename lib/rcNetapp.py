@@ -6,8 +6,8 @@ from subprocess import *
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
 
-if rcEnv.pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+rcEnv.pathbin
+if rcEnv.paths.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.paths.pathbin
 
 class Netapps(object):
     def __init__(self, objects=[]):
@@ -17,7 +17,7 @@ class Netapps(object):
         else:
             self.filtering = False
         self.arrays = []
-        cf = rcEnv.authconf
+        cf = rcEnv.paths.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()

@@ -127,13 +127,13 @@ class syncSymSrdfS(resSync.Sync):
         return out
 
     def dgfile_tmp_local_name(self):
-        return os.path.join(rcEnv.pathvar, 'symrdf_' + self.symdg + '.dg.tmp.local')
+        return os.path.join(rcEnv.paths.pathvar, 'symrdf_' + self.symdg + '.dg.tmp.local')
 
     def dgfile_local_name(self):
-        return os.path.join(rcEnv.pathvar, 'symrdf_' + self.symdg + '.dg.local')
+        return os.path.join(rcEnv.paths.pathvar, 'symrdf_' + self.symdg + '.dg.local')
 
     def dgfile_rdf_name(self):
-        return os.path.join(rcEnv.pathvar, 'symrdf_' + self.symdg + '.dg.rdf')
+        return os.path.join(rcEnv.paths.pathvar, 'symrdf_' + self.symdg + '.dg.rdf')
 
     def flush_cache(self):
         self.rdf_query_cache = None

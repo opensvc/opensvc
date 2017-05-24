@@ -50,7 +50,7 @@ class SyncBtrfs(resSync.Sync):
             self.dst_subvol = dst[dst.index(":")+1:]
 
         if delta_store is None:
-            self.delta_store = rcEnv.pathvar
+            self.delta_store = rcEnv.paths.pathvar
         else:
             self.delta_store = delta_store
         self.dst_btrfs = {}
@@ -418,7 +418,7 @@ class SyncBtrfs(resSync.Sync):
         self.snap_uuid = self.src_btrfs.get_transid(snap)
 
     def set_statefile(self):
-        self.statefile = os.path.join(rcEnv.pathvar,
+        self.statefile = os.path.join(rcEnv.paths.pathvar,
                                       self.svc.svcname+'_'+self.rid+'_btrfs_state')
 
     def write_statefile(self):

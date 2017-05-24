@@ -559,7 +559,7 @@ class Resource(object):
         """
         Return the file path for the resource status cache.
         """
-        dirname = os.path.join(rcEnv.pathvar, self.svc.svcname)
+        dirname = os.path.join(rcEnv.paths.pathvar, self.svc.svcname)
         fname = "resource.status.last." + self.rid
         fpath = os.path.join(dirname, fname)
         if not os.path.exists(dirname):
@@ -570,7 +570,7 @@ class Resource(object):
         """
         Return the file path for the resource status history.
         """
-        dirname = os.path.join(rcEnv.pathvar, self.svc.svcname)
+        dirname = os.path.join(rcEnv.paths.pathvar, self.svc.svcname)
         fname = "resource.status.history." + self.rid
         fpath = os.path.join(dirname, fname)
         if not os.path.exists(dirname):

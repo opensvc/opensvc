@@ -14,14 +14,14 @@ except ImportError:
 
 try:
     config = ConfigParser.RawConfigParser()
-    config.read(rcEnv.nodeconf)
+    config.read(rcEnv.paths.nodeconf)
     port = config.getint("listener", "port")
 except:
     port = rcEnv.listener_port
 
 def HandleClient(conn):
     data = conn.recv(1024)
-    cmd = [rcEnv.nodemgr, 'dequeue_actions']
+    cmd = [rcEnv.paths.nodemgr, 'dequeue_actions']
     p = Popen(cmd, stdout=None, stderr=None, stdin=None)
     p.communicate()
     conn.close()

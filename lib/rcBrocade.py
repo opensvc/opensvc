@@ -5,8 +5,8 @@ import ConfigParser
 import telnetlib
 from rcGlobalEnv import rcEnv
 
-if rcEnv.pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+rcEnv.pathbin
+if rcEnv.paths.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.paths.pathbin
 
 def brocadetelnetcmd(cmd, switch, username, password):
     tn = telnetlib.Telnet(switch)
@@ -48,7 +48,7 @@ class Brocades(object):
             self.filtering = True
         else:
             self.filtering = False
-        cf = rcEnv.authconf
+        cf = rcEnv.paths.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()

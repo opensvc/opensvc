@@ -12,7 +12,7 @@ from subprocess import *
 from rcColor import color, colorize, formatter
 from rcScheduler import scheduler_fork
 
-comp_dir = os.path.join(rcEnv.pathvar, 'compliance')
+comp_dir = os.path.join(rcEnv.paths.pathvar, 'compliance')
 
 # ex: \x1b[37;44m\x1b[1mContact List\x1b[0m\n
 regex = re.compile("\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|K|G]", re.UNICODE)
@@ -108,8 +108,8 @@ class Module(object):
             os.environ["PATH"] = self.python_link_d + ":" + os.environ["PATH"]
         else:
             os.environ["PATH"] = self.python_link_d
-        if rcEnv.pathbin != "/usr/bin":
-            os.environ["PATH"] = os.environ["PATH"] + ":" + rcEnv.pathbin
+        if rcEnv.paths.pathbin != "/usr/bin":
+            os.environ["PATH"] = os.environ["PATH"] + ":" + rcEnv.paths.pathbin
 
     def set_locale(self):
         """
@@ -130,13 +130,13 @@ class Module(object):
         os.environ.update({
           "PYTHONIOENCODING": "utf-8",
           "OSVC_PYTHON": sys.executable,
-          "OSVC_PATH_ETC": rcEnv.pathetc,
-          "OSVC_PATH_VAR": rcEnv.pathvar,
-          "OSVC_PATH_COMP": rcEnv.pathcomp,
-          "OSVC_PATH_TMP": rcEnv.pathtmp,
-          "OSVC_PATH_LOG": rcEnv.pathlog,
-          "OSVC_NODEMGR": rcEnv.nodemgr,
-          "OSVC_SVCMGR": rcEnv.svcmgr,
+          "OSVC_PATH_ETC": rcEnv.paths.pathetc,
+          "OSVC_PATH_VAR": rcEnv.paths.pathvar,
+          "OSVC_PATH_COMP": rcEnv.paths.pathcomp,
+          "OSVC_PATH_TMP": rcEnv.paths.pathtmp,
+          "OSVC_PATH_LOG": rcEnv.paths.pathlog,
+          "OSVC_NODEMGR": rcEnv.paths.nodemgr,
+          "OSVC_SVCMGR": rcEnv.paths.svcmgr,
         })
         self.set_locale()
         self.set_env_path()

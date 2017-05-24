@@ -4,8 +4,8 @@ import os
 import ConfigParser
 from rcGlobalEnv import rcEnv
 
-if rcEnv.pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+rcEnv.pathbin
+if rcEnv.paths.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+rcEnv.paths.pathbin
 
 def rcmd(cmd, manager, username, key):
     _cmd = ['ssh', '-i', key, '@'.join((username, manager))]
@@ -25,7 +25,7 @@ class VioServers(object):
         else:
             self.filtering = False
         self.arrays = []
-        cf = rcEnv.authconf
+        cf = rcEnv.paths.authconf
         if not os.path.exists(cf):
             return
         conf = ConfigParser.RawConfigParser()

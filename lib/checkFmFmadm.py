@@ -26,7 +26,7 @@ class check(checks.check):
         fmadm = self.find_fmadm()
         if fmadm is None:
             return self.undef
-        os.chdir(rcEnv.pathtmp)
+        os.chdir(rcEnv.paths.pathtmp)
         cmd = [fmadm, 'faulty']
         out, err, ret = justcall(cmd)
         if ret != 0:

@@ -234,7 +234,7 @@ class Freenass(object):
     def __init__(self, objects=[]):
         self.objects = objects
         self.filtering = len(objects) > 0
-        cf = rcEnv.authconf
+        cf = rcEnv.paths.authconf
         if not os.path.exists(cf):
             return
         conf = RawConfigParser()

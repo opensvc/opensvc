@@ -258,7 +258,7 @@ class Section(object):
             return ""
         if rtype and self.section+"."+rtype in deprecated_sections:
             return ""
-        dpath = rcEnv.pathdoc
+        dpath = rcEnv.paths.pathdoc
         fpath = os.path.join(dpath, "template."+section+".conf")
         if rtype:
             section += ", type "+rtype

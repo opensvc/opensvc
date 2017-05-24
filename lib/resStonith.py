@@ -15,7 +15,7 @@ class Stonith(Res.Resource):
     def creds(self):
         import ConfigParser
         c = ConfigParser.RawConfigParser()
-        c.read(os.path.join(rcEnv.pathetc, 'auth.conf'))
+        c.read(os.path.join(rcEnv.paths.pathetc, 'auth.conf'))
 
         username = None
         password = None

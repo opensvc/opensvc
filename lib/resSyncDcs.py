@@ -96,7 +96,7 @@ class SyncDcs(resSync.Sync):
         self.password = None
         self.dcs = dcs
         self.manager = manager
-        self.conf = os.path.join(rcEnv.pathetc, 'auth.conf')
+        self.conf = os.path.join(rcEnv.paths.pathetc, 'auth.conf')
 
     def on_add(self):
         self.get_conn()

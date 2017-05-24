@@ -45,7 +45,7 @@ class Zone(resContainer.Container):
         self.delayed_noaction = True
 
     def zone_cfg_dir(self):
-        return os.path.join(rcEnv.pathvar, self.svc.svcname, "zonecfg")
+        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, "zonecfg")
 
     def zone_cfg_path(self):
         return os.path.join(self.zone_cfg_dir(), self.name+".cfg")

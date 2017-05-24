@@ -173,10 +173,10 @@ class Disk(resDisk.Disk):
         self.do_deactivate()
 
     def vgfile_name(self):
-        return os.path.join(rcEnv.pathvar, self.name + '.vginfo')
+        return os.path.join(rcEnv.paths.pathvar, self.name + '.vginfo')
 
     def vgimportedfile_name(self):
-        return os.path.join(rcEnv.pathvar, self.name + '.vginfo.imported')
+        return os.path.join(rcEnv.paths.pathvar, self.name + '.vginfo.imported')
 
     def files_to_sync(self):
         return [self.vgfile_name()]

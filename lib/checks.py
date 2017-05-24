@@ -51,7 +51,7 @@ class checks(check):
     def register_local_checkers(self):
         import os
         import glob
-        check_d = os.path.join(rcEnv.pathvar, 'check')
+        check_d = os.path.join(rcEnv.paths.pathvar, 'check')
         if not os.path.exists(check_d):
             return
         import sys
@@ -68,7 +68,7 @@ class checks(check):
                 print(e, file=sys.stderr)
 
     def register(self, chk_name):
-        if not os.path.exists(os.path.join(rcEnv.pathlib, chk_name+rcEnv.sysname+'.py')):
+        if not os.path.exists(os.path.join(rcEnv.paths.pathlib, chk_name+rcEnv.sysname+'.py')):
             return
         m = __import__(chk_name+rcEnv.sysname)
         self += m.check(svcs=self.svcs)

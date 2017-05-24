@@ -27,7 +27,7 @@ def run_as_popen_kwargs(fpath):
         fstat = os.stat(fpath)
     except Exception as exc:
         raise ex.excError(str(exc))
-    cwd = rcEnv.pathtmp
+    cwd = rcEnv.paths.pathtmp
     user_uid = fstat[stat.ST_UID]
     user_gid = fstat[stat.ST_GID]
     try:
@@ -39,7 +39,7 @@ def run_as_popen_kwargs(fpath):
         user_name = pw_record.pw_name
         user_home_dir = pw_record.pw_dir
     except KeyError:
-        user_home_dir = rcEnv.pathtmp
+        user_home_dir = rcEnv.paths.pathtmp
     env = os.environ.copy()
     env['HOME'] = user_home_dir
     env['LOGNAME'] = user_name
@@ -157,7 +157,7 @@ class App(Resource):
         """
         Lazy init for the resource lock file path property.
         """
-        lockfile = os.path.join(rcEnv.pathlock, self.svc.svcname)
+        lockfile = os.path.join(rcEnv.paths.pathlock, self.svc.svcname)
         lockfile = ".".join((lockfile, self.rid))
         return lockfile
 
@@ -476,7 +476,7 @@ class App(Resource):
         Poll stdout and stderr to log as soon as new lines are available.
         """
         outf = os.path.join(
-            rcEnv.pathtmp,
+            rcEnv.paths.pathtmp,
             'svc_'+self.svc.svcname+'_'+os.path.basename(self.script)+'.log'
         )
         ofile = open(outf, 'w')
