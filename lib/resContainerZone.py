@@ -6,7 +6,7 @@ import os
 from rcUtilities import justcall, qcall
 from stat import *
 import resContainer
-from rcExceptions import excError
+import rcExceptions as ex
 from rcZfs import zfs_setprop
 from rcGlobalEnv import rcEnv
 
@@ -65,20 +65,20 @@ class Zone(resContainer.Container):
         cmd = [ZONECFG, '-z', self.name, 'info', 'zonepath']
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise excError("unable to determine zonepath using %s"%' '.join(cmd))
+            raise ex.excError("unable to determine zonepath using %s"%' '.join(cmd))
         zp = out.replace("zonepath: ", "").strip()
         return zp
 
     def get_zonepath_from_zonecfg_export(self):
         fpath = self.zone_cfg_path()
         if not os.path.exists(fpath):
-            raise excError("zone config export file %s not found. unable to determine zonepath" % fpath)
+            raise ex.excError("zone config export file %s not found. unable to determine zonepath" % fpath)
         with open(fpath, "r") as f:
             buff = f.read()
         for line in buff.split("\n"):
             if "set zonepath" in line:
                 return line.split("=")[-1].strip()
-        raise excError("set zonepath command not found in %s" % fpath)
+        raise ex.excError("set zonepath command not found in %s" % fpath)
 
     def get_zonepath(self):
         if hasattr(self, "zonepath"):
@@ -99,7 +99,7 @@ class Zone(resContainer.Container):
         if ret != 0:
             msg = '%s failed status: %i\n%s' % (" ".join(cmd), ret, out)
             self.log.error(msg)
-            raise excError(msg)
+            raise ex.excError(msg)
         else:
             msg = '%s done status: %i\n%s' % (" ".join(cmd), ret, out)
             self.log.info(msg)
@@ -121,7 +121,7 @@ class Zone(resContainer.Container):
         if ret != 0:
             msg = '%s failed status: %i in %s logs in %s' % (' '.join(cmd), ret, len, out)
             self.log.error(msg)
-            raise excError(msg)
+            raise ex.excError(msg)
         else:
             self.log.info('%s done in %s - ret %i - logs in %s'
                             % (' '.join(cmd), len, ret, out))
@@ -147,7 +147,7 @@ class Zone(resContainer.Container):
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def rcp(self, src, dst):
@@ -156,7 +156,7 @@ class Zone(resContainer.Container):
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def attach(self):
@@ -172,7 +172,7 @@ class Zone(resContainer.Container):
         try:
             self.umount_fs_in_zonepath()
             self.zoneadm('attach')
-        except excError:
+        except ex.excError:
             self.zoneadm('attach', ['-F'])
         self.can_rollback = True
 
@@ -246,7 +246,7 @@ class Zone(resContainer.Container):
         if self.state == "running":
             return(0)
         else:
-            raise(excError("zone should be running"))
+            raise(ex.excError("zone should be running"))
         self.log.info("wait for zone operational")
         self.wait_for_fn(self.operational, self.startup_timeout, 2)
 
@@ -316,7 +316,7 @@ class Zone(resContainer.Container):
             elif n_fields == 7:
                 (zoneid,zonename,state,zonepath,uuid,brand,iptype) = l
             else:
-                raise excError("Unexpected zoneadm list output: %s"%out)
+                raise ex.excError("Unexpected zoneadm list output: %s"%out)
             if zonename == self.name :
                 self.state = state
                 self.zonepath = zonepath
@@ -357,16 +357,16 @@ class Zone(resContainer.Container):
         self.log.info("wait for zone boot and reboot...")
         self.boot()
         if self.is_running is False:
-            raise(excError("zone is not running"))
+            raise(ex.excError("zone is not running"))
         cmd = [PGREP, "-z", self.name, "-f", INIT]
         (out, err, st) = justcall(cmd)
         if st != 0:
-            raise(excError("fail to detect zone init process"))
+            raise(ex.excError("fail to detect zone init process"))
         pids = " ".join(out.split("\n")).rstrip()
         cmd = [PWAIT, pids]
         self.log.info("wait for zone init process %s termination" % (pids))
         if qcall(cmd) != 0:
-            raise(excError("failed " + " ".join(cmd)))
+            raise(ex.excError("failed " + " ".join(cmd)))
         self.log.info("wait for zone running again")
         self.wait_for_fn(self.is_up, self.startup_timeout, 2)
         self.log.info("wait for zone operational")

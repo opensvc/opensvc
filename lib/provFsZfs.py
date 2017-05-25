@@ -4,6 +4,7 @@ from rcUtilities import which, convert_size
 from rcGlobalEnv import rcEnv
 from rcZfs import Dataset
 from svcBuilder import conf_get_string_scope
+import rcExceptions as ex
 
 class ProvisioningFs(provFs.ProvisioningFs):
     def unprovision_dev(self):

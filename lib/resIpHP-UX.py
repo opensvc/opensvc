@@ -1,6 +1,7 @@
 import resIp as Res
 u = __import__('rcUtilitiesHP-UX')
 from rcUtilities import to_cidr, to_dotted
+import rcExceptions as ex
 
 class Ip(Res.Ip):
     def check_ping(self, count=1, timeout=5):

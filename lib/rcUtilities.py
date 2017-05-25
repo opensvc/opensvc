@@ -4,6 +4,7 @@ import datetime
 import logging
 import socket
 import re
+import rcExceptions as ex
 from subprocess import *
 from rcGlobalEnv import rcEnv
 from functools import wraps
@@ -499,7 +500,7 @@ def convert_bool(s):
         return True
     if str(s).lower() in ("no",  "n", "false", "f", "0", "0.0", "", "none", "[]", "{}"):
         return False
-    raise Exception('Invalid value for boolean conversion: ' + str(value))
+    raise Exception('Invalid value for boolean conversion: ' + str(s))
 
 def convert_size(s, _to='', _round=1):
     l = ['', 'K', 'M', 'G', 'T', 'P', 'Z', 'E']
@@ -646,7 +647,8 @@ def cache(sig):
             try:
                 lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock', intent="cache")
             except Exception as e:
-                self.log.warning("cache locking error: %s. run command uncached." % str(e))
+                if log:
+                    log.warning("cache locking error: %s. run command uncached." % str(e))
                 return fn(*args, **kwargs)
             try:
                 data = cache_get(fpath, log=log)
@@ -695,7 +697,6 @@ def cache_get(fpath, log=None):
             data = json.load(f)
     except Exception as e:
         raise ex.excError("cache read error: %s" % str(e))
-        lock.unlock(lfd)
     return data
 
 def clear_cache(sig, o=None):

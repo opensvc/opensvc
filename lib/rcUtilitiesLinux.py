@@ -1,8 +1,11 @@
 import os
 import re
 import glob
+import time
+
 from rcGlobalEnv import rcEnv
 from rcUtilities import call, qcall, justcall, which
+import rcExceptions as ex
 
 label_to_dev_cache = {}
 
@@ -181,7 +184,13 @@ def lv_exists(self, device):
     return False
 
 def lv_info(self, device):
-    (ret, buff, err) = self.call([rcEnv.syspaths.lvs, '-o', 'vg_name,lv_name,lv_size', '--noheadings', '--units', 'm', device])
+    cmd = [
+        rcEnv.syspaths.lvs,
+        '-o', 'vg_name,lv_name,lv_size',
+        '--noheadings', '--units', 'm',
+        device
+    ]
+    ret, buff, err = self.call(cmd)
     if ret != 0:
         return (None, None, None)
     info = buff.split()

@@ -763,7 +763,8 @@ def main(argv, node=None):
 
 if __name__ == "__main__":
     try:
-        ret = main(sys.argv)
+        main(sys.argv)
+        ret = 0
     except ex.excError as exc:
         print(exc, file=sys.stderr)
         ret = 1

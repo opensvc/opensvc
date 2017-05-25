@@ -1,5 +1,6 @@
 from rcUtilities import justcall, call, vcall
 from rcGlobalEnv import rcEnv
+import rcExceptions as ex
 import logging
 import sys
 """
@@ -146,7 +147,7 @@ class Dataset(object):
         Return False if failure
         """
         if snapname is None:
-            raise(rcExceptions.excBug("snapname should be defined"))
+            raise ex.excError("snapname should be defined")
         snapdataset = self.name + "@" + snapname
         cmd = [rcEnv.syspaths.zfs, 'snapshot']
         if recursive:

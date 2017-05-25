@@ -3755,7 +3755,7 @@ class Svc(object):
         """
 
         if action not in ACTIONS_NO_LOCK and self.clustertype not in CLUSTER_TYPES:
-            raise ex.exError("invalid cluster type '%s'. allowed: %s" % (
+            raise ex.excError("invalid cluster type '%s'. allowed: %s" % (
                 self.clustertype,
                 ', '.join(CLUSTER_TYPES),
             ))
