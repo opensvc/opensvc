@@ -706,6 +706,15 @@ class DockerLib(object):
         finally:
             lock.unlock(lockfd)
 
+        unset_lazy(self, "docker_ps")
+        unset_lazy(self, "docker_service_ls")
+        unset_lazy(self, "service_ls_data")
+        unset_lazy(self, "container_id_by_name")
+        unset_lazy(self, "docker_info")
+        unset_lazy(self, "running_service_ids")
+        unset_lazy(self, "running_instance_ids")
+        unset_lazy(self, "images")
+
     def docker_running(self):
         """
         Return True if the docker daemon is running.
