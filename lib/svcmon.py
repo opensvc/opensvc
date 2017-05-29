@@ -128,8 +128,8 @@ def svcmon_normal1(svc, options, fmt=None):
 
     print('\n'.join(l))
 
-    o = svc.svcmon_push_lists(status)
-    return svc.svcmon_push_lists(status)
+    o = svc.svcmon_push_lists()
+    return o
 
 def svcmon_cluster(node, options):
     svcnames = ",".join([r.svcname for r in node.svcs])

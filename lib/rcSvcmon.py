@@ -17,33 +17,14 @@ else:
 def svcmon_normal1(svc, queue=None):
     # don't schedule svcmon updates for encap services.
     # those are triggered by the master node
-    status = svc.group_status()
-    containers = svc.get_resources("container")
-    if len(containers) > 0 and svc.has_encap_resources:
-        for container in containers:
-            try:
-                s = svc.encap_json_status(container)
-            except ex.excNotAvailable as e:
-                s = {'resources': [],
-                     'ip': 'n/a',
-                     'disk': 'n/a',
-                     'sync': 'n/a',
-                     'hb': 'n/a',
-                     'container': 'n/a',
-                     'fs': 'n/a',
-                     'share': 'n/a',
-                     'app': 'n/a',
-                     'avail': 'n/a',
-                     'overall': 'n/a'}
-
-    o = svc.svcmon_push_lists(status)
+    o = svc.svcmon_push_lists()
     _size = len(str(o))
     if queue is None or _size > 30000:
         # multiprocess Queue not supported, can't combine results
-        g_vars, g_vals, r_vars, r_vals = svc.svcmon_push_lists(status)
+        g_vars, g_vals, r_vars, r_vals = o
         svc.node.collector.call('svcmon_update_combo', g_vars, g_vals, r_vars, r_vals)
     else:
-        queue.put(svc.svcmon_push_lists(status))
+        queue.put(o)
 
 def svcmon_normal(svcs):
     ps = []

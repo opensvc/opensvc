@@ -438,11 +438,13 @@ class Svc(object):
             waitlock=DEFAULT_WAITLOCK,
         )
 
-        self.log = rcLogger.initLogger(self.svcname)
-
         self.scsirelease = self.prstop
         self.scsireserv = self.prstart
         self.scsicheckreserv = self.prstatus
+
+    @lazy
+    def log(self):
+        return rcLogger.initLogger(self.svcname)
 
     @lazy
     def sched(self):
@@ -1328,15 +1330,14 @@ class Svc(object):
                     pfx = "   |  %-14s %4s %-10s " % ('', '', '')
                     print_res(line, fmt, pfx)
 
-    def svcmon_push_lists(self, status=None):
+    def svcmon_push_lists(self):
         """
         Return the list of resource status in a format adequate for
         collector feeding.
         """
-        if status is None:
-            status = self.group_status()
+        data = self.print_status_data()
 
-        if self.frozen():
+        if data["frozen"]:
             frozen = 1
         else:
             frozen = 0
@@ -1358,25 +1359,21 @@ class Svc(object):
         r_vals = []
         now = datetime.datetime.now()
 
-        for rset in self.resourcesets:
-            for resource in rset.resources:
-                if 'encap' in resource.tags:
-                    continue
-                rstatus = str(rcStatus.Status(resource.rstatus))
-                r_vals.append([
-                    self.svcname,
-                    rcEnv.nodename,
-                    "",
-                    resource.rid,
-                    resource.type,
-                    resource.label,
-                    str(rstatus),
-                    "1" if resource.monitor else "0",
-                    "1" if resource.optional else "0",
-                    "1" if resource.disabled else "0",
-                    str(now),
-                    resource.status_logs_str(),
-                ])
+        for rid, resource in data["resources"].items():
+            r_vals.append([
+                self.svcname,
+                rcEnv.nodename,
+                "",
+                rid,
+                resource["type"],
+                resource["label"],
+                resource["status"],
+                "1" if resource["monitor"] else "0",
+                "1" if resource["optional"] else "0",
+                "1" if resource["disable"] else "0",
+                str(now),
+                resource["log"]
+            ])
 
         g_vars = [
             "mon_svcname",
@@ -1400,10 +1397,7 @@ class Svc(object):
             "mon_frozen",
         ]
 
-        containers = self.get_resources('container')
-        containers = [container for container in containers \
-                      if container.type != "container.docker"]
-        if len(containers) == 0:
+        if "encap" not in data:
             g_vals = [
                 self.svcname,
                 self.svc_env,
@@ -1411,65 +1405,38 @@ class Svc(object):
                 "",
                 "hosted",
                 rcEnv.node_env,
-                str(status["ip"]),
-                str(status["disk"]),
-                str(status["sync"]),
-                str(status["hb"]),
-                str(status["container"]),
-                str(status["fs"]),
-                str(status["share"]),
-                str(status["app"]),
-                str(status["avail"]),
-                str(status["overall"]),
+                data["ip"],
+                data["disk"],
+                data["sync"],
+                data["hb"],
+                data["container"],
+                data["fs"],
+                data["share"],
+                data["app"],
+                data["avail"],
+                data["overall"],
                 str(now),
                 ' '.join(self.nodes),
-                frozen,
+                str(frozen)
             ]
         else:
             g_vals = []
-            for container in containers:
-                ers = {}
-                try:
-                    ers = self.encap_json_status(container)
-                except ex.excNotAvailable:
-                    ers = {
-                        'resources': [],
-                        'ip': 'n/a',
-                        'disk': 'n/a',
-                        'sync': 'n/a',
-                        'hb': 'n/a',
-                        'container': 'n/a',
-                        'fs': 'n/a',
-                        'share': 'n/a',
-                        'app': 'n/a',
-                        'avail': 'n/a',
-                        'overall': 'n/a',
-                    }
-                except Exception as exc:
-                    print(exc)
-                    continue
-
-                vhostname = container.vm_hostname()
-
-                for rid in ers['resources']:
-                    rstatus = ers['resources'][rid]['status']
+            for container_name, container in data["encap"].items():
+                for rid, resource in container['resources'].items():
                     r_vals.append([
                         self.svcname,
                         rcEnv.nodename,
-                        vhostname,
-                        str(rid),
-                        ers['resources'][rid].get('type', ''),
-                        str(ers['resources'][rid]['label']),
-                        str(rstatus),
-                        "1" if ers['resources'][rid].get('monitor', False) else "0",
-                        "1" if ers['resources'][rid].get('optional', False) else "0",
-                        "1" if ers['resources'][rid].get('disabled', False) else "0",
+                        container_name,
+                        rid,
+                        resource["type"],
+                        resource["label"],
+                        resource["status"],
+                        "1" if resource["monitor"] else "0",
+                        "1" if resource["optional"] else "0",
+                        "1" if resource["disable"] else "0",
                         str(now),
-                        str(ers['resources'][rid]['log']),
+                        resources["log"],
                     ])
-
-                if 'avail' not in status or 'avail' not in ers:
-                    continue
 
                 #
                 # 0: global thawed + encap thawed
@@ -1477,7 +1444,7 @@ class Svc(object):
                 # 2: global thawed + encap frozen
                 # 3: global frozen + encap frozen
                 #
-                if ers.get("frozen"):
+                if container["frozen"]:
                     e_frozen = frozen + 2
                 else:
                     e_frozen = frozen
@@ -1486,19 +1453,19 @@ class Svc(object):
                     self.svcname,
                     self.svc_env,
                     rcEnv.nodename,
-                    vhostname,
-                    container.type.replace('container.', ''),
+                    container_name,
+                    container["type"].replace('container.', ''),
                     rcEnv.node_env,
-                    str(rcStatus.Status(status["ip"])+rcStatus.Status(ers['ip'])),
-                    str(rcStatus.Status(status["disk"])+rcStatus.Status(ers['disk'])),
-                    str(rcStatus.Status(status["sync"])+rcStatus.Status(ers['sync'])),
-                    str(rcStatus.Status(status["hb"])+rcStatus.Status(ers['hb'])),
-                    str(rcStatus.Status(status["container"])+rcStatus.Status(ers['container'])),
-                    str(rcStatus.Status(status["fs"])+rcStatus.Status(ers['fs'])),
-                    str(rcStatus.Status(status["share"])+rcStatus.Status(ers['share'] if 'share' in ers else 'n/a')),
-                    str(rcStatus.Status(status["app"])+rcStatus.Status(ers['app'])),
-                    str(rcStatus.Status(status["avail"])+rcStatus.Status(ers['avail'])),
-                    str(rcStatus.Status(status["overall"])+rcStatus.Status(ers['overall'])),
+                    str(rcStatus.Status(data["ip"])+rcStatus.Status(container['ip'])),
+                    str(rcStatus.Status(data["disk"])+rcStatus.Status(container['disk'])),
+                    str(rcStatus.Status(data["sync"])+rcStatus.Status(container['sync'])),
+                    str(rcStatus.Status(data["hb"])+rcStatus.Status(container['hb'])),
+                    str(rcStatus.Status(data["container"])+rcStatus.Status(container['container'])),
+                    str(rcStatus.Status(data["fs"])+rcStatus.Status(container['fs'])),
+                    str(rcStatus.Status(data["share"])+rcStatus.Status(container['share'] if 'share' in container else 'n/a')),
+                    str(rcStatus.Status(data["app"])+rcStatus.Status(container['app'])),
+                    str(rcStatus.Status(data["avail"])+rcStatus.Status(container['avail'])),
+                    str(rcStatus.Status(data["overall"])+rcStatus.Status(container['overall'])),
                     str(now),
                     ' '.join(self.nodes),
                     e_frozen,
