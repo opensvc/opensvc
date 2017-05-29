@@ -72,7 +72,7 @@ class LoggerHandler(logging.handlers.SysLogHandler):
         except:
             self.handleError(record)
 
-def set_namelen(svcs):
+def set_namelen(svcs=[], force=None):
     global namelen
     global namefmt
     global include_svcname
@@ -96,6 +96,8 @@ def set_namelen(svcs):
                 include_svcname = False
             if l > maxlen:
                 maxlen = l
+    if force:
+        maxlen = force
     namelen = maxlen
     namefmt = "%-"+str(namelen)+"s"
 
