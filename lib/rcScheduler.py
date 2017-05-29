@@ -134,6 +134,9 @@ def scheduler_fork(func):
     """
     A decorator that runs the decorated function in a detached
     subprocess if the cron option is set, else runs it inline.
+    The decorated function is run after a random delay, max 59
+    seconds. A lock is held to avoid running the same function
+    twice.
     """
     def _func(*args, **kwargs):
         self = args[0]
