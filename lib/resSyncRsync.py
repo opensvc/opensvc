@@ -439,7 +439,7 @@ class Rsync(resSync.Sync):
             if rcEnv.paths.drp_path in dst:
                 self.label = "rsync system files to drpnodes"
             else:
-                self.label = "rsync svc config to %s"%(', '.join(target.keys()))
+                self.label = "rsync svc config to %s"%(', '.join(sorted(target.keys())))
         else:
             _src = ', '.join(src)
             if len(_src) > 300:
