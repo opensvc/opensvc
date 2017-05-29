@@ -74,6 +74,7 @@ def colorize_json(s):
 def format_json(d):
     import json
     kwargs = {
+      "sort_keys": True,
       "ensure_ascii": False,
       "indent": 4,
       "separators": (',', ': '),
