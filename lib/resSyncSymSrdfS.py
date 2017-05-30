@@ -18,8 +18,42 @@ class syncSymSrdfS(resSync.Sync):
         """
         <?xml version="1.0" standalone="yes" ?>
         <SymCLI_ML>
+          <Inquiry>
+            <Dev_Info>
+              <pd_name>/dev/sdb</pd_name>
+              <dev_name>000F1</dev_name>
+              <symid>000196801561</symid>
+              <dev_ident_name>V_TOOLSDL360S24</dev_ident_name>
+            </Dev_Info>
+            <Product>
+              <vendor>EMC</vendor>
+            </Product>
+          </Inquiry>
+        """
+        inq = {}
+        cmd = ["syminq", "-identifier", "device_name", "-output", "xml_e"]
+        (ret, out, err) = self.call(cmd)
+        if ret != 0:
+            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+        xml = XML(out)
+        for e in xml.findall("Inquiry/Dev_Info"):
+            pd_name = e.find("pd_name").text
+            dev_name = e.find("dev_name").text
+            if dev_name not in inq:
+                inq[dev_name] = []
+            inq[dev_name].append(pd_name)
+
+        """
+        <?xml version="1.0" standalone="yes" ?>
+        <SymCLI_ML>
           <DG>
             <Device>
+              <Dev_Info>
+                <dev_name>003AD</dev_name>
+                <configuration>RDF1+TDEV</configuration>
+                <ld_name>DEV001</ld_name>
+                <status>Ready</status>
+              </Dev_Info>
               <Front_End>
                 <Port>
                   <pd_name>/dev/sdq</pd_name>
@@ -37,8 +71,11 @@ class syncSymSrdfS(resSync.Sync):
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         devs = []
         xml = XML(out)
-        for e in xml.findall("DG/Device/Front_End/Port"):
-            devs.append(e.find("pd_name").text)
+        for e in xml.findall("DG/Device/Dev_Info"):
+            dev_name = e.find("dev_name").text
+            if dev_name in inq:
+                devs += inq[dev_name]
+
         return devs
 
     def promote_devs_rw(self):
