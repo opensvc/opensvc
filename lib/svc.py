@@ -1755,8 +1755,8 @@ class Svc(object):
         self.sub_set_action('stonith.callout', 'start')
 
     def do_pre_monitor_action(self):
-	if self.pre_monitor_action is None:
-	    return
+        if self.pre_monitor_action is None:
+            return
         kwargs = {}
         if "|" in self.pre_monitor_action or \
            "&&" in self.pre_monitor_action or \
@@ -1790,12 +1790,12 @@ class Svc(object):
         """
         Call the resource monitor action.
         """
-	self.do_pre_monitor_action()
-	if self.monitor_action is None:
-	    return
-	if not hasattr(self, self.monitor_action):
+        self.do_pre_monitor_action()
+        if self.monitor_action is None:
+            return
+        if not hasattr(self, self.monitor_action):
             self.log.error("invalid monitor action '%s'", self.monitor_action)
-	    return
+            return
         self.log.info("start monitor action '%s'", self.monitor_action)
         getattr(self, self.monitor_action)()
 
