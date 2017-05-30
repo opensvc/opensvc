@@ -1508,6 +1508,19 @@ class KeywordMonitorAction(Keyword):
                   example="reboot"
                 )
 
+class KeywordPreMonitorAction(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="pre_monitor_action",
+                  at=True,
+                  order=30,
+                  default=None,
+                  text="A script to execute before the monitor_action. For example, if the monitor_action is set to freezestop, the script can decide to crash the server if it detects a situation were the freezestop can not succeed (ex. fs can not be umounted with a dead storage array).",
+                  example="/bin/true"
+                )
+
 class KeywordCreatePg(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4290,6 +4303,7 @@ class KeyDict(KeywordStore):
         self += KeywordSyncMaxDelay()
         self += KeywordPresnapTrigger()
         self += KeywordPostsnapTrigger()
+        self += KeywordPreMonitorAction()
         self += KeywordMonitorAction()
         self += KeywordCreatePg()
         self += KeywordPgCpus()

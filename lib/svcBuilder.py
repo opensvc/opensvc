@@ -3653,6 +3653,11 @@ def build(name, minimal=False, svcconf=None):
         pass
 
     try:
+        svc.pre_monitor_action = conf_get_string_scope(svc, conf, 'DEFAULT', "pre_monitor_action")
+    except ex.OptNotFound:
+        pass
+
+    try:
         svc.app = conf_get_string_scope(svc, conf, 'DEFAULT', "app")
     except ex.OptNotFound:
         pass

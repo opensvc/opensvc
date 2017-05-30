@@ -408,6 +408,7 @@ class Svc(object):
         self.presnap_trigger = None
         self.postsnap_trigger = None
         self.monitor_action = None
+        self.pre_monitor_action = None
         self.disabled = False
         self.anti_affinity = None
         self.autostart_node = []
@@ -1753,10 +1754,48 @@ class Svc(object):
         self.sub_set_action('stonith.ilo', 'start')
         self.sub_set_action('stonith.callout', 'start')
 
+    def do_pre_monitor_action(self):
+	if self.pre_monitor_action is None:
+	    return
+        kwargs = {}
+        if "|" in self.pre_monitor_action or \
+           "&&" in self.pre_monitor_action or \
+           ";" in self.pre_monitor_action:
+            kwargs["shell"] = True
+
+        import shlex
+        if not kwargs.get("shell", False):
+            if sys.version_info[0] < 3:
+                cmdv = shlex.split(self.pre_monitor_action.encode('utf8'))
+                cmdv = [elem.decode('utf8') for elem in cmdv]
+            else:
+                cmdv = shlex.split(self.pre_monitor_action)
+        else:
+            cmdv = self.pre_monitor_action
+
+        try:
+            result = self.vcall(cmdv, **kwargs)
+            ret = result[0]
+        except OSError as exc:
+            ret = 1
+            if exc.errno == 8:
+                self.log.error("%s exec format error: check the script shebang", self.pre_monitor_action)
+            else:
+                self.log.error("%s error: %s", self.pre_monitor_action, str(exc))
+        except Exception as exc:
+            ret = 1
+            self.log.error("%s error: %s", self.pre_monitor_action, str(exc))
+
     def toc(self):
         """
         Call the resource monitor action.
         """
+	self.do_pre_monitor_action()
+	if self.monitor_action is None:
+	    return
+	if not hasattr(self, self.monitor_action):
+            self.log.error("invalid monitor action '%s'", self.monitor_action)
+	    return
         self.log.info("start monitor action '%s'", self.monitor_action)
         getattr(self, self.monitor_action)()
 
