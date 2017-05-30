@@ -1421,8 +1421,10 @@ class Svc(object):
         ]
         r_vals = []
         now = datetime.datetime.now()
+        container_types = {}
 
         for rid, resource in data["resources"].items():
+            container_types[resource["label"]] = resource["type"].replace("container.", "")
             r_vals.append([
                 self.svcname,
                 rcEnv.nodename,
@@ -1498,7 +1500,7 @@ class Svc(object):
                         "1" if resource["optional"] else "0",
                         "1" if resource["disable"] else "0",
                         str(now),
-                        resources["log"],
+                        resource["log"],
                     ])
 
                 #
@@ -1517,7 +1519,7 @@ class Svc(object):
                     self.svc_env,
                     rcEnv.nodename,
                     container_name,
-                    container["type"].replace('container.', ''),
+                    container_types[container_name],
                     rcEnv.node_env,
                     str(rcStatus.Status(data["ip"])+rcStatus.Status(container['ip'])),
                     str(rcStatus.Status(data["disk"])+rcStatus.Status(container['disk'])),
@@ -1974,6 +1976,8 @@ class Svc(object):
             group_status = {
                 "avail": "down",
                 "overall": "down",
+                "type": container.type,
+                "frozen": False,
                 "resources": {},
             }
             groups = set(["container", "ip", "disk", "fs", "share", "hb"])
@@ -2008,6 +2012,8 @@ class Svc(object):
         group_status = {
             "avail": "n/a",
             "overall": "n/a",
+            "type": container.type,
+            "frozen": False,
             "resources": {},
         }
         groups = set([
