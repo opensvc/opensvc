@@ -10,6 +10,7 @@ import signal
 import logging
 import datetime
 import lock
+import json
 
 from resources import Resource
 from resourceset import ResourceSet
@@ -965,11 +966,22 @@ class Svc(object):
         group_status = self.group_status()
         return group_status["overall"].status
 
+    @lazy
+    def status_data_dump(self):
+        return os.path.join(rcEnv.paths.pathvar, self.svcname, "status.json")
+
     def print_status_data(self):
         """
         Return a structure containing hierarchical status of
         the service.
         """
+        if not self.options.refresh and os.path.exists(self.status_data_dump):
+            try:
+                with open(self.status_data_dump, 'r') as filep:
+                    return json.load(filep)
+            except ValueError:
+                pass
+
         data = {
             "resources": {},
             "frozen": self.frozen(),
@@ -1013,6 +1025,11 @@ class Svc(object):
         group_status = self.group_status()
         for group in group_status:
             data[group] = str(group_status[group])
+        try:
+            with open(self.status_data_dump, "w") as filep:
+                json.dump(data, filep)
+        except Exception as exc:
+            self.log.warning("failed to update %s: %s" % (self.status_data_dump, str(exc)))
         return data
 
     def env_section_keys_evaluated(self):
@@ -1156,14 +1173,39 @@ class Svc(object):
         """
         Display in human-readable format the hierarchical service status.
         """
+        data = self.print_status_data()
         if self.options.format is not None:
-            return self.print_status_data()
+            return data
 
         from textwrap import wrap
         from rcUtilities import term_width
         from rcColor import color, colorize
+        import re
 
         width = term_width()
+
+        def print_log(log, subpfx, width):
+            lines = []
+            for msg in log.split("\n"):
+                if len(msg) == 0:
+                    continue
+                if subpfx and not subpfx.startswith(color.END):
+                    subpfx = color.END + subpfx
+                    lines += wrap(
+                        msg,
+                        initial_indent=subpfx,
+                        subsequent_indent=subpfx,
+                        width=width
+                    )
+            _color = None
+            for line in lines:
+                if " info: " in line:
+                    _color = color.LIGHTBLUE
+                elif " warn: " in line:
+                    _color = color.BROWN
+                elif " error: " in line:
+                    _color = color.RED
+                print(re.sub(r'([\s\|\`\-]+)(.*)', r'\1'+colorize(r'\2', _color), line))
 
         def print_res(squad, fmt, pfx, subpfx=None):
             """
@@ -1179,50 +1221,62 @@ class Svc(object):
             flags += 'O' if optional else '.'
             flags += 'E' if encap else '.'
             print(fmt % (rid, flags, rcStatus.colorize_status(status), label))
-            for msg in log.split("\n"):
-                if len(msg) > 0:
-                    if subpfx and not subpfx.startswith(color.END):
-                        subpfx = color.END + subpfx
-                    print('\n'.join(wrap(msg,
-                                         initial_indent=subpfx,
-                                         subsequent_indent=subpfx,
-                                         width=width
-                                        )
-                                   )
-                         )
+            print_log(log, subpfx, width)
+
 
         if self.options.show_disabled is not None:
             discard_disabled = not self.options.show_disabled
         else:
             discard_disabled = not self.show_disabled
 
-        def get_res(group):
+        def dispatch_resources():
             """
-            Wrap get_resources() with discard_disable relaying and sorted
-            resultset.
+            Dispatch resources in avail/accesory sets, and sort.
             """
-            resources = self.get_resources(
-                group,
-                discard_disabled=discard_disabled,
-            )
-            return sorted(resources)
+            rbg = {
+                    "ip": [],
+                    "disk": [],
+                    "fs": [],
+                    "container": [],
+                    "share": [],
+                    "app": [],
+                    "sync": [],
+                    "hb": [],
+                    "stonith": [],
+                    "task": [],
+            }
+            avail_resources = []
+            accessory_resources = []
 
-        avail_resources = get_res("ip")
-        avail_resources += get_res("disk")
-        avail_resources += get_res("fs")
-        avail_resources += get_res("container")
-        avail_resources += get_res("share")
-        avail_resources += get_res("app")
-        accessory_resources = get_res("hb")
-        accessory_resources += get_res("stonith")
-        accessory_resources += get_res("sync")
-        accessory_resources += get_res("task")
+            for rid, resource in data["resources"].items():
+                if discard_disabled and resource["disable"]:
+                    continue
+                group = resource["type"].split(".", 1)[0]
+                rbg[group].append(rid)
+
+            for group in ("ip", "disk", "fs", "container", "share", "app"):
+                for rid in sorted(rbg[group]):
+                    resource = data["resources"][rid]
+                    resource["rid"] = rid
+                    avail_resources.append(resource)
+            for group in ("sync", "hb", "stonith", "task"):
+                for rid in sorted(rbg[group]):
+                    resource = data["resources"][rid]
+                    resource["rid"] = rid
+                    accessory_resources.append(resource)
+
+            return (
+                avail_resources,
+                accessory_resources,
+            )
+
+        avail_resources, accessory_resources = dispatch_resources()
         n_accessory_resources = len(accessory_resources)
 
         print(colorize(self.svcname, color.BOLD))
         frozen = 'frozen' if self.frozen() else ''
         fmt = "%-20s %4s %-10s %s"
-        color_status = rcStatus.colorize_status(self.group_status()['overall'])
+        color_status = rcStatus.colorize_status(data['overall'])
         print(fmt % ("overall", '', color_status, frozen))
         if n_accessory_resources == 0:
             fmt = "'- %-17s %4s %-10s %s"
@@ -1230,13 +1284,15 @@ class Svc(object):
         else:
             fmt = "|- %-17s %4s %-10s %s"
             head_c = "|"
-        color_status = rcStatus.colorize_status(self.group_status()['avail'])
+        color_status = rcStatus.colorize_status(data['avail'])
         print(fmt % ("avail", '', color_status, ''))
 
         ers = {}
         for container in self.get_resources('container'):
+            if container.type == "container.docker":
+                continue
             try:
-                ejs = self.encap_json_status(container)
+                ejs = data["encap"][container.name]
                 ers[container.rid] = ejs["resources"]
                 if ejs.get("frozen", False):
                     container.status_log("frozen", "info")
@@ -1249,18 +1305,17 @@ class Svc(object):
         lines = []
         encap_squad = {}
         for resource in avail_resources:
-            (
+            rid = resource["rid"]
+            lines.append((
                 rid,
-                rtype,
-                status,
-                label,
-                log,
-                monitor,
-                disable,
-                optional,
-                encap
-            ) = resource.status_quad()
-            lines.append((rid, status, label, log, monitor, disable, optional, encap))
+                resource["status"],
+                resource["label"],
+                resource["log"],
+                resource["monitor"],
+                resource["disable"],
+                resource["optional"],
+                resource["encap"]
+            ))
             if rid.startswith("container") and rid in ers:
                 squad = []
                 for _rid, val in ers[rid].items():
@@ -1313,10 +1368,17 @@ class Svc(object):
 
         lines = []
         for resource in accessory_resources:
-            rid, rtype, status, label, log, monitor, disable, optional, encap = resource.status_quad()
-            if rid in ers:
-                status = rcStatus.Status(rcStatus.status_value(ers[rid]['status']))
-            lines.append((rid, status, label, log, monitor, disable, optional, encap))
+            rid = resource["rid"]
+            lines.append((
+                rid,
+                resource["status"],
+                resource["label"],
+                resource["log"],
+                resource["monitor"],
+                resource["disable"],
+                resource["optional"],
+                resource["encap"]
+            ))
 
         last = len(lines) - 1
         if last >= 0:
@@ -1830,7 +1892,6 @@ class Svc(object):
         Write the on-disk cache of status of the service encapsulated in
         the container identified by <rid>.
         """
-        import json
         self.encap_json_status_cache[rid] = data
         path = self.get_encap_json_status_path(rid)
         directory = os.path.dirname(path)
@@ -1847,7 +1908,6 @@ class Svc(object):
         Fetch the on-disk cache of status of the service encapsulated in
         the container identified by <rid>.
         """
-        import json
         if rid in self.encap_json_status_cache:
             return self.encap_json_status_cache[rid]
         path = self.get_encap_json_status_path(rid)
@@ -1936,7 +1996,6 @@ class Svc(object):
             print(exc)
             return group_status
 
-        import json
         try:
             group_status = json.loads(results[0])
         except:
@@ -3369,7 +3428,6 @@ class Svc(object):
             options.slave = options.slave.split(',')
 
         if isinstance(options.resource, list):
-            import json
             for idx, resource in enumerate(options.resource):
                 if not is_string(resource):
                     continue
@@ -3590,7 +3648,6 @@ class Svc(object):
             for nodename in results:
                 results[nodename] = results[nodename][0]
                 if options.format == "json":
-                    import json
                     try:
                         results[nodename] = json.loads(results[nodename])
                     except ValueError as exc:
@@ -4824,7 +4881,6 @@ class Svc(object):
                     continue
                 sections[section][option] = value
 
-        import json
         import svcBuilder
         from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue
 
