@@ -63,6 +63,7 @@ CONFIG_DEFAULTS = {
 ACTIONS_ALLOW_ON_FROZEN = [
     "autopush",
     "delete",
+    "docker",
     "disable",
     "edit_config",
     "enable",
@@ -110,7 +111,6 @@ ACTIONS_ALLOW_ON_INVALID_NODE = [
 
 ACTIONS_ALLOW_ON_CLUSTER = ACTIONS_ALLOW_ON_FROZEN + [
     "boot",
-    "docker",
     "dns_update",
     "postsync",
     "presync",
