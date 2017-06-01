@@ -4,6 +4,7 @@ from rcUtilities import qcall, which, lazy
 import os
 import rcExceptions as ex
 import glob
+import json
 
 import re
 
@@ -39,7 +40,6 @@ class Disk(resDisk.Disk):
         """ this one is exported as a service command line arg
         """
         dl = self._disklist()
-        import json
         with open(self.disklist_name, 'w') as f:
             f.write(json.dumps(list(dl)))
 
@@ -103,12 +103,18 @@ class Disk(resDisk.Disk):
                 return set([])
         with open(self.disklist_name, 'r') as f:
             buff = f.read()
-        import json
         try:
             dl = set(json.loads(buff))
         except:
             self.log.error("corrupted disklist cache file %s"%self.disklist_name)
             raise ex.excError
+        dl = self.remap_cached_disklist_controller(dl)
+        return dl
+
+    def remap_cached_disklist_controller(self, dl):
+        if rcEnv.sysname != "SunOS":
+            return dl
+        mapping = self.get_wwn_map()
         vdl = []
         for d in dl:
             if os.path.exists(d):
@@ -118,14 +124,38 @@ class Disk(resDisk.Disk):
                 self.log.debug("no remapping possible for disk %s. keep as is." % d)
                 vdl.append(d)
                 continue
-            wwid = d[-35:-2]
-            l = glob.glob("/dev/rdsk/*"+wwid+"s2")
+            wwid = d[-36:-2]
+            if len(wwid) in (18, 26, 34) and wwid.endswith("d0"):
+                wwid = wwid[:-2]
+                d0 = "d0"
+            else:
+                d0 = ""
+            l = glob.glob("/dev/rdsk/*"+wwid+d0+"s2")
+            if len(l) != 1:
+                # may be the disk is a R2 mirror member, with a different wwn than R1
+                if wwid in mapping:
+                    wwid = mapping[wwid]
+                    l = glob.glob("/dev/rdsk/*"+wwid+d0+"s2")
             if len(l) != 1:
                 self.log.warning("discard disk %s from disklist cache: not found" % wwid)
                 continue
             self.log.debug("remapped device %s to %s" % (d, l[0]))
             vdl.append(l[0])
         return set(vdl)
+
+    def get_wwn_map(self):
+        mapping = {}
+        wwn_maps = glob.glob(os.path.join(rcEnv.paths.pathvar, self.svc.svcname, "wwn_map.*"))
+        for fpath in wwn_maps:
+            try:
+                with open(fpath, "r") as filep:
+                    _mapping = json.load(filep)
+            except ValueError:
+                pass
+            else:
+                for (r1, r2) in _mapping:
+                    mapping[r1] = r2
+        return mapping
 
     def _disklist(self):
         """disklist() search zpool vdevs from
