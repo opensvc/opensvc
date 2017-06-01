@@ -1,6 +1,6 @@
 from rcGlobalEnv import rcEnv
 import resDisk
-from rcUtilities import qcall, which
+from rcUtilities import qcall, which, lazy
 import os
 import rcExceptions as ex
 import glob
@@ -28,18 +28,19 @@ class Disk(resDisk.Disk):
         ]
         return self.fmt_info(data)
 
+    @lazy
     def disklist_name(self):
         return os.path.join(rcEnv.paths.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.disklist')
 
     def files_to_sync(self):
-        return [self.disklist_name()]
+        return [self.disklist_name]
 
     def presync(self):
         """ this one is exported as a service command line arg
         """
         dl = self._disklist()
         import json
-        with open(self.disklist_name(), 'w') as f:
+        with open(self.disklist_name, 'w') as f:
             f.write(json.dumps(list(dl)))
 
     def has_it(self):
@@ -93,20 +94,20 @@ class Disk(resDisk.Disk):
         return ret
 
     def disklist(self):
-        if not os.path.exists(self.disklist_name()):
+        if not os.path.exists(self.disklist_name):
             if self.is_up():
                 self.log.debug("no disklist cache file and resource up ... refresh disklist cache")
                 self.presync()
             else:
                 self.log.debug("no disklist cache file and service not up ... unable to evaluate disklist")
                 return set([])
-        with open(self.disklist_name(), 'r') as f:
+        with open(self.disklist_name, 'r') as f:
             buff = f.read()
         import json
         try:
             dl = set(json.loads(buff))
         except:
-            self.log.error("corrupted disklist cache file %s"%self.disklist_name())
+            self.log.error("corrupted disklist cache file %s"%self.disklist_name)
             raise ex.excError
         vdl = []
         for d in dl:
