@@ -700,7 +700,7 @@ class Vmax(Sym):
         if srdf and rdfg:
             _cmd += ", config=RDF1+TDEV, remote_config=RDF2+TDEV, ra_group=%s" % str(rdfg)
         elif srdf and rdfg is None:
-            raise ex.excError("--srdf is specified but --rdfg is not") 
+            raise ex.excError("--srdf is specified but --rdfg is not")
         else:
             _cmd += ", config=TDEV"
 
@@ -714,7 +714,7 @@ class Vmax(Sym):
         """
             out contains:
             ...
-            New symdev:  003AF [TDEV]     
+            New symdev:  003AF [TDEV]
             ...
         """
         for line in out.splitlines():
@@ -858,7 +858,6 @@ class Vmax(Sym):
             self.log.info("%s does not exist", dev)
             return
         data = data[0]
-        self.deletepair(dev)
         cmd = ["delete", dev, "-noprompt"]
         out, err, ret = self.symdev(cmd, xml=False, log=True)
         if ret != 0:
@@ -866,7 +865,9 @@ class Vmax(Sym):
         self.del_diskinfo(data["wwn"])
 
     def del_disk(self, dev=None, **kwargs):
+        self.set_dev_ro(dev)
         self.del_map(dev)
+        self.deletepair(dev)
         retry = 5
         try:
             rdf_data = self.get_dev_rdf(dev)
@@ -904,6 +905,10 @@ class Vmax(Sym):
             if self.tdev_freed(dev) and not self.tdev_deallocating(dev) and not self.tdev_freeingall(dev):
                 break
             time.sleep(5)
+
+    def set_dev_ro(self, dev):
+        out, err, ret = self.symdev(["write_disable", dev, "-noprompt"], xml=False, log=True)
+        return out, err, ret
 
     def tdev_freed(self, dev):
         out, err, ret = self.symcfg(["list", "-tdevs", "-devs", dev], xml=True)
