@@ -1,8 +1,9 @@
 import os
 import logging
+import json
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
+from rcUtilities import which, lazy, unset_lazy
 from xml.etree.ElementTree import ElementTree, XML
 
 import rcExceptions as ex
@@ -94,58 +95,92 @@ class syncSymSrdfS(resSync.Sync):
         return buff.split("\n")[0].split()[-1]
 
     def postsync(self):
-        local_export_symid = self.get_symid_from_export(self.dgfile_local_name())
+        local_export_symid = self.get_symid_from_export(self.dgfile_local_name)
         if local_export_symid == self.symid:
-            return self.do_dgimport(self.dgfile_local_name())
-        remote_export_symid = self.get_symid_from_export(self.dgfile_rdf_name())
+            return self.do_dgimport(self.dgfile_local_name)
+        remote_export_symid = self.get_symid_from_export(self.dgfile_rdf_name)
         if remote_export_symid == self.symid:
-            self.do_dgimport(self.dgfile_rdf_name())
+            self.do_dgimport(self.dgfile_rdf_name)
 
     def presync(self):
         s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
         if self.svc.options.force or s['overall'].status == rcStatus.UP:
             self.do_rdf_dgexport()
             self.do_local_dgexport()
+            self.do_dg_wwn_map()
 
     def files_to_sync(self):
-        return [self.dgfile_rdf_name(), self.dgfile_local_name()]
+        return [
+	    self.dgfile_rdf_name,
+	    self.dgfile_local_name,
+	    self.wwn_map_fpath,
+	]
+
+    @lazy
+    def wwn_map_fpath(self):
+        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, "wwn_map."+self.rid)
+
+    def do_dg_wwn_map(self):
+        devs = []
+        with open(self.dgfile_local_name, "r") as filep:
+            for line in filep.readlines():
+                if "DEV" not in line:
+                    continue
+                devs.append(line.split()[1])
+        cmd = ["/usr/symcli/bin/symdev", "list", "-output", "xml_e", "-sid", self.symid, "-devs", ",".join(devs), "-v"]
+        ret, out, err = self.call(cmd)
+        if ret != 0:
+            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+        tree = XML(out)
+        mapping = []
+        for dev in tree.findall("Symmetrix/Device"):
+            try:
+                local = dev.find('Product/wwn').text
+                remote = dev.find('RDF/Remote/wwn').text
+            except Exception as exc:
+                self.log.warning(str(exc))
+            else:
+                mapping.append((local, remote))
+        with open(self.wwn_map_fpath, 'w') as filep:
+             json.dump(mapping, filep)
+	     filep.write("\n")
 
     def do_local_dgexport(self, fpath=None):
         if fpath is None:
-            fpath = self.dgfile_local_name()
+            fpath = self.dgfile_local_name
         try:
             os.unlink(fpath)
         except:
             pass
-        cmd = ['symdg', 'export', self.symdg, '-f', fpath]
+        cmd = ['/usr/symcli/bin/symdg', 'export', self.symdg, '-f', fpath]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         return out
 
     def do_rdf_dgexport(self):
-        fpath = self.dgfile_rdf_name()
+        fpath = self.dgfile_rdf_name
         try:
             os.unlink(fpath)
         except:
             pass
-        cmd = ['symdg', 'export', self.symdg, '-f', fpath, '-rdf']
+        cmd = ['/usr/symcli/bin/symdg', 'export', self.symdg, '-f', fpath, '-rdf']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         return out
 
     def do_dgremove(self):
-        cmd = ['symdg', 'delete', self.symdg, '-force']
+        cmd = ['/usr/symcli/bin/symdg', 'delete', self.symdg, '-force']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         return out
 
     def is_dgimport_needed(self):
-        self.do_local_dgexport(fpath=self.dgfile_tmp_local_name())
+        self.do_local_dgexport(fpath=self.dgfile_tmp_local_name)
         import filecmp
-        if filecmp.cmp(self.dgfile_local_name(), self.dgfile_rdf_name(), shallow=False):
+        if filecmp.cmp(self.dgfile_local_name, self.dgfile_rdf_name, shallow=False):
             return False
         return True
 
@@ -163,17 +198,20 @@ class syncSymSrdfS(resSync.Sync):
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         return out
 
+    @lazy
     def dgfile_tmp_local_name(self):
         return os.path.join(rcEnv.paths.pathvar, 'symrdf_' + self.symdg + '.dg.tmp.local')
 
+    @lazy
     def dgfile_local_name(self):
         return os.path.join(rcEnv.paths.pathvar, 'symrdf_' + self.symdg + '.dg.local')
 
+    @lazy
     def dgfile_rdf_name(self):
         return os.path.join(rcEnv.paths.pathvar, 'symrdf_' + self.symdg + '.dg.rdf')
 
     def flush_cache(self):
-        self.rdf_query_cache = None
+	unset_lazy(self, "rdf_query")
 
     def get_symdevs(self):
         for symdev in self.symdevs:
@@ -183,18 +221,16 @@ class syncSymSrdfS(resSync.Sync):
                 raise ex.excError
             self.symdev[l[0],l[1]] = dict(symid=l[0], symdev=l[1])
 
-    def rdf_query(self, cache=True):
-        if cache and self.rdf_query_cache is not None:
-            return self.rdf_query_cache
-        cmd = ['symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'query', '-output', 'xml_e']
-        (ret, out, err) = self.call(cmd)
+    @lazy
+    def rdf_query(self):
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'query', '-output', 'xml_e']
+        ret, out, err = self.call(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
-        self.rdf_query_cache = out
+            raise ex.excError("Failed to run command %s"% ' '.join(cmd))
         return out
 
     def dg_query(self):
-        cmd = ['symdg', 'list', '-output', 'xml_e']
+        cmd = ['/usr/symcli/bin/symdg', 'list', '-output', 'xml_e']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
@@ -203,7 +239,7 @@ class syncSymSrdfS(resSync.Sync):
     # browse local device groups and build dict with list
     def get_dg_list(self):
         try:
-            rdf_query = self.dg_query()
+            rdf_query = self.dg_query
         except:
             return {}
         self.xmldg = XML(rdf_query)
@@ -214,7 +250,7 @@ class syncSymSrdfS(resSync.Sync):
         return self.dglist
 
     def get_dg_rdf_type(self):
-        rdf_query = self.rdf_query()
+        rdf_query = self.rdf_query
         self.xmldg = XML(rdf_query)
         rdftype = self.xmldg.find('DG/DG_Info/type').text
         return rdftype
@@ -514,10 +550,8 @@ class syncSymSrdfS(resSync.Sync):
                               type="sync.symsrdfs",
                               **kwargs)
 
-        self.rdf_query_cache = None
         self.label = "srdf/s symdg %s"%(symdg)
         self.symid = symid
-
 
         self.symdg = symdg
         self.rdfg = rdfg

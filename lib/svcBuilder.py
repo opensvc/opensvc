@@ -2856,6 +2856,11 @@ def add_sync_symsrdfs(svc, conf, s):
         svc.log.error("config file section %s must have rdfg number set" % s)
         return
 
+    try:
+        kwargs['symid'] = conf_get_string_scope(svc, conf, s, 'symid')
+    except ex.OptNotFound:
+        svc.log.error("config file section %s must have symid" % s)
+        return
 
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(conf, s, svc)
