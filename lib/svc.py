@@ -9,6 +9,7 @@ import os
 import signal
 import logging
 import datetime
+import time
 import lock
 import json
 
@@ -971,19 +972,23 @@ class Svc(object):
     def status_data_dump(self):
         return os.path.join(rcEnv.paths.pathvar, self.svcname, "status.json")
 
-    def print_status_data(self):
+    def print_status_data(self, from_resource_status_cache=False):
         """
         Return a structure containing hierarchical status of
         the service.
         """
-        if not self.options.refresh and os.path.exists(self.status_data_dump):
+        if not from_resource_status_cache and not self.options.refresh and os.path.exists(self.status_data_dump):
             try:
                 with open(self.status_data_dump, 'r') as filep:
                     return json.load(filep)
             except ValueError:
                 pass
 
+        now = time.time()
+
         data = {
+            "updated": datetime.datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "mtime": now,
             "resources": {},
             "frozen": self.frozen(),
         }
@@ -1026,12 +1031,21 @@ class Svc(object):
         group_status = self.group_status()
         for group in group_status:
             data[group] = str(group_status[group])
+        self.write_status_data(data)
+        return data
+
+    def write_status_data(self, data):
         try:
             with open(self.status_data_dump, "w") as filep:
                 json.dump(data, filep)
+            os.utime(self.status_data_dump, (-1, data["mtime"]))
         except Exception as exc:
             self.log.warning("failed to update %s: %s" % (self.status_data_dump, str(exc)))
         return data
+
+    def update_status_data(self):
+        data = self.print_status_data(from_resource_status_cache=True)
+        self.write_status_data(data)
 
     def env_section_keys_evaluated(self):
         """
@@ -3899,6 +3913,8 @@ class Svc(object):
                     if resource.disabled:
                         continue
                     resource.force_status(rcStatus.UP)
+
+        self.update_status_data()
 
         if psinfo:
             self.join_cluster_action(**psinfo)
