@@ -22,6 +22,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         if rcEnv.sysname != "Linux":
             return
         os.environ["SG_PERSIST_O_RDONLY"] = str(val)
+        os.environ["SG_PERSIST_IN_RDONLY"] = str(val)
 
     def ack_unit_attention(self, d):
         if not os.path.exists(d):
