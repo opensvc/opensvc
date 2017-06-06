@@ -21,7 +21,7 @@ class Disk(Res.Disk):
         if self.is_up():
             self.log.info("%s is already up" % self.loopFile)
             return
-        cmd = ['hdiutil', 'attach', self.loopFile]
+        cmd = ['hdiutil', 'attach', '-imagekey', 'diskimage-class=CRawDiskImage', '-nomount', self.loopFile]
         (ret, out, err) = self.call(cmd, info=True, outlog=False)
         if ret != 0:
             raise ex.excError
@@ -44,6 +44,16 @@ class Disk(Res.Disk):
             return self.status_stdby(rcStatus.UP)
         else:
             return self.status_stdby(rcStatus.DOWN)
+
+    def provision(self):
+        m = __import__("provDiskLoopLinux")
+        prov = m.ProvisioningDisk(self)
+        prov.provisioner()
+
+    def unprovision(self):
+        m = __import__("provDiskLoopLinux")
+        prov = m.ProvisioningDisk(self)
+        prov.unprovisioner()
 
     def __init__(self, rid, loopFile, **kwargs):
         Res.Disk.__init__(self, rid, loopFile, **kwargs)
