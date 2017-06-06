@@ -519,3 +519,9 @@ class App(Resource):
         ofile.close()
         return proc.returncode
 
+    def provision(self):
+        self.start()
+
+    def unprovision(self):
+        self.stop()
+
