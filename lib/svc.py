@@ -2743,6 +2743,7 @@ class Svc(object):
         self.refresh_ip_status()
 
     def unprovision(self):
+        self.sub_set_action("app", "unprovision")
         self.sub_set_action("container", "unprovision")
         self.sub_set_action("fs", "unprovision", xtags=set(['zone']))
         self.sub_set_action("disk", "unprovision", xtags=set(['zone']))
@@ -2753,6 +2754,7 @@ class Svc(object):
         self.sub_set_action("disk", "provision", xtags=set(['zone']))
         self.sub_set_action("fs", "provision", xtags=set(['zone']))
         self.sub_set_action("container", "provision")
+        self.sub_set_action("app", "provision")
         self.push()
 
     def startapp(self):

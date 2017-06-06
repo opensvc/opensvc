@@ -329,6 +329,8 @@ class Resource(object):
             return False
         if "start" in action or "stop" in action:
             return True
+        if "provision" in action:
+            return True
         if "rollback" in action:
             return True
         if "sync" in action and self.type.startswith("sync"):
