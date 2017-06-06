@@ -239,7 +239,7 @@ class syncSymSrdfS(resSync.Sync):
     # browse local device groups and build dict with list
     def get_dg_list(self):
         try:
-            rdf_query = self.dg_query
+            rdf_query = self.dg_query()
         except:
             return {}
         self.xmldg = XML(rdf_query)
