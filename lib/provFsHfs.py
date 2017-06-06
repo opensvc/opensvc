@@ -17,6 +17,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
        if ret != 0:
            self.r.log.error('Failed to format %s'%self.mkfs_dev)
            raise ex.excError
+       self.r.start()
        cmd = ["diskutil", "enableOwnership", self.mkfs_dev]
        (ret, out, err) = self.r.vcall(cmd)
        if ret != 0:
