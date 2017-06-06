@@ -59,6 +59,14 @@ class ProvisioningFs(Provisioning):
             if not os.path.exists(self.mkfs_dev):
                self.r.log.error("%s raw device does not exists"%self.mkfs_dev)
                return
+	elif rcEnv.sysname == 'Darwin':
+            if os.path.isfile(self.mkfs_dev):
+                from rcLoopDarwin import file_to_loop
+                devs = file_to_loop(self.mkfs_dev)
+                if len(devs) == 1:
+                    self.mkfs_dev = devs[0]
+                else:
+                    raise ex.excError("unable to find a device associated to %s" % self.mkfs_dev)
 
         if not os.path.exists(self.mkfs_dev):
             raise ex.excError("abort fs provisioning: %s does not exist" % self.mkfs_dev)

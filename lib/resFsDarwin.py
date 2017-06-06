@@ -168,6 +168,7 @@ class Mount(Res.Mount):
                     devs = file_to_loop(self.device)
                     if len(devs) > 0:
                         self.loopdevice = devs[0]
+                    self.loopdev = devs[0]
                     self.isloop = True
             except:
                 self.log.debug("can not stat %s" % self.device)
@@ -181,24 +182,27 @@ class Mount(Res.Mount):
             os.makedirs(self.mount_point, 0o755)
 
         if self.isloop is True:
-            cmd = ['hdiutil', 'attach', '-mountpoint', self.mount_point , self.device]
-            (ret, out, err) = self.vcall(cmd)
+            #cmd = ['hdiutil', 'attach', '-mountpoint', self.mount_point , self.device]
+            #(ret, out, err) = self.vcall(cmd)
+            device = self.loopdev
         else:
+            device = self.device
             self.fsck()
-            try:
-                cmd = ['diskutil', 'mount', '-mount_point', self.mount_point , self.device]
-                (ret, out, err) = self.vcall(cmd)
-            except:
-                if self.fs_type != "":
-                    fstype = ['-t', self.fs_type]
-                else:
-                    fstype = []
-                if self.mount_options != "":
-                    mntopt = ['-o', self.mount_options]
-                else:
-                    mntopt = []
-                cmd = ['mount']+fstype+mntopt+[self.device, self.mount_point]
-                (ret, out, err) = self.vcall(cmd)
+
+        try:
+            cmd = ['diskutil', 'mount', '-mountPoint', self.mount_point , device]
+            (ret, out, err) = self.vcall(cmd)
+        except:
+            if self.fs_type != "":
+                fstype = ['-t', self.fs_type]
+            else:
+                fstype = []
+            if self.mount_options != "":
+                mntopt = ['-o', self.mount_options]
+            else:
+                mntopt = []
+            cmd = ['mount']+fstype+mntopt+[self.device, self.mount_point]
+            (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
         self.Mounts = None

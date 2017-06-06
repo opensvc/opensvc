@@ -24,11 +24,10 @@ def file_to_loop(f):
     for image in pl['images']:
         if image.get('image-path') == f:
             for se in image['system-entities']:
-                if se.get('mount-point') is not None:
-                    diskdevice = se.get('dev-entry')
-                    if diskdevice is not None:
-                        devs.append(diskdevice)
-                    else:
-                        return []
+                diskdevice = se.get('dev-entry')
+                if diskdevice is not None:
+                    devs.append(diskdevice)
+                else:
+                    return []
 
     return devs
