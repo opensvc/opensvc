@@ -2457,10 +2457,8 @@ class Cli(object):
             except KeyboardInterrupt:
                 print("Interrupted")
                 sys.exit(1)
-            except Exception as e:
-                import traceback
-                e = sys.exc_info()
-                print(e[0], e[1], traceback.print_tb(e[2]))
+            except Exception as exc:
+                print(exc)
                 sys.exit(1)
             sys.exit(0)
 
