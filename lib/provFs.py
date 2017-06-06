@@ -57,9 +57,9 @@ class ProvisioningFs(Provisioning):
             l[-1] = 'r'+l[-1]
             self.mkfs_dev = '/'.join(l)
             if not os.path.exists(self.mkfs_dev):
-               self.r.log.error("%s raw device does not exists"%self.mkfs_dev)
-               return
-	elif rcEnv.sysname == 'Darwin':
+                self.r.log.error("%s raw device does not exists"%self.mkfs_dev)
+                return
+        elif rcEnv.sysname == 'Darwin':
             if os.path.isfile(self.mkfs_dev):
                 from rcLoopDarwin import file_to_loop
                 devs = file_to_loop(self.mkfs_dev)
