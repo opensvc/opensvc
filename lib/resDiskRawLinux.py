@@ -169,16 +169,16 @@ class Disk(resDiskRaw.Disk):
         lock.unlock(self.lockfd)
 
     def has_it_char_devices(self):
-        r = False
+        r = True
         l = []
         for dev in self.devs:
             raw = self.find_raw(dev)
             if raw is None:
                 l.append(dev)
-                r |= True
+                r &= False
         if len(l) > 0 and len(l) < len(self.devs):
             self.status_log("%s not mapped to a raw device"% ", ".join(l))
-        return not r
+        return r
 
     def mangle_devs_map(self):
         if not self.create_char_devices:

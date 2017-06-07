@@ -184,19 +184,21 @@ class Disk(resDisk.Disk):
             return False
         return True
 
-    def check_block(self, src, dst):
+    def check_dst(self, src, dst):
+        if dst in self.major_minor_errs:
+            self.major_minor_errs.remove(dst)
         if src is None or dst is None:
             return False
         if not os.path.exists(src) or not os.path.exists(dst):
             return False
         src_st = os.stat(src)
         dst_st = os.stat(dst)
-        r = False
+        r = True
         if os.major(src_st.st_rdev) != os.major(dst_st.st_rdev) or \
            os.minor(src_st.st_rdev) != os.minor(dst_st.st_rdev):
             self.major_minor_errs.add(dst)
-            r |= True
-        return not r
+            r &= False
+        return r
 
     def fix_ownership(self, path):
         self.fix_ownership_user(path)
@@ -237,38 +239,38 @@ class Disk(resDisk.Disk):
         return True
 
     def has_it_devs_map(self):
-        r = False
+        r = True
         if len(self.dst_devs_not_found) == len(self.devs_map):
             # all dst unlinked: report no error => down state
-            r |= True
+            r &= False
         elif len(self.dst_devs_not_found) > 0:
             self.status_log("%s dst devs not found"%', '.join(self.dst_devs_not_found))
-            r |= True
+            r &= False
         for src, dst in self.devs_map.items():
-            r |= not self.has_it_dev_map(src, dst)
-        return not r
+            r &= self.has_it_dev_map(src, dst)
+        return r
 
     def has_it_dev_map(self, src, dst):
-        r = False
-        if not self.check_block(src, dst):
-            r |= True
+        r = True
+        if not self.check_dst(src, dst):
+            r &= False
         if not self.check_uid(dst, verbose=True):
-            r |= True
+            r &= False
         elif not self.check_gid(dst, verbose=True):
-            r |= True
+            r &= False
         elif not self.check_perm(dst, verbose=True):
-            r |= True
-        return not r
+            r &= False
+        return r
 
     def has_it(self):
         """Returns True if all raw devices are present and correctly
            named
         """
-        r = False
+        r = True
         if self.create_char_devices:
-            r |= not self.has_it_char_devices()
+            r &= self.has_it_char_devices()
         if len(self.devs_map) > 0:
-            r |= not self.has_it_devs_map()
+            r &= self.has_it_devs_map()
         if len(self.devs_not_found) > 0:
             status = self.svc.group_status(excluded_groups=set([
                 "sync",
@@ -281,11 +283,11 @@ class Disk(resDisk.Disk):
                 self.status_log(msg, "info")
             else:
                 self.status_log(msg, "warn")
-            r |= True
+            r &= False
         if len(self.major_minor_errs) > 0:
-            self.status_log("%s have major:minor diff with their src"%', '.join(self.devs_not_found))
-            r |= True
-        return not r
+            self.status_log("%s have major:minor diff with their src" % ', '.join(sorted(list(self.major_minor_errs))))
+            r &= False
+        return r
 
     def is_up(self):
         """Returns True if the volume group is present and activated
@@ -318,22 +320,28 @@ class Disk(resDisk.Disk):
             if not os.path.exists(d):
                 self.log.info("create dir %s" % d)
                 os.makedirs(d)
-            if not os.path.exists(dst):
-                src_st = os.stat(src)
-                if stat.S_ISBLK(src_st.st_mode):
-                    t = "b"
-                elif stat.S_ISCHR(src_st.st_mode):
-                    t = "c"
-                else:
-                    raise ex.excError("%s is not a block nor a char device" % src)
-                major = os.major(src_st.st_rdev)
-                minor = os.minor(src_st.st_rdev)
-                cmd = ["mknod", dst, t, str(major), str(minor)]
-                ret, out, err = self.vcall(cmd)
-                if ret != 0:
-                    raise ex.excError
+            if not os.path.exists(dst) or not self.check_dst(src, dst):
+                self.do_create_dst(src, dst)
         self.fix_ownership(dst)
         self.fix_perms(dst)
+
+    def do_create_dst(self, src, dst):
+        if os.path.exists(dst):
+            self.log.info("remove existing dst %s", dst)
+            os.unlink(dst)
+        src_st = os.stat(src)
+        if stat.S_ISBLK(src_st.st_mode):
+            t = "b"
+        elif stat.S_ISCHR(src_st.st_mode):
+            t = "c"
+        else:
+            raise ex.excError("%s is not a block nor a char device" % src)
+        major = os.major(src_st.st_rdev)
+        minor = os.minor(src_st.st_rdev)
+        cmd = ["mknod", dst, t, str(major), str(minor)]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
 
     def do_start_blocks(self):
         if which("mknod") is None:
