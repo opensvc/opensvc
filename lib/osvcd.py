@@ -29,7 +29,29 @@ from rcUtilities import justcall, bdecode
 from rcStatus import Status
 from svcBuilder import build
 import pyaes
-from pyaes.util import to_bufferable
+
+try:
+    from Crypto.Cipher import AES
+    def _encrypt(message, key, iv):
+        message = pyaes.util.append_PKCS7_padding(zlib.compress(message.encode()))
+        obj = AES.new(key, AES.MODE_CBC, iv)
+        ciphertext = obj.encrypt(message)
+        return ciphertext
+    def _decrypt(ciphertext, key, iv):
+        obj = AES.new(key, AES.MODE_CBC, iv)
+        message = obj.decrypt(ciphertext)
+        return zlib.decompress(pyaes.util.strip_PKCS7_padding(message))
+except ImportError:
+    def _encrypt(message, key, iv):
+        obj = pyaes.Encrypter(pyaes.AESModeOfOperationCBC(key, iv=iv))
+        ciphertext = obj.feed(zlib.compress(message.encode()))
+        ciphertext += obj.feed()
+        return ciphertext
+    def _decrypt(ciphertext, key, iv):
+        obj = pyaes.Decrypter(pyaes.AESModeOfOperationCBC(key, iv=iv))
+        message = obj.feed(ciphertext)
+        message += obj.feed()
+        return zlib.decompress(message)
 
 try:
     import ConfigParser
@@ -148,18 +170,13 @@ class Crypt(object):
     A class implement AES encrypt, decrypt and message padding.
     Used by child classes to authenticate senders on data receive.
     """
-    def _encrypt(self, message, key, iv):
-        obj = pyaes.Encrypter(pyaes.AESModeOfOperationCBC(key, iv=iv))
-        ciphertext = obj.feed(zlib.compress(message.encode()))
-        ciphertext += obj.feed()
-        return ciphertext
+    @staticmethod
+    def _encrypt(message, key, iv):
+        return _encrypt(message, key, iv)
 
     @staticmethod
     def _decrypt(ciphertext, key, iv):
-        obj = pyaes.Decrypter(pyaes.AESModeOfOperationCBC(key, iv=iv))
-        message = obj.feed(ciphertext)
-        message += obj.feed()
-        return zlib.decompress(message)
+        return _decrypt(ciphertext, key, iv)
 
     @staticmethod
     def gen_iv(urandom=[], locker=threading.RLock()):
