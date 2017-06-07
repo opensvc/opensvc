@@ -7,11 +7,18 @@ from rcUtilities import is_string
 
 use_color = "auto"
 
-class unicons:
-    NONE = u'\u0020'
-    FROZEN = u'\u2744'
-    STDBY = u'\u2299'
-    STATUS = u'\u23FA'
+if "UTF" in os.environ.get("LANG", ""):
+    class unicons:
+        NONE = u'\u0020'
+        FROZEN = u'\u2744'
+        STDBY = u'\u2299'
+        STATUS = u'\u23FA'
+else:
+    class unicons:
+        NONE = " "
+        FROZEN = "*"
+        STDBY = "0"
+        STATUS = "O"
 
 class color:
     END = '\033[000m'
