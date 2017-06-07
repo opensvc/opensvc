@@ -254,16 +254,19 @@ class Hb(OsvcThread):
 
     def __init__(self, name, role=None):
         OsvcThread.__init__(self)
-        self.last = 0
         self.name = name
         self.id = name + "." + role
         self.log = logging.getLogger(rcEnv.nodename+".osvcd."+self.id)
-        self.beating = False
+        self.peers = {}
 
     def status(self):
         data = OsvcThread.status(self)
-        data.last = datetime.datetime.utcfromtimestamp(self.last).strftime('%Y-%m-%dT%H:%M:%SZ')
-        data.beating = self.beating
+        data.peers = {}
+        for nodename, _data in self.peers.items():
+            data.peers[nodename] = {
+                "last": datetime.datetime.utcfromtimestamp(_data.last).strftime('%Y-%m-%dT%H:%M:%SZ'),
+                "beating": _data.beating,
+            }
         data.config = {
             "addr": self.addr,
             "port": self.port,
@@ -273,21 +276,34 @@ class Hb(OsvcThread):
         }
         return data
 
-    def set_last(self):
-        self.last = time.time()
-        if not self.beating:
-            self.log.info("mark heartbeat as up")
-        self.beating = True
+    def set_last(self, nodename="*"):
+        if nodename not in self.peers:
+            self.peers[nodename] = Storage({
+                "last": 0,
+                "beating": False,
+            })
+        self.peers[nodename].last = time.time()
+        if not self.peers[nodename].beating:
+            self.log.info("node %s hb status stale => beating", nodename)
+        self.peers[nodename].beating = True
 
-    def set_beating(self):
+    def set_beating(self, nodename="*"):
         now = time.time()
-        if now > self.last + self.timeout:
+        if nodename not in self.peers:
+            self.peers[nodename] = Storage({
+                "last": 0,
+                "beating": False,
+            })
+        if now > self.peers[nodename].last + self.timeout:
             beating = False
         else:
             beating = True
-        if self.beating != beating:
-            self.log.info("mark heartbeat as %s", "up" if beating else "down")
-        self.beating = beating
+        if self.peers[nodename].beating != beating:
+            if beating:
+                self.log.info("node %s hb status stale => beating", nodename)
+            else:
+                self.log.info("node %s hb status beating => stale", nodename)
+        self.peers[nodename].beating = beating
 
     @staticmethod
     def get_ip_address(ifname):
@@ -311,8 +327,6 @@ class HbMcast(Hb, Crypt):
 
     def status(self):
         data = Hb.status(self)
-        data.last = datetime.datetime.utcfromtimestamp(self.last).strftime('%Y-%m-%dT%H:%M:%SZ')
-        data.beating = self.beating
         data.stats = self.stats
         data.config = {
             "addr": self.addr,
@@ -404,7 +418,7 @@ class HbMcastSender(HbMcast):
             return CLUSTER_DATA[rcEnv.nodename]
 
     def do(self):
-        self.log.info("sending to %s:%s", self.addr, self.port)
+        #self.log.info("sending to %s:%s", self.addr, self.port)
         message = self.format_message()
         if message is None:
             return
@@ -470,7 +484,6 @@ class HbMcastListener(HbMcast):
             self.stats.beats += 1
             self.stats.bytes += len(data)
         except socket.timeout:
-            self.set_beating()
             return
         thr = threading.Thread(target=self.handle_client, args=(data, addr))
         thr.start()
@@ -484,11 +497,12 @@ class HbMcastListener(HbMcast):
         if data is None:
             self.stats.errors += 1
             return
-        self.log.info("received data from %s %s", nodename, addr)
+        #self.log.info("received data from %s %s", nodename, addr)
+        self.set_beating(nodename)
         global CLUSTER_DATA
         with CLUSTER_DATA_LOCK:
             CLUSTER_DATA[nodename] = data
-        self.set_last()
+        self.set_last(nodename)
 
 
 #

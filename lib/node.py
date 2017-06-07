@@ -2704,17 +2704,7 @@ class Node(Crypt):
             return
 
         from rcStatus import Status, colorize_status
-        hb_header_done = False
-        svc_header_done = False
-        out = {
-            "threads": {
-                "title": "Threads",
-                "data": []
-            },
-            "services": {
-                "data": []
-            }
-        }
+        out = []
 
         def get_nodes():
             nodenames = set()
@@ -2728,8 +2718,6 @@ class Node(Crypt):
         services = {}
 
         def load_svc_header():
-            if svc_header_done:
-                return True
             line = [
                 colorize("Services", color.GRAY),
                 "",
@@ -2738,7 +2726,7 @@ class Node(Crypt):
             ]
             for nodename in nodenames:
                 line.append(colorize("@" + nodename, color.GRAY))
-            out["services"]["data"].append(line)
+            out.append(line)
             return True
 
         def load_svc(svcname, data):
@@ -2778,34 +2766,60 @@ class Node(Crypt):
                     line.append("")
                 else:
                     line.append("unknown")
-            out["services"]["data"].append(line)
+            out.append(line)
+
+        def load_threads_header():
+            line = [
+                colorize("Threads", color.GRAY),
+                "",
+                "",
+                "",
+            ]
+            for nodename in nodenames:
+                if nodename == rcEnv.nodename:
+                    line.append("")
+                    continue
+                line.append(colorize("@" + nodename, color.GRAY))
+            out.append(line)
 
         def load_hb(key, _data):
-            if _data["beating"]:
-                beating = colorize("beating", color.GREEN)
-            else:
-                beating = colorize("stale", color.RED)
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
             else:
                 state = colorize(_data["state"], color.RED)
-            out["threads"]["data"].append((
+            line = [
                 " "+colorize(key, color.BOLD),
-                _data["config"]["addr"]+":"+str(_data["config"]["port"])+"@"+_data["config"]["intf"],
                 state,
-                beating,
-            ))
+                _data["config"]["addr"]+":"+str(_data["config"]["port"]),
+                "|",
+            ]
+            for nodename in nodenames:
+                if nodename == rcEnv.nodename:
+                    line.append("")
+                    continue
+                if "*" in _data["peers"]:
+                    status = _data["peers"]["*"]["beating"]
+                elif nodename not in _data["peers"]:
+                    status = " "
+                else:
+                    status = _data["peers"][nodename]["beating"]
+                if status != " ":
+                    if status:
+                        status = colorize(unicons.STATUS, color.GREEN)
+                    else:
+                        status = colorize(unicons.STATUS, color.RED)
+                line.append(status)
+            out.append(line)
 
         def load_listener(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
             else:
                 state = colorize(_data["state"], color.RED)
-            out["threads"]["data"].append((
+            out.append((
                 " "+colorize(key, color.BOLD),
-                _data["config"]["addr"]+":"+str(_data["config"]["port"]),
                 state,
-                "",
+                _data["config"]["addr"]+":"+str(_data["config"]["port"]),
             ))
 
         def load_thread(key, _data):
@@ -2813,11 +2827,9 @@ class Node(Crypt):
                 state = colorize(_data["state"], color.GREEN)
             else:
                 state = colorize(_data["state"], color.RED)
-            out["threads"]["data"].append((
+            out.append((
                 " "+colorize(key, color.BOLD),
-                "",
                 state,
-                "",
             ))
 
         if sys.version_info[0] < 3:
@@ -2857,21 +2869,20 @@ class Node(Crypt):
                 print(pad.join(_line).decode("utf-8"))
 
         def print_section(data):
-            if len(data["data"]) == 0:
+            if len(data) == 0:
                 return
-            if "title" in data:
-                print(colorize(data["title"], color.GRAY))
-            list_print(data["data"])
-            print()
+            list_print(data)
 
-        for key in sorted(list(data.keys())):
-            if key.startswith("hb#"):
-                load_hb(key, data[key])
-            elif key == "listener":
-                load_listener(key, data[key])
-            else:
-                load_thread(key, data[key])
+        def load_threads():
+            for key in sorted(list(data.keys())):
+                if key.startswith("hb#"):
+                    load_hb(key, data[key])
+                elif key == "listener":
+                    load_listener(key, data[key])
+                else:
+                    load_thread(key, data[key])
 
+        # init the services hash
         for node in data.get("monitor", {}).get("nodes", []):
             for svcname, _data in data["monitor"]["nodes"][node]["services"]["status"].items():
                 if svcname not in services:
@@ -2885,12 +2896,17 @@ class Node(Crypt):
                     "frozen": _data["frozen"],
                     "mon": _data["monitor"]["status"],
                 }
+
+        # load data in lists
+        load_threads_header()
+        load_threads()
+        out.append([])
         load_svc_header()
         for svcname in sorted(list(services.keys())):
             load_svc(svcname, services[svcname])
 
-        print_section(out["threads"])
-        print_section(out["services"])
+        # print tabulated lists
+        print_section(out)
 
     def daemon_stop(self):
         options = {}
