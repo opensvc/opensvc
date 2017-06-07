@@ -1732,6 +1732,11 @@ class Node(object):
             print("failed to unpack", file=sys.stderr)
             return 1
         print("install new compliance")
+        for root, dirs, files in os.walk(tmpp):
+            for fpath in dirs:
+                os.chown(os.path.join(root, fpath), 0, 0)
+                for fpath in files:
+                    os.chown(os.path.join(root, fpath), 0, 0)
         shutil.move(compp, backp)
         shutil.move(tmpp, compp)
         return 0
