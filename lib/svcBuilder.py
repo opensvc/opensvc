@@ -3598,21 +3598,19 @@ def build(name, minimal=False, svcconf=None):
     except ex.OptNotFound:
         svc.flex_min_nodes = 1
     if svc.flex_min_nodes < 0:
-        raise ex.excInitError("invalid flex_min_nodes '%d' (<0)."%svc.flex_min_nodes)
-    nb_nodes = len(svc.autostart_node)
-    if nb_nodes == 0:
-        nb_nodes = 1
-    if nb_nodes > 0 and svc.flex_min_nodes > nb_nodes:
-        raise ex.excInitError("invalid flex_min_nodes '%d' (>%d nb of nodes)."%(svc.flex_min_nodes, nb_nodes))
+        svc.flex_min_nodes = 0
+    nb_nodes = len(svc.nodes|svc.drpnodes)
+    if svc.flex_min_nodes > nb_nodes:
+        svc.flex_min_nodes = nb_nodes
 
     try:
         svc.flex_max_nodes = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_max_nodes')
     except ex.OptNotFound:
         svc.flex_max_nodes = nb_nodes
-    if svc.flex_max_nodes < 0:
-        raise ex.excInitError("invalid flex_max_nodes '%d' (<0)."%svc.flex_max_nodes)
+    if svc.flex_max_nodes < nb_nodes:
+        svc.flex_max_nodes = nb_nodes
     if svc.flex_max_nodes < svc.flex_min_nodes:
-        raise ex.excInitError("invalid flex_max_nodes '%d' (<flex_min_nodes)."%svc.flex_max_nodes)
+        svc.flex_max_nodes = svc.flex_min_nodes
 
     try:
         svc.flex_cpu_low_threshold = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_cpu_low_threshold')
