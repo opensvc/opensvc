@@ -1478,30 +1478,28 @@ class Svc(object):
             "mon_frozen",
         ]
 
-        if "encap" not in data:
-            g_vals = [
-                self.svcname,
-                self.svc_env,
-                rcEnv.nodename,
-                "",
-                "hosted",
-                rcEnv.node_env,
-                data["ip"],
-                data["disk"],
-                data["sync"],
-                data["hb"],
-                data["container"],
-                data["fs"],
-                data["share"],
-                data["app"],
-                data["avail"],
-                data["overall"],
-                str(now),
-                ' '.join(self.nodes),
-                str(frozen)
-            ]
-        else:
-            g_vals = []
+        g_vals = [
+            self.svcname,
+            self.svc_env,
+            rcEnv.nodename,
+            "",
+            "hosted",
+            rcEnv.node_env,
+            data["ip"],
+            data["disk"],
+            data["sync"],
+            data["hb"],
+            data["container"],
+            data["fs"],
+            data["share"],
+            data["app"],
+            data["avail"],
+            data["overall"],
+            str(now),
+            ' '.join(self.nodes),
+            str(frozen)
+        ]
+        if "encap" in data:
             for container_name, container in data["encap"].items():
                 for rid, resource in container['resources'].items():
                     r_vals.append([
