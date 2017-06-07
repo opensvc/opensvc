@@ -2656,7 +2656,7 @@ class Node(Crypt):
             return
         self.action("compliance_auto")
 
-    def daemon_send(self, data):
+    def daemon_send(self, data, with_result=True):
         try:
             port = self.config.getint("listener", "port")
         except:
@@ -2671,23 +2671,23 @@ class Node(Crypt):
             sock.connect((addr, port))
             message = self.encrypt(data)
             sock.sendall(message)
-            chunks = []
-            while True:
-                chunk = sock.recv(4096)
-                if chunk:
-                    chunks.append(chunk)
-                if not chunk or chunk.endswith(b"\x00"):
-                    break
+            if with_result:
+                chunks = []
+                while True:
+                    chunk = sock.recv(4096)
+                    if chunk:
+                        chunks.append(chunk)
+                    if not chunk or chunk.endswith(b"\x00"):
+                        break
+                if sys.version_info[0] >= 3:
+                    data = b"".join(chunks)
+                else:
+                    data = "".join(chunks)
+                nodename, data = self.decrypt(data)
+                return data
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
             return
-        else:
-            if sys.version_info[0] >= 3:
-                data = b"".join(chunks)
-            else:
-                data = "".join(chunks)
-            nodename, data = self.decrypt(data)
-            return data
         finally:
             sock.close()
 
@@ -2894,13 +2894,23 @@ class Node(Crypt):
         options = {}
         if self.options.thr_id:
             options["thr_id"] = self.options.thr_id
-        data = self.daemon_send({"action": "daemon_stop", "options": options})
-        print(json.dumps(data, indent=4, sort_keys=True))
+            with_result = True
+        else:
+            with_result = False
+        data = self.daemon_send(
+            {"action": "daemon_stop", "options": options},
+            with_result=with_result,
+        )
+        if self.options.thr_id:
+            print(json.dumps(data, indent=4, sort_keys=True))
 
     def daemon_start(self):
         options = {}
         if self.options.thr_id:
             options["thr_id"] = self.options.thr_id
+        else:
+            os.system(sys.executable+" "+os.path.join(rcEnv.paths.pathlib, "osvcd.py"))
+            return
         data = self.daemon_send({"action": "daemon_start", "options": options})
         print(json.dumps(data, indent=4, sort_keys=True))
 

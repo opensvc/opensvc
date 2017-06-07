@@ -597,7 +597,9 @@ class Listener(OsvcThread, Crypt):
     def daemon_stop(self, **kwargs):
         thr_id = kwargs.get("thr_id")
         if not thr_id:
-            return {"error": "no thread specified", "status": 1}
+            self.log.info("stop daemon requested")
+            setattr(sys, "stop_osvcd", 1)
+            return {"status": 0}
         with THREADS_LOCK:
             has_thr = thr_id in THREADS
         if not has_thr:
@@ -732,7 +734,7 @@ class Monitor(OsvcThread):
 
         now = datetime.datetime.utcnow()
         if svc.clustertype == "failover":
-            if status == "down":
+            if status in ("down", "stdby down"):
                 if smon.status == "ready":
                     if smon.updated < (now - MON_WAIT_READY):
                         self.log.info("failover service %s status %s/ready for %s", svc.svcname, status, now-smon.updated)
@@ -750,8 +752,8 @@ class Monitor(OsvcThread):
                         self.log.info("flex service %s status %s/ready for %s", svc.svcname, status, now-smon.updated)
                         self.set_service_monitor(svc.svcname, "starting")
                         self.service_command(svc.svcname, ["start"])
-                elif instance.status == "down":
-                    self.log.info("flex service %s started, starting or ready to start instances: %d/%d", svc.svcname, n_up, svc.flex_min_nodes)
+                elif instance.avail in ("down", "stdby down"):
+                    self.log.info("flex service %s started, starting or ready to start instances: %d/%d. local status %s", svc.svcname, n_up, svc.flex_min_nodes, instance.avail)
                     self.set_service_monitor(svc.svcname, "ready")
 
     def count_up_service_instances(self, svcname):
@@ -783,7 +785,7 @@ class Monitor(OsvcThread):
     def get_service_instance(self, svcname, nodename):
         try:
             with CLUSTER_DATA_LOCK:
-                return CLUSTER_DATA[node]["services"]["status"][svcname]
+                return Storage(CLUSTER_DATA[nodename]["services"]["status"][svcname])
         except KeyError:
             return
 
@@ -829,7 +831,10 @@ class Monitor(OsvcThread):
             if last_config is None or mtime > datetime.datetime.strptime(last_config["updated"], DATEFMT):
                 self.log.info("compute service %s config checksum", svcname)
                 cksum = self.fsum(cfg)
-                self.services[svcname] = build(svcname, minimal=True)
+                try:
+                    self.services[svcname] = build(svcname, minimal=True)
+                except Exception as exc:
+                    self.log.error("%s build error: %s", svcname, str(exc))
             else:
                 cksum = last_config["cksum"]
             config[svcname] = {
@@ -967,6 +972,9 @@ class Daemon(object):
     def _run(self):
         while True:
             self.loop()
+            if hasattr(sys, "stop_osvcd"):
+                self.stop_threads()
+                break
 
     def stop_threads(self):
         for thr in self.threads.values():
