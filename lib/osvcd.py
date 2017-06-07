@@ -517,6 +517,7 @@ class Listener(OsvcThread, Crypt):
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
             self.addr = addrinfo[4][0]
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.sock.bind((self.addr, self.port))
             self.sock.listen(5)
             self.sock.settimeout(self.sock_tmo)
