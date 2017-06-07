@@ -2692,19 +2692,21 @@ class Node(Crypt):
             sock.close()
 
     def daemon_status(self):
-        from rcColor import format_json, colorize, color, unicons
+        data = self.daemon_send({"action": "daemon_status"})
+        if data is None:
+            return
 
+        from rcColor import format_json, colorize, color, unicons
         if self.options.format == "json":
             format_json(data)
             return
 
         from rcStatus import Status, colorize_status
-        data = self.daemon_send({"action": "daemon_status"})
         hb_header_done = False
         svc_header_done = False
         out = {
-            "heartbeats": {
-                "title": "Heartbeats",
+            "threads": {
+                "title": "Threads",
                 "data": []
             },
             "services": {
@@ -2782,11 +2784,35 @@ class Node(Crypt):
                 state = colorize(_data["state"], color.GREEN)
             else:
                 state = colorize(_data["state"], color.RED)
-            out["heartbeats"]["data"].append((
+            out["threads"]["data"].append((
                 " "+colorize(key, color.BOLD),
                 _data["config"]["addr"]+":"+str(_data["config"]["port"])+"@"+_data["config"]["intf"],
                 state,
                 beating,
+            ))
+
+        def load_listener(key, _data):
+            if _data["state"] == "RUNNING":
+                state = colorize(_data["state"], color.GREEN)
+            else:
+                state = colorize(_data["state"], color.RED)
+            out["threads"]["data"].append((
+                " "+colorize(key, color.BOLD),
+                _data["config"]["addr"]+":"+str(_data["config"]["port"]),
+                state,
+                "",
+            ))
+
+        def load_thread(key, _data):
+            if _data["state"] == "RUNNING":
+                state = colorize(_data["state"], color.GREEN)
+            else:
+                state = colorize(_data["state"], color.RED)
+            out["threads"]["data"].append((
+                " "+colorize(key, color.BOLD),
+                "",
+                state,
+                "",
             ))
 
         if sys.version_info[0] < 3:
@@ -2836,8 +2862,12 @@ class Node(Crypt):
         for key in sorted(list(data.keys())):
             if key.startswith("hb#"):
                 load_hb(key, data[key])
+            elif key == "listener":
+                load_listener(key, data[key])
+            else:
+                load_thread(key, data[key])
 
-        for node in data["monitor"]["nodes"]:
+        for node in data.get("monitor", {}).get("nodes", []):
             for svcname, _data in data["monitor"]["nodes"][node]["services"]["status"].items():
                 if svcname not in services:
                     services[svcname] = Storage({
@@ -2854,7 +2884,7 @@ class Node(Crypt):
         for svcname in sorted(list(services.keys())):
             load_svc(svcname, services[svcname])
 
-        print_section(out["heartbeats"])
+        print_section(out["threads"])
         print_section(out["services"])
 
     def daemon_stop(self):
