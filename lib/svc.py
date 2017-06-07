@@ -1044,6 +1044,8 @@ class Svc(object):
         return data
 
     def update_status_data(self):
+        if self.options.minimal:
+            return
         data = self.print_status_data(from_resource_status_cache=True)
         self.write_status_data(data)
 

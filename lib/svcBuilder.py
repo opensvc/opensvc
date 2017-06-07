@@ -3683,7 +3683,10 @@ def build(name, minimal=False, svcconf=None):
         pass
 
     if minimal:
+        svc.options.minimal = True
         return svc
+
+    svc.options.minimal = False
 
     #
     # instanciate resources
