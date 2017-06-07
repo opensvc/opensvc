@@ -2896,15 +2896,10 @@ class Node(Crypt):
         options = {}
         if self.options.thr_id:
             options["thr_id"] = self.options.thr_id
-            with_result = True
-        else:
-            with_result = False
         data = self.daemon_send(
             {"action": "daemon_stop", "options": options},
-            with_result=with_result,
         )
-        if self.options.thr_id:
-            print(json.dumps(data, indent=4, sort_keys=True))
+        print(json.dumps(data, indent=4, sort_keys=True))
 
     def daemon_start(self):
         options = {}

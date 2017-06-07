@@ -138,6 +138,7 @@ class OsvcThread(threading.Thread):
         super(OsvcThread, self).__init__()
         self._stop_event = threading.Event()
         self.created = time.time()
+        self.threads = []
 
     def stop(self):
         self._stop_event.set()
@@ -164,6 +165,18 @@ class OsvcThread(threading.Thread):
                 "created": datetime.datetime.utcfromtimestamp(self.created).strftime('%Y-%m-%dT%H:%M:%SZ'),
         })
         return data
+
+    def janitor_threads(self):
+        done = []
+        for idx, thr in enumerate(self.threads):
+            thr.join(0)
+            if not thr.is_alive():
+                done.append(idx)
+        for idx in done:
+            del self.threads[idx]
+        if len(self.threads) > 2:
+            self.log.info("threads queue length %d", len(self.threads))
+
 #
 class Crypt(object):
     """
@@ -420,7 +433,6 @@ class HbMcastListener(HbMcast):
     """
     def __init__(self, name):
         HbMcast.__init__(self, name, role="listener")
-        self.threads = []
 
     def run(self):
         try:
@@ -445,12 +457,14 @@ class HbMcastListener(HbMcast):
         while True:
             self.do()
             if self.stopped():
+                for thr in self.threads:
+                    thr.join()
                 self.sock.close()
                 sys.exit(0)
 
     def do(self):
-        for thr in self.threads:
-            thr.join(0)
+        self.janitor_threads()
+
         try:
             data, addr = self.sock.recvfrom(MAX_MSG_SIZE)
             self.stats.beats += 1
@@ -479,9 +493,10 @@ class HbMcastListener(HbMcast):
 
 #
 class Listener(OsvcThread, Crypt):
+    sock_tmo = 1.0
+
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.listener")
-        self.threads = []
         try:
             self.config = ConfigParser.RawConfigParser()
             self.config.read(rcEnv.paths.nodeconf)
@@ -504,7 +519,7 @@ class Listener(OsvcThread, Crypt):
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.bind((self.addr, self.port))
             self.sock.listen(5)
-            self.sock.settimeout(0.2)
+            self.sock.settimeout(self.sock_tmo)
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
             return
@@ -525,6 +540,8 @@ class Listener(OsvcThread, Crypt):
         while True:
             self.do()
             if self.stopped():
+                for thr in self.threads:
+                    thr.join()
                 self.sock.close()
                 sys.exit(0)
 
@@ -538,8 +555,9 @@ class Listener(OsvcThread, Crypt):
         return data
 
     def do(self):
-        for thr in self.threads:
-            thr.join(0)
+        done = []
+        self.janitor_threads()
+
         try:
             conn, addr = self.sock.accept()
             self.stats.sessions.accepted += 1
@@ -646,36 +664,54 @@ class Listener(OsvcThread, Crypt):
 
 #
 class Scheduler(OsvcThread):
+    max_runs = 2
+    interval = 60
+    stop_tmo = 60
+
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.scheduler")
-        self.threads = []
+        self.procs = []
         self.log.info("scheduler started")
         self.last_run = time.time()
 
         while True:
             self.do()
             if self.stopped():
+                for proc in self.procs:
+                    proc.terminate()
+                    while i in range(self.stop_tmo):
+                        proc.poll()
+                        if proc.returncode is not None:
+                            break
+                        time.sleep(1)
                 sys.exit(0)
 
     def do(self):
-        for thr in self.threads:
-            thr.join(0)
+        done = []
+        for idx, proc in enumerate(self.procs):
+            proc.poll()
+            if proc.returncode is not None:
+                done.append(idx)
+        for idx in done:
+            del self.procs[idx]
 
         now = time.time()
-        if now < self.last_run + 60:
+        if now < self.last_run + self.interval:
             time.sleep(1)
             return
 
+        if len(self.procs) > self.max_runs:
+            self.log.warning("%d scheduler runs are already in progress. skip this run.", self.max_runs)
+            return
+
         self.last_run = now
-        thr = threading.Thread(target=self.run_scheduler)
-        thr.start()
-        self.threads.append(thr)
+        self.run_scheduler()
 
     def run_scheduler(self):
         self.log.info("run schedulers")
         cmd = [rcEnv.paths.nodemgr, 'schedulers']
-        p = Popen(cmd, stdout=None, stderr=None, stdin=None)
-        p.communicate()
+        proc = Popen(cmd, stdout=None, stderr=None, stdin=None)
+        self.procs.append(proc)
 
 #
 class Monitor(OsvcThread):
@@ -686,7 +722,6 @@ class Monitor(OsvcThread):
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
-        self.threads = []
         self.last_run = 0
         self.log.info("monitor started")
         self.data = {}
@@ -696,11 +731,12 @@ class Monitor(OsvcThread):
         while True:
             self.do()
             if self.stopped():
+                for thr in self.threads:
+                    thr.join()
                 sys.exit(0)
 
     def do(self):
-        for thr in self.threads:
-            thr.join(0)
+        self.janitor_threads()
 
         now = time.time()
         if now < self.last_run + self.monitor_period:
@@ -994,11 +1030,14 @@ class Daemon(object):
             if hasattr(sys, "stop_osvcd"):
                 self.stop_threads()
                 break
+        self.log.info("daemon graceful stop")
 
     def stop_threads(self):
+        self.log.info("signal stop to all threads")
         for thr in self.threads.values():
             thr.stop()
-        for thr in self.threads.values():
+        for thr_id, thr in self.threads.items():
+            self.log.info("waiting for %s to stop", thr_id)
             thr.join()
 
     def need_start(self, thr_id):
