@@ -878,6 +878,11 @@ class Monitor(OsvcThread):
             except Exception:
                 data[svcname] = self.service_status_fallback(svcname)
             data[svcname]["monitor"] = self.get_service_monitor(svcname, datestr=True)
+
+        # purge deleted services
+        for svcname in set(data.keys()) - set(svcnames):
+            del data[svcname]
+
         return data
 
     def set_service_monitor(self, svcname, status=None):

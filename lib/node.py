@@ -2740,6 +2740,9 @@ class Node(Crypt):
             return True
 
         def load_svc(svcname, data):
+            if svcname not in self.services:
+                # svc deleted and monitor not yet aware
+                return
             line = [
                 " "+colorize(svcname, color.BOLD),
                 colorize_status(data["avail"], lpad=0),
