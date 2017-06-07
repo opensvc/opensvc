@@ -744,12 +744,13 @@ class Monitor(OsvcThread):
         elif svc.clustertype == "flex":
             n_up = self.count_up_service_instances(svc.svcname)
             if n_up < svc.flex_min_nodes:
+                instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
                 if smon.status == "ready":
                     if smon.updated < (now - MON_WAIT_READY):
                         self.log.info("flex service %s status %s/ready for %s", svc.svcname, status, now-smon.updated)
                         self.set_service_monitor(svc.svcname, "starting")
                         self.service_command(svc.svcname, ["start"])
-                else:
+                elif instance.status == "down":
                     self.log.info("flex service %s started, starting or ready to start instances: %d/%d", svc.svcname, n_up, svc.flex_min_nodes)
                     self.set_service_monitor(svc.svcname, "ready")
 
@@ -778,6 +779,13 @@ class Monitor(OsvcThread):
         except KeyError:
             return []
         return svcnames
+
+    def get_service_instance(self, svcname, nodename):
+        try:
+            with CLUSTER_DATA_LOCK:
+                return CLUSTER_DATA[node]["services"]["status"][svcname]
+        except KeyError:
+            return
 
     def get_service_instances(self, svcname):
         instances = []
@@ -997,14 +1005,10 @@ class Daemon(object):
                 self.threads[hb_id].start()
                 changed = True
 
-        n_hb = len([thr_id for thr_id in self.threads.keys() if thr_id.startswith("hb")])
-        if n_hb > 0:
-            if self.need_start("monitor"):
-                self.threads["monitor"] = Monitor()
-                self.threads["monitor"].start()
-                changed = True
-        elif "monitor" in self.threads:
-            self.threads["monitor"].stop()
+        if self.need_start("monitor"):
+            self.threads["monitor"] = Monitor()
+            self.threads["monitor"].start()
+            changed = True
 
         global THREADS
         if changed:
