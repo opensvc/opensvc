@@ -152,14 +152,14 @@ class OsvcThread(threading.Thread):
     def status(self):
         if self.stopped():
             if self.is_alive():
-                state = "STOPPING"
+                state = "stopping"
             else:
-                state = "STOPPED"
+                state = "stopped"
         else:
             if self.is_alive():
-                state = "RUNNING"
+                state = "running"
             else:
-                state = "TERMINATED"
+                state = "terminated"
         data = Storage({
                 "state": state,
                 "created": datetime.datetime.utcfromtimestamp(self.created).strftime('%Y-%m-%dT%H:%M:%SZ'),

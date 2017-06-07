@@ -2785,7 +2785,7 @@ class Node(Crypt):
                 beating = colorize("beating", color.GREEN)
             else:
                 beating = colorize("stale", color.RED)
-            if _data["state"] == "RUNNING":
+            if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
             else:
                 state = colorize(_data["state"], color.RED)
@@ -2797,7 +2797,7 @@ class Node(Crypt):
             ))
 
         def load_listener(key, _data):
-            if _data["state"] == "RUNNING":
+            if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
             else:
                 state = colorize(_data["state"], color.RED)
@@ -2809,7 +2809,7 @@ class Node(Crypt):
             ))
 
         def load_thread(key, _data):
-            if _data["state"] == "RUNNING":
+            if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
             else:
                 state = colorize(_data["state"], color.RED)
