@@ -35,6 +35,7 @@ from rcConfigParser import RawConfigParser
 from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         call, which, purge_cache
+from osvcd import Crypt
 
 if sys.version_info[0] < 3:
     BrokenPipeError = IOError
@@ -79,7 +80,7 @@ UNPRIVILEGED_ACTIONS = [
     "collector_cli",
 ]
 
-class Node(object):
+class Node(Crypt):
     """
     Defines a cluster node.  It contain list of Svc.
     Implements node-level actions and checks.
@@ -1732,6 +1733,11 @@ class Node(object):
             print("failed to unpack", file=sys.stderr)
             return 1
         print("install new compliance")
+        for root, dirs, files in os.walk(tmpp):
+            for fpath in dirs:
+                os.chown(os.path.join(root, fpath), 0, 0)
+                for fpath in files:
+                    os.chown(os.path.join(root, fpath), 0, 0)
         shutil.move(compp, backp)
         shutil.move(tmpp, compp)
         return 0
@@ -2649,4 +2655,219 @@ class Node(object):
         if self.sched.skip_action("compliance_auto"):
             return
         self.action("compliance_auto")
+
+    def daemon_send(self, data):
+        try:
+            port = self.config.getint("listener", "port")
+        except:
+            port = rcEnv.listener_port
+        try:
+            addr = self.config.get("listener", "addr")
+        except:
+            addr = "127.0.0.1"
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(6.2)
+            sock.connect((addr, port))
+            message = self.encrypt(data)
+            sock.sendall(message)
+            chunks = []
+            while True:
+                chunk = sock.recv(4096)
+                if chunk:
+                    chunks.append(chunk)
+                if not chunk or chunk.endswith(b"\x00"):
+                    break
+        except socket.error as exc:
+            self.log.error("init error: %s", str(exc))
+            return
+        else:
+            if sys.version_info[0] >= 3:
+                data = b"".join(chunks)
+            else:
+                data = "".join(chunks)
+            nodename, data = self.decrypt(data)
+            return data
+        finally:
+            sock.close()
+
+    def daemon_status(self):
+        from rcColor import format_json, colorize, color, unicons
+
+        if self.options.format == "json":
+            format_json(data)
+            return
+
+        from rcStatus import Status, colorize_status
+        data = self.daemon_send({"action": "daemon_status"})
+        hb_header_done = False
+        svc_header_done = False
+        out = {
+            "heartbeats": {
+                "title": "Heartbeats",
+                "data": []
+            },
+            "services": {
+                "data": []
+            }
+        }
+
+        def get_nodes():
+            nodenames = set()
+            for svc in self.svcs:
+                nodenames |= svc.nodes
+                nodenames |= svc.drpnodes
+            return sorted(nodenames)
+
+        self.build_services(minimal=True)
+        nodenames = get_nodes()
+        services = {}
+
+        def load_svc_header():
+            if svc_header_done:
+                return True
+            line = [
+                colorize("Services", color.GRAY),
+                "",
+                "",
+                "",
+            ]
+            for nodename in nodenames:
+                line.append(colorize("@" + nodename, color.GRAY))
+            out["services"]["data"].append(line)
+            return True
+
+        def load_svc(svcname, data):
+            line = [
+                " "+colorize(svcname, color.BOLD),
+                colorize_status(data["avail"], lpad=0),
+                self.services[svcname].clustertype,
+                "|",
+            ]
+            for nodename in nodenames:
+                if nodename in services[svcname]["nodes"]:
+                    val = []
+                    # frozen unicon
+                    if services[svcname]["nodes"][nodename]["frozen"]:
+                        frozen_icon = colorize(unicons.FROZEN, color.BLUE)
+                    else:
+                        frozen_icon = ""
+                    # avail status unicon
+                    avail = services[svcname]["nodes"][nodename]["avail"]
+                    if avail == "unknown":
+                        avail_icon = colorize("?", color.RED)
+                    elif "stdby" in avail:
+                        avail_icon = colorize_status(avail, lpad=0).replace(avail, unicons.STDBY)
+                    else:
+                        avail_icon = colorize_status(avail, lpad=0).replace(avail, unicons.STATUS)
+                    # mon status
+                    smon = services[svcname]["nodes"][nodename]["mon"]
+
+                    val.append(smon)
+                    val.append(avail_icon)
+                    val.append(frozen_icon)
+                    line.append(" ".join(val))
+                elif nodename not in self.services[svcname].nodes | self.services[svcname].drpnodes:
+                    line.append("")
+                else:
+                    line.append("unknown")
+            out["services"]["data"].append(line)
+
+        def load_hb(key, _data):
+            if _data["beating"]:
+                beating = colorize("beating", color.GREEN)
+            else:
+                beating = colorize("stale", color.RED)
+            if _data["state"] == "RUNNING":
+                state = colorize(_data["state"], color.GREEN)
+            else:
+                state = colorize(_data["state"], color.RED)
+            out["heartbeats"]["data"].append((
+                " "+colorize(key, color.BOLD),
+                _data["config"]["addr"]+":"+str(_data["config"]["port"])+"@"+_data["config"]["intf"],
+                state,
+                beating,
+            ))
+
+        if sys.version_info[0] < 3:
+            pad = " "
+            def bare_len(val):
+                import re
+                ansi_escape = re.compile(r'\x1b[^m]*m')
+                val = ansi_escape.sub('', val)
+                val = bytes(val).decode("utf-8")
+                return len(val)
+        else:
+            pad = b" "
+            def bare_len(val):
+                import re
+                ansi_escape = re.compile(b'\x1b[^m]*m')
+                val = ansi_escape.sub(b'', val)
+                val = bytes(val).decode("utf-8")
+                return len(val)
+
+        def list_print(data):
+            if len(data) == 0:
+                return
+            widths = [0] * len(data[0])
+            _data = []
+            for line in data:
+                _data.append(tuple(map(lambda x: x.encode("utf-8"), line)))
+            for line in _data:
+                for i, val in enumerate(line):
+                    strlen = bare_len(val)
+                    if strlen > widths[i]:
+                        widths[i] = strlen
+            for line in _data:
+                _line = []
+                for i, val in enumerate(line):
+                    val = val + pad*(widths[i]-bare_len(val))
+                    _line.append(val)
+                print(pad.join(_line).decode("utf-8"))
+
+        def print_section(data):
+            if len(data["data"]) == 0:
+                return
+            if "title" in data:
+                print(colorize(data["title"], color.GRAY))
+            list_print(data["data"])
+            print()
+
+        for key in sorted(list(data.keys())):
+            if key.startswith("hb#"):
+                load_hb(key, data[key])
+
+        for node in data["monitor"]["nodes"]:
+            for svcname, _data in data["monitor"]["nodes"][node]["services"]["status"].items():
+                if svcname not in services:
+                    services[svcname] = Storage({
+                        "avail": Status(),
+                        "nodes": {}
+                    })
+                services[svcname].avail += Status(_data["avail"])
+                services[svcname].nodes[node] = {
+                    "avail": _data["avail"],
+                    "frozen": _data["frozen"],
+                    "mon": _data["monitor"]["status"],
+                }
+        load_svc_header()
+        for svcname in sorted(list(services.keys())):
+            load_svc(svcname, services[svcname])
+
+        print_section(out["heartbeats"])
+        print_section(out["services"])
+
+    def daemon_stop(self):
+        options = {}
+        if self.options.thr_id:
+            options["thr_id"] = self.options.thr_id
+        data = self.daemon_send({"action": "daemon_stop", "options": options})
+        print(json.dumps(data, indent=4, sort_keys=True))
+
+    def daemon_start(self):
+        options = {}
+        if self.options.thr_id:
+            options["thr_id"] = self.options.thr_id
+        data = self.daemon_send({"action": "daemon_start", "options": options})
+        print(json.dumps(data, indent=4, sort_keys=True))
 

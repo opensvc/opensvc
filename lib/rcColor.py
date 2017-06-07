@@ -7,6 +7,12 @@ from rcUtilities import is_string
 
 use_color = "auto"
 
+class unicons:
+    NONE = u'\u0020'
+    FROZEN = u'\u2744'
+    STDBY = u'\u2299'
+    STATUS = u'\u23FA'
+
 class color:
     END = '\033[000m'
     BOLD = '\033[001m'

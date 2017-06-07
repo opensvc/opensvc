@@ -189,6 +189,9 @@ OPT = Storage({
         "--target", default=None, action="store", dest="target",
         help="specify a target to scan for new block devices. Example: "
              "5000097358185088 or iqn.clementine.tgt1"),
+    "thr_id": Option(
+        "--thread-id", default=None, action="store", dest="thr_id",
+        help="specify a daemon thread, as listed in the daemon status output"),
     "user": Option(
         "--user", default=None, action="store", dest="user",
         help="authenticate with the collector using the "
@@ -338,6 +341,23 @@ ACTIONS = {
                 OPT.param,
             ],
         },
+    },
+    'Node daemon management': {
+        'daemon_status': {
+            'msg': 'display the daemon status.',
+         },
+        'daemon_start': {
+            'msg': 'start a daemon thread.',
+            'options': [
+                OPT.thr_id,
+            ],
+         },
+        'daemon_stop': {
+            'msg': 'stop a daemon thread.',
+            'options': [
+                OPT.thr_id,
+            ],
+         },
     },
     'Push data to the collector': {
         'pushasset': {
