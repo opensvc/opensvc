@@ -3916,7 +3916,8 @@ class Svc(object):
                         continue
                     resource.force_status(rcStatus.UP)
 
-        self.update_status_data()
+        if action != "delete" and not self.command_is_scoped():
+            self.update_status_data()
 
         if psinfo:
             self.join_cluster_action(**psinfo)
