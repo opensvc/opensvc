@@ -2670,6 +2670,8 @@ class Node(Crypt):
             sock.settimeout(6.2)
             sock.connect((addr, port))
             message = self.encrypt(data)
+            if message is None:
+                return
             sock.sendall(message)
             if with_result:
                 chunks = []

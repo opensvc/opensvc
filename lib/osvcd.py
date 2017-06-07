@@ -379,6 +379,8 @@ class HbMcastSender(HbMcast):
         if message is None:
             return
         message = self.encrypt(self.format_message())
+        if message is None:
+            return
 
         try:
             sent = self.sock.sendto(message, self.group)
