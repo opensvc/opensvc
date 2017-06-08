@@ -2456,7 +2456,11 @@ class Svc(object):
             for resource in self.get_resources("hb"):
                 if not resource.skip and hasattr(resource, action):
                     self.running_action = action
-                    getattr(resource, action)()
+                    if self.options.dry_run:
+                        self.log.info("%s %s", action, resource.label)
+                        raise ex.excEndAction
+                    else:
+                        getattr(resource, action)()
 
             raise ex.excError("this service is managed by a clusterware, thus "
                               "direct service manipulation is disabled (%s). "
@@ -2887,6 +2891,8 @@ class Svc(object):
         rcmd = [os.path.join(rcEnv.paths.pathetc, self.svcname)]
         if self.options.debug:
             rcmd += ['--debug']
+        if self.options.dry_run:
+            rcmd += ['--dry-run']
         if self.options.cluster and action_mode:
             rcmd += ['--cluster']
         if self.options.cron:
