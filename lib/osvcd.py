@@ -25,7 +25,7 @@ from optparse import OptionParser
 import rcExceptions as ex
 import rcLogger
 from rcGlobalEnv import rcEnv, Storage
-from rcUtilities import justcall, bdecode
+from rcUtilities import justcall, bdecode, lazy, unset_lazy
 from rcStatus import Status
 from svcBuilder import build
 import pyaes
@@ -69,6 +69,9 @@ THREADS = {}
 THREADS_LOCK = threading.RLock()
 CLUSTER_DATA = {}
 CLUSTER_DATA_LOCK = threading.RLock()
+HB_MSG = None
+HB_MSG_LOCK = threading.RLock()
+
 
 def fork(func, args=None, kwargs=None):
     """
@@ -172,10 +175,28 @@ class OsvcThread(threading.Thread):
             thr.join(0)
             if not thr.is_alive():
                 done.append(idx)
-        for idx in done:
+        for idx in sorted(done, reverse=True):
             del self.threads[idx]
         if len(self.threads) > 2:
             self.log.info("threads queue length %d", len(self.threads))
+
+    @lazy
+    def config(self):
+        try:
+            config = ConfigParser.RawConfigParser()
+            with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as filep:
+                if sys.version_info[0] >= 3:
+                    config.read_file(filep)
+                else:
+                    config.readfp(filep)
+        except Exception as exc:
+            self.log.info("error loading config: %", str(exc))
+            raise ex.excAbortAction()
+        return config
+
+    def reload_config(self):
+        unset_lazy(self, "config")
+
 
 #
 class Crypt(object):
@@ -209,7 +230,7 @@ class Crypt(object):
                 locker.release()
 
     def decrypt(self, message):
-        message = bdecode(message).rstrip("\0")
+        message = bdecode(message).rstrip("\0\x00")
         try:
             message = json.loads(message)
         except ValueError:
@@ -247,6 +268,69 @@ class Crypt(object):
             "data": bdecode(base64.urlsafe_b64encode(self._encrypt(json.dumps(data), key, iv))),
         }
         return (json.dumps(message)+'\0').encode()
+
+    def get_listener_info(self, nodename):
+        if nodename == rcEnv.nodename:
+            if not self.config.has_section("listener"):
+                return "127.0.0.1", rcEnv.listener_port
+            if self.config.has_option("listener", "addr@"+nodename):
+                addr = self.config.get("listener", "addr@"+nodename)
+            elif self.config.has_option("listener", "addr"):
+                addr = self.config.get("listener", "addr")
+            else:
+                addr = "127.0.0.1"
+            if self.config.has_option("listener", "port@"+nodename):
+                port = self.config.getint("listener", "port@"+nodename)
+            elif self.config.has_option("listener", "port"):
+                port = self.config.getint("listener", "port")
+            else:
+                port = rcEnv.listener_port
+        else:
+            if not self.config.has_section("listener"):
+                return nodename, rcEnv.listener_port
+            if self.config.has_option("listener", "addr@"+nodename):
+                addr = self.config.get("listener", "addr@"+nodename)
+            else:
+                addr = nodename
+            if self.config.has_option("listener", "port@"+nodename):
+                port = self.config.getint("listener", "port@"+nodename)
+            elif self.config.has_option("listener", "port"):
+                port = self.config.getint("listener", "port")
+            else:
+                port = rcEnv.listener_port
+        return addr, port
+
+    def daemon_send(self, data, nodename=None, with_result=True):
+        if nodename is None:
+            nodename = rcEnv.nodename
+        addr, port = self.get_listener_info(nodename)
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(6.2)
+            sock.connect((addr, port))
+            message = self.encrypt(data)
+            if message is None:
+                return
+            sock.sendall(message)
+            if with_result:
+                chunks = []
+                while True:
+                    chunk = sock.recv(4096)
+                    if chunk:
+                        chunks.append(chunk)
+                    if not chunk or chunk.endswith(b"\x00"):
+                        break
+                if sys.version_info[0] >= 3:
+                    data = b"".join(chunks)
+                else:
+                    data = "".join(chunks)
+                nodename, data = self.decrypt(data)
+                return data
+        except socket.error as exc:
+            self.log.error("init error: %s", str(exc))
+            return
+        finally:
+            sock.close()
 
 #
 class Hb(OsvcThread):
@@ -337,25 +421,12 @@ class HbMcast(Hb, Crypt):
         }
         return data
 
-    def load_config(self):
-        try:
-            self.config = ConfigParser.RawConfigParser()
-            with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as filep:
-                if sys.version_info[0] >= 3:
-                    self.config.read_file(filep)
-                else:
-                    self.config.readfp(filep)
-        except Exception as exc:
-            self.log.info("error loading config: %", str(exc))
-            raise ex.excAbortAction()
-
     def configure(self):
         self.stats = Storage({
             "beats": 0,
             "bytes": 0,
             "errors": 0,
         })
-        self.load_config()
         try:
             self.port = self.config.getint(self.name, "port")
         except:
@@ -410,19 +481,16 @@ class HbMcastSender(HbMcast):
                 sys.exit(0)
             time.sleep(DEFAULT_HB_PERIOD)
 
-    def format_message(self):
-        with CLUSTER_DATA_LOCK:
-            if rcEnv.nodename not in CLUSTER_DATA:
+    def get_message(self):
+        with HB_MSG_LOCK:
+            if not HB_MSG:
                 # no data to send yet
                 return
-            return CLUSTER_DATA[rcEnv.nodename]
+            return HB_MSG
 
     def do(self):
         #self.log.info("sending to %s:%s", self.addr, self.port)
-        message = self.format_message()
-        if message is None:
-            return
-        message = self.encrypt(self.format_message())
+        message = self.get_message()
         if message is None:
             return
 
@@ -615,7 +683,7 @@ class Listener(OsvcThread, Crypt):
         del chunks
 
         nodename, data = self.decrypt(data)
-        self.log.info("received %s from %s", str(data), nodename)
+        #self.log.info("received %s from %s", str(data), nodename)
         self.stats.sessions.auth_validated += 1
         self.stats.sessions.clients[addr[0]].auth_validated += 1
         if data is None:
@@ -623,30 +691,34 @@ class Listener(OsvcThread, Crypt):
             p = Popen(cmd, stdout=None, stderr=None, stdin=None)
             p.communicate()
         else:
-            result = self.router(data)
+            result = self.router(nodename, data)
             if result:
                 message = self.encrypt(result)
                 conn.sendall(message)
                 self.log.info("responded to %s, %s:%d", nodename, addr[0], addr[1])
 
-    def router(self, data):
+    #
+    # Actions
+    #
+    def router(self, nodename, data):
         if not isinstance(data, dict):
             return
         if "action" not in data:
             return {"error": "action not specified", "status": 1}
-        if not hasattr(self, data["action"]):
+        fname = "action_"+data["action"]
+        if not hasattr(self, fname):
             return {"error": "action not supported", "status": 1}
         options = data.get("options", {})
-        return getattr(self, data["action"])(**options)
+        return getattr(self, fname)(nodename, **options)
 
-    def daemon_status(self):
+    def action_daemon_status(self, nodename, **kwargs):
         data = {}
         with THREADS_LOCK:
             for thr_id, thread in THREADS.items():
                 data[thr_id] = thread.status()
         return data
 
-    def daemon_stop(self, **kwargs):
+    def action_daemon_stop(self, nodename, **kwargs):
         thr_id = kwargs.get("thr_id")
         if not thr_id:
             self.log.info("stop daemon requested")
@@ -662,7 +734,7 @@ class Listener(OsvcThread, Crypt):
             THREADS[thr_id].stop()
         return {"status": 0}
 
-    def daemon_start(self, **kwargs):
+    def action_daemon_start(self, nodename, **kwargs):
         thr_id = kwargs.get("thr_id")
         if not thr_id:
             return {"error": "no thread specified", "status": 1}
@@ -675,6 +747,18 @@ class Listener(OsvcThread, Crypt):
         with THREADS_LOCK:
             THREADS[thr_id].unstop()
         return {"status": 0}
+
+    def action_get_service_config(self, nodename, **kwargs):
+        svcname = kwargs.get("svcname")
+        if not svcname:
+            return {"error": "no svcname specified", "status": 1}
+        fpath = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
+        if not os.path.exists(fpath):
+            return {"error": "%s does not exist" % fpath, "status": 1}
+        with open(fpath, "r") as filep:
+            buff = filep.read()
+        self.log.info("serve service %s config to %s", svcname, nodename)
+        return {"status": 0, "data": buff}
 
 
 #
@@ -729,7 +813,7 @@ class Scheduler(OsvcThread):
         self.procs.append(proc)
 
 #
-class Monitor(OsvcThread):
+class Monitor(OsvcThread, Crypt):
     """
     The monitoring thread collecting local service states and taking decisions.
     """
@@ -758,9 +842,61 @@ class Monitor(OsvcThread):
             time.sleep(1)
             return
 
+        self.reload_config()
         self.last_run = now
         self.orchestrator()
-        self.reset_hb_data()
+        self.sync_services_conf()
+        self.update_hb_data()
+
+    def sync_services_conf(self):
+        confs = self.get_services_configs()
+        for svcname, data in confs.items():
+            if svcname not in self.services:
+                continue
+            if rcEnv.nodename not in data:
+                # need to check if we should have this config ?
+                continue
+            ref_conf = data[rcEnv.nodename]
+            ref_nodename = rcEnv.nodename
+            for nodename, conf in data.items():
+                if rcEnv.nodename == nodename:
+                    continue
+                if conf.cksum != ref_conf.cksum and conf.updated > ref_conf.updated:
+                    ref_conf = conf
+                    ref_nodename = nodename
+            if ref_nodename != rcEnv.nodename:
+                if rcEnv.nodename in self.services[svcname].nodes and \
+                   ref_nodename in self.services[svcname].drpnodes:
+                       # don't fetch drp config from prd nodes
+                       return
+                self.log.info("node %s has the most recent service %s config", ref_nodename, svcname)
+                self.fetch_service_config(svcname, ref_nodename)
+
+    def fetch_service_config(self, svcname, nodename):
+        request = {
+            "action": "get_service_config",
+            "options": {
+                "svcname": svcname,
+            },
+        }
+        resp = self.daemon_send(request, nodename=nodename)
+        if resp.get("status", 1) != 0:
+            self.log.error("unable to fetch service %s config from node %s: received %s", svcname, nodename, resp)
+            return
+        import tempfile
+        with tempfile.NamedTemporaryFile(dir=rcEnv.paths.pathtmp, delete=False) as filep:
+            tmpfpath = filep.name
+            filep.write(resp["data"].encode())
+        try:
+            results = self.services[svcname]._validate_config(path=filep.name)
+            if results["errors"] == 0:
+                import shutil
+                shutil.copy(filep.name, self.services[svcname].paths.cf)
+            else:
+                self.log.error("the service %s config fetched from node %s is not valid", svcname, nodename)
+        finally:
+            os.unlink(tmpfpath)
+        self.log.info("the service %s config fetched from node %s is now installed", svcname, nodename)
 
     def service_command(self, svcname, cmd):
         thr = threading.Thread(target=self._service_command, args=(svcname, cmd))
@@ -851,6 +987,19 @@ class Monitor(OsvcThread):
         except KeyError:
             return []
         return svcnames
+
+    def get_services_configs(self):
+        data = {}
+        with CLUSTER_DATA_LOCK:
+            for nodename in CLUSTER_DATA:
+                try:
+                    for svcname in CLUSTER_DATA[nodename]["services"]["config"]:
+                        if svcname not in data:
+                            data[svcname] = {}
+                        data[svcname][nodename] = Storage(CLUSTER_DATA[nodename]["services"]["config"][svcname])
+                except KeyError:
+                    pass
+        return data
 
     def get_service_instance(self, svcname, nodename):
         try:
@@ -983,13 +1132,14 @@ class Monitor(OsvcThread):
                 data.updated = data.updated.strftime(DATEFMT)
             return data
 
-    def reset_hb_data(self):
+    def update_hb_data(self):
         #self.log.info("update heartbeat data to send")
         load_avg = os.getloadavg()
         config = self.get_services_config()
         status = self.get_services_status(config.keys())
 
         global CLUSTER_DATA
+        global HB_MSG
         try:
             with CLUSTER_DATA_LOCK:
                 CLUSTER_DATA[rcEnv.nodename] = {
@@ -1004,6 +1154,8 @@ class Monitor(OsvcThread):
                         "15m": load_avg[2],
                     },
                 }
+            with HB_MSG_LOCK:
+                HB_MSG = self.encrypt(CLUSTER_DATA[rcEnv.nodename])
         except ValueError:
             self.log.error("failed to refresh local cluster data: invalid json")
 

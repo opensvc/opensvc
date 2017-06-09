@@ -2656,45 +2656,14 @@ class Node(Crypt):
             return
         self.action("compliance_auto")
 
-    def daemon_send(self, data, with_result=True):
-        try:
-            port = self.config.getint("listener", "port")
-        except:
-            port = rcEnv.listener_port
-        try:
-            addr = self.config.get("listener", "addr")
-        except:
-            addr = "127.0.0.1"
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(6.2)
-            sock.connect((addr, port))
-            message = self.encrypt(data)
-            if message is None:
-                return
-            sock.sendall(message)
-            if with_result:
-                chunks = []
-                while True:
-                    chunk = sock.recv(4096)
-                    if chunk:
-                        chunks.append(chunk)
-                    if not chunk or chunk.endswith(b"\x00"):
-                        break
-                if sys.version_info[0] >= 3:
-                    data = b"".join(chunks)
-                else:
-                    data = "".join(chunks)
-                nodename, data = self.decrypt(data)
-                return data
-        except socket.error as exc:
-            self.log.error("init error: %s", str(exc))
-            return
-        finally:
-            sock.close()
-
+    #
+    # daemon actions
+    #
     def daemon_status(self):
-        data = self.daemon_send({"action": "daemon_status"})
+        data = self.daemon_send(
+            {"action": "daemon_status"},
+            nodename=self.options.node,
+        )
         if data is None:
             return
 
@@ -2716,6 +2685,10 @@ class Node(Crypt):
         self.build_services(minimal=True)
         nodenames = get_nodes()
         services = {}
+        if self.options.node:
+            daemon_node = self.options.node
+        else:
+            daemon_node = rcEnv.nodename
 
         def load_svc_header():
             line = [
@@ -2776,7 +2749,7 @@ class Node(Crypt):
                 "",
             ]
             for nodename in nodenames:
-                if nodename == rcEnv.nodename:
+                if nodename == daemon_node:
                     line.append("")
                     continue
                 line.append(colorize("@" + nodename, color.GRAY))
@@ -2794,7 +2767,7 @@ class Node(Crypt):
                 "|",
             ]
             for nodename in nodenames:
-                if nodename == rcEnv.nodename:
+                if nodename == daemon_node:
                     line.append("")
                     continue
                 if "*" in _data["peers"]:
@@ -2914,6 +2887,7 @@ class Node(Crypt):
             options["thr_id"] = self.options.thr_id
         data = self.daemon_send(
             {"action": "daemon_stop", "options": options},
+            nodename=self.options.node,
         )
         print(json.dumps(data, indent=4, sort_keys=True))
 
@@ -2924,6 +2898,9 @@ class Node(Crypt):
         else:
             os.system(sys.executable+" "+os.path.join(rcEnv.paths.pathlib, "osvcd.py"))
             return
-        data = self.daemon_send({"action": "daemon_start", "options": options})
+        data = self.daemon_send(
+            {"action": "daemon_start", "options": options},
+            nodename=self.options.node,
+        )
         print(json.dumps(data, indent=4, sort_keys=True))
 

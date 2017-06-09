@@ -132,6 +132,10 @@ OPT = Storage({
         action="store", dest="moduleset",
         help="compliance, set moduleset list. The 'all' value "
              "can be used in conjonction with detach."),
+    "node": Option(
+        "--node", default="",
+        action="store", dest="node",
+        help="the node to send a request to. if not specified the local node is targeted."),
     "opt_object": Option(
         "--object", default=[], action="append", dest="objects",
         help="an object to limit a push* action to. multiple "
@@ -217,6 +221,10 @@ GLOBAL_OPTS = [
     OPT.debug,
     OPT.format,
     OPT.help,
+]
+
+DAEMON_OPTS = [
+    OPT.node,
 ]
 
 ACTIONS = {
@@ -345,16 +353,17 @@ ACTIONS = {
     'Node daemon management': {
         'daemon_status': {
             'msg': 'display the daemon status.',
+            'options': DAEMON_OPTS,
          },
         'daemon_start': {
             'msg': 'start a daemon thread.',
-            'options': [
+            'options': DAEMON_OPTS + [
                 OPT.thr_id,
             ],
          },
         'daemon_stop': {
             'msg': 'stop a daemon thread.',
-            'options': [
+            'options': DAEMON_OPTS + [
                 OPT.thr_id,
             ],
          },
