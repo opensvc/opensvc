@@ -71,6 +71,8 @@ CLUSTER_DATA = {}
 CLUSTER_DATA_LOCK = threading.RLock()
 HB_MSG = None
 HB_MSG_LOCK = threading.RLock()
+SERVICES = {}
+SERVICES_LOCK = threading.RLock()
 
 
 def fork(func, args=None, kwargs=None):
@@ -196,6 +198,13 @@ class OsvcThread(threading.Thread):
 
     def reload_config(self):
         unset_lazy(self, "config")
+
+    def get_services_nodenames(self):
+        nodenames = set()
+        with SERVICES_LOCK:
+            for svc in SERVICES.values():
+                nodenames |= svc.nodes | svc.drpnodes
+        return nodenames
 
 
 #
@@ -346,18 +355,21 @@ class Hb(OsvcThread):
     def status(self):
         data = OsvcThread.status(self)
         data.peers = {}
-        for nodename, _data in self.peers.items():
+        for nodename in self.get_services_nodenames():
+            if nodename == rcEnv.nodename:
+                data.peers[nodename] = {}
+                continue
+            if "*" in self.peers:
+                _data = self.peers["*"]
+            else:
+                _data = self.peers.get(nodename, Storage({
+                        "last": 0,
+                        "beating": False,
+                    }))
             data.peers[nodename] = {
                 "last": datetime.datetime.utcfromtimestamp(_data.last).strftime('%Y-%m-%dT%H:%M:%SZ'),
                 "beating": _data.beating,
             }
-        data.config = {
-            "addr": self.addr,
-            "port": self.port,
-            "intf": self.intf,
-            "src_addr": self.src_addr,
-            "timeout": self.timeout,
-        }
         return data
 
     def set_last(self, nodename="*"):
@@ -370,6 +382,9 @@ class Hb(OsvcThread):
         if not self.peers[nodename].beating:
             self.log.info("node %s hb status stale => beating", nodename)
         self.peers[nodename].beating = True
+
+    def is_beating(self, nodename="*"):
+        return self.peers.get(nodename, {"beating": False})["beating"]
 
     def set_beating(self, nodename="*"):
         now = time.time()
@@ -391,12 +406,214 @@ class Hb(OsvcThread):
 
     @staticmethod
     def get_ip_address(ifname):
+        ifname = str(ifname)
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         return socket.inet_ntoa(fcntl.ioctl(
             s.fileno(),
             0x8915,  # SIOCGIFADDR
             struct.pack('256s', ifname[:15])
         )[20:24])
+
+
+#
+class HbUcast(Hb, Crypt):
+    """
+    A class factorizing common methods and properties for the unicast
+    heartbeat sender and listener child classes.
+    """
+    DEFAULT_UCAST_PORT = 10000
+    DEFAULT_UCAST_TIMEOUT = 15
+
+    def status(self):
+        data = Hb.status(self)
+        data.stats = self.stats
+        data.timeout = self.timeout
+        data.config = {
+            "addr": self.peer_config[rcEnv.nodename].addr,
+            "port": self.peer_config[rcEnv.nodename].port,
+        }
+        return data
+
+    def configure(self):
+        self.stats = Storage({
+            "beats": 0,
+            "bytes": 0,
+            "errors": 0,
+        })
+        self.peer_config = {}
+        for option in self.config.options(self.name):
+            if "@" in option:
+                base_option, nodename = option.split("@", 1)
+            else:
+                base_option = option
+                nodename = rcEnv.nodename
+            if nodename not in self.peer_config:
+                self.peer_config[nodename] = Storage()
+            if base_option == "port":
+                self.peer_config[nodename][base_option] = self.config.getint(self.name, option)
+            else:
+                self.peer_config[nodename][base_option] = self.config.get(self.name, option)
+            if base_option == "addr":
+                addrinfo = socket.getaddrinfo(self.peer_config[nodename].addr, None)[0]
+                self.peer_config[nodename].addr = addrinfo[4][0]
+
+        # timeout
+        if self.config.has_option(self.name, "timeout@"+rcEnv.nodename):
+            self.timeout = self.config.getint(self.name, "timeout@"+rcEnv.nodename)
+        elif self.config.has_option(self.name, "timeout"):
+            self.timeout = self.config.getint(self.name, "timeout")
+        else:
+            self.timeout = self.DEFAULT_UCAST_TIMEOUT
+
+        for nodename in self.peer_config:
+            if nodename == rcEnv.nodename:
+                continue
+            if self.peer_config[nodename].port is None:
+                self.peer_config[nodename].port = self.peer_config[rcEnv.nodename].port
+        #print(json.dumps(self.peer_config, indent=4))
+
+class HbUcastSender(HbUcast):
+    """
+    The multicast heartbeat sender class.
+    """
+    def __init__(self, name):
+        HbUcast.__init__(self, name, role="sender")
+
+    def run(self):
+        try:
+            self.configure()
+        except ex.excAbortAction:
+            return
+
+        while True:
+            self.do()
+            if self.stopped():
+                sys.exit(0)
+            time.sleep(DEFAULT_HB_PERIOD)
+
+    def status(self):
+        data = HbUcast.status(self)
+        data["config"] = {}
+        return data
+
+    def get_message(self):
+        with HB_MSG_LOCK:
+            if not HB_MSG:
+                # no data to send yet
+                return
+            return HB_MSG
+
+    def do(self):
+        #self.log.info("sending to %s:%s", self.addr, self.port)
+        message = self.get_message()
+        if message is None:
+            return
+
+        for nodename, config in self.peer_config.items():
+            if nodename == rcEnv.nodename:
+                continue
+            self._do(message, nodename, config)
+
+    def _do(self, message, nodename, config):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(6.2)
+            sock.bind((self.peer_config[rcEnv.nodename].addr, 0))
+            sock.connect((config.addr, config.port))
+            sock.sendall(message)
+            self.set_last(nodename)
+            self.stats.beats += 1
+            self.stats.bytes += len(message)
+        except socket.timeout as exc:
+            self.stats.errors += 1
+            self.log.warning("send timeout")
+            self.set_beating(nodename)
+        except socket.error as exc:
+            self.log.error("send to %s error: %s", nodename, str(exc))
+            return
+        finally:
+            sock.close()
+
+#
+class HbUcastListener(HbUcast):
+    """
+    The multicast heartbeat listener class.
+    """
+    def __init__(self, name):
+        HbUcast.__init__(self, name, role="listener")
+
+    def run(self):
+        try:
+            self.configure()
+        except ex.excAbortAction:
+            return
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.sock.bind((self.peer_config[rcEnv.nodename].addr, self.peer_config[rcEnv.nodename].port))
+            self.sock.listen(5)
+            self.sock.settimeout(0.5)
+        except socket.error as exc:
+            self.log.error("init error: %s", str(exc))
+            return
+
+        self.log.info("listening on %s:%s", self.peer_config[rcEnv.nodename].addr, self.peer_config[rcEnv.nodename].port)
+
+        while True:
+            self.do()
+            if self.stopped():
+                for thr in self.threads:
+                    thr.join()
+                self.sock.close()
+                sys.exit(0)
+
+    def do(self):
+        self.janitor_threads()
+
+        try:
+            conn, addr = self.sock.accept()
+        except socket.timeout:
+            return
+        thr = threading.Thread(target=self.handle_client, args=(conn, addr))
+        thr.start()
+        self.threads.append(thr)
+
+    def handle_client(self, conn, addr):
+        try:
+            self._handle_client(conn, addr)
+            self.stats.beats += 1
+        finally:
+            conn.close()
+
+    def _handle_client(self, conn, addr):
+        chunks = []
+        buff_size = 4096
+        while True:
+            chunk = conn.recv(buff_size)
+            self.stats.bytes += len(chunk)
+            if chunk:
+                chunks.append(chunk)
+            if not chunk or chunk.endswith(b"\x00"):
+                break
+        if sys.version_info[0] >= 3:
+            data = b"".join(chunks)
+        else:
+            data = "".join(chunks)
+        del chunks
+
+        nodename, data = self.decrypt(data)
+        if nodename is None or nodename == rcEnv.nodename:
+            # ignore hb data we sent ourself
+            return
+        if data is None:
+            self.stats.errors += 1
+            return
+        #self.log.info("received data from %s %s", nodename, addr)
+        self.set_beating(nodename)
+        global CLUSTER_DATA
+        with CLUSTER_DATA_LOCK:
+            CLUSTER_DATA[nodename] = data
+        self.set_last(nodename)
 
 
 #
@@ -439,6 +656,16 @@ class HbMcast(Hb, Crypt):
             self.timeout = self.config.getint(self.name, "timeout")
         except:
             self.timeout = self.DEFAULT_MCAST_TIMEOUT
+        group = socket.inet_aton(self.addr)
+        try:
+            self.intf = self.config.get(self.name, "intf")
+            self.src_addr = self.get_ip_address(self.intf)
+            self.mreq = group + socket.inet_aton(self.src_addr)
+        except:
+            self.intf = "any"
+            self.src_addr = "0.0.0.0"
+            self.mreq = struct.pack("4sl", group, socket.INADDR_ANY)
+
         try:
             self.intf = self.config.get(self.name, "intf")
             self.src_addr = self.get_ip_address(self.intf)
@@ -526,9 +753,7 @@ class HbMcastListener(HbMcast):
             self.addr = addrinfo[4][0]
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.sock.bind(('', self.port))
-            group = socket.inet_aton(self.addr)
-            mreq = struct.pack("4sl", group, self.src_naddr)
-            self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+            self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, self.mreq)
             self.sock.settimeout(0.2)
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
@@ -760,6 +985,10 @@ class Listener(OsvcThread, Crypt):
         self.log.info("serve service %s config to %s", svcname, nodename)
         return {"status": 0, "data": buff}
 
+    def action_get_hb_data(self, nodename, **kwargs):
+        with HB_MSG_LOCK:
+            return HB_MSG
+
 
 #
 class Scheduler(OsvcThread):
@@ -778,7 +1007,7 @@ class Scheduler(OsvcThread):
             if self.stopped():
                 for proc in self.procs:
                     proc.terminate()
-                    while i in range(self.stop_tmo):
+                    for i in range(self.stop_tmo):
                         proc.poll()
                         if proc.returncode is not None:
                             break
@@ -825,7 +1054,6 @@ class Monitor(OsvcThread, Crypt):
         self.log.info("monitor started")
         self.data = {}
         self.data_lock = threading.RLock()
-        self.services = {}
 
         while True:
             self.do()
@@ -851,8 +1079,9 @@ class Monitor(OsvcThread, Crypt):
     def sync_services_conf(self):
         confs = self.get_services_configs()
         for svcname, data in confs.items():
-            if svcname not in self.services:
-                continue
+            with SERVICES_LOCK:
+                if svcname not in SERVICES:
+                    continue
             if rcEnv.nodename not in data:
                 # need to check if we should have this config ?
                 continue
@@ -865,10 +1094,11 @@ class Monitor(OsvcThread, Crypt):
                     ref_conf = conf
                     ref_nodename = nodename
             if ref_nodename != rcEnv.nodename:
-                if rcEnv.nodename in self.services[svcname].nodes and \
-                   ref_nodename in self.services[svcname].drpnodes:
-                       # don't fetch drp config from prd nodes
-                       return
+                with SERVICES_LOCK:
+                    if rcEnv.nodename in SERVICES[svcname].nodes and \
+                       ref_nodename in SERVICES[svcname].drpnodes:
+                           # don't fetch drp config from prd nodes
+                           return
                 self.log.info("node %s has the most recent service %s config", ref_nodename, svcname)
                 self.fetch_service_config(svcname, ref_nodename)
 
@@ -889,10 +1119,12 @@ class Monitor(OsvcThread, Crypt):
         with codecs.open(tmpfpath, "w", "utf-8") as filep:
             filep.write(resp["data"])
         try:
-            results = self.services[svcname]._validate_config(path=filep.name)
+            with SERVICES_LOCK:
+                svc = SERVICES[svcname]
+            results = svc._validate_config(path=filep.name)
             if results["errors"] == 0:
                 import shutil
-                shutil.copy(filep.name, self.services[svcname].paths.cf)
+                shutil.copy(filep.name, svc.paths.cf)
             else:
                 self.log.error("the service %s config fetched from node %s is not valid", svcname, nodename)
         finally:
@@ -915,7 +1147,9 @@ class Monitor(OsvcThread, Crypt):
             self.set_service_monitor(svcname, "idle")
 
     def orchestrator(self):
-        for svc in self.services.values():
+        with SERVICES_LOCK:
+            svcs = SERVICES.values()
+        for svc in svcs:
             self.service_orchestrator(svc)
 
     def service_orchestrator(self, svc):
@@ -1052,7 +1286,8 @@ class Monitor(OsvcThread, Crypt):
                 self.log.info("compute service %s config checksum", svcname)
                 cksum = self.fsum(cfg)
                 try:
-                    self.services[svcname] = build(svcname, minimal=True)
+                    with SERVICES_LOCK:
+                        SERVICES[svcname] = build(svcname, minimal=True)
                 except Exception as exc:
                     self.log.error("%s build error: %s", svcname, str(exc))
             else:
@@ -1243,6 +1478,19 @@ class Daemon(object):
                 self.threads[hb_id] = HbMcastSender(name)
                 self.threads[hb_id].start()
                 changed = True
+
+        for name in self.get_config_hb("unicast"):
+            hb_id = name + ".listener"
+            if self.need_start(hb_id):
+                self.threads[hb_id] = HbUcastListener(name)
+                self.threads[hb_id].start()
+                changed = True
+            hb_id = name + ".sender"
+            if self.need_start(hb_id):
+                self.threads[hb_id] = HbUcastSender(name)
+                self.threads[hb_id].start()
+                changed = True
+
 
         if self.need_start("monitor"):
             self.threads["monitor"] = Monitor()

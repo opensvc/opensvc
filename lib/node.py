@@ -2676,11 +2676,12 @@ class Node(Crypt):
         out = []
 
         def get_nodes():
-            nodenames = set()
-            for svc in self.svcs:
-                nodenames |= svc.nodes
-                nodenames |= svc.drpnodes
-            return sorted(nodenames)
+            try:
+                hb_id = [thr_id for thr_id in data.keys() if thr_id.startswith("hb#")][0]
+                hb = data[hb_id]
+                return sorted(hb["peers"].keys())
+            except:
+                return []
 
         self.build_services(minimal=True)
         nodenames = get_nodes()
@@ -2730,15 +2731,18 @@ class Node(Crypt):
                         avail_icon = colorize_status(avail, lpad=0).replace(avail, unicons.STATUS)
                     # mon status
                     smon = services[svcname]["nodes"][nodename]["mon"]
+                    if smon == "idle":
+                        # don't display 'idle', as its to normal status and thus repeated as nauseam
+                        smon = ""
 
-                    val.append(smon)
                     val.append(avail_icon)
                     val.append(frozen_icon)
+                    val.append(smon)
                     line.append(" ".join(val))
                 elif nodename not in self.services[svcname].nodes | self.services[svcname].drpnodes:
                     line.append("")
                 else:
-                    line.append("unknown")
+                    line.append(colorize("?", color.RED))
             out.append(line)
 
         def load_threads_header():
@@ -2749,9 +2753,6 @@ class Node(Crypt):
                 "",
             ]
             for nodename in nodenames:
-                if nodename == daemon_node:
-                    line.append("")
-                    continue
                 line.append(colorize("@" + nodename, color.GRAY))
             out.append(line)
 
@@ -2760,19 +2761,21 @@ class Node(Crypt):
                 state = colorize(_data["state"], color.GREEN)
             else:
                 state = colorize(_data["state"], color.RED)
+            if "addr" in _data["config"] and "port" in _data["config"]:
+                config = _data["config"]["addr"]+":"+str(_data["config"]["port"])
+            else:
+                config = ""
             line = [
                 " "+colorize(key, color.BOLD),
                 state,
-                _data["config"]["addr"]+":"+str(_data["config"]["port"]),
+                config,
                 "|",
             ]
             for nodename in nodenames:
                 if nodename == daemon_node:
                     line.append("")
                     continue
-                if "*" in _data["peers"]:
-                    status = _data["peers"]["*"]["beating"]
-                elif nodename not in _data["peers"]:
+                if nodename not in _data["peers"]:
                     status = " "
                 else:
                     status = _data["peers"][nodename]["beating"]
