@@ -755,7 +755,7 @@ class Listener(OsvcThread, Crypt):
         fpath = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
         if not os.path.exists(fpath):
             return {"error": "%s does not exist" % fpath, "status": 1}
-        with open(fpath, "r") as filep:
+        with codecs.open(fpath, "r", "utf8") as filep:
             buff = filep.read()
         self.log.info("serve service %s config to %s", svcname, nodename)
         return {"status": 0, "data": buff}
@@ -886,7 +886,8 @@ class Monitor(OsvcThread, Crypt):
         import tempfile
         with tempfile.NamedTemporaryFile(dir=rcEnv.paths.pathtmp, delete=False) as filep:
             tmpfpath = filep.name
-            filep.write(resp["data"].encode())
+        with codecs.open(tmpfpath, "w", "utf-8") as filep:
+            filep.write(resp["data"])
         try:
             results = self.services[svcname]._validate_config(path=filep.name)
             if results["errors"] == 0:
