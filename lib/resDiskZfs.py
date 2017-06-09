@@ -39,6 +39,8 @@ class Disk(resDisk.Disk):
     def presync(self):
         """ this one is exported as a service command line arg
         """
+        if not self.has_it():
+            return
         dl = self._disklist()
         with open(self.disklist_name, 'w') as f:
             f.write(json.dumps(list(dl)))
