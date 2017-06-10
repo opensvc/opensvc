@@ -866,7 +866,7 @@ class Listener(OsvcThread, Crypt):
             self.sock.listen(5)
             self.sock.settimeout(self.sock_tmo)
         except socket.error as exc:
-            self.log.error("init error: %s", str(exc))
+            self.log.error("bind %s:%d error: %s", self.addr, self.port, str(exc))
             return
 
         self.log.info("listening on %s:%s", self.addr, self.port)
@@ -950,7 +950,7 @@ class Listener(OsvcThread, Crypt):
         self.stats.sessions.clients[addr[0]].auth_validated += 1
         if data is None:
             cmd = [rcEnv.paths.nodemgr, 'dequeue_actions']
-            p = Popen(cmd, stdout=None, stderr=None, stdin=None)
+            p = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
             p.communicate()
         else:
             result = self.router(nodename, data)
@@ -1082,7 +1082,7 @@ class Scheduler(OsvcThread):
     def run_scheduler(self):
         self.log.info("run schedulers")
         cmd = [rcEnv.paths.nodemgr, 'schedulers']
-        proc = Popen(cmd, stdout=None, stderr=None, stdin=None)
+        proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
         self.procs.append(proc)
 
 #
@@ -1181,7 +1181,7 @@ class Monitor(OsvcThread, Crypt):
     def _service_command(self, svcname, cmd):
         cmd = [rcEnv.paths.svcmgr, '-s', svcname] + cmd
         self.log.info("execute: %s", " ".join(cmd))
-        p = Popen(cmd, stdout=None, stderr=None, stdin=None)
+        p = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
         p.communicate()
         if p.returncode != 0:
             self.set_service_monitor(svcname, "start failed")
@@ -1418,7 +1418,7 @@ class Monitor(OsvcThread, Crypt):
     def service_status_fallback(self, svcname):
         self.log.info("slow path service status eval: %s", svcname)
         cmd = [rcEnv.paths.svcmgr, "-s", svcname, "json", "status"]
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         out, err = proc.communicate()
         return json.loads(bdecode(out))
 
@@ -1483,6 +1483,7 @@ class Monitor(OsvcThread, Crypt):
             self.log.error("failed to refresh local cluster data: invalid json")
 
     def status(self):
+        self.update_hb_data()
         data = OsvcThread.status(self)
         with CLUSTER_DATA_LOCK:
             data.nodes = dict(CLUSTER_DATA)

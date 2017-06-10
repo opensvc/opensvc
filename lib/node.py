@@ -2691,17 +2691,16 @@ class Node(Crypt):
         else:
             daemon_node = rcEnv.nodename
 
-        def load_svc_header():
+        def load_header(title):
             line = [
-                colorize("Services", color.GRAY),
+                colorize(title, color.GRAY),
                 "",
                 "",
                 "",
             ]
             for nodename in nodenames:
-                line.append(colorize("@" + nodename, color.GRAY))
+                line.append(colorize(nodename, color.GRAY))
             out.append(line)
-            return True
 
         def load_svc(svcname, data):
             if svcname not in self.services:
@@ -2743,17 +2742,6 @@ class Node(Crypt):
                     line.append("")
                 else:
                     line.append(colorize("?", color.RED))
-            out.append(line)
-
-        def load_threads_header():
-            line = [
-                colorize("Threads", color.GRAY),
-                "",
-                "",
-                "",
-            ]
-            for nodename in nodenames:
-                line.append(colorize("@" + nodename, color.GRAY))
             out.append(line)
 
         def load_hb(key, _data):
@@ -2858,8 +2846,20 @@ class Node(Crypt):
                 else:
                     load_thread(key, data[key])
 
+        def load_metrics():
+            for metric in ("1m", "5m", "15m"):
+                line = [
+                    colorize(" "+metric, color.BOLD),
+                    "",
+                    "",
+                    "|",
+                ]
+                for nodename in nodenames:
+                    line.append(str(data["monitor"]["nodes"][nodename].get("load", {}).get(metric, "")))
+                out.append(line)
+
         # init the services hash
-        for node in data.get("monitor", {}).get("nodes", []):
+        for node in nodenames:
             for svcname, _data in data["monitor"]["nodes"][node]["services"]["status"].items():
                 if svcname not in services:
                     services[svcname] = Storage({
@@ -2875,10 +2875,13 @@ class Node(Crypt):
             services[svcname].avail = _data["avail"]
 
         # load data in lists
-        load_threads_header()
+        load_header("Threads")
         load_threads()
         out.append([])
-        load_svc_header()
+        load_header("Metrics")
+        load_metrics()
+        out.append([])
+        load_header("Services")
         for svcname in sorted(list(services.keys())):
             load_svc(svcname, services[svcname])
 

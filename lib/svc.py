@@ -65,6 +65,7 @@ CONFIG_DEFAULTS = {
 ACTIONS_ALLOW_ON_FROZEN = [
     "autopush",
     "delete",
+    "clear",
     "docker",
     "disable",
     "edit_config",
