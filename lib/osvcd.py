@@ -529,7 +529,7 @@ class HbUcastSender(HbUcast):
             self.log.warning("send timeout")
             self.set_beating(nodename)
         except socket.error as exc:
-            self.log.error("send to %s error: %s", nodename, str(exc))
+            self.log.error("send to %s (%s:%d) error: %s", nodename, config.addr, config.port, str(exc))
             return
         finally:
             sock.close()
