@@ -141,11 +141,14 @@ class OsvcThread(threading.Thread):
     Thread class with a stop() method. The thread itself has to check
     regularly for the stopped() condition.
     """
+    stop_tmo = 60
+
     def __init__(self):
         super(OsvcThread, self).__init__()
         self._stop_event = threading.Event()
         self.created = time.time()
         self.threads = []
+        self.procs = []
 
     def stop(self):
         self._stop_event.set()
@@ -172,6 +175,45 @@ class OsvcThread(threading.Thread):
                 "created": datetime.datetime.utcfromtimestamp(self.created).strftime('%Y-%m-%dT%H:%M:%SZ'),
         })
         return data
+
+    def push_proc(self, proc,
+                  on_success=None, on_success_args=None, on_success_kwargs=None,
+                  on_error=None, on_error_args=None, on_error_kwargs=None):
+        self.procs.append(Storage({
+            "proc": proc,
+            "on_success": on_success,
+            "on_success_args": on_success_args if on_success_args else [],
+            "on_success_kwargs": on_success_args if on_success_kwargs else {},
+            "on_error": on_error,
+            "on_error_args": on_error_args if on_error_args else [],
+            "on_error_kwargs": on_error_args if on_error_kwargs else {},
+        }))
+
+    def terminate_procs(self):
+        for data in self.procs:
+            data.proc.terminate()
+            for i in range(self.stop_tmo):
+                data.proc.poll()
+                if data.proc.returncode is not None:
+                    break
+                time.sleep(1)
+
+    def janitor_procs(self):
+        done = []
+        for idx, data in enumerate(self.procs):
+            data.proc.poll()
+            if data.proc.returncode is not None:
+                done.append(idx)
+                if data.proc.returncode == 0 and data.on_success:
+                    getattr(self, data.on_success)(*data.on_success_args, **data.on_success_kwargs)
+                elif data.proc.returncode != 0 and data.on_error:
+                    getattr(self, data.on_error)(*data.on_error_args, **data.on_error_kwargs)
+        for idx in done:
+            del self.procs[idx]
+
+    def join_threads(self):
+        for thr in self.threads:
+            thr.join()
 
     def janitor_threads(self):
         done = []
@@ -599,8 +641,7 @@ class HbUcastListener(HbUcast):
         while True:
             self.do()
             if self.stopped():
-                for thr in self.threads:
-                    thr.join()
+                self.join_threads()
                 self.sock.close()
                 sys.exit(0)
 
@@ -801,8 +842,7 @@ class HbMcastListener(HbMcast):
         while True:
             self.do()
             if self.stopped():
-                for thr in self.threads:
-                    thr.join()
+                self.join_threads()
                 self.sock.close()
                 sys.exit(0)
 
@@ -885,8 +925,7 @@ class Listener(OsvcThread, Crypt):
         while True:
             self.do()
             if self.stopped():
-                for thr in self.threads:
-                    thr.join()
+                self.join_threads()
                 self.sock.close()
                 sys.exit(0)
 
@@ -1038,35 +1077,20 @@ class Listener(OsvcThread, Crypt):
 class Scheduler(OsvcThread):
     max_runs = 2
     interval = 60
-    stop_tmo = 60
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.scheduler")
-        self.procs = []
         self.log.info("scheduler started")
         self.last_run = time.time()
 
         while True:
             self.do()
             if self.stopped():
-                for proc in self.procs:
-                    proc.terminate()
-                    for i in range(self.stop_tmo):
-                        proc.poll()
-                        if proc.returncode is not None:
-                            break
-                        time.sleep(1)
+                self.terminate_procs()
                 sys.exit(0)
 
     def do(self):
-        done = []
-        for idx, proc in enumerate(self.procs):
-            proc.poll()
-            if proc.returncode is not None:
-                done.append(idx)
-        for idx in done:
-            del self.procs[idx]
-
+        self.janitor_procs()
         now = time.time()
         if now < self.last_run + self.interval:
             time.sleep(1)
@@ -1082,8 +1106,11 @@ class Scheduler(OsvcThread):
     def run_scheduler(self):
         self.log.info("run schedulers")
         cmd = [rcEnv.paths.nodemgr, 'schedulers']
-        proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
-        self.procs.append(proc)
+        try:
+            proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
+        except KeyboardInterrupt:
+            return
+        self.push_proc(proc=proc)
 
 #
 class Monitor(OsvcThread, Crypt):
@@ -1100,12 +1127,13 @@ class Monitor(OsvcThread, Crypt):
         while True:
             self.do()
             if self.stopped():
-                for thr in self.threads:
-                    thr.join()
+                self.join_threads()
+                self.terminate_procs()
                 sys.exit(0)
 
     def do(self):
         self.janitor_threads()
+        self.janitor_procs()
 
         now = time.time()
         if now < self.last_run + self.monitor_period:
@@ -1174,19 +1202,24 @@ class Monitor(OsvcThread, Crypt):
         self.log.info("the service %s config fetched from node %s is now installed", svcname, nodename)
 
     def service_command(self, svcname, cmd):
-        thr = threading.Thread(target=self._service_command, args=(svcname, cmd))
-        thr.start()
-        self.threads.append(thr)
-
-    def _service_command(self, svcname, cmd):
         cmd = [rcEnv.paths.svcmgr, '-s', svcname] + cmd
         self.log.info("execute: %s", " ".join(cmd))
-        p = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
-        p.communicate()
-        if p.returncode != 0:
-            self.set_service_monitor(svcname, "start failed")
-        else:
-            self.set_service_monitor(svcname, "idle")
+        proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
+        return proc
+
+    def service_start(self, svcname):
+        proc = self.service_command(svcname, ["start"])
+        self.push_proc(
+            proc=proc,
+            on_success="service_start_on_success", on_success_args=[svcname],
+            on_error="service_start_on_error", on_error_args=[svcname],
+        )
+
+    def service_start_on_error(self, svcname):
+        self.set_service_monitor(svcname, "start failed")
+
+    def service_start_on_success(self, svcname):
+        self.set_service_monitor(svcname, "idle")
 
     def orchestrator(self):
         with SERVICES_LOCK:
@@ -1216,14 +1249,22 @@ class Monitor(OsvcThread, Crypt):
                 return
 
         now = datetime.datetime.utcnow()
+        instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
         if svc.clustertype == "failover":
-            if status in ("down", "stdby down", "stdby up"):
-                if smon.status == "ready":
+            if smon.status == "ready":
+                if instance.avail is "up":
+                    self.log.info("abort 'ready' because the local instance has started")
+                    self.set_service_monitor(svc.svcname, "idle")
+                elif status == "up":
+                    self.log.info("abort 'ready' because an instance has started")
+                    self.set_service_monitor(svc.svcname, "idle")
+                else:
                     if smon.updated < (now - MON_WAIT_READY):
                         self.log.info("failover service %s status %s/ready for %s", svc.svcname, status, now-smon.updated)
                         self.set_service_monitor(svc.svcname, "starting")
-                        self.service_command(svc.svcname, ["start"])
-                else:
+                        self.service_start(svc.svcname)
+            elif smon.status == "idle":
+                if status in ("down", "stdby down", "stdby up"):
                     self.log.info("failover service %s status %s", svc.svcname, status)
                     self.set_service_monitor(svc.svcname, "ready")
         elif svc.clustertype == "flex":
@@ -1236,11 +1277,10 @@ class Monitor(OsvcThread, Crypt):
                 if smon.updated < (now - MON_WAIT_READY):
                     self.log.info("flex service %s status %s/ready for %s", svc.svcname, status, now-smon.updated)
                     self.set_service_monitor(svc.svcname, "starting")
-                    self.service_command(svc.svcname, ["start"])
+                    self.service_command(svc.svcname)
             elif smon.status == "idle":
                 if n_up >= svc.flex_min_nodes:
                     return
-                instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
                 if instance.avail not in ("down", "stdby down", "stdby up"):
                     return
                 self.log.info("flex service %s started, starting or ready to start instances: %d/%d. local status %s", svc.svcname, n_up, svc.flex_min_nodes, instance.avail)
@@ -1418,8 +1458,11 @@ class Monitor(OsvcThread, Crypt):
     def service_status_fallback(self, svcname):
         self.log.info("slow path service status eval: %s", svcname)
         cmd = [rcEnv.paths.svcmgr, "-s", svcname, "json", "status"]
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-        out, err = proc.communicate()
+        try:
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
+            out, err = proc.communicate()
+        except KeyboardInterrupt:
+            return {}
         return json.loads(bdecode(out))
 
     def get_services_status(self, svcnames):
