@@ -158,6 +158,10 @@ OPT = Storage({
         action="store", dest="moduleset",
         help="compliance, set moduleset list. The 'all' value "
              "can be used in conjonction with detach."),
+    "node": Option(
+        "--node", default="",
+        action="store", dest="node",
+        help="the node to send a request to. if not specified the local node is targeted."),
     "onlyprimary": Option(
         "--onlyprimary", default=None,
         action="store_true", dest="parm_primary",
@@ -330,6 +334,10 @@ START_ACTION_OPTS = [
     OPT.ignore_affinity,
 ]
 
+DAEMON_OPTS = [
+    OPT.node
+]
+
 ACTIONS = {
     'Service actions': {
         'boot': {
@@ -337,6 +345,12 @@ ACTIONS = {
                    ' the primary nodes in case of a flex service), '
                    'startstandby if not',
             'options': ACTION_OPTS + START_ACTION_OPTS,
+        },
+        'clear': {
+            'msg': 'clear the monitor status of the service on the node pointed '
+                   'by --node. If --node is not specified, the local node is '
+                   'targeted.',
+            'options': DAEMON_OPTS,
         },
         'dns_update': {
             'msg': 'update the collector dns records for the service',
