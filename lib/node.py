@@ -2860,6 +2860,8 @@ class Node(Crypt):
 
         # init the services hash
         for node in nodenames:
+            if node not in data["monitor"]["nodes"]:
+                continue
             for svcname, _data in data["monitor"]["nodes"][node]["services"]["status"].items():
                 if svcname not in services:
                     services[svcname] = Storage({
