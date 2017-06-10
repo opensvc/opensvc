@@ -2866,12 +2866,13 @@ class Node(Crypt):
                         "avail": Status(),
                         "nodes": {}
                     })
-                services[svcname].avail += Status(_data["avail"])
                 services[svcname].nodes[node] = {
                     "avail": _data["avail"],
                     "frozen": _data["frozen"],
                     "mon": _data["monitor"]["status"],
                 }
+        for svcname, _data in data["monitor"]["services"].items():
+            services[svcname].avail = _data["avail"]
 
         # load data in lists
         load_threads_header()

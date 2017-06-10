@@ -1255,11 +1255,72 @@ class Monitor(OsvcThread, Crypt):
                 n_up += 1
         return n_up
 
+    def get_service(self, svcname):
+        with SERVICES_LOCK:
+            if svcname not in SERVICES:
+                return
+        return SERVICES[svcname]
+
     def get_service_status(self, svcname):
-        status = Status()
-        for instance in self.get_service_instances(svcname):
-            status += Status(instance["avail"])
-        return str(status)
+        svc = self.get_service(svcname)
+        if svc is None:
+            return "unknown"
+        if svc.clustertype == "failover":
+            return self.get_service_status_failover(svc)
+        elif svc.clustertype == "flex":
+            return self.get_service_status_flex(svc)
+        else:
+            return "unknown"
+        
+    def get_service_status_failover(self, svc):
+        astatus = 'undef'
+        astatus_l = []
+        n_instances = 0
+        for instance in self.get_service_instances(svc.svcname):
+            astatus_l.append(instance["avail"])
+            n_instances +=1
+        astatus_s = set(astatus_l)
+
+        n_up = astatus_l.count("up")
+        if n_instances == 0:
+            astatus = 'n/a'
+        elif astatus_s == set(['n/a']):
+            astatus = 'n/a'
+        elif 'warn' in astatus_l:
+            astatus = 'warn'
+        elif n_up > 1:
+            astatus = 'warn'
+        elif n_up == 1:
+            astatus = 'up'
+        else:
+            astatus = 'down'
+        return astatus
+
+    def get_service_status_flex(self, svc):
+        astatus = 'undef'
+        astatus_l = []
+        n_instances = 0
+        for instance in self.get_service_instances(svc.svcname):
+            astatus_l.append(instance["avail"])
+            n_instances +=1
+        astatus_s = set(astatus_l)
+
+        n_up = astatus_l.count("up")
+        if n_instances == 0:
+            astatus = 'n/a'
+        elif astatus_s == set(['n/a']):
+            astatus = 'n/a'
+        elif 'warn' in astatus_l:
+            astatus = 'warn'
+        elif n_up > svc.flex_max_nodes:
+            astatus = 'warn'
+        elif n_up < svc.flex_min_nodes:
+            astatus = 'warn'
+        elif n_up == 0:
+            astatus = 'down'
+        else:
+            astatus = 'up'
+        return astatus
 
     def get_local_svcnames(self):
         svcnames = []
@@ -1425,6 +1486,11 @@ class Monitor(OsvcThread, Crypt):
         data = OsvcThread.status(self)
         with CLUSTER_DATA_LOCK:
             data.nodes = dict(CLUSTER_DATA)
+        data["services"] = {}
+        for svcname in data.nodes[rcEnv.nodename]["services"]["config"]:
+            if svcname not in data["services"]:
+                data["services"][svcname] = Storage()
+            data["services"][svcname].avail = self.get_service_status(svcname)
         return data
 
 class Daemon(object):
