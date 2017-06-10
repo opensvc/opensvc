@@ -1277,7 +1277,7 @@ class Monitor(OsvcThread, Crypt):
                 if smon.updated < (now - MON_WAIT_READY):
                     self.log.info("flex service %s status %s/ready for %s", svc.svcname, status, now-smon.updated)
                     self.set_service_monitor(svc.svcname, "starting")
-                    self.service_command(svc.svcname)
+                    self.service_start(svc.svcname)
             elif smon.status == "idle":
                 if n_up >= svc.flex_min_nodes:
                     return
