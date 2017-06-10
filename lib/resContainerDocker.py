@@ -521,6 +521,15 @@ class Docker(resContainer.Container):
     def _ping(self):
         return check_ping(self.addr, timeout=1)
 
+    def is_down(self):
+        if self.docker_service:
+            hosted = len(self.service_hosted_instances())
+            if hosted > 0:
+                return False
+            return True
+        else:
+            return not self.is_up()
+
     def is_up(self):
         if self.svc.dockerlib.docker_daemon_private and \
            self.svc.dockerlib.docker_data_dir is None:

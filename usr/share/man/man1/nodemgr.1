@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2017\-04\-22
+.TH NODEMGR 1 2017\-06\-10
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -1562,6 +1562,89 @@ unset a node configuration parameter (pointed by --param)
 .TP
 .B --param=PARAM
 point a node configuration parameter for the 'get' and 'set' actions
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+cron mode
+.TP
+.B --debug
+debug mode
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+.TP
+.B -h, --help
+show this help message and exit
+
+\fRNODE DAEMON MANAGEMENT\fP
+
+.RE
+\fBnodemgr daemon start\fP
+.RS
+
+start a daemon thread.
+
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
+.TP
+.B --thread-id=THR_ID
+specify a daemon thread, as listed in the daemon status output
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+cron mode
+.TP
+.B --debug
+debug mode
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+.TP
+.B -h, --help
+show this help message and exit
+
+.RE
+\fBnodemgr daemon status\fP
+.RS
+
+display the daemon status.
+
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+cron mode
+.TP
+.B --debug
+debug mode
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+.TP
+.B -h, --help
+show this help message and exit
+
+.RE
+\fBnodemgr daemon stop\fP
+.RS
+
+stop a daemon thread.
+
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
+.TP
+.B --thread-id=THR_ID
+specify a daemon thread, as listed in the daemon status output
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize

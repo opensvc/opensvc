@@ -73,6 +73,8 @@ HB_MSG = None
 HB_MSG_LOCK = threading.RLock()
 SERVICES = {}
 SERVICES_LOCK = threading.RLock()
+MON_DATA = {}
+MON_DATA_LOCK = threading.RLock()
 
 
 def fork(func, args=None, kwargs=None):
@@ -206,6 +208,29 @@ class OsvcThread(threading.Thread):
                 nodenames |= svc.nodes | svc.drpnodes
         return nodenames
 
+    def set_service_monitor(self, svcname, status=None):
+        with MON_DATA_LOCK:
+            if svcname not in MON_DATA:
+                MON_DATA[svcname] = Storage({})
+            if status:
+                self.log.info(
+                    "service %s monitor status change: %s => %s",
+                    svcname,
+                    MON_DATA[svcname].status if MON_DATA[svcname].status else "none",
+                    status
+                )
+                MON_DATA[svcname].status = status
+            MON_DATA[svcname].updated = datetime.datetime.utcnow()
+
+    def get_service_monitor(self, svcname, datestr=False):
+        with MON_DATA_LOCK:
+            if svcname not in MON_DATA:
+                self.set_service_monitor(svcname, "idle")
+            data = Storage(MON_DATA[svcname])
+            if datestr:
+                data.updated = data.updated.strftime(DATEFMT)
+            return data
+
 
 #
 class Crypt(object):
@@ -239,6 +264,10 @@ class Crypt(object):
                 locker.release()
 
     def decrypt(self, message):
+        if hasattr(self, "node"):
+            config = self.node.config
+        else:
+            config = self.config
         message = bdecode(message).rstrip("\0\x00")
         try:
             message = json.loads(message)
@@ -251,10 +280,10 @@ class Crypt(object):
             uuid_key = "uuid"
         else:
             uuid_key = "uuid@"+message["nodename"]
-        if not self.config.has_option("node", uuid_key):
+        if not config.has_option("node", uuid_key):
             self.log.error("no %s to use as AES key", uuid_key)
             return None, None
-        key = self.config.get("node", uuid_key).encode("utf-8")
+        key = config.get("node", uuid_key).encode("utf-8")
         if len(key) > 32:
             key = key[:32]
         data = bdecode(self._decrypt(data, key, iv))
@@ -264,10 +293,14 @@ class Crypt(object):
             return message["nodename"], data
 
     def encrypt(self, data):
-        if not self.config.has_option("node", "uuid"):
+        if hasattr(self, "node"):
+            config = self.node.config
+        else:
+            config = self.config
+        if not config.has_option("node", "uuid"):
             self.log.error("no uuid to use as AES key")
             return
-        key = self.config.get("node", "uuid").encode("utf-8")
+        key = config.get("node", "uuid").encode("utf-8")
         if len(key) > 32:
             key = key[:32]
         iv = self.gen_iv()
@@ -279,32 +312,36 @@ class Crypt(object):
         return (json.dumps(message)+'\0').encode()
 
     def get_listener_info(self, nodename):
+        if hasattr(self, "node"):
+            config = self.node.config
+        else:
+            config = self.config
         if nodename == rcEnv.nodename:
-            if not self.config.has_section("listener"):
+            if not config.has_section("listener"):
                 return "127.0.0.1", rcEnv.listener_port
-            if self.config.has_option("listener", "addr@"+nodename):
-                addr = self.config.get("listener", "addr@"+nodename)
-            elif self.config.has_option("listener", "addr"):
-                addr = self.config.get("listener", "addr")
+            if config.has_option("listener", "addr@"+nodename):
+                addr = config.get("listener", "addr@"+nodename)
+            elif config.has_option("listener", "addr"):
+                addr = config.get("listener", "addr")
             else:
                 addr = "127.0.0.1"
-            if self.config.has_option("listener", "port@"+nodename):
-                port = self.config.getint("listener", "port@"+nodename)
-            elif self.config.has_option("listener", "port"):
-                port = self.config.getint("listener", "port")
+            if config.has_option("listener", "port@"+nodename):
+                port = config.getint("listener", "port@"+nodename)
+            elif config.has_option("listener", "port"):
+                port = config.getint("listener", "port")
             else:
                 port = rcEnv.listener_port
         else:
-            if not self.config.has_section("listener"):
+            if not config.has_section("listener"):
                 return nodename, rcEnv.listener_port
-            if self.config.has_option("listener", "addr@"+nodename):
-                addr = self.config.get("listener", "addr@"+nodename)
+            if config.has_option("listener", "addr@"+nodename):
+                addr = config.get("listener", "addr@"+nodename)
             else:
                 addr = nodename
-            if self.config.has_option("listener", "port@"+nodename):
-                port = self.config.getint("listener", "port@"+nodename)
-            elif self.config.has_option("listener", "port"):
-                port = self.config.getint("listener", "port")
+            if config.has_option("listener", "port@"+nodename):
+                port = config.getint("listener", "port@"+nodename)
+            elif config.has_option("listener", "port"):
+                port = config.getint("listener", "port")
             else:
                 port = rcEnv.listener_port
         return addr, port
@@ -989,6 +1026,13 @@ class Listener(OsvcThread, Crypt):
         with HB_MSG_LOCK:
             return HB_MSG
 
+    def action_clear(self, nodename, **kwargs):
+        svcname = kwargs.get("svcname")
+        if not svcname:
+            return {"error": "no svcname specified", "status": 1}
+        self.set_service_monitor(svcname, "idle")
+        return {"status": 0}
+
 
 #
 class Scheduler(OsvcThread):
@@ -1052,8 +1096,6 @@ class Monitor(OsvcThread, Crypt):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
         self.last_run = 0
         self.log.info("monitor started")
-        self.data = {}
-        self.data_lock = threading.RLock()
 
         while True:
             self.do()
@@ -1175,7 +1217,7 @@ class Monitor(OsvcThread, Crypt):
 
         now = datetime.datetime.utcnow()
         if svc.clustertype == "failover":
-            if status in ("down", "stdby down"):
+            if status in ("down", "stdby down", "stdby up"):
                 if smon.status == "ready":
                     if smon.updated < (now - MON_WAIT_READY):
                         self.log.info("failover service %s status %s/ready for %s", svc.svcname, status, now-smon.updated)
@@ -1186,16 +1228,23 @@ class Monitor(OsvcThread, Crypt):
                     self.set_service_monitor(svc.svcname, "ready")
         elif svc.clustertype == "flex":
             n_up = self.count_up_service_instances(svc.svcname)
-            if n_up < svc.flex_min_nodes:
+            if smon.status == "ready":
+                if (n_up - 1) >= svc.flex_min_nodes:
+                    self.log.info("flex service %s instance count reached required minimum while we were ready", svc.svcname, status)
+                    self.set_service_monitor(svc.svcname, "idle")
+                    return
+                if smon.updated < (now - MON_WAIT_READY):
+                    self.log.info("flex service %s status %s/ready for %s", svc.svcname, status, now-smon.updated)
+                    self.set_service_monitor(svc.svcname, "starting")
+                    self.service_command(svc.svcname, ["start"])
+            elif smon.status == "idle":
+                if n_up >= svc.flex_min_nodes:
+                    return
                 instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
-                if smon.status == "ready":
-                    if smon.updated < (now - MON_WAIT_READY):
-                        self.log.info("flex service %s status %s/ready for %s", svc.svcname, status, now-smon.updated)
-                        self.set_service_monitor(svc.svcname, "starting")
-                        self.service_command(svc.svcname, ["start"])
-                elif instance.avail in ("down", "stdby down"):
-                    self.log.info("flex service %s started, starting or ready to start instances: %d/%d. local status %s", svc.svcname, n_up, svc.flex_min_nodes, instance.avail)
-                    self.set_service_monitor(svc.svcname, "ready")
+                if instance.avail not in ("down", "stdby down", "stdby up"):
+                    return
+                self.log.info("flex service %s started, starting or ready to start instances: %d/%d. local status %s", svc.svcname, n_up, svc.flex_min_nodes, instance.avail)
+                self.set_service_monitor(svc.svcname, "ready")
 
     def count_up_service_instances(self, svcname):
         n_up = 0
@@ -1344,29 +1393,6 @@ class Monitor(OsvcThread, Crypt):
             del data[svcname]
 
         return data
-
-    def set_service_monitor(self, svcname, status=None):
-        with self.data_lock:
-            if svcname not in self.data:
-                self.data[svcname] = Storage({})
-            if status:
-                self.log.info(
-                    "service %s monitor status change: %s => %s",
-                    svcname,
-                    self.data[svcname].status if self.data[svcname].status else "none",
-                    status
-                )
-                self.data[svcname].status = status
-            self.data[svcname].updated = datetime.datetime.utcnow()
-
-    def get_service_monitor(self, svcname, datestr=False):
-        with self.data_lock:
-            if svcname not in self.data:
-                self.set_service_monitor(svcname, "idle")
-            data = Storage(self.data[svcname])
-            if datestr:
-                data.updated = data.updated.strftime(DATEFMT)
-            return data
 
     def update_hb_data(self):
         #self.log.info("update heartbeat data to send")

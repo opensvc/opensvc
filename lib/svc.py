@@ -25,6 +25,7 @@ import rcExceptions as ex
 import rcLogger
 import node
 from rcScheduler import scheduler_fork, Scheduler, SchedOpts
+from osvcd import Crypt
 
 if sys.version_info[0] < 3:
     BrokenPipeError = IOError
@@ -344,7 +345,7 @@ def _master_action(func):
             func(self)
     return _func
 
-class Svc(object):
+class Svc(Crypt):
     """
     A OpenSVC service class.
     A service is a collection of resources.
@@ -5038,4 +5039,13 @@ class Svc(object):
             return
         self.action("compliance_auto")
 
+    def clear(self):
+        options = {
+            "svcname": self.svcname,
+        }
+        data = self.daemon_send(
+            {"action": "clear", "options": options},
+            nodename=self.options.node,
+        )
+        print(json.dumps(data, indent=4, sort_keys=True))
 

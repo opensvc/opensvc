@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2017\-04\-22
+.TH SVCMGR 1 2017\-06\-10
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -1760,6 +1760,55 @@ Exit without resource activation rollback on start action error
 .TP
 .B --ignore-affinity
 ignore service anti-affinity with other services check
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
+
+.RE
+\fBsvcmgr clear\fP
+.RS
+
+clear the monitor status of the service on the node pointed by --node. If --node is not specified, the local node is targeted.
+
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --onlyprimary
 operate only on service flagged for autostart on this node
@@ -6110,6 +6159,52 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 .RS
 
 remove the flag to unblock actions on this service
+
+.TP
+.B --onlyprimary
+operate only on service flagged for autostart on this node
+.TP
+.B --onlysecondary
+operate only on service not flagged for autostart on this node
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+option to set when excuting from a clusterware to disable safety net
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+comma-separated list of resource tags to limit action to
+.TP
+.B -h, --help
+show this help message and exit
+.TP
+.B --remote
+flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
+
+.RE
+\fBsvcmgr toc\fP
+.RS
+
+Trigger the service pre_monitor_action script and monitor_action method. Beware, this might crash or reboot the node.
 
 .TP
 .B --onlyprimary
