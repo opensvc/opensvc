@@ -953,7 +953,7 @@ class Listener(OsvcThread, Crypt):
                     "rx": 0,
                 })
             self.stats.sessions.clients[addr[0]].accepted += 1
-            self.log.info("accept %s", str(addr))
+            #self.log.info("accept %s", str(addr))
         except socket.timeout:
             return
         thr = threading.Thread(target=self.handle_client, args=(conn, addr))
@@ -1479,17 +1479,16 @@ class Monitor(OsvcThread, Crypt):
                 # force service status refresh
                 mtime = time.time() + 1
             last_mtime = self.get_last_svc_status_mtime(svcname)
-            if mtime <= last_mtime and svcname in data:
-                continue
-            self.log.info("service %s status changed, update hb payload", svcname)
-            try:
-                with open(fpath, 'r') as filep:
-                    try:
-                        data[svcname] = json.load(filep)
-                    except ValueError:
-                        data[svcname] = self.service_status_fallback(svcname)
-            except Exception:
-                data[svcname] = self.service_status_fallback(svcname)
+            if svcname not in data or mtime > last_mtime and svcname in data:
+                self.log.info("service %s status changed, update hb payload", svcname)
+                try:
+                    with open(fpath, 'r') as filep:
+                        try:
+                            data[svcname] = json.load(filep)
+                        except ValueError:
+                            data[svcname] = self.service_status_fallback(svcname)
+                except Exception:
+                     data[svcname] = self.service_status_fallback(svcname)
             data[svcname]["monitor"] = self.get_service_monitor(svcname, datestr=True)
 
         # purge deleted services
