@@ -2855,7 +2855,7 @@ class Node(Crypt):
                     "|",
                 ]
                 for nodename in nodenames:
-                    line.append(str(data["monitor"]["nodes"][nodename].get("load", {}).get(metric, "")))
+                    line.append(str(data["monitor"]["nodes"].get(nodename, {}).get("load", {}).get(metric, "")))
                 out.append(line)
 
         # init the services hash
