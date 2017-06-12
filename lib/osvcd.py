@@ -263,7 +263,7 @@ class OsvcThread(threading.Thread):
                 nodenames |= svc.nodes | svc.drpnodes
         return nodenames
 
-    def set_service_monitor(self, svcname, status=None, expect=None):
+    def set_service_monitor(self, svcname, status=None, expect=None, reset_retries=False):
         global MON_DATA
         global MON_DATA_LOCK
         with MON_DATA_LOCK:
@@ -279,6 +279,8 @@ class OsvcThread(threading.Thread):
                 MON_DATA[svcname].status = status
             if expect:
                 MON_DATA[svcname].expect = expect
+            if reset_retries and "restart" in MON_DATA[svcname]:
+                del MON_DATA[svcname]["restart"]
             MON_DATA[svcname].updated = datetime.datetime.utcnow()
 
     def get_service_monitor(self, svcname, datestr=False):
@@ -1088,18 +1090,19 @@ class Listener(OsvcThread, Crypt):
 
     def action_clear(self, nodename, **kwargs):
         svcname = kwargs.get("svcname")
-        return self._action_set_service_monitor(nodename, svcname, "idle")
+        return self._action_set_service_monitor(nodename, svcname, "idle", reset_retries=True)
 
     def action_set_service_monitor(self, nodename, **kwargs):
         svcname = kwargs.get("svcname")
         status = kwargs.get("status")
         expect = kwargs.get("expect")
-        return self._action_set_service_monitor(nodename, svcname, status=status, expect=expect)
+        reset_retries = kwargs.get("reset_retries", False)
+        return self._action_set_service_monitor(nodename, svcname, status=status, expect=expect, reset_retries=reset_retries)
 
-    def _action_set_service_monitor(self, nodename, svcname=None, status=None, expect=None):
+    def _action_set_service_monitor(self, nodename, svcname=None, status=None, expect=None, reset_retries=False):
         if svcname is None:
             return {"error": "no svcname specified", "status": 1}
-        self.set_service_monitor(svcname, status=status, expect=expect)
+        self.set_service_monitor(svcname, status=status, expect=expect, reset_retries=reset_retries)
         return {"status": 0}
 
 
@@ -1259,6 +1262,20 @@ class Monitor(OsvcThread, Crypt):
             self.service_monitor_reset_retries(svcname, rid)
         self.update_hb_data()
 
+    def service_toc(self, svcname):
+        proc = self.service_command(svcname, ["toc"])
+        self.push_proc(
+            proc=proc,
+            on_success="service_toc_on_success", on_success_args=[svcname],
+            on_error="service_toc_on_error", on_error_args=[svcname],
+        )
+
+    def service_toc_on_error(self, svcname):
+        self.set_service_monitor(svcname, "idle")
+
+    def service_toc_on_success(self, svcname):
+        self.set_service_monitor(svcname, status="idle")
+
     def service_start(self, svcname):
         proc = self.service_command(svcname, ["start"])
         self.push_proc(
@@ -1314,6 +1331,7 @@ class Monitor(OsvcThread, Crypt):
             if retries >= nb_restart:
                 self.service_monitor_inc_retries(svc.svcname, rid)
                 self.log.info("max retries (%d) reached for %s.%s", nb_restart, svc.svcname, rid)
+                self.service_toc(svc.svcname)
                 continue
             self.service_monitor_inc_retries(svc.svcname, rid)
             self.log.info("restart resource %s.%s %d/%d", svc.svcname, rid, retries+1, nb_restart)

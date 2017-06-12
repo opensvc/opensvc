@@ -2231,7 +2231,8 @@ class Svc(Crypt):
         self.encap_cmd(['run'], verbose=True)
 
     def start(self):
-        self.set_service_monitor(status="starting", expect="up")
+        if not self.command_is_scoped():
+            self.set_service_monitor(status="starting", expect="up")
         self.abort_start()
         af_svc = self.get_non_affine_svc()
         if len(af_svc) != 0:
@@ -2266,7 +2267,8 @@ class Svc(Crypt):
         self.rollbackip()
 
     def stop(self):
-        self.set_service_monitor(status="stopping", expect="down")
+        if not self.command_is_scoped():
+            self.set_service_monitor(status="stopping", expect="down")
         self.slave_stop()
         try:
             self.master_stopapp()
@@ -4349,6 +4351,11 @@ class Svc(Crypt):
         proc = subprocess.Popen(cmd)
         proc.communicate()
         return proc.returncode
+
+    def freezestop(self):
+        self.freeze()
+        self.options.force = True
+        self.stop()
 
     def freeze(self):
         """
