@@ -693,7 +693,8 @@ class DockerLib(object):
             ['nohup'] + cmd,
             stdout=open('/dev/null', 'w'),
             stderr=open('/dev/null', 'a'),
-            preexec_fn=os.setpgrp
+            preexec_fn=os.setpgrp,
+            close_fds=True,
         )
 
         import time

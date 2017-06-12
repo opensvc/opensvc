@@ -243,6 +243,9 @@ class OsvcThread(threading.Thread):
         unset_lazy(self, "config")
 
     def get_services_nodenames(self):
+        global SERVICES
+        global SERVICES_LOCK
+
         nodenames = set()
         with SERVICES_LOCK:
             for svc in SERVICES.values():
@@ -250,6 +253,8 @@ class OsvcThread(threading.Thread):
         return nodenames
 
     def set_service_monitor(self, svcname, status=None):
+        global MON_DATA
+        global MON_DATA_LOCK
         with MON_DATA_LOCK:
             if svcname not in MON_DATA:
                 MON_DATA[svcname] = Storage({})
@@ -264,6 +269,8 @@ class OsvcThread(threading.Thread):
             MON_DATA[svcname].updated = datetime.datetime.utcnow()
 
     def get_service_monitor(self, svcname, datestr=False):
+        global MON_DATA
+        global MON_DATA_LOCK
         with MON_DATA_LOCK:
             if svcname not in MON_DATA:
                 self.set_service_monitor(svcname, "idle")
@@ -422,6 +429,7 @@ class Crypt(object):
 #
 class Hb(OsvcThread):
     global CLUSTER_DATA
+    global CLUSTER_DATA_LOCK
 
     def __init__(self, name, role=None):
         OsvcThread.__init__(self)
@@ -491,6 +499,15 @@ class Hb(OsvcThread):
             0x8915,  # SIOCGIFADDR
             struct.pack('256s', ifname[:15])
         )[20:24])
+
+    def get_message(self):
+        global HB_MSG
+        global HB_MSG_LOCK
+        with HB_MSG_LOCK:
+            if not HB_MSG:
+                # no data to send yet
+                return
+            return HB_MSG
 
 
 #
@@ -574,13 +591,6 @@ class HbUcastSender(HbUcast):
         data["config"] = {}
         return data
 
-    def get_message(self):
-        with HB_MSG_LOCK:
-            if not HB_MSG:
-                # no data to send yet
-                return
-            return HB_MSG
-
     def do(self):
         #self.log.info("sending to %s:%s", self.addr, self.port)
         message = self.get_message()
@@ -663,6 +673,9 @@ class HbUcastListener(HbUcast):
             conn.close()
 
     def _handle_client(self, conn, addr):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
+
         chunks = []
         buff_size = 4096
         while True:
@@ -687,7 +700,6 @@ class HbUcastListener(HbUcast):
             return
         #self.log.info("received data from %s %s", nodename, addr)
         self.set_beating(nodename)
-        global CLUSTER_DATA
         with CLUSTER_DATA_LOCK:
             CLUSTER_DATA[nodename] = data
         self.set_last(nodename)
@@ -785,13 +797,6 @@ class HbMcastSender(HbMcast):
                 sys.exit(0)
             time.sleep(DEFAULT_HB_PERIOD)
 
-    def get_message(self):
-        with HB_MSG_LOCK:
-            if not HB_MSG:
-                # no data to send yet
-                return
-            return HB_MSG
-
     def do(self):
         #self.log.info("sending to %s:%s", self.addr, self.port)
         message = self.get_message()
@@ -859,6 +864,8 @@ class HbMcastListener(HbMcast):
         self.threads.append(thr)
 
     def handle_client(self, message, addr):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
         nodename, data = self.decrypt(message)
         if nodename is None or nodename == rcEnv.nodename:
             # ignore hb data we sent ourself
@@ -868,7 +875,6 @@ class HbMcastListener(HbMcast):
             return
         #self.log.info("received data from %s %s", nodename, addr)
         self.set_beating(nodename)
-        global CLUSTER_DATA
         with CLUSTER_DATA_LOCK:
             CLUSTER_DATA[nodename] = data
         self.set_last(nodename)
@@ -911,14 +917,14 @@ class Listener(OsvcThread, Crypt):
         self.log.info("listening on %s:%s", self.addr, self.port)
 
         self.stats = Storage({
-                "sessions": Storage({
-                    "accepted": 0,
-                    "auth_validated": 0,
-                    "tx": 0,
-                    "rx": 0,
-                    "clients": Storage({
-                    })
-                }),
+            "sessions": Storage({
+                "accepted": 0,
+                "auth_validated": 0,
+                "tx": 0,
+                "rx": 0,
+                "clients": Storage({
+                })
+            }),
         })
 
         while True:
@@ -1012,6 +1018,8 @@ class Listener(OsvcThread, Crypt):
         return getattr(self, fname)(nodename, **options)
 
     def action_daemon_status(self, nodename, **kwargs):
+        global THREADS
+        global THREADS_LOCK
         data = {}
         with THREADS_LOCK:
             for thr_id, thread in THREADS.items():
@@ -1019,6 +1027,8 @@ class Listener(OsvcThread, Crypt):
         return data
 
     def action_daemon_stop(self, nodename, **kwargs):
+        global THREADS
+        global THREADS_LOCK
         thr_id = kwargs.get("thr_id")
         if not thr_id:
             self.log.info("stop daemon requested")
@@ -1035,6 +1045,8 @@ class Listener(OsvcThread, Crypt):
         return {"status": 0}
 
     def action_daemon_start(self, nodename, **kwargs):
+        global THREADS
+        global THREADS_LOCK
         thr_id = kwargs.get("thr_id")
         if not thr_id:
             return {"error": "no thread specified", "status": 1}
@@ -1059,10 +1071,6 @@ class Listener(OsvcThread, Crypt):
             buff = filep.read()
         self.log.info("serve service %s config to %s", svcname, nodename)
         return {"status": 0, "data": buff}
-
-    def action_get_hb_data(self, nodename, **kwargs):
-        with HB_MSG_LOCK:
-            return HB_MSG
 
     def action_clear(self, nodename, **kwargs):
         svcname = kwargs.get("svcname")
@@ -1146,6 +1154,8 @@ class Monitor(OsvcThread, Crypt):
         self.update_hb_data()
 
     def sync_services_conf(self):
+        global SERVICES
+        global SERVICES_LOCK
         confs = self.get_services_configs()
         for svcname, data in confs.items():
             with SERVICES_LOCK:
@@ -1172,6 +1182,8 @@ class Monitor(OsvcThread, Crypt):
                 self.fetch_service_config(svcname, ref_nodename)
 
     def fetch_service_config(self, svcname, nodename):
+        global SERVICES
+        global SERVICES_LOCK
         request = {
             "action": "get_service_config",
             "options": {
@@ -1221,6 +1233,8 @@ class Monitor(OsvcThread, Crypt):
         self.set_service_monitor(svcname, "idle")
 
     def orchestrator(self):
+        global SERVICES
+        global SERVICES_LOCK
         with SERVICES_LOCK:
             svcs = SERVICES.values()
         for svc in svcs:
@@ -1295,6 +1309,8 @@ class Monitor(OsvcThread, Crypt):
         return n_up
 
     def get_service(self, svcname):
+        global SERVICES
+        global SERVICES_LOCK
         with SERVICES_LOCK:
             if svcname not in SERVICES:
                 return
@@ -1362,6 +1378,8 @@ class Monitor(OsvcThread, Crypt):
         return astatus
 
     def get_local_svcnames(self):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
         svcnames = []
         try:
             with CLUSTER_DATA_LOCK:
@@ -1373,6 +1391,8 @@ class Monitor(OsvcThread, Crypt):
         return svcnames
 
     def get_services_configs(self):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
         data = {}
         with CLUSTER_DATA_LOCK:
             for nodename in CLUSTER_DATA:
@@ -1386,6 +1406,8 @@ class Monitor(OsvcThread, Crypt):
         return data
 
     def get_service_instance(self, svcname, nodename):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
         try:
             with CLUSTER_DATA_LOCK:
                 return Storage(CLUSTER_DATA[nodename]["services"]["status"][svcname])
@@ -1393,6 +1415,8 @@ class Monitor(OsvcThread, Crypt):
             return
 
     def get_service_instances(self, svcname):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
         instances = []
         try:
             with CLUSTER_DATA_LOCK:
@@ -1411,6 +1435,8 @@ class Monitor(OsvcThread, Crypt):
         return cksum.hexdigest()
 
     def get_last_svc_config(self, svcname):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
         with CLUSTER_DATA_LOCK:
             try:
                 return CLUSTER_DATA[rcEnv.nodename]["services"]["config"][svcname]
@@ -1418,6 +1444,8 @@ class Monitor(OsvcThread, Crypt):
                 return
 
     def get_services_config(self):
+        global SERVICES
+        global SERVICES_LOCK
         from svcBuilder import build
         config = {}
         for cfg in glob.glob(os.path.join(rcEnv.paths.pathetc, "*.conf")):
@@ -1449,6 +1477,8 @@ class Monitor(OsvcThread, Crypt):
         return config
 
     def get_last_svc_status_mtime(self, svcname):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
         with CLUSTER_DATA_LOCK:
             try:
                 return CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]["mtime"]
@@ -1466,6 +1496,8 @@ class Monitor(OsvcThread, Crypt):
         return json.loads(bdecode(out))
 
     def get_services_status(self, svcnames):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
         with CLUSTER_DATA_LOCK:
             try:
                 data = CLUSTER_DATA[rcEnv.nodename]["services"]["status"]
@@ -1498,13 +1530,16 @@ class Monitor(OsvcThread, Crypt):
         return data
 
     def update_hb_data(self):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
+        global HB_MSG
+        global HB_MSG_LOCK
+
         #self.log.info("update heartbeat data to send")
         load_avg = os.getloadavg()
         config = self.get_services_config()
         status = self.get_services_status(config.keys())
 
-        global CLUSTER_DATA
-        global HB_MSG
         try:
             with CLUSTER_DATA_LOCK:
                 CLUSTER_DATA[rcEnv.nodename] = {
@@ -1525,6 +1560,8 @@ class Monitor(OsvcThread, Crypt):
             self.log.error("failed to refresh local cluster data: invalid json")
 
     def status(self):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
         self.update_hb_data()
         data = OsvcThread.status(self)
         with CLUSTER_DATA_LOCK:
@@ -1589,6 +1626,9 @@ class Daemon(object):
         return True
 
     def start_threads(self):
+        global THREADS
+        global THREADS_LOCK
+
         # a thread can only be started once, allocate a new one if not alive.
         changed = False
         if self.need_start("listener"):
@@ -1632,7 +1672,6 @@ class Daemon(object):
             self.threads["monitor"].start()
             changed = True
 
-        global THREADS
         if changed:
             with THREADS_LOCK:
                 THREADS = self.threads
