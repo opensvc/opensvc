@@ -19,7 +19,7 @@ from resourceset import ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
-from rcUtilities import justcall, lazy, vcall, is_string, try_decode, eval_expr, convert_bool
+from rcUtilities import justcall, lazy, unset_lazy, vcall, is_string, try_decode, eval_expr, convert_bool
 from rcConfigParser import RawConfigParser
 import rcExceptions as ex
 import rcLogger
