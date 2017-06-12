@@ -3658,7 +3658,7 @@ class Svc(Crypt):
 
         self.svcunlock()
 
-        if action != "delete" and not self.command_is_scoped():
+        if not (action == "delete" and not self.command_is_scoped()):
             self.update_status_data()
 
         if psinfo:
