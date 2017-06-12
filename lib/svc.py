@@ -357,6 +357,7 @@ class Svc(Crypt):
         self.dependencies = {}
         self.running_action = None
         self.need_postsync = set()
+        self.service_monitor_set = False
 
         # set by the builder
         self.conf = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
@@ -748,6 +749,15 @@ class Svc(Crypt):
         """
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
+
+    def get_resource(self, rid):
+        """
+        Return a resource object by id.
+        Return None if the rid is not found.
+        """
+        if rid not in self.resources_by_id:
+            return
+        return self.resources_by_id[rid]
 
     def get_resources(self, _type=None, strict=False, discard_disabled=True):
         """
@@ -2221,6 +2231,7 @@ class Svc(Crypt):
         self.encap_cmd(['run'], verbose=True)
 
     def start(self):
+        self.set_service_monitor(status="starting", expect="up")
         self.abort_start()
         af_svc = self.get_non_affine_svc()
         if len(af_svc) != 0:
@@ -2255,6 +2266,7 @@ class Svc(Crypt):
         self.rollbackip()
 
     def stop(self):
+        self.set_service_monitor(status="stopping", expect="down")
         self.slave_stop()
         try:
             self.master_stopapp()
@@ -3287,6 +3299,9 @@ class Svc(Crypt):
         finally:
             if action != "scheduler":
                 self.set_run_flag()
+            if self.service_monitor_set:
+                self.set_service_monitor(status="idle")
+                self.service_monitor_set = False
 
     def options_to_rids(self, options):
         """
@@ -4767,6 +4782,9 @@ class Svc(Crypt):
             return
         self.action("compliance_auto")
 
+    #
+    # daemon communications
+    #
     def clear(self):
         options = {
             "svcname": self.svcname,
@@ -4776,6 +4794,24 @@ class Svc(Crypt):
             nodename=self.options.node,
         )
         print(json.dumps(data, indent=4, sort_keys=True))
+
+    def set_service_monitor(self, status=None, expect=None):
+        self.service_monitor_set = True
+        options = {
+            "svcname": self.svcname,
+            "status": status,
+            "expect": expect,
+        }
+        try:
+            data = self.daemon_send(
+                {"action": "set_service_monitor", "options": options},
+                nodename=self.options.node,
+                silent=True,
+            )
+            if data and data["status"] != 0:
+                self.log.warning("set monitor status failed")
+        except Exception as exc:
+            self.log.warning("set monitor status failed: %s", str(exc))
 
     #
     # config helpers
