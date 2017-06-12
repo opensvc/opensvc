@@ -27,7 +27,6 @@ import rcLogger
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import justcall, bdecode, lazy, unset_lazy
 from rcStatus import Status
-from svcBuilder import build
 import pyaes
 
 try:
@@ -1419,6 +1418,7 @@ class Monitor(OsvcThread, Crypt):
                 return
 
     def get_services_config(self):
+        from svcBuilder import build
         config = {}
         for cfg in glob.glob(os.path.join(rcEnv.paths.pathetc, "*.conf")):
             svcname = os.path.basename(cfg[:-5])

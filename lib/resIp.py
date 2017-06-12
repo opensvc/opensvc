@@ -353,15 +353,12 @@ class Ip(Res.Resource):
         """
         Post a dns update request to the collector.
         """
-        from svcBuilder import conf_get_string_scope, conf_get_boolean_scope
-
         if self.ipname is None:
             self.log.debug("skip dns update: ipname is not set")
             return
 
         try:
-            conf_get_boolean_scope(self.svc, self.svc.config, self.rid,
-                                   "dns_update")
+            self.svc.conf_get_boolean_scope(self.rid, "dns_update")
         except ex.OptNotFound:
             self.log.debug("skip dns update: dns_update is not set")
             return
@@ -371,8 +368,7 @@ class Ip(Res.Resource):
             return
 
         try:
-            dns_name_suffix = conf_get_string_scope(self.svc, self.svc.config,
-                                                    self.rid, "dns_name_suffix")
+            dns_name_suffix = self.svc.conf_get_string_scope( self.rid, "dns_name_suffix")
         except ex.OptNotFound:
             dns_name_suffix = None
             self.log.debug("dns update: dns_name_suffix is not set")
@@ -451,11 +447,10 @@ class Ip(Res.Resource):
         """
         Request an ip in the ipdev network from the collector.
         """
-        from svcBuilder import conf_get_string_scope
         import ipaddress
 
         try:
-            conf_get_string_scope(self.svc, self.svc.config, self.rid, "ipname")
+            self.svc.conf_get_string_scope(self.rid, "ipname")
             self.log.info("skip allocate: an ip is already defined")
             return
         except ex.OptNotFound:
@@ -467,7 +462,7 @@ class Ip(Res.Resource):
 
         try:
             # explicit network setting
-            network = conf_get_string_scope(self.svc, self.svc.config, self.rid, "network")
+            network = self.svc.conf_get_string_scope(self.rid, "network")
         except ex.OptNotFound:
             network = None
 
@@ -491,8 +486,7 @@ class Ip(Res.Resource):
         }
 
         try:
-            post_data["name"] = conf_get_string_scope(self.svc, self.svc.config,
-                                                      self.rid, "dns_name_suffix")
+            post_data["name"] = self.svc.conf_get_string_scope(self.rid, "dns_name_suffix")
         except ex.OptNotFound:
             self.log.debug("allocate: dns_name_suffix is not set")
 
@@ -532,8 +526,6 @@ class Ip(Res.Resource):
         """
         Release an allocated ip a collector managed network.
         """
-        from svcBuilder import conf_get_string_scope
-
         if self.ipname is None:
             self.log.info("skip release: no ipname set")
             return
@@ -547,8 +539,7 @@ class Ip(Res.Resource):
         post_data = {}
 
         try:
-            post_data["name"] = conf_get_string_scope(self.svc, self.svc.config,
-                                                      self.rid, "dns_name_suffix")
+            post_data["name"] = self.svc.conf_get_string_scope(self.rid, "dns_name_suffix")
         except ex.OptNotFound:
             self.log.debug("allocate: dns_name_suffix is not set")
 

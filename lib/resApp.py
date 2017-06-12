@@ -196,7 +196,7 @@ class App(Resource):
         if self.script is None:
             return
         if not self.script.startswith('/'):
-            self.script = os.path.join(self.svc.initd, self.script)
+            self.script = os.path.join(self.svc.paths.initd, self.script)
         if os.path.exists(self.script):
             self.script = os.path.realpath(self.script)
             return

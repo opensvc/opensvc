@@ -4,7 +4,6 @@ from rcGlobalEnv import rcEnv
 import os
 import rcExceptions as ex
 import shutil
-from svcBuilder import conf_get_string_scope
 
 class ProvisioningFs(Provisioning):
     # required from child classes:
@@ -41,8 +40,8 @@ class ProvisioningFs(Provisioning):
         p.ProvisioningDisk(self.r).unprovisioner()
 
     def provisioner_fs(self):
-        self.dev = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "dev")
-        self.mnt = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "mnt")
+        self.dev = self.r.svc.conf_get_string_scope(self.r.rid, "dev")
+        self.mnt = self.r.svc.conf_get_string_scope(self.r.rid, "mnt")
 
         if not os.path.exists(self.mnt):
             os.makedirs(self.mnt)
@@ -79,7 +78,7 @@ class ProvisioningFs(Provisioning):
             self.do_mkfs()
         elif hasattr(self, "mkfs"):
             try:
-                opts = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "mkfs_opt").split()
+                opts = self.r.svc.conf_get_string_scope(self.r.rid, "mkfs_opt").split()
             except:
                 opts = []
             cmd = self.mkfs + opts + [self.mkfs_dev]

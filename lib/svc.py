@@ -12,15 +12,15 @@ import datetime
 import time
 import lock
 import json
+import re
 
 from resources import Resource
 from resourceset import ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
-from rcUtilities import justcall, lazy, vcall, is_string, try_decode
+from rcUtilities import justcall, lazy, vcall, is_string, try_decode, eval_expr, convert_bool
 from rcConfigParser import RawConfigParser
-from svcBuilder import conf_get_string_scope, conf_get_boolean_scope, get_pg_settings
 import rcExceptions as ex
 import rcLogger
 import node
@@ -47,7 +47,6 @@ DEFAULT_STATUS_GROUPS = [
     "share",
     "sync",
     "app",
-    "hb",
     "stonith",
     "task",
 ]
@@ -62,15 +61,10 @@ CONFIG_DEFAULTS = {
     'no_schedule': '',
 }
 
-ACTIONS_ALLOW_ON_FROZEN = [
+ACTIONS_NO_STATUS_CHANGE = [
     "autopush",
-    "delete",
     "clear",
     "docker",
-    "disable",
-    "edit_config",
-    "enable",
-    "freeze",
     "frozen",
     "get",
     "json_config",
@@ -91,11 +85,7 @@ ACTIONS_ALLOW_ON_FROZEN = [
     "push_service_status",
     "prstatus",
     "scheduler",
-    "set",
     "status",
-    "thaw",
-    "update",
-    "unset",
     "validate_config",
 ]
 
@@ -109,20 +99,6 @@ ACTIONS_ALLOW_ON_INVALID_NODE = [
     "set",
     "unset",
     "update",
-    "validate_config",
-]
-
-ACTIONS_ALLOW_ON_CLUSTER = ACTIONS_ALLOW_ON_FROZEN + [
-    "boot",
-    "dns_update",
-    "postsync",
-    "presync",
-    "resource_monitor",
-    "startstandby",
-    "sync_all",
-    "sync_drp",
-    "sync_nodes",
-    "toc",
     "validate_config",
 ]
 
@@ -161,7 +137,6 @@ ACTIONS_NO_TRIGGER = [
     "group_status",
     "presync",
     "postsync",
-    "freezestop",
     "resource_monitor",
 ]
 
@@ -169,7 +144,6 @@ ACTIONS_NO_LOCK = [
     "docker",
     "edit_config",
     "freeze",
-    "freezestop",
     "frozen",
     "get",
     "logs",
@@ -229,12 +203,6 @@ STATUS_TYPES = [
     "disk.vg",
     "disk.zpool",
     "fs",
-    "hb.linuxha",
-    "hb.openha",
-    "hb.ovm",
-    "hb.rhcs",
-    "hb.sg",
-    "hb.vcs",
     "ip",
     "ip.docker",
     "share.nfs",
@@ -359,7 +327,10 @@ class Svc(Crypt):
         self.svcname = svcname
         self.hostid = rcEnv.nodename
         self.paths = Storage(
+            exe=os.path.join(rcEnv.paths.pathetc, self.svcname),
             cf=os.path.join(rcEnv.paths.pathetc, self.svcname+'.conf'),
+            initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.d'),
+            alt_initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.dir'),
             push_flag=os.path.join(rcEnv.paths.pathvar, self.svcname, 'last_pushed_config'),
             run_flag=os.path.join(os.sep, "var", "run", "opensvc."+self.svcname),
         )
@@ -385,7 +356,6 @@ class Svc(Crypt):
         self.action_rid_depends = []
         self.dependencies = {}
         self.running_action = None
-        self.config = None
         self.need_postsync = set()
 
         # set by the builder
@@ -587,7 +557,7 @@ class Svc(Crypt):
             )
 
         try:
-            monitor_schedule = conf_get_string_scope(self, self.config, 'DEFAULT', 'monitor_schedule')
+            monitor_schedule = self.conf_get_string_scope('DEFAULT', 'monitor_schedule')
         except ex.OptNotFound:
             monitor_schedule = None
 
@@ -637,12 +607,10 @@ class Svc(Crypt):
         """
         rtype = rtype.split(".")[0]
         subset_section = 'subset#' + rtype
-        if self.config is None:
-            self.load_config()
         if not self.config.has_section(subset_section):
             return False
         try:
-            return conf_get_boolean_scope(self, self.config, subset_section, "parallel")
+            return self.conf_get_boolean_scope(subset_section, "parallel")
         except ex.OptNotFound:
             return False
 
@@ -678,19 +646,17 @@ class Svc(Crypt):
                 rset = ResourceSet(type=rtype, resources=[other], parallel=parallel)
             rset.rid = rtype
             rset.svc = self
-            rset.pg_settings = get_pg_settings(self, "subset#"+rtype)
+            rset.pg_settings = self.get_pg_settings("subset#"+rtype)
             self.__iadd__(rset)
         else:
             self.log.debug("unexpected object addition to the service: %s",
                            str(other))
 
         if isinstance(other, Resource) and other.rid and "#" in other.rid:
+            other.pg_settings = self.get_pg_settings(other.rid)
             self.resources_by_id[other.rid] = other
 
         other.svc = self
-
-        if other.type.startswith("hb"):
-            self.ha = True
 
         if not other.disabled and hasattr(other, "on_add"):
             other.on_add()
@@ -1071,7 +1037,7 @@ class Svc(Crypt):
             data = {}
         for key in config.get("env", {}).keys():
             if evaluate:
-                data[key] = conf_get_string_scope(self, self.config, 'env', key)
+                data[key] = self.conf_get_string_scope('env', key)
             else:
                 data[key] = config["env"][key]
         return data
@@ -1088,7 +1054,6 @@ class Svc(Crypt):
             best_dict = dict
         svc_config = best_dict()
         tmp = best_dict()
-        self.load_config()
         config = self.config
 
         defaults = config.defaults()
@@ -1106,7 +1071,7 @@ class Svc(Crypt):
                 if config.has_option(section, option):
                     tmpsection[option] = config.get(section, option)
             svc_config[section] = tmpsection
-        self.load_config()
+        unset_lazy(self, "config")
         return svc_config
 
     def logs(self):
@@ -1260,7 +1225,6 @@ class Svc(Crypt):
                     "share": [],
                     "app": [],
                     "sync": [],
-                    "hb": [],
                     "stonith": [],
                     "task": [],
             }
@@ -1278,7 +1242,7 @@ class Svc(Crypt):
                     resource = data["resources"][rid]
                     resource["rid"] = rid
                     avail_resources.append(resource)
-            for group in ("sync", "hb", "stonith", "task"):
+            for group in ("sync", "stonith", "task"):
                 for rid in sorted(rbg[group]):
                     resource = data["resources"][rid]
                     resource["rid"] = rid
@@ -1468,7 +1432,6 @@ class Svc(Crypt):
             "mon_ipstatus",
             "mon_diskstatus",
             "mon_syncstatus",
-            "mon_hbstatus",
             "mon_containerstatus",
             "mon_fsstatus",
             "mon_sharestatus",
@@ -1490,7 +1453,6 @@ class Svc(Crypt):
             data["ip"],
             data["disk"],
             data["sync"],
-            data["hb"],
             data["container"],
             data["fs"],
             data["share"],
@@ -1540,7 +1502,6 @@ class Svc(Crypt):
                     str(rcStatus.Status(data["ip"])+rcStatus.Status(container['ip'])),
                     str(rcStatus.Status(data["disk"])+rcStatus.Status(container['disk'])),
                     str(rcStatus.Status(data["sync"])+rcStatus.Status(container['sync'])),
-                    str(rcStatus.Status(data["hb"])+rcStatus.Status(container['hb'])),
                     str(rcStatus.Status(data["container"])+rcStatus.Status(container['container'])),
                     str(rcStatus.Status(data["fs"])+rcStatus.Status(container['fs'])),
                     str(rcStatus.Status(data["share"])+rcStatus.Status(container['share'] if 'share' in container else 'n/a')),
@@ -1582,83 +1543,13 @@ class Svc(Crypt):
 
     def task_resource_monitor(self):
         """
-        The resource monitor action.
-        Trigger the service defined monitor_action if the hb resource is up
-        but a monitored resource is down and not restartable.
+        The resource monitor action. Refresh important resources at a different
+        schedule.
         """
-        self.options.refresh = True
-        if self.group_status_cache is None:
-            self.group_status(excluded_groups=set(['sync']))
-        if not self.ha:
-            self.log.debug("no active heartbeat resource. no need to check "
-                           "monitored resources.")
-            return
-        hb_status = self.group_status_cache['hb']
-        if hb_status.status != rcStatus.UP:
-            self.log.debug("heartbeat status is not up. no need to check "
-                           "monitored resources.")
-            return
-
-        monitored_resources = []
         for resource in self.get_resources():
             if resource.monitor:
-                monitored_resources.append(resource)
-
-        for resource in monitored_resources:
-            if resource.rstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
-                if len(resource.status_logs) > 0:
-                    rstatus_log = " (%s)" % resource.status_logs_str().strip().strip("# ")
-                else:
-                    rstatus_log = ''
-                self.log.info("monitored resource %s is in state %s%s",
-                              resource.rid,
-                              str(rcStatus.Status(resource.rstatus)),
-                              rstatus_log)
-
-                if self.monitor_action is not None and \
-                   hasattr(self, self.monitor_action):
-                    raise ex.MonitorAction
-                else:
-                    self.log.info("Would TOC but no (or unknown) resource "
-                                  "monitor action set.")
-                return
-
-        for container in self.get_resources('container'):
-            try:
-                encap_status = self.encap_json_status(container)
-                res = encap_status["resources"]
-            except Exception:
-                encap_status = {}
-                res = {}
-            if encap_status.get("frozen"):
-                continue
-            for rid, rdata in res.items():
-                if not rdata.get("monitor"):
-                    continue
-                erid = rid+"@"+container.name
-                monitored_resources.append(erid)
-                if rdata.get("status") not in ("up", "n/a"):
-                    if len(rdata.get("log")) > 0:
-                        rstatus_log = " (%s)" % rdata.get("log").strip().strip("# ")
-                    else:
-                        rstatus_log = ""
-                    self.log.info("monitored resource %s is in state %s%s",
-                                  erid, rdata.get("status"), rstatus_log)
-
-                    if self.monitor_action is not None and \
-                       hasattr(self, self.monitor_action):
-                        raise ex.MonitorAction
-                    else:
-                        self.log.info("Would TOC but no (or unknown) resource "
-                                      "monitor action set.")
-                    return
-
-        if len(monitored_resources) == 0:
-            self.log.debug("no monitored resource")
-        else:
-            rids = ','.join([res if is_string(res) else res.rid \
-                             for res in monitored_resources])
-            self.log.debug("monitored resources are up (%s)", rids)
+                resource.status(refresh=True)
+        self.update_status_data()
 
     def reboot(self):
         """
@@ -1731,7 +1622,7 @@ class Svc(Crypt):
         else:
             self._pg_freeze()
             for resource in self.get_resources(["app", "container"]):
-                resource.status(refresh=True, restart=False)
+                resource.status(refresh=True)
 
     def pg_thaw(self):
         """
@@ -1743,7 +1634,7 @@ class Svc(Crypt):
         else:
             self._pg_thaw()
             for resource in self.get_resources(["app", "container"]):
-                resource.status(refresh=True, restart=False)
+                resource.status(refresh=True)
 
     def pg_kill(self):
         """
@@ -1755,14 +1646,7 @@ class Svc(Crypt):
         else:
             self._pg_kill()
             for resource in self.get_resources(["app", "container"]):
-                resource.status(refresh=True, restart=False)
-
-    def freezestop(self):
-        """
-        The 'freezestop' action entrypoint.
-        Call the freezestop method of resources implementing it.
-        """
-        self.sub_set_action('hb.openha', 'freezestop')
+                resource.status(refresh=True)
 
     def stonith(self):
         """
@@ -1845,9 +1729,8 @@ class Svc(Crypt):
                               "command.")
         vmhostname = container.vm_hostname()
         try:
-            autostart_node = conf_get_string_scope(self, self.config,
-                                                   'DEFAULT', 'autostart_node',
-                                                   impersonate=vmhostname).split()
+            autostart_node = self.conf_get_string_scope('DEFAULT', 'autostart_node',
+                                                        impersonate=vmhostname).split()
         except ex.OptNotFound:
             autostart_node = []
         if cmd == ["start"] and container.booted and vmhostname in autostart_node:
@@ -1996,7 +1879,7 @@ class Svc(Crypt):
                 "frozen": False,
                 "resources": {},
             }
-            groups = set(["container", "ip", "disk", "fs", "share", "hb"])
+            groups = set(["container", "ip", "disk", "fs", "share"])
             for group in groups:
                 group_status[group] = 'down'
             for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
@@ -2038,7 +1921,6 @@ class Svc(Crypt):
             "disk",
             "fs",
             "share",
-            "hb",
             "stonith",
             "task",
             "app",
@@ -2086,7 +1968,6 @@ class Svc(Crypt):
 
         for driver in [_driver for _driver in STATUS_TYPES if \
                   not _driver.startswith('sync') and \
-                  not _driver.startswith('hb') and \
                   not _driver.startswith('task') and \
                   not _driver.startswith('stonith')]:
             if driver in excluded_groups:
@@ -2130,17 +2011,6 @@ class Svc(Crypt):
             for resource in self.get_resources(driver):
                 rstatus = resource.status()
                 status['stonith'] += rstatus
-                status["overall"] += rstatus
-
-        for driver in [_driver for _driver in STATUS_TYPES if \
-                       _driver.startswith('hb')]:
-            if 'hb' not in groups:
-                continue
-            if driver in excluded_groups:
-                continue
-            for resource in self.get_resources(driver):
-                rstatus = resource.status()
-                status['hb'] += rstatus
                 status["overall"] += rstatus
 
         for driver in [_driver for _driver in STATUS_TYPES if \
@@ -2278,7 +2148,6 @@ class Svc(Crypt):
         Return True if this service has an encapsulated part that would need
         starting.
         """
-        self.load_config()
         defaults = self.config.defaults()
         if defaults.get('autostart_node@'+container.name) in (container.name, 'encapnodes'):
             return False
@@ -2300,12 +2169,6 @@ class Svc(Crypt):
             self.startstandby()
             return
 
-        resources = self.get_resources('hb')
-        if len(resources) > 0:
-            self.log.warning("cluster nodes should not be in autostart_nodes for HA configuration")
-            self.startstandby()
-            return
-
         try:
             self.start()
         except ex.excError as exc:
@@ -2315,7 +2178,6 @@ class Svc(Crypt):
 
     def shutdown(self):
         self.options.force = True
-        self.master_shutdownhb()
         self.slave_shutdown()
         try:
             self.master_shutdownapp()
@@ -2359,7 +2221,6 @@ class Svc(Crypt):
         self.encap_cmd(['run'], verbose=True)
 
     def start(self):
-        self.master_starthb()
         self.abort_start()
         af_svc = self.get_non_affine_svc()
         if len(af_svc) != 0:
@@ -2394,7 +2255,6 @@ class Svc(Crypt):
         self.rollbackip()
 
     def stop(self):
-        self.master_stophb()
         self.slave_stop()
         try:
             self.master_stopapp()
@@ -2412,97 +2272,6 @@ class Svc(Crypt):
     @_slave_action
     def slave_stop(self):
         self.encap_cmd(['stop'], verbose=True, error="continue")
-
-    def cluster_mode_safety_net(self, action, options):
-        """
-        Raise excError to bar actions executed without --cluster on monitored
-        services.
-
-        Raise excAbortAction to bar actions executed with --cluster on monitored
-        services with disabled hb resources (maintenance mode).
-
-        In any case, consider an action with --rid, --tags or --subset set is
-        not to be blocked, as it is a surgical operation typical of maintenance
-        operations.
-        """
-        if action in ACTIONS_ALLOW_ON_CLUSTER:
-            return
-
-        if self.command_is_scoped(options):
-            self.log.debug("stop: called with --rid, --tags or --subset, allow "
-                           "action on ha service.")
-            return
-
-        n_hb = 0
-        n_hb_enabled = 0
-
-        for resource in self.get_resources('hb', discard_disabled=False):
-            n_hb += 1
-            if not resource.disabled:
-                n_hb_enabled += 1
-
-        if n_hb == 0:
-            return
-
-        if n_hb > 0 and n_hb_enabled == 0 and self.options.cluster:
-            raise ex.excAbortAction("this service has heartbeat resources, "
-                                    "but all disabled. this state is "
-                                    "interpreted as a maintenance mode. "
-                                    "actions submitted with --cluster are not "
-                                    "allowed to inhibit actions triggered by "
-                                    "the heartbeat daemon.")
-        if n_hb_enabled == 0:
-            return
-
-        if not self.options.cluster:
-            for resource in self.get_resources("hb"):
-                if not resource.skip and hasattr(resource, action):
-                    self.running_action = action
-                    if self.options.dry_run:
-                        self.log.info("%s %s", action, resource.label)
-                        raise ex.excEndAction
-                    else:
-                        getattr(resource, action)()
-
-            raise ex.excError("this service is managed by a clusterware, thus "
-                              "direct service manipulation is disabled (%s). "
-                              "the --cluster option circumvent this safety "
-                              "net." % action)
-
-    def starthb(self):
-        self.master_starthb()
-        self.slave_starthb()
-
-    @_slave_action
-    def slave_starthb(self):
-        self.encap_cmd(['starthb'], verbose=True)
-
-    @_master_action
-    def master_starthb(self):
-        self.master_hb('start')
-
-    @_master_action
-    def master_startstandbyhb(self):
-        self.master_hb('startstandby')
-
-    @_master_action
-    def master_shutdownhb(self):
-        self.master_hb('shutdown')
-
-    @_master_action
-    def master_stophb(self):
-        self.master_hb('stop')
-
-    def master_hb(self, action):
-        self.sub_set_action("hb", action)
-
-    def stophb(self):
-        self.slave_stophb()
-        self.master_stophb()
-
-    @_slave_action
-    def slave_stophb(self):
-        self.encap_cmd(['stophb'], verbose=True)
 
     def startdisk(self):
         self.master_startdisk()
@@ -2732,7 +2501,7 @@ class Svc(Crypt):
             status change after its own start/stop
         """
         for resource in self.get_resources("ip"):
-            resource.status(refresh=True, restart=False)
+            resource.status(refresh=True)
 
     @_master_action
     def shutdowncontainer(self):
@@ -3620,32 +3389,9 @@ class Svc(Crypt):
             self.log.error("Abort action for non PRD service on PRD node")
             return 1
 
-        if action not in ACTIONS_ALLOW_ON_FROZEN and \
+        if action not in ACTIONS_NO_STATUS_CHANGE and \
            'compliance' not in action and \
            'collector' not in action:
-            if self.frozen() and not options.force:
-                self.log.info("Abort action '%s' for frozen service. Use "
-                              "--force to override.", action)
-                return 1
-
-            if action == "boot" and len(self.always_on_resources()) == 0 and \
-               len(self.get_resources('hb')) > 0:
-                self.log.info("end boot action on cluster node before "
-                              "acquiring the action lock: no stdby resource "
-                              "needs activation.")
-                return 0
-
-            try:
-                self.cluster_mode_safety_net(action, options)
-            except ex.excAbortAction as exc:
-                self.log.info(str(exc))
-                return 0
-            except ex.excEndAction as exc:
-                self.log.info(str(exc))
-                return 0
-            except ex.excError as exc:
-                self.log.error(str(exc))
-                return 1
             #
             # here we know we will run a resource state-changing action
             # purge the resource status file cache, so that we don't take
@@ -3912,18 +3658,6 @@ class Svc(Crypt):
 
         self.svcunlock()
 
-        if action == "start" and self.options.cluster and self.ha:
-            # This situation is typical of a hb-initiated service start.
-            # While the hb starts the service, its resource status is warn from
-            # opensvc point of view. So after a successful startup, the hb res
-            # status would stay warn until the next svcmon.
-            # To avoid this drawback we can force from here the hb status.
-            if err == 0:
-                for resource in self.get_resources(['hb']):
-                    if resource.disabled:
-                        continue
-                    resource.force_status(rcStatus.UP)
-
         if action != "delete" and not self.command_is_scoped():
             self.update_status_data()
 
@@ -4057,7 +3791,6 @@ class Svc(Crypt):
         Service move to another node.
         """
         self.destination_node_sanity_checks()
-        self.sub_set_action("hb", "switch")
         self.stop()
         self.remote_action(nodename=self.options.destination_node, action='start')
 
@@ -4130,7 +3863,8 @@ class Svc(Crypt):
         except (OSError, IOError) as exc:
             self.log.debug("failed to set %s mode: %s", self.paths.cf, str(exc))
 
-    def load_config(self):
+    @lazy
+    def config(self):
         """
         Initialize the service configuration parser object. Using an
         OrderDict type to preserve the options and sections ordering,
@@ -4141,10 +3875,11 @@ class Svc(Crypt):
         """
         try:
             from collections import OrderedDict
-            self.config = RawConfigParser(dict_type=OrderedDict)
+            config = RawConfigParser(dict_type=OrderedDict)
         except ImportError:
-            self.config = RawConfigParser()
-        self.config.read(self.paths.cf)
+            config = RawConfigParser()
+        config.read(self.paths.cf)
+        return config
 
     def unset(self):
         """
@@ -4219,7 +3954,6 @@ class Svc(Crypt):
         * print the raw value if --eval is not set
         * print the dereferenced and evaluated value if --eval is set
         """
-        self.load_config()
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
@@ -4237,8 +3971,7 @@ class Svc(Crypt):
             print("option '%s' not found in section [%s]"%(option, section), file=sys.stderr)
             return 1
         if self.options.eval:
-            from svcBuilder import conf_get
-            print(conf_get(self, self.config, section, option, "string", scope=True))
+            print(self.conf_get(section, option, "string", scope=True))
         else:
             print(self.config.get(section, option))
         return 0
@@ -4250,7 +3983,6 @@ class Svc(Crypt):
         if no section was specified, and set the value using the internal
         _set() method.
         """
-        self.load_config()
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
@@ -4307,7 +4039,7 @@ class Svc(Crypt):
             create codepath.
             """
             import re
-            comment = re.sub("(\[.+://.+])", lambda m: get_href(m.group(1)), comment) 
+            comment = re.sub("(\[.+://.+])", lambda m: get_href(m.group(1)), comment)
             print(comment)
 
         for key, default_val in self.env_section_keys().items():
@@ -4605,18 +4337,14 @@ class Svc(Crypt):
 
     def freeze(self):
         """
-        Call the freeze method of hb resources, then set the frozen flag.
+        Set the frozen flag.
         """
-        for resource in self.get_resources("hb"):
-            resource.freeze()
         self.freezer.freeze()
 
     def thaw(self):
         """
-        Call the thaw method of hb resources, then unset the frozen flag.
+        Unset the frozen flag.
         """
-        for resource in self.get_resources("hb"):
-            resource.thaw()
         self.freezer.thaw()
 
     def frozen(self):
@@ -4716,7 +4444,7 @@ class Svc(Crypt):
             Fetch the value and convert it to expected type.
             """
             _option = option.split("@")[0]
-            value = conf_get_string_scope(self, config, section, _option)
+            value = self.conf_get_string_scope(section, _option)
             if isinstance(key.default, bool):
                 return bool(value)
             elif isinstance(key.default, int):
@@ -4935,7 +4663,6 @@ class Svc(Crypt):
         Add resources to the service configuration, and provision them if
         instructed to do so.
         """
-        self.load_config()
         sections = {}
         rtypes = {}
         defaults = self.config.defaults()
@@ -5049,4 +4776,233 @@ class Svc(Crypt):
             nodename=self.options.node,
         )
         print(json.dumps(data, indent=4, sort_keys=True))
+
+    #
+    # config helpers
+    #
+    def handle_reference(self, ref, scope=False, impersonate=None):
+            # hardcoded references
+            if ref == "nodename":
+                return rcEnv.nodename
+            if ref == "short_nodename":
+                return rcEnv.nodename.split(".")[0]
+            if ref == "svcname":
+                return self.svcname
+            if ref == "short_svcname":
+                return self.svcname.split(".")[0]
+            if ref == "svcmgr":
+                return rcEnv.paths.svcmgr
+            if ref == "nodemgr":
+                return rcEnv.paths.nodemgr
+
+            if "[" in ref and ref.endswith("]"):
+                i = ref.index("[")
+                index = ref[i+1:-1]
+                ref = ref[:i]
+                index = int(self.handle_references(index, scope=scope, impersonate=impersonate))
+            else:
+                index = None
+
+            # use DEFAULT as the implicit section
+            n_dots = ref.count(".")
+            if n_dots == 0:
+                _section = "DEFAULT"
+                _v = ref
+            elif n_dots == 1:
+                _section, _v = ref.split(".")
+            else:
+                raise ex.excError("%s: reference can have only one dot" % ref)
+
+            if len(_section) == 0:
+                raise ex.excError("%s: reference section can not be empty" % ref)
+            if len(_v) == 0:
+                raise ex.excError("%s: reference option can not be empty" % ref)
+
+            if _v[0] == "#":
+                return_length = True
+                _v = _v[1:]
+            else:
+                return_length = False
+
+            val = self._handle_reference(ref, _section, _v, scope=scope, impersonate=impersonate)
+
+            if return_length:
+                return str(len(val.split()))
+
+            if not index is None:
+                return val.split()[index]
+
+            return val
+
+    def _handle_reference(self, ref, _section, _v, scope=False, impersonate=None):
+            # give os env precedence over the env cf section
+            if _section == "env" and _v.upper() in os.environ:
+                return os.environ[_v.upper()]
+
+            if _section != "DEFAULT" and not self.config.has_section(_section):
+                raise ex.excError("%s: section %s does not exist" % (ref, _section))
+
+            try:
+                return self.conf_get(_section, _v, "string", scope=scope, impersonate=impersonate)
+            except ex.OptNotFound as e:
+                raise ex.excError("%s: unresolved reference (%s)" % (ref, str(e)))
+
+            raise ex.excError("%s: unknown reference" % ref)
+
+    def _handle_references(self, s, scope=False, impersonate=None):
+        while True:
+            m = re.search(r'{\w*[\w#][\w\.\[\]]*}', s)
+            if m is None:
+                return s
+            ref = m.group(0).strip("{}")
+            val = self.handle_reference(ref, scope=scope, impersonate=impersonate)
+            s = s[:m.start()] + val + s[m.end():]
+
+    @staticmethod
+    def _handle_expressions(s):
+        while True:
+            m = re.search(r'\$\((.+)\)', s)
+            if m is None:
+                return s
+            expr = m.group(1)
+            val = eval_expr(expr)
+            s = s[:m.start()] + str(val) + s[m.end():]
+
+    def handle_references(self, s, scope=False, impersonate=None):
+        key = (s, scope, impersonate)
+        if hasattr(self, "ref_cache") and self.ref_cache is not None and key in self.ref_cache:
+            return self.ref_cache[key]
+        try:
+            val = self._handle_references(s, scope=scope, impersonate=impersonate)
+            val = self._handle_expressions(val)
+            val = self._handle_references(val, scope=scope, impersonate=impersonate)
+        except Exception as e:
+            raise ex.excError("%s: reference evaluation failed: %s" %(s, str(e)))
+        if hasattr(self, "ref_cache") and self.ref_cache is not None:
+            self.ref_cache[key] = val
+        return val
+
+    def conf_get(self, s, o, t, scope=False, impersonate=None):
+        if not scope:
+            val = self.conf_get_val_unscoped(s, o)
+        else:
+            val = self.conf_get_val_scoped(s, o, impersonate=impersonate)
+
+        try:
+            val = self.handle_references(val, scope=scope, impersonate=impersonate)
+        except ex.excError:
+            if o.startswith("pre_") or o.startswith("post_") or o.startswith("blocking_"):
+                pass
+            else:
+                raise
+
+        if t == 'string':
+            pass
+        elif t == 'boolean':
+            val = convert_bool(val)
+        elif t == 'integer':
+            try:
+                val = int(val)
+            except:
+                val = convert_size(val)
+        else:
+            raise Exception("unknown keyword type: %s" % t)
+
+        return val
+
+    def conf_get_val_unscoped(self, s, o):
+        if self.config.has_option(s, o):
+            return self.config.get(s, o)
+        raise ex.OptNotFound("unscoped keyword %s.%s not found" % (s, o))
+
+    def conf_has_option_scoped(self, s, o, impersonate=None):
+        if impersonate is None:
+            nodename = rcEnv.nodename
+        else:
+            nodename = impersonate
+
+        if self.config.has_option(s, o+"@"+nodename):
+            return o+"@"+nodename
+        elif self.config.has_option(s, o+"@nodes") and \
+             nodename in self.nodes:
+            return s, o+"@nodes"
+        elif self.config.has_option(s, o+"@drpnodes") and \
+             nodename in self.drpnodes:
+            return o+"@drpnodes"
+        elif self.config.has_option(s, o+"@encapnodes") and \
+             nodename in self.encapnodes:
+            return o+"@encapnodes"
+        elif self.config.has_option(s, o+"@flex_primary") and \
+             nodename == self.flex_primary:
+            return o+"@flex_primary"
+        elif self.config.has_option(s, o+"@drp_flex_primary") and \
+             nodename == self.drp_flex_primary:
+            return o+"@drp_flex_primary"
+        elif self.config.has_option(s, o):
+            return o
+
+    def conf_get_val_scoped(self, s, o, impersonate=None, use_default=True):
+        if impersonate is None:
+            nodename = rcEnv.nodename
+        else:
+            nodename = impersonate
+
+        option = self.conf_has_option_scoped(s, o, impersonate=impersonate)
+        if option is None and use_default:
+            if s != "DEFAULT":
+                # fallback to default
+                return self.conf_get_val_scoped("DEFAULT", o, impersonate=impersonate)
+            else:
+                raise ex.OptNotFound("scoped keyword %s.%s not found" % (s, o))
+
+        try:
+            val = self.config.get(s, option)
+        except Exception as e:
+            raise ex.excError("param %s.%s: %s"%(s, o, str(e)))
+
+        return val
+
+    def conf_get_string(self, s, o):
+        return self.conf_get(s, o, 'string', scope=False)
+
+    def conf_get_string_scope(self, s, o, impersonate=None):
+        return self.conf_get(s, o, 'string', scope=True, impersonate=impersonate)
+
+    def conf_get_boolean(self, s, o):
+        return self.conf_get(s, o, 'boolean', scope=False)
+
+    def conf_get_boolean_scope(self, s, o, impersonate=None):
+        return self.conf_get(s, o, 'boolean', scope=True, impersonate=impersonate)
+
+    def conf_get_int(self, s, o):
+        return self.conf_get(s, o, 'integer', scope=False)
+
+    def conf_get_int_scope(self, s, o, impersonate=None):
+        return self.conf_get(s, o, 'integer', scope=True, impersonate=impersonate)
+
+    def get_pg_settings(self, s):
+        d = {}
+        options = (
+            "cpus",
+            "cpu_shares",
+            "cpu_quota",
+            "mems",
+            "mem_oom_control",
+            "mem_limit",
+            "mem_swappiness",
+            "vmem_limit",
+            "blkio_weight",
+        )
+
+        # don't use DEFAULT for resources and subsets
+        for option in options:
+            _option = self.conf_has_option_scoped(s, option)
+            if _option:
+                d[option] = self.conf_get_string_scope(s, option)
+
+        return d
+
+    @lazy
+    def pg_settings(self):
+        return self.get_pg_settings("DEFAULT")
 

@@ -5,8 +5,6 @@ import logging
 import re
 import socket
 import glob
-import ast
-import operator as op
 import platform
 
 from rcGlobalEnv import rcEnv, Storage
@@ -15,251 +13,33 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
-from rcUtilities import convert_bool, convert_size, cmdline2list, ximport, \
+from svc import Svc
+from rcUtilities import convert_size, cmdline2list, ximport, \
                         check_privs
-
-# supported operators in arithmetic expressions
-operators = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
-             ast.Div: op.truediv, ast.Pow: op.pow, ast.BitXor: op.xor,
-             ast.USub: op.neg, ast.FloorDiv: op.floordiv, ast.Mod: op.mod}
 
 if 'PATH' not in os.environ:
     os.environ['PATH'] = ""
 os.environ['LANG'] = 'C'
 os.environ['PATH'] += ':/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
 
-def eval_expr(expr):
-    """ arithmetic expressions evaluator
-    """
-    def eval_(node):
-        if isinstance(node, ast.Num): # <number>
-            return node.n
-        elif isinstance(node, ast.BinOp): # <left> <operator> <right>
-            return operators[type(node.op)](eval_(node.left), eval_(node.right))
-        elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
-            return operators[type(node.op)](eval_(node.operand))
-        else:
-            raise TypeError(node)
-    return eval_(ast.parse(expr, mode='eval').body)
-
-def handle_reference(svc, conf, ref, scope=False, impersonate=None):
-        # hardcoded references
-        if ref == "nodename":
-            return rcEnv.nodename
-        if ref == "short_nodename":
-            return rcEnv.nodename.split(".")[0]
-        if ref == "svcname":
-            return svc.svcname
-        if ref == "short_svcname":
-            return svc.svcname.split(".")[0]
-        if ref == "svcmgr":
-            return rcEnv.paths.svcmgr
-        if ref == "nodemgr":
-            return rcEnv.paths.nodemgr
-
-        if "[" in ref and ref.endswith("]"):
-            i = ref.index("[")
-            index = ref[i+1:-1]
-            ref = ref[:i]
-            index = int(handle_references(svc, conf, index, scope=scope, impersonate=impersonate))
-        else:
-            index = None
-
-        # use DEFAULT as the implicit section
-        n_dots = ref.count(".")
-        if n_dots == 0:
-            _section = "DEFAULT"
-            _v = ref
-        elif n_dots == 1:
-            _section, _v = ref.split(".")
-        else:
-            raise ex.excError("%s: reference can have only one dot" % ref)
-
-        if len(_section) == 0:
-            raise ex.excError("%s: reference section can not be empty" % ref)
-        if len(_v) == 0:
-            raise ex.excError("%s: reference option can not be empty" % ref)
-
-        if _v[0] == "#":
-            return_length = True
-            _v = _v[1:]
-        else:
-            return_length = False
-
-        val = _handle_reference(svc, conf, ref, _section, _v, scope=scope, impersonate=impersonate)
-
-        if return_length:
-            return str(len(val.split()))
-
-        if not index is None:
-            return val.split()[index]
-
-        return val
-
-def _handle_reference(svc, conf, ref, _section, _v, scope=False, impersonate=None):
-        # give os env precedence over the env cf section
-        if _section == "env" and _v.upper() in os.environ:
-            return os.environ[_v.upper()]
-
-        if _section != "DEFAULT" and not conf.has_section(_section):
-            raise ex.excError("%s: section %s does not exist" % (ref, _section))
-
-        try:
-            return conf_get(svc, conf, _section, _v, "string", scope=scope, impersonate=impersonate)
-        except ex.OptNotFound as e:
-            raise ex.excError("%s: unresolved reference (%s)" % (ref, str(e)))
-
-        raise ex.excError("%s: unknown reference" % ref)
-
-def _handle_references(svc, conf, s, scope=False, impersonate=None):
-    while True:
-        m = re.search(r'{\w*[\w#][\w\.\[\]]*}', s)
-        if m is None:
-            return s
-        ref = m.group(0).strip("{}")
-        val = handle_reference(svc, conf, ref, scope=scope, impersonate=impersonate)
-        s = s[:m.start()] + val + s[m.end():]
-
-def _handle_expressions(s):
-    while True:
-        m = re.search(r'\$\((.+)\)', s)
-        if m is None:
-            return s
-        expr = m.group(1)
-        val = eval_expr(expr)
-        s = s[:m.start()] + str(val) + s[m.end():]
-
-def handle_references(svc, conf, s, scope=False, impersonate=None):
-    key = (s, scope, impersonate)
-    if hasattr(svc, "ref_cache") and svc.ref_cache is not None and key in svc.ref_cache:
-        return svc.ref_cache[key]
+def get_tags(svc, section):
     try:
-        val = _handle_references(svc, conf, s, scope=scope, impersonate=impersonate)
-        val = _handle_expressions(val)
-        val = _handle_references(svc, conf, val, scope=scope, impersonate=impersonate)
-    except Exception as e:
-        raise ex.excError("%s: reference evaluation failed: %s" %(s, str(e)))
-    if hasattr(svc, "ref_cache") and svc.ref_cache is not None:
-        svc.ref_cache[key] = val
-    return val
-
-def conf_get(svc, conf, s, o, t, scope=False, impersonate=None):
-    if not scope:
-        val = conf_get_val_unscoped(svc, conf, s, o)
-    else:
-        val = conf_get_val_scoped(svc, conf, s, o, impersonate=impersonate)
-
-    try:
-        val = handle_references(svc, conf, val, scope=scope, impersonate=impersonate)
-    except ex.excError:
-        if o.startswith("pre_") or o.startswith("post_") or o.startswith("blocking_"):
-            pass
-        else:
-            raise
-
-    if t == 'string':
-        pass
-    elif t == 'boolean':
-        val = convert_bool(val)
-    elif t == 'integer':
-        try:
-            val = int(val)
-        except:
-            val = convert_size(val)
-    else:
-        raise Exception("unknown keyword type: %s" % t)
-
-    return val
-
-def conf_get_val_unscoped(svc, conf, s, o):
-    if conf.has_option(s, o):
-        return conf.get(s, o)
-    raise ex.OptNotFound("unscoped keyword %s.%s not found" % (s, o))
-
-def conf_get_val_scoped(svc, conf, s, o, impersonate=None):
-    if impersonate is None:
-        nodename = rcEnv.nodename
-    else:
-        nodename = impersonate
-
-    if conf.has_option(s, o+"@"+nodename):
-        val = conf.get(s, o+"@"+nodename)
-    elif conf.has_option(s, o+"@nodes") and \
-         nodename in svc.nodes:
-        val = conf.get(s, o+"@nodes")
-    elif conf.has_option(s, o+"@drpnodes") and \
-         nodename in svc.drpnodes:
-        val = conf.get(s, o+"@drpnodes")
-    elif conf.has_option(s, o+"@encapnodes") and \
-         nodename in svc.encapnodes:
-        val = conf.get(s, o+"@encapnodes")
-    elif conf.has_option(s, o+"@flex_primary") and \
-         nodename == svc.flex_primary:
-        val = conf.get(s, o+"@flex_primary")
-    elif conf.has_option(s, o+"@drp_flex_primary") and \
-         nodename == svc.drp_flex_primary:
-        val = conf.get(s, o+"@drp_flex_primary")
-    elif conf.has_option(s, o):
-        try:
-            val = conf.get(s, o)
-        except Exception as e:
-            raise ex.excError("param %s.%s: %s"%(s, o, str(e)))
-    else:
-        raise ex.OptNotFound("scoped keyword %s.%s not found" % (s, o))
-
-    return val
-
-def conf_get_string(svc, conf, s, o):
-    return conf_get(svc, conf, s, o, 'string', scope=False)
-
-def conf_get_string_scope(svc, conf, s, o, impersonate=None):
-    return conf_get(svc, conf, s, o, 'string', scope=True, impersonate=impersonate)
-
-def conf_get_boolean(svc, conf, s, o):
-    return conf_get(svc, conf, s, o, 'boolean', scope=False)
-
-def conf_get_boolean_scope(svc, conf, s, o, impersonate=None):
-    return conf_get(svc, conf, s, o, 'boolean', scope=True, impersonate=impersonate)
-
-def conf_get_int(svc, conf, s, o):
-    return conf_get(svc, conf, s, o, 'integer', scope=False)
-
-def conf_get_int_scope(svc, conf, s, o, impersonate=None):
-    return conf_get(svc, conf, s, o, 'integer', scope=True, impersonate=impersonate)
-
-def svcmode_mod_name(svcmode=''):
-    """Returns (moduleName, serviceClassName) implementing the class for
-    a given service mode. For example:
-    hosted => ('svcHosted', 'SvcHosted')
-    """
-    if svcmode == 'hosted':
-        return ('svcHosted', 'SvcHosted')
-    elif svcmode == 'sg':
-        return ('svcSg', 'SvcSg')
-    elif svcmode == 'rhcs':
-        return ('svcRhcs', 'SvcRhcs')
-    elif svcmode == 'vcs':
-        return ('svcVcs', 'SvcVcs')
-    raise ex.excError("unknown service mode: %s"%svcmode)
-
-def get_tags(conf, section, svc):
-    try:
-        s = conf_get_string_scope(svc, conf, section, 'tags')
+        s = svc.conf_get_string_scope(section, 'tags')
     except ex.OptNotFound:
         s = ""
     return set(s.split())
 
-def get_optional(conf, section, svc):
-    if not conf.has_section(section):
+def get_optional(svc, section):
+    if not svc.config.has_section(section):
         try:
-            return conf_get_boolean_scope(svc, conf, "DEFAULT", "optional")
+            return svc.conf_get_boolean_scope("DEFAULT", "optional")
         except:
             return False
 
     # deprecated
-    if conf.has_option(section, 'optional_on'):
+    if svc.config.has_option(section, 'optional_on'):
         nodes = set([])
-        l = conf.get(section, "optional_on").split()
+        l = svc.config.get(section, "optional_on").split()
         for i in l:
             if i == 'nodes': nodes |= svc.nodes
             elif i == 'drpnodes': nodes |= svc.drpnodes
@@ -269,21 +49,21 @@ def get_optional(conf, section, svc):
         return False
 
     try:
-        return conf_get_boolean_scope(svc, conf, section, "optional")
+        return svc.conf_get_boolean_scope(section, "optional")
     except:
         return False
 
-def get_monitor(conf, section, svc):
-    if not conf.has_section(section):
+def get_monitor(svc, section):
+    if not svc.config.has_section(section):
         try:
-            return conf_get_boolean_scope(svc, conf, "DEFAULT", "monitor")
+            return svc.conf_get_boolean_scope("DEFAULT", "monitor")
         except:
             return False
 
     # deprecated
-    if conf.has_option(section, 'monitor_on'):
+    if svc.config.has_option(section, 'monitor_on'):
         nodes = set([])
-        l = conf.get(section, "monitor_on").split()
+        l = svc.config.get(section, "monitor_on").split()
         for i in l:
             if i == 'nodes': nodes |= svc.nodes
             elif i == 'drpnodes': nodes |= svc.drpnodes
@@ -293,55 +73,55 @@ def get_monitor(conf, section, svc):
         return False
 
     try:
-        return conf_get_boolean_scope(svc, conf, section, "monitor")
+        return svc.conf_get_boolean_scope(section, "monitor")
     except:
         return False
 
-def get_rcmd(conf, section, svc):
-    if not conf.has_section(section):
+def get_rcmd(svc, section):
+    if not svc.config.has_section(section):
         return
     try:
-        return conf_get_string_scope(svc, conf, section, 'rcmd').split()
+        return svc.conf_get_string_scope(section, 'rcmd').split()
     except ex.OptNotFound:
         return
 
-def get_subset(conf, section, svc):
-    if not conf.has_section(section):
+def get_subset(svc, section):
+    if not svc.config.has_section(section):
         return
     try:
-        return conf_get_string_scope(svc, conf, section, 'subset')
-    except ex.OptNotFound:
-        return
-    return
-
-def get_osvc_root_path(conf, section, svc):
-    if not conf.has_section(section):
-        return
-    try:
-        return conf_get_string_scope(svc, conf, section, 'osvc_root_path')
+        return svc.conf_get_string_scope(section, 'subset')
     except ex.OptNotFound:
         return
     return
 
-def get_restart(conf, section, svc):
-    if not conf.has_section(section):
-        if conf.has_option('DEFAULT', 'restart'):
+def get_osvc_root_path(svc, section):
+    if not svc.config.has_section(section):
+        return
+    try:
+        return svc.conf_get_string_scope(section, 'osvc_root_path')
+    except ex.OptNotFound:
+        return
+    return
+
+def get_restart(svc, section):
+    if not svc.config.has_section(section):
+        if svc.config.has_option('DEFAULT', 'restart'):
             try:
-                return conf_get_int_scope(svc, conf, section, 'restart')
+                return svc.conf_get_int_scope(section, 'restart')
             except ex.OptNotFound:
                 return 0
         else:
             return 0
     try:
-        return conf_get_int_scope(svc, conf, section, 'restart')
+        return svc.conf_get_int_scope(section, 'restart')
     except ex.OptNotFound:
         return 0
     return 0
 
-def get_disabled(conf, section, svc):
+def get_disabled(svc, section):
     # service-level disable takes precedence over all resource-level disable method
-    if conf.has_option('DEFAULT', 'disable'):
-        svc_disable = conf.getboolean("DEFAULT", "disable")
+    if svc.config.has_option('DEFAULT', 'disable'):
+        svc_disable = svc.config.getboolean("DEFAULT", "disable")
     else:
         svc_disable = False
 
@@ -353,8 +133,8 @@ def get_disabled(conf, section, svc):
 
     # unscopable enable_on option (takes precedence over disable and disable_on)
     nodes = set([])
-    if conf.has_option(section, 'enable_on'):
-        l = conf_get_string_scope(svc, conf, section, "enable_on").split()
+    if svc.config.has_option(section, 'enable_on'):
+        l = svc.conf_get_string_scope(section, "enable_on").split()
         for i in l:
             if i == 'nodes': nodes |= svc.nodes
             elif i == 'drpnodes': nodes |= svc.drpnodes
@@ -364,7 +144,7 @@ def get_disabled(conf, section, svc):
 
     # scoped disable option
     try:
-        r = conf_get_boolean_scope(svc, conf, section, 'disable')
+        r = svc.conf_get_boolean_scope(section, 'disable')
     except ex.OptNotFound:
         r = False
     except Exception as e:
@@ -375,8 +155,8 @@ def get_disabled(conf, section, svc):
 
     # unscopable disable_on option
     nodes = set([])
-    if conf.has_option(section, 'disable_on'):
-        l = conf.get(section, "disable_on").split()
+    if svc.config.has_option(section, 'disable_on'):
+        l = svc.config.get(section, "disable_on").split()
         for i in l:
             if i == 'nodes': nodes |= svc.nodes
             elif i == 'drpnodes': nodes |= svc.drpnodes
@@ -386,21 +166,21 @@ def get_disabled(conf, section, svc):
 
     return False
 
-def need_scsireserv(svc, conf, section):
+def need_scsireserv(svc, section):
     """scsireserv = true can be set globally or in a specific
     resource section
     """
     r = False
     try:
-        r = conf_get_boolean_scope(svc, conf, section, 'scsireserv')
+        r = svc.conf_get_boolean_scope(section, 'scsireserv')
     except ex.OptNotFound:
-        defaults = conf.defaults()
+        defaults = svc.config.defaults()
         if 'scsireserv' in defaults:
             r = bool(defaults['scsireserv'])
     return r
 
-def add_scsireserv(svc, resource, conf, section):
-    if not need_scsireserv(svc, conf, section):
+def add_scsireserv(svc, resource, section):
+    if not need_scsireserv(svc, section):
         return
     try:
         sr = __import__('resScsiReserv'+rcEnv.sysname)
@@ -411,37 +191,37 @@ def add_scsireserv(svc, resource, conf, section):
     pr_rid = resource.rid+"pr"
 
     try:
-        kwargs["prkey"] = conf_get_string_scope(svc, conf, resource.rid, 'prkey')
+        kwargs["prkey"] = svc.conf_get_string_scope(resource.rid, 'prkey')
     except ex.OptNotFound:
         pass
 
     try:
-        pa = conf_get_boolean_scope(svc, conf, resource.rid, 'no_preempt_abort')
+        pa = svc.conf_get_boolean_scope(resource.rid, 'no_preempt_abort')
     except ex.OptNotFound:
         pa = False
 
     try:
-        kwargs['optional'] = get_optional(conf, pr_rid, svc)
+        kwargs['optional'] = get_optional(svc, pr_rid)
     except ex.OptNotFound:
         kwargs['optional'] = resource.is_optional()
 
     try:
-        kwargs['disabled'] = get_disabled(conf, pr_rid, svc)
+        kwargs['disabled'] = get_disabled(svc, pr_rid)
     except ex.OptNotFound:
         kwargs['disabled'] = resource.is_disabled()
 
     try:
-        kwargs['restart'] = get_restart(conf, pr_rid, svc)
+        kwargs['restart'] = get_restart(svc, pr_rid)
     except ex.OptNotFound:
         kwargs['restart'] = resource.restart
 
     try:
-        kwargs['monitor'] = get_monitor(conf, pr_rid, svc)
+        kwargs['monitor'] = get_monitor(svc, pr_rid)
     except ex.OptNotFound:
         kwargs['monitor'] = resource.monitor
 
     try:
-        kwargs['tags'] = get_tags(conf, pr_rid, svc)
+        kwargs['tags'] = get_tags(svc, pr_rid)
     except:
         kwargs['tags'] = set([])
 
@@ -453,7 +233,7 @@ def add_scsireserv(svc, resource, conf, section):
     r = sr.ScsiReserv(**kwargs)
     svc += r
 
-def add_triggers(svc, resource, conf, section):
+def add_triggers(svc, resource, section):
     triggers = [
       'pre_unprovision', 'post_unprovision',
       'pre_provision', 'post_provision',
@@ -474,14 +254,14 @@ def add_triggers(svc, resource, conf, section):
     for trigger in triggers + compat_triggers:
         for prefix in ("", "blocking_"):
             try:
-                s = conf_get_string_scope(svc, conf, resource.rid, prefix+trigger)
+                s = svc.conf_get_string_scope(resource.rid, prefix+trigger)
             except ex.OptNotFound:
                 continue
             if trigger in compat_triggers:
                 trigger = trigger.replace("sync", "sync_")
             setattr(resource, prefix+trigger, s)
 
-def add_requires(svc, resource, conf, section):
+def add_requires(svc, resource, section):
     actions = [
       'unprovision', 'provision'
       'stop', 'start',
@@ -490,7 +270,7 @@ def add_requires(svc, resource, conf, section):
     ]
     for action in actions:
         try:
-            s = conf_get_string_scope(svc, conf, section, action+'_requires')
+            s = svc.conf_get_string_scope(section, action+'_requires')
         except ex.OptNotFound:
             continue
         s = s.replace("stdby ", "stdby_")
@@ -498,13 +278,13 @@ def add_requires(svc, resource, conf, section):
         l = list(map(lambda x: x.replace("stdby_", "stdby "), l))
         setattr(resource, action+'_requires', l)
 
-def add_triggers_and_requires(svc, resource, conf, section):
-    add_triggers(svc, resource, conf, section)
-    add_requires(svc, resource, conf, section)
+def add_triggers_and_requires(svc, resource, section):
+    add_triggers(svc, resource, section)
+    add_requires(svc, resource, section)
 
-def always_on_nodes_set(svc, conf, section):
+def always_on_nodes_set(svc, section):
     try:
-        always_on_opt = conf.get(section, "always_on").split()
+        always_on_opt = svc.config.get(section, "always_on").split()
     except:
         always_on_opt = []
     always_on = set([])
@@ -515,35 +295,35 @@ def always_on_nodes_set(svc, conf, section):
     always_on |= set(always_on_opt) - set(['nodes', 'drpnodes'])
     return always_on
 
-def get_sync_args(conf, s, svc):
+def get_sync_args(svc, s):
     kwargs = {}
-    defaults = conf.defaults()
+    defaults = svc.config.defaults()
 
-    if conf.has_option(s, 'sync_max_delay'):
-        kwargs['sync_max_delay'] = conf_get_int_scope(svc, conf, s, 'sync_max_delay')
+    if svc.config.has_option(s, 'sync_max_delay'):
+        kwargs['sync_max_delay'] = svc.conf_get_int_scope(s, 'sync_max_delay')
     elif 'sync_max_delay' in defaults:
-        kwargs['sync_max_delay'] = conf_get_int_scope(svc, conf, 'DEFAULT', 'sync_max_delay')
+        kwargs['sync_max_delay'] = svc.conf_get_int_scope('DEFAULT', 'sync_max_delay')
 
-    if conf.has_option(s, 'schedule'):
-        kwargs['schedule'] = conf_get_string_scope(svc, conf, s, 'schedule')
-    elif conf.has_option(s, 'period') or conf.has_option(s, 'sync_period'):
+    if svc.config.has_option(s, 'schedule'):
+        kwargs['schedule'] = svc.conf_get_string_scope(s, 'schedule')
+    elif svc.config.has_option(s, 'period') or svc.config.has_option(s, 'sync_period'):
         # old schedule syntax compatibility
         from rcScheduler import Scheduler
-        kwargs['schedule'] = Scheduler().sched_convert_to_schedule(conf, s, prefix='sync_')
+        kwargs['schedule'] = Scheduler().sched_convert_to_schedule(svc.config, s, prefix='sync_')
     elif 'sync_schedule' in defaults:
-        kwargs['schedule'] = conf_get_string_scope(svc, conf, 'DEFAULT', 'sync_schedule')
+        kwargs['schedule'] = svc.conf_get_string_scope('DEFAULT', 'sync_schedule')
     elif 'sync_period' in defaults:
         # old schedule syntax compatibility for internal sync
         from rcScheduler import Scheduler
-        kwargs['schedule'] = Scheduler().sched_convert_to_schedule(conf, s, prefix='sync_')
+        kwargs['schedule'] = Scheduler().sched_convert_to_schedule(svc.config, s, prefix='sync_')
 
     return kwargs
 
-def add_resources(restype, svc, conf):
-    for s in conf.sections():
-        add_resource(restype, svc, conf, s)
+def add_resources(svc, restype):
+    for s in svc.config.sections():
+        add_resource(svc, restype, s)
 
-def add_resource(restype, svc, conf, s):
+def add_resource(svc, restype, s):
     if restype == "pool":
         restype = "zpool"
         match = "[z]{0,1}pool#"
@@ -558,7 +338,7 @@ def add_resource(restype, svc, conf, s):
     if s != 'app' and s != restype and re.match(match, s, re.I) is None:
         return
 
-    tags = get_tags(conf, s, svc)
+    tags = get_tags(svc, s)
 
     if svc.encap and 'encap' not in tags:
         return
@@ -566,7 +346,7 @@ def add_resource(restype, svc, conf, s):
     if not svc.encap and 'encap' in tags:
         svc.has_encap_resources = True
         try:
-            subset = conf_get_string_scope(svc, conf, s, 'subset')
+            subset = svc.conf_get_string_scope(s, 'subset')
         except ex.OptNotFound:
             subset = None
         svc.encap_resources[s] = Storage({
@@ -579,13 +359,13 @@ def add_resource(restype, svc, conf, s):
     if s in svc.resources_by_id:
         return
 
-    globals()['add_'+restype](svc, conf, s)
+    globals()['add_'+restype](svc, s)
 
-def add_ip_gce(svc, conf, s):
+def add_ip_gce(svc, s):
     kwargs = {}
 
     try:
-        rtype = conf_get_string_scope(svc, conf, s, 'type')
+        rtype = svc.conf_get_string_scope(s, 'type')
     except ex.OptNotFound:
         rtype = None
 
@@ -593,51 +373,51 @@ def add_ip_gce(svc, conf, s):
         return
 
     try:
-        kwargs['ipname'] = conf_get_string_scope(svc, conf, s, 'ipname')
+        kwargs['ipname'] = svc.conf_get_string_scope(s, 'ipname')
     except ex.OptNotFound:
         svc.log.error("ipname must be defined in config file section %s" % s)
         return
 
     try:
-        kwargs['ipdev'] = conf_get_string_scope(svc, conf, s, 'ipdev')
+        kwargs['ipdev'] = svc.conf_get_string_scope(s, 'ipdev')
     except ex.OptNotFound:
         svc.log.error("ipdev must be defined in config file section %s" % s)
         return
 
     try:
-        kwargs['eip'] = conf_get_string_scope(svc, conf, s, 'eip')
+        kwargs['eip'] = svc.conf_get_string_scope(s, 'eip')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['routename'] = conf_get_string_scope(svc, conf, s, 'routename')
+        kwargs['routename'] = svc.conf_get_string_scope(s, 'routename')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['gce_zone'] = conf_get_string_scope(svc, conf, s, 'gce_zone')
+        kwargs['gce_zone'] = svc.conf_get_string_scope(s, 'gce_zone')
     except ex.OptNotFound:
         pass
 
     ip = __import__('resIpGce')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
     r = ip.Ip(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_ip_amazon(svc, conf, s):
+def add_ip_amazon(svc, s):
     kwargs = {}
 
     try:
-        rtype = conf_get_string_scope(svc, conf, s, 'type')
+        rtype = svc.conf_get_string_scope(s, 'type')
     except ex.OptNotFound:
         rtype = None
 
@@ -645,95 +425,95 @@ def add_ip_amazon(svc, conf, s):
         return
 
     try:
-        kwargs['ipname'] = conf_get_string_scope(svc, conf, s, 'ipname')
+        kwargs['ipname'] = svc.conf_get_string_scope(s, 'ipname')
     except ex.OptNotFound:
         svc.log.error("nor ipname and ipname@%s defined in config file section %s"%(rcEnv.nodename, s))
         return
 
     try:
-        kwargs['ipdev'] = conf_get_string_scope(svc, conf, s, 'ipdev')
+        kwargs['ipdev'] = svc.conf_get_string_scope(s, 'ipdev')
     except ex.OptNotFound:
         svc.log.error("ipdev must be defined in config file section %s" % s)
         return
 
     try:
-        kwargs['eip'] = conf_get_string_scope(svc, conf, s, 'eip')
+        kwargs['eip'] = svc.conf_get_string_scope(s, 'eip')
     except ex.OptNotFound:
         pass
 
     ip = __import__('resIpAmazon')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
     r = ip.Ip(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_ip(svc, conf, s):
+def add_ip(svc, s):
     """Parse the configuration file and add an ip object for each [ip#n]
     section. Ip objects are stored in a list in the service object.
     """
     try:
-        rtype = conf_get_string_scope(svc, conf, s, 'type')
+        rtype = svc.conf_get_string_scope(s, 'type')
     except ex.OptNotFound:
         rtype = None
 
     if rtype == "amazon":
-        return add_ip_amazon(svc, conf, s)
+        return add_ip_amazon(svc, s)
     elif rtype == "gce":
-        return add_ip_gce(svc, conf, s)
+        return add_ip_gce(svc, s)
 
     kwargs = {}
 
     try:
-        kwargs['ipname'] = conf_get_string_scope(svc, conf, s, 'ipname')
+        kwargs['ipname'] = svc.conf_get_string_scope(s, 'ipname')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['ipdev'] = conf_get_string_scope(svc, conf, s, 'ipdev')
+        kwargs['ipdev'] = svc.conf_get_string_scope(s, 'ipdev')
     except ex.OptNotFound:
         svc.log.error('ipdev not found in ip section %s'%s)
         return
 
     try:
-        kwargs['ipdevExt'] = conf_get_string_scope(svc, conf, s, 'ipdevext')
+        kwargs['ipdevExt'] = svc.conf_get_string_scope(s, 'ipdevext')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['mask'] = conf_get_string_scope(svc, conf, s, 'netmask')
+        kwargs['mask'] = svc.conf_get_string_scope(s, 'netmask')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['gateway'] = conf_get_string_scope(svc, conf, s, 'gateway')
+        kwargs['gateway'] = svc.conf_get_string_scope(s, 'gateway')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['zone'] = conf_get_string_scope(svc, conf, s, 'zone')
+        kwargs['zone'] = svc.conf_get_string_scope(s, 'zone')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['container_rid'] = conf_get_string_scope(svc, conf, s, 'container_rid')
+        kwargs['container_rid'] = svc.conf_get_string_scope(s, 'container_rid')
     except ex.OptNotFound:
         pass
 
     if rtype == "docker":
         try:
-            kwargs['network'] = conf_get_string_scope(svc, conf, s, 'network')
+            kwargs['network'] = svc.conf_get_string_scope(s, 'network')
         except ex.OptNotFound:
             pass
         try:
-            kwargs['del_net_route'] = conf_get_boolean_scope(svc, conf, s, 'del_net_route')
+            kwargs['del_net_route'] = svc.conf_get_boolean_scope(s, 'del_net_route')
         except ex.OptNotFound:
             pass
 
@@ -750,34 +530,34 @@ def add_ip(svc, conf, s):
         ip = __import__('resIp'+rcEnv.sysname)
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
     r = ip.Ip(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_md(svc, conf, s):
+def add_md(svc, s):
     kwargs = {}
 
     try:
-        kwargs['uuid'] = conf_get_string_scope(svc, conf, s, 'uuid')
+        kwargs['uuid'] = svc.conf_get_string_scope(s, 'uuid')
     except ex.OptNotFound:
         svc.log.error("uuid must be set in section %s"%s)
         return
 
     try:
-        kwargs['shared'] = conf_get_string_scope(svc, conf, s, 'shared')
+        kwargs['shared'] = svc.conf_get_string_scope(s, 'shared')
     except ex.OptNotFound:
         if len(svc.nodes|svc.drpnodes) < 2:
             kwargs['shared'] = False
             svc.log.debug("md %s shared param defaults to %s due to single node configuration"%(s, kwargs['shared']))
         else:
-            l = [ p for p in conf.options(s) if "@" in p ]
+            l = [ p for p in svc.config.options(s) if "@" in p ]
             if len(l) > 0:
                 kwargs['shared'] = False
                 svc.log.debug("md %s shared param defaults to %s due to scoped configuration"%(s, kwargs['shared']))
@@ -786,45 +566,45 @@ def add_md(svc, conf, s):
                 svc.log.debug("md %s shared param defaults to %s due to unscoped configuration"%(s, kwargs['shared']))
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
     m = __import__('resDiskMdLinux')
     r = m.Disk(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_drbd(svc, conf, s):
+def add_drbd(svc, s):
     """Parse the configuration file and add a drbd object for each [drbd#n]
     section. Drbd objects are stored in a list in the service object.
     """
     kwargs = {}
 
     try:
-        kwargs['res'] = conf_get_string(svc, conf, s, 'res')
+        kwargs['res'] = svc.conf_get_string(s, 'res')
     except ex.OptNotFound:
         svc.log.error("res must be set in section %s"%s)
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
     mod = __import__('resDiskDrbd')
     r = mod.Drbd(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_vdisk(svc, conf, s):
+def add_vdisk(svc, s):
     kwargs = {}
     devpath = {}
 
@@ -838,20 +618,20 @@ def add_vdisk(svc, conf, s):
 
     kwargs['devpath'] = devpath
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
     m = __import__('resDiskVdisk')
     r = m.Disk(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_stonith(svc, conf, s):
+def add_stonith(svc, s):
     if rcEnv.nodename in svc.drpnodes:
         # no stonith on DRP nodes
         return
@@ -859,7 +639,7 @@ def add_stonith(svc, conf, s):
     kwargs = {}
 
     try:
-        _type = conf_get_string(svc, conf, s, 'type')
+        _type = svc.conf_get_string(s, 'type')
         if len(_type) > 1:
             _type = _type[0].upper()+_type[1:].lower()
     except ex.OptNotFound:
@@ -868,11 +648,11 @@ def add_stonith(svc, conf, s):
 
     if _type in ('Ilo'):
         try:
-            kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+            kwargs['name'] = svc.conf_get_string_scope(s, 'name')
         except ex.OptNotFound:
             pass
         try:
-            kwargs['name'] = conf_get_string_scope(svc, conf, s, 'target')
+            kwargs['name'] = svc.conf_get_string_scope(s, 'target')
         except ex.OptNotFound:
             pass
 
@@ -881,7 +661,7 @@ def add_stonith(svc, conf, s):
             return
     elif _type in ('Callout'):
         try:
-            kwargs['cmd'] = conf_get_string_scope(svc, conf, s, 'cmd')
+            kwargs['cmd'] = svc.conf_get_string_scope(s, 'cmd')
         except ex.OptNotFound:
             pass
 
@@ -890,11 +670,11 @@ def add_stonith(svc, conf, s):
             return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
 
     st = __import__('resStonith'+_type)
     try:
@@ -904,69 +684,29 @@ def add_stonith(svc, conf, s):
         return
 
     r = st.Stonith(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_hb(svc, conf, s):
-    if rcEnv.nodename in svc.drpnodes:
-        # no heartbeat on DRP nodes
-        return
-
-    kwargs = {}
-
-    try:
-        hbtype = conf_get_string(svc, conf, s, 'type').lower()
-    except ex.OptNotFound:
-        svc.log.error("type must be set in section %s"%s)
-        return
-
-    try:
-        kwargs['name'] = conf_get_string(svc, conf, s, 'name')
-    except ex.OptNotFound:
-        pass
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-
-    if hbtype == 'openha':
-        hbtype = 'OpenHA'
-    elif hbtype == 'linuxha':
-        hbtype = 'LinuxHA'
-
-    try:
-        hb = __import__('resHb'+hbtype)
-    except ImportError:
-        svc.log.error("resHb%s is not implemented"%hbtype)
-        return
-
-    r = hb.Hb(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
-    svc += r
-
-def add_loop(svc, conf, s):
+def add_loop(svc, s):
     """Parse the configuration file and add a loop object for each [loop#n]
     section. Loop objects are stored in a list in the service object.
     """
     kwargs = {}
 
     try:
-        kwargs['loopFile'] = conf_get_string_scope(svc, conf, s, 'file')
+        kwargs['loopFile'] = svc.conf_get_string_scope(s, 'file')
     except ex.OptNotFound:
         svc.log.error("file must be set in section %s"%s)
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     try:
         m = __import__('resDiskLoop'+rcEnv.sysname)
@@ -975,115 +715,115 @@ def add_loop(svc, conf, s):
         return
 
     r = m.Disk(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
 
-def add_disk_disk(svc, conf, s):
+def add_disk_disk(svc, s):
     kwargs = {}
     try:
-        kwargs['disk_id'] = conf_get_string_scope(svc, conf, s, 'disk_id')
+        kwargs['disk_id'] = svc.conf_get_string_scope(s, 'disk_id')
     except ex.OptNotFound:
         pass
 
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     m = __import__('resDiskDisk'+rcEnv.sysname)
 
     r = m.Disk(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_disk_gce(svc, conf, s):
+def add_disk_gce(svc, s):
     kwargs = {}
     try:
-        kwargs['names'] = conf_get_string_scope(svc, conf, s, 'names').split()
+        kwargs['names'] = svc.conf_get_string_scope(s, 'names').split()
     except ex.OptNotFound:
         svc.log.error("names must be set in section %s"%s)
         return
 
     try:
-        kwargs['gce_zone'] = conf_get_string_scope(svc, conf, s, 'gce_zone')
+        kwargs['gce_zone'] = svc.conf_get_string_scope(s, 'gce_zone')
     except ex.OptNotFound:
         svc.log.error("gce_zone must be set in section %s"%s)
         return
 
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     m = __import__('resDiskGce')
 
     r = m.Disk(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_disk_amazon(svc, conf, s):
+def add_disk_amazon(svc, s):
     kwargs = {}
     try:
-        kwargs['volumes'] = conf_get_string_scope(svc, conf, s, 'volumes').split()
+        kwargs['volumes'] = svc.conf_get_string_scope(s, 'volumes').split()
     except ex.OptNotFound:
         svc.log.error("volumes must be set in section %s"%s)
         return
 
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     m = __import__('resDiskAmazon')
 
     r = m.Disk(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_rados(svc, conf, s):
+def add_rados(svc, s):
     kwargs = {}
     try:
-        kwargs['images'] = conf_get_string_scope(svc, conf, s, 'images').split()
+        kwargs['images'] = svc.conf_get_string_scope(s, 'images').split()
     except ex.OptNotFound:
         pass
     try:
-        kwargs['keyring'] = conf_get_string_scope(svc, conf, s, 'keyring')
+        kwargs['keyring'] = svc.conf_get_string_scope(s, 'keyring')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['client_id'] = conf_get_string_scope(svc, conf, s, 'client_id')
+        kwargs['client_id'] = svc.conf_get_string_scope(s, 'client_id')
     except ex.OptNotFound:
         pass
     try:
-        lock_shared_tag = conf_get_string_scope(svc, conf, s, 'lock_shared_tag')
+        lock_shared_tag = svc.conf_get_string_scope(s, 'lock_shared_tag')
     except ex.OptNotFound:
         lock_shared_tag = None
     try:
-        lock = conf_get_string_scope(svc, conf, s, 'lock')
+        lock = svc.conf_get_string_scope(s, 'lock')
     except ex.OptNotFound:
         lock = None
 
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     try:
         m = __import__('resDiskRados'+rcEnv.sysname)
@@ -1092,7 +832,7 @@ def add_rados(svc, conf, s):
         return
 
     r = m.Disk(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
     if not lock:
@@ -1103,35 +843,35 @@ def add_rados(svc, conf, s):
     kwargs["lock"] = lock
     kwargs["lock_shared_tag"] = lock_shared_tag
     r = m.DiskLock(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
 
-def add_raw(svc, conf, s):
+def add_raw(svc, s):
     kwargs = {}
     disk_type = "Raw"+rcEnv.sysname
     try:
-        zone = conf_get_string_scope(svc, conf, s, 'zone')
+        zone = svc.conf_get_string_scope(s, 'zone')
     except:
         zone = None
     try:
-        kwargs['user'] = conf_get_string_scope(svc, conf, s, 'user')
+        kwargs['user'] = svc.conf_get_string_scope(s, 'user')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['group'] = conf_get_string_scope(svc, conf, s, 'group')
+        kwargs['group'] = svc.conf_get_string_scope(s, 'group')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['perm'] = conf_get_string_scope(svc, conf, s, 'perm')
+        kwargs['perm'] = svc.conf_get_string_scope(s, 'perm')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['create_char_devices'] = conf_get_boolean_scope(svc, conf, s, 'create_char_devices')
+        kwargs['create_char_devices'] = svc.conf_get_boolean_scope(s, 'create_char_devices')
     except ex.OptNotFound:
         pass
     try:
-        devs = conf_get_string_scope(svc, conf, s, 'devs')
+        devs = svc.conf_get_string_scope(s, 'devs')
         if zone is not None:
             devs = devs.replace(":", ":<%s>" % zone)
         kwargs['devs'] = set(devs.split())
@@ -1142,18 +882,18 @@ def add_raw(svc, conf, s):
     # backward compat : the dummy keyword is deprecated in favor of
     # the standard "noaction" tag.
     try:
-        dummy = conf_get_boolean_scope(svc, conf, s, 'dummy')
+        dummy = svc.conf_get_boolean_scope(s, 'dummy')
     except ex.OptNotFound:
         dummy = False
 
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     try:
         m = __import__('resDisk'+disk_type)
@@ -1167,48 +907,48 @@ def add_raw(svc, conf, s):
     if zone is not None:
         r.tags.add('zone')
         r.tags.add(zone)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_gandi(svc, conf, s):
+def add_gandi(svc, s):
     disk_type = "Gandi"
     kwargs = {}
     try:
-        kwargs['cloud_id'] = conf_get_string_scope(svc, conf, s, 'cloud_id')
+        kwargs['cloud_id'] = svc.conf_get_string_scope(s, 'cloud_id')
     except ex.OptNotFound:
         svc.log.error("cloud_id must be set in section %s"%s)
         return
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         svc.log.error("name must be set in section %s"%s)
         return
     try:
-        kwargs['node'] = conf_get_string_scope(svc, conf, s, 'node')
+        kwargs['node'] = svc.conf_get_string_scope(s, 'node')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['user'] = conf_get_string_scope(svc, conf, s, 'user')
+        kwargs['user'] = svc.conf_get_string_scope(s, 'user')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['group'] = conf_get_string_scope(svc, conf, s, 'user')
+        kwargs['group'] = svc.conf_get_string_scope(s, 'user')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['perm'] = conf_get_string_scope(svc, conf, s, 'perm')
+        kwargs['perm'] = svc.conf_get_string_scope(s, 'perm')
     except ex.OptNotFound:
         pass
 
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     try:
         m = __import__('resDisk'+disk_type)
@@ -1217,84 +957,84 @@ def add_gandi(svc, conf, s):
         return
 
     r = m.Disk(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_disk_compat(svc, conf, s):
+def add_disk_compat(svc, s):
     try:
-        disk_type = conf_get_string_scope(svc, conf, s, 'type')
+        disk_type = svc.conf_get_string_scope(s, 'type')
     except ex.OptNotFound:
         disk_type = s.split("#")[0]
     if len(disk_type) >= 2:
         disk_type = disk_type[0].upper() + disk_type[1:].lower()
 
     if disk_type == 'Drbd':
-        add_drbd(svc, conf, s)
+        add_drbd(svc, s)
         return
     if disk_type == 'Vdisk':
-        add_vdisk(svc, conf, s)
+        add_vdisk(svc, s)
         return
     if disk_type == 'Vmdg':
-        add_vmdg(svc, conf, s)
+        add_vmdg(svc, s)
         return
     if disk_type == 'Pool':
-        add_zpool(svc, conf, s)
+        add_zpool(svc, s)
         return
     if disk_type == 'Zpool':
-        add_zpool(svc, conf, s)
+        add_zpool(svc, s)
         return
     if disk_type == 'Loop':
-        add_loop(svc, conf, s)
+        add_loop(svc, s)
         return
     if disk_type == 'Md':
-        add_md(svc, conf, s)
+        add_md(svc, s)
         return
     if disk_type == 'Gce':
-        add_disk_gce(svc, conf, s)
+        add_disk_gce(svc, s)
         return
     if disk_type == 'Disk':
-        add_disk_disk(svc, conf, s)
+        add_disk_disk(svc, s)
         return
     if disk_type == 'Amazon':
-        add_disk_amazon(svc, conf, s)
+        add_disk_amazon(svc, s)
         return
     if disk_type == 'Rados':
-        add_rados(svc, conf, s)
+        add_rados(svc, s)
         return
     if disk_type == 'Raw':
-        add_raw(svc, conf, s)
+        add_raw(svc, s)
         return
     if disk_type == 'Gandi':
-        add_gandi(svc, conf, s)
+        add_gandi(svc, s)
         return
     if disk_type == 'Veritas':
-        add_veritas(svc, conf, s)
+        add_veritas(svc, s)
         return
 
     raise ex.OptNotFound
 
-def add_veritas(svc, conf, s):
+def add_veritas(svc, s):
     kwargs = {}
     try:
         # deprecated keyword 'vgname'
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'vgname')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         if "name" not in kwargs:
             svc.log.error("name must be set in section %s"%s)
             return
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     try:
         m = __import__('resDiskVgVeritas')
@@ -1303,13 +1043,13 @@ def add_veritas(svc, conf, s):
         return
 
     r = m.Disk(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_vg(svc, conf, s):
+def add_vg(svc, s):
     try:
-        add_disk_compat(svc, conf, s)
+        add_disk_compat(svc, s)
         return
     except ex.OptNotFound:
         pass
@@ -1317,27 +1057,27 @@ def add_vg(svc, conf, s):
     disk_type = rcEnv.sysname
     kwargs = {}
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'vgname')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'vgname')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         if "name" not in kwargs:
             svc.log.error("name must be set in section %s"%s)
             return
     try:
-        kwargs['dsf'] = conf_get_boolean_scope(svc, conf, s, 'dsf')
+        kwargs['dsf'] = svc.conf_get_boolean_scope(s, 'dsf')
     except ex.OptNotFound:
         pass
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     try:
         m = __import__('resDiskVg'+disk_type)
@@ -1346,29 +1086,29 @@ def add_vg(svc, conf, s):
         return
 
     r = m.Disk(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_sync(svc, conf, s):
+def add_sync(svc, s):
     try:
-        rtype = conf_get_string_scope(svc, conf, s, 'type')
+        rtype = svc.conf_get_string_scope(s, 'type')
     except ex.OptNotFound:
         rtype = "rsync"
-    globals()["add_sync_"+rtype](svc, conf, s)
+    globals()["add_sync_"+rtype](svc, s)
 
-def add_container(svc, conf, s):
-    rtype = conf_get_string_scope(svc, conf, s, 'type')
-    globals()["add_container_"+rtype](svc, conf, s)
+def add_container(svc, s):
+    rtype = svc.conf_get_string_scope(s, 'type')
+    globals()["add_container_"+rtype](svc, s)
 
-def add_disk(svc, conf, s):
+def add_disk(svc, s):
     """Parse the configuration file and add a disk object for each [disk#n]
     section. Disk objects are stored in a list in the service object.
     """
     kwargs = {}
 
     try:
-        disk_type = conf_get_string_scope(svc, conf, s, 'type')
+        disk_type = svc.conf_get_string_scope(s, 'type')
     except ex.OptNotFound:
         disk_type = s.split("#")[0]
 
@@ -1376,56 +1116,56 @@ def add_disk(svc, conf, s):
         disk_type = disk_type[0].upper() + disk_type[1:].lower()
 
     if disk_type == 'Drbd':
-        add_drbd(svc, conf, s)
+        add_drbd(svc, s)
         return
     if disk_type == 'Vdisk':
-        add_vdisk(svc, conf, s)
+        add_vdisk(svc, s)
         return
     if disk_type == 'Vmdg':
-        add_vmdg(svc, conf, s)
+        add_vmdg(svc, s)
         return
     if disk_type == 'Pool':
-        add_zpool(svc, conf, s)
+        add_zpool(svc, s)
         return
     if disk_type == 'Zpool':
-        add_zpool(svc, conf, s)
+        add_zpool(svc, s)
         return
     if disk_type == 'Loop':
-        add_loop(svc, conf, s)
+        add_loop(svc, s)
         return
     if disk_type == 'Md':
-        add_md(svc, conf, s)
+        add_md(svc, s)
         return
     if disk_type == 'Gce':
-        add_disk_gce(svc, conf, s)
+        add_disk_gce(svc, s)
         return
     if disk_type == 'Disk':
-        add_disk_disk(svc, conf, s)
+        add_disk_disk(svc, s)
         return
     if disk_type == 'Amazon':
-        add_disk_amazon(svc, conf, s)
+        add_disk_amazon(svc, s)
         return
     if disk_type == 'Rados':
-        add_rados(svc, conf, s)
+        add_rados(svc, s)
         return
     if disk_type == 'Raw':
-        add_raw(svc, conf, s)
+        add_raw(svc, s)
         return
     if disk_type == 'Gandi':
-        add_gandi(svc, conf, s)
+        add_gandi(svc, s)
         return
     if disk_type == 'Veritas':
-        add_veritas(svc, conf, s)
+        add_veritas(svc, s)
         return
     if disk_type == 'Lvm' or disk_type == 'Vg' or disk_type == rcEnv.sysname:
-        add_vg(svc, conf, s)
+        add_vg(svc, s)
         return
 
-def add_vmdg(svc, conf, s):
+def add_vmdg(svc, s):
     kwargs = {}
 
     try:
-        kwargs['container_id'] = conf_get_string_scope(svc, conf, s, 'container_id')
+        kwargs['container_id'] = svc.conf_get_string_scope(s, 'container_id')
     except ex.OptNotFound:
         svc.log.error("container_id must be set in section %s"%s)
         return
@@ -1435,7 +1175,7 @@ def add_vmdg(svc, conf, s):
         return
 
     try:
-        container_type = conf_get_string_scope(svc, conf, kwargs['container_id'], 'type')
+        container_type = svc.conf_get_string_scope(kwargs['container_id'], 'type')
     except ex.OptNotFound:
         svc.log.error("type must be set in section %s"%kwargs['container_id'])
         return
@@ -1446,32 +1186,32 @@ def add_vmdg(svc, conf, s):
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
     kwargs['name'] = s
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     r = m.Disk(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_zpool(svc, conf, s):
+def add_zpool(svc, s):
     """Parse the configuration file and add a zpool object for each disk.zpool
     section. Pools objects are stored in a list in the service object.
     """
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'poolname')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'poolname')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         pass
 
@@ -1480,20 +1220,20 @@ def add_zpool(svc, conf, s):
         return
 
     try:
-        zone = conf_get_string_scope(svc, conf, s, 'zone')
+        zone = svc.conf_get_string_scope(s, 'zone')
     except ex.OptNotFound:
         zone = None
 
     m = __import__('resDiskZfs')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     r = m.Disk(**kwargs)
 
@@ -1501,13 +1241,13 @@ def add_zpool(svc, conf, s):
         r.tags.add('zone')
         r.tags.add(zone)
 
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_share(svc, conf, s):
+def add_share(svc, s):
     try:
-        _type = conf_get_string_scope(svc, conf, s, 'type')
+        _type = svc.conf_get_string_scope(s, 'type')
     except ex.OptNotFound:
         svc.log.error("type must be set in section %s"%s)
         return
@@ -1515,19 +1255,19 @@ def add_share(svc, conf, s):
     fname = 'add_share_'+_type
     if fname not in globals():
         svc.log.error("type '%s' not supported in section %s"%(_type, s))
-    globals()[fname](svc, conf, s)
+    globals()[fname](svc, s)
 
-def add_share_nfs(svc, conf, s):
+def add_share_nfs(svc, s):
     kwargs = {}
 
     try:
-        kwargs['path'] = conf_get_string_scope(svc, conf, s, 'path')
+        kwargs['path'] = svc.conf_get_string_scope(s, 'path')
     except ex.OptNotFound:
         svc.log.error("path must be set in section %s"%s)
         return
 
     try:
-        kwargs['opts'] = conf_get_string_scope(svc, conf, s, 'opts')
+        kwargs['opts'] = svc.conf_get_string_scope(s, 'opts')
     except ex.OptNotFound:
         svc.log.error("opts must be set in section %s"%s)
         return
@@ -1539,45 +1279,45 @@ def add_share_nfs(svc, conf, s):
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     r = m.Share(**kwargs)
 
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_fs_directory(svc, conf, s):
+def add_fs_directory(svc, s):
     kwargs = {}
 
     try:
-        kwargs['path'] = conf_get_string_scope(svc, conf, s, 'path')
+        kwargs['path'] = svc.conf_get_string_scope(s, 'path')
     except ex.OptNotFound:
         svc.log.error("path must be set in section %s"%s)
         return
 
     try:
-        kwargs['user'] = conf_get_string_scope(svc, conf, s, 'user')
+        kwargs['user'] = svc.conf_get_string_scope(s, 'user')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['group'] = conf_get_string_scope(svc, conf, s, 'group')
+        kwargs['group'] = svc.conf_get_string_scope(s, 'group')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['perm'] = conf_get_string_scope(svc, conf, s, 'perm')
+        kwargs['perm'] = svc.conf_get_string_scope(s, 'perm')
     except ex.OptNotFound:
         pass
 
     try:
-        zone = conf_get_string_scope(svc, conf, s, 'zone')
+        zone = svc.conf_get_string_scope(s, 'zone')
     except:
         zone = None
 
@@ -1600,13 +1340,13 @@ def add_fs_directory(svc, conf, s):
     mod = __import__('resFsDir')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     r = mod.FsDir(**kwargs)
 
@@ -1614,32 +1354,32 @@ def add_fs_directory(svc, conf, s):
         r.tags.add(zone)
         r.tags.add('zone')
 
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_fs(svc, conf, s):
+def add_fs(svc, s):
     """Parse the configuration file and add a fs object for each [fs#n]
     section. Fs objects are stored in a list in the service object.
     """
     kwargs = {}
 
     try:
-        kwargs['fs_type'] = conf_get_string_scope(svc, conf, s, 'type')
+        kwargs['fs_type'] = svc.conf_get_string_scope(s, 'type')
     except ex.OptNotFound:
         kwargs['fs_type'] = ""
 
     if kwargs['fs_type'] == "directory":
-        add_fs_directory(svc, conf, s)
+        add_fs_directory(svc, s)
         return
 
     try:
-        kwargs['device'] = conf_get_string_scope(svc, conf, s, 'dev')
+        kwargs['device'] = svc.conf_get_string_scope(s, 'dev')
     except ex.OptNotFound:
         svc.log.error("dev must be set in section %s"%s)
         return
 
     try:
-        kwargs['mount_point'] = conf_get_string_scope(svc, conf, s, 'mnt')
+        kwargs['mount_point'] = svc.conf_get_string_scope(s, 'mnt')
     except ex.OptNotFound:
         svc.log.error("mnt must be set in section %s"%s)
         return
@@ -1651,17 +1391,17 @@ def add_fs(svc, conf, s):
         kwargs['mount_point'] = kwargs['mount_point'][0:-1]
 
     try:
-        kwargs['mount_options'] = conf_get_string_scope(svc, conf, s, 'mnt_opt')
+        kwargs['mount_options'] = svc.conf_get_string_scope(s, 'mnt_opt')
     except ex.OptNotFound:
         kwargs['mount_options'] = ""
 
     try:
-        kwargs['snap_size'] = conf_get_int_scope(svc, conf, s, 'snap_size')
+        kwargs['snap_size'] = svc.conf_get_int_scope(s, 'snap_size')
     except ex.OptNotFound:
         pass
 
     try:
-        zone = conf_get_string_scope(svc, conf, s, 'zone')
+        zone = svc.conf_get_string_scope(s, 'zone')
     except:
         zone = None
 
@@ -1688,13 +1428,13 @@ def add_fs(svc, conf, s):
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     r = mount.Mount(**kwargs)
 
@@ -1702,220 +1442,218 @@ def add_fs(svc, conf, s):
         r.tags.add(zone)
         r.tags.add('zone')
 
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_esx(svc, conf, s):
+def add_container_esx(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerEsx')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Esx(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_hpvm(svc, conf, s):
+def add_container_hpvm(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerHpVm')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.HpVm(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_ldom(svc, conf, s):
+def add_container_ldom(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerLdom')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Ldom(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_vbox(svc, conf, s):
+def add_container_vbox(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerVbox')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Vbox(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
-    r.pg_settings = get_pg_settings(svc, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_xen(svc, conf, s):
+def add_container_xen(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerXen')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Xen(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
-    r.pg_settings = get_pg_settings(svc, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_zone(svc, conf, s):
+def add_container_zone(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['delete_on_stop'] = conf_get_boolean_scope(svc, conf, s, 'delete_on_stop')
+        kwargs['delete_on_stop'] = svc.conf_get_boolean_scope(s, 'delete_on_stop')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerZone')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Zone(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
 
 
-def add_container_vcloud(svc, conf, s):
+def add_container_vcloud(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['cloud_id'] = conf_get_string_scope(svc, conf, s, 'cloud_id')
+        kwargs['cloud_id'] = svc.conf_get_string_scope(s, 'cloud_id')
     except ex.OptNotFound:
         svc.log.error("cloud_id must be set in section %s"%s)
         return
 
     try:
-        kwargs['vapp'] = conf_get_string_scope(svc, conf, s, 'vapp')
+        kwargs['vapp'] = svc.conf_get_string_scope(s, 'vapp')
     except ex.OptNotFound:
         svc.log.error("vapp must be set in section %s"%s)
         return
@@ -1923,385 +1661,380 @@ def add_container_vcloud(svc, conf, s):
     m = __import__('resContainerVcloud')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.CloudVm(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_amazon(svc, conf, s):
+def add_container_amazon(svc, s):
     kwargs = {}
 
     # mandatory keywords
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['cloud_id'] = conf_get_string_scope(svc, conf, s, 'cloud_id')
+        kwargs['cloud_id'] = svc.conf_get_string_scope(s, 'cloud_id')
     except ex.OptNotFound:
         svc.log.error("cloud_id must be set in section %s"%s)
         return
 
     # optional keywords
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     # provisioning keywords
     try:
-        kwargs['image_id'] = conf_get_string_scope(svc, conf, s, 'image_id')
+        kwargs['image_id'] = svc.conf_get_string_scope(s, 'image_id')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['size'] = conf_get_string_scope(svc, conf, s, 'size')
+        kwargs['size'] = svc.conf_get_string_scope(s, 'size')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['key_name'] = conf_get_string_scope(svc, conf, s, 'key_name')
+        kwargs['key_name'] = svc.conf_get_string_scope(s, 'key_name')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['subnet'] = conf_get_string_scope(svc, conf, s, 'subnet')
+        kwargs['subnet'] = svc.conf_get_string_scope(s, 'subnet')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerAmazon')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.CloudVm(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_openstack(svc, conf, s):
+def add_container_openstack(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['cloud_id'] = conf_get_string_scope(svc, conf, s, 'cloud_id')
+        kwargs['cloud_id'] = svc.conf_get_string_scope(s, 'cloud_id')
     except ex.OptNotFound:
         svc.log.error("cloud_id must be set in section %s"%s)
         return
 
     try:
-        kwargs['size'] = conf_get_string_scope(svc, conf, s, 'size')
+        kwargs['size'] = svc.conf_get_string_scope(s, 'size')
     except ex.OptNotFound:
         svc.log.error("size must be set in section %s"%s)
         return
 
     try:
-        kwargs['key_name'] = conf_get_string_scope(svc, conf, s, 'key_name')
+        kwargs['key_name'] = svc.conf_get_string_scope(s, 'key_name')
     except ex.OptNotFound:
         svc.log.error("key_name must be set in section %s"%s)
         return
 
     try:
-        kwargs['shared_ip_group'] = conf_get_string_scope(svc, conf, s, 'shared_ip_group')
+        kwargs['shared_ip_group'] = svc.conf_get_string_scope(s, 'shared_ip_group')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerOpenstack')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.CloudVm(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_vz(svc, conf, s):
+def add_container_vz(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerVz')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Vz(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
-    r.pg_settings = get_pg_settings(svc, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_kvm(svc, conf, s):
+def add_container_kvm(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         svc.log.error("name must be set in section %s"%s)
         return
 
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerKvm')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Kvm(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
-    r.pg_settings = get_pg_settings(svc, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_srp(svc, conf, s):
+def add_container_srp(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerSrp')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Srp(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_lxc(svc, conf, s):
+def add_container_lxc(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['cf'] = conf_get_string_scope(svc, conf, s, 'cf')
+        kwargs['cf'] = svc.conf_get_string_scope(s, 'cf')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerLxc')
 
     kwargs['rid'] = s
-    kwargs['rcmd'] = get_rcmd(conf, s, svc)
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['rcmd'] = get_rcmd(svc, s)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Lxc(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
-    r.pg_settings = get_pg_settings(svc, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_docker(svc, conf, s):
+def add_container_docker(svc, s):
     kwargs = {}
 
     try:
-        kwargs['run_image'] = conf_get_string_scope(svc, conf, s, 'run_image')
+        kwargs['run_image'] = svc.conf_get_string_scope(s, 'run_image')
     except ex.OptNotFound:
         svc.log.error("'run_image' parameter is mandatory in section %s"%s)
         return
 
     try:
-        kwargs['run_command'] = conf_get_string_scope(svc, conf, s, 'run_command')
+        kwargs['run_command'] = svc.conf_get_string_scope(s, 'run_command')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['run_args'] = conf_get_string_scope(svc, conf, s, 'run_args')
+        kwargs['run_args'] = svc.conf_get_string_scope(s, 'run_args')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['docker_service'] = conf_get_boolean_scope(svc, conf, s, 'docker_service')
+        kwargs['docker_service'] = svc.conf_get_boolean_scope(s, 'docker_service')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerDocker')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Docker(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
-    r.pg_settings = get_pg_settings(svc, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_ovm(svc, conf, s):
+def add_container_ovm(svc, s):
     kwargs = {}
 
     try:
-        kwargs['uuid'] = conf_get_string_scope(svc, conf, s, 'uuid')
+        kwargs['uuid'] = svc.conf_get_string_scope(s, 'uuid')
     except ex.OptNotFound:
         svc.log.error("uuid must be set in section %s"%s)
         return
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         svc.log.error("name must be set in section %s"%s)
         return
 
     try:
-        kwargs['guestos'] = conf_get_string_scope(svc, conf, s, 'guestos')
+        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerOvm')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Ovm(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
-    r.pg_settings = get_pg_settings(svc, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_container_jail(svc, conf, s):
+def add_container_jail(svc, s):
     kwargs = {}
 
     try:
-        kwargs['jailroot'] = conf_get_string_scope(svc, conf, s, 'jailroot')
+        kwargs['jailroot'] = svc.conf_get_string_scope(s, 'jailroot')
     except ex.OptNotFound:
         svc.log.error("jailroot must be set in section %s"%s)
         return
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         svc.log.error("name must be set in section %s"%s)
         return
 
     try:
-        kwargs['ips'] = conf_get_string_scope(svc, conf, s, 'ips').split()
+        kwargs['ips'] = svc.conf_get_string_scope(s, 'ips').split()
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['ip6s'] = conf_get_string_scope(svc, conf, s, 'ip6s').split()
+        kwargs['ip6s'] = svc.conf_get_string_scope(s, 'ip6s').split()
     except ex.OptNotFound:
         pass
 
     m = __import__('resContainerJail')
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
-    kwargs['osvc_root_path'] = get_osvc_root_path(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Jail(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-    add_scsireserv(svc, r, conf, s)
+    add_scsireserv(svc, r, s)
 
-def add_mandatory_syncs(svc, conf):
+def add_mandatory_syncs(svc):
     """Mandatory files to sync:
     1/ to all nodes: service definition
     2/ to drpnodes: system files to replace on the drpnode in case of startdrp
@@ -2318,11 +2051,10 @@ def add_mandatory_syncs(svc, conf):
     if len(svc.nodes|svc.drpnodes) > 1:
         kwargs = {}
         src = []
-        src = add_file(src, os.path.join(rcEnv.paths.pathetc, svc.svcname))
-        src = add_file(src, os.path.join(rcEnv.paths.pathetc, svc.svcname+'.conf'))
-        src = add_file(src, os.path.join(rcEnv.paths.pathetc, svc.svcname+'.d'))
-        src = add_file(src, os.path.join(rcEnv.paths.pathetc, svc.svcname+'.cluster'))
-        src = add_file(src, os.path.join(rcEnv.paths.pathetc, svc.svcname+'.dir'))
+        src = add_file(src, svc.paths.exe)
+        src = add_file(src, svc.paths.cf)
+        src = add_file(src, svc.paths.initd)
+        src = add_file(src, svc.paths.alt_initd)
         dst = os.path.join("/")
         exclude = ['--exclude=*.core']
         targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
@@ -2330,13 +2062,13 @@ def add_mandatory_syncs(svc, conf):
         kwargs['src'] = src
         kwargs['dst'] = dst
         kwargs['options'] = ['-R']+exclude
-        if conf.has_option(kwargs['rid'], 'options'):
-            kwargs['options'] += cmdline2list(conf.get(kwargs['rid'], 'options'))
+        if svc.config.has_option(kwargs['rid'], 'options'):
+            kwargs['options'] += cmdline2list(svc.config.get(kwargs['rid'], 'options'))
         kwargs['target'] = targethash
         kwargs['internal'] = True
-        kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)
-        kwargs['optional'] = get_optional(conf, kwargs['rid'], svc)
-        kwargs.update(get_sync_args(conf, kwargs['rid'], svc))
+        kwargs['disabled'] = get_disabled(svc, kwargs['rid'])
+        kwargs['optional'] = get_optional(svc, kwargs['rid'])
+        kwargs.update(get_sync_args(svc, kwargs['rid']))
         r = resSyncRsync.Rsync(**kwargs)
         svc += r
 
@@ -2362,121 +2094,121 @@ def add_mandatory_syncs(svc, conf):
         kwargs['src'] = src
         kwargs['dst'] = dst
         kwargs['options'] = ['-R']+exclude
-        if conf.has_option(kwargs['rid'], 'options'):
-            kwargs['options'] += cmdline2list(conf.get(kwargs['rid'], 'options'))
+        if svc.config.has_option(kwargs['rid'], 'options'):
+            kwargs['options'] += cmdline2list(svc.config.get(kwargs['rid'], 'options'))
         kwargs['target'] = targethash
         kwargs['internal'] = True
-        kwargs['disabled'] = get_disabled(conf, kwargs['rid'], svc)
-        kwargs['optional'] = get_optional(conf, kwargs['rid'], svc)
-        kwargs.update(get_sync_args(conf, kwargs['rid'], svc))
+        kwargs['disabled'] = get_disabled(svc, kwargs['rid'])
+        kwargs['optional'] = get_optional(svc, kwargs['rid'])
+        kwargs.update(get_sync_args(svc, kwargs['rid']))
         r = resSyncRsync.Rsync(**kwargs)
         svc += r
 
-def add_sync_docker(svc, conf, s):
+def add_sync_docker(svc, s):
     kwargs = {}
 
     try:
-        kwargs['target'] = conf_get_string_scope(svc, conf, s, 'target').split(' ')
+        kwargs['target'] = svc.conf_get_string_scope(s, 'target').split(' ')
     except ex.OptNotFound:
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
 
     m = __import__('resSyncDocker')
     r = m.SyncDocker(**kwargs)
     svc += r
 
-def add_sync_btrfs(svc, conf, s):
+def add_sync_btrfs(svc, s):
     kwargs = {}
 
     try:
-        kwargs['src'] = conf_get_string_scope(svc, conf, s, 'src')
+        kwargs['src'] = svc.conf_get_string_scope(s, 'src')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have src set" % s)
         return
 
     try:
-        kwargs['dst'] = conf_get_string_scope(svc, conf, s, 'dst')
+        kwargs['dst'] = svc.conf_get_string_scope(s, 'dst')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have dst set" % s)
         return
 
     try:
-        kwargs['target'] = conf_get_string_scope(svc, conf, s, 'target').split()
+        kwargs['target'] = svc.conf_get_string_scope(s, 'target').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have target set" % s)
         return
 
     try:
-        kwargs['recursive'] = conf_get_boolean(svc, conf, s, 'recursive')
+        kwargs['recursive'] = svc.conf_get_boolean(s, 'recursive')
     except ex.OptNotFound:
         pass
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     btrfs = __import__('resSyncBtrfs')
     r = btrfs.SyncBtrfs(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_zfs(svc, conf, s):
+def add_sync_zfs(svc, s):
     kwargs = {}
 
     try:
-        kwargs['src'] = conf_get_string_scope(svc, conf, s, 'src')
+        kwargs['src'] = svc.conf_get_string_scope(s, 'src')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have src set" % s)
         return
 
     try:
-        kwargs['dst'] = conf_get_string_scope(svc, conf, s, 'dst')
+        kwargs['dst'] = svc.conf_get_string_scope(s, 'dst')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have dst set" % s)
         return
 
     try:
-        kwargs['target'] = conf_get_string_scope(svc, conf, s, 'target').split()
+        kwargs['target'] = svc.conf_get_string_scope(s, 'target').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have target set" % s)
         return
 
     try:
-        kwargs['recursive'] = conf_get_boolean(svc, conf, s, 'recursive')
+        kwargs['recursive'] = svc.conf_get_boolean(s, 'recursive')
     except ex.OptNotFound:
         pass
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     zfs = __import__('resSyncZfs')
     r = zfs.SyncZfs(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_dds(svc, conf, s):
+def add_sync_dds(svc, s):
     kwargs = {}
 
     try:
-        kwargs['src'] = conf_get_string_scope(svc, conf, s, 'src')
+        kwargs['src'] = svc.conf_get_string_scope(s, 'src')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have src set" % s)
         return
 
     dsts = {}
     for node in svc.nodes | svc.drpnodes:
-        dst = conf_get_string_scope(svc, conf, s, 'dst', impersonate=node)
+        dst = svc.conf_get_string_scope(s, 'dst', impersonate=node)
         dsts[node] = dst
 
     if len(dsts) == 0:
@@ -2486,48 +2218,48 @@ def add_sync_dds(svc, conf, s):
     kwargs['dsts'] = dsts
 
     try:
-        kwargs['target'] = conf_get_string_scope(svc, conf, s, 'target').split()
+        kwargs['target'] = svc.conf_get_string_scope(s, 'target').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have target set" % s)
         return
 
     try:
-        kwargs['sender'] = conf_get_string(svc, conf, s, 'sender')
+        kwargs['sender'] = svc.conf_get_string(s, 'sender')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['snap_size'] = conf_get_int_scope(svc, conf, s, 'snap_size')
+        kwargs['snap_size'] = svc.conf_get_int_scope(s, 'snap_size')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['delta_store'] = conf_get_string_scope(svc, conf, s, 'delta_store')
+        kwargs['delta_store'] = svc.conf_get_string_scope(s, 'delta_store')
     except ex.OptNotFound:
         pass
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     dds = __import__('resSyncDds')
     r = dds.syncDds(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_dcsckpt(svc, conf, s):
+def add_sync_dcsckpt(svc, s):
     kwargs = {}
 
     try:
-        kwargs['dcs'] = set(conf_get_string_scope(svc, conf, s, 'dcs').split())
+        kwargs['dcs'] = set(svc.conf_get_string_scope(s, 'dcs').split())
     except ex.OptNotFound:
         svc.log.error("config file section %s must have 'dcs' set" % s)
         return
 
     try:
-        kwargs['manager'] = set(conf_get_string_scope(svc, conf, s, 'manager').split())
+        kwargs['manager'] = set(svc.conf_get_string_scope(s, 'manager').split())
     except ex.OptNotFound:
         svc.log.error("config file section %s must have 'manager' set" % s)
         return
@@ -2545,199 +2277,199 @@ def add_sync_dcsckpt(svc, conf, s):
     kwargs['pairs'] = pairs
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     try:
         sc = __import__('resSyncDcsCkpt'+rcEnv.sysname)
     except:
         sc = __import__('resSyncDcsCkpt')
     r = sc.syncDcsCkpt(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_dcssnap(svc, conf, s):
+def add_sync_dcssnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['dcs'] = set(conf_get_string(svc, conf, s, 'dcs').split())
+        kwargs['dcs'] = set(svc.conf_get_string(s, 'dcs').split())
     except ex.OptNotFound:
         svc.log.error("config file section %s must have 'dcs' set" % s)
         return
 
     try:
-        kwargs['manager'] = set(conf_get_string(svc, conf, s, 'manager').split())
+        kwargs['manager'] = set(svc.conf_get_string(s, 'manager').split())
     except ex.OptNotFound:
         svc.log.error("config file section %s must have 'manager' set" % s)
         return
 
     try:
-        kwargs['snapname'] = set(conf_get_string(svc, conf, s, 'snapname').split())
+        kwargs['snapname'] = set(svc.conf_get_string(s, 'snapname').split())
     except ex.OptNotFound:
         svc.log.error("config file section %s must have 'snapname' set" % s)
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     try:
         sc = __import__('resSyncDcsSnap'+rcEnv.sysname)
     except:
         sc = __import__('resSyncDcsSnap')
     r = sc.syncDcsSnap(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_s3(svc, conf, s):
+def add_sync_s3(svc, s):
     kwargs = {}
 
     try:
-        kwargs['full_schedule'] = conf_get_string_scope(svc, conf, s, 'full_schedule')
+        kwargs['full_schedule'] = svc.conf_get_string_scope(s, 'full_schedule')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['options'] = conf_get_string_scope(svc, conf, s, 'options').split()
+        kwargs['options'] = svc.conf_get_string_scope(s, 'options').split()
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['snar'] = conf_get_string_scope(svc, conf, s, 'snar')
+        kwargs['snar'] = svc.conf_get_string_scope(s, 'snar')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['bucket'] = conf_get_string_scope(svc, conf, s, 'bucket')
+        kwargs['bucket'] = svc.conf_get_string_scope(s, 'bucket')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have bucket set" % s)
         return
 
     try:
-        kwargs['src'] = conf_get_string_scope(svc, conf, s, 'src').split()
+        kwargs['src'] = svc.conf_get_string_scope(s, 'src').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have src set" % s)
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     sc = __import__('resSyncS3')
     r = sc.syncS3(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_zfssnap(svc, conf, s):
+def add_sync_zfssnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['keep'] = conf_get_int_scope(svc, conf, s, 'keep')
+        kwargs['keep'] = svc.conf_get_int_scope(s, 'keep')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['recursive'] = conf_get_boolean_scope(svc, conf, s, 'recursive')
+        kwargs['recursive'] = svc.conf_get_boolean_scope(s, 'recursive')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['dataset'] = conf_get_string_scope(svc, conf, s, 'dataset').split()
+        kwargs['dataset'] = svc.conf_get_string_scope(s, 'dataset').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have dataset set" % s)
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     sc = __import__('resSyncZfsSnap')
     r = sc.syncZfsSnap(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_btrfssnap(svc, conf, s):
+def add_sync_btrfssnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string_scope(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['keep'] = conf_get_int_scope(svc, conf, s, 'keep')
+        kwargs['keep'] = svc.conf_get_int_scope(s, 'keep')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['subvol'] = conf_get_string_scope(svc, conf, s, 'subvol').split()
+        kwargs['subvol'] = svc.conf_get_string_scope(s, 'subvol').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have subvol set" % s)
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     sc = __import__('resSyncBtrfsSnap')
     r = sc.syncBtrfsSnap(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_necismsnap(svc, conf, s):
+def add_sync_necismsnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['array'] = conf_get_string_scope(svc, conf, s, 'array')
+        kwargs['array'] = svc.conf_get_string_scope(s, 'array')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['devs'] = conf_get_string_scope(svc, conf, s, 'devs')
+        kwargs['devs'] = svc.conf_get_string_scope(s, 'devs')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have devs set" % s)
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     try:
         sc = __import__('resSyncNecIsmSnap'+rcEnv.sysname)
     except:
         sc = __import__('resSyncNecIsmSnap')
     r = sc.syncNecIsmSnap(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_evasnap(svc, conf, s):
+def add_sync_evasnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['eva_name'] = conf_get_string(svc, conf, s, 'eva_name')
+        kwargs['eva_name'] = svc.conf_get_string(s, 'eva_name')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have eva_name set" % s)
         return
 
     try:
-        kwargs['snap_name'] = conf_get_string(svc, conf, s, 'snap_name')
+        kwargs['snap_name'] = svc.conf_get_string(s, 'snap_name')
     except ex.OptNotFound:
         kwargs['snap_name'] = svc.svcname
 
@@ -2752,30 +2484,30 @@ def add_sync_evasnap(svc, conf, s):
         kwargs['pairs'] = pairs
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     try:
         sc = __import__('resSyncEvasnap'+rcEnv.sysname)
     except:
         sc = __import__('resSyncEvasnap')
     r = sc.syncEvasnap(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_hp3parsnap(svc, conf, s):
+def add_sync_hp3parsnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['array'] = conf_get_string_scope(svc, conf, s, 'array')
+        kwargs['array'] = svc.conf_get_string_scope(s, 'array')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have array set" % s)
         return
 
     try:
-        vv_names = conf_get_string_scope(svc, conf, s, 'vv_names').split()
+        vv_names = svc.conf_get_string_scope(s, 'vv_names').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have vv_names set" % s)
         return
@@ -2787,38 +2519,38 @@ def add_sync_hp3parsnap(svc, conf, s):
     kwargs['vv_names'] = vv_names
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     try:
         sc = __import__('resSyncHp3parSnap'+rcEnv.sysname)
     except:
         sc = __import__('resSyncHp3parSnap')
     r = sc.syncHp3parSnap(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_hp3par(svc, conf, s):
+def add_sync_hp3par(svc, s):
     kwargs = {}
 
     try:
-        kwargs['mode'] = conf_get_string_scope(svc, conf, s, 'mode')
+        kwargs['mode'] = svc.conf_get_string_scope(s, 'mode')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have mode set" % s)
         return
 
     try:
-        kwargs['array'] = conf_get_string_scope(svc, conf, s, 'array')
+        kwargs['array'] = svc.conf_get_string_scope(s, 'array')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have array set" % s)
         return
 
     rcg_names = {}
     for node in svc.nodes | svc.drpnodes:
-        array = conf_get_string_scope(svc, conf, s, 'array', impersonate=node)
-        rcg = conf_get_string_scope(svc, conf, s, 'rcg', impersonate=node)
+        array = svc.conf_get_string_scope(s, 'array', impersonate=node)
+        rcg = svc.conf_get_string_scope(s, 'rcg', impersonate=node)
         rcg_names[array] = rcg
 
     if len(rcg_names) == 0:
@@ -2828,229 +2560,229 @@ def add_sync_hp3par(svc, conf, s):
     kwargs['rcg_names'] = rcg_names
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     try:
         sc = __import__('resSyncHp3par'+rcEnv.sysname)
     except:
         sc = __import__('resSyncHp3par')
     r = sc.syncHp3par(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_symsrdfs(svc, conf, s):
+def add_sync_symsrdfs(svc, s):
     kwargs = {}
 
     try:
-        kwargs['symdg'] = conf_get_string(svc, conf, s, 'symdg')
+        kwargs['symdg'] = svc.conf_get_string(s, 'symdg')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have symdg set" % s)
         return
 
     try:
-        kwargs['rdfg'] = conf_get_int(svc, conf, s, 'rdfg')
+        kwargs['rdfg'] = svc.conf_get_int(s, 'rdfg')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have rdfg number set" % s)
         return
 
     try:
-        kwargs['symid'] = conf_get_string_scope(svc, conf, s, 'symid')
+        kwargs['symid'] = svc.conf_get_string_scope(s, 'symid')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have symid" % s)
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     try:
         sc = __import__('resSyncSymSrdfS'+rcEnv.sysname)
     except:
         sc = __import__('resSyncSymSrdfS')
     r = sc.syncSymSrdfS(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
 
-def add_sync_radosclone(svc, conf, s):
+def add_sync_radosclone(svc, s):
     kwargs = {}
 
     try:
-        kwargs['client_id'] = conf_get_string_scope(svc, conf, s, 'client_id')
+        kwargs['client_id'] = svc.conf_get_string_scope(s, 'client_id')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['keyring'] = conf_get_string_scope(svc, conf, s, 'keyring')
+        kwargs['keyring'] = svc.conf_get_string_scope(s, 'keyring')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['pairs'] = conf_get_string_scope(svc, conf, s, 'pairs').split()
+        kwargs['pairs'] = svc.conf_get_string_scope(s, 'pairs').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have pairs set" % s)
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     try:
         sc = __import__('resSyncRados'+rcEnv.sysname)
     except:
         sc = __import__('resSyncRados')
     r = sc.syncRadosClone(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_radossnap(svc, conf, s):
+def add_sync_radossnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['client_id'] = conf_get_string_scope(svc, conf, s, 'client_id')
+        kwargs['client_id'] = svc.conf_get_string_scope(s, 'client_id')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['keyring'] = conf_get_string_scope(svc, conf, s, 'keyring')
+        kwargs['keyring'] = svc.conf_get_string_scope(s, 'keyring')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['images'] = conf_get_string_scope(svc, conf, s, 'images').split()
+        kwargs['images'] = svc.conf_get_string_scope(s, 'images').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have images set" % s)
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     try:
         sc = __import__('resSyncRados'+rcEnv.sysname)
     except:
         sc = __import__('resSyncRados')
     r = sc.syncRadosSnap(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_symsnap(svc, conf, s):
-    _add_sync_symclone(svc, conf, s, "sync.symsnap")
+def add_sync_symsnap(svc, s):
+    _add_sync_symclone(svc, s, "sync.symsnap")
 
-def add_sync_symclone(svc, conf, s):
-    _add_sync_symclone(svc, conf, s, "sync.symclone")
+def add_sync_symclone(svc, s):
+    _add_sync_symclone(svc, s, "sync.symclone")
 
-def _add_sync_symclone(svc, conf, s, t):
+def _add_sync_symclone(svc, s, t):
     kwargs = {}
     kwargs['type'] = t
     try:
-        kwargs['pairs'] = conf_get_string(svc, conf, s, 'pairs').split()
+        kwargs['pairs'] = svc.conf_get_string(s, 'pairs').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have pairs set" % s)
         return
 
     try:
-        kwargs['symid'] = conf_get_string_scope(svc, conf, s, 'symid')
+        kwargs['symid'] = svc.conf_get_string_scope(s, 'symid')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have sid set" % s)
         return
 
     try:
-        kwargs['recreate_timeout'] = conf_get_int(svc, conf, s, 'recreate_timeout')
+        kwargs['recreate_timeout'] = svc.conf_get_int(s, 'recreate_timeout')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['consistent'] = conf_get_boolean(svc, conf, s, 'consistent')
+        kwargs['consistent'] = svc.conf_get_boolean(s, 'consistent')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['precopy'] = conf_get_boolean(svc, conf, s, 'precopy')
+        kwargs['precopy'] = svc.conf_get_boolean(s, 'precopy')
     except ex.OptNotFound:
         pass
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     try:
         sc = __import__('resSyncSymclone'+rcEnv.sysname)
     except:
         sc = __import__('resSyncSymclone')
     r = sc.syncSymclone(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_ibmdssnap(svc, conf, s):
+def add_sync_ibmdssnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['pairs'] = conf_get_string(svc, conf, s, 'pairs').split()
+        kwargs['pairs'] = svc.conf_get_string(s, 'pairs').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have pairs set" % s)
         return
 
     try:
-        kwargs['array'] = conf_get_string(svc, conf, s, 'array')
+        kwargs['array'] = svc.conf_get_string(s, 'array')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have array set" % s)
         return
 
     try:
-        kwargs['bgcopy'] = conf_get_boolean(svc, conf, s, 'bgcopy')
+        kwargs['bgcopy'] = svc.conf_get_boolean(s, 'bgcopy')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have bgcopy set" % s)
         return
 
     try:
-        kwargs['recording'] = conf_get_boolean(svc, conf, s, 'recording')
+        kwargs['recording'] = svc.conf_get_boolean(s, 'recording')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have recording set" % s)
         return
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
     try:
         m = __import__('resSyncIbmdsSnap'+rcEnv.sysname)
     except:
         m = __import__('resSyncIbmdsSnap')
     r = m.syncIbmdsSnap(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_nexenta(svc, conf, s):
+def add_sync_nexenta(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = conf_get_string(svc, conf, s, 'name')
+        kwargs['name'] = svc.conf_get_string(s, 'name')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have 'name' set" % s)
         return
 
     try:
-        kwargs['path'] = conf_get_string_scope(svc, conf, s, 'path')
+        kwargs['path'] = svc.conf_get_string_scope(s, 'path')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have path set" % s)
         return
 
     try:
-        kwargs['reversible'] = conf_get_boolean_scope(svc, conf, s, "reversible")
+        kwargs['reversible'] = svc.conf_get_boolean_scope(s, "reversible")
     except:
         pass
 
@@ -3076,28 +2808,28 @@ def add_sync_nexenta(svc, conf, s):
 
     kwargs['filers'] = filers
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
 
     import resSyncNexenta
     r = resSyncNexenta.syncNexenta(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_netapp(svc, conf, s):
+def add_sync_netapp(svc, s):
     kwargs = {}
 
     try:
-        kwargs['path'] = conf_get_string_scope(svc, conf, s, 'path')
+        kwargs['path'] = svc.conf_get_string_scope(s, 'path')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have path set" % s)
         return
 
     try:
-        kwargs['user'] = conf_get_string_scope(svc, conf, s, 'user')
+        kwargs['user'] = svc.conf_get_string_scope(s, 'user')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have user set" % s)
         return
@@ -3124,18 +2856,18 @@ def add_sync_netapp(svc, conf, s):
 
     kwargs['filers'] = filers
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
 
     import resSyncNetapp
     r = resSyncNetapp.syncNetapp(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_sync_rsync(svc, conf, s):
+def add_sync_rsync(svc, s):
     if s.startswith("sync#i"):
         # internal syncs have their own dedicated add function
         return
@@ -3144,7 +2876,7 @@ def add_sync_rsync(svc, conf, s):
     kwargs = {}
     kwargs['src'] = []
     try:
-        _s = conf_get_string_scope(svc, conf, s, 'src')
+        _s = svc.conf_get_string_scope(s, 'src')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have src set" % s)
         return
@@ -3153,25 +2885,25 @@ def add_sync_rsync(svc, conf, s):
         kwargs['src'] += glob.glob(src)
 
     try:
-        kwargs['dst'] = conf_get_string_scope(svc, conf, s, 'dst')
+        kwargs['dst'] = svc.conf_get_string_scope(s, 'dst')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have dst set" % s)
         return
 
     try:
-        kwargs['dstfs'] = conf_get_string_scope(svc, conf, s, 'dstfs')
+        kwargs['dstfs'] = svc.conf_get_string_scope(s, 'dstfs')
     except ex.OptNotFound:
         pass
 
     try:
-        _s = conf_get_string_scope(svc, conf, s, 'options')
+        _s = svc.conf_get_string_scope(s, 'options')
         options += _s.split()
     except ex.OptNotFound:
         pass
 
     try:
         # for backward compat (use options keyword now)
-        _s = conf_get_string_scope(svc, conf, s, 'exclude')
+        _s = svc.conf_get_string_scope(s, 'exclude')
         options += _s.split()
     except ex.OptNotFound:
         pass
@@ -3179,18 +2911,18 @@ def add_sync_rsync(svc, conf, s):
     kwargs['options'] = options
 
     try:
-        kwargs['snap'] = conf_get_boolean_scope(svc, conf, s, 'snap')
+        kwargs['snap'] = svc.conf_get_boolean_scope(s, 'snap')
     except ex.OptNotFound:
         pass
 
     try:
-        _s = conf_get_string_scope(svc, conf, s, 'target')
+        _s = svc.conf_get_string_scope(s, 'target')
         target = _s.split()
     except ex.OptNotFound:
         target = []
 
     try:
-        kwargs['bwlimit'] = conf_get_int_scope(svc, conf, s, 'bwlimit')
+        kwargs['bwlimit'] = svc.conf_get_int_scope(s, 'bwlimit')
     except ex.OptNotFound:
         pass
 
@@ -3199,67 +2931,66 @@ def add_sync_rsync(svc, conf, s):
     if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
     kwargs['target'] = targethash
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs.update(get_sync_args(conf, s, svc))
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs.update(get_sync_args(svc, s))
 
     r = resSyncRsync.Rsync(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_task(svc, conf, s):
+def add_task(svc, s):
     kwargs = {}
 
     try:
-        kwargs['command'] = conf_get_string_scope(svc, conf, s, 'command')
+        kwargs['command'] = svc.conf_get_string_scope(s, 'command')
     except ex.OptNotFound:
         svc.log.error("'command' is not defined in config file section %s"%s)
         return
 
     try:
-        kwargs['on_error'] = conf_get_string_scope(svc, conf, s, 'on_error')
+        kwargs['on_error'] = svc.conf_get_string_scope(s, 'on_error')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['user'] = conf_get_string_scope(svc, conf, s, 'user')
+        kwargs['user'] = svc.conf_get_string_scope(s, 'user')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['confirmation'] = conf_get_boolean_scope(svc, conf, s, 'confirmation')
+        kwargs['confirmation'] = svc.conf_get_boolean_scope(s, 'confirmation')
     except ex.OptNotFound:
         pass
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     import resTask
     r = resTask.Task(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
-    r.pg_settings = get_pg_settings(svc, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
 
-def add_app(svc, conf, s):
+def add_app(svc, s):
     resApp = ximport('resApp')
     kwargs = {}
 
     try:
-        kwargs['script'] = conf_get_string_scope(svc, conf, s, 'script')
+        kwargs['script'] = svc.conf_get_string_scope(s, 'script')
     except ex.OptNotFound:
         svc.log.error("'script' is not defined in config file section %s"%s)
         return
 
     try:
-        kwargs['start'] = conf_get_int_scope(svc, conf, s, 'start')
+        kwargs['start'] = svc.conf_get_int_scope(s, 'start')
     except ex.OptNotFound:
         pass
     except:
@@ -3267,7 +2998,7 @@ def add_app(svc, conf, s):
         return
 
     try:
-        kwargs['stop'] = conf_get_int_scope(svc, conf, s, 'stop')
+        kwargs['stop'] = svc.conf_get_int_scope(s, 'stop')
     except ex.OptNotFound:
         pass
     except:
@@ -3275,7 +3006,7 @@ def add_app(svc, conf, s):
         return
 
     try:
-        kwargs['check'] = conf_get_int_scope(svc, conf, s, 'check')
+        kwargs['check'] = svc.conf_get_int_scope(s, 'check')
     except ex.OptNotFound:
         pass
     except:
@@ -3283,7 +3014,7 @@ def add_app(svc, conf, s):
         return
 
     try:
-        kwargs['info'] = conf_get_int_scope(svc, conf, s, 'info')
+        kwargs['info'] = svc.conf_get_int_scope(s, 'info')
     except ex.OptNotFound:
         pass
     except:
@@ -3291,89 +3022,22 @@ def add_app(svc, conf, s):
         return
 
     try:
-        kwargs['timeout'] = conf_get_int_scope(svc, conf, s, 'timeout')
+        kwargs['timeout'] = svc.conf_get_int_scope(s, 'timeout')
     except ex.OptNotFound:
         pass
 
     kwargs['rid'] = s
-    kwargs['subset'] = get_subset(conf, s, svc)
-    kwargs['tags'] = get_tags(conf, s, svc)
-    kwargs['always_on'] = always_on_nodes_set(svc, conf, s)
-    kwargs['disabled'] = get_disabled(conf, s, svc)
-    kwargs['optional'] = get_optional(conf, s, svc)
-    kwargs['monitor'] = get_monitor(conf, s, svc)
-    kwargs['restart'] = get_restart(conf, s, svc)
+    kwargs['subset'] = get_subset(svc, s)
+    kwargs['tags'] = get_tags(svc, s)
+    kwargs['always_on'] = always_on_nodes_set(svc, s)
+    kwargs['disabled'] = get_disabled(svc, s)
+    kwargs['optional'] = get_optional(svc, s)
+    kwargs['monitor'] = get_monitor(svc, s)
+    kwargs['restart'] = get_restart(svc, s)
 
     r = resApp.App(**kwargs)
-    add_triggers_and_requires(svc, r, conf, s)
-    r.pg_settings = get_pg_settings(svc, s)
+    add_triggers_and_requires(svc, r, s)
     svc += r
-
-def get_pg_settings(svc, s):
-    d = {}
-    if not os.path.exists(svc.paths.cf):
-        return d
-
-    if s != "DEFAULT":
-        conf = rcConfigParser.RawConfigParser()
-        import codecs
-        with codecs.open(svc.paths.cf, "r", "utf8") as f:
-            if sys.version_info[0] >= 3:
-                conf.read_file(f)
-            else:
-                conf.readfp(f)
-        import copy
-        for o in copy.copy(conf.defaults()):
-            conf.remove_option("DEFAULT", o)
-    else:
-        conf = svc.config
-
-    try:
-        d["cpus"] = conf_get_string_scope(svc, conf, s, "pg_cpus")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        d["cpu_shares"] = conf_get_string_scope(svc, conf, s, "pg_cpu_shares")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        d["cpu_quota"] = conf_get_string_scope(svc, conf, s, "pg_cpu_quota")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        d["mems"] = conf_get_string_scope(svc, conf, s, "pg_mems")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        d["mem_oom_control"] = conf_get_string_scope(svc, conf, s, "pg_mem_oom_control")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        d["mem_limit"] = conf_get_string_scope(svc, conf, s, "pg_mem_limit")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        d["mem_swappiness"] = conf_get_string_scope(svc, conf, s, "pg_mem_swappiness")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        d["vmem_limit"] = conf_get_string_scope(svc, conf, s, "pg_vmem_limit")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        d["blkio_weight"] = conf_get_string_scope(svc, conf, s, "pg_blkio_weight")
-    except ex.OptNotFound:
-        pass
-
-    return d
 
 
 def setup_logging(svcnames):
@@ -3397,153 +3061,87 @@ def build(name, minimal=False, svcconf=None):
     it return None if service Name is not managed by local node
     else it return new Svc instance
     """
-    if svcconf is None:
-        svcconf = os.path.join(rcEnv.paths.pathetc, name) + '.conf'
-    svcinitd = os.path.join(rcEnv.paths.pathetc, name) + '.d'
-
     #
     # node discovery is hidden in a separate module to
     # keep it separate from the framework stuff
     #
     discover_node()
+    svc = Svc(svcname=name)
 
-    #
-    # parse service configuration file
-    # class RawConfigParser instance name: 'conf'
-    #
-    svcmode = "hosted"
-    conf = None
-    kwargs = {'svcname': name}
-    if os.path.isfile(svcconf):
-        conf = rcConfigParser.RawConfigParser()
-        import codecs
-        with codecs.open(svcconf, "r", "utf8") as f:
-            if sys.version_info[0] >= 3:
-                conf.read_file(f)
-            else:
-                conf.readfp(f)
-        defaults = conf.defaults()
-        if "mode" in defaults:
-            svcmode = conf_get_string_scope({}, conf, 'DEFAULT', "mode")
+    try:
+        encapnodes = [n.lower() for n in svc.conf_get_string_scope('DEFAULT', "encapnodes").split() if n != ""]
+    except ex.OptNotFound:
+        encapnodes = []
+    svc.encapnodes = set(encapnodes)
 
-        d_nodes = Storage()
-        d_nodes.svcname = name
+    try:
+        nodes = [n.lower() for n in svc.conf_get_string_scope('DEFAULT', "nodes").split() if n != ""]
+    except ex.OptNotFound:
+        nodes = [rcEnv.nodename]
+    svc.nodes = set(nodes)
 
-        try:
-            encapnodes = [n.lower() for n in conf_get_string_scope(d_nodes, conf, 'DEFAULT', "encapnodes").split() if n != ""]
-        except ex.OptNotFound:
-            encapnodes = []
-        d_nodes['encapnodes'] = set(encapnodes)
+    try:
+        drpnodes = [n.lower() for n in svc.conf_get_string_scope('DEFAULT', "drpnodes").split() if n != ""]
+    except ex.OptNotFound:
+        drpnodes = []
 
-        try:
-            nodes = [n.lower() for n in conf_get_string_scope(d_nodes, conf, 'DEFAULT', "nodes").split() if n != ""]
-        except ex.OptNotFound:
-            nodes = [rcEnv.nodename]
-        d_nodes['nodes'] = set(nodes)
+    try:
+        drpnode = svc.conf_get_string_scope('DEFAULT', "drpnode").lower()
+        if drpnode not in drpnodes and drpnode != "":
+            drpnodes.append(drpnode)
+    except ex.OptNotFound:
+        drpnode = ''
+    svc.drpnodes = set(drpnodes)
 
-        try:
-            drpnodes = [n.lower() for n in conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drpnodes").split() if n != ""]
-        except ex.OptNotFound:
-            drpnodes = []
+    try:
+        flex_primary = svc.conf_get_string_scope('DEFAULT', "flex_primary").lower()
+    except ex.OptNotFound:
+        if len(nodes) > 0:
+            flex_primary = nodes[0]
+        else:
+            flex_primary = ''
+    svc.flex_primary = flex_primary
 
-        try:
-            drpnode = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drpnode").lower()
-            if drpnode not in drpnodes and drpnode != "":
-                drpnodes.append(drpnode)
-        except ex.OptNotFound:
-            drpnode = ''
-        d_nodes['drpnodes'] = set(drpnodes)
+    try:
+        drp_flex_primary = svc.conf_get_string_scope('DEFAULT', "drp_flex_primary").lower()
+    except ex.OptNotFound:
+        if len(drpnodes) > 0:
+            drp_flex_primary = drpnodes[0]
+        else:
+            drp_flex_primary = ''
+    svc.drp_flex_primary = drp_flex_primary
 
-        try:
-            flex_primary = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "flex_primary").lower()
-        except ex.OptNotFound:
-            if len(nodes) > 0:
-                flex_primary = nodes[0]
-            else:
-                flex_primary = ''
-        d_nodes['flex_primary'] = flex_primary
-
-        try:
-            drp_flex_primary = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "drp_flex_primary").lower()
-        except ex.OptNotFound:
-            if len(drpnodes) > 0:
-                drp_flex_primary = drpnodes[0]
-            else:
-                drp_flex_primary = ''
-        d_nodes['drp_flex_primary'] = drp_flex_primary
-
-        if "pkg_name" in defaults:
-            if svcmode in ["sg", "rhcs", "vcs"]:
-                kwargs['pkg_name'] = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "pkg_name")
-
-
-    #
-    # dynamically import the module matching the service mode
-    # and instanciate a service
-    #
-    mod , svc_class_name = svcmode_mod_name(svcmode)
-    svcMod = __import__(mod)
-    svc = getattr(svcMod, svc_class_name)(**kwargs)
-
-    #
-    # Store useful properties
-    #
-    svc.svcmode = svcmode
-    svc.initd = svcinitd
-    svc.config = conf
-
-    if hasattr(svc, "builder"):
-        builder_props = svc.builder_props
-        svc.builder()
-    else:
-        builder_props = []
 
     #
     # Store and validate the service type
     #
-    if "env" in defaults:
-        svc.svc_env = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "env")
-    elif "service_type" in defaults:
-        svc.svc_env = conf_get_string_scope(d_nodes, conf, 'DEFAULT', "service_type")
-
-    #
-    # Setup service properties from config file content
-    #
-    if "nodes" not in builder_props:
-        svc.nodes = set(nodes)
-    if "drpnodes" not in builder_props:
-        svc.drpnodes = set(drpnodes)
-    if "drpnode" not in builder_props:
-        svc.drpnode = drpnode
-    if "encapnodes" not in builder_props:
-        svc.encapnodes = set(encapnodes)
-    if "flex_primary" not in builder_props:
-        svc.flex_primary = flex_primary
-    if "drp_flex_primary" not in builder_props:
-        svc.drp_flex_primary = drp_flex_primary
+    if svc.conf_has_option_scoped("DEFAULT", "env"):
+        svc.svc_env = svc.conf_get_string_scope('DEFAULT', "env")
+    elif svc.conf_has_option_scoped("DEFAULT", "service_type"):
+        svc.svc_env = svc.conf_get_string_scope('DEFAULT', "service_type")
 
     try:
-        svc.lock_timeout = conf_get_int_scope(svc, conf, 'DEFAULT', 'lock_timeout')
+        svc.lock_timeout = svc.conf_get_int_scope('DEFAULT', 'lock_timeout')
     except ex.OptNotFound:
         pass
 
-    if conf.has_option('DEFAULT', 'disable'):
-        svc.disabled = conf.getboolean("DEFAULT", "disable")
+    if svc.config.has_option('DEFAULT', 'disable'):
+        svc.disabled = svc.config.getboolean("DEFAULT", "disable")
     else:
         pass
 
     try:
-        svc.presnap_trigger = conf_get_string_scope(svc, conf, 'DEFAULT', 'presnap_trigger').split()
+        svc.presnap_trigger = svc.conf_get_string_scope('DEFAULT', 'presnap_trigger').split()
     except ex.OptNotFound:
         pass
 
     try:
-        svc.postsnap_trigger = conf_get_string_scope(svc, conf, 'DEFAULT', 'postsnap_trigger').split()
+        svc.postsnap_trigger = svc.conf_get_string_scope('DEFAULT', 'postsnap_trigger').split()
     except ex.OptNotFound:
         pass
 
     try:
-        svc.disable_rollback = not conf_get_boolean_scope(svc, conf, 'DEFAULT', "rollback")
+        svc.disable_rollback = not svc.conf_get_boolean_scope('DEFAULT', "rollback")
     except ex.OptNotFound:
         pass
 
@@ -3556,12 +3154,12 @@ def build(name, minimal=False, svcconf=None):
     # amazon options
     #
     try:
-        svc.aws = conf_get_string_scope(svc, conf, "DEFAULT", 'aws')
+        svc.aws = svc.conf_get_string_scope("DEFAULT", 'aws')
     except ex.OptNotFound:
         pass
 
     try:
-        svc.aws_profile = conf_get_string_scope(svc, conf, "DEFAULT", 'aws_profile')
+        svc.aws_profile = svc.conf_get_string_scope("DEFAULT", 'aws_profile')
     except ex.OptNotFound:
         pass
 
@@ -3569,24 +3167,23 @@ def build(name, minimal=False, svcconf=None):
     # process group options
     #
     try:
-        svc.create_pg = conf_get_boolean_scope(svc, conf, "DEFAULT", 'create_pg')
-    except ex.OptNotFound:
-        pass
-    svc.pg_settings = get_pg_settings(svc, "DEFAULT")
-
-    try:
-        svc.autostart_node = conf_get_string_scope(svc, conf, 'DEFAULT', 'autostart_node').split()
+        svc.create_pg = svc.conf_get_boolean_scope("DEFAULT", 'create_pg')
     except ex.OptNotFound:
         pass
 
     try:
-        anti_affinity = conf_get_string_scope(svc, conf, 'DEFAULT', 'anti_affinity')
-        svc.anti_affinity = set(conf_get_string_scope(svc, conf, 'DEFAULT', 'anti_affinity').split())
+        svc.autostart_node = svc.conf_get_string_scope('DEFAULT', 'autostart_node').split()
     except ex.OptNotFound:
         pass
 
     try:
-        svc.clustertype = conf_get_string_scope(svc, conf, 'DEFAULT', 'cluster_type')
+        anti_affinity = svc.conf_get_string_scope('DEFAULT', 'anti_affinity')
+        svc.anti_affinity = set(svc.conf_get_string_scope('DEFAULT', 'anti_affinity').split())
+    except ex.OptNotFound:
+        pass
+
+    try:
+        svc.clustertype = svc.conf_get_string_scope('DEFAULT', 'cluster_type')
     except ex.OptNotFound:
         pass
 
@@ -3594,7 +3191,7 @@ def build(name, minimal=False, svcconf=None):
         svc.ha = True
 
     try:
-        svc.flex_min_nodes = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_min_nodes')
+        svc.flex_min_nodes = svc.conf_get_int_scope('DEFAULT', 'flex_min_nodes')
     except ex.OptNotFound:
         svc.flex_min_nodes = 1
     if svc.flex_min_nodes < 0:
@@ -3604,7 +3201,7 @@ def build(name, minimal=False, svcconf=None):
         svc.flex_min_nodes = nb_nodes
 
     try:
-        svc.flex_max_nodes = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_max_nodes')
+        svc.flex_max_nodes = svc.conf_get_int_scope('DEFAULT', 'flex_max_nodes')
     except ex.OptNotFound:
         svc.flex_max_nodes = nb_nodes
     if svc.flex_max_nodes < nb_nodes:
@@ -3613,7 +3210,7 @@ def build(name, minimal=False, svcconf=None):
         svc.flex_max_nodes = svc.flex_min_nodes
 
     try:
-        svc.flex_cpu_low_threshold = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_cpu_low_threshold')
+        svc.flex_cpu_low_threshold = svc.conf_get_int_scope('DEFAULT', 'flex_cpu_low_threshold')
     except ex.OptNotFound:
         svc.flex_cpu_low_threshold = 10
     if svc.flex_cpu_low_threshold < 0:
@@ -3622,7 +3219,7 @@ def build(name, minimal=False, svcconf=None):
         raise ex.excInitError("invalid flex_cpu_low_threshold '%d' (>100)."%svc.flex_cpu_low_threshold)
 
     try:
-        svc.flex_cpu_high_threshold = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_cpu_high_threshold')
+        svc.flex_cpu_high_threshold = svc.conf_get_int_scope('DEFAULT', 'flex_cpu_high_threshold')
     except ex.OptNotFound:
         svc.flex_cpu_high_threshold = 90
     if svc.flex_cpu_high_threshold < 0:
@@ -3631,7 +3228,7 @@ def build(name, minimal=False, svcconf=None):
         raise ex.excInitError("invalid flex_cpu_high_threshold '%d' (>100)."%svc.flex_cpu_high_threshold)
 
     try:
-        svc.show_disabled = conf_get_boolean_scope(svc, conf, 'DEFAULT', 'show_disabled')
+        svc.show_disabled = svc.conf_get_boolean_scope('DEFAULT', 'show_disabled')
     except ex.OptNotFound:
         svc.show_disabled = True
 
@@ -3641,42 +3238,42 @@ def build(name, minimal=False, svcconf=None):
         raise ex.excInitError('not allowed to run on this node (svc env=%s node env=%s)' % (svc.svc_env, rcEnv.node_env))
 
     try:
-        svc.drp_type = conf_get_string_scope(svc, conf, 'DEFAULT', 'drp_type')
+        svc.drp_type = svc.conf_get_string_scope('DEFAULT', 'drp_type')
     except ex.OptNotFound:
         pass
 
     try:
-        svc.comment = conf_get_string_scope(svc, conf, 'DEFAULT', 'comment')
+        svc.comment = svc.conf_get_string_scope('DEFAULT', 'comment')
     except ex.OptNotFound:
         pass
 
     try:
-        svc.monitor_action = conf_get_string_scope(svc, conf, 'DEFAULT', "monitor_action")
+        svc.monitor_action = svc.conf_get_string_scope('DEFAULT', "monitor_action")
     except ex.OptNotFound:
         pass
 
     try:
-        svc.pre_monitor_action = conf_get_string_scope(svc, conf, 'DEFAULT', "pre_monitor_action")
+        svc.pre_monitor_action = svc.conf_get_string_scope('DEFAULT', "pre_monitor_action")
     except ex.OptNotFound:
         pass
 
     try:
-        svc.app = conf_get_string_scope(svc, conf, 'DEFAULT', "app")
+        svc.app = svc.conf_get_string_scope('DEFAULT', "app")
     except ex.OptNotFound:
         pass
 
     try:
-        svc.drnoaction = conf_get_boolean_scope(svc, conf, 'DEFAULT', "drnoaction")
+        svc.drnoaction = svc.conf_get_boolean_scope('DEFAULT', "drnoaction")
     except ex.OptNotFound:
         pass
 
     try:
-        svc.bwlimit = conf_get_int_scope(svc, conf, 'DEFAULT', "bwlimit")
+        svc.bwlimit = svc.conf_get_int_scope('DEFAULT', "bwlimit")
     except ex.OptNotFound:
         svc.bwlimit = None
 
     try:
-        svc.clustername = conf_get_string_scope(svc, conf, 'DEFAULT', "cluster")
+        svc.clustername = svc.conf_get_string_scope('DEFAULT', "cluster")
     except ex.OptNotFound:
         pass
 
@@ -3689,26 +3286,25 @@ def build(name, minimal=False, svcconf=None):
     #
     # instanciate resources
     #
-    add_resources('container', svc, conf)
-    add_resources('hb', svc, conf)
-    add_resources('stonith', svc, conf)
-    add_resources('ip', svc, conf)
-    add_resources('disk', svc, conf)
-    add_resources('fs', svc, conf)
-    add_resources('share', svc, conf)
-    add_resources('app', svc, conf)
-    add_resources('task', svc, conf)
+    add_resources(svc, 'container')
+    add_resources(svc, 'stonith')
+    add_resources(svc, 'ip')
+    add_resources(svc, 'disk')
+    add_resources(svc, 'fs')
+    add_resources(svc, 'share')
+    add_resources(svc, 'app')
+    add_resources(svc, 'task')
 
     # deprecated, folded into "disk"
-    add_resources('vdisk', svc, conf)
-    add_resources('vmdg', svc, conf)
-    add_resources('loop', svc, conf)
-    add_resources('drbd', svc, conf)
-    add_resources('vg', svc, conf)
-    add_resources('pool', svc, conf)
+    add_resources(svc, 'vdisk')
+    add_resources(svc, 'vmdg')
+    add_resources(svc, 'loop')
+    add_resources(svc, 'drbd')
+    add_resources(svc, 'vg')
+    add_resources(svc, 'pool')
 
-    add_resources('sync', svc, conf)
-    add_mandatory_syncs(svc, conf)
+    add_resources(svc, 'sync')
+    add_mandatory_syncs(svc)
 
     svc.post_build()
     return svc

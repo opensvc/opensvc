@@ -1,7 +1,6 @@
 from provisioning import Provisioning
 import os
 import rcExceptions as ex
-from svcBuilder import conf_get_string_scope, conf_get_int_scope
 from rcUtilities import convert_size
 from subprocess import *
 
@@ -20,25 +19,25 @@ class ProvisioningDisk(Provisioning):
             self.r.log.info("already provisioned")
             return
         try:
-            level = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "level")
+            level = self.r.svc.conf_get_string_scope(self.r.rid, "level")
         except:
             raise ex.excError("'level' provisioning parameter not set")
         try:
-            devs = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "devs").split()
+            devs = self.r.svc.conf_get_string_scope(self.r.rid, "devs").split()
         except:
             raise ex.excError("'devs' provisioning parameter not set")
         if len(devs) == 0:
             raise ex.excError("at least 2 devices must be set in the 'devs' provisioning parameter")
         try:
-            spares = conf_get_int_scope(self.r.svc, self.r.svc.config, self.r.rid, 'spares')
+            spares = self.r.svc.conf_get_int_scope(self.r.rid, 'spares')
         except:
             spares = 0
         try:
-            chunk = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, 'chunk')
+            chunk = self.r.svc.conf_get_string_scope(self.r.rid, 'chunk')
         except:
             chunk = None
         try:
-            layout = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, 'layout')
+            layout = self.r.svc.conf_get_string_scope(self.r.rid, 'layout')
         except:
             layout = None
 

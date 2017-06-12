@@ -5,7 +5,6 @@ from stat import *
 
 from rcGlobalEnv import rcEnv
 from provisioning import Provisioning
-from svcBuilder import conf_get_string_scope
 import rcExceptions as ex
 from rcUtilities import justcall
 
@@ -30,7 +29,7 @@ class ProvisioningDisk(Provisioning):
             return
 
         try:
-            self.pvs = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "pvs")
+            self.pvs = self.r.svc.conf_get_string_scope(self.r.rid, "pvs")
         except ex.OptNotFound:
             raise ex.excError("the 'pvs' parameter is mandatory for provisioning")
 

@@ -310,7 +310,7 @@ class Resource(object):
         self.action_triggers("post", action)
         self.action_triggers("blocking_post", action, blocking=True)
         if self.need_refresh_status(action):
-            self.status(refresh=True, restart=False)
+            self.status(refresh=True)
         return
 
     def need_refresh_status(self, action):
@@ -452,11 +452,10 @@ class Resource(object):
     def status(self, **kwargs):
         """
         Resource status evaluation method wrapper.
-        Handles caching, resource restart, nostatus tag and disabled flag.
+        Handles caching, nostatus tag and disabled flag.
         """
         verbose = kwargs.get("verbose", False)
         refresh = kwargs.get("refresh", False)
-        restart = kwargs.get("restart", True)
         ignore_nostatus = kwargs.get("ignore_nostatus", False)
 
         if self.disabled:
@@ -484,71 +483,7 @@ class Resource(object):
                            rcStatus.Status(self.rstatus))
             self.write_status()
 
-        if restart:
-            self.do_restart(last_status)
-
         return self.rstatus
-
-    def do_restart(self, last_status):
-        """
-        Restart a resource defined to be restarted when seen down.
-        """
-        restart_last_status = (
-            rcStatus.UP,
-            rcStatus.STDBY_UP,
-            rcStatus.STDBY_UP_WITH_UP,
-            rcStatus.STDBY_UP_WITH_DOWN
-        )
-        no_restart_status = (
-            rcStatus.UP,
-            rcStatus.STDBY_UP,
-            rcStatus.NA,
-            rcStatus.UNDEF,
-            rcStatus.STDBY_UP_WITH_UP,
-            rcStatus.STDBY_UP_WITH_DOWN,
-        )
-        if self.nb_restart == 0:
-            return
-        if self.rstatus in no_restart_status:
-            return
-        if last_status not in restart_last_status:
-            self.status_log("not restarted because previous status is %s" % \
-                            rcStatus.Status(last_status), "info")
-            return
-
-        if not hasattr(self, 'start'):
-            self.log.error("resource restart configured on resource %s with "
-                           "no 'start' action support", self.rid)
-            return
-
-        if self.svc.frozen():
-            msg = "resource restart skipped: service is frozen"
-            self.log.info(msg)
-            self.status_log(msg, "info")
-            return
-
-        if self.svc.lockfd is None:
-            try:
-                self.svc.svclock("resource_restart", timeout=0)
-            except ex.excError:
-                self.log.info("resource restart skipped: an action is running")
-                return
-            self.svc.svcunlock()
-
-        for i in range(self.nb_restart):
-            try:
-                self.log.info("restart resource %s. try number %d/%d",
-                              self.rid, i+1, self.nb_restart)
-                self.action("start")
-            except Exception as exc:
-                self.log.error("restart resource failed: " + str(exc))
-            self.rstatus = self.try_status()
-            self.write_status()
-            if self.rstatus == rcStatus.UP:
-                self.log.info("monitored resource %s restarted.", self.rid)
-                return
-            if i + 1 < self.nb_restart:
-                time.sleep(1)
 
     def write_status(self):
         """

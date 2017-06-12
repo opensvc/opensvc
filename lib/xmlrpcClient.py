@@ -540,7 +540,6 @@ class Collector(object):
 
         vars = ['svc_hostid',
                 'svc_name',
-                'svc_cluster_type',
                 'svc_flex_min_nodes',
                 'svc_flex_max_nodes',
                 'svc_flex_cpu_low_threshold',
@@ -573,7 +572,6 @@ class Collector(object):
                 svc.drp_type,
                 ' '.join(svc.autostart_node),
                 svc.app,
-                svc.svcmode,
                 repr_config(svc.svcname),
                 svc.drnoaction,
                 '1' if svc.ha else '0']

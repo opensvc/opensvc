@@ -1,7 +1,6 @@
 import provFs
 import rcExceptions as ex
 from rcUtilities import justcall
-from svcBuilder import conf_get_string_scope
 
 class ProvisioningFs(provFs.ProvisioningFs):
    mkfs = ['newfs_hfs']
@@ -9,7 +8,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
 
    def do_mkfs(self):
        try:
-           opts = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "mkfs_opt").split()
+           opts = self.r.svc.conf_get_string_scope(self.r.rid, "mkfs_opt").split()
        except:
            opts = []
        cmd = self.mkfs + opts + [self.mkfs_dev]

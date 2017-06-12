@@ -1,7 +1,6 @@
 from provisioning import Provisioning
 import rcExceptions as ex
 from rcUtilities import convert_size
-from svcBuilder import conf_get_string_scope, conf_get_int_scope
 
 class ProvisioningDisk(Provisioning):
     def __init__(self, r):
@@ -22,7 +21,7 @@ class ProvisioningDisk(Provisioning):
             return
 
         try:
-            size = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "size")
+            size = self.r.svc.conf_get_string_scope(self.r.rid, "size")
         except:
             raise ex.excError("gce disk name %s in %s: missing the 'size' parameter" % (name, self.r.rid))
         size = str(convert_size(size, _to="MB"))+'MB'
@@ -33,31 +32,31 @@ class ProvisioningDisk(Provisioning):
                "--zone", self.r.gce_zone]
 
         try:
-            description = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "description")
+            description = self.r.svc.conf_get_string_scope(self.r.rid, "description")
             cmd += ["--description", description]
         except:
             pass
 
         try:
-            image = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "image")
+            image = self.r.svc.conf_get_string_scope(self.r.rid, "image")
             cmd += ["--image", image]
         except:
             pass
 
         try:
-            source_snapshot = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "source_snapshot")
+            source_snapshot = self.r.svc.conf_get_string_scope(self.r.rid, "source_snapshot")
             cmd += ["--source-snapshot", source_snapshot]
         except:
             pass
 
         try:
-            image_project = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "image_project")
+            image_project = self.r.svc.conf_get_string_scope(self.r.rid, "image_project")
             cmd += ["--image-project", image_project]
         except:
             pass
 
         try:
-            disk_type = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "disk_type")
+            disk_type = self.r.svc.conf_get_string_scope(self.r.rid, "disk_type")
             cmd += ["--type", disk_type]
         except:
             pass

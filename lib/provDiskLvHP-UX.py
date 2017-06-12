@@ -1,7 +1,6 @@
 from provisioning import Provisioning
 from rcUtilities import justcall, which, convert_size
 from rcGlobalEnv import rcEnv
-from svcBuilder import conf_get_string_scope
 import os
 import rcExceptions as ex
 import time
@@ -20,9 +19,9 @@ class ProvisioningDisk(Provisioning):
             raise ex.excError
 
         try:
-            self.size = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "size")
+            self.size = self.r.svc.conf_get_string_scope(self.r.rid, "size")
             self.size = convert_size(self.size, _to="m")
-            self.vg = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "vg")
+            self.vg = self.r.svc.conf_get_string_scope(self.r.rid, "vg")
         except Exception as e:
             self.r.log.info("skip lv provisioning: %s" % str(e))
             return

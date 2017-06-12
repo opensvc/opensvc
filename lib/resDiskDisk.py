@@ -5,7 +5,6 @@ import time
 
 import resources as Res
 from rcGlobalEnv import rcEnv
-from svcBuilder import conf_get_string_scope, conf_get_int_scope
 from rcUtilities import lazy
 import rcExceptions as ex
 
@@ -37,14 +36,14 @@ class Disk(Res.Resource):
     @lazy
     def array_name(self):
         try:
-            return conf_get_string_scope(self.svc, self.svc.config, self.rid, "array")
+            return self.svc.conf_get_string_scope(self.rid, "array")
         except:
             raise ex.excError("disk %s: missing the 'array' provisioning parameter" % self.rid)
 
     @lazy
     def diskgroup(self):
         try:
-            return conf_get_string_scope(self.svc, self.svc.config, self.rid, "diskgroup")
+            return self.svc.conf_get_string_scope(self.rid, "diskgroup")
         except:
             raise ex.excError("disk %s: missing the 'diskgroup' provisioning parameter" % self.rid)
 
@@ -131,11 +130,11 @@ class Disk(Res.Resource):
             self.log.info("skip provision: 'disk_id' is already set")
             return
         try:
-            size = conf_get_string_scope(self.svc, self.svc.config, self.rid, "size")
+            size = self.svc.conf_get_string_scope(self.rid, "size")
         except:
             raise ex.excError("disk %s: missing the 'size' provisioning parameter" % self.rid)
         try:
-            slo = conf_get_string_scope(self.svc, self.svc.config, self.rid, "slo")
+            slo = self.svc.conf_get_string_scope(self.rid, "slo")
         except:
             slo = None
 

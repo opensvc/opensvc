@@ -1,6 +1,5 @@
 from provisioning import Provisioning
 import rcExceptions as ex
-from svcBuilder import conf_get_string_scope
 
 class ProvisioningIp(Provisioning):
     def __init__(self, r):
@@ -32,7 +31,7 @@ class ProvisioningIp(Provisioning):
             need_write = True
             self.r.log.info("cascade %s to %s" % (self.r.ipname, e))
             self.r.svc.config.set(rid, param, self.r.ipname)
-            self.r.svc.resources_by_id[rid].ipname = conf_get_string_scope(self.r.svc, self.r.svc.config, rid, param)
+            self.r.svc.resources_by_id[rid].ipname = self.r.svc.conf_get_string_scope(rid, param)
             self.r.svc.resources_by_id[rid].addr = self.r.svc.resources_by_id[rid].ipname
         if need_write:
             self.r.svc.write_config()

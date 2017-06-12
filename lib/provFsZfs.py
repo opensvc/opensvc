@@ -3,7 +3,6 @@ import provFs
 from rcUtilities import which, convert_size
 from rcGlobalEnv import rcEnv
 from rcZfs import Dataset
-from svcBuilder import conf_get_string_scope
 import rcExceptions as ex
 
 class ProvisioningFs(provFs.ProvisioningFs):
@@ -27,7 +26,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
 
         nv_list = dict()
         try:
-            size = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "size")
+            size = self.r.svc.conf_get_string_scope(self.r.rid, "size")
         except:
             size = None
         if size:

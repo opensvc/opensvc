@@ -546,21 +546,8 @@ class KeywordMode(Keyword):
                   required=False,
                   order=10,
                   default="hosted",
-                  candidates=["hosted", "sg", "vcs", "rhcs"],
-                  text="The mode decides upon disposition OpenSVC takes to bring a service up or down : virtualized services need special actions to prepare and boot the container for example, which is not needed for 'hosted' services."
-                )
-
-class KeywordPkgName(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="DEFAULT",
-                  keyword="pkg_name",
-                  at=True,
-                  required=False,
-                  order=11,
-                  depends=[('mode', ["vcs", "sg", "rhcs"])],
-                  text="The wrapped cluster package name, as known to the cluster manager in charge."
+                  candidates=["hosted"],
+                  text="Deprecated. The value is always 'hosted'. The keyword is kept around for now the ease transition from older agents."
                 )
 
 class KeywordRollback(Keyword):
@@ -3728,27 +3715,6 @@ class KeywordVdiskPath(Keyword):
                   text="Path of the device or file used as a virtual machine disk. The path@nodename can be used to to set up different path on each node."
                 )
 
-class KeywordHbType(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="hb",
-                  keyword="type",
-                  required=True,
-                  candidates=('openha', 'linuxha'),
-                  text="Specify the heartbeat driver to use."
-                )
-
-class KeywordHbName(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="hb",
-                  keyword="name",
-                  rtype="openha",
-                  text="Specify the service name used by the heartbeat. Defaults to the service name."
-                )
-
 class KeywordTaskCommand(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -3856,7 +3822,7 @@ class KeyDict(KeywordStore):
                   at=True,
                   candidates=(True, False),
                   default=False,
-                  text="A monitored resource will trigger a node suicide if the service has a heartbeat resource in up state"
+                  text="A down monitored resource will trigger a node suicide if the monitor thinks it should be up and the resource can not be restarted."
                 )
         def kw_disable(resource):
             return Keyword(
@@ -4206,7 +4172,7 @@ class KeyDict(KeywordStore):
 
         self += kw_disable("DEFAULT")
 
-        for r in ["sync", "ip", "fs", "disk", "hb", "share", "container", "app", "task", "stonith"]:
+        for r in ["sync", "ip", "fs", "disk", "share", "container", "app", "task", "stonith"]:
             self += kw_restart(r)
             self += kw_tags(r)
             self += kw_subset(r)
@@ -4263,7 +4229,6 @@ class KeyDict(KeywordStore):
         self += KeywordMode()
         self += KeywordLockTimeout()
         self += KeywordPrKey()
-        self += KeywordPkgName()
         self += KeywordDockerDaemonPrivate()
         self += KeywordDockerExe()
         self += KeywordDockerdExe()
@@ -4474,8 +4439,6 @@ class KeyDict(KeywordStore):
         self += KeywordSyncDdsTarget()
         self += KeywordSyncDdsSnapSize()
         self += KeywordVdiskPath()
-        self += KeywordHbType()
-        self += KeywordHbName()
         self += KeywordSubsetParallel()
         self += KeywordStonithType()
         self += KeywordStonithTarget()

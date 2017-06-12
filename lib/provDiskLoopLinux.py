@@ -2,7 +2,6 @@ from provisioning import Provisioning
 import os
 import rcExceptions as ex
 from rcUtilities import convert_size
-from svcBuilder import conf_get_string_scope
 
 class ProvisioningDisk(Provisioning):
     def __init__(self, r):
@@ -26,7 +25,7 @@ class ProvisioningDisk(Provisioning):
     def provisioner(self):
         try:
             self.path = self.r.loopFile
-            self.size = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "size")
+            self.size = self.r.svc.conf_get_string_scope(self.r.rid, "size")
         except Exception as e:
             raise ex.excError(str(e))
         if os.path.exists(self.path):
