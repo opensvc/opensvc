@@ -109,12 +109,23 @@ def fork(func, args=None, kwargs=None):
     except Exception:
         os._exit(0)
 
+    # Redirect standard file descriptors.
+    if (hasattr(os, "devnull")):
+       devnull = os.devnull
+    else:
+       devnull = "/dev/null"
+
     for fd in range(0, 3):
         try:
             os.close(fd)
         except OSError:
-            sys.stderr.write("error closing file: (%d) %s\n" % (e.errno, e.strerror))
             pass
+
+    # Popen(close_fds=True) does not close 0, 1, 2. Make sure we have those
+    # initialized to /dev/null
+    os.open(devnull, os.O_RDWR)
+    os.dup2(0, 1)
+    os.dup2(0, 2)
 
     try:
         func(*args, **kwargs)
