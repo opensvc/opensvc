@@ -4388,7 +4388,7 @@ class Svc(Crypt):
         Returns a dict with the list of syntax warnings and errors.
         """
         from svcDict import KeyDict, deprecated_sections
-        from svcBuilder import build, handle_references
+        from svcBuilder import build
         from rcUtilities import convert_size
         try:
             import ConfigParser
@@ -4427,7 +4427,7 @@ class Svc(Crypt):
             """
             value = config.get(section, option)
             try:
-                value = handle_references(self, config, value, scope=True)
+                value = self.handle_references(value, scope=True)
             except ex.excError as exc:
                 if not option.startswith("pre_") and \
                    not option.startswith("post_") and \
