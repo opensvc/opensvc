@@ -157,6 +157,7 @@ class Disk(resDisk.Disk):
             else:
                 for (r1, r2) in _mapping:
                     mapping[r1] = r2
+                    mapping[r2] = r1
         return mapping
 
     def _disklist(self):
