@@ -1003,6 +1003,8 @@ class Svc(object):
                     data['encap'][container.name] = self.encap_json_status(container)
                 except:
                     data['encap'][container.name] = {'resources': {}}
+		if hasattr(container, "vm_hostname"):
+		    data['encap'][container.name]["hostname"] = container.vm_hostname()
 
         for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
             for resource in rset.resources:
@@ -1440,7 +1442,8 @@ class Svc(object):
         container_types = {}
 
         for rid, resource in data["resources"].items():
-            container_types[resource["label"]] = resource["type"].replace("container.", "")
+            if rid.startswith("container"):
+                container_types[resource["label"]] = resource["type"].replace("container.", "")
             r_vals.append([
                 self.svcname,
                 rcEnv.nodename,
@@ -1478,34 +1481,37 @@ class Svc(object):
             "mon_frozen",
         ]
 
-        g_vals = [
-            self.svcname,
-            self.svc_env,
-            rcEnv.nodename,
-            "",
-            "hosted",
-            rcEnv.node_env,
-            data["ip"],
-            data["disk"],
-            data["sync"],
-            data["hb"],
-            data["container"],
-            data["fs"],
-            data["share"],
-            data["app"],
-            data["avail"],
-            data["overall"],
-            str(now),
-            ' '.join(self.nodes),
-            str(frozen)
-        ]
-        if "encap" in data:
+        if "encap" not in data:
+            g_vals = [
+                self.svcname,
+                self.svc_env,
+                rcEnv.nodename,
+                "",
+                "hosted",
+                rcEnv.node_env,
+                data["ip"],
+                data["disk"],
+                data["sync"],
+                data["hb"],
+                data["container"],
+                data["fs"],
+                data["share"],
+                data["app"],
+                data["avail"],
+                data["overall"],
+                str(now),
+                ' '.join(self.nodes),
+                str(frozen)
+            ]
+        else:
+            g_vals = []
             for container_name, container in data["encap"].items():
+                vhostname = container.get("hostname", container_name)
                 for rid, resource in container['resources'].items():
                     r_vals.append([
                         self.svcname,
                         rcEnv.nodename,
-                        container_name,
+                        vhostname,
                         rid,
                         resource["type"],
                         resource["label"],
@@ -1532,7 +1538,7 @@ class Svc(object):
                     self.svcname,
                     self.svc_env,
                     rcEnv.nodename,
-                    container_name,
+                    vhostname,
                     container_types[container_name],
                     rcEnv.node_env,
                     str(rcStatus.Status(data["ip"])+rcStatus.Status(container['ip'])),
