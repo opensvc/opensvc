@@ -976,11 +976,12 @@ class Svc(Crypt):
             data['encap'] = {}
             for container in containers:
                 if container.name is None or len(container.name) == 0:
+                    # docker case
                     continue
                 try:
-                    data['encap'][container.name] = self.encap_json_status(container)
+                    data['encap'][container.rid] = self.encap_json_status(container)
                 except:
-                    data['encap'][container.name] = {'resources': {}}
+                    data['encap'][container.rid] = {'resources': {}}
 
         for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
             for resource in rset.resources:
@@ -1285,7 +1286,7 @@ class Svc(Crypt):
             if container.type == "container.docker":
                 continue
             try:
-                ejs = data["encap"][container.name]
+                ejs = data["encap"][container.rid]
                 ers[container.rid] = ejs["resources"]
                 if ejs.get("frozen", False):
                     container.status_log("frozen", "info")
@@ -1413,17 +1414,8 @@ class Svc(Crypt):
         ]
         r_vals = []
         now = datetime.datetime.now()
-        container_types = {}
-        container_vhostnames = {}
 
         for rid, resource in data["resources"].items():
-            if rid.startswith("container"):
-                container_types[resource["label"]] = resource["type"].replace("container.", "")
-                container = self.resources_by_id[rid]
-                if hasattr(container, "vm_hostname"):
-                    container_vhostnames[resource["label"]] = container.vm_hostname()
-                else:
-                    container_vhostnames[resource["label"]] = resource["label"]
             r_vals.append([
                 self.svcname,
                 rcEnv.nodename,
@@ -1483,8 +1475,9 @@ class Svc(Crypt):
             ]
         else:
             g_vals = []
-            for container_name, container in data["encap"].items():
-                vhostname = container_vhostnames[container_name]
+            for rid, container in data["encap"].items():
+                vhostname = self.resources_by_id[rid].vm_hostname()
+                container_type = self.resources_by_id[rid].type.replace("container.", "")
                 for rid, resource in container['resources'].items():
                     r_vals.append([
                         self.svcname,
@@ -1517,7 +1510,7 @@ class Svc(Crypt):
                     self.svc_env,
                     rcEnv.nodename,
                     vhostname,
-                    container_types[container_name],
+                    container_type,
                     rcEnv.node_env,
                     str(rcStatus.Status(data["ip"])+rcStatus.Status(container['ip'])),
                     str(rcStatus.Status(data["disk"])+rcStatus.Status(container['disk'])),
