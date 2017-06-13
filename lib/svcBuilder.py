@@ -3078,6 +3078,7 @@ def build(name, minimal=False, svcconf=None):
         nodes = [n.lower() for n in svc.conf_get_string_scope('DEFAULT', "nodes").split() if n != ""]
     except ex.OptNotFound:
         nodes = [rcEnv.nodename]
+    svc.ordered_nodes = nodes
     svc.nodes = set(nodes)
 
     try:
@@ -3091,6 +3092,7 @@ def build(name, minimal=False, svcconf=None):
             drpnodes.append(drpnode)
     except ex.OptNotFound:
         drpnode = ''
+    svc.ordered_drpnodes = drpnodes
     svc.drpnodes = set(drpnodes)
 
     try:

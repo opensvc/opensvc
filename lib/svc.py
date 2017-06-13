@@ -370,7 +370,9 @@ class Svc(Crypt):
         self.show_disabled = False
         self.svc_env = rcEnv.node_env
         self.nodes = set([rcEnv.nodename])
+        self.ordered_nodes = [rcEnv.nodename]
         self.drpnodes = set()
+        self.ordered_drpnodes = []
         self.drpnode = ""
         self.encapnodes = set()
         self.flex_primary = ""
