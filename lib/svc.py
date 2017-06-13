@@ -982,6 +982,8 @@ class Svc(Crypt):
                     data['encap'][container.rid] = self.encap_json_status(container)
                 except:
                     data['encap'][container.rid] = {'resources': {}}
+                if hasattr(container, "vm_hostname"):
+                    data['encap'][container.rid]["hostname"] = container.vm_hostname()
 
         for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
             for resource in rset.resources:
@@ -1476,7 +1478,7 @@ class Svc(Crypt):
         else:
             g_vals = []
             for rid, container in data["encap"].items():
-                vhostname = self.resources_by_id[rid].vm_hostname()
+                vhostname = container.get("hostname", self.resources_by_id[rid].name)
                 container_type = self.resources_by_id[rid].type.replace("container.", "")
                 for rid, resource in container['resources'].items():
                     r_vals.append([
