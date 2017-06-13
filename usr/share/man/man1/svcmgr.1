@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2017\-06\-11
+.TH SVCMGR 1 2017\-06\-13
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -22,12 +22,6 @@ the acker name to log when used with the 'collector ack unavailability' action
 .TP
 .B --comment=COMMENT
 a comment to log when used with the 'collector ack unavailability' action
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -87,12 +81,6 @@ a comment to log when used with the 'collector ack unavailability' action
 .B --duration=DURATION
 a duration expressed in minutes. used with the 'collector ack unavailability' action
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -135,12 +123,6 @@ display service alerts
 .TP
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -185,12 +167,6 @@ display asset information known to the collector
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -233,12 +209,6 @@ display service checks
 .TP
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -283,12 +253,6 @@ create a new tag
 .B --tag=TAG
 a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -331,12 +295,6 @@ display service disks
 .TP
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -387,12 +345,6 @@ a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavail
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -442,12 +394,6 @@ a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavail
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -493,12 +439,6 @@ specify a data formatter for output of the print* and collector* commands. possi
 .TP
 .B --like=LIKE
 a sql like filtering expression. leading and trailing wildcards are automatically set.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -552,12 +492,6 @@ a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavail
 .B --comment=COMMENT
 a comment to log when used with the 'collector ack unavailability' action
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -601,12 +535,6 @@ log a message in the collector's service log
 .B --message=MESSAGE
 the message to send to the collector for logging
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -649,12 +577,6 @@ display network information known to the collector for each service ip
 .TP
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -708,12 +630,6 @@ a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavail
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -756,12 +672,6 @@ list all service tags
 .TP
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -806,12 +716,6 @@ set a service tag (pointed by --tag)
 .B --tag=TAG
 a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -854,12 +758,6 @@ unset a service tag (pointed by --tag)
 .TP
 .B --tag=TAG
 a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -909,12 +807,6 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 .B --ruleset=RULESET
 compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -958,12 +850,6 @@ attach moduleset specified by --moduleset to this service
 .B --moduleset=MODULESET
 compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1006,12 +892,6 @@ attach ruleset specified by --ruleset to this service
 .TP
 .B --ruleset=RULESET
 compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -1068,12 +948,6 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 .B --ruleset-date=RULESET_DATE
 compliance, use rulesets valid on specified date
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1129,12 +1003,6 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 .B --ruleset-date=RULESET_DATE
 compliance, use rulesets valid on specified date
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1181,12 +1049,6 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 .B --ruleset=RULESET
 compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1230,12 +1092,6 @@ detach moduleset specified by --moduleset from this service
 .B --moduleset=MODULESET
 compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1278,12 +1134,6 @@ detach ruleset specified by --ruleset from this service
 .TP
 .B --ruleset=RULESET
 compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -1330,12 +1180,6 @@ compliance, set module list
 .TP
 .B --moduleset=MODULESET
 compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -1392,12 +1236,6 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 .B --ruleset-date=RULESET_DATE
 compliance, use rulesets valid on specified date
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1453,12 +1291,6 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 .B --ruleset-date=RULESET_DATE
 compliance, use rulesets valid on specified date
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1498,12 +1330,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 
 list available compliance modulesets. --moduleset f% limit the scope to modulesets matching the f% pattern.
 
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -1545,12 +1371,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 list available compliance rulesets. --ruleset f% limit the scope to rulesets matching the f% pattern.
 
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1590,12 +1410,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 
 show compliance rules applying to this service
 
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -1637,12 +1451,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 show compliance rules applying to this node
 
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1682,12 +1490,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 
 show compliance modules status
 
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -1761,12 +1563,6 @@ Exit without resource activation rollback on start action error
 .B --ignore-affinity
 ignore service anti-affinity with other services check
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1809,12 +1605,6 @@ clear the monitor status of the service on the node pointed by --node. If --node
 .TP
 .B --node=NODE
 the node to send a request to. if not specified the local node is targeted.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -1864,12 +1654,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .TP
 .B --subsets=PARM_SUBSETS
 comma-separated list of resource subsets to limit action to
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -1935,12 +1719,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1980,12 +1758,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 
 wrap the docker client command, setting automatically the socket parameter to join the service-private docker daemon. The %as_service%, %images% and %instances% words in the wrapped command are replaced by, respectively, the registry login username/password/email parameters to log as a service using <svcname>@<nodename> as the username and the node uuid as password (which is what is expected when the opensvc collector is used as the JWT manager for the registry), the set of docker instance names and images for container resources passing the --tags, --rid and --subsets filters. This is useful to remove all instances of a service or all instances of resources with a tag like "frontend". Note the opensvc filters must be positioned before the docker command in the arguments list.
 
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -2036,12 +1808,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --subsets=PARM_SUBSETS
 comma-separated list of resource subsets to limit action to
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2081,12 +1847,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 
 set up a flag to block actions on this service
 
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -2128,12 +1888,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 report on the current blocking of actions on this service
 
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2174,12 +1928,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 display the service logs in the pager
 
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2219,12 +1967,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 
 display the installed service list
 
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -2299,12 +2041,6 @@ ignore service anti-affinity with other services check
 .B --to=PARM_DESTINATION_NODE
 remote node to start or migrate the service to
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2368,12 +2104,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -2439,12 +2169,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2508,12 +2232,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -2579,12 +2297,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2649,12 +2361,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2694,12 +2400,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 
 display service configuration file modification time
 
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -2753,12 +2453,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --subsets=PARM_SUBSETS
 comma-separated list of resource subsets to limit action to
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2811,12 +2505,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --subsets=PARM_SUBSETS
 comma-separated list of resource subsets to limit action to
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2866,12 +2554,6 @@ drop last resource status cache and re-evaluate before printing with the 'print 
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2917,12 +2599,6 @@ specify a data formatter for output of the print* and collector* commands. possi
 .TP
 .B --verbose
 add more information to some print commands: +next in 'print schedule'
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -2975,12 +2651,6 @@ drop last resource status cache and re-evaluate before printing with the 'print 
 .TP
 .B --show-disabled
 tell print|json status action to include the disabled resources in the output, irrespective of the show_disabled service configuration setting.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -3052,12 +2722,6 @@ Exit without resource activation rollback on start action error
 .B --ignore-affinity
 ignore service anti-affinity with other services check
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3128,12 +2792,6 @@ Exit without resource activation rollback on start action error
 .B --ignore-affinity
 ignore service anti-affinity with other services check
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3173,12 +2831,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 
 report status of reservations on scsi disks held by this service
 
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -3244,12 +2896,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3293,12 +2939,6 @@ pull a service configuration from the collector
 .B --provision
 with the install or create actions, provision the service resources after config file creation. defaults to False.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3338,12 +2978,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 
 push service configuration to the collector
 
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -3385,12 +3019,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 push service resources and application launchers info key/value pairs the collector
 
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3430,12 +3058,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 
 push service and its resources status to database
 
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -3500,12 +3122,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -3577,12 +3193,6 @@ Exit without resource activation rollback on start action error
 .B --ignore-affinity
 ignore service anti-affinity with other services check
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3653,12 +3263,6 @@ Exit without resource activation rollback on start action error
 .B --ignore-affinity
 ignore service anti-affinity with other services check
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3723,12 +3327,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3768,12 +3366,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 
 run the service task scheduler
 
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -3838,12 +3430,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -3915,12 +3501,6 @@ Exit without resource activation rollback on start action error
 .B --ignore-affinity
 ignore service anti-affinity with other services check
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3990,12 +3570,6 @@ Exit without resource activation rollback on start action error
 .TP
 .B --ignore-affinity
 ignore service anti-affinity with other services check
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -4067,12 +3641,6 @@ Exit without resource activation rollback on start action error
 .B --ignore-affinity
 ignore service anti-affinity with other services check
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -4142,12 +3710,6 @@ Exit without resource activation rollback on start action error
 .TP
 .B --ignore-affinity
 ignore service anti-affinity with other services check
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -4219,12 +3781,6 @@ Exit without resource activation rollback on start action error
 .B --ignore-affinity
 ignore service anti-affinity with other services check
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -4294,12 +3850,6 @@ Exit without resource activation rollback on start action error
 .TP
 .B --ignore-affinity
 ignore service anti-affinity with other services check
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -4371,12 +3921,6 @@ Exit without resource activation rollback on start action error
 .B --ignore-affinity
 ignore service anti-affinity with other services check
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -4447,12 +3991,6 @@ Exit without resource activation rollback on start action error
 .B --ignore-affinity
 ignore service anti-affinity with other services check
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -4495,12 +4033,6 @@ return service overall status code
 .TP
 .B --refresh
 drop last resource status cache and re-evaluate before printing with the 'print [json] status' commands
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -4566,12 +4098,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -4635,12 +4161,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -4706,12 +4226,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -4775,12 +4289,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -4846,12 +4354,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -4915,12 +4417,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -4986,12 +4482,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -5055,12 +4545,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -5135,12 +4619,6 @@ ignore service anti-affinity with other services check
 .B --to=PARM_DESTINATION_NODE
 remote node to start or migrate the service to
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -5204,12 +4682,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -5275,12 +4747,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -5344,12 +4810,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -5415,12 +4875,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -5484,12 +4938,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -5555,12 +5003,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -5624,12 +5066,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -5695,12 +5131,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -5764,12 +5194,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -5835,12 +5259,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -5904,12 +5322,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -5975,12 +5387,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -6044,12 +5450,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -6115,12 +5515,6 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -6161,12 +5555,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 remove the flag to unblock actions on this service
 
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -6206,12 +5594,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 
 Trigger the service pre_monitor_action script and monitor_action method. Beware, this might crash or reboot the node.
 
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -6276,12 +5658,6 @@ comma-separated list of resource subsets to limit action to
 .TP
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -6367,12 +5743,6 @@ a resource definition in json dictionary format fed to create or update
 .B --template=PARM_TEMPLATE
 the configuration file template name or id, served by the collector, to use when creating or installing a service
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -6440,12 +5810,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --unprovision
 with the delete action, unprovision the service resources before config files file deletion. defaults to False.
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -6491,12 +5855,6 @@ Discard the stashed erroneous configuration file in a 'edit config' command
 .TP
 .B --recover
 Recover the stashed erroneous configuration file in a 'edit config' command
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -6544,12 +5902,6 @@ If set with the 'get' action, the printed value of --param is scoped and derefer
 .B --param=PARAM
 point a service configuration parameter for the 'get' and 'set' actions
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -6592,12 +5944,6 @@ display service current configuration
 .TP
 .B --format=FORMAT
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -6645,12 +5991,6 @@ point a service configuration parameter for the 'get' and 'set' actions
 .B --value=VALUE
 set a service configuration parameter value for the 'set --param' action
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -6693,12 +6033,6 @@ unset a node configuration parameter pointed by --param
 .TP
 .B --param=PARAM
 point a service configuration parameter for the 'get' and 'set' actions
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -6773,12 +6107,6 @@ with the install or create actions, provision the service resources after config
 .B --resource=RESOURCE
 a resource definition in json dictionary format fed to create or update
 .TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -6818,12 +6146,6 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 
 check the sections and parameters are valid.
 
-.TP
-.B --onlyprimary
-operate only on service flagged for autostart on this node
-.TP
-.B --onlysecondary
-operate only on service not flagged for autostart on this node
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on

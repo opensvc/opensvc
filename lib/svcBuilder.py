@@ -3174,11 +3174,6 @@ def build(name, minimal=False, svcconf=None):
         pass
 
     try:
-        svc.autostart_node = svc.conf_get_string_scope('DEFAULT', 'autostart_node').split()
-    except ex.OptNotFound:
-        pass
-
-    try:
         anti_affinity = svc.conf_get_string_scope('DEFAULT', 'anti_affinity')
         svc.anti_affinity = set(svc.conf_get_string_scope('DEFAULT', 'anti_affinity').split())
     except ex.OptNotFound:
@@ -3338,7 +3333,7 @@ def list_services():
     return l
 
 def build_services(status=None, svcnames=None, create_instance=False,
-                   onlyprimary=False, onlysecondary=False, minimal=False):
+                   minimal=False):
     """
     Returns a list of all services of status matching the specified status.
     If no status is specified, returns all services.
@@ -3386,10 +3381,6 @@ def build_services(status=None, svcnames=None, create_instance=False,
             traceback.print_exc()
             continue
         if status is not None and not svc.status() in status:
-            continue
-        if onlyprimary and rcEnv.nodename not in svc.autostart_node:
-            continue
-        if onlysecondary and rcEnv.nodename in svc.autostart_node:
             continue
         services[svc.svcname] = svc
     return [ s for n, s in sorted(services.items()) ], errors

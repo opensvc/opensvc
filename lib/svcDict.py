@@ -1343,20 +1343,6 @@ class KeywordNodes(Keyword):
                   text="List of cluster local nodes able to start the service.  Whitespace separated."
                 )
 
-class KeywordAutostartNode(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="DEFAULT",
-                  keyword="autostart_node",
-                  order=20,
-                  at=True,
-                  required=False,
-                  default=rcEnv.nodename,
-                  default_text="<hostname of the current node>",
-                  text="A whitespace-separated list subset of 'nodes'. Defines the nodes where the service will try to start on upon node reboot. On a failover cluster there should only be one autostart node and the start-up will fail if the service is already up on another node though. If not specified, the service will never be started at node boot-time, which is rarely the expected behaviour."
-                )
-
 class KeywordDrpnode(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4256,7 +4242,6 @@ class KeyDict(KeywordStore):
         self += KeywordServiceEnv()
         self += KeywordServiceType()
         self += KeywordNodes()
-        self += KeywordAutostartNode()
         self += KeywordDrpnode()
         self += KeywordDrpnodes()
         self += KeywordEncapnodes()

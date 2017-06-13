@@ -162,16 +162,6 @@ OPT = Storage({
         "--node", default="",
         action="store", dest="node",
         help="the node to send a request to. if not specified the local node is targeted."),
-    "onlyprimary": Option(
-        "--onlyprimary", default=None,
-        action="store_true", dest="parm_primary",
-        help="operate only on service flagged for autostart on "
-             "this node"),
-    "onlysecondary": Option(
-        "--onlysecondary", default=None,
-        action="store_true", dest="parm_secondary",
-        help="operate only on service not flagged for autostart"
-             " on this node"),
     "parallel": Option(
         "-p", "--parallel", default=False,
         action="store_true", dest="parallel",
@@ -300,8 +290,6 @@ OPT = Storage({
 })
 
 SVCMGR_OPTS = [
-    OPT.onlyprimary,
-    OPT.onlysecondary,
     OPT.service,
     OPT.status,
 ]

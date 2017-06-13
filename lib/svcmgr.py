@@ -82,16 +82,6 @@ def get_build_kwargs(optparser, options, action):
     if hasattr(options, "status") and options.status is not None:
         build_kwargs["status"] = [rcStatus.status_value(s) for s in options.status.split(",")]
 
-    if hasattr(options, "primary") and options.primary is not None and \
-       hasattr(options, "secondary") and options.secondary is not None:
-        optparser.parser.error("--onlyprimary and --onlysecondary are exclusive")
-
-    if hasattr(options, "primary") and options.primary is not None:
-        build_kwargs["onlyprimary"] = options.primary
-
-    if hasattr(options, "secondary") and options.secondary is not None:
-        build_kwargs["onlysecondary"] = options.secondary
-
     # don't autopush when the intent is to push explicitely
     build_kwargs["autopush"] = action != "push"
     build_kwargs["create_instance"] = action in ("create", "pull")

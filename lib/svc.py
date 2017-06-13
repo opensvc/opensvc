@@ -387,7 +387,6 @@ class Svc(Crypt):
         self.pre_monitor_action = None
         self.disabled = False
         self.anti_affinity = None
-        self.autostart_node = []
         self.lock_timeout = DEFAULT_WAITLOCK
 
         # merged by the cmdline parser
@@ -1745,14 +1744,7 @@ class Svc(Crypt):
             raise ex.excError("can't join a frozen container. abort encap "
                               "command.")
         vmhostname = container.vm_hostname()
-        try:
-            autostart_node = self.conf_get_string_scope('DEFAULT', 'autostart_node',
-                                                        impersonate=vmhostname).split()
-        except ex.OptNotFound:
-            autostart_node = []
-        if cmd == ["start"] and container.booted and vmhostname in autostart_node:
-            self.log.info("skip encap service start in container %s: already "
-                          "started on boot", vmhostname)
+        if cmd == ["start"] and container.booted:
             return '', '', 0
         if not self.has_encap_resources:
             self.log.debug("skip encap %s: no encap resource", ' '.join(cmd))
@@ -1771,10 +1763,7 @@ class Svc(Crypt):
             # no need to run encap cmd (container not specified in --slave)
             return '', '', 0
 
-        if cmd == ['start'] and not self.need_start_encap(container):
-            self.log.info("skip start in container %s: the encap service is "
-                          "configured to start on container boot.",
-                          container.name)
+        if cmd == ['start'] and not self.command_is_scoped():
             return '', '', 0
 
         # now we known we'll execute a command in the slave, so purge the
@@ -2160,38 +2149,12 @@ class Svc(Crypt):
         mtime = os.stat(self.paths.cf).st_mtime
         print(mtime)
 
-    def need_start_encap(self, container):
-        """
-        Return True if this service has an encapsulated part that would need
-        starting.
-        """
-        defaults = self.config.defaults()
-        if defaults.get('autostart_node@'+container.name) in (container.name, 'encapnodes'):
-            return False
-        elif defaults.get('autostart_node@encapnodes') in (container.name, 'encapnodes'):
-            return False
-        elif defaults.get('autostart_node') in (container.name, 'encapnodes'):
-            return False
-        return True
-
     def boot(self):
         """
         The 'boot' action entrypoint.
-        A boot is a start if the running node is defined as autostart_node.
-        A boot is a startstandby if the running node is not defined as autostart_node.
-        A boot is a startstandby if the service is handled by a HA monitor.
         Start errors cause a fallback to startstandby as a best effort.
         """
-        if rcEnv.nodename not in self.autostart_node:
-            self.startstandby()
-            return
-
-        try:
-            self.start()
-        except ex.excError as exc:
-            self.log.error(str(exc))
-            self.log.info("start failed. try to start standby")
-            self.startstandby()
+        self.startstandby()
 
     def shutdown(self):
         self.options.force = True
