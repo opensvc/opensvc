@@ -4824,6 +4824,13 @@ class Svc(Crypt):
             if _section == "env" and _v.upper() in os.environ:
                 return os.environ[_v.upper()]
 
+            if _section == "node":
+                # go fetch the reference in the node.conf [node] section
+                try:
+                    return self.node.config.get("node", _v)
+                except:
+                    raise ex.excError("%s: unresolved reference (%s)" % (ref, str(e)))
+
             if _section != "DEFAULT" and not self.config.has_section(_section):
                 raise ex.excError("%s: section %s does not exist" % (ref, _section))
 
