@@ -1151,6 +1151,7 @@ class Monitor(OsvcThread, Crypt):
     The monitoring thread collecting local service states and taking decisions.
     """
     monitor_period = 5
+    default_stdby_nb_restart = 2
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
@@ -1313,29 +1314,54 @@ class Monitor(OsvcThread, Crypt):
                 resources = CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]["resources"]
         except KeyError:
             return
-        rids = []
-        for rid, resource in resources.items():
+
+        def monitored_resource(svc, rid, resource):
             if not resource["monitor"]:
-                continue
-            if resource["status"] != "down":
-                continue
-            smon = self.get_service_monitor(svc.svcname)
-            if smon.status != "idle":
-                continue
+                return []
             if smon.expect != "up":
-                continue
+                return []
             nb_restart = svc.get_resource(rid).nb_restart
             retries = self.service_monitor_get_retries(svc.svcname, rid)
             if retries > nb_restart:
-                continue
+                return []
             if retries >= nb_restart:
                 self.service_monitor_inc_retries(svc.svcname, rid)
-                self.log.info("max retries (%d) reached for %s.%s", nb_restart, svc.svcname, rid)
+                self.log.info("max retries (%d) reached for resource %s.%s", nb_restart, svc.svcname, rid)
                 self.service_toc(svc.svcname)
-                continue
+                return []
             self.service_monitor_inc_retries(svc.svcname, rid)
             self.log.info("restart resource %s.%s %d/%d", svc.svcname, rid, retries+1, nb_restart)
-            rids.append(rid)
+            return [rid]
+
+        def stdby_resource(svc, rid):
+            resource = svc.get_resource(rid)
+            if resource is None or rcEnv.nodename not in resource.always_on:
+                return []
+            nb_restart = resource.nb_restart
+            if nb_restart == 0:
+                nb_restart = self.default_stdby_nb_restart
+            retries = self.service_monitor_get_retries(svc.svcname, rid)
+            if retries > nb_restart:
+                return []
+            if retries >= nb_restart:
+                self.service_monitor_inc_retries(svc.svcname, rid)
+                self.log.info("max retries (%d) reached for stdby resource %s.%s", nb_restart, svc.svcname, rid)
+                return []
+            self.service_monitor_inc_retries(svc.svcname, rid)
+            self.log.info("start stdby resource %s.%s %d/%d", svc.svcname, rid, retries+1, nb_restart)
+            return [rid]
+
+        smon = self.get_service_monitor(svc.svcname)
+        if smon.status != "idle":
+            return
+
+        rids = []
+        for rid, resource in resources.items():
+            if resource["status"] not in ("down", "stdby down"):
+                continue
+            rids += monitored_resource(svc, rid, resource)
+            rids += stdby_resource(svc, rid)
+
         if len(rids) > 0:
             self.set_service_monitor(svc.svcname, "restarting")
             self.service_start_resources(svc.svcname, rids)
