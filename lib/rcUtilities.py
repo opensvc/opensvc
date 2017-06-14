@@ -14,9 +14,25 @@ import ast
 import operator as op
 
 # supported operators in arithmetic expressions
-operators = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
-             ast.Div: op.truediv, ast.Pow: op.pow, ast.BitXor: op.xor,
-             ast.USub: op.neg, ast.FloorDiv: op.floordiv, ast.Mod: op.mod}
+operators = {
+    ast.Add: op.add,
+    ast.Sub: op.sub,
+    ast.Mult: op.mul,
+    ast.Div: op.truediv,
+    ast.Pow: op.pow,
+    ast.BitXor: op.xor,
+    ast.USub: op.neg,
+    ast.FloorDiv: op.floordiv,
+    ast.Mod: op.mod,
+    ast.Not: op.not_,
+    ast.Eq: op.eq,
+    ast.NotEq: op.ne,
+    ast.Lt: op.lt,
+    ast.LtE: op.le,
+    ast.Gt: op.gt,
+    ast.GtE: op.ge,
+    ast.In: op.contains,
+}
 
 def eval_expr(expr):
     """ arithmetic expressions evaluator
@@ -24,10 +40,41 @@ def eval_expr(expr):
     def eval_(node):
         if isinstance(node, ast.Num): # <number>
             return node.n
+        elif isinstance(node, ast.Str):
+            return node.s
+        elif isinstance(node, ast.Name):
+            return node.id
+        elif isinstance(node, ast.Tuple):
+            return tuple(node.elts)
         elif isinstance(node, ast.BinOp): # <left> <operator> <right>
             return operators[type(node.op)](eval_(node.left), eval_(node.right))
         elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
             return operators[type(node.op)](eval_(node.operand))
+        elif isinstance(node, ast.BoolOp):  # Boolean operator: either "and" or "or" with two or more values
+            if type(node.op) == ast.And:
+                return all(eval_(val) for val in node.values)
+            else:  # Or:
+                for val in node.values:
+                    result = eval_(val)
+                    if result:
+                        return result
+                    return result  # or returns the final value even if it's falsy
+        elif isinstance(node, ast.Compare):  # A comparison expression, e.g. "3 > 2" or "5 < x < 10"
+            left = eval_(node.left)
+            for comparison_op, right_expr in zip(node.ops, node.comparators):
+                right = eval_(right_expr)
+                if type(comparison_op) == ast.In:
+                    if isinstance(right, tuple):
+                        if not any(q.id == left for q in right if isinstance(q, ast.Name)):
+                            return False
+                    else:
+                        if not operators[type(comparison_op)](right, left):
+                            return False
+                else:
+                    if not operators[type(comparison_op)](left, right):
+                        return False
+                left = right
+                return True
         else:
             raise TypeError(node)
     return eval_(ast.parse(expr, mode='eval').body)
