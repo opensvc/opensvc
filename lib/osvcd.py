@@ -218,7 +218,7 @@ class OsvcThread(threading.Thread):
                     getattr(self, data.on_success)(*data.on_success_args, **data.on_success_kwargs)
                 elif data.proc.returncode != 0 and data.on_error:
                     getattr(self, data.on_error)(*data.on_error_args, **data.on_error_kwargs)
-        for idx in done:
+        for idx in sorted(done, reverse=True):
             del self.procs[idx]
 
     def join_threads(self):
@@ -1042,6 +1042,21 @@ class Listener(OsvcThread, Crypt):
                 data[thr_id] = thread.status()
         return data
 
+    def action_daemon_shutdown(self, nodename, **kwargs):
+        global THREADS
+        global THREADS_LOCK
+
+        self.log.info("shutdown daemon requested")
+        with THREADS_LOCK:
+            THREADS["monitor"].shutdown()
+
+        while True:
+            with THREADS_LOCK:
+                if not THREADS["monitor"].is_alive():
+                    break
+        setattr(sys, "stop_osvcd", 1)
+        return {"status": 0}
+
     def action_daemon_stop(self, nodename, **kwargs):
         global THREADS
         global THREADS_LOCK
@@ -1153,6 +1168,10 @@ class Monitor(OsvcThread, Crypt):
     monitor_period = 5
     default_stdby_nb_restart = 2
 
+    def __init__(self):
+        OsvcThread.__init__(self)
+        self._shutdown = False
+
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
         self.last_run = 0
@@ -1176,9 +1195,21 @@ class Monitor(OsvcThread, Crypt):
 
         self.reload_config()
         self.last_run = now
-        self.orchestrator()
-        self.sync_services_conf()
+        if self._shutdown:
+            if len(self.procs) == 0:
+                self.stop()
+        else:
+            self.orchestrator()
+            self.sync_services_conf()
         self.update_hb_data()
+
+    def shutdown(self):
+        global SERVICES
+        global SERVICES_LOCK
+        with SERVICES_LOCK:
+            for svcname, svc in SERVICES.items():
+                self.service_shutdown(svc.svcname)
+        self._shutdown = True
 
     def sync_services_conf(self):
         global SERVICES
@@ -1245,6 +1276,7 @@ class Monitor(OsvcThread, Crypt):
         proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
         return proc
 
+    #
     def service_start_resources(self, svcname, rids):
         proc = self.service_command(svcname, ["start", "--rid", ",".join(rids)])
         self.push_proc(
@@ -1263,6 +1295,7 @@ class Monitor(OsvcThread, Crypt):
             self.service_monitor_reset_retries(svcname, rid)
         self.update_hb_data()
 
+    #
     def service_toc(self, svcname):
         proc = self.service_command(svcname, ["toc"])
         self.push_proc(
@@ -1277,6 +1310,7 @@ class Monitor(OsvcThread, Crypt):
     def service_toc_on_success(self, svcname):
         self.set_service_monitor(svcname, status="idle")
 
+    #
     def service_start(self, svcname):
         proc = self.service_command(svcname, ["start"])
         self.push_proc(
@@ -1290,6 +1324,23 @@ class Monitor(OsvcThread, Crypt):
 
     def service_start_on_success(self, svcname):
         self.set_service_monitor(svcname, status="idle", expect="up")
+
+    #
+    def service_shutdown(self, svcname):
+        self.set_service_monitor(svcname, "shutdown")
+        proc = self.service_command(svcname, ["shutdown"])
+        self.push_proc(
+            proc=proc,
+            on_success="service_shutdown_on_success", on_success_args=[svcname],
+            on_error="service_shutdown_on_error", on_error_args=[svcname],
+        )
+
+    def service_shutdown_on_error(self, svcname):
+        self.set_service_monitor(svcname, "idle")
+
+    def service_shutdown_on_success(self, svcname):
+        self.set_service_monitor(svcname, status="idle", expect="none")
+
 
     def orchestrator(self):
         global SERVICES

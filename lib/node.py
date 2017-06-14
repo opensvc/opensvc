@@ -2890,7 +2890,20 @@ class Node(Crypt):
         # print tabulated lists
         print_section(out)
 
+    def daemon_shutdown(self):
+        """
+        Tell the daemon to shutdown all local service instances then die.
+        """
+        data = self.daemon_send(
+            {"action": "daemon_shutdown"},
+            nodename=self.options.node,
+        )
+        print(json.dumps(data, indent=4, sort_keys=True))
+
     def daemon_stop(self):
+        """
+        Tell the daemon to die or stop a specified thread.
+        """
         options = {}
         if self.options.thr_id:
             options["thr_id"] = self.options.thr_id

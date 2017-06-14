@@ -9,18 +9,10 @@
 PATH=/usr/bin:/usr/sbin:$PATH
 
 DEFAULTS="/etc/defaults/opensvc"
-OSVC_BOOT_OPTS="--parallel"
-OSVC_SHUTDOWN_OPTS="--parallel"
 OSVC_ROOT_PATH="/usr/share/opensvc"
 
 # Include opensvc defaults if available
 [ -r "$DEFAULTS" ] && . "$DEFAULTS"
-
-# Compat
-[ -n "$osvc_opts" ] && OSVC_BOOT_OPTS=${osvc_opts}
-[ -n "$osvc_background" ] && OSVC_BACKGROUND=${osvc_background}
-
-allservices=${OSVC_ROOT_PATH}/bin/svcmgr
 
 case $1 in
 start)
@@ -28,16 +20,12 @@ start)
         echo "OpenSVC : Pushing node information"
 	${OSVC_ROOT_PATH}/bin/nodemgr pushasset
         echo
-        echo "OpenSVC : Starting Services"
-	[ "${OSVC_BACKGROUND}" == "true" ] && {
-		${allservices} ${OSVC_BOOT_OPTS} boot &
-	} || {
-		${allservices} ${OSVC_BOOT_OPTS} boot
-	}
+        echo "OpenSVC : Starting daemon"
+	${OSVC_ROOT_PATH}/bin/nodemgr daemon start
 	;;
 stop)
-	echo "OpenSVC : Stopping Services"
-	${allservices} ${OSVC_SHUTDOWN_OPTS} shutdown
+	echo "OpenSVC : Stopping services and daemon"
+	${OSVC_ROOT_PATH}/bin/nodemgr daemon shutdown
 	;;
 esac
 

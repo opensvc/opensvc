@@ -351,6 +351,9 @@ ACTIONS = {
         },
     },
     'Node daemon management': {
+        'daemon_shutdown': {
+            'msg': 'stop all local services instances then stop the daemon.',
+         },
         'daemon_status': {
             'msg': 'display the daemon status.',
             'options': DAEMON_OPTS,
