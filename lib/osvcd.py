@@ -1459,9 +1459,12 @@ class Monitor(OsvcThread, Crypt):
                         self.set_service_monitor(svc.svcname, "starting")
                         self.service_start(svc.svcname)
             elif smon.status == "idle":
-                if status in ("down", "stdby down", "stdby up"):
-                    self.log.info("failover service %s status %s", svc.svcname, status)
-                    self.set_service_monitor(svc.svcname, "ready")
+                if status not in ("down", "stdby down", "stdby up"):
+                    return
+                if not self.failover_placement_leader(svc):
+                    return
+                self.log.info("failover service %s status %s", svc.svcname, status)
+                self.set_service_monitor(svc.svcname, "ready")
         elif svc.clustertype == "flex":
             n_up = self.count_up_service_instances(svc.svcname)
             if smon.status == "ready":
@@ -1478,8 +1481,57 @@ class Monitor(OsvcThread, Crypt):
                     return
                 if instance.avail not in ("down", "stdby down", "stdby up"):
                     return
+                if not self.failover_placement_leader(svc):
+                    return
                 self.log.info("flex service %s started, starting or ready to start instances: %d/%d. local status %s", svc.svcname, n_up, svc.flex_min_nodes, instance.avail)
                 self.set_service_monitor(svc.svcname, "ready")
+
+    def failover_placement_leader(self, svc):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
+        with CLUSTER_DATA_LOCK:
+            if len(CLUSTER_DATA) == 0:
+                self.log.info("we have the greatest placement priority (alone)")
+                return True
+        if svc.placement == "load avg":
+            return self.failover_placement_leader_load_avg(svc)
+        elif svc.placement == "nodes order":
+            return self.failover_placement_leader_nodes_order(svc)
+        else:
+            # unkown
+            return True
+
+    def failover_placement_leader_load_avg(self, svc):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
+        top_load = None
+        top_node = None
+        with CLUSTER_DATA_LOCK:
+            for nodename in CLUSTER_DATA:
+                try:
+                    load = CLUSTER_DATA[nodename]["load"]["15m"]
+                except KeyError:
+                    continue
+                if top_load is None or load < top_load:
+                    top_load = load
+                    top_node = nodename
+        if top_node == rcEnv.nodename:
+            self.log.info("we have the highest 'load avg' placement priority")
+            return True
+        self.log.info("node %s is alive and has a higher 'load avg' placement priority (%s)", top_node, str(top_load))
+        return False
+
+    def failover_placement_leader_nodes_order(self, svc):
+        global CLUSTER_DATA
+        global CLUSTER_DATA_LOCK
+        with CLUSTER_DATA_LOCK:
+            for nodename in svc.ordered_nodes:
+                if nodename == rcEnv.nodename:
+                    self.log.info("we have the highest 'nodes order' placement priority")
+                    return True
+                elif nodename in CLUSTER_DATA and CLUSTER_DATA[nodename] != "unknown":
+                    self.log.info("node %s is alive and has a higher 'nodes order' placement priority", nodename)
+                    return False
 
     def count_up_service_instances(self, svcname):
         n_up = 0

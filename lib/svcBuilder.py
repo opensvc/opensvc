@@ -3113,6 +3113,11 @@ def build(name, minimal=False, svcconf=None):
             drp_flex_primary = ''
     svc.drp_flex_primary = drp_flex_primary
 
+    try:
+        svc.placement = svc.conf_get_string_scope('DEFAULT', "placement").lower()
+    except ex.OptNotFound:
+        pass
+
 
     #
     # Store and validate the service type

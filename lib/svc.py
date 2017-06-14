@@ -367,6 +367,7 @@ class Svc(Crypt):
         self.app = ""
         self.drnoaction = False
         self.clustertype = "failover"
+        self.placement = "nodes order"
         self.show_disabled = False
         self.svc_env = rcEnv.node_env
         self.nodes = set([rcEnv.nodename])

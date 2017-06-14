@@ -1261,8 +1261,21 @@ class KeywordClusterType(Keyword):
                   order=15,
                   required=False,
                   default="failover",
-                  candidates=["failover", "flex", "autoflex"],
-                  text="failover: the service is allowed to be up on one node at a time. allactive: the service must be up on all nodes. flex: the service can be up on n out of m nodes (n <= m), n/m must be in the [flex_min_nodes, flex_max_nodes] range. autoflex: same as flex, but charge the collector to start the service on passive nodes when the average %cpu usage on active nodes > flex_cpu_high_threshold and stop the service on active nodes when the average %cpu usage on active nodes < flex_cpu_low_threshold."
+                  candidates=["failover", "flex"],
+                  text="failover: the service is allowed to be up on one node at a time. allactive: the service must be up on all nodes. flex: the service can be up on n out of m nodes (n <= m), n/m must be in the [flex_min_nodes, flex_max_nodes] range."
+                )
+
+class KeywordPlacement(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="placement",
+                  order=16,
+                  required=False,
+                  default="nodes order",
+                  candidates=["nodes order", "load avg"],
+                  text="Set a service instances placement policy. nodes order: the left-most available node is allowed to start a service instance when necessary. load avg: the least loaded node.",
                 )
 
 class KeywordFlexMinNodes(Keyword):
@@ -1274,7 +1287,7 @@ class KeywordFlexMinNodes(Keyword):
                   order=16,
                   required=False,
                   default=1,
-                  depends=[("cluster_type", ["flex", "autoflex"])],
+                  depends=[("cluster_type", ["flex"])],
                   text="Minimum number of active nodes in the cluster. Below this number alerts are raised by the collector, and the collector won't stop any more service instances."
                 )
 
@@ -1287,7 +1300,7 @@ class KeywordFlexMaxNodes(Keyword):
                   order=16,
                   required=False,
                   default=10,
-                  depends=[("cluster_type", ["flex", "autoflex"])],
+                  depends=[("cluster_type", ["flex"])],
                   text="Maximum number of active nodes in the cluster. Above this number alerts are raised by the collector, and the collector won't start any more service instances. 0 means unlimited."
                 )
 
@@ -1300,8 +1313,8 @@ class KeywordFlexCpuMinThreshold(Keyword):
                   order=16,
                   required=False,
                   default=10,
-                  depends=[("cluster_type", ["flex", "autoflex"])],
-                  text="Average CPU usage across the active cluster nodes below which the collector raises alerts and decides to stop service instances with autoflex cluster type."
+                  depends=[("cluster_type", ["flex"])],
+                  text="Cluster-wide load average below which flex service instances will be stopped.",
                 )
 
 class KeywordFlexCpuMaxThreshold(Keyword):
@@ -1313,8 +1326,8 @@ class KeywordFlexCpuMaxThreshold(Keyword):
                   order=16,
                   required=False,
                   default=70,
-                  depends=[("cluster_type", ["flex", "autoflex"])],
-                  text="Average CPU usage across the active cluster nodes above which the collector raises alerts and decides to start new service instances with autoflex cluster type."
+                  depends=[("cluster_type", ["flex"])],
+                  text="Cluster-wide load average above which flex new service instances will be started.",
                 )
 
 class KeywordServiceType(Keyword):
@@ -4242,6 +4255,7 @@ class KeyDict(KeywordStore):
         self += KeywordShowDisabled()
         self += KeywordCluster()
         self += KeywordClusterType()
+        self += KeywordPlacement()
         self += KeywordFlexPrimary()
         self += KeywordDrpFlexPrimary()
         self += KeywordRollback()
