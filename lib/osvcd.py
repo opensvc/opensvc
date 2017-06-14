@@ -537,7 +537,7 @@ class HbUcast(Hb, Crypt):
 
     def status(self):
         data = Hb.status(self)
-        data.stats = self.stats
+        data.stats = Storage(self.stats)
         data.timeout = self.timeout
         data.config = {
             "addr": self.peer_config[rcEnv.nodename].addr,
@@ -733,7 +733,7 @@ class HbMcast(Hb, Crypt):
 
     def status(self):
         data = Hb.status(self)
-        data.stats = self.stats
+        data.stats = Storage(self.stats)
         data.config = {
             "addr": self.addr,
             "port": self.port,
