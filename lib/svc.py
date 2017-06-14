@@ -1892,8 +1892,6 @@ class Svc(object):
         options = ['--daemon']
         if self.options.dry_run:
             options.append('--dry-run')
-        if self.options.refresh:
-            options.append('--refresh')
         if self.options.disable_rollback:
             options.append('--disable-rollback')
         if self.options.rid:
@@ -2053,6 +2051,8 @@ class Svc(object):
             group_status[group] = 'n/a'
 
         cmd = ['print', 'status', '--format', 'json']
+        if self.options.refresh:
+            cmd.append('--refresh')
         try:
             results = self._encap_cmd(cmd, container)
         except ex.excError:
