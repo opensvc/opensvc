@@ -471,6 +471,17 @@ class Svc(Crypt):
         comp = Compliance(self)
         return comp
 
+    @lazy
+    def constraints(self):
+        """
+        Return True if no constraints is defined or if defined constraints are
+        met. Otherwise return False.
+        """
+        try:
+            return self.conf_get_boolean_scope("DEFAULT", "constraints")
+        except ex.OptNotFound:
+            return True
+
     def __lt__(self, other):
         """
         Order by service name
@@ -971,6 +982,7 @@ class Svc(Crypt):
             "mtime": now,
             "resources": {},
             "frozen": self.frozen(),
+            "constraints": self.constraints,
         }
 
         containers = self.get_resources('container')
@@ -1272,10 +1284,15 @@ class Svc(Crypt):
         n_accessory_resources = len(accessory_resources)
 
         print(colorize(self.svcname, color.BOLD))
-        frozen = 'frozen' if self.frozen() else ''
+        notice = []
+        if self.frozen():
+            notice.append("frozen")
+        if not data.get("constraints", True):
+            notice.append("constraints violation")
+        notice = ", ".join(notice)
         fmt = "%-20s %4s %-10s %s"
         color_status = rcStatus.colorize_status(data['overall'])
-        print(fmt % ("overall", '', color_status, frozen))
+        print(fmt % ("overall", '', color_status, notice))
         if n_accessory_resources == 0:
             fmt = "'- %-17s %4s %-10s %s"
             head_c = " "

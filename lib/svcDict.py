@@ -1278,6 +1278,18 @@ class KeywordPlacement(Keyword):
                   text="Set a service instances placement policy. nodes order: the left-most available node is allowed to start a service instance when necessary. load avg: the least loaded node.",
                 )
 
+class KeywordConstraints(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="constraints",
+                  order=16,
+                  required=False,
+                  example="nodename==n2",
+                  text="an expression constraining the service instance placement to matching nodes.",
+                )
+
 class KeywordFlexMinNodes(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4256,6 +4268,7 @@ class KeyDict(KeywordStore):
         self += KeywordCluster()
         self += KeywordClusterType()
         self += KeywordPlacement()
+        self += KeywordConstraints()
         self += KeywordFlexPrimary()
         self += KeywordDrpFlexPrimary()
         self += KeywordRollback()
