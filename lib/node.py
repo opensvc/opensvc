@@ -2681,7 +2681,7 @@ class Node(Crypt):
                 hb = data[hb_id]
                 return sorted(hb["peers"].keys())
             except:
-                return []
+                return [rcEnv.nodename]
 
         self.build_services(minimal=True)
         nodenames = get_nodes()
