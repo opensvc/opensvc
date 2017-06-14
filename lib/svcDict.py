@@ -1170,6 +1170,20 @@ class KeywordVmUuid(Keyword):
                   text="The virtual machine unique identifier used to pass commands on the VM."
                 )
 
+class KeywordAffinity(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="affinity",
+                  at=True,
+                  order=15,
+                  required=False,
+                  default=None,
+                  text="A whitespace separated list of services that should be started on the node to allow the monitor to start this service.",
+                  example="svc1 svc2"
+                )
+
 class KeywordAntiAffinity(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1180,7 +1194,7 @@ class KeywordAntiAffinity(Keyword):
                   order=15,
                   required=False,
                   default=None,
-                  text="A whitespace separated list of services this service is not allowed to be started on the same node. The svcmgr --ignore-affinity option can be set to override this policy.",
+                  text="A whitespace separated list of services that should not be started on the node to allow the monitor to start this service.",
                   example="svc1 svc2"
                 )
 
@@ -4222,6 +4236,7 @@ class KeyDict(KeywordStore):
         self += KeywordDockerDaemonArgs()
         self += KeywordDockerSwarmArgs()
         self += KeywordDockerSwarmManagers()
+        self += KeywordAffinity()
         self += KeywordAntiAffinity()
         self += KeywordNoPreemptAbort()
         self += KeywordShowDisabled()

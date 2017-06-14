@@ -118,7 +118,7 @@ class Disk(resDisk.Disk):
             self.wait_for_fn(self.has_it, self.startup_timeout, 1, errmsg="waited too long for devpath creation")
 
     def manage_stop(self):
-        cmd = [self.mdadm, "--manage", self.md_devpath(), "--stop"]
+        cmd = [self.mdadm, "--stop", self.md_devpath()]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
             raise ex.excError

@@ -387,6 +387,7 @@ class Svc(Crypt):
         self.pre_monitor_action = None
         self.disabled = False
         self.anti_affinity = None
+        self.affinity = None
         self.lock_timeout = DEFAULT_WAITLOCK
 
         # merged by the cmdline parser
@@ -398,7 +399,6 @@ class Svc(Crypt):
             cron=False,
             force=False,
             remote=False,
-            ignore_affinity=False,
             debug=False,
             disable_rollback=False,
             show_disabled=None,
@@ -2122,25 +2122,6 @@ class Svc(Crypt):
         self.log.debug("found devs %s held by service", devs)
         return devs
 
-    def get_non_affine_svc(self):
-        """
-        Return the list services defined as anti-affine, filtered to retain
-        only the running ones (those that will cause an actual affinity error
-        on start for this service).
-        """
-        if not self.anti_affinity:
-            return []
-        self.log.debug("build anti-affine services %s", str(self.anti_affinity))
-        self.node.build_services(svcnames=self.anti_affinity)
-        running_af_svc = []
-        for svc in self.node.svcs:
-            if svc.svcname == self.svcname:
-                continue
-            avail = svc.group_status()['avail']
-            if str(avail) != "down":
-                running_af_svc.append(svc.svcname)
-        return running_af_svc
-
     def print_config_mtime(self):
         """
         Print the service configuration file last modified timestamp. Used by
@@ -2204,16 +2185,6 @@ class Svc(Crypt):
         if not self.command_is_scoped():
             self.set_service_monitor(status="starting", expect="up")
         self.abort_start()
-        af_svc = self.get_non_affine_svc()
-        if len(af_svc) != 0:
-            if self.options.ignore_affinity:
-                self.log.error("force start of %s on the same node as %s "
-                               "despite anti-affinity settings",
-                               self.svcname, ', '.join(af_svc))
-            else:
-                self.log.error("refuse to start %s on the same node as %s",
-                               self.svcname, ', '.join(af_svc))
-                return
         self.master_startip()
         self.master_startfs()
         self.master_startshare()

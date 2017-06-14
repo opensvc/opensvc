@@ -1386,6 +1386,11 @@ class Monitor(OsvcThread, Crypt):
             if len(intersection) > 0:
                 #self.log.info("service %s orchestrator out (anti-affinity with %s)", svc.svcname, ','.join(intersection))
                 return
+        if svc.affinity:
+            intersection = set(self.get_local_svcnames()) & set(svc.affinity)
+            if len(intersection) < len(set(svc.affinity)):
+                #self.log.info("service %s orchestrator out (affinity with %s)", svc.svcname, ','.join(intersection))
+                return
 
         now = datetime.datetime.utcnow()
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)

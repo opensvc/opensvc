@@ -25,14 +25,11 @@ allservices=${OSVC_ROOT_PATH}/bin/svcmgr
 
 case $1 in
 start)
+        ${OSVC_ROOT_PATH}/bin/nodemgr daemon start
         ${OSVC_ROOT_PATH}/bin/nodemgr pushasset
-	[ "${OSVC_BACKGROUND}" == "true" ] && {
-		${allservices} ${OSVC_BOOT_OPTS} boot &
-	} || {
-		${allservices} ${OSVC_BOOT_OPTS} boot
-	}
 	;;
 stop)
 	${allservices} ${OSVC_SHUTDOWN_OPTS} shutdown
+        ${OSVC_ROOT_PATH}/bin/nodemgr daemon stop
 	;;
 esac

@@ -125,11 +125,6 @@ OPT = Storage({
         "--id", default=0,
         action="store", dest="id", type="int",
         help="specify an object id to act on"),
-    "ignore_affinity": Option(
-        "--ignore-affinity", default=False,
-        action="store_true", dest="ignore_affinity",
-        help="ignore service anti-affinity with other services "
-             "check"),
     "interactive": Option(
         "-i", "--interactive", default=False,
         action="store_true", dest="interactive",
@@ -319,7 +314,6 @@ ACTION_OPTS = [
 
 START_ACTION_OPTS = [
     OPT.disable_rollback,
-    OPT.ignore_affinity,
 ]
 
 DAEMON_OPTS = [
