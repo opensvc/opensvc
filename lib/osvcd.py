@@ -631,11 +631,12 @@ class HbUcastSender(HbUcast):
         except socket.timeout as exc:
             self.stats.errors += 1
             self.log.warning("send timeout")
-            self.set_beating(nodename)
         except socket.error as exc:
+            self.stats.errors += 1
             self.log.error("send to %s (%s:%d) error: %s", nodename, config.addr, config.port, str(exc))
             return
         finally:
+            self.set_beating(nodename)
             sock.close()
 
 #
@@ -710,15 +711,17 @@ class HbUcastListener(HbUcast):
         nodename, data = self.decrypt(data)
         if nodename is None or nodename == rcEnv.nodename:
             # ignore hb data we sent ourself
+            self.set_beating(nodename)
             return
         if data is None:
             self.stats.errors += 1
+            self.set_beating(nodename)
             return
         #self.log.info("received data from %s %s", nodename, addr)
-        self.set_beating(nodename)
         with CLUSTER_DATA_LOCK:
             CLUSTER_DATA[nodename] = data
         self.set_last(nodename)
+        self.set_beating(nodename)
 
 
 #
@@ -827,10 +830,11 @@ class HbMcastSender(HbMcast):
         except socket.timeout as exc:
             self.stats.errors += 1
             self.log.warning("send timeout")
-            self.set_beating()
         except socket.error as exc:
             self.stats.errors += 1
             self.log.warning("send error: %s" % str(exc))
+        finally:
+            self.set_beating()
 
 
 #
@@ -888,12 +892,13 @@ class HbMcastListener(HbMcast):
             return
         if data is None:
             self.stats.errors += 1
+            self.set_beating(nodename)
             return
         #self.log.info("received data from %s %s", nodename, addr)
-        self.set_beating(nodename)
         with CLUSTER_DATA_LOCK:
             CLUSTER_DATA[nodename] = data
         self.set_last(nodename)
+        self.set_beating(nodename)
 
 
 #
