@@ -530,7 +530,7 @@ class Hb(OsvcThread):
 class HbUcast(Hb, Crypt):
     """
     A class factorizing common methods and properties for the unicast
-    heartbeat sender and listener child classes.
+    heartbeat tx and rx child classes.
     """
     DEFAULT_UCAST_PORT = 10000
     DEFAULT_UCAST_TIMEOUT = 15
@@ -583,12 +583,12 @@ class HbUcast(Hb, Crypt):
                 self.peer_config[nodename].port = self.peer_config[rcEnv.nodename].port
         #print(json.dumps(self.peer_config, indent=4))
 
-class HbUcastSender(HbUcast):
+class HbUcastTx(HbUcast):
     """
-    The multicast heartbeat sender class.
+    The multicast heartbeat tx class.
     """
     def __init__(self, name):
-        HbUcast.__init__(self, name, role="sender")
+        HbUcast.__init__(self, name, role="tx")
 
     def run(self):
         try:
@@ -640,12 +640,12 @@ class HbUcastSender(HbUcast):
             sock.close()
 
 #
-class HbUcastListener(HbUcast):
+class HbUcastRx(HbUcast):
     """
-    The multicast heartbeat listener class.
+    The multicast heartbeat rx class.
     """
     def __init__(self, name):
-        HbUcast.__init__(self, name, role="listener")
+        HbUcast.__init__(self, name, role="rx")
 
     def run(self):
         try:
@@ -728,7 +728,7 @@ class HbUcastListener(HbUcast):
 class HbMcast(Hb, Crypt):
     """
     A class factorizing common methods and properties for the multicast
-    heartbeat sender and listener child classes.
+    heartbeat tx and rx child classes.
     """
     DEFAULT_MCAST_PORT = 10000
     DEFAULT_MCAST_ADDR = "224.3.29.71"
@@ -784,12 +784,12 @@ class HbMcast(Hb, Crypt):
             self.src_naddr = socket.INADDR_ANY
 
 
-class HbMcastSender(HbMcast):
+class HbMcastTx(HbMcast):
     """
-    The multicast heartbeat sender class.
+    The multicast heartbeat tx class.
     """
     def __init__(self, name):
-        HbMcast.__init__(self, name, role="sender")
+        HbMcast.__init__(self, name, role="tx")
 
     def run(self):
         try:
@@ -838,12 +838,12 @@ class HbMcastSender(HbMcast):
 
 
 #
-class HbMcastListener(HbMcast):
+class HbMcastRx(HbMcast):
     """
-    The multicast heartbeat listener class.
+    The multicast heartbeat rx class.
     """
     def __init__(self, name):
-        HbMcast.__init__(self, name, role="listener")
+        HbMcast.__init__(self, name, role="rx")
 
     def run(self):
         try:
@@ -1958,26 +1958,26 @@ class Daemon(object):
         self.read_config()
 
         for name in self.get_config_hb("multicast"):
-            hb_id = name + ".listener"
+            hb_id = name + ".rx"
             if self.need_start(hb_id):
-                self.threads[hb_id] = HbMcastListener(name)
+                self.threads[hb_id] = HbMcastRx(name)
                 self.threads[hb_id].start()
                 changed = True
-            hb_id = name + ".sender"
+            hb_id = name + ".tx"
             if self.need_start(hb_id):
-                self.threads[hb_id] = HbMcastSender(name)
+                self.threads[hb_id] = HbMcastTx(name)
                 self.threads[hb_id].start()
                 changed = True
 
         for name in self.get_config_hb("unicast"):
-            hb_id = name + ".listener"
+            hb_id = name + ".rx"
             if self.need_start(hb_id):
-                self.threads[hb_id] = HbUcastListener(name)
+                self.threads[hb_id] = HbUcastRx(name)
                 self.threads[hb_id].start()
                 changed = True
-            hb_id = name + ".sender"
+            hb_id = name + ".tx"
             if self.need_start(hb_id):
-                self.threads[hb_id] = HbUcastSender(name)
+                self.threads[hb_id] = HbUcastTx(name)
                 self.threads[hb_id].start()
                 changed = True
 
