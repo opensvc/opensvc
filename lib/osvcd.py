@@ -74,6 +74,7 @@ SERVICES = {}
 SERVICES_LOCK = threading.RLock()
 MON_DATA = {}
 MON_DATA_LOCK = threading.RLock()
+HB_TX_TICKER = threading.Condition()
 
 #
 STARTED_STATES = (
@@ -331,6 +332,9 @@ class OsvcThread(threading.Thread):
                 data.status_updated = data.status_updated.strftime(DATEFMT)
             return data
 
+    def wake_heartbeat_tx(self):
+        with HB_TX_TICKER:
+            HB_TX_TICKER.notify_all()
 
 #############################################################################
 #
@@ -649,7 +653,8 @@ class HbUcastTx(HbUcast):
             self.do()
             if self.stopped():
                 sys.exit(0)
-            time.sleep(DEFAULT_HB_PERIOD)
+            with HB_TX_TICKER:
+                HB_TX_TICKER.wait(DEFAULT_HB_PERIOD)
 
     def status(self):
         data = HbUcast.status(self)
@@ -866,7 +871,8 @@ class HbMcastTx(HbMcast):
             if self.stopped():
                 self.sock.close()
                 sys.exit(0)
-            time.sleep(DEFAULT_HB_PERIOD)
+            with HB_TX_TICKER:
+                HB_TX_TICKER.wait(DEFAULT_HB_PERIOD)
 
     def do(self):
         #self.log.info("sending to %s:%s", self.addr, self.port)
@@ -2042,6 +2048,7 @@ class Monitor(OsvcThread, Crypt):
                 }
             with HB_MSG_LOCK:
                 HB_MSG = self.encrypt(CLUSTER_DATA[rcEnv.nodename])
+            self.wake_heartbeat_tx()
         except ValueError:
             self.log.error("failed to refresh local cluster data: invalid json")
 
