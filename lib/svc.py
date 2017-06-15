@@ -357,7 +357,6 @@ class Svc(Crypt):
         self.dependencies = {}
         self.running_action = None
         self.need_postsync = set()
-        self.service_monitor_set = False
 
         # set by the builder
         self.conf = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
@@ -2200,8 +2199,9 @@ class Svc(Crypt):
         self.encap_cmd(['run'], verbose=True)
 
     def start(self):
-        if not self.command_is_scoped():
-            self.set_service_monitor(status="starting", expect="up")
+        if not self.command_is_scoped() and not self.options.cluster:
+            self.set_service_monitor(global_expect="started")
+            return
         self.abort_start()
         self.master_startip()
         self.master_startfs()
@@ -2226,8 +2226,10 @@ class Svc(Crypt):
         self.rollbackip()
 
     def stop(self):
-        if not self.command_is_scoped():
-            self.set_service_monitor(status="stopping", expect="down")
+        if not self.command_is_scoped() and not self.options.cluster:
+            self.set_service_monitor(global_expect="stopped")
+            self.log.info("daemon signaled")
+            return
         self.slave_stop()
         try:
             self.master_stopapp()
@@ -3260,9 +3262,6 @@ class Svc(Crypt):
         finally:
             if action != "scheduler":
                 self.set_run_flag()
-            if self.service_monitor_set:
-                self.set_service_monitor(status="idle")
-                self.service_monitor_set = False
 
     def options_to_rids(self, options):
         """
@@ -4376,7 +4375,6 @@ class Svc(Crypt):
         except ImportError:
             import configparser as ConfigParser
 
-
         data = KeyDict(provision=True)
         ret = {
             "errors": 0,
@@ -4748,9 +4746,11 @@ class Svc(Crypt):
             return
         self.action("compliance_auto")
 
+    #########################################################################
     #
     # daemon communications
     #
+    #########################################################################
     def clear(self):
         options = {
             "svcname": self.svcname,
@@ -4761,12 +4761,12 @@ class Svc(Crypt):
         )
         print(json.dumps(data, indent=4, sort_keys=True))
 
-    def set_service_monitor(self, status=None, expect=None):
-        self.service_monitor_set = True
+    def set_service_monitor(self, status=None, local_expect=None, global_expect=None):
         options = {
             "svcname": self.svcname,
             "status": status,
-            "expect": expect,
+            "local_expect": local_expect,
+            "global_expect": global_expect,
         }
         try:
             data = self.daemon_send(
@@ -4779,9 +4779,12 @@ class Svc(Crypt):
         except Exception as exc:
             self.log.warning("set monitor status failed: %s", str(exc))
 
+
+    #########################################################################
     #
     # config helpers
     #
+    #########################################################################
     def handle_reference(self, ref, scope=False, impersonate=None):
             # hardcoded references
             if ref == "nodename":
@@ -4843,18 +4846,21 @@ class Svc(Crypt):
 
             if _section == "node":
                 # go fetch the reference in the node.conf [node] section
+                if self.node is None:
+                    from node import Node
+                    self.node = Node()
                 try:
                     return self.node.config.get("node", _v)
-                except:
-                    raise ex.excError("%s: unresolved reference (%s)" % (ref, str(e)))
+                except Exception as exc:
+                    raise ex.excError("%s: unresolved reference (%s)" % (ref, str(exc)))
 
             if _section != "DEFAULT" and not self.config.has_section(_section):
                 raise ex.excError("%s: section %s does not exist" % (ref, _section))
 
             try:
                 return self.conf_get(_section, _v, "string", scope=scope, impersonate=impersonate)
-            except ex.OptNotFound as e:
-                raise ex.excError("%s: unresolved reference (%s)" % (ref, str(e)))
+            except ex.OptNotFound as exc:
+                raise ex.excError("%s: unresolved reference (%s)" % (ref, str(exc)))
 
             raise ex.excError("%s: unknown reference" % ref)
 

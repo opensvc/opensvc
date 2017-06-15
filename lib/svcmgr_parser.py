@@ -135,6 +135,11 @@ OPT = Storage({
         action="store", dest="like",
         help="a sql like filtering expression. leading and "
              "trailing wildcards are automatically set."),
+    "local": Option(
+        "--local", default=False,
+        action="store_true", dest="local",
+        help="execute the service action via the daemon, on the local service "
+             "instances only, ignoring cluster-wide considerations."),
     "master": Option(
         "--master", default=False,
         action="store_true", dest="master",
@@ -183,12 +188,6 @@ OPT = Storage({
         help="drop last resource status cache and re-evaluate "
              "before printing with the 'print [json] status' "
              "commands"),
-    "remote": Option(
-        "--remote", default=False,
-        action="store_true", dest="remote",
-        help="flag action as triggered by a remote node. used "
-             "to avoid recursively triggering actions amongst "
-             "nodes"),
     "resource": Option(
         "--resource", default=[],
         action="append",
@@ -298,13 +297,14 @@ GLOBAL_OPTS = SVCMGR_OPTS + [
     OPT.parallel,
     OPT.waitlock,
     OPT.help,
-    OPT.remote,
 ]
 
 ACTION_OPTS = [
     OPT.dry_run,
     OPT.force,
+    OPT.local,
     OPT.master,
+    OPT.node,
     OPT.rid,
     OPT.slave,
     OPT.slaves,
@@ -317,7 +317,7 @@ START_ACTION_OPTS = [
 ]
 
 DAEMON_OPTS = [
-    OPT.node
+    OPT.node,
 ]
 
 ACTIONS = {
