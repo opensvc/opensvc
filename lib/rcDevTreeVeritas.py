@@ -3,7 +3,21 @@ import os
 from subprocess import *
 from rcUtilities import which, justcall
 import rcDevTree
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+
+def dmp_paths(dmpname):
+    cmd = ["vxdmpadm", "getsubpaths", "dmpnodename="+os.path.basename(dmpname)]
+    out, err, ret = justcall(cmd)
+    if ret != 0:
+        raise ex.excError("unable to find dmp %s paths: %s" % (dmpname, err))
+    lines = out.splitlines()
+    if len(lines) < 3:
+        raise ex.excError("unable to find dmp %s paths: %s" % (dmpname, out))
+    devs = []
+    for line in lines[2:]:
+        devs.append(line.split()[0])
+    return devs
 
 class DevTreeVeritas(rcDevTree.DevTree):
     vxprint_cache = {}

@@ -12,6 +12,12 @@ from rcUtilities import which
 
 class syncSymclone(symclone.syncSymclone):
     def dev_rescan(self, dev):
+        if "/rdmp/" in dev:
+            from rcDevTreeVeritas import dmp_paths
+            devs = dmp_paths(dev)
+            for _dev in devs:
+                self.dev_rescan(_dev)
+            return
         dev = dev.replace('/dev/', '')
         sysdev = "/sys/block/%s/device/rescan"%dev
         self.log.info("echo 1>%s"%sysdev)
@@ -19,6 +25,8 @@ class syncSymclone(symclone.syncSymclone):
             s.write("1")
 
     def refresh_multipath(self, dev):
+        if "/rdmp/" in dev:
+            return
         if which(rcEnv.syspaths.multipath) is None:
             return
         cmd = [rcEnv.syspaths.multipath, '-v0', '-r', dev]
