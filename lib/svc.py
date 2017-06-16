@@ -255,7 +255,6 @@ ACTIONS_NEED_SNAP_TRIGGER = [
 CLUSTER_TYPES = [
     "failover",
     "flex",
-    "autoflex",
 ]
 
 os.environ['LANG'] = 'C'

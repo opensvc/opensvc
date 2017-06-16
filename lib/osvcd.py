@@ -74,7 +74,6 @@ SERVICES = {}
 SERVICES_LOCK = threading.RLock()
 MON_DATA = {}
 MON_DATA_LOCK = threading.RLock()
-HB_TX_TICKER = threading.Condition()
 
 #
 STARTED_STATES = (
@@ -85,6 +84,32 @@ STOPPED_STATES = (
     "stdby up",
     "stdby down",
 )
+
+# thread loop conditions and helpers
+HB_TX_TICKER = threading.Condition()
+MON_TICKER = threading.Condition()
+SCHED_TICKER = threading.Condition()
+
+def wake_heartbeat_tx():
+    """
+    Notify the heartbeat tx thread to do they periodic job immediatly
+    """
+    with HB_TX_TICKER:
+        HB_TX_TICKER.notify_all()
+
+def wake_monitor():
+    """
+    Notify the monitor thread to do they periodic job immediatly
+    """
+    with HB_TX_TICKER:
+        HB_TX_TICKER.notify_all()
+
+def wake_scheduler():
+    """
+    Notify the scheduler thread to do they periodic job immediatly
+    """
+    with SCHED_TICKER:
+        SCHED_TICKER.notify_all()
 
 def fork(func, args=None, kwargs=None):
     """
@@ -284,44 +309,50 @@ class OsvcThread(threading.Thread):
             if svcname not in MON_DATA:
                 MON_DATA[svcname] = Storage({})
             if status:
-                self.log.info(
-                    "service %s monitor status change: %s => %s",
-                    svcname,
-                    MON_DATA[svcname].status if MON_DATA[svcname].status else "none",
-                    status
-                )
+                if status != MON_DATA[svcname].status:
+                    self.log.info(
+                        "service %s monitor status change: %s => %s",
+                        svcname,
+                        MON_DATA[svcname].status if MON_DATA[svcname].status else "none",
+                        status
+                    )
                 MON_DATA[svcname].status = status
                 MON_DATA[svcname].status_updated = datetime.datetime.utcnow()
 
             if local_expect:
-                self.log.info(
-                    "service %s monitor local expect change: %s => %s",
-                    svcname,
-                    MON_DATA[svcname].local_expect if MON_DATA[svcname].local_expect else "none",
-                    local_expect
-                )
                 if local_expect == "unset":
-                    MON_DATA[svcname].local_expect = None
-                elif local_expect:
-                    MON_DATA[svcname].local_expect = local_expect
+                    local_expect = None
+                if local_expect != MON_DATA[svcname].local_expect:
+                    self.log.info(
+                        "service %s monitor local expect change: %s => %s",
+                        svcname,
+                        MON_DATA[svcname].local_expect if MON_DATA[svcname].local_expect else "none",
+                        local_expect
+                    )
+                MON_DATA[svcname].local_expect = local_expect
 
             if global_expect:
-                self.log.info(
-                    "service %s monitor global expect change: %s => %s",
-                    svcname,
-                    MON_DATA[svcname].global_expect if MON_DATA[svcname].global_expect else "none",
-                    global_expect
-                )
                 if global_expect == "unset":
-                    MON_DATA[svcname].global_expect = None
-                elif global_expect:
-                    MON_DATA[svcname].global_expect = global_expect
+                    global_expect = None
+                if global_expect != MON_DATA[svcname].global_expect:
+                    self.log.info(
+                        "service %s monitor global expect change: %s => %s",
+                        svcname,
+                        MON_DATA[svcname].global_expect if MON_DATA[svcname].global_expect else "none",
+                        global_expect
+                    )
+                MON_DATA[svcname].global_expect = global_expect
 
             if reset_retries and "restart" in MON_DATA[svcname]:
                 self.log.info("service %s monitor resources restart count reset", svcname)
                 del MON_DATA[svcname]["restart"]
+        wake_monitor()
 
     def get_service_monitor(self, svcname, datestr=False):
+        """
+        Return the Monitor data of a service.
+        If datestr is set, convert datetimes to a json compatible string.
+        """
         global MON_DATA
         global MON_DATA_LOCK
         with MON_DATA_LOCK:
@@ -331,10 +362,6 @@ class OsvcThread(threading.Thread):
             if datestr:
                 data.status_updated = data.status_updated.strftime(DATEFMT)
             return data
-
-    def wake_heartbeat_tx(self):
-        with HB_TX_TICKER:
-            HB_TX_TICKER.notify_all()
 
 #############################################################################
 #
@@ -420,6 +447,9 @@ class Crypt(object):
         return (json.dumps(message)+'\0').encode()
 
     def get_listener_info(self, nodename):
+        """
+        Get the listener address and port from node.conf.
+        """
         if hasattr(self, "node"):
             config = self.node.config
         else:
@@ -455,6 +485,10 @@ class Crypt(object):
         return addr, port
 
     def daemon_send(self, data, nodename=None, with_result=True, silent=False):
+        """
+        Send a request to the daemon running on nodename and return the result
+        fetched if with_result is set.
+        """
         if nodename is None:
             nodename = rcEnv.nodename
         addr, port = self.get_listener_info(nodename)
@@ -493,6 +527,9 @@ class Crypt(object):
 #
 #############################################################################
 class Hb(OsvcThread):
+    """
+    Heartbeat parent class
+    """
     global CLUSTER_DATA
     global CLUSTER_DATA_LOCK
 
@@ -536,6 +573,10 @@ class Hb(OsvcThread):
 
     def is_beating(self, nodename="*"):
         return self.peers.get(nodename, {"beating": False})["beating"]
+
+    def set_peers_beating(self):
+        for nodename in self.peers:
+            self.set_beating(nodename)
 
     def set_beating(self, nodename="*"):
         now = time.time()
@@ -675,7 +716,7 @@ class HbUcastTx(HbUcast):
     def _do(self, message, nodename, config):
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(6.2)
+            sock.settimeout(0.5)
             sock.bind((self.peer_config[rcEnv.nodename].addr, 0))
             sock.connect((config.addr, config.port))
             sock.sendall(message)
@@ -936,6 +977,7 @@ class HbMcastRx(HbMcast):
             self.stats.beats += 1
             self.stats.bytes += len(data)
         except socket.timeout:
+            self.set_peers_beating()
             return
         thr = threading.Thread(target=self.handle_client, args=(data, addr))
         thr.start()
@@ -1084,11 +1126,14 @@ class Listener(OsvcThread, Crypt):
             if result:
                 message = self.encrypt(result)
                 conn.sendall(message)
-                self.log.info("responded to %s, %s:%d", nodename, addr[0], addr[1])
+                self.log.info("responded to %s, %s:%d", nodename,
+                              addr[0], addr[1])
 
+    #########################################################################
     #
     # Actions
     #
+    #########################################################################
     def router(self, nodename, data):
         if not isinstance(data, dict):
             return
@@ -1140,6 +1185,10 @@ class Listener(OsvcThread, Crypt):
         self.log.info("stop thread requested")
         with THREADS_LOCK:
             THREADS[thr_id].stop()
+        if thr_id == "scheduler":
+            wake_scheduler()
+        if thr_id == "monitor":
+            wake_monitor()
         return {"status": 0}
 
     def action_daemon_start(self, nodename, **kwargs):
@@ -1178,6 +1227,7 @@ class Listener(OsvcThread, Crypt):
             svcname, status="idle",
             reset_retries=True
         )
+        wake_monitor()
         return {"status": 0}
 
     def action_set_service_monitor(self, nodename, **kwargs):
@@ -1193,6 +1243,7 @@ class Listener(OsvcThread, Crypt):
             local_expect=local_expect, global_expect=global_expect,
             reset_retries=reset_retries
         )
+        wake_monitor()
         return {"status": 0}
 
 #############################################################################
@@ -1218,9 +1269,8 @@ class Scheduler(OsvcThread):
     def do(self):
         self.janitor_procs()
         now = time.time()
-        if now < self.last_run + self.interval:
-            time.sleep(1)
-            return
+        with SCHED_TICKER:
+            SCHED_TICKER.wait(self.interval)
 
         if len(self.procs) > self.max_runs:
             self.log.warning("%d scheduler runs are already in progress. skip this run.", self.max_runs)
@@ -1293,6 +1343,7 @@ class Monitor(OsvcThread, Crypt):
             for svcname, svc in SERVICES.items():
                 self.service_shutdown(svc.svcname)
         self._shutdown = True
+        wake_monitor()
 
     #########################################################################
     #
@@ -1463,6 +1514,38 @@ class Monitor(OsvcThread, Crypt):
     def service_shutdown_on_success(self, svcname):
         self.set_service_monitor(svcname, status="idle", local_expect="unset")
 
+    #
+    def service_freeze(self, svcname):
+        self.set_service_monitor(svcname, "freezing")
+        proc = self.service_command(svcname, ["freeze"])
+        self.push_proc(
+            proc=proc,
+            on_success="service_freeze_on_success", on_success_args=[svcname],
+            on_error="service_freeze_on_error", on_error_args=[svcname],
+        )
+
+    def service_freeze_on_error(self, svcname):
+        self.set_service_monitor(svcname, "idle")
+
+    def service_freeze_on_success(self, svcname):
+        self.set_service_monitor(svcname, status="idle", local_expect="unset")
+
+    #
+    def service_thaw(self, svcname):
+        self.set_service_monitor(svcname, "thawing")
+        proc = self.service_command(svcname, ["thaw"])
+        self.push_proc(
+            proc=proc,
+            on_success="service_thaw_on_success", on_success_args=[svcname],
+            on_error="service_thaw_on_error", on_error_args=[svcname],
+        )
+
+    def service_thaw_on_error(self, svcname):
+        self.set_service_monitor(svcname, "idle")
+
+    def service_thaw_on_success(self, svcname):
+        self.set_service_monitor(svcname, status="idle", local_expect="unset")
+
 
     #########################################################################
     #
@@ -1552,7 +1635,7 @@ class Monitor(OsvcThread, Crypt):
             #self.log.info("service %s orchestrator out (mon status %s)", svc.svcname, smon.status)
             return
         status = self.get_global_service_status(svc.svcname)
-        self.service_monitor_update_global_expect(svc.svcname, smon, status)
+        self.set_service_monitor_global_expect_from_status(svc.svcname, smon, status)
         if smon.global_expect:
             self.service_orchestrator_manual(svc, smon, status)
         else:
@@ -1626,14 +1709,18 @@ class Monitor(OsvcThread, Crypt):
         if smon.global_expect == "stopped":
             if not svc.frozen():
                 self.log.info("freeze service %s", svc.svcname)
-                svc.freeze()
+                self.service_freeze(svc.svcname)
             if instance.avail not in STOPPED_STATES:
-                self.service_stop(svc.svcname)
-        elif smon.global_expect == "started" and status not in STARTED_STATES:
+                thawed_on = self.service_instances_thawed(svc.svcname)
+                if thawed_on:
+                    self.log.info("service %s still has thawed instances on nodes %s, delay stop", svc.svcname, ", ".join(thawed_on))
+                else:
+                    self.service_stop(svc.svcname)
+        elif smon.global_expect == "started":
             if svc.frozen():
                 self.log.info("thaw service %s", svc.svcname)
-                svc.thaw()
-            else:
+                self.service_thaw(svc.svcname)
+            elif status not in STARTED_STATES:
                 self.service_orchestrator_auto(svc, smon, status)
 
     def failover_placement_leader(self, svc):
@@ -1674,7 +1761,10 @@ class Monitor(OsvcThread, Crypt):
         top_node = None
         with CLUSTER_DATA_LOCK:
             for nodename in CLUSTER_DATA:
-                if svc.frozen():
+                instance = self.get_service_instance(svc.svcname, nodename)
+                if instance is None:
+                    continue
+                if instance.frozen:
                     continue
                 try:
                     load = CLUSTER_DATA[nodename]["load"]["15m"]
@@ -1683,6 +1773,8 @@ class Monitor(OsvcThread, Crypt):
                 if top_load is None or load < top_load:
                     top_load = load
                     top_node = nodename
+        if top_node is None:
+            return False
         if top_node == rcEnv.nodename:
             self.log.info("we have the highest 'load avg' placement priority for service %s", svc.svcname)
             return True
@@ -1703,7 +1795,7 @@ class Monitor(OsvcThread, Crypt):
 
     def count_up_service_instances(self, svcname):
         n_up = 0
-        for instance in self.get_service_instances(svcname):
+        for instance in self.get_service_instances(svcname).values():
             if instance["avail"] == "up":
                 n_up += 1
             elif instance["monitor"]["status"] in ("restarting", "starting", "ready"):
@@ -1738,7 +1830,7 @@ class Monitor(OsvcThread, Crypt):
         astatus = 'undef'
         astatus_l = []
         n_instances = 0
-        for instance in self.get_service_instances(svc.svcname):
+        for instance in self.get_service_instances(svc.svcname).values():
             astatus_l.append(instance["avail"])
             n_instances +=1
         astatus_s = set(astatus_l)
@@ -1762,7 +1854,7 @@ class Monitor(OsvcThread, Crypt):
         astatus = 'undef'
         astatus_l = []
         n_instances = 0
-        for instance in self.get_service_instances(svc.svcname):
+        for instance in self.get_service_instances(svc.svcname).values():
             astatus_l.append(instance["avail"])
             n_instances +=1
         astatus_s = set(astatus_l)
@@ -1783,6 +1875,18 @@ class Monitor(OsvcThread, Crypt):
         else:
             astatus = 'up'
         return astatus
+
+    def service_instances_frozen(self, svcname):
+        """
+        Return the nodenames with a frozen instance of the specified service.
+        """
+        return [nodename for (nodename, instance) in self.get_service_instances(svcname).items() if instance["frozen"]]
+
+    def service_instances_thawed(self, svcname):
+        """
+        Return the nodenames with a frozen instance of the specified service.
+        """
+        return [nodename for (nodename, instance) in self.get_service_instances(svcname).items() if not instance["frozen"]]
 
     def get_local_svcnames(self):
         """
@@ -1827,14 +1931,14 @@ class Monitor(OsvcThread, Crypt):
     def get_service_instances(self, svcname):
         global CLUSTER_DATA
         global CLUSTER_DATA_LOCK
-        instances = []
-        try:
-            with CLUSTER_DATA_LOCK:
-                for node in CLUSTER_DATA:
-                    if svcname in CLUSTER_DATA[node]["services"]["status"]:
-                        instances.append(CLUSTER_DATA[node]["services"]["status"][svcname])
-        except KeyError:
-            return []
+        instances = {}
+        with CLUSTER_DATA_LOCK:
+            for nodename in CLUSTER_DATA:
+                try:
+                    if svcname in CLUSTER_DATA[nodename]["services"]["status"]:
+                        instances[nodename] = CLUSTER_DATA[nodename]["services"]["status"][svcname]
+                except KeyError:
+                    continue
         return instances
 
     @staticmethod
@@ -1994,13 +2098,14 @@ class Monitor(OsvcThread, Crypt):
             else:
                 MON_DATA[svcname].restart[rid] += 1
 
-    def service_monitor_update_global_expect(self, svcname, smon, status):
+    def set_service_monitor_global_expect_from_status(self, svcname, smon, status):
         if smon.global_expect is None:
             return
-        if smon.global_expect == "stopped" and status in STOPPED_STATES:
+        local_frozen = self.get_service_instance(svcname, rcEnv.nodename)["frozen"]
+        if smon.global_expect == "stopped" and status in STOPPED_STATES and local_frozen:
             self.log.info("service %s global expect is %s and its global status is %s", svcname, smon.global_expect, status)
             self.set_service_monitor(svcname, global_expect="unset")
-        elif smon.global_expect == "started" and status in STARTED_STATES:
+        elif smon.global_expect == "started" and status in STARTED_STATES and not local_frozen:
             self.log.info("service %s global expect is %s and its global status is %s", svcname, smon.global_expect, status)
             self.set_service_monitor(svcname, global_expect="unset")
 
@@ -2048,7 +2153,7 @@ class Monitor(OsvcThread, Crypt):
                 }
             with HB_MSG_LOCK:
                 HB_MSG = self.encrypt(CLUSTER_DATA[rcEnv.nodename])
-            self.wake_heartbeat_tx()
+            wake_heartbeat_tx()
         except ValueError:
             self.log.error("failed to refresh local cluster data: invalid json")
 
@@ -2073,10 +2178,14 @@ class Monitor(OsvcThread, Crypt):
                     if global_expect is None:
                         continue
                     local_avail = CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]["avail"]
-                    if (global_expect == "stopped" and local_avail not in STOPPED_STATES) or \
-                       (global_expect == "started" and local_avail not in STARTED_STATES):
+                    local_frozen = CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]["frozen"]
+                    status = self.get_global_service_status(svcname)
+                    if (global_expect == "stopped" and (local_avail not in STOPPED_STATES or not local_frozen)) or \
+                       (global_expect == "started" and (status not in STARTED_STATES or local_frozen)):
                         self.log.info("node %s wants service %s %s", nodename, svcname, global_expect)
                         self.set_service_monitor(svcname, global_expect=global_expect)
+                    else:
+                        self.log.info("node %s wants service %s %s, already is", nodename, svcname, global_expect)
 
     def status(self):
         global CLUSTER_DATA
@@ -2135,6 +2244,9 @@ class Daemon(object):
         self.log.info("signal stop to all threads")
         for thr in self.threads.values():
             thr.stop()
+        wake_scheduler()
+        wake_monitor()
+        wake_heartbeat_tx()
         for thr_id, thr in self.threads.items():
             self.log.info("waiting for %s to stop", thr_id)
             thr.join()
