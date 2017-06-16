@@ -1706,7 +1706,15 @@ class Monitor(OsvcThread, Crypt):
 
     def service_orchestrator_manual(self, svc, smon, status):
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
-        if smon.global_expect == "stopped":
+        if smon.global_expect == "frozen":
+            if not svc.frozen():
+                self.log.info("freeze service %s", svc.svcname)
+                self.service_freeze(svc.svcname)
+        elif smon.global_expect == "thawed":
+            if svc.frozen():
+                self.log.info("thaw service %s", svc.svcname)
+                self.service_thaw(svc.svcname)
+        elif smon.global_expect == "stopped":
             if not svc.frozen():
                 self.log.info("freeze service %s", svc.svcname)
                 self.service_freeze(svc.svcname)
@@ -2036,7 +2044,7 @@ class Monitor(OsvcThread, Crypt):
                 mtime = time.time() + 1
             last_mtime = self.get_last_svc_status_mtime(svcname)
             if svcname not in data or mtime > last_mtime and svcname in data:
-                self.log.info("service %s status changed, update hb payload", svcname)
+                #self.log.info("service %s status changed", svcname)
                 try:
                     with open(fpath, 'r') as filep:
                         try:
@@ -2107,6 +2115,12 @@ class Monitor(OsvcThread, Crypt):
             self.set_service_monitor(svcname, global_expect="unset")
         elif smon.global_expect == "started" and status in STARTED_STATES and not local_frozen:
             self.log.info("service %s global expect is %s and its global status is %s", svcname, smon.global_expect, status)
+            self.set_service_monitor(svcname, global_expect="unset")
+        elif smon.global_expect == "frozen" and local_frozen:
+            self.log.info("service %s global expect is %s and is frozen", svcname, smon.global_expect)
+            self.set_service_monitor(svcname, global_expect="unset")
+        elif smon.global_expect == "thawed" and not local_frozen:
+            self.log.info("service %s global expect is %s and is thawed", svcname, smon.global_expect)
             self.set_service_monitor(svcname, global_expect="unset")
 
     def set_service_monitor_expect_from_status(self, data, svcname):
@@ -2181,7 +2195,9 @@ class Monitor(OsvcThread, Crypt):
                     local_frozen = CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]["frozen"]
                     status = self.get_global_service_status(svcname)
                     if (global_expect == "stopped" and (local_avail not in STOPPED_STATES or not local_frozen)) or \
-                       (global_expect == "started" and (status not in STARTED_STATES or local_frozen)):
+                       (global_expect == "started" and (status not in STARTED_STATES or local_frozen)) or \
+                       (global_expect == "frozen" and not local_frozen) or \
+                       (global_expect == "thawed" and local_frozen):
                         self.log.info("node %s wants service %s %s", nodename, svcname, global_expect)
                         self.set_service_monitor(svcname, global_expect=global_expect)
                     else:

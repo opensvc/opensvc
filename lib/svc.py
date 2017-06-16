@@ -4311,6 +4311,9 @@ class Svc(Crypt):
         return proc.returncode
 
     def freezestop(self):
+        """
+        The freezestop monitor action.
+        """
         self.freeze()
         self.options.force = True
         self.stop()
@@ -4319,12 +4322,18 @@ class Svc(Crypt):
         """
         Set the frozen flag.
         """
+        if not self.options.crm:
+            self.set_service_monitor(global_expect="frozen")
+            return
         self.freezer.freeze()
 
     def thaw(self):
         """
         Unset the frozen flag.
         """
+        if not self.options.crm:
+            self.set_service_monitor(global_expect="thawed")
+            return
         self.freezer.thaw()
 
     def frozen(self):
