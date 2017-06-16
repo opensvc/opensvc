@@ -109,6 +109,7 @@ class Node(Crypt):
             end=None,
             moduleset="",
             module="",
+            node=None,
             ruleset_date="",
             objects=[],
             format=None,
@@ -2798,6 +2799,8 @@ class Node(Crypt):
 
         if sys.version_info[0] < 3:
             pad = " "
+            def print_bytes(val):
+                print(val)
             def bare_len(val):
                 import re
                 ansi_escape = re.compile(r'\x1b[^m]*m')
@@ -2806,6 +2809,8 @@ class Node(Crypt):
                 return len(val)
         else:
             pad = b" "
+            def print_bytes(val):
+                print(val.decode("utf-8"))
             def bare_len(val):
                 import re
                 ansi_escape = re.compile(b'\x1b[^m]*m')
@@ -2830,7 +2835,8 @@ class Node(Crypt):
                 for i, val in enumerate(line):
                     val = val + pad*(widths[i]-bare_len(val))
                     _line.append(val)
-                print(pad.join(_line).decode("utf-8"))
+                _line = pad.join(_line)
+                print_bytes(_line)
 
         def print_section(data):
             if len(data) == 0:
