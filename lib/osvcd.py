@@ -86,9 +86,18 @@ STOPPED_STATES = (
 )
 
 # thread loop conditions and helpers
+DAEMON_STOP = threading.Event()
+DAEMON_TICKER = threading.Condition()
 HB_TX_TICKER = threading.Condition()
 MON_TICKER = threading.Condition()
 SCHED_TICKER = threading.Condition()
+
+def wake_daemon():
+    """
+    Notify the daemon process to do they periodic job immediatly
+    """
+    with HB_DAEMON_TICKER:
+        HB_DAEMON_TICKER.notify_all()
 
 def wake_heartbeat_tx():
     """
@@ -101,8 +110,8 @@ def wake_monitor():
     """
     Notify the monitor thread to do they periodic job immediatly
     """
-    with HB_TX_TICKER:
-        HB_TX_TICKER.notify_all()
+    with MON_TICKER:
+        MON_TICKER.notify_all()
 
 def wake_scheduler():
     """
@@ -1166,7 +1175,7 @@ class Listener(OsvcThread, Crypt):
             with THREADS_LOCK:
                 if not THREADS["monitor"].is_alive():
                     break
-        setattr(sys, "stop_osvcd", 1)
+        DAEMON_STOP.set()
         return {"status": 0}
 
     def action_daemon_stop(self, nodename, **kwargs):
@@ -1175,7 +1184,7 @@ class Listener(OsvcThread, Crypt):
         thr_id = kwargs.get("thr_id")
         if not thr_id:
             self.log.info("stop daemon requested")
-            setattr(sys, "stop_osvcd", 1)
+            DAEMON_STOP.set()
             return {"status": 0}
         with THREADS_LOCK:
             has_thr = thr_id in THREADS
@@ -1319,14 +1328,8 @@ class Monitor(OsvcThread, Crypt):
     def do(self):
         self.janitor_threads()
         self.janitor_procs()
-
-        now = time.time()
-        if now < self.last_run + self.monitor_period:
-            time.sleep(1)
-            return
-
         self.reload_config()
-        self.last_run = now
+        self.last_run = time.time()
         if self._shutdown:
             if len(self.procs) == 0:
                 self.stop()
@@ -1335,6 +1338,9 @@ class Monitor(OsvcThread, Crypt):
             self.orchestrator()
             self.sync_services_conf()
         self.update_hb_data()
+
+        with MON_TICKER:
+            MON_TICKER.wait(self.monitor_period)
 
     def shutdown(self):
         global SERVICES
@@ -1485,6 +1491,7 @@ class Monitor(OsvcThread, Crypt):
 
     #
     def service_stop(self, svcname):
+        self.set_service_monitor(svcname, "stopping")
         proc = self.service_command(svcname, ["stop"])
         self.push_proc(
             proc=proc,
@@ -1833,7 +1840,7 @@ class Monitor(OsvcThread, Crypt):
             return self.get_global_service_status_flex(svc)
         else:
             return "unknown"
-        
+
     def get_global_service_status_failover(self, svc):
         astatus = 'undef'
         astatus_l = []
@@ -2250,10 +2257,12 @@ class Daemon(object):
 
     def _run(self):
         while True:
-            self.loop()
-            if hasattr(sys, "stop_osvcd"):
+            self.start_threads()
+            if DAEMON_STOP.is_set():
                 self.stop_threads()
                 break
+            with DAEMON_TICKER:
+                DAEMON_TICKER.wait(1)
         self.log.info("daemon graceful stop")
 
     def stop_threads(self):
@@ -2361,10 +2370,6 @@ class Daemon(object):
                 continue
             hbs.append(section)
         return hbs
-
-    def loop(self):
-        self.start_threads()
-        time.sleep(1)
 
 #############################################################################
 #
