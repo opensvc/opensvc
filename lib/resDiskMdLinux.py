@@ -18,7 +18,6 @@ class Disk(resDisk.Disk):
                  uuid=None,
                  shared=False,
                  **kwargs):
-        self.label = "md " + uuid
         self.uuid = uuid
         self.shared = shared
         self.mdadm = "/sbin/mdadm"
@@ -27,6 +26,7 @@ class Disk(resDisk.Disk):
                           name=uuid,
                           type='disk.md',
                           **kwargs)
+        self.label = "md " + uuid
 
     def info(self):
         data = [
@@ -36,7 +36,7 @@ class Disk(resDisk.Disk):
         return self.fmt_info(data)
 
     def md_config_file_name(self):
-        return os.path.join(rcEnv.paths.pathvar, 'md_' + self.md_devname() + '.disklist')
+        return os.path.join(rcEnv.paths.pathvar, 'md_' + self.uuid + '.disklist')
 
     def md_config_import(self):
         p = self.md_config_file_name()
@@ -93,16 +93,17 @@ class Disk(resDisk.Disk):
             return []
         return [self.md_config_file_name()]
 
-    def md_devname(self):
-        #devname = self.svc.svcname+"."+self.rid.replace("#", "")
-        return self.uuid
-
     def md_devpath(self):
-        devname = self.md_devname()
-        l = glob.glob("/dev/disk/by-id/md-uuid-"+self.uuid) + glob.glob("/dev/md/"+devname)
-        if len(l) == 0:
-            raise ex.excError("unable to find a devpath for md")
-        return l[0]
+        l = glob.glob("/dev/disk/by-id/md-uuid-"+self.uuid)
+        if len(l) > 0:
+            return l[0]
+        out, err, ret = self.mdadm_scan()
+        for line in out.splitlines():
+            if self.uuid in line:
+                devname = line.split()[1]
+                if os.path.exists(devname):
+                    return devname
+        raise ex.excError("unable to find a devpath for md")
 
     def devpath(self):
         return "/dev/md/"+self.uuid
@@ -153,6 +154,7 @@ class Disk(resDisk.Disk):
         states = (
           "clean",
           "active",
+          "inactive",
         )
         if state in states:
             return True
@@ -161,8 +163,11 @@ class Disk(resDisk.Disk):
     def is_up(self):
         if not self.has_it():
             return False
-        state = self.detail_status()
+        state = self.detail_status().split(", ")[0]
         if state in ("clean", "active"):
+            return True
+        if state in ("inactive"):
+            self.status_log(state, "warn")
             return True
         if state != "devpath does not exist":
             self.status_log(state)
@@ -205,11 +210,17 @@ class Disk(resDisk.Disk):
             self.devs = self.devlist_inactive()
         return self.devs
 
+    def mdadm_scan(self):
+        cmd = [self.mdadm, "--detail", "--scan"]
+        return justcall(cmd)
+
+    def mdadm_scan_v(self):
+        cmd = [self.mdadm, "-E", "--scan", "-v"]
+        return justcall(cmd)
+
     def devlist_inactive(self):
         devs = set()
-
-        cmd = [self.mdadm, "-E", "--scan", "-v"]
-        out, err, ret = justcall(cmd)
+        out, err, ret = self.mdadm_scan_v()
         if ret != 0:
             return devs
         lines = out.split("\n")
