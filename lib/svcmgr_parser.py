@@ -34,8 +34,8 @@ OPT = Storage({
     "cluster": Option(
         "-c", "--cluster", default=False,
         action="store_true", dest="cluster",
-        help="option to set when excuting from a clusterware to"
-             " disable safety net"),
+        help="Execute an action on all cluster nodes, aggregate the json "
+             "outputs."),
     "color": Option(
         "--color", default="auto",
         action="store", dest="color",
@@ -52,6 +52,10 @@ OPT = Storage({
         action="store", dest="parm_config",
         help="the configuration file to use when creating or "
              "installing a service"),
+    "crm": Option(
+        "--crm", default=False,
+        action="store_true", dest="crm",
+        help="Set to disable cluster-wide operations."),
     "cron": Option(
         "--cron", default=False,
         action="store_true", dest="cron",
@@ -290,6 +294,7 @@ SVCMGR_OPTS = [
 
 GLOBAL_OPTS = SVCMGR_OPTS + [
     OPT.cluster,
+    OPT.crm,
     OPT.color,
     OPT.cron,
     OPT.daemon,

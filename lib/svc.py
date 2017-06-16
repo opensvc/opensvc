@@ -392,6 +392,7 @@ class Svc(Crypt):
         # merged by the cmdline parser
         self.options = Storage(
             color="auto",
+            crm=False,
             slaves=False,
             slave=None,
             master=False,
@@ -2198,7 +2199,7 @@ class Svc(Crypt):
         self.encap_cmd(['run'], verbose=True)
 
     def start(self):
-        if not self.command_is_scoped() and not self.options.cluster:
+        if not self.command_is_scoped() and not self.options.crm:
             self.set_service_monitor(global_expect="started")
             return
         self.abort_start()
@@ -2225,7 +2226,7 @@ class Svc(Crypt):
         self.rollbackip()
 
     def stop(self):
-        if not self.command_is_scoped() and not self.options.cluster:
+        if not self.command_is_scoped() and not self.options.crm:
             self.set_service_monitor(global_expect="stopped")
             self.log.info("daemon signaled")
             return
@@ -2638,8 +2639,8 @@ class Svc(Crypt):
             rcmd += ['--debug']
         if self.options.dry_run:
             rcmd += ['--dry-run']
-        if self.options.cluster and action_mode:
-            rcmd += ['--cluster']
+        if self.options.crm and action_mode:
+            rcmd += ['--crm']
         if self.options.cron:
             rcmd += ['--cron']
         if self.options.waitlock != DEFAULT_WAITLOCK:

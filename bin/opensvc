@@ -35,15 +35,6 @@ opensvc)
 	#
 	exec "$OSVC_PYTHON" "$@"
 	;;
-*.cluster)
-	BIN_ARGS="--cluster"
-	BASENAME=`echo $BASENAME|sed -e "s/.cluster$//"`
-	;;
-*.stonith)
-	set --
-	BIN_ARGS="stonith --cluster"
-	BASENAME=`echo $BASENAME|sed -e "s/.stonith$//"`
-	;;
 esac
 
 if [ "$BASENAME" = "nodemgr" -o "$BASENAME" = "svcmgr" -o "$BASENAME" = "svcmon" ]

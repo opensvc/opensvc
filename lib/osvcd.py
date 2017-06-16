@@ -1427,7 +1427,7 @@ class Monitor(OsvcThread, Crypt):
         """
         A generic svcmgr command Popen wrapper.
         """
-        cmd = [rcEnv.paths.svcmgr, '-s', svcname] + cmd
+        cmd = [rcEnv.paths.svcmgr, '-s', svcname, "--crm"] + cmd
         self.log.info("execute: %s", " ".join(cmd))
         proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
         return proc
@@ -1470,7 +1470,7 @@ class Monitor(OsvcThread, Crypt):
     #
     def service_start(self, svcname):
         self.set_service_monitor(svcname, "starting")
-        proc = self.service_command(svcname, ["start", "--cluster"])
+        proc = self.service_command(svcname, ["start"])
         self.push_proc(
             proc=proc,
             on_success="service_start_on_success", on_success_args=[svcname],
@@ -1485,7 +1485,7 @@ class Monitor(OsvcThread, Crypt):
 
     #
     def service_stop(self, svcname):
-        proc = self.service_command(svcname, ["stop", "--cluster"])
+        proc = self.service_command(svcname, ["stop"])
         self.push_proc(
             proc=proc,
             on_success="service_stop_on_success", on_success_args=[svcname],
