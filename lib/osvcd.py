@@ -1872,14 +1872,14 @@ class Monitor(OsvcThread, Crypt):
             astatus = 'n/a'
         elif astatus_s == set(['n/a']):
             astatus = 'n/a'
+        elif n_up == 0:
+            astatus = 'down'
         elif 'warn' in astatus_l:
             astatus = 'warn'
         elif n_up > svc.flex_max_nodes:
             astatus = 'warn'
         elif n_up < svc.flex_min_nodes:
             astatus = 'warn'
-        elif n_up == 0:
-            astatus = 'down'
         else:
             astatus = 'up'
         return astatus

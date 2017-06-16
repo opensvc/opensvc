@@ -362,7 +362,6 @@ class Svc(Crypt):
         self.node = None
         self.comment = ""
         self.drp_type = ""
-        self.app = ""
         self.drnoaction = False
         self.clustertype = "failover"
         self.placement = "nodes order"
@@ -480,6 +479,16 @@ class Svc(Crypt):
             return self.conf_get_boolean_scope("DEFAULT", "constraints")
         except ex.OptNotFound:
             return True
+
+    @lazy
+    def app(self):
+        """
+        Return the service app code.
+        """
+        try:
+            return self.conf_get_string_scope("DEFAULT", "app")
+        except ex.OptNotFound:
+            return ""
 
     def __lt__(self, other):
         """
@@ -1472,7 +1481,7 @@ class Svc(Crypt):
             "mon_frozen",
         ]
 
-        if "encap" not in data:
+        if "encap" not in data or not data["encap"]:
             g_vals = [
                 self.svcname,
                 self.svc_env,
@@ -2922,9 +2931,9 @@ class Svc(Crypt):
         """
         if self.options.cron:
             self.sched.sched_delay()
-        import rcSvcmon
         self.options.refresh = True
-        rcSvcmon.svcmon_normal([self])
+        data = self.svcmon_push_lists()
+        self.node.collector.call('svcmon_update_combo', *data, sync=True)
 
     def push_resinfo(self):
         """

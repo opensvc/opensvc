@@ -3260,11 +3260,6 @@ def build(name, minimal=False, svcconf=None):
         pass
 
     try:
-        svc.app = svc.conf_get_string_scope('DEFAULT', "app")
-    except ex.OptNotFound:
-        pass
-
-    try:
         svc.drnoaction = svc.conf_get_boolean_scope('DEFAULT', "drnoaction")
     except ex.OptNotFound:
         pass

@@ -2718,17 +2718,15 @@ class Node(Crypt):
                     val = []
                     # frozen unicon
                     if services[svcname]["nodes"][nodename]["frozen"]:
-                        frozen_icon = colorize(unicons.FROZEN, color.BLUE)
+                        frozen_icon = colorize(unicons["frozen"], color.BLUE)
                     else:
                         frozen_icon = ""
                     # avail status unicon
                     avail = services[svcname]["nodes"][nodename]["avail"]
                     if avail == "unknown":
                         avail_icon = colorize("?", color.RED)
-                    elif "stdby" in avail:
-                        avail_icon = colorize_status(avail, lpad=0).replace(avail, unicons.STDBY)
                     else:
-                        avail_icon = colorize_status(avail, lpad=0).replace(avail, unicons.STATUS)
+                        avail_icon = colorize_status(avail, lpad=0).replace(avail, unicons[avail])
                     # mon status
                     smon = services[svcname]["nodes"][nodename]["mon"]
                     if smon == "idle":
@@ -2770,9 +2768,9 @@ class Node(Crypt):
                     status = _data["peers"][nodename]["beating"]
                 if status != " ":
                     if status:
-                        status = colorize(unicons.STATUS, color.GREEN)
+                        status = colorize(unicons["up"], color.GREEN)
                     else:
-                        status = colorize(unicons.STATUS, color.RED)
+                        status = colorize(unicons["down"], color.RED)
                 line.append(status)
             out.append(line)
 
