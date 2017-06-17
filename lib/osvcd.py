@@ -781,6 +781,8 @@ class HbUcastRx(HbUcast):
             conn, addr = self.sock.accept()
         except socket.timeout:
             return
+        finally:
+            self.set_peers_beating()
         thr = threading.Thread(target=self.handle_client, args=(conn, addr))
         thr.start()
         self.threads.append(thr)
