@@ -24,6 +24,7 @@ parser.add_option("--color", default="auto", action="store", dest="color",
 
 def _main(node, argv=None):
     (options, args) = parser.parse_args(argv)
+    node.check_privs(argv)
     rcColor.use_color = options.color
 
     node.options.update({
