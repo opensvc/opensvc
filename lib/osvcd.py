@@ -2026,8 +2026,11 @@ class Monitor(OsvcThread, Crypt):
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
             out, err = proc.communicate()
         except KeyboardInterrupt:
-            return {}
-        return json.loads(bdecode(out))
+            return
+        try:
+            return json.loads(bdecode(out))
+        except ValueError:
+            return
 
     def get_services_status(self, svcnames):
         """
@@ -2062,6 +2065,9 @@ class Monitor(OsvcThread, Crypt):
                             data[svcname] = self.service_status_fallback(svcname)
                 except Exception:
                      data[svcname] = self.service_status_fallback(svcname)
+            if not data[svcname]:
+                del data[svcname]
+                continue
             self.set_service_monitor_expect_from_status(data, svcname)
             data[svcname]["monitor"] = self.get_service_monitor(svcname, datestr=True)
 
