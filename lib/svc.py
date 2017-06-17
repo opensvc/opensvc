@@ -1544,7 +1544,7 @@ class Svc(object):
                     str(rcStatus.Status(data["ip"])+rcStatus.Status(container['ip'])),
                     str(rcStatus.Status(data["disk"])+rcStatus.Status(container['disk'])),
                     str(rcStatus.Status(data["sync"])+rcStatus.Status(container['sync'])),
-                    str(rcStatus.Status(data["hb"])+rcStatus.Status(container['hb'])),
+                    str(rcStatus.Status(data["hb"])+rcStatus.Status(container.get('hb', 'n/a'))),
                     str(rcStatus.Status(data["container"])+rcStatus.Status(container['container'])),
                     str(rcStatus.Status(data["fs"])+rcStatus.Status(container['fs'])),
                     str(rcStatus.Status(data["share"])+rcStatus.Status(container['share'] if 'share' in container else 'n/a')),
