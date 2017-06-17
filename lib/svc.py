@@ -479,6 +479,8 @@ class Svc(Crypt):
             return self.conf_get_boolean_scope("DEFAULT", "constraints")
         except ex.OptNotFound:
             return True
+        except ex.excError:
+            return True
 
     @lazy
     def app(self):
@@ -4923,7 +4925,7 @@ class Svc(Crypt):
 
         try:
             val = self.handle_references(val, scope=scope, impersonate=impersonate)
-        except ex.excError:
+        except ex.excError as exc:
             if o.startswith("pre_") or o.startswith("post_") or o.startswith("blocking_"):
                 pass
             else:
