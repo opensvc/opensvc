@@ -331,7 +331,6 @@ class Svc(Crypt):
             initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.d'),
             alt_initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.dir'),
             push_flag=os.path.join(rcEnv.paths.pathvar, self.svcname, 'last_pushed_config'),
-            run_flag=os.path.join(os.sep, "var", "run", "opensvc."+self.svcname),
         )
         self.resources_by_id = {}
         self.encap_resources = {}
@@ -545,9 +544,6 @@ class Svc(Crypt):
         """
         self.options.cron = True
         self.sync_dblogger = True
-        if not self.has_run_flag():
-            self.log.info("the scheduler is off during init")
-            return
         for action in self.sched.scheduler_actions:
             try:
                 if action == "sync_all":
@@ -3262,18 +3258,6 @@ class Svc(Crypt):
 
         return options
 
-    def action(self, action, options=None):
-        """
-        The service action main entrypoint.
-        Handle the run file flag creation after the action is done,
-        whatever its status.
-        """
-        try:
-            return self._action(action, options)
-        finally:
-            if action != "scheduler":
-                self.set_run_flag()
-
     def options_to_rids(self, options):
         """
         Return the list of rids to apply an action to, from the command
@@ -3337,7 +3321,7 @@ class Svc(Crypt):
 
         return rids
 
-    def _action(self, action, options):
+    def action(self, action, options):
         """
         Filter resources on which the service action must act.
         Abort if the service is frozen, or if --cluster is not set on a HA
@@ -4567,43 +4551,6 @@ class Svc(Crypt):
         ret = validate_build(path, ret)
 
         return ret
-
-    def has_run_flag(self):
-        """
-        Return True if the run flag is set or if the run flag dir does not
-        exist.
-        """
-        flag_d = os.path.dirname(self.paths.run_flag)
-        if not os.path.exists(flag_d):
-            return True
-        if os.path.exists(self.paths.run_flag):
-            return True
-        return False
-
-    def set_run_flag(self):
-        """
-        Create the /var/run/opensvc.<svcname> flag if and /var/run exists,
-        and if the flag does not exist yet.
-
-        This flag absence inhibit the service scheduler.
-
-        A known issue with scheduled tasks during init is the 'monitor vs
-        boot' lock contention.
-        """
-        flag_d = os.path.dirname(self.paths.run_flag)
-        if not os.path.exists(flag_d):
-            self.log.debug("%s does not exists", flag_d)
-            return
-        if os.path.exists(self.paths.run_flag):
-            self.log.debug("%s already exists", self.paths.run_flag)
-            return
-        self.log.debug("create %s", self.paths.run_flag)
-        try:
-            with open(self.paths.run_flag, "w"):
-                pass
-        except (IOError, OSError) as exc:
-            self.log.error("failed to create %s: %s",
-                           self.paths.run_flag, str(exc))
 
     def save_exc(self):
         """
