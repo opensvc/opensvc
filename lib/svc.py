@@ -3321,7 +3321,7 @@ class Svc(Crypt):
 
         return rids
 
-    def action(self, action, options):
+    def action(self, action, options=None):
         """
         Filter resources on which the service action must act.
         Abort if the service is frozen, or if --cluster is not set on a HA
