@@ -2769,6 +2769,8 @@ class Svc(Crypt):
 
     def sync_restore(self):
         self.sub_set_action("sync.s3", "sync_restore")
+        self.sub_set_action("sync.symclone", "sync_restore")
+        self.sub_set_action("sync.symsnap", "sync_restore")
 
     def sync_split(self):
         self.sub_set_action("sync.symsrdfs", "sync_split")

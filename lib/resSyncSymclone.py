@@ -42,16 +42,13 @@ class syncSymclone(resSync.Sync):
         return ['/usr/symcli/bin/symclone', '-sid', self.symid, '-f', self.pairs_file(pairs)]
 
     def is_active(self):
-        for pair in self.pairs:
-            if pair in self.active_pairs:
-                continue
-            found = False
-            for state in self.active_states:
-                cmd = self.symclone_cmd([pair]) + ['verify', '-'+state]
-                out, err, ret = justcall(cmd)
-                if ret == 0:
-                    self.active_pairs.append(pair)
-                    break
+        etree = self._showdevs()
+        for e in etree.findall("Symmetrix/Device"):
+            src = e.find("CLONE_Device/SRC/dev_name").text
+            dst = e.find("CLONE_Device/TGT/dev_name").text
+            state = e.find("CLONE_Device/state").text.lower()
+            if state in self.active_states:
+                self.active_pairs.append(src+":"+dst)
         if len(self.active_pairs) == len(self.pairs):
             return True
         return False
@@ -72,11 +69,10 @@ class syncSymclone(resSync.Sync):
             if self.is_active():
                 return
             if i == 0:
-                self.log.info("waiting for active state (max %i secs, %s)" % (timeout, ass))
+                self.log.info("waiting for active state (max %i secs, %s)" % (self.activate_timeout, ass))
             time.sleep(delay)
-        self.log.error("timed out waiting for active state (%i secs, %s)" % (timeout, ass))
+        self.log.error("timed out waiting for active state (%i secs, %s)" % (self.activate_timeout, ass))
         ina = set(self.pairs) - set(self.active_pairs)
-        ina = map(lambda x: ' '.join(x), ina)
         ina = ", ".join(ina)
         raise ex.excError("%s still not in active state (%s)" % (ina, ass))
 
@@ -87,9 +83,9 @@ class syncSymclone(resSync.Sync):
             if self.is_activable():
                 return
             if i == 0:
-                self.log.info("waiting for activable state (max %i secs, %s)" % (self.activate_timeout, ass))
+                self.log.info("waiting for activable state (max %i secs, %s)" % (self.recreate_timeout, ass))
             time.sleep(delay)
-        raise ex.excError("timed out waiting for activable state (%i secs, %s)" % (self.activate_timeout, ass))
+        raise ex.excError("timed out waiting for activable state (%i secs, %s)" % (self.recreate_timeout, ass))
 
     def activate(self):
         if self.is_active():
@@ -131,6 +127,18 @@ class syncSymclone(resSync.Sync):
         if ret != 0:
             raise ex.excError
 
+    def restore(self):
+        cmd = self.symclone_cmd() + ['-noprompt', 'restore']
+        (ret, out, err) = self.vcall(cmd, warn_to_info=True)
+        if ret != 0:
+            raise ex.excError(err)
+
+    def terminate_restore(self):
+        cmd = self.symclone_cmd() + ['-noprompt', 'terminate', '-restored']
+        (ret, out, err) = self.vcall(cmd, warn_to_info=True)
+        if ret != 0:
+            raise ex.excError(err)
+
     def info(self):
         data = [
           ["precopy", str(self.precopy)],
@@ -146,14 +154,17 @@ class syncSymclone(resSync.Sync):
             raise ex.excError("pair %s malformed" % pair)
         return l
 
-    def showdevs(self):
-        if len(self.showdevs_etree) > 0:
-            return
+    def _showdevs(self):
         dst_devs = map(lambda x: x.split(":")[1], self.pairs)
         cmd = ['/usr/symcli/bin/symdev', '-sid', self.symid, 'list', '-v', '-devs', ','.join(dst_devs), '-output', 'xml_e']
         out, err, ret = justcall(cmd)
         etree = ElementTree.fromstring(out)
-        etree = ElementTree.fromstring(out)
+        return etree
+
+    def showdevs(self):
+        if len(self.showdevs_etree) > 0:
+            return
+        etree = self._showdevs()
         for e in etree.findall("Symmetrix/Device"):
             dev_name = e.find("Dev_Info/dev_name").text
             self.showdevs_etree[dev_name] = e
@@ -194,6 +205,15 @@ class syncSymclone(resSync.Sync):
     def sync_update(self):
         self.recreate()
         self.activate()
+
+    def sync_restore(self):
+        if not self.is_active():
+            ina = set(self.pairs) - set(self.active_pairs)
+            ina = ", ".join(ina)
+            ass = " or ".join(self.active_states)
+            raise ex.excError("%s not in active state (%s)" % (ina, ass))
+        self.restore()
+        self.terminate_restore()
 
     def start(self):
         self.activate()
