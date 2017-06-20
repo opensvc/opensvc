@@ -300,6 +300,9 @@ class OsvcThread(threading.Thread):
 
     def reload_config(self):
         unset_lazy(self, "config")
+        unset_lazy(self, "cluster_name")
+        unset_lazy(self, "cluster_key")
+        unset_lazy(self, "cluster_nodes")
 
     def get_services_nodenames(self):
         global SERVICES
@@ -407,6 +410,58 @@ class Crypt(object):
             finally:
                 locker.release()
 
+    @lazy
+    def cluster_nodes(self):
+        if hasattr(self, "node"):
+            config = self.node.config
+        else:
+            config = self.config
+        try:
+            return config.get("cluster", "nodes").split()
+        except:
+            return [rcEnv.nodename]
+
+    @lazy
+    def cluster_name(self):
+        if hasattr(self, "node"):
+            config = self.node.config
+        else:
+            config = self.config
+        try:
+            return config.get("cluster", "name")
+        except:
+            return "default"
+
+    @lazy
+    def cluster_key(self):
+        if hasattr(self, "node"):
+            config = self.node.config
+        else:
+            config = self.config
+        try:
+            key = config.get("cluster", "secret")
+            return self.prepare_key(key)
+        except Exception as exc:
+            pass
+        if hasattr(self, "node"):
+            node = self.node
+        elif hasattr(self, "write_config"):
+            node = self
+        else:
+            return
+        import uuid
+        key = uuid.uuid1().hex
+        node.config.set("cluster", "secret", key)
+        node.write_config()
+        return self.prepare_key(key)
+
+    @staticmethod
+    def prepare_key(key):
+        key = key.encode("utf-8")
+        if len(key) > 32:
+            key = key[:32]
+        return key
+
     def decrypt(self, message):
         if hasattr(self, "node"):
             config = self.node.config
@@ -418,40 +473,37 @@ class Crypt(object):
         except ValueError:
             self.log.error("misformatted encrypted message: %s", repr(message))
             return None, None
-        iv = base64.urlsafe_b64decode(str(message["iv"]))
-        data = base64.urlsafe_b64decode(str(message["data"]))
-        if message["nodename"] == rcEnv.nodename:
-            uuid_key = "uuid"
-        else:
-            uuid_key = "uuid@"+message["nodename"]
-        if not config.has_option("node", uuid_key):
-            self.log.error("no %s to use as AES key", uuid_key)
+        if message.get("clustername") != self.cluster_name:
             return None, None
-        key = config.get("node", uuid_key).encode("utf-8")
-        if len(key) > 32:
-            key = key[:32]
-        data = bdecode(self._decrypt(data, key, iv))
+        if self.cluster_key is None:
+            return None, None
+        nodename = message.get("nodename")
+        if nodename is None:
+            return None, None
+        iv = message.get("iv")
+        if iv is None:
+            return None, None
+        iv = base64.urlsafe_b64decode(str(iv))
+        data = base64.urlsafe_b64decode(str(message["data"]))
+        data = bdecode(self._decrypt(data, self.cluster_key, iv))
         try:
-            return message["nodename"], json.loads(data)
+            return nodename, json.loads(data)
         except ValueError as exc:
-            return message["nodename"], data
+            return nodename, data
 
     def encrypt(self, data):
         if hasattr(self, "node"):
             config = self.node.config
         else:
             config = self.config
-        if not config.has_option("node", "uuid"):
-            self.log.error("no uuid to use as AES key")
+        if self.cluster_key is None:
             return
-        key = config.get("node", "uuid").encode("utf-8")
-        if len(key) > 32:
-            key = key[:32]
         iv = self.gen_iv()
         message = {
+            "clustername": self.cluster_name,
             "nodename": rcEnv.nodename,
             "iv": bdecode(base64.urlsafe_b64encode(iv)),
-            "data": bdecode(base64.urlsafe_b64encode(self._encrypt(json.dumps(data), key, iv))),
+            "data": bdecode(base64.urlsafe_b64encode(self._encrypt(json.dumps(data), self.cluster_key, iv))),
         }
         return (json.dumps(message)+'\0').encode()
 
@@ -655,21 +707,25 @@ class HbUcast(Hb, Crypt):
             "errors": 0,
         })
         self.peer_config = {}
-        for option in self.config.options(self.name):
-            if "@" in option:
-                base_option, nodename = option.split("@", 1)
-            else:
-                base_option = option
-                nodename = rcEnv.nodename
+        if hasattr(self, "node"):
+            config = self.node.config
+        else:
+            config = self.config
+        try:
+            default_port = config.getint(self.name, "port")
+        except:
+            default_port = self.DEFAULT_UCAST_PORT + 0
+
+        for nodename in self.cluster_nodes:
             if nodename not in self.peer_config:
-                self.peer_config[nodename] = Storage()
-            if base_option == "port":
-                self.peer_config[nodename][base_option] = self.config.getint(self.name, option)
-            else:
-                self.peer_config[nodename][base_option] = self.config.get(self.name, option)
-            if base_option == "addr":
-                addrinfo = socket.getaddrinfo(self.peer_config[nodename].addr, None)[0]
-                self.peer_config[nodename].addr = addrinfo[4][0]
+                self.peer_config[nodename] = Storage({
+                    "addr": nodename,
+                    "port": default_port,
+                })
+            if config.has_option(self.name, "addr@"+nodename):
+                self.peer_config[nodename].addr = config.get(self.name, "addr@"+nodename)
+            if config.has_option(self.name, "port@"+nodename):
+                self.peer_config[nodename].port = config.getint(self.name, "port@"+nodename)
 
         # timeout
         if self.config.has_option(self.name, "timeout@"+rcEnv.nodename):
