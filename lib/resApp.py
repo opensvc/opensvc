@@ -8,7 +8,7 @@ import pwd
 import time
 import stat
 
-from rcUtilities import justcall, which, lazy, is_string
+from rcUtilities import justcall, which, lazy, is_string, lcall
 from rcGlobalEnv import rcEnv
 from resources import Resource
 from resourceset import ResourceSet
@@ -475,49 +475,29 @@ class App(Resource):
         """
         Poll stdout and stderr to log as soon as new lines are available.
         """
-        outf = os.path.join(
-            rcEnv.paths.pathtmp,
-            'svc_'+self.svc.svcname+'_'+os.path.basename(self.script)+'.log'
-        )
-        ofile = open(outf, 'w')
         kwargs = {
             'stdin': None,
-            'stdout': ofile.fileno(),
-            'stderr': ofile.fileno(),
+            'timeout': self.timeout,
+            'logger': self.log,
         }
         kwargs.update(run_as_popen_kwargs(self.script))
         user = kwargs.get("env").get("LOGNAME")
         self.log.info('exec %s as user %s', ' '.join(cmd), user)
         now = datetime.now()
-        proc = Popen(cmd, **kwargs)
         try:
-            if self.timeout is None:
-                proc.communicate()
-            else:
-                for _ in range(self.timeout+1):
-                    proc.poll()
-                    if proc.returncode is not None:
-                        break
-                    time.sleep(1)
-                if proc.returncode is None:
-                    self.log.error("execution timeout (%d seconds)", self.timeout)
-                    proc.terminate()
-                    return 1
-                proc.communicate()
+            ret = lcall(cmd, **kwargs)
         except (KeyboardInterrupt, ex.excSignal):
             _len = datetime.now() - now
-            self.log.error('%s interrupted after %s - ret %d - logs in %s',
-                           action, _len, 1, outf)
-            ofile.close()
+            self.log.error('%s interrupted after %s - ret %d',
+                           action, _len, 1)
             return 1
         _len = datetime.now() - now
-        msg = '%s done in %s - ret %d - logs in %s' % (action, _len, proc.returncode, outf)
-        if proc.returncode == 0:
+        msg = '%s done in %s - ret %d' % (action, _len, ret)
+        if ret == 0:
             self.log.info(msg)
         else:
             self.log.error(msg)
-        ofile.close()
-        return proc.returncode
+        return ret
 
     def provision(self):
         self.start()

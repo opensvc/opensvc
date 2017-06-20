@@ -1,8 +1,10 @@
 from __future__ import print_function
 import os, sys
 import datetime
+import time
 import logging
 import socket
+import select
 import re
 import rcExceptions as ex
 from subprocess import *
@@ -260,6 +262,48 @@ def empty_string(buff):
     if len(b) == 0:
         return True
     return False
+
+def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, **kwargs):
+    """
+    Variant of subprocess.call that accepts a logger instead of stdout/stderr,
+    and logs stdout messages via logger.debug and stderr messages via
+    logger.error.
+    """
+    start = time.time()
+    proc = Popen(cmd, stdout=PIPE, stderr=PIPE, **kwargs)
+    log_level = {proc.stdout: outlvl, proc.stderr: errlvl}
+    terminated = False
+    killed = False
+
+    def check_io():
+        ready_to_read = select.select([proc.stdout, proc.stderr], [], [], 1000)[0]
+        for io in ready_to_read:
+            line = io.readline()
+            if sys.version_info[0] < 3:
+                line = line.decode("utf8")
+            else:
+                line = line.decode("ascii", errors="ignore")
+            if line in ('', b''):
+                continue
+            logger.log(log_level[io], line[:-1])
+
+    # keep checking stdout/stderr until the proc exits
+    while proc.poll() is None:
+        check_io()
+        ellapsed = time.time() - start
+        if timeout and ellapsed > timeout:
+            if not terminated:
+                logger.error("execution timeout (%d seconds). send SIGTERM." % timeout)
+                proc.terminate()
+                terminated = True
+            elif not killed and ellapsed > timeout*2:
+                logger.error("SIGTERM handling timeout (%d seconds). send SIGKILL." % timeout)
+                proc.kill()
+                killed = True
+
+    check_io()  # check again to catch anything after the process exits
+
+    return proc.wait()
 
 def call(argv,
          cache=False,      # serve/don't serve cmd output from cache
