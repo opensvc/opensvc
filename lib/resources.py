@@ -8,11 +8,10 @@ import os
 import logging
 import sys
 import time
-import shlex
 
 import rcExceptions as ex
 import rcStatus
-from rcUtilities import lazy, clear_cache, call, vcall, set_lazy
+from rcUtilities import lazy, clear_cache, call, vcall, lcall, set_lazy, action_triggers
 from rcGlobalEnv import rcEnv
 import rcColor
 
@@ -199,71 +198,12 @@ class Resource(object):
         """
         clear_cache(sig, o=self)
 
-    @staticmethod
-    def get_trigger_cmdv(cmd, kwargs):
-        """
-        Return the cmd arg useable by subprocess Popen
-        """
-        if not kwargs.get("shell", False):
-            if sys.version_info[0] < 3:
-                cmdv = shlex.split(cmd.encode('utf8'))
-                cmdv = [elem.decode('utf8') for elem in cmdv]
-            else:
-                cmdv = shlex.split(cmd)
-        else:
-            cmdv = cmd
-        return cmdv
-
-    def action_triggers(self, driver, action, **kwargs):
+    def action_triggers(self, trigger, action, **kwargs):
         """
         Executes a resource trigger. Guess if the shell mode is needed from
         the trigger syntax.
         """
-        if action == "startstandby":
-            action = "start"
-        elif action == "shutdown":
-            action = "stop"
-
-        if "blocking" in kwargs:
-            blocking = kwargs["blocking"]
-            del kwargs["blocking"]
-        else:
-            blocking = False
-
-        if driver == "":
-            attr = action
-        else:
-            attr = driver+"_"+action
-
-        if not hasattr(self, attr):
-            return
-
-        cmd = getattr(self, attr)
-
-        if "|" in cmd or "&&" in cmd or ";" in cmd:
-            kwargs["shell"] = True
-
-        cmdv = self.get_trigger_cmdv(cmd, kwargs)
-
-        if self.svc.options.dry_run:
-            self.log.info("exec trigger %s", getattr(self, attr))
-            return
-
-        try:
-            result = self.vcall(cmdv, **kwargs)
-            ret = result[0]
-        except OSError as exc:
-            ret = 1
-            if exc.errno == 8:
-                self.log.error("%s exec format error: check the script shebang", cmd)
-            else:
-                self.log.error("%s error: %s", cmd, str(exc))
-        except Exception as exc:
-            ret = 1
-            self.log.error("%s error: %s", cmd, str(exc))
-
-        if blocking and ret != 0:
-            raise ex.excError("%s trigger %s blocking error" % (driver, cmd))
+        action_triggers(self, trigger, action, **kwargs)
 
     def action_main(self, action):
         """
@@ -672,6 +612,13 @@ class Resource(object):
         """
         kwargs["log"] = self.log
         return vcall(*args, **kwargs)
+
+    def lcall(self, *args, **kwargs):
+        """
+        Wrap lcall, setting the resource logger
+        """
+        kwargs["logger"] = self.log
+        return lcall(*args, **kwargs)
 
     @staticmethod
     def wait_for_fn(func, tmo, delay, errmsg="Waited too long for startup"):

@@ -19,7 +19,7 @@ from resourceset import ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
-from rcUtilities import justcall, lazy, unset_lazy, vcall, is_string, try_decode, eval_expr, convert_bool
+from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, try_decode, eval_expr, convert_bool, action_triggers
 from rcConfigParser import RawConfigParser
 import rcExceptions as ex
 import rcLogger
@@ -864,6 +864,13 @@ class Svc(Crypt):
                    rcEnv.nodename in self.nodes:
                     return True
         return False
+
+    def action_triggers(self, trigger, action, **kwargs):
+        """
+        Executes a resource trigger. Guess if the shell mode is needed from
+        the trigger syntax.
+        """
+        action_triggers(self, trigger, action, **kwargs)
 
     def set_action(self, rsets=None, action=None, tags=None, xtags=None):
         """
@@ -3585,12 +3592,20 @@ class Svc(Crypt):
 
         psinfo = self.do_cluster_action(action, options)
 
+        def call_action(action):
+            self.action_triggers("pre", action)
+            self.action_triggers("blocking_pre", action, blocking=True)
+            err = getattr(self, action)()
+            self.action_triggers("post", action)
+            self.action_triggers("blocking_post", action, blocking=True)
+            return err
+
         try:
             if action.startswith("compliance_"):
                 err = getattr(self.compliance, action)()
             elif hasattr(self, action):
                 self.running_action = action
-                err = getattr(self, action)()
+                err = call_action(action)
                 if err is None:
                     err = 0
             else:
@@ -4568,6 +4583,13 @@ class Svc(Crypt):
         kwargs["log"] = self.log
         return vcall(*args, **kwargs)
 
+    def lcall(self, *args, **kwargs):
+        """
+        Wrap lcall, setting the service logger
+        """
+        kwargs["logger"] = self.log
+        return lcall(*args, **kwargs)
+
     def _read_cf(self):
         """
         Return the service config file content.
@@ -4866,11 +4888,11 @@ class Svc(Crypt):
             self.ref_cache[key] = val
         return val
 
-    def conf_get(self, s, o, t, scope=False, impersonate=None):
+    def conf_get(self, s, o, t, scope=False, impersonate=None, use_default=True):
         if not scope:
-            val = self.conf_get_val_unscoped(s, o)
+            val = self.conf_get_val_unscoped(s, o, use_default=use_default)
         else:
-            val = self.conf_get_val_scoped(s, o, impersonate=impersonate)
+            val = self.conf_get_val_scoped(s, o, impersonate=impersonate, use_default=use_default)
 
         try:
             val = self.handle_references(val, scope=scope, impersonate=impersonate)
@@ -4894,7 +4916,7 @@ class Svc(Crypt):
 
         return val
 
-    def conf_get_val_unscoped(self, s, o):
+    def conf_get_val_unscoped(self, s, o, use_default=True):
         if self.config.has_option(s, o):
             return self.config.get(s, o)
         raise ex.OptNotFound("unscoped keyword %s.%s not found" % (s, o))
@@ -4905,24 +4927,32 @@ class Svc(Crypt):
         else:
             nodename = impersonate
 
-        if self.config.has_option(s, o+"@"+nodename):
+        if s != "DEFAULT" and not self.config.has_section(s):
+            return
+
+        if s == "DEFAULT":
+            options = self.config.defaults().keys()
+        else:
+            options = self.config._sections[s].keys()
+
+        if o+"@"+nodename in options:
             return o+"@"+nodename
-        elif self.config.has_option(s, o+"@nodes") and \
+        elif o+"@nodes" in options and \
              nodename in self.nodes:
             return s, o+"@nodes"
-        elif self.config.has_option(s, o+"@drpnodes") and \
+        elif o+"@drpnodes" in options and \
              nodename in self.drpnodes:
             return o+"@drpnodes"
-        elif self.config.has_option(s, o+"@encapnodes") and \
+        elif o+"@encapnodes" in options and \
              nodename in self.encapnodes:
             return o+"@encapnodes"
-        elif self.config.has_option(s, o+"@flex_primary") and \
+        elif o+"@flex_primary" in options and \
              nodename == self.flex_primary:
             return o+"@flex_primary"
-        elif self.config.has_option(s, o+"@drp_flex_primary") and \
+        elif o+"@drp_flex_primary" in options and \
              nodename == self.drp_flex_primary:
             return o+"@drp_flex_primary"
-        elif self.config.has_option(s, o):
+        elif o in options:
             return o
 
     def conf_get_val_scoped(self, s, o, impersonate=None, use_default=True):
@@ -4932,6 +4962,9 @@ class Svc(Crypt):
             nodename = impersonate
 
         option = self.conf_has_option_scoped(s, o, impersonate=impersonate)
+        if option is None and not use_default:
+            raise ex.OptNotFound("scoped keyword %s.%s not found" % (s, o))
+
         if option is None and use_default:
             if s != "DEFAULT":
                 # fallback to default
@@ -4946,23 +4979,23 @@ class Svc(Crypt):
 
         return val
 
-    def conf_get_string(self, s, o):
-        return self.conf_get(s, o, 'string', scope=False)
+    def conf_get_string(self, s, o, use_default=True):
+        return self.conf_get(s, o, 'string', scope=False, use_default=use_default)
 
-    def conf_get_string_scope(self, s, o, impersonate=None):
-        return self.conf_get(s, o, 'string', scope=True, impersonate=impersonate)
+    def conf_get_string_scope(self, s, o, impersonate=None, use_default=True):
+        return self.conf_get(s, o, 'string', scope=True, impersonate=impersonate, use_default=use_default)
 
-    def conf_get_boolean(self, s, o):
-        return self.conf_get(s, o, 'boolean', scope=False)
+    def conf_get_boolean(self, s, o, use_default=True):
+        return self.conf_get(s, o, 'boolean', scope=False, use_default=use_default)
 
-    def conf_get_boolean_scope(self, s, o, impersonate=None):
-        return self.conf_get(s, o, 'boolean', scope=True, impersonate=impersonate)
+    def conf_get_boolean_scope(self, s, o, impersonate=None, use_default=True):
+        return self.conf_get(s, o, 'boolean', scope=True, impersonate=impersonate, use_default=use_default)
 
-    def conf_get_int(self, s, o):
-        return self.conf_get(s, o, 'integer', scope=False)
+    def conf_get_int(self, s, o, use_default=True):
+        return self.conf_get(s, o, 'integer', scope=False, use_default=use_default)
 
-    def conf_get_int_scope(self, s, o, impersonate=None):
-        return self.conf_get(s, o, 'integer', scope=True, impersonate=impersonate)
+    def conf_get_int_scope(self, s, o, impersonate=None, use_default=True):
+        return self.conf_get(s, o, 'integer', scope=True, impersonate=impersonate, use_default=use_default)
 
     def get_pg_settings(self, s):
         d = {}

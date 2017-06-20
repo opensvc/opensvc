@@ -5,6 +5,7 @@ import time
 import logging
 import socket
 import select
+import shlex
 import re
 import rcExceptions as ex
 from subprocess import *
@@ -544,6 +545,108 @@ def cmdline2list(cmdline):
             arg.append(c)
 
     return result
+
+def action_triggers(self, trigger="", action=None, **kwargs):
+    """
+    Executes a service or resource trigger. Guess if the shell mode is needed
+    from the trigger syntax.
+    """
+
+    actions = [
+        'provision',
+        'unprovision',
+        'start',
+        'stop',
+        'shutdown',
+        'sync_nodes',
+        'sync_drp',
+        'sync_all',
+        'sync_resync',
+        'sync_update',
+        'sync_restore',
+        'command', # tasks use that as an action
+    ]
+
+    compat_triggers = [
+        'pre_syncnodes', 'pre_syncdrp',
+        'post_syncnodes', 'post_syncdrp',
+        'post_syncresync', 'pre_syncresync',
+        'post_syncupdate', 'pre_syncupdate',
+    ]
+
+    def get_trigger_cmdv(cmd, kwargs):
+        """
+        Return the cmd arg useable by subprocess Popen
+        """
+        if not kwargs.get("shell", False):
+            if sys.version_info[0] < 3:
+                cmdv = shlex.split(cmd.encode('utf8'))
+                cmdv = [elem.decode('utf8') for elem in cmdv]
+            else:
+                cmdv = shlex.split(cmd)
+        else:
+            cmdv = cmd
+        return cmdv
+
+    if hasattr(self, "svc"):
+        svc = self.svc
+        section = self.rid
+    else:
+        svc = self
+        section = "DEFAULT"
+
+    if action not in actions:
+        return
+    elif action == "startstandby":
+        action = "start"
+    elif action == "shutdown":
+        action = "stop"
+
+    if "blocking" in kwargs:
+        blocking = kwargs["blocking"]
+        del kwargs["blocking"]
+    else:
+        blocking = False
+
+    if trigger == "":
+        attr = action
+    else:
+        attr = trigger+"_"+action
+
+    # translate deprecated actions
+    if attr in compat_triggers:
+        attr = compat_triggers[attr]
+
+    try:
+        cmd = svc.conf_get_string_scope(section, attr, use_default=False)
+    except ex.OptNotFound:
+        return
+
+    if "|" in cmd or "&&" in cmd or ";" in cmd:
+        kwargs["shell"] = True
+
+    cmdv = get_trigger_cmdv(cmd, kwargs)
+
+    self.log.info("%s: %s", attr, cmd)
+
+    if svc.options.dry_run:
+        return
+
+    try:
+        ret = self.lcall(cmdv, **kwargs)
+    except OSError as exc:
+        ret = 1
+        if exc.errno == 8:
+            self.log.error("%s exec format error: check the script shebang", cmd)
+        else:
+            self.log.error("%s error: %s", cmd, str(exc))
+    except Exception as exc:
+        ret = 1
+        self.log.error("%s error: %s", cmd, str(exc))
+
+    if blocking and ret != 0:
+        raise ex.excError("%s trigger %s blocking error" % (trigger, cmd))
+
 
 def try_decode(string, codecs=['utf8', 'latin1']):
     for i in codecs:
