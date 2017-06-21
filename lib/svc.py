@@ -1004,7 +1004,7 @@ class Svc(object):
                 except:
                     data['encap'][container.name] = {'resources': {}}
 		if hasattr(container, "vm_hostname"):
-		    data['encap'][container.name]["hostname"] = container.vm_hostname()
+		    data['encap'][container.name]["hostname"] = container.vm_hostname
 
         for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
             for resource in rset.resources:
@@ -1847,7 +1847,7 @@ class Svc(object):
         if container.pg_frozen():
             raise ex.excError("can't join a frozen container. abort encap "
                               "command.")
-        vmhostname = container.vm_hostname()
+        vmhostname = container.vm_hostname
         try:
             autostart_node = conf_get_string_scope(self, self.config,
                                                    'DEFAULT', 'autostart_node',

@@ -100,6 +100,7 @@ class Docker(resContainer.Container):
         """
         return True
 
+    @lazy
     def vm_hostname(self):
         """
         Return an empty string, as we won't need that.

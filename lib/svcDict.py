@@ -1020,6 +1020,18 @@ class KeywordVmName(Keyword):
                   text="This need to be set if the virtual machine name is different from the service name."
                 )
 
+class KeywordVmHostname(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="hostname",
+                  at=True,
+                  order=2,
+                  rtype=rcEnv.vt_supported,
+                  text="This need to be set if the virtual machine hostname is different from the machine name."
+                )
+
 class KeywordContainerRcmd(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4483,6 +4495,7 @@ class KeyDict(KeywordStore):
         self += KeywordContainerType()
         self += KeywordContainerZoneDeleteOnStop()
         self += KeywordVmName()
+        self += KeywordVmHostname()
         self += KeywordOsvcRootPath()
         self += KeywordContainerRcmd()
         self += KeywordGuestos()
