@@ -27,6 +27,7 @@ import rcLogger
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import justcall, bdecode, lazy, unset_lazy
 from rcStatus import Status
+from rcConfigParser import RawConfigParser
 import pyaes
 
 try:
@@ -51,12 +52,6 @@ except ImportError:
         message = obj.feed(ciphertext)
         message += obj.feed()
         return zlib.decompress(message)
-
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
-
 
 MON_WAIT_READY = datetime.timedelta(seconds=6)
 DEFAULT_HB_PERIOD = 5
@@ -204,6 +199,7 @@ class OsvcThread(threading.Thread):
     def __init__(self):
         super(OsvcThread, self).__init__()
         self._stop_event = threading.Event()
+        self._node_conf_event = threading.Event()
         self.created = time.time()
         self.threads = []
         self.procs = []
@@ -287,7 +283,7 @@ class OsvcThread(threading.Thread):
     @lazy
     def config(self):
         try:
-            config = ConfigParser.RawConfigParser()
+            config = RawConfigParser()
             with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as filep:
                 if sys.version_info[0] >= 3:
                     config.read_file(filep)
@@ -299,6 +295,9 @@ class OsvcThread(threading.Thread):
         return config
 
     def reload_config(self):
+        if not self._node_conf_event.is_set():
+            return
+        self._node_conf_event.clear()
         unset_lazy(self, "config")
         unset_lazy(self, "cluster_name")
         unset_lazy(self, "cluster_key")
@@ -374,6 +373,31 @@ class OsvcThread(threading.Thread):
             if datestr:
                 data.status_updated = data.status_updated.strftime(DATEFMT)
             return data
+
+    def node_command(self, cmd):
+        """
+        A generic nodemgr command Popen wrapper.
+        """
+        cmd = [rcEnv.paths.nodemgr] + cmd
+        self.log.info("execute: %s", " ".join(cmd))
+        proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
+        return proc
+
+    def service_command(self, svcname, cmd):
+        """
+        A generic svcmgr command Popen wrapper.
+        """
+        cmd = [rcEnv.paths.svcmgr, '-s', svcname, "--crm"] + cmd
+        self.log.info("execute: %s", " ".join(cmd))
+        proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
+        return proc
+
+    def add_cluster_node(self, nodename):
+        new_nodes = self.cluster_nodes + [nodename]
+        new_nodes_str = " ".join(new_nodes)
+        cmd = ["set", "--param", "cluster.nodes", "--value", new_nodes_str]
+        proc = self.node_command(cmd)
+        return proc.wait()
 
 #############################################################################
 #
@@ -451,6 +475,8 @@ class Crypt(object):
             return
         import uuid
         key = uuid.uuid1().hex
+        if not config.has_section("cluster"):
+            config.add_section("cluster")
         node.config.set("cluster", "secret", key)
         node.write_config()
         return self.prepare_key(key)
@@ -473,7 +499,8 @@ class Crypt(object):
         except ValueError:
             self.log.error("misformatted encrypted message: %s", repr(message))
             return None, None
-        if message.get("clustername") != self.cluster_name:
+        if self.cluster_name != "join" and message.get("clustername") not in (self.cluster_name, "join"):
+            self.log.warning("discard message from cluster %s", message.get("clustername"))
             return None, None
         if self.cluster_key is None:
             return None, None
@@ -485,7 +512,11 @@ class Crypt(object):
             return None, None
         iv = base64.urlsafe_b64decode(str(iv))
         data = base64.urlsafe_b64decode(str(message["data"]))
-        data = bdecode(self._decrypt(data, self.cluster_key, iv))
+        try:
+            data = bdecode(self._decrypt(data, self.cluster_key, iv))
+        except Exception as exc:
+            self.log.error("decrypt message from %s: %s", nodename, str(exc))
+            return None, None
         try:
             return nodename, json.loads(data)
         except ValueError as exc:
@@ -740,7 +771,6 @@ class HbUcast(Hb, Crypt):
                 continue
             if self.peer_config[nodename].port is None:
                 self.peer_config[nodename].port = self.peer_config[rcEnv.nodename].port
-        #print(json.dumps(self.peer_config, indent=4))
 
 class HbUcastTx(HbUcast):
     """
@@ -769,6 +799,7 @@ class HbUcastTx(HbUcast):
 
     def do(self):
         #self.log.info("sending to %s:%s", self.addr, self.port)
+        self.reload_config()
         message = self.get_message()
         if message is None:
             return
@@ -831,6 +862,7 @@ class HbUcastRx(HbUcast):
                 sys.exit(0)
 
     def do(self):
+        self.reload_config()
         self.janitor_threads()
 
         try:
@@ -874,6 +906,9 @@ class HbUcastRx(HbUcast):
             # ignore hb data we sent ourself
             self.set_beating(nodename)
             return
+        elif nodename not in self.cluster_nodes:
+            # decrypt passed, trust it is a new node
+            self.add_cluster_node()
         if data is None:
             self.stats.errors += 1
             self.set_beating(nodename)
@@ -984,6 +1019,7 @@ class HbMcastTx(HbMcast):
 
     def do(self):
         #self.log.info("sending to %s:%s", self.addr, self.port)
+        self.reload_config()
         message = self.get_message()
         if message is None:
             return
@@ -1037,6 +1073,7 @@ class HbMcastRx(HbMcast):
                 sys.exit(0)
 
     def do(self):
+        self.reload_config()
         self.janitor_threads()
 
         try:
@@ -1057,6 +1094,9 @@ class HbMcastRx(HbMcast):
         if nodename is None or nodename == rcEnv.nodename:
             # ignore hb data we sent ourself
             return
+        elif nodename not in self.cluster_nodes:
+            # decrypt passed, trust it is a new node
+            self.add_cluster_node()
         if data is None:
             self.stats.errors += 1
             self.set_beating(nodename)
@@ -1079,20 +1119,13 @@ class Listener(OsvcThread, Crypt):
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.listener")
         try:
-            self.config = ConfigParser.RawConfigParser()
-            self.config.read(rcEnv.paths.nodeconf)
+            self.port = self.config.getint("listener", "port")
         except:
             self.port = rcEnv.listener_port
+        try:
+            self.addr = self.config.get("listener", "addr")
+        except:
             self.addr = "0.0.0.0"
-        else:
-            try:
-                self.port = self.config.getint("listener", "port")
-            except:
-                self.port = rcEnv.listener_port
-            try:
-                self.addr = self.config.get("listener", "addr")
-            except:
-                self.addr = "0.0.0.0"
 
         try:
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
@@ -1137,6 +1170,7 @@ class Listener(OsvcThread, Crypt):
 
     def do(self):
         done = []
+        self.reload_config()
         self.janitor_threads()
 
         try:
@@ -1313,6 +1347,34 @@ class Listener(OsvcThread, Crypt):
         wake_monitor()
         return {"status": 0}
 
+    def action_join(self, nodename, **kwargs):
+        if nodename in self.cluster_nodes:
+            self.log.warning("node %s is already joined.",
+                             nodename)
+            new_nodes = self.cluster_nodes
+        else:
+            self.add_cluster_node(nodename)
+            new_nodes = self.cluster_nodes + [nodename]
+            new_nodes_str = " ".join(new_nodes)
+            cmd = ["set", "--param", "cluster.nodes", "--value", new_nodes_str]
+            proc = self.node_command(cmd)
+            ret = proc.wait()
+        result = {
+            "status": 0,
+            "data": {
+                "cluster": {
+                    "nodes": new_nodes,
+                    "name": self.cluster_name
+                },
+            },
+        }
+        for section in self.config.sections():
+            if section.startswith("hb#"):
+                result["data"][section] = {}
+                for key, val in self.config.items(section):
+                     result["data"][section][key] = val
+        return result
+
 #############################################################################
 #
 # Scheduler Thread
@@ -1335,6 +1397,7 @@ class Scheduler(OsvcThread):
 
     def do(self):
         self.janitor_procs()
+        self.reload_config()
         now = time.time()
         with SCHED_TICKER:
             SCHED_TICKER.wait(self.interval)
@@ -1484,18 +1547,9 @@ class Monitor(OsvcThread, Crypt):
 
     #########################################################################
     #
-    # Service commands
+    # Node and Service Commands
     #
     #########################################################################
-    def service_command(self, svcname, cmd):
-        """
-        A generic svcmgr command Popen wrapper.
-        """
-        cmd = [rcEnv.paths.svcmgr, '-s', svcname, "--crm"] + cmd
-        self.log.info("execute: %s", " ".join(cmd))
-        proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
-        return proc
-
     #
     def service_start_resources(self, svcname, rids):
         self.set_service_monitor(svcname, "restarting")
@@ -2250,7 +2304,7 @@ class Monitor(OsvcThread, Crypt):
         global CLUSTER_DATA
         global CLUSTER_DATA_LOCK
         with CLUSTER_DATA_LOCK:
-            nodenames = CLUSTER_DATA.keys()
+            nodenames = list(CLUSTER_DATA.keys())
         if rcEnv.nodename not in nodenames:
             return
         nodenames.remove(rcEnv.nodename)
@@ -2297,7 +2351,7 @@ class Daemon(object):
     def __init__(self):
         self.handlers = None
         self.threads = {}
-        self.config = ConfigParser.RawConfigParser()
+        self.config = RawConfigParser()
         self.last_config_mtime = None
         rcLogger.initLogger(rcEnv.nodename, self.handlers)
         rcLogger.set_namelen(force=30)
@@ -2418,6 +2472,8 @@ class Daemon(object):
             else:
                 self.log.info("node config loaded")
             self.last_config_mtime = mtime
+            for thr_id in self.threads:
+                self.threads[thr_id]._node_conf_event.set()
         except Exception as exc:
             self.log.warning("failed to load config: %s", str(exc))
 

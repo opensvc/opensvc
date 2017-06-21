@@ -170,7 +170,12 @@ OPT = Storage({
         "--stats-dir", default=None,
         action="store", dest="stats_dir",
         help="points the directory where the metrics files are "
-             "stored for pushstats"),
+             "stored for pushstats."),
+    "secret": Option(
+        "--secret", default=None,
+        action="store", dest="secret",
+        help="the cluster secret used as the AES key in the cluster "
+             "communications."),
     "symcli_db_file": Option(
         "--symcli-db-file", default=None,
         action="store", dest="symcli_db_file",
@@ -368,6 +373,12 @@ ACTIONS = {
             'msg': 'stop a daemon thread.',
             'options': DAEMON_OPTS + [
                 OPT.thr_id,
+            ],
+         },
+        'daemon_join': {
+            'msg': 'stop a daemon thread.',
+            'options': DAEMON_OPTS + [
+                OPT.secret,
             ],
          },
     },

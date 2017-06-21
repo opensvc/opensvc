@@ -19,8 +19,7 @@ from resourceset import ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
-from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, try_decode, eval_expr, convert_bool, action_triggers
-from rcConfigParser import RawConfigParser
+from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, try_decode, eval_expr, convert_bool, action_triggers, read_cf
 import rcExceptions as ex
 import rcLogger
 import node
@@ -1076,6 +1075,9 @@ class Svc(Crypt):
         except ImportError:
             data = {}
         for key in config.get("env", {}).keys():
+            key = key.split("@")[0]
+            if key in data:
+                continue
             if evaluate:
                 data[key] = self.conf_get_string_scope('env', key)
             else:
@@ -3860,13 +3862,7 @@ class Svc(Crypt):
         The parser object is a opensvc-specified class derived from
         optparse.RawConfigParser.
         """
-        try:
-            from collections import OrderedDict
-            config = RawConfigParser(dict_type=OrderedDict)
-        except ImportError:
-            config = RawConfigParser()
-        config.read(self.paths.cf)
-        return config
+        return read_cf(self.paths.cf)
 
     def unset(self):
         """
@@ -4405,9 +4401,8 @@ class Svc(Crypt):
         if path is None:
             config = self.config
         else:
-            config = RawConfigParser()
             try:
-                config.read(path)
+                config = read_cf(path)
             except ConfigParser.ParsingError:
                 self.log.error("error parsing %s" % path)
                 ret["errors"] += 1
@@ -4427,7 +4422,7 @@ class Svc(Crypt):
             """
             value = config.get(section, option)
             try:
-                value = self.handle_references(value, scope=True)
+                value = self.handle_references(value, scope=True, config=config)
             except ex.excError as exc:
                 if not option.startswith("pre_") and \
                    not option.startswith("post_") and \
@@ -4444,7 +4439,7 @@ class Svc(Crypt):
             Fetch the value and convert it to expected type.
             """
             _option = option.split("@")[0]
-            value = self.conf_get_string_scope(section, _option)
+            value = self.conf_get_string_scope(section, _option, config=config)
             if isinstance(key.default, bool):
                 return bool(value)
             elif isinstance(key.default, int):
@@ -4776,7 +4771,7 @@ class Svc(Crypt):
     # config helpers
     #
     #########################################################################
-    def handle_reference(self, ref, scope=False, impersonate=None):
+    def handle_reference(self, ref, scope=False, impersonate=None, config=None):
             # hardcoded references
             if ref == "nodename":
                 return rcEnv.nodename
@@ -4820,7 +4815,7 @@ class Svc(Crypt):
             else:
                 return_length = False
 
-            val = self._handle_reference(ref, _section, _v, scope=scope, impersonate=impersonate)
+            val = self._handle_reference(ref, _section, _v, scope=scope, impersonate=impersonate, config=config)
 
             if return_length:
                 return str(len(val.split()))
@@ -4830,38 +4825,40 @@ class Svc(Crypt):
 
             return val
 
-    def _handle_reference(self, ref, _section, _v, scope=False, impersonate=None):
-            # give os env precedence over the env cf section
-            if _section == "env" and _v.upper() in os.environ:
-                return os.environ[_v.upper()]
+    def _handle_reference(self, ref, _section, _v, scope=False, impersonate=None, config=None):
+        if config is None:
+            config = self.config
+        # give os env precedence over the env cf section
+        if _section == "env" and _v.upper() in os.environ:
+            return os.environ[_v.upper()]
 
-            if _section == "node":
-                # go fetch the reference in the node.conf [node] section
-                if self.node is None:
-                    from node import Node
-                    self.node = Node()
-                try:
-                    return self.node.config.get("node", _v)
-                except Exception as exc:
-                    raise ex.excError("%s: unresolved reference (%s)" % (ref, str(exc)))
-
-            if _section != "DEFAULT" and not self.config.has_section(_section):
-                raise ex.excError("%s: section %s does not exist" % (ref, _section))
-
+        if _section == "node":
+            # go fetch the reference in the node.conf [node] section
+            if self.node is None:
+                from node import Node
+                self.node = Node()
             try:
-                return self.conf_get(_section, _v, "string", scope=scope, impersonate=impersonate)
-            except ex.OptNotFound as exc:
+                return self.node.config.get("node", _v)
+            except Exception as exc:
                 raise ex.excError("%s: unresolved reference (%s)" % (ref, str(exc)))
 
-            raise ex.excError("%s: unknown reference" % ref)
+        if _section != "DEFAULT" and not config.has_section(_section):
+            raise ex.excError("%s: section %s does not exist" % (ref, _section))
 
-    def _handle_references(self, s, scope=False, impersonate=None):
+        try:
+            return self.conf_get(_section, _v, "string", scope=scope, impersonate=impersonate, config=config)
+        except ex.OptNotFound as exc:
+            raise ex.excError("%s: unresolved reference (%s)" % (ref, str(exc)))
+
+        raise ex.excError("%s: unknown reference" % ref)
+
+    def _handle_references(self, s, scope=False, impersonate=None, config=None):
         while True:
             m = re.search(r'{\w*[\w#][\w\.\[\]]*}', s)
             if m is None:
                 return s
             ref = m.group(0).strip("{}")
-            val = self.handle_reference(ref, scope=scope, impersonate=impersonate)
+            val = self.handle_reference(ref, scope=scope, impersonate=impersonate, config=config)
             s = s[:m.start()] + val + s[m.end():]
 
     @staticmethod
@@ -4874,25 +4871,25 @@ class Svc(Crypt):
             val = eval_expr(expr)
             s = s[:m.start()] + str(val) + s[m.end():]
 
-    def handle_references(self, s, scope=False, impersonate=None):
+    def handle_references(self, s, scope=False, impersonate=None, config=None):
         key = (s, scope, impersonate)
         if hasattr(self, "ref_cache") and self.ref_cache is not None and key in self.ref_cache:
             return self.ref_cache[key]
         try:
-            val = self._handle_references(s, scope=scope, impersonate=impersonate)
+            val = self._handle_references(s, scope=scope, impersonate=impersonate, config=config)
             val = self._handle_expressions(val)
-            val = self._handle_references(val, scope=scope, impersonate=impersonate)
+            val = self._handle_references(val, scope=scope, impersonate=impersonate, config=config)
         except Exception as e:
             raise ex.excError("%s: reference evaluation failed: %s" %(s, str(e)))
         if hasattr(self, "ref_cache") and self.ref_cache is not None:
             self.ref_cache[key] = val
         return val
 
-    def conf_get(self, s, o, t, scope=False, impersonate=None, use_default=True):
+    def conf_get(self, s, o, t, scope=False, impersonate=None, use_default=True, config=None):
         if not scope:
-            val = self.conf_get_val_unscoped(s, o, use_default=use_default)
+            val = self.conf_get_val_unscoped(s, o, use_default=use_default, config=config)
         else:
-            val = self.conf_get_val_scoped(s, o, impersonate=impersonate, use_default=use_default)
+            val = self.conf_get_val_scoped(s, o, impersonate=impersonate, use_default=use_default, config=config)
 
         try:
             val = self.handle_references(val, scope=scope, impersonate=impersonate)
@@ -4916,24 +4913,28 @@ class Svc(Crypt):
 
         return val
 
-    def conf_get_val_unscoped(self, s, o, use_default=True):
-        if self.config.has_option(s, o):
-            return self.config.get(s, o)
+    def conf_get_val_unscoped(self, s, o, use_default=True, config=None):
+        if config is None:
+            config = self.config
+        if config.has_option(s, o):
+            return config.get(s, o)
         raise ex.OptNotFound("unscoped keyword %s.%s not found" % (s, o))
 
-    def conf_has_option_scoped(self, s, o, impersonate=None):
+    def conf_has_option_scoped(self, s, o, impersonate=None, config=None):
+        if config is None:
+            config = self.config
         if impersonate is None:
             nodename = rcEnv.nodename
         else:
             nodename = impersonate
 
-        if s != "DEFAULT" and not self.config.has_section(s):
+        if s != "DEFAULT" and not config.has_section(s):
             return
 
         if s == "DEFAULT":
-            options = self.config.defaults().keys()
+            options = config.defaults().keys()
         else:
-            options = self.config._sections[s].keys()
+            options = config._sections[s].keys()
 
         if o+"@"+nodename in options:
             return o+"@"+nodename
@@ -4955,47 +4956,49 @@ class Svc(Crypt):
         elif o in options:
             return o
 
-    def conf_get_val_scoped(self, s, o, impersonate=None, use_default=True):
+    def conf_get_val_scoped(self, s, o, impersonate=None, use_default=True, config=None):
+        if config is None:
+            config = self.config
         if impersonate is None:
             nodename = rcEnv.nodename
         else:
             nodename = impersonate
 
-        option = self.conf_has_option_scoped(s, o, impersonate=impersonate)
+        option = self.conf_has_option_scoped(s, o, impersonate=impersonate, config=config)
         if option is None and not use_default:
             raise ex.OptNotFound("scoped keyword %s.%s not found" % (s, o))
 
         if option is None and use_default:
             if s != "DEFAULT":
                 # fallback to default
-                return self.conf_get_val_scoped("DEFAULT", o, impersonate=impersonate)
+                return self.conf_get_val_scoped("DEFAULT", o, impersonate=impersonate, config=config)
             else:
                 raise ex.OptNotFound("scoped keyword %s.%s not found" % (s, o))
 
         try:
-            val = self.config.get(s, option)
+            val = config.get(s, option)
         except Exception as e:
             raise ex.excError("param %s.%s: %s"%(s, o, str(e)))
 
         return val
 
-    def conf_get_string(self, s, o, use_default=True):
-        return self.conf_get(s, o, 'string', scope=False, use_default=use_default)
+    def conf_get_string(self, s, o, use_default=True, config=None):
+        return self.conf_get(s, o, 'string', scope=False, use_default=use_default, config=config)
 
-    def conf_get_string_scope(self, s, o, impersonate=None, use_default=True):
-        return self.conf_get(s, o, 'string', scope=True, impersonate=impersonate, use_default=use_default)
+    def conf_get_string_scope(self, s, o, impersonate=None, use_default=True, config=None):
+        return self.conf_get(s, o, 'string', scope=True, impersonate=impersonate, use_default=use_default, config=config)
 
-    def conf_get_boolean(self, s, o, use_default=True):
-        return self.conf_get(s, o, 'boolean', scope=False, use_default=use_default)
+    def conf_get_boolean(self, s, o, use_default=True, config=None):
+        return self.conf_get(s, o, 'boolean', scope=False, use_default=use_default, config=config)
 
-    def conf_get_boolean_scope(self, s, o, impersonate=None, use_default=True):
-        return self.conf_get(s, o, 'boolean', scope=True, impersonate=impersonate, use_default=use_default)
+    def conf_get_boolean_scope(self, s, o, impersonate=None, use_default=True, config=None):
+        return self.conf_get(s, o, 'boolean', scope=True, impersonate=impersonate, use_default=use_default, config=config)
 
-    def conf_get_int(self, s, o, use_default=True):
-        return self.conf_get(s, o, 'integer', scope=False, use_default=use_default)
+    def conf_get_int(self, s, o, use_default=True, config=None):
+        return self.conf_get(s, o, 'integer', scope=False, use_default=use_default, config=config)
 
-    def conf_get_int_scope(self, s, o, impersonate=None, use_default=True):
-        return self.conf_get(s, o, 'integer', scope=True, impersonate=impersonate, use_default=use_default)
+    def conf_get_int_scope(self, s, o, impersonate=None, use_default=True, config=None):
+        return self.conf_get(s, o, 'integer', scope=True, impersonate=impersonate, use_default=use_default, config=config)
 
     def get_pg_settings(self, s):
         d = {}

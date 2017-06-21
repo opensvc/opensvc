@@ -946,6 +946,31 @@ def purge_cache():
         except:
             pass
 
+def read_cf(fpath, defaults=None):
+    """
+    Read and parse an arbitrary ini-formatted config file, and return
+    the RawConfigParser object.
+    """
+    import codecs
+    from rcConfigParser import RawConfigParser
+    try:
+        from collections import OrderedDict
+        config = RawConfigParser(dict_type=OrderedDict)
+    except ImportError:
+        config = RawConfigParser()
+
+    if defaults is None:
+        defaults = {}
+    config = RawConfigParser(defaults)
+    if not os.path.exists(fpath):
+        return config
+    with codecs.open(fpath, "r", "utf8") as ofile:
+        if sys.version_info[0] >= 3:
+            config.read_file(ofile)
+        else:
+            config.readfp(ofile)
+    return config
+
 if __name__ == "__main__":
     #print("call(('id','-a'))")
     #(r,output,err)=call(("/usr/bin/id","-a"))

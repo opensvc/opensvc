@@ -34,7 +34,7 @@ from rcScheduler import scheduler_fork, Scheduler, SchedOpts
 from rcConfigParser import RawConfigParser
 from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
-                        call, which, purge_cache
+                        call, which, purge_cache, read_cf
 from osvcd import Crypt
 
 if sys.version_info[0] < 3:
@@ -576,12 +576,17 @@ class Node(Crypt):
                 self.config.remove_section(section)
         import tempfile
         import shutil
+        import codecs
         try:
             tmpf = tempfile.NamedTemporaryFile()
             fpath = tmpf.name
             tmpf.close()
-            with open(fpath, "w") as tmpf:
-                self.config.write(tmpf)
+            if sys.version_info[0] >= 3:
+                with codecs.open(fpath, "w", "utf-8") as tmpf:
+                    self.config.write(tmpf)
+            else:
+                with open(fpath, "w") as tmpf:
+                    self.config.write(tmpf)
             shutil.move(fpath, rcEnv.paths.nodeconf)
         except (OSError, IOError) as exc:
             print("failed to write new %s (%s)" % (rcEnv.paths.nodeconf, str(exc)),
@@ -600,25 +605,6 @@ class Node(Crypt):
         for svc in self.svcs:
             svc.purge_status_last()
 
-    @staticmethod
-    def read_cf(fpath, defaults=None):
-        """
-        Read and parse an arbitrary ini-formatted config file, and return
-        the RawConfigParser object.
-        """
-        import codecs
-        if defaults is None:
-            defaults = {}
-        config = RawConfigParser(defaults)
-        if not os.path.exists(fpath):
-            return config
-        with codecs.open(fpath, "r", "utf8") as ofile:
-            if sys.version_info[0] >= 3:
-                config.read_file(ofile)
-            else:
-                config.readfp(ofile)
-        return config
-
     def load_config(self):
         """
         Parse the node.conf configuration file and store the RawConfigParser
@@ -628,7 +614,7 @@ class Node(Crypt):
         value before use.
         """
         try:
-            self.config = self.read_cf(rcEnv.paths.nodeconf, CONFIG_DEFAULTS)
+            self.config = read_cf(rcEnv.paths.nodeconf, CONFIG_DEFAULTS)
         except IOError:
             # some action don't need self.config
             pass
@@ -642,7 +628,7 @@ class Node(Crypt):
         """
         if self.auth_config is not None:
             return
-        self.auth_config = self.read_cf(rcEnv.paths.authconf)
+        self.auth_config = read_cf(rcEnv.paths.authconf)
 
     @staticmethod
     def setup_sync_outdated():
@@ -2927,4 +2913,47 @@ class Node(Crypt):
             nodename=self.options.node,
         )
         print(json.dumps(data, indent=4, sort_keys=True))
+
+    def daemon_join(self):
+        if self.options.secret is None:
+            raise ex.excError("--secret must be set")
+        if self.options.node is None:
+            raise ex.excError("--node must be set")
+        if not self.config.has_section("cluster"):
+            self.config.add_section("cluster")
+        self.config.set("cluster", "secret", self.options.secret)
+        self.config.set("cluster", "name", "join")
+        self.write_config()
+        data = self.daemon_send(
+            {"action": "join"},
+            nodename=self.options.node,
+        )
+        print(json.dumps(data, indent=4, sort_keys=True))
+        if data is None:
+            raise ex.excError("join failed")
+        data = data.get("data")
+        if data is None:
+            raise ex.excError("join failed: no data in response")
+        cluster_name = data.get("cluster", {}).get("name")
+        if cluster_name is None:
+            raise ex.excError("join failed: no cluster.name in response")
+        cluster_nodes = data.get("cluster", {}).get("nodes")
+        if cluster_nodes is None:
+            raise ex.excError("join failed: no cluster.nodes in response")
+        if not isinstance(cluster_nodes, list):
+            raise ex.excError("join failed: cluster.nodes value is not a list")
+
+        self.config.set("cluster", "name", cluster_name)
+        self.config.set("cluster", "nodes", " ".join(cluster_nodes))
+
+        for section, _data in data.items():
+            if not section.startswith("hb#"):
+                continue
+            if self.config.has_section(section):
+                self.config.remove_section(section)
+            self.config.add_section(section)
+            for option, value in _data.items():
+                self.config.set(section, option, value)
+
+        self.write_config()
 
