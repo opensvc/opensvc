@@ -237,7 +237,7 @@ class App(Resource):
             return self.fmt_info(keyvals)
         self.validate_on_action()
         buff = self.run('info', dedicated_log=False, return_out=True)
-        if is_string(buff) != str or len(buff) == 0:
+        if not is_string(buff) or len(buff) == 0:
             keyvals.append(["Error", "info not implemented in launcher"])
             return keyvals
         for line in buff.splitlines():
