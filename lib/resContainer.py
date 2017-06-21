@@ -48,15 +48,15 @@ class Container(Res.Resource):
     def getaddr(self, cache_fallback=False):
         if hasattr(self, 'addr'):
             return
-        if len(self.name) == 0:
+        if len(self.vm_hostname) == 0:
             # explicitely disabled (ex: docker)
             return
         try:
-            self.log.debug("resolving %s" % self.name)
-            self.addr = getaddr(self.name, cache_fallback=cache_fallback, log=self.log)
+            self.log.debug("resolving %s" % self.vm_hostname)
+            self.addr = getaddr(self.vm_hostname, cache_fallback=cache_fallback, log=self.log)
         except Exception as e:
             if not self.disabled:
-                raise ex.excError("could not resolve name %s: %s" % (self.name, str(e)))
+                raise ex.excError("could not resolve name %s: %s" % (self.vm_hostname, str(e)))
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
@@ -125,7 +125,7 @@ class Container(Res.Resource):
         return
 
     def abort_start_ping(self):
-        if len(self.name) == 0:
+        if len(self.vm_hostname) == 0:
             # docker container for example
             return False
         try:
