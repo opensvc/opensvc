@@ -36,7 +36,7 @@ Version: $VERSION-$RELEASE
 Section: admin 
 Priority: optional
 Architecture: all
-Depends: python psmisc
+Depends: python, psmisc
 Pre-Depends: 
 Recommends: sg3-utils
 Suggests: 
