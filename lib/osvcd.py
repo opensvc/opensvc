@@ -2455,6 +2455,17 @@ class Daemon(object):
             self.threads["monitor"].start()
             changed = True
 
+        # clean up deleted heartbeats
+        for thr_id in list(self.threads.keys()):
+            if not thr_id.startswith("hb#"):
+                continue
+            name = thr_id.replace(".tx", "").replace(".rx", "")
+            if not self.config.has_section(name):
+                self.log.info("heartbeat %s removed from configuration. stop thread %s", name, thr_id)
+                self.threads[thr_id].stop()
+                self.threads[thr_id].join()
+                del self.threads[thr_id]
+
         if changed:
             with THREADS_LOCK:
                 THREADS = self.threads
@@ -2470,12 +2481,15 @@ class Daemon(object):
         if self.last_config_mtime is not None and self.last_config_mtime >= mtime:
             return
         try:
+            self.config = RawConfigParser()
             self.config.read(rcEnv.paths.nodeconf)
             if self.last_config_mtime:
                 self.log.info("node config reloaded (changed)")
             else:
                 self.log.info("node config loaded")
             self.last_config_mtime = mtime
+
+            # signal the node config change to threads
             for thr_id in self.threads:
                 self.threads[thr_id]._node_conf_event.set()
         except Exception as exc:
