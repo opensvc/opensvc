@@ -2922,11 +2922,11 @@ class Node(Crypt):
         if not self.config.has_section("cluster"):
             self.config.add_section("cluster")
         self.config.set("cluster", "secret", self.options.secret)
-        self.config.set("cluster", "name", "join")
         self.write_config()
         data = self.daemon_send(
             {"action": "join"},
             nodename=self.options.node,
+            cluster_name="join",
         )
         print(json.dumps(data, indent=4, sort_keys=True))
         if data is None:
