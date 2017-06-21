@@ -3771,7 +3771,7 @@ class Svc(object):
                 peers = set(self.drpnodes)
             peers -= set([rcEnv.nodename])
 
-        args = [arg for arg in sys.argv[1:] if arg != "--cluster"]
+        args = [arg for arg in sys.argv[1:] if arg not in ("-c", "--cluster")]
         if self.options.docker_argv and len(self.options.docker_argv) > 0:
             args += self.options.docker_argv
 
