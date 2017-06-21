@@ -1003,8 +1003,8 @@ class Svc(object):
                     data['encap'][container.name] = self.encap_json_status(container)
                 except:
                     data['encap'][container.name] = {'resources': {}}
-		if hasattr(container, "vm_hostname"):
-		    data['encap'][container.name]["hostname"] = container.vm_hostname
+                if hasattr(container, "vm_hostname"):
+                    data['encap'][container.name]["hostname"] = container.vm_hostname
 
         for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
             for resource in rset.resources:
