@@ -2,7 +2,7 @@ import rcStatus
 import resources as Res
 import time
 import rcExceptions as ex
-from rcUtilities import justcall, getaddr
+from rcUtilities import justcall, getaddr, lazy
 from rcGlobalEnv import rcEnv
 
 class Container(Res.Resource):
@@ -37,19 +37,13 @@ class Container(Res.Resource):
             self.runmethod = rcEnv.rsh.split() + [name]
         self.booted = False
 
+    @lazy
     def vm_hostname(self):
-        if hasattr(self, 'vmhostname'):
-            return self.vmhostname
-        if self.guestos == "windows":
-            self.vmhostname = self.name
-            return self.vmhostname
-        cmd = self.runmethod + ['hostname']
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            self.vmhostname = self.name
-        else:
-            self.vmhostname = out.strip()
-        return self.vmhostname
+        try:
+            hostname = self.svc.conf_get_string_scope(self.rid, "hostname")
+        except ex.OptNotFound:
+            hostname = self.name
+        return hostname
 
     def getaddr(self, cache_fallback=False):
         if hasattr(self, 'addr'):

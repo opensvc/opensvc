@@ -592,7 +592,7 @@ class Collector(object):
             container_info = container.get_container_info()
             vals += [[svc.svcname,
                       rcEnv.nodename,
-                      container.vm_hostname(),
+                      container.vm_hostname,
                       container.guestos if hasattr(container, 'guestos') and container.guestos is not None else "",
                       container_info['vmem'],
                       container_info['vcpus'],
@@ -647,7 +647,7 @@ class Collector(object):
                         cluster = svc.clustername
                     else:
                         cluster = ','.join(sorted(list(svc.nodes)))
-                    served_disks += map(lambda x: (x[0], r.vm_hostname()+'.'+x[1], cluster), r.devmap())
+                    served_disks += map(lambda x: (x[0], r.vm_hostname+'.'+x[1], cluster), r.devmap())
 
                 try:
                     devpaths = r.devlist()
