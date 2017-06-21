@@ -50,7 +50,7 @@ class syncSymclone(symclone.syncSymclone):
         for pair in self.pairs:
             src, dst = self.split_pair(pair)
             dev = self.showdevs_etree[dst].find('Dev_Info/pd_name').text
-            if dev is "Not Visible":
+            if "Not Visible" in dev:
                 raise ex.excError("pd name is 'Not Visible'. please scan scsi buses and run symcfg discover")
             self.dev_rescan(dev)
             self.wait_for_dev_ready(dev)
