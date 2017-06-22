@@ -2655,6 +2655,8 @@ class Node(Crypt):
 
     def daemon_status(self):
         data = self._daemon_status()
+        if data is None:
+            return
 
         from rcColor import format_json, colorize, color, unicons
         if self.options.format == "json":
@@ -2695,9 +2697,12 @@ class Node(Crypt):
             if svcname not in self.services:
                 # svc deleted and monitor not yet aware
                 return
+            status = colorize_status(data["avail"], lpad=0)
+            if data["overall"] != "":
+                status += " "+colorize_status(data["overall"], lpad=0)
             line = [
                 " "+colorize(svcname, color.BOLD),
-                colorize_status(data["avail"], lpad=0),
+                status,
                 self.services[svcname].clustertype,
                 "|",
             ]
@@ -2715,6 +2720,12 @@ class Node(Crypt):
                         avail_icon = colorize("?", color.RED)
                     else:
                         avail_icon = colorize_status(avail, lpad=0).replace(avail, unicons[avail])
+                    # overall status unicon
+                    overall = services[svcname]["nodes"][nodename]["overall"]
+                    if overall == "warn":
+                        overall_icon = colorize_status(overall, lpad=0).replace(overall, unicons[overall])
+                    else:
+                        overall_icon = ""
                     # mon status
                     smon = services[svcname]["nodes"][nodename]["mon"]
                     if smon == "idle":
@@ -2722,9 +2733,10 @@ class Node(Crypt):
                         smon = ""
 
                     val.append(avail_icon)
+                    val.append(overall_icon)
                     val.append(frozen_icon)
                     val.append(smon)
-                    line.append(" ".join(val))
+                    line.append("".join(val))
                 elif nodename not in self.services[svcname].nodes | self.services[svcname].drpnodes:
                     line.append("")
                 else:
@@ -2858,15 +2870,18 @@ class Node(Crypt):
                 if svcname not in services:
                     services[svcname] = Storage({
                         "avail": Status(),
+                        "overall": "",
                         "nodes": {}
                     })
                 services[svcname].nodes[node] = {
                     "avail": _data["avail"],
+                    "overall": _data["overall"],
                     "frozen": _data["frozen"],
                     "mon": _data["monitor"]["status"],
                 }
         for svcname, _data in data["monitor"]["services"].items():
             services[svcname].avail = _data["avail"]
+            services[svcname].overall = _data["overall"]
 
         # load data in lists
         load_header("Threads")

@@ -2207,8 +2207,9 @@ class Svc(Crypt):
                 for nodename in prev_global_expect_set - set(global_expect_set):
                     self.log.info("work over on %s", nodename)
             if not global_expect_set:
-                self.log.info("final status: %s %s",
+                self.log.info("final status: avail=%s overall=%s frozen=%s",
                               data["monitor"]["services"][self.svcname]["avail"],
+                              data["monitor"]["services"][self.svcname]["overall"],
                               data["monitor"]["services"][self.svcname]["frozen"])
                 raise ex.excAbortAction()
             prev_global_expect_set = set(global_expect_set)

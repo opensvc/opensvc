@@ -499,7 +499,8 @@ class Crypt(object):
         try:
             message = json.loads(message)
         except ValueError:
-            self.log.error("misformatted encrypted message: %s", repr(message))
+            if len(message) > 0:
+                self.log.error("misformatted encrypted message: %s", repr(message))
             return None, None
         if cluster_name != "join" and message.get("clustername") not in (cluster_name, "join"):
             self.log.warning("discard message from cluster %s", message.get("clustername"))
@@ -1957,6 +1958,12 @@ class Monitor(OsvcThread, Crypt):
         else:
             return "unknown"
 
+    def get_global_service_status_overall(self, svcname):
+        for instance in self.get_service_instances(svcname).values():
+            if instance["overall"] == "warn":
+                return "warn"
+        return ""
+
     def get_global_service_status_frozen(self, svcname):
         fstatus = "undef"
         fstatus_l = []
@@ -2363,6 +2370,7 @@ class Monitor(OsvcThread, Crypt):
                 data["services"][svcname] = Storage()
             data["services"][svcname].avail = self.get_global_service_status(svcname)
             data["services"][svcname].frozen = self.get_global_service_status_frozen(svcname)
+            data["services"][svcname].overall = self.get_global_service_status_overall(svcname)
         return data
 
 #############################################################################
