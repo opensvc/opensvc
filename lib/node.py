@@ -2731,6 +2731,8 @@ class Node(Crypt):
                     if smon == "idle":
                         # don't display 'idle', as its to normal status and thus repeated as nauseam
                         smon = ""
+                    else:
+                        smon = " " + smon
 
                     val.append(avail_icon)
                     val.append(overall_icon)
