@@ -60,6 +60,13 @@ CONFIG_DEFAULTS = {
     'no_schedule': '',
 }
 
+ACTIONS_ASYNC = [
+    "freeze",
+    "start",
+    "stop",
+    "thaw",
+]
+
 ACTIONS_NO_STATUS_CHANGE = [
     "autopush",
     "clear",
@@ -410,6 +417,7 @@ class Svc(Crypt):
             discard=False,
             recover=False,
             waitlock=DEFAULT_WAITLOCK,
+            wait=False,
         )
 
         self.scsirelease = self.prstop
@@ -2163,6 +2171,50 @@ class Svc(Crypt):
         mtime = os.stat(self.paths.cf).st_mtime
         print(mtime)
 
+    def async_action(self, action):
+        states = {
+            "start": "started",
+            "stop": "stopped",
+            "freeze": "frozen",
+            "thaw": "thawed",
+        }
+        if self.options.crm:
+            return
+        if action not in states:
+            return
+        if self.command_is_scoped():
+            return
+        self.set_service_monitor(global_expect=states[action])
+        self.log.info("%s action requested", action)
+        if not self.options.wait:
+            raise ex.excAbortAction()
+
+        # poll global service status
+        prev_global_expect_set = set()
+        for _ in range(self.options.time):
+            data = self.node._daemon_status()
+            global_expect_set = []
+            for nodename in data["monitor"]["nodes"]:
+                try:
+                    _data = data["monitor"]["nodes"][nodename]["services"]["status"][self.svcname]
+                except (KeyError, TypeError) as exc:
+                    continue
+                if _data["monitor"]["global_expect"] == states[action]:
+                    global_expect_set.append(nodename)
+            if prev_global_expect_set != global_expect_set:
+                for nodename in set(global_expect_set) - prev_global_expect_set:
+                    self.log.info("work starting on %s", nodename)
+                for nodename in prev_global_expect_set - set(global_expect_set):
+                    self.log.info("work over on %s", nodename)
+            if not global_expect_set:
+                self.log.info("final status: %s %s",
+                              data["monitor"]["services"][self.svcname]["avail"],
+                              data["monitor"]["services"][self.svcname]["frozen"])
+                raise ex.excAbortAction()
+            prev_global_expect_set = set(global_expect_set)
+            time.sleep(1)
+        raise ex.excError("wait timeout exceeded")
+
     def boot(self):
         """
         The 'boot' action entrypoint.
@@ -2215,9 +2267,6 @@ class Svc(Crypt):
         self.encap_cmd(['run'], verbose=True)
 
     def start(self):
-        if not self.command_is_scoped() and not self.options.crm:
-            self.set_service_monitor(global_expect="started")
-            return
         self.abort_start()
         self.master_startip()
         self.master_startfs()
@@ -2242,10 +2291,6 @@ class Svc(Crypt):
         self.rollbackip()
 
     def stop(self):
-        if not self.command_is_scoped() and not self.options.crm:
-            self.set_service_monitor(global_expect="stopped")
-            self.log.info("daemon signaled")
-            return
         self.slave_stop()
         try:
             self.master_stopapp()
@@ -3333,6 +3378,15 @@ class Svc(Crypt):
         return rids
 
     def action(self, action, options=None):
+        self.allow_on_this_node(action)
+        options = self.prepare_options(options)
+        try:
+            self.async_action(action)
+        except ex.excAbortAction:
+            return
+        self._action(action, options=options)
+
+    def _action(self, action, options=None):
         """
         Filter resources on which the service action must act.
         Abort if the service is frozen, or if --cluster is not set on a HA
@@ -3340,8 +3394,6 @@ class Svc(Crypt):
         Set up the environment variables.
         Finally do the service action either in logged or unlogged mode.
         """
-        self.allow_on_this_node(action)
-        options = self.prepare_options(options)
 
         try:
             self.action_rid_before_depends = self.options_to_rids(options)
@@ -4330,18 +4382,12 @@ class Svc(Crypt):
         """
         Set the frozen flag.
         """
-        if not self.options.crm:
-            self.set_service_monitor(global_expect="frozen")
-            return
         self.freezer.freeze()
 
     def thaw(self):
         """
         Unset the frozen flag.
         """
-        if not self.options.crm:
-            self.set_service_monitor(global_expect="thawed")
-            return
         self.freezer.thaw()
 
     def frozen(self):

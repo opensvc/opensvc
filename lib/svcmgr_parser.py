@@ -260,6 +260,11 @@ OPT = Storage({
         help="the configuration file template name or id, "
              "served by the collector, to use when creating or "
              "installing a service"),
+    "time": Option(
+        "--time", default=300,
+        action="store", dest="time", type="int",
+        help="Number of seconds to wait for an async action to "
+             "finish. Default is 300 seconds."),
     "to": Option(
         "--to", default=None,
         action="store", dest="parm_destination_node",
@@ -280,11 +285,15 @@ OPT = Storage({
         action="store_true", dest="verbose",
         help="add more information to some print commands: +next"
              " in 'print schedule'"),
+    "wait": Option(
+        "--wait", default=False,
+        action="store_true", dest="wait",
+        help="Wait for asynchronous action termination"),
     "waitlock": Option(
         "--waitlock", default=-1,
         action="store", dest="parm_waitlock", type="int",
-        help="comma-separated list of resource tags to limit "
-             "action to"),
+        help="Number of seconds to wait for the action lock "
+             "acquire."),
 })
 
 SVCMGR_OPTS = [
@@ -315,6 +324,11 @@ ACTION_OPTS = [
     OPT.slaves,
     OPT.subsets,
     OPT.tags,
+]
+
+ASYNC_ACTION_OPTS = [
+    OPT.time,
+    OPT.wait,
 ]
 
 START_ACTION_OPTS = [
@@ -349,7 +363,7 @@ ACTIONS = {
         },
         'start': {
             'msg': 'start all service resources',
-            'options': ACTION_OPTS + START_ACTION_OPTS,
+            'options': ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS,
         },
         'startstandby': {
             'msg': 'start service resources flagged always on',
@@ -380,7 +394,7 @@ ACTIONS = {
             'msg': 'stop all service resources not flagged always on. With '
                    '--force, stop all service resources, even those flagged '
                    'always on.',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + ASYNC_ACTION_OPTS,
         },
         'stopip': {
             'msg': 'unconfigure service ip addresses',
@@ -464,9 +478,11 @@ ACTIONS = {
         },
         'freeze': {
             'msg': 'set up a flag to block actions on this service',
+            'options': ASYNC_ACTION_OPTS,
         },
         'thaw': {
             'msg': 'remove the flag to unblock actions on this service',
+            'options': ASYNC_ACTION_OPTS,
         },
         'toc': {
             'msg': 'Trigger the service pre_monitor_action script and monitor_action method. Beware, this might crash or reboot the node.',

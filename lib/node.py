@@ -2644,13 +2644,17 @@ class Node(Crypt):
     #
     # daemon actions
     #
-    def daemon_status(self):
+    def _daemon_status(self):
         data = self.daemon_send(
             {"action": "daemon_status"},
             nodename=self.options.node,
         )
         if data is None:
             return
+        return data
+
+    def daemon_status(self):
+        data = self._daemon_status()
 
         from rcColor import format_json, colorize, color, unicons
         if self.options.format == "json":

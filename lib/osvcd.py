@@ -1957,6 +1957,24 @@ class Monitor(OsvcThread, Crypt):
         else:
             return "unknown"
 
+    def get_global_service_status_frozen(self, svcname):
+        fstatus = "undef"
+        fstatus_l = []
+        n_instances = 0
+        for instance in self.get_service_instances(svcname).values():
+            fstatus_l.append(instance["frozen"])
+            n_instances +=1
+        n_frozen = fstatus_l.count(True)
+        if n_instances == 0:
+            fstatus = 'n/a'
+        elif n_frozen == n_instances:
+            fstatus = 'frozen'
+        elif n_frozen == 0:
+            fstatus = 'thawed'
+        else:
+            fstatus = 'mixed'
+        return fstatus
+
     def get_global_service_status_failover(self, svc):
         astatus = 'undef'
         astatus_l = []
@@ -2344,6 +2362,7 @@ class Monitor(OsvcThread, Crypt):
             if svcname not in data["services"]:
                 data["services"][svcname] = Storage()
             data["services"][svcname].avail = self.get_global_service_status(svcname)
+            data["services"][svcname].frozen = self.get_global_service_status_frozen(svcname)
         return data
 
 #############################################################################
