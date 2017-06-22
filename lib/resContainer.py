@@ -4,6 +4,7 @@ import time
 import rcExceptions as ex
 from rcUtilities import justcall, getaddr, lazy
 from rcGlobalEnv import rcEnv
+from svcBuilder import conf_get_string_scope
 
 class Container(Res.Resource):
     """ in seconds
@@ -40,7 +41,7 @@ class Container(Res.Resource):
     @lazy
     def vm_hostname(self):
         try:
-            hostname = self.svc.conf_get_string_scope(self.rid, "hostname")
+            hostname = conf_get_string_scope(self.svc, self.svc.config, self.rid, "hostname")
         except ex.OptNotFound:
             hostname = self.name
         return hostname
