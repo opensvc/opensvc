@@ -92,7 +92,10 @@ def format_json(d):
     }
     if sys.version_info[0] < 3:
         kwargs["encoding"] = "utf8"
-    print(colorize_json(json.dumps(d, **kwargs)))
+    try:
+        print(colorize_json(json.dumps(d, **kwargs)))
+    except IOError:
+        pass
 
 def format_table(d):
     from rcPrintTable import print_table_tabulate

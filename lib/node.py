@@ -2752,6 +2752,8 @@ class Node(Crypt):
                 state = colorize(_data["state"], color.RED)
             if "addr" in _data["config"] and "port" in _data["config"]:
                 config = _data["config"]["addr"]+":"+str(_data["config"]["port"])
+            elif "dev" in _data["config"]:
+                config = os.path.basename(_data["config"]["dev"])
             else:
                 config = ""
             line = [
