@@ -41,6 +41,9 @@ class ProvisioningFs(Provisioning):
         p.ProvisioningDisk(self.r).unprovisioner()
 
     def provisioner_fs(self):
+        if self.r.fs_type in self.r.netfs:
+            return
+
         self.dev = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "dev")
         self.mnt = conf_get_string_scope(self.r.svc, self.r.svc.config, self.r.rid, "mnt")
 
@@ -112,6 +115,8 @@ class ProvisioningFs(Provisioning):
 
     def unprovisioner(self):
         self.r.stop()
+        if self.r.fs_type in self.r.netfs:
+            return
         self.unprovisioner_fs()
         self.purge_mountpoint()
         self.unprovision_dev()
