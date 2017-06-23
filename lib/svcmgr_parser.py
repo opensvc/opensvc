@@ -93,9 +93,10 @@ OPT = Storage({
     "env": Option(
         "--env", default=[],
         action="append", dest="env",
-        help="with the create action, set a env section "
-             "parameter. multiple --env <key>=<val> can be "
-             "specified."),
+        help="export the uppercased variable in the os environment. "
+             "with the create action only, set a env section parameter in "
+             "the service configuration file. multiple --env <key>=<val> "
+             "can be specified. For all other actions."),
     "eval": Option(
         "--eval", default=False,
         action="store_true", dest="eval",
@@ -308,6 +309,7 @@ GLOBAL_OPTS = SVCMGR_OPTS + [
     OPT.cron,
     OPT.daemon,
     OPT.debug,
+    OPT.env,
     OPT.parallel,
     OPT.waitlock,
     OPT.help,
@@ -712,7 +714,6 @@ ACTIONS = {
                    'service config.',
             'options': ACTION_OPTS + [
                 OPT.config,
-                OPT.env,
                 OPT.interactive,
                 OPT.provision,
                 OPT.resource,
