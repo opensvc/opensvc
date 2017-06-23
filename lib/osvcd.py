@@ -2735,7 +2735,6 @@ class Daemon(object):
     def __init__(self):
         self.handlers = None
         self.threads = {}
-        self.config = RawConfigParser()
         self.last_config_mtime = None
         rcLogger.initLogger(rcEnv.nodename, self.handlers)
         rcLogger.set_namelen(force=30)
@@ -2756,6 +2755,20 @@ class Daemon(object):
     def _run_daemon(self):
         self.log.info("daemon started")
         self._run()
+
+    @lazy
+    def config(self):
+        try:
+            config = RawConfigParser()
+            with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as filep:
+                if sys.version_info[0] >= 3:
+                    config.read_file(filep)
+                else:
+                    config.readfp(filep)
+        except Exception as exc:
+            self.log.info("error loading config: %", str(exc))
+            raise ex.excAbortAction()
+        return config
 
     def _run(self):
         while True:
