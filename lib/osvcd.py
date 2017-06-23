@@ -2873,8 +2873,7 @@ class Daemon(object):
         if self.last_config_mtime is not None and self.last_config_mtime >= mtime:
             return
         try:
-            self.config = RawConfigParser()
-            self.config.read(rcEnv.paths.nodeconf)
+            unset_lazy(self, "config")
             if self.last_config_mtime:
                 self.log.info("node config reloaded (changed)")
             else:
