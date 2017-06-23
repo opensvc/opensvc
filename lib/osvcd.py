@@ -60,17 +60,37 @@ DEFAULT_HB_PERIOD = 5
 MAX_MSG_SIZE = 1024 * 1024
 DATEFMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
-# locked globals
+# The threads store
 THREADS = {}
 THREADS_LOCK = threading.RLock()
+
+# The per-threads configuration, stats and states store
+# The monitor thread states include cluster-wide aggregated data
 CLUSTER_DATA = {}
 CLUSTER_DATA_LOCK = threading.RLock()
+
+# The encrypted message all the heartbeat tx threads send.
+# It is refreshed in the monitor thread loop.
 HB_MSG = None
 HB_MSG_LOCK = threading.RLock()
+
+# CRM services objects. Used to access services properties.
+# The monitor thread reloads a new Svc object when the corresponding
+# configuration file changes.
 SERVICES = {}
 SERVICES_LOCK = threading.RLock()
+
+# the local monitor data, where the listener can set expected states
 MON_DATA = {}
 MON_DATA_LOCK = threading.RLock()
+
+# Number of received misencrypted data messages by senders
+BLACKLIST = {}
+BLACKLIST_LOCK = threading.RLock()
+
+# The maximum number of misencrypted data messages received before refusing
+# new messages
+BLACKLIST_THRESHOLD = 5
 
 #
 STARTED_STATES = (
@@ -490,7 +510,7 @@ class Crypt(object):
             key = key[:32]
         return key
 
-    def decrypt(self, message, cluster_name=None):
+    def decrypt(self, message, cluster_name=None, sender_id=None):
         if cluster_name is None:
             cluster_name = self.cluster_name
         if hasattr(self, "node"):
@@ -515,12 +535,15 @@ class Crypt(object):
         iv = message.get("iv")
         if iv is None:
             return None, None
+        if self.blacklisted(sender_id):
+            return None, None
         iv = base64.urlsafe_b64decode(str(iv))
         data = base64.urlsafe_b64decode(str(message["data"]))
         try:
             data = bdecode(self._decrypt(data, self.cluster_key, iv))
         except Exception as exc:
             self.log.error("decrypt message from %s: %s", nodename, str(exc))
+            self.blacklist(sender_id)
             return None, None
         try:
             return nodename, json.loads(data)
@@ -544,6 +567,37 @@ class Crypt(object):
             "data": bdecode(base64.urlsafe_b64encode(self._encrypt(json.dumps(data), self.cluster_key, iv))),
         }
         return (json.dumps(message)+'\0').encode()
+
+    def blacklisted(self, sender_id):
+        """
+        Return True if the sender's problem count is above threshold.
+        Else, return False.
+        """
+        if sender_id is None:
+            return False
+        sender_id = str(sender_id)
+        with BLACKLIST_LOCK:
+            count = BLACKLIST.get(sender_id, 0)
+        if count > BLACKLIST_THRESHOLD:
+            self.log.warning("received a message from blacklisted sender %s", sender_id)
+            return True
+        return False
+
+    def blacklist(self, sender_id):
+        """
+        Increment the sender's problem count in the blacklist.
+        """
+        if sender_id is None:
+            return
+        sender_id = str(sender_id)
+        with BLACKLIST_LOCK:
+            count = BLACKLIST.get(sender_id, 0)
+            if sender_id in BLACKLIST:
+                BLACKLIST[sender_id] += 1
+                if count == BLACKLIST_THRESHOLD:
+                    self.log.warning("sender %s blacklisted")
+            else:
+                BLACKLIST[sender_id] = 1
 
     def get_listener_info(self, nodename):
         """
@@ -970,6 +1024,9 @@ class HbDiskRx(HbDisk):
             try:
                 slot_data = self.read_slot(data.slot)
                 _nodename, _data = self.decrypt(slot_data)
+                if _nodename is None:
+                    # invalid crypt
+                    continue
                 if _nodename != nodename:
                     self.log.warning("node %s has written its data in node %s reserved slot", _nodename, nodename)
                     nodename = _nodename
@@ -1178,7 +1235,7 @@ class HbUcastRx(HbUcast):
             data = "".join(chunks)
         del chunks
 
-        nodename, data = self.decrypt(data)
+        nodename, data = self.decrypt(data, sender_id=addr[0])
         if nodename is None or nodename == rcEnv.nodename:
             # ignore hb data we sent ourself
             self.set_beating(nodename)
@@ -1367,7 +1424,7 @@ class HbMcastRx(HbMcast):
     def handle_client(self, message, addr):
         global CLUSTER_DATA
         global CLUSTER_DATA_LOCK
-        nodename, data = self.decrypt(message)
+        nodename, data = self.decrypt(message, sender_id=addr[0])
         if nodename is None or nodename == rcEnv.nodename:
             # ignore hb data we sent ourself
             return
@@ -1491,7 +1548,7 @@ class Listener(OsvcThread, Crypt):
             data = "".join(chunks)
         del chunks
 
-        nodename, data = self.decrypt(data)
+        nodename, data = self.decrypt(data, sender_id=addr[0])
         #self.log.info("received %s from %s", str(data), nodename)
         self.stats.sessions.auth_validated += 1
         self.stats.sessions.clients[addr[0]].auth_validated += 1
@@ -1522,6 +1579,20 @@ class Listener(OsvcThread, Crypt):
             return {"error": "action not supported", "status": 1}
         options = data.get("options", {})
         return getattr(self, fname)(nodename, **options)
+
+    def action_daemon_blacklist_clear(self, nodename, **kwargs):
+        global BLACKLIST
+        global BLACKLIST_LOCK
+        with BLACKLIST_LOCK:
+            BLACKLIST = {}
+        self.log.info("blacklist cleared")
+        return {"status": 0}
+
+    def action_daemon_blacklist_status(self, nodename, **kwargs):
+        global BLACKLIST
+        global BLACKLIST_LOCK
+        with BLACKLIST_LOCK:
+            return {"status": 0, "data": dict(BLACKLIST)}
 
     def action_daemon_status(self, nodename, **kwargs):
         global THREADS
@@ -2612,6 +2683,8 @@ class Monitor(OsvcThread, Crypt):
         with CLUSTER_DATA_LOCK:
             for svcname in CLUSTER_DATA[rcEnv.nodename]["services"]["status"]:
                 for nodename in nodenames:
+                    if nodename not in CLUSTER_DATA:
+                        continue
                     if svcname not in CLUSTER_DATA[nodename]["services"]["status"]:
                         continue
                     global_expect = CLUSTER_DATA[nodename]["services"]["status"][svcname]["monitor"].get("global_expect")

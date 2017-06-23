@@ -356,6 +356,12 @@ ACTIONS = {
         },
     },
     'Node daemon management': {
+        'daemon_blacklist_status': {
+            'msg': 'show the content of the daemon senders blacklist.',
+         },
+        'daemon_blacklist_clear': {
+            'msg': 'empty the content of the daemon senders blacklist.',
+         },
         'daemon_shutdown': {
             'msg': 'stop all local services instances then stop the daemon.',
          },

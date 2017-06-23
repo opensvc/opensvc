@@ -2901,6 +2901,26 @@ class Node(Crypt):
         # print tabulated lists
         print_section(out)
 
+    def daemon_blacklist_clear(self):
+        """
+        Tell the daemon to clear the senders blacklist
+        """
+        data = self.daemon_send(
+            {"action": "daemon_blacklist_clear"},
+            nodename=self.options.node,
+        )
+        print(json.dumps(data, indent=4, sort_keys=True))
+
+    def daemon_blacklist_status(self):
+        """
+        Show the daemon senders blacklist
+        """
+        data = self.daemon_send(
+            {"action": "daemon_blacklist_status"},
+            nodename=self.options.node,
+        )
+        print(json.dumps(data, indent=4, sort_keys=True))
+
     def daemon_shutdown(self):
         """
         Tell the daemon to shutdown all local service instances then die.
