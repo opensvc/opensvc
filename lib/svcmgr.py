@@ -203,6 +203,18 @@ def prepare_options(options):
         opts[key.replace("parm_", "")] = val
     return opts
 
+def split_env(arg):
+    idx = arg.index("=")
+    option = arg[:idx]
+    value = arg[idx+1:]
+    return option, value
+
+def export_env_from_options(options):
+    for arg in options.get("env", []):
+        option, value = split_env(arg)
+        option = option.upper()
+        os.environ[option] = value
+
 def _main(node, argv=None):
     """
     Build the service list, full or minimal depending on the requested action.
@@ -216,6 +228,7 @@ def _main(node, argv=None):
     optparser = SvcmgrOptParser()
     options, action = optparser.parse_args(argv)
     options = prepare_options(options)
+    export_env_from_options(options)
     options.docker_argv = docker_argv
     rcColor.use_color = options.color
     try:
