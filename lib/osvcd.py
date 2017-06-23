@@ -27,8 +27,7 @@ from optparse import OptionParser
 import rcExceptions as ex
 import rcLogger
 from rcGlobalEnv import rcEnv, Storage
-from rcUtilities import justcall, bdecode, lazy, unset_lazy
-from rcStatus import Status
+from rcUtilities import bdecode, lazy, unset_lazy
 from rcConfigParser import RawConfigParser
 import pyaes
 
@@ -158,7 +157,7 @@ def fork(func, args=None, kwargs=None):
         pid = os.fork()
         if pid > 0:
             os._exit(0)
-    except:
+    except Exception:
         os._exit(1)
 
     lockfile = "osvcd.lock"
@@ -225,6 +224,9 @@ class OsvcThread(threading.Thread):
         self.created = time.time()
         self.threads = []
         self.procs = []
+
+    def notify_config_change(self):
+        self._node_conf_event.set()
 
     def stop(self):
         self._stop_event.set()
@@ -312,7 +314,7 @@ class OsvcThread(threading.Thread):
                 else:
                     config.readfp(filep)
         except Exception as exc:
-            self.log.info("error loading config: %", str(exc))
+            self.log.info("error loading config: %s", exc)
             raise ex.excAbortAction()
         return config
 
@@ -326,9 +328,6 @@ class OsvcThread(threading.Thread):
         unset_lazy(self, "cluster_nodes")
 
     def get_services_nodenames(self):
-        global SERVICES
-        global SERVICES_LOCK
-
         nodenames = set()
         with SERVICES_LOCK:
             for svc in SERVICES.values():
@@ -337,7 +336,6 @@ class OsvcThread(threading.Thread):
 
     def set_service_monitor(self, svcname, status=None, local_expect=None, global_expect=None, reset_retries=False):
         global MON_DATA
-        global MON_DATA_LOCK
         with MON_DATA_LOCK:
             if svcname not in MON_DATA:
                 MON_DATA[svcname] = Storage({})
@@ -386,8 +384,6 @@ class OsvcThread(threading.Thread):
         Return the Monitor data of a service.
         If datestr is set, convert datetimes to a json compatible string.
         """
-        global MON_DATA
-        global MON_DATA_LOCK
         with MON_DATA_LOCK:
             if svcname not in MON_DATA:
                 self.set_service_monitor(svcname, "idle")
@@ -464,7 +460,7 @@ class Crypt(object):
             config = self.config
         try:
             return config.get("cluster", "nodes").split()
-        except:
+        except Exception:
             return [rcEnv.nodename]
 
     @lazy
@@ -475,7 +471,7 @@ class Crypt(object):
             config = self.config
         try:
             return config.get("cluster", "name")
-        except:
+        except Exception:
             return "default"
 
     @lazy
@@ -691,9 +687,6 @@ class Hb(OsvcThread):
     """
     Heartbeat parent class
     """
-    global CLUSTER_DATA
-    global CLUSTER_DATA_LOCK
-
     def __init__(self, name, role=None):
         OsvcThread.__init__(self)
         self.name = name
@@ -768,8 +761,6 @@ class Hb(OsvcThread):
         )[20:24])
 
     def get_message(self):
-        global HB_MSG
-        global HB_MSG_LOCK
         with HB_MSG_LOCK:
             if not HB_MSG:
                 # no data to send yet
@@ -833,7 +824,7 @@ class HbDisk(Hb, Crypt):
 
         try:
             self.dev = self.config.get(self.name, "dev")
-        except ex.OptNotFound:
+        except Exception:
             raise ex.excAbortAction("no %s.dev is not set in node.conf" % self.name)
 
         if not os.path.exists(self.dev):
@@ -1086,7 +1077,7 @@ class HbUcast(Hb, Crypt):
             config = self.config
         try:
             default_port = config.getint(self.name, "port")
-        except:
+        except Exception:
             default_port = self.DEFAULT_UCAST_PORT + 0
 
         for nodename in self.cluster_nodes:
@@ -1226,7 +1217,6 @@ class HbUcastRx(HbUcast):
 
     def _handle_client(self, conn, addr):
         global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
 
         chunks = []
         buff_size = 4096
@@ -1296,22 +1286,22 @@ class HbMcast(Hb, Crypt):
         })
         try:
             self.port = self.config.getint(self.name, "port")
-        except:
+        except Exception:
             self.port = self.DEFAULT_MCAST_PORT
         try:
             self.addr = self.config.get(self.name, "addr")
-        except:
+        except Exception:
             self.addr = self.DEFAULT_MCAST_ADDR
         try:
             self.timeout = self.config.getint(self.name, "timeout")
-        except:
+        except Exception:
             self.timeout = self.DEFAULT_MCAST_TIMEOUT
         group = socket.inet_aton(self.addr)
         try:
             self.intf = self.config.get(self.name, "intf")
             self.src_addr = self.get_ip_address(self.intf)
             self.mreq = group + socket.inet_aton(self.src_addr)
-        except:
+        except Exception:
             self.intf = "any"
             self.src_addr = "0.0.0.0"
             self.mreq = struct.pack("4sl", group, socket.INADDR_ANY)
@@ -1320,7 +1310,7 @@ class HbMcast(Hb, Crypt):
             self.intf = self.config.get(self.name, "intf")
             self.src_addr = self.get_ip_address(self.intf)
             self.src_naddr = socket.inet_aton(self.src_addr)
-        except:
+        except Exception:
             self.intf = "any"
             self.src_addr = "0.0.0.0"
             self.src_naddr = socket.INADDR_ANY
@@ -1376,7 +1366,7 @@ class HbMcastTx(HbMcast):
             self.log.warning("send timeout")
         except socket.error as exc:
             self.stats.errors += 1
-            self.log.warning("send error: %s" % str(exc))
+            self.log.warning("send error: %s", exc)
         finally:
             self.set_beating()
 
@@ -1431,7 +1421,6 @@ class HbMcastRx(HbMcast):
 
     def handle_client(self, message, addr):
         global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         nodename, data = self.decrypt(message, sender_id=addr[0])
         if nodename is None or nodename == rcEnv.nodename:
             # ignore hb data we sent ourself
@@ -1462,11 +1451,11 @@ class Listener(OsvcThread, Crypt):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.listener")
         try:
             self.port = self.config.getint("listener", "port")
-        except:
+        except Exception:
             self.port = rcEnv.listener_port
         try:
             self.addr = self.config.get("listener", "addr")
-        except:
+        except Exception:
             self.addr = "0.0.0.0"
 
         try:
@@ -1590,21 +1579,16 @@ class Listener(OsvcThread, Crypt):
 
     def action_daemon_blacklist_clear(self, nodename, **kwargs):
         global BLACKLIST
-        global BLACKLIST_LOCK
         with BLACKLIST_LOCK:
             BLACKLIST = {}
         self.log.info("blacklist cleared")
         return {"status": 0}
 
     def action_daemon_blacklist_status(self, nodename, **kwargs):
-        global BLACKLIST
-        global BLACKLIST_LOCK
         with BLACKLIST_LOCK:
             return {"status": 0, "data": dict(BLACKLIST)}
 
     def action_daemon_status(self, nodename, **kwargs):
-        global THREADS
-        global THREADS_LOCK
         data = {}
         with THREADS_LOCK:
             for thr_id, thread in THREADS.items():
@@ -1612,9 +1596,6 @@ class Listener(OsvcThread, Crypt):
         return data
 
     def action_daemon_shutdown(self, nodename, **kwargs):
-        global THREADS
-        global THREADS_LOCK
-
         self.log.info("shutdown daemon requested")
         with THREADS_LOCK:
             THREADS["monitor"].shutdown()
@@ -1627,8 +1608,6 @@ class Listener(OsvcThread, Crypt):
         return {"status": 0}
 
     def action_daemon_stop(self, nodename, **kwargs):
-        global THREADS
-        global THREADS_LOCK
         thr_id = kwargs.get("thr_id")
         if not thr_id:
             self.log.info("stop daemon requested")
@@ -1649,8 +1628,6 @@ class Listener(OsvcThread, Crypt):
         return {"status": 0}
 
     def action_daemon_start(self, nodename, **kwargs):
-        global THREADS
-        global THREADS_LOCK
         thr_id = kwargs.get("thr_id")
         if not thr_id:
             return {"error": "no thread specified", "status": 1}
@@ -1820,8 +1797,6 @@ class Monitor(OsvcThread, Crypt):
             MON_TICKER.wait(self.monitor_period)
 
     def shutdown(self):
-        global SERVICES
-        global SERVICES_LOCK
         with SERVICES_LOCK:
             for svcname, svc in SERVICES.items():
                 self.service_shutdown(svc.svcname)
@@ -1838,8 +1813,6 @@ class Monitor(OsvcThread, Crypt):
         For each service, decide if we have an outdated configuration file
         and fetch the most recent one if needed.
         """
-        global SERVICES
-        global SERVICES_LOCK
         confs = self.get_services_configs()
         for svcname, data in confs.items():
             with SERVICES_LOCK:
@@ -1870,8 +1843,6 @@ class Monitor(OsvcThread, Crypt):
         Fetch and install the most recent service configuration file, using
         the remote node listener.
         """
-        global SERVICES
-        global SERVICES_LOCK
         request = {
             "action": "get_service_config",
             "options": {
@@ -2028,8 +1999,6 @@ class Monitor(OsvcThread, Crypt):
     #
     #########################################################################
     def orchestrator(self):
-        global SERVICES
-        global SERVICES_LOCK
         with SERVICES_LOCK:
             svcs = SERVICES.values()
         for svc in svcs:
@@ -2037,8 +2006,6 @@ class Monitor(OsvcThread, Crypt):
             self.resources_orchestrator(svc)
 
     def resources_orchestrator(self, svc):
-        global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         if svc.frozen():
             #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
             return
@@ -2207,8 +2174,6 @@ class Monitor(OsvcThread, Crypt):
                 self.service_orchestrator_auto(svc, smon, status)
 
     def failover_placement_leader(self, svc):
-        global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         nodenames = []
         with CLUSTER_DATA_LOCK:
             for nodename, data in CLUSTER_DATA.items():
@@ -2238,8 +2203,6 @@ class Monitor(OsvcThread, Crypt):
             return True
 
     def failover_placement_leader_load_avg(self, svc):
-        global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         top_load = None
         top_node = None
         with CLUSTER_DATA_LOCK:
@@ -2265,8 +2228,6 @@ class Monitor(OsvcThread, Crypt):
         return False
 
     def failover_placement_leader_nodes_order(self, svc):
-        global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         with CLUSTER_DATA_LOCK:
             for nodename in svc.ordered_nodes:
                 if nodename == rcEnv.nodename:
@@ -2286,8 +2247,6 @@ class Monitor(OsvcThread, Crypt):
         return n_up
 
     def get_service(self, svcname):
-        global SERVICES
-        global SERVICES_LOCK
         with SERVICES_LOCK:
             if svcname not in SERVICES:
                 return
@@ -2399,8 +2358,6 @@ class Monitor(OsvcThread, Crypt):
         """
         Extract service instance names from the locally maintained hb data.
         """
-        global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         svcnames = []
         try:
             with CLUSTER_DATA_LOCK:
@@ -2412,8 +2369,6 @@ class Monitor(OsvcThread, Crypt):
         return svcnames
 
     def get_services_configs(self):
-        global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         data = {}
         with CLUSTER_DATA_LOCK:
             for nodename in CLUSTER_DATA:
@@ -2427,8 +2382,6 @@ class Monitor(OsvcThread, Crypt):
         return data
 
     def get_service_instance(self, svcname, nodename):
-        global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         try:
             with CLUSTER_DATA_LOCK:
                 return Storage(CLUSTER_DATA[nodename]["services"]["status"][svcname])
@@ -2436,8 +2389,6 @@ class Monitor(OsvcThread, Crypt):
             return
 
     def get_service_instances(self, svcname):
-        global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         instances = {}
         with CLUSTER_DATA_LOCK:
             for nodename in CLUSTER_DATA:
@@ -2459,8 +2410,6 @@ class Monitor(OsvcThread, Crypt):
         return cksum.hexdigest()
 
     def get_last_svc_config(self, svcname):
-        global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         with CLUSTER_DATA_LOCK:
             try:
                 return CLUSTER_DATA[rcEnv.nodename]["services"]["config"][svcname]
@@ -2468,8 +2417,6 @@ class Monitor(OsvcThread, Crypt):
                 return
 
     def get_services_config(self):
-        global SERVICES
-        global SERVICES_LOCK
         from svcBuilder import build
         config = {}
         for cfg in glob.glob(os.path.join(rcEnv.paths.pathetc, "*.conf")):
@@ -2501,8 +2448,6 @@ class Monitor(OsvcThread, Crypt):
         return config
 
     def get_last_svc_status_mtime(self, svcname):
-        global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         with CLUSTER_DATA_LOCK:
             try:
                 return CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]["mtime"]
@@ -2530,8 +2475,6 @@ class Monitor(OsvcThread, Crypt):
 
         Also update the monitor 'local_expect' field for each service.
         """
-        global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         with CLUSTER_DATA_LOCK:
             try:
                 data = CLUSTER_DATA[rcEnv.nodename]["services"]["status"]
@@ -2574,7 +2517,6 @@ class Monitor(OsvcThread, Crypt):
     #########################################################################
     def service_monitor_reset_retries(self, svcname, rid):
         global MON_DATA
-        global MON_DATA_LOCK
         with MON_DATA_LOCK:
             if svcname not in MON_DATA:
                 return
@@ -2586,8 +2528,6 @@ class Monitor(OsvcThread, Crypt):
                 del MON_DATA[svcname].restart
 
     def service_monitor_get_retries(self, svcname, rid):
-        global MON_DATA
-        global MON_DATA_LOCK
         with MON_DATA_LOCK:
             if svcname not in MON_DATA:
                 return 0
@@ -2600,7 +2540,6 @@ class Monitor(OsvcThread, Crypt):
 
     def service_monitor_inc_retries(self, svcname, rid):
         global MON_DATA
-        global MON_DATA_LOCK
         with MON_DATA_LOCK:
             if svcname not in MON_DATA:
                 return
@@ -2630,7 +2569,6 @@ class Monitor(OsvcThread, Crypt):
 
     def set_service_monitor_expect_from_status(self, data, svcname):
         global MON_DATA
-        global MON_DATA_LOCK
         if svcname not in data:
             return
         with MON_DATA_LOCK:
@@ -2647,9 +2585,7 @@ class Monitor(OsvcThread, Crypt):
         Crypt it so the tx threads don't have to do it on their own.
         """
         global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         global HB_MSG
-        global HB_MSG_LOCK
 
         #self.log.info("update heartbeat data to send")
         load_avg = os.getloadavg()
@@ -2681,8 +2617,6 @@ class Monitor(OsvcThread, Crypt):
         Set the global expect received through heartbeats as local expect, if
         the service instance is not already in the expected status.
         """
-        global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         with CLUSTER_DATA_LOCK:
             nodenames = list(CLUSTER_DATA.keys())
         if rcEnv.nodename not in nodenames:
@@ -2711,8 +2645,6 @@ class Monitor(OsvcThread, Crypt):
                         self.log.info("node %s wants service %s %s, already is", nodename, svcname, global_expect)
 
     def status(self):
-        global CLUSTER_DATA
-        global CLUSTER_DATA_LOCK
         self.update_hb_data()
         data = OsvcThread.status(self)
         with CLUSTER_DATA_LOCK:
@@ -2732,6 +2664,12 @@ class Monitor(OsvcThread, Crypt):
 #
 #############################################################################
 class Daemon(object):
+    """
+    The OpenSVC daemon process.
+    Can run forked or foreground.
+    Janitors all the listener, the monitor and all heartbeat threads.
+    Monitors the node configuration file and notify its changes to threads.
+    """
     def __init__(self):
         self.handlers = None
         self.threads = {}
@@ -2741,10 +2679,17 @@ class Daemon(object):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd")
 
     def stop(self):
+        """
+        The global stop method. Signal all threads to shutdown.
+        """
         self.log.info("daemon stop")
         self.stop_threads()
 
     def run(self, daemon=True):
+        """
+        Switch between the forked/foreground execution mode.
+        Drop the stream handler for the forked mode.
+        """
         if daemon:
             self.handlers = ["file", "syslog"]
             self._run_daemon()
@@ -2753,11 +2698,19 @@ class Daemon(object):
 
     @forked
     def _run_daemon(self):
+        """
+        The method used as fork-point in the daemon execution mode.
+        """
         self.log.info("daemon started")
         self._run()
 
     @lazy
     def config(self):
+        """
+        Allocate a config parser object and load the node configuration.
+        Abstracting python2/3 differences in the parser modules and utf8
+        handling.
+        """
         try:
             config = RawConfigParser()
             with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as filep:
@@ -2766,7 +2719,7 @@ class Daemon(object):
                 else:
                     config.readfp(filep)
         except Exception as exc:
-            self.log.info("error loading config: %", str(exc))
+            self.log.info("error loading config: %s", exc)
             raise ex.excAbortAction()
         return config
 
@@ -2781,6 +2734,10 @@ class Daemon(object):
         self.log.info("daemon graceful stop")
 
     def stop_threads(self):
+        """
+        Send a stop notification to all threads, and wait for them to
+        complete their shutdown.
+        """
         self.log.info("signal stop to all threads")
         for thr in self.threads.values():
             thr.stop()
@@ -2792,6 +2749,10 @@ class Daemon(object):
             thr.join()
 
     def need_start(self, thr_id):
+        """
+        Return True if a thread need restarting, ie not signalled to stop
+        and not alive.
+        """
         if thr_id not in self.threads:
             return True
         thr = self.threads[thr_id]
@@ -2802,8 +2763,12 @@ class Daemon(object):
         return True
 
     def start_threads(self):
+        """
+        Reload the node configuration if needed.
+        Start threads or restart threads dead of an unexpected cause.
+        Stop and delete heartbeat threads whose configuration was deleted.
+        """
         global THREADS
-        global THREADS_LOCK
 
         # a thread can only be started once, allocate a new one if not alive.
         changed = False
@@ -2861,7 +2826,8 @@ class Daemon(object):
             changed = True
 
         # clean up deleted heartbeats
-        for thr_id in list(self.threads.keys()):
+        thr_ids = self.threads.keys()
+        for thr_id in thr_ids:
             if not thr_id.startswith("hb#"):
                 continue
             name = thr_id.replace(".tx", "").replace(".rx", "")
@@ -2876,6 +2842,10 @@ class Daemon(object):
                 THREADS = self.threads
 
     def read_config(self):
+        """
+        Reload the node configuration file and notify the threads to do the
+        same, if the file's mtime has changed since the last load.
+        """
         if not os.path.exists(rcEnv.paths.nodeconf):
             return
         try:
@@ -2895,18 +2865,22 @@ class Daemon(object):
 
             # signal the node config change to threads
             for thr_id in self.threads:
-                self.threads[thr_id]._node_conf_event.set()
+                self.threads[thr_id].notify_config_change()
         except Exception as exc:
             self.log.warning("failed to load config: %s", str(exc))
 
     def get_config_hb(self, hb_type=None):
+        """
+        Parse the node configuration and return the list of heartbeat
+        section names matching the specified type.
+        """
         hbs = []
         for section in self.config.sections():
             if not section.startswith("hb#"):
                 continue
             try:
                 section_type = self.config.get(section, "type")
-            except:
+            except Exception:
                 section_type = None
             if hb_type and section_type != hb_type:
                 continue
@@ -2919,6 +2893,9 @@ class Daemon(object):
 #
 #############################################################################
 def optparse():
+    """
+    Parse command line options for main().
+    """
     parser = OptionParser()
     parser.add_option(
         "-f", "--foreground", action="store_false",
@@ -2927,7 +2904,10 @@ def optparse():
     return parser.parse_args()
 
 def main():
-    options, args = optparse()
+    """
+    Start the daemon and catch Exceptions to reap it down cleanly.
+    """
+    options, _ = optparse()
     try:
        daemon = Daemon()
        daemon.run(daemon=options.daemon)
