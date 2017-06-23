@@ -510,9 +510,13 @@ class Crypt(object):
             key = key[:32]
         return key
 
-    def decrypt(self, message, cluster_name=None, sender_id=None):
+    def decrypt(self, message, cluster_name=None, secret=None, sender_id=None):
         if cluster_name is None:
             cluster_name = self.cluster_name
+        if secret is None:
+            cluster_key = self.cluster_key
+        else:
+            cluster_key = secret
         if hasattr(self, "node"):
             config = self.node.config
         else:
@@ -527,7 +531,7 @@ class Crypt(object):
         if cluster_name != "join" and message.get("clustername") not in (cluster_name, "join"):
             self.log.warning("discard message from cluster %s", message.get("clustername"))
             return None, None
-        if self.cluster_key is None:
+        if cluster_key is None:
             return None, None
         nodename = message.get("nodename")
         if nodename is None:
@@ -540,7 +544,7 @@ class Crypt(object):
         iv = base64.urlsafe_b64decode(str(iv))
         data = base64.urlsafe_b64decode(str(message["data"]))
         try:
-            data = bdecode(self._decrypt(data, self.cluster_key, iv))
+            data = bdecode(self._decrypt(data, cluster_key, iv))
         except Exception as exc:
             self.log.error("decrypt message from %s: %s", nodename, str(exc))
             self.blacklist(sender_id)
@@ -550,21 +554,25 @@ class Crypt(object):
         except ValueError as exc:
             return nodename, data
 
-    def encrypt(self, data, cluster_name=None):
+    def encrypt(self, data, cluster_name=None, secret=None):
         if cluster_name is None:
             cluster_name = self.cluster_name
+        if secret is None:
+            cluster_key = self.cluster_key
+        else:
+            cluster_key = secret
         if hasattr(self, "node"):
             config = self.node.config
         else:
             config = self.config
-        if self.cluster_key is None:
+        if cluster_key is None:
             return
         iv = self.gen_iv()
         message = {
             "clustername": cluster_name,
             "nodename": rcEnv.nodename,
             "iv": bdecode(base64.urlsafe_b64encode(iv)),
-            "data": bdecode(base64.urlsafe_b64encode(self._encrypt(json.dumps(data), self.cluster_key, iv))),
+            "data": bdecode(base64.urlsafe_b64encode(self._encrypt(json.dumps(data), cluster_key, iv))),
         }
         return (json.dumps(message)+'\0').encode()
 
@@ -637,7 +645,7 @@ class Crypt(object):
                 port = rcEnv.listener_port
         return addr, port
 
-    def daemon_send(self, data, nodename=None, with_result=True, silent=False, cluster_name=None):
+    def daemon_send(self, data, nodename=None, with_result=True, silent=False, cluster_name=None, secret=None):
         """
         Send a request to the daemon running on nodename and return the result
         fetched if with_result is set.
@@ -649,7 +657,7 @@ class Crypt(object):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(6.2)
             sock.connect((addr, port))
-            message = self.encrypt(data, cluster_name=cluster_name)
+            message = self.encrypt(data, cluster_name=cluster_name, secret=secret)
             if message is None:
                 return
             sock.sendall(message)
@@ -665,7 +673,7 @@ class Crypt(object):
                     data = b"".join(chunks)
                 else:
                     data = "".join(chunks)
-                nodename, data = self.decrypt(data, cluster_name=cluster_name)
+                nodename, data = self.decrypt(data, cluster_name=cluster_name, secret=secret)
                 return data
         except socket.error as exc:
             if not silent:

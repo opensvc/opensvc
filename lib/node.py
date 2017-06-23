@@ -2964,12 +2964,11 @@ class Node(Crypt):
             raise ex.excError("--node must be set")
         if not self.config.has_section("cluster"):
             self.config.add_section("cluster")
-        self.config.set("cluster", "secret", self.options.secret)
-        self.write_config()
         data = self.daemon_send(
             {"action": "join"},
             nodename=self.options.node,
             cluster_name="join",
+            secret=self.options.secret,
         )
         print(json.dumps(data, indent=4, sort_keys=True))
         if data is None:
@@ -2988,6 +2987,7 @@ class Node(Crypt):
 
         self.config.set("cluster", "name", cluster_name)
         self.config.set("cluster", "nodes", " ".join(cluster_nodes))
+        self.config.set("cluster", "secret", self.options.secret)
 
         for section, _data in data.items():
             if not section.startswith("hb#"):
