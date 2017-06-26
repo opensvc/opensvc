@@ -865,14 +865,15 @@ class Vmax(Sym):
         self.del_diskinfo(data["wwn"])
 
     def del_disk(self, dev=None, **kwargs):
+        try:
+            rdf_data = self.get_dev_rdf(dev)
+        except ex.excError as exc:
+            self.log.info("rdf data: %s", exc)
+            rdf_data = None
         self.set_dev_ro(dev)
         self.del_map(dev)
         self.deletepair(dev)
         retry = 5
-        try:
-            rdf_data = self.get_dev_rdf(dev)
-        except ex.excError:
-            rdf_data = None
         while retry > 0:
             self.free_tdev(dev)
             try:
