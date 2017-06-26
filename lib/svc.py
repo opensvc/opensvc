@@ -1481,7 +1481,7 @@ class Svc(object):
             "mon_frozen",
         ]
 
-        if "encap" not in data:
+        if "encap" not in data or not data["encap"]:
             g_vals = [
                 self.svcname,
                 self.svc_env,
