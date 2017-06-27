@@ -211,7 +211,7 @@ class Resource(object):
         before executing triggers.
         """
         if not hasattr(self, "confirm"):
-            pass
+            return
         self.confirm()
 
     def action_main(self, action):
