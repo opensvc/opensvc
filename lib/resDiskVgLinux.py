@@ -166,6 +166,9 @@ class Disk(resDisk.Disk):
         self.wait_for_fn(self._deactivate_vg, 3, 1, errmsg="deactivation failed to release all logical volumes")
 
     def do_start(self):
+        self.clear_cache("vg.lvs")
+        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("vg.tags")
         curtags = self.list_tags()
         tags_to_remove = set(curtags) - set([self.tag])
         if len(tags_to_remove) > 0:
