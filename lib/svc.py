@@ -3308,7 +3308,11 @@ class Svc(Crypt):
             for idx, resource in enumerate(options.resource):
                 if not is_string(resource):
                     continue
-                options.resource[idx] = json.loads(resource)
+                try:
+                    options.resource[idx] = json.loads(resource)
+                except ValueError:
+                    raise ex.excError("invalid json in resource definition: "
+                                      "%s" % options.resource[idx])
 
         self.options.update(options)
         options = self.options
@@ -4689,7 +4693,7 @@ class Svc(Crypt):
                     rtypes[rtype] = set([])
                 rtypes[rtype].add(ridx)
             for option, value in self.config.items(section):
-                if option in defaults.keys() + ['rtype']:
+                if option in list(defaults.keys()) + ['rtype']:
                     continue
                 sections[section][option] = value
 
