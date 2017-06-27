@@ -205,6 +205,15 @@ class Resource(object):
         """
         action_triggers(self, trigger, action, **kwargs)
 
+    def handle_confirm(self):
+        """
+        Tasks can require a run confirmation. We want the confirmation checked
+        before executing triggers.
+        """
+        if not hasattr(self, "confirm"):
+            pass
+        self.confirm()
+
     def action_main(self, action):
         """
         Shortcut the resource action if in dry-run mode.
@@ -243,6 +252,7 @@ class Resource(object):
                 return
 
         self.check_requires(action)
+        self.handle_confirm()
         self.setup_environ()
         self.action_triggers("pre", action)
         self.action_triggers("blocking_pre", action, blocking=True)
