@@ -19,7 +19,9 @@ if sys.version_info[0] < 3:
             if self._defaults:
                 fp.write("[%s]\n" % ConfigParser.DEFAULTSECT)
                 for (key, value) in self._defaults.items():
-                    if type(value) != unicode:
+                    if not isinstance(value, (str, unicode)):
+                        value = str(value)
+                    if not isinstance(value, unicode):
                         value = value.decode(encoding)
                     fp.write("%s = %s\n" % (key, value.replace('\n', '\n\t')))
                 fp.write("\n")
@@ -28,7 +30,9 @@ if sys.version_info[0] < 3:
                 for (key, value) in self._sections[section].items():
                     if key == "__name__":
                         continue
-                    if type(value) != unicode:
+                    if not isinstance(value, (str, unicode)):
+                        value = str(value)
+                    if not isinstance(value, unicode):
                         value = value.decode(encoding)
                     if (value is not None) or (self._optcre == self.OPTCRE):
                         key = " = ".join((key, value.replace('\n', '\n\t')))

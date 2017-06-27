@@ -16,7 +16,7 @@ import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
 from rcUtilities import convert_bool, convert_size, cmdline2list, ximport, \
-                        check_privs
+                        check_privs, is_string
 
 # supported operators in arithmetic expressions
 operators = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
@@ -112,6 +112,8 @@ def _handle_reference(svc, conf, ref, _section, _v, scope=False, impersonate=Non
         raise ex.excError("%s: unknown reference" % ref)
 
 def _handle_references(svc, conf, s, scope=False, impersonate=None):
+    if not is_string(s):
+        return s
     while True:
         m = re.search(r'{\w*[\w#][\w\.\[\]]*}', s)
         if m is None:
@@ -121,6 +123,8 @@ def _handle_references(svc, conf, s, scope=False, impersonate=None):
         s = s[:m.start()] + val + s[m.end():]
 
 def _handle_expressions(s):
+    if not is_string(s):
+        return s
     while True:
         m = re.search(r'\$\((.+)\)', s)
         if m is None:
