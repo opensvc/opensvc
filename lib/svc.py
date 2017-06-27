@@ -3989,32 +3989,40 @@ class Svc(Crypt):
     def get(self):
         """
         The 'get' action entrypoint.
-        Verifies the --param and --value are set, set DEFAULT as section
-        if no section was specified, and finally,
-        * print the raw value if --eval is not set
-        * print the dereferenced and evaluated value if --eval is set
+        Verifies the --param is set, set DEFAULT as section if no section was
+        specified, and finally print,
+        * the raw value if --eval is not set
+        * the dereferenced and evaluated value if --eval is set
         """
-        if self.options.param is None:
-            print("no parameter. set --param", file=sys.stderr)
-            return 1
-        elements = self.options.param.split('.')
+        try:
+            print(self._get(self.options.param, self.options.eval))
+        except ex.excError as exc:
+            print(exc, file=sys.stderr)
+        return 0
+
+    def _get(self, param=None, evaluate=False):
+        """
+        Verifies the param is set, set DEFAULT as section if no section was
+        specified, and finally return,
+        * the raw value if evaluate is False
+        * the dereferenced and evaluated value if evaluate is True
+        """
+        if param is None:
+            raise ex.excError("no parameter. set --param")
+        elements = param.split('.')
         if len(elements) == 1:
             elements.insert(0, "DEFAULT")
         elif len(elements) != 2:
-            print("malformed parameter. format as 'section.key'", file=sys.stderr)
-            return 1
+            raise ex.excError("malformed parameter. format as 'section.key'")
         section, option = elements
         if section != 'DEFAULT' and not self.config.has_section(section):
-            print("section [%s] not found"%section, file=sys.stderr)
-            return 1
+            raise ex.excError("section [%s] not found" % section)
         if not self.config.has_option(section, option):
-            print("option '%s' not found in section [%s]"%(option, section), file=sys.stderr)
-            return 1
+            raise ex.excError("option '%s' not found in section [%s]" % (option, section))
         if self.options.eval:
-            print(self.conf_get(section, option, "string", scope=True))
+            return self.conf_get(section, option, "string", scope=True)
         else:
-            print(self.config.get(section, option))
-        return 0
+            return self.config.get(section, option)
 
     def set(self):
         """
@@ -4026,8 +4034,23 @@ class Svc(Crypt):
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
-        if self.options.value is None:
-            print("no value. set --value", file=sys.stderr)
+        if self.options.value is not None:
+            value = self.options.value
+        elif self.options.remove is not None:
+            value = self._get(self.options.param, self.options.eval).split()
+            if self.options.remove not in value:
+                return 0
+            value.remove(self.options.remove)
+            value = " ".join(value)
+        elif self.options.add is not None:
+            value = self._get(self.options.param, self.options.eval).split()
+            if self.options.add in value:
+                return 0
+            index = self.options.index if self.options.index is not None else len(value)
+            value.insert(index, self.options.add)
+            value = " ".join(value)
+        else:
+            print("no value. set --value or --remove", file=sys.stderr)
             return 1
         elements = self.options.param.split('.')
         if len(elements) == 1:
@@ -4036,7 +4059,7 @@ class Svc(Crypt):
             print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
         try:
-            self._set(elements[0], elements[1], self.options.value)
+            self._set(elements[0], elements[1], value)
         except ex.excError as exc:
             print(exc, file=sys.stderr)
             return 1
