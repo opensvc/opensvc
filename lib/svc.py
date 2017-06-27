@@ -4922,11 +4922,12 @@ class Svc(object):
             ofile.write(buff)
         shutil.move(fpath, self.paths.cf)
 
-    def allocate_rid(self, group):
+    def allocate_rid(self, group, sections):
         """
         Return an unused rid in <group>.
         """
-        rids = [resource.rid for resource in self.get_resources(group)]
+        prefix = group + "#"
+        rids = [section for section in sections if section.startswith(prefix)]
         idx = 1
         while True:
             rid = "#".join((group, str(idx)))
@@ -4987,7 +4988,7 @@ class Svc(object):
                 else:
                     sections["env"] = data
             elif 'rtype' in data and data["rtype"] != "DEFAULT":
-                section = self.allocate_rid(data['rtype'])
+                section = self.allocate_rid(data['rtype'], sections)
                 self.log.info("allocated rid %s" % section)
                 del data['rtype']
                 sections[section] = data
