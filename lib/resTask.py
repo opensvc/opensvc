@@ -104,7 +104,6 @@ class Task(Res.Resource):
             raise ex.excError("run aborted")
 
     def run(self):
-        self.confirm()
         kwargs = {
           'blocking': True,
         }
