@@ -564,6 +564,7 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         'sync_resync',
         'sync_update',
         'sync_restore',
+        'run',
         'command', # tasks use that as an action
     ]
 
