@@ -4753,7 +4753,7 @@ class Svc(Crypt):
 
         for section in rid:
             group = section.split("#")[0]
-            svcBuilder.add_resource(group, self, self.config, section)
+            svcBuilder.add_resource(self, group, section)
 
         if self.options.provision and len(rid) > 0:
             options = Storage(self.options)
@@ -4905,6 +4905,8 @@ class Svc(Crypt):
         raise ex.excError("%s: unknown reference" % ref)
 
     def _handle_references(self, s, scope=False, impersonate=None, config=None):
+        if not is_string(s):
+            return s
         while True:
             m = re.search(r'{\w*[\w#][\w\.\[\]]*}', s)
             if m is None:
@@ -4915,6 +4917,8 @@ class Svc(Crypt):
 
     @staticmethod
     def _handle_expressions(s):
+        if not is_string(s):
+            return s
         while True:
             m = re.search(r'\$\((.+)\)', s)
             if m is None:
