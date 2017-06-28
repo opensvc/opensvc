@@ -2884,6 +2884,12 @@ class Node(Crypt):
                     "mon": _data["monitor"]["status"],
                 }
         for svcname, _data in data["monitor"]["services"].items():
+            if svcname not in services:
+                services[svcname] = Storage({
+                    "avail": Status(),
+                    "overall": "",
+                    "nodes": {}
+                })
             services[svcname].avail = _data["avail"]
             services[svcname].overall = _data["overall"]
 
