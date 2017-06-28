@@ -27,5 +27,8 @@ stop)
 	echo "OpenSVC : Stopping services and daemon"
 	${OSVC_ROOT_PATH}/bin/nodemgr daemon shutdown
 	;;
+restart)
+        ${OSVC_ROOT_PATH}/bin/nodemgr daemon restart
+	;;
 esac
 
