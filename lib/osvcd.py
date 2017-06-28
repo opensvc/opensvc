@@ -30,6 +30,7 @@ from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode, lazy, unset_lazy
 from rcConfigParser import RawConfigParser
 import pyaes
+from freezer import Freezer
 
 try:
     from Crypto.Cipher import AES
@@ -319,6 +320,10 @@ class OsvcThread(threading.Thread):
             del self.threads[idx]
         if len(self.threads) > 2:
             self.log.info("threads queue length %d", len(self.threads))
+
+    @lazy
+    def freezer(self):
+        return Freezer("node")
 
     @lazy
     def config(self):
@@ -2756,6 +2761,7 @@ class Monitor(OsvcThread, Crypt):
         try:
             with CLUSTER_DATA_LOCK:
                 CLUSTER_DATA[rcEnv.nodename] = {
+                    "frozen": self.freezer.node_frozen(),
                     "updated": datetime.datetime.utcfromtimestamp(time.time())\
                                                 .strftime('%Y-%m-%dT%H:%M:%SZ'),
                     "services": {

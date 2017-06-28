@@ -45,12 +45,26 @@ class Freezer(object):
         if self.flag != self.base_flag and os.path.exists(self.flag):
             os.unlink(self.flag)
 
-    def global_freeze(self):
+    def node_frozen(self):
+        """
+        Return True if the node frozen file flag is present.
+        """
+        if os.path.exists(self.base_flag):
+            return True
+        return False
+
+    def node_freeze(self):
+        """
+        Create the node frozen file flag.
+        """
         if os.path.exists(self.base_flag):
             return
         open(self.base_flag, 'w').close()
 
-    def global_thaw(self):
+    def node_thaw(self):
+        """
+        Remove the node frozen file flag.
+        """
         if not os.path.exists(self.base_flag):
             return
         os.unlink(self.base_flag)

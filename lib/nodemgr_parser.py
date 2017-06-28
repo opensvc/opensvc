@@ -234,13 +234,18 @@ DAEMON_OPTS = [
 
 ACTIONS = {
     'Node actions': {
+        'frozen': {
+            'msg': 'return 0 if all the services are frozen node-wide, '
+                   'preventing the daemon to orchestrate them. return 1'
+                   'otherwise',
+        },
         'freeze': {
-            'msg': 'freeze services globally, preventing the daemon to '
+            'msg': 'freeze services node-wide, preventing the daemon to '
                    'orchestrate them. this freeze method preserves the '
                    'frozen state at service-level (with svcmgr).',
         },
         'thaw': {
-            'msg': 'thaw services globally, allowing the daemon to '
+            'msg': 'thaw services node-wide, allowing the daemon to '
                    'orchestrate them. this thaw method does not actually '
                    'thaw services frozen at service-level (with svcmgr).',
         },

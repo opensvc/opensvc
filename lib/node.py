@@ -720,8 +720,10 @@ class Node(Crypt):
             return 0
         else:
             ret = getattr(self, action)()
-            if ret is None:
+            if ret in (None, True):
                 return 0
+            elif ret == False:
+                return 1
             return ret
 
     @formatter
@@ -2649,17 +2651,23 @@ class Node(Crypt):
             return
         self.action("compliance_auto")
 
+    def frozen(self):
+        """
+        Return True if the node frozen flag is set.
+        """
+        return self.freezer.node_frozen()
+
     def freeze(self):
         """
-        Set the global frozen flag.
+        Set the node frozen flag.
         """
-        self.freezer.global_freeze()
+        self.freezer.node_freeze()
 
     def thaw(self):
         """
-        Unset the global frozen flag.
+        Unset the node frozen flag.
         """
-        self.freezer.global_thaw()
+        self.freezer.node_thaw()
 
     #
     # daemon actions
