@@ -23,6 +23,9 @@ start)
 stop)
         ${OSVC_ROOT_PATH}/bin/nodemgr daemon shutdown
 	;;
+status)
+        ${OSVC_ROOT_PATH}/bin/nodemgr daemon running
+	;;
 restart)
         ${OSVC_ROOT_PATH}/bin/nodemgr daemon restart
 	;;

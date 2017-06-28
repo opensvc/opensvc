@@ -2968,6 +2968,12 @@ class Node(Crypt):
         print(json.dumps(data, indent=4, sort_keys=True))
 
     def daemon_running(self):
+        if self._daemon_running():
+            return
+        else:
+            raise ex.excError
+
+    def _daemon_running(self):
         from lock import lock, unlock
         lockfd = None
         try:
@@ -2980,10 +2986,10 @@ class Node(Crypt):
 
     def daemon_restart(self):
         import time
-        if self.daemon_running():
+        if self._daemon_running():
             self._daemon_stop()
         while True:
-            if not self.daemon_running():
+            if not self._daemon_running():
                 break
             time.sleep(0.1)
         self.daemon_start()

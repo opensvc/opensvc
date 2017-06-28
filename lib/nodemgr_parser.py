@@ -365,6 +365,10 @@ ACTIONS = {
         'daemon_restart': {
             'msg': 'restart the daemon.',
          },
+        'daemon_running': {
+            'msg': 'return with code 0 if the daemon is running, else return '
+                   'with code 1',
+         },
         'daemon_shutdown': {
             'msg': 'stop all local services instances then stop the daemon.',
          },

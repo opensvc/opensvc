@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2017\-06\-13
+.TH SVCMGR 1 2017\-06\-28
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -30,7 +30,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -44,17 +47,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector ack unavailability\fP
@@ -88,7 +91,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -102,17 +108,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector alerts\fP
@@ -131,7 +137,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -145,17 +154,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector asset\fP
@@ -174,7 +183,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -188,17 +200,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector checks\fP
@@ -217,7 +229,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -231,17 +246,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector create tag\fP
@@ -260,7 +275,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -274,17 +292,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector disks\fP
@@ -303,7 +321,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -317,17 +338,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector events\fP
@@ -352,7 +373,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -366,17 +390,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector list actions\fP
@@ -401,7 +425,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -415,17 +442,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector list tags\fP
@@ -447,7 +474,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -461,17 +491,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector list unavailability ack\fP
@@ -499,7 +529,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -513,17 +546,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector log\fP
@@ -542,7 +575,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -556,17 +592,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector networks\fP
@@ -585,7 +621,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -599,17 +638,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector show actions\fP
@@ -637,7 +676,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -651,17 +693,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector show tags\fP
@@ -680,7 +722,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -694,17 +739,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector tag\fP
@@ -723,7 +768,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -737,17 +785,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr collector untag\fP
@@ -766,7 +814,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -780,17 +831,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 \fRCOMPLIANCE\fP
 
@@ -814,7 +865,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -828,17 +882,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance attach moduleset\fP
@@ -857,7 +911,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -871,17 +928,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance attach ruleset\fP
@@ -900,7 +957,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -914,17 +974,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance auto\fP
@@ -955,7 +1015,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -969,17 +1032,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance check\fP
@@ -1010,7 +1073,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1024,17 +1090,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance detach\fP
@@ -1056,7 +1122,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1070,17 +1139,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance detach moduleset\fP
@@ -1099,7 +1168,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1113,17 +1185,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance detach ruleset\fP
@@ -1142,7 +1214,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1156,17 +1231,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance env\fP
@@ -1188,7 +1263,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1202,17 +1280,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance fix\fP
@@ -1243,7 +1321,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1257,17 +1338,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance fixable\fP
@@ -1298,7 +1379,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1312,17 +1396,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance list moduleset\fP
@@ -1338,7 +1422,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1352,17 +1439,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance list ruleset\fP
@@ -1378,7 +1465,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1392,17 +1482,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance show moduleset\fP
@@ -1418,7 +1508,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1432,17 +1525,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance show ruleset\fP
@@ -1458,7 +1551,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1472,17 +1568,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr compliance show status\fP
@@ -1498,7 +1594,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1512,17 +1611,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 \fRSERVICE ACTIONS\fP
 
@@ -1539,8 +1638,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -1560,9 +1665,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1570,7 +1672,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1584,17 +1689,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr clear\fP
@@ -1613,7 +1718,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1627,17 +1735,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr disable\fP
@@ -1662,7 +1770,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1676,17 +1787,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr dns update\fP
@@ -1701,8 +1812,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -1726,7 +1843,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1740,17 +1860,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr docker\fP
@@ -1766,7 +1886,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1780,17 +1903,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr enable\fP
@@ -1815,7 +1938,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1829,17 +1955,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr freeze\fP
@@ -1848,6 +1974,12 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 set up a flag to block actions on this service
 
 .TP
+.B --time=TIME
+Number of seconds to wait for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1855,7 +1987,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1869,17 +2004,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr frozen\fP
@@ -1895,7 +2030,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1909,17 +2047,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr logs\fP
@@ -1935,7 +2073,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1949,17 +2090,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr ls\fP
@@ -1975,7 +2116,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -1989,17 +2133,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr migrate\fP
@@ -2014,8 +2158,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -2035,9 +2185,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B --to=PARM_DESTINATION_NODE
 remote node to start or migrate the service to
 .TP
@@ -2048,7 +2195,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2062,17 +2212,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr pg freeze\fP
@@ -2087,8 +2237,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -2112,7 +2268,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2126,17 +2285,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr pg kill\fP
@@ -2151,8 +2310,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -2176,7 +2341,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2190,17 +2358,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr pg thaw\fP
@@ -2215,8 +2383,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -2240,7 +2414,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2254,17 +2431,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr postsync\fP
@@ -2279,8 +2456,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -2304,7 +2487,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2318,17 +2504,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr presync\fP
@@ -2343,8 +2529,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -2368,7 +2560,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2382,17 +2577,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print config mtime\fP
@@ -2408,7 +2603,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2422,17 +2620,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print devlist\fP
@@ -2460,7 +2658,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2474,17 +2675,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print disklist\fP
@@ -2512,7 +2713,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2526,17 +2730,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print resource status\fP
@@ -2561,7 +2765,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2575,17 +2782,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print schedule\fP
@@ -2607,7 +2814,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2621,17 +2831,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print status\fP
@@ -2659,7 +2869,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2673,17 +2886,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr provision\fP
@@ -2698,8 +2911,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -2719,9 +2938,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2729,7 +2945,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2743,17 +2962,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr prstart\fP
@@ -2768,8 +2987,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -2789,9 +3014,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2799,7 +3021,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2813,17 +3038,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr prstatus\fP
@@ -2839,7 +3064,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2853,17 +3081,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr prstop\fP
@@ -2878,8 +3106,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -2903,7 +3137,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2917,17 +3154,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr pull\fP
@@ -2946,7 +3183,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -2960,17 +3200,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr push\fP
@@ -2986,7 +3226,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3000,17 +3243,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr push resinfo\fP
@@ -3026,7 +3269,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3040,17 +3286,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr push service status\fP
@@ -3066,7 +3312,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3080,17 +3329,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr resource monitor\fP
@@ -3105,8 +3354,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -3130,7 +3385,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3144,17 +3402,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr restart\fP
@@ -3169,8 +3427,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -3190,9 +3454,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3200,7 +3461,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3214,17 +3478,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr resync\fP
@@ -3239,8 +3503,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -3260,9 +3530,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3270,7 +3537,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3284,17 +3554,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr run\fP
@@ -3309,8 +3579,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -3334,7 +3610,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3348,17 +3627,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr scheduler\fP
@@ -3374,7 +3653,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3388,17 +3670,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr shutdown\fP
@@ -3413,8 +3695,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -3438,7 +3726,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3452,17 +3743,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr start\fP
@@ -3477,8 +3768,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -3498,8 +3795,11 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
+.B --time=TIME
+Number of seconds to wait for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -3508,7 +3808,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3522,17 +3825,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startapp\fP
@@ -3547,8 +3850,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -3568,9 +3877,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3578,7 +3884,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3592,17 +3901,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startcontainer\fP
@@ -3617,8 +3926,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -3638,9 +3953,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3648,7 +3960,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3662,17 +3977,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startdisk\fP
@@ -3687,8 +4002,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -3708,9 +4029,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3718,7 +4036,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3732,17 +4053,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startfs\fP
@@ -3757,8 +4078,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -3778,9 +4105,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3788,7 +4112,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3802,17 +4129,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startip\fP
@@ -3827,8 +4154,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -3848,9 +4181,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3858,7 +4188,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3872,17 +4205,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startshare\fP
@@ -3897,8 +4230,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -3918,9 +4257,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3928,7 +4264,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -3942,17 +4281,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr startstandby\fP
@@ -3967,8 +4306,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -3988,9 +4333,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -3998,7 +4340,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4012,17 +4357,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr status\fP
@@ -4041,7 +4386,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4055,17 +4403,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stonith\fP
@@ -4080,8 +4428,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4105,7 +4459,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4119,17 +4476,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stop\fP
@@ -4144,8 +4501,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4162,6 +4525,12 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --time=TIME
+Number of seconds to wait for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -4169,7 +4538,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4183,17 +4555,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stopapp\fP
@@ -4208,8 +4580,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4233,7 +4611,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4247,17 +4628,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stopcontainer\fP
@@ -4272,8 +4653,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4297,7 +4684,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4311,17 +4701,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stopdisk\fP
@@ -4336,8 +4726,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4361,7 +4757,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4375,17 +4774,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stopfs\fP
@@ -4400,8 +4799,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4425,7 +4830,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4439,17 +4847,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stopip\fP
@@ -4464,8 +4872,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4489,7 +4903,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4503,17 +4920,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr stopshare\fP
@@ -4528,8 +4945,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4553,7 +4976,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4567,17 +4993,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr switch\fP
@@ -4592,8 +5018,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4613,9 +5045,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
-.B --ignore-affinity
-ignore service anti-affinity with other services check
-.TP
 .B --to=PARM_DESTINATION_NODE
 remote node to start or migrate the service to
 .TP
@@ -4626,7 +5055,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4640,17 +5072,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync all\fP
@@ -4665,8 +5097,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4690,7 +5128,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4704,17 +5145,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync break\fP
@@ -4729,8 +5170,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4754,7 +5201,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4768,17 +5218,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync drp\fP
@@ -4793,8 +5243,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4818,7 +5274,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4832,17 +5291,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync establish\fP
@@ -4857,8 +5316,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4882,7 +5347,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4896,17 +5364,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync full\fP
@@ -4921,8 +5389,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -4946,7 +5420,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -4960,17 +5437,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync nodes\fP
@@ -4985,8 +5462,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5010,7 +5493,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5024,17 +5510,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync quiesce\fP
@@ -5049,8 +5535,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5074,7 +5566,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5088,17 +5583,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync restore\fP
@@ -5113,8 +5608,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5138,7 +5639,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5152,17 +5656,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync resume\fP
@@ -5177,8 +5681,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5202,7 +5712,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5216,17 +5729,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync resync\fP
@@ -5241,8 +5754,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5266,7 +5785,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5280,17 +5802,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync revert\fP
@@ -5305,8 +5827,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5330,7 +5858,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5344,17 +5875,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync split\fP
@@ -5369,8 +5900,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5394,7 +5931,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5408,17 +5948,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync update\fP
@@ -5433,8 +5973,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5458,7 +6004,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5472,17 +6021,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr sync verify\fP
@@ -5497,8 +6046,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5522,7 +6077,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5536,17 +6094,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr thaw\fP
@@ -5555,6 +6113,12 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 remove the flag to unblock actions on this service
 
 .TP
+.B --time=TIME
+Number of seconds to wait for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -5562,7 +6126,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5576,17 +6143,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr toc\fP
@@ -5602,7 +6169,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5616,17 +6186,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr unprovision\fP
@@ -5641,8 +6211,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5666,7 +6242,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5680,17 +6259,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 \fRSERVICE CONFIGURATION\fP
 
@@ -5707,8 +6286,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5727,9 +6312,6 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .TP
 .B --config=PARM_CONFIG
 the configuration file to use when creating or installing a service
-.TP
-.B --env=ENV
-with the create action, set a env section parameter. multiple --env <key>=<val> can be specified.
 .TP
 .B -i, --interactive
 prompt user for a choice instead of going for defaults or failing
@@ -5750,7 +6332,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5764,17 +6349,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr delete\fP
@@ -5789,8 +6374,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -5817,7 +6408,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5831,17 +6425,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr edit config\fP
@@ -5863,7 +6457,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5877,17 +6474,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr get\fP
@@ -5909,7 +6506,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5923,17 +6523,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr print config\fP
@@ -5952,7 +6552,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -5966,17 +6569,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr set\fP
@@ -5985,8 +6588,17 @@ flag action as triggered by a remote node. used to avoid recursively triggering 
 set a service configuration parameter
 
 .TP
+.B --add=ADD
+a list member to add from the value pointed by --param in a set action. If --index is set, add the new element at that position in the list
+.TP
+.B --index=INDEX
+the position in the list pointed by --param where to add the new element on a set action
+.TP
 .B --param=PARAM
 point a service configuration parameter for the 'get' and 'set' actions
+.TP
+.B --remove=REMOVE
+a list member to drop from the value pointed by --param in a set action
 .TP
 .B --value=VALUE
 set a service configuration parameter value for the 'set --param' action
@@ -5998,7 +6610,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -6012,17 +6627,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr unset\fP
@@ -6041,7 +6656,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -6055,17 +6673,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr update\fP
@@ -6080,8 +6698,14 @@ Show the action execution plan
 .B -f, --force
 force action, ignore sanity check warnings
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B --master
 option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --rid=PARM_RID
 comma-separated list of resource to limit action to
@@ -6114,7 +6738,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -6128,17 +6755,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 
 .RE
 \fBsvcmgr validate config\fP
@@ -6154,7 +6781,10 @@ comma-separated list of service to operate on
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-option to set when excuting from a clusterware to disable safety net
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
@@ -6168,17 +6798,17 @@ a flag inhibiting the daemonization. set by the daemonization routine.
 .B --debug
 debug mode
 .TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
 .B -p, --parallel
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-comma-separated list of resource tags to limit action to
+Number of seconds to wait for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
-.TP
-.B --remote
-flag action as triggered by a remote node. used to avoid recursively triggering actions amongst nodes
 .SH OPTIONS
 .SH SEE ALSO
 .BR nodemgr (1)

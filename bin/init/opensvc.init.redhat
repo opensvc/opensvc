@@ -28,6 +28,9 @@ stop)
         ${OSVC_ROOT_PATH}/bin/nodemgr daemon shutdown
 	rm -f /var/lock/subsys/opensvc
 	;;
+status)
+        ${OSVC_ROOT_PATH}/bin/nodemgr daemon running
+	;;
 restart)
         ${OSVC_ROOT_PATH}/bin/nodemgr daemon restart
 	;;
