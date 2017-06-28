@@ -2005,11 +2005,8 @@ def add_container_jail(svc, s):
 def add_mandatory_syncs(svc):
     """Mandatory files to sync:
     1/ to all nodes: service definition
-    2/ to drpnodes: system files to replace on the drpnode in case of startdrp
     """
 
-    """1
-    """
     def add_file(flist, fpath):
         if not os.path.exists(fpath):
             return flist
@@ -2027,38 +2024,6 @@ def add_mandatory_syncs(svc):
         exclude = ['--exclude=*.core']
         targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
         kwargs['rid'] = "sync#i0"
-        kwargs['src'] = src
-        kwargs['dst'] = dst
-        kwargs['options'] = ['-R']+exclude
-        if svc.config.has_option(kwargs['rid'], 'options'):
-            kwargs['options'] += cmdline2list(svc.config.get(kwargs['rid'], 'options'))
-        kwargs['target'] = targethash
-        kwargs['internal'] = True
-        kwargs['disabled'] = get_disabled(svc, kwargs['rid'])
-        kwargs['optional'] = get_optional(svc, kwargs['rid'])
-        kwargs.update(get_sync_args(svc, kwargs['rid']))
-        r = resSyncRsync.Rsync(**kwargs)
-        svc += r
-
-    """2
-    """
-    if len(svc.drpnodes) == 0:
-        return
-
-    targethash = {'drpnodes': svc.drpnodes}
-    """ Reparent all PRD backed-up file in drp_path/node on the drpnode
-    """
-    dst = os.path.join(rcEnv.paths.drp_path, rcEnv.nodename)
-    i = 0
-    for src, exclude in rcEnv.drp_sync_files:
-        """'-R' triggers rsync relative mode
-        """
-        kwargs = {}
-        src = [ s for s in src if os.path.exists(s) ]
-        if len(src) == 0:
-            continue
-        i += 1
-        kwargs['rid'] = "sync#i"+str(i)
         kwargs['src'] = src
         kwargs['dst'] = dst
         kwargs['options'] = ['-R']+exclude
