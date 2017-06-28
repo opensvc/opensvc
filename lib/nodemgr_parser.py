@@ -362,6 +362,9 @@ ACTIONS = {
         'daemon_blacklist_clear': {
             'msg': 'empty the content of the daemon senders blacklist.',
          },
+        'daemon_restart': {
+            'msg': 'restart the daemon.',
+         },
         'daemon_shutdown': {
             'msg': 'stop all local services instances then stop the daemon.',
          },
@@ -370,13 +373,13 @@ ACTIONS = {
             'options': DAEMON_OPTS,
          },
         'daemon_start': {
-            'msg': 'start a daemon thread.',
+            'msg': 'start the daemon or a daemon thread pointed by --thread-id.',
             'options': DAEMON_OPTS + [
                 OPT.thr_id,
             ],
          },
         'daemon_stop': {
-            'msg': 'stop a daemon thread.',
+            'msg': 'stop the daemon or a daemon thread pointed by --thread-id.',
             'options': DAEMON_OPTS + [
                 OPT.thr_id,
             ],

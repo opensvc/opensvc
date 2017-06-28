@@ -160,15 +160,6 @@ def fork(func, args=None, kwargs=None):
     except Exception:
         os._exit(1)
 
-    lockfile = "osvcd.lock"
-    lockfile = os.path.join(rcEnv.paths.pathlock, lockfile)
-
-    from lock import lock, unlock
-    try:
-        lockfd = lock(lockfile=lockfile, timeout=0, delay=0)
-    except Exception:
-        os._exit(0)
-
     # Redirect standard file descriptors.
     if hasattr(os, "devnull"):
         devnull = os.devnull
@@ -190,10 +181,8 @@ def fork(func, args=None, kwargs=None):
     try:
         func(*args, **kwargs)
     except Exception:
-        unlock(lockfd)
         os._exit(1)
 
-    unlock(lockfd)
     os._exit(0)
 
 def forked(func):
@@ -2897,6 +2886,28 @@ class Daemon(object):
         return config
 
     def _run(self):
+        """
+        Acquire the osvcd lock, write the pid in a system-compatible pidfile,
+        and start the daemon loop.
+        """
+        from lock import lock, unlock
+        try:
+            lockfd = lock(lockfile=rcEnv.paths.daemon_lock, timeout=0, delay=0)
+        except Exception as exc:
+            self.log.error("a daemon is already running, and holding the daemon lock")
+            os._exit(1)
+        try:
+            pid = str(os.getpid())+"\n"
+            with open(rcEnv.paths.daemon_pid, "w") as ofile:
+                ofile.write(pid)
+            self.__run()
+        finally:
+            unlock(lockfd)
+
+    def __run(self):
+        """
+        Loop over the daemon tasks until notified to stop.
+        """
         while True:
             self.start_threads()
             if DAEMON_STOP.is_set():

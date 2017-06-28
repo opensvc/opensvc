@@ -2937,7 +2937,7 @@ class Node(Crypt):
         )
         print(json.dumps(data, indent=4, sort_keys=True))
 
-    def daemon_stop(self):
+    def _daemon_stop(self):
         """
         Tell the daemon to die or stop a specified thread.
         """
@@ -2948,6 +2948,10 @@ class Node(Crypt):
             {"action": "daemon_stop", "options": options},
             nodename=self.options.node,
         )
+        return data
+
+    def daemon_stop(self):
+        data = self._daemon_stop()
         print(json.dumps(data, indent=4, sort_keys=True))
 
     def daemon_start(self):
@@ -2962,6 +2966,27 @@ class Node(Crypt):
             nodename=self.options.node,
         )
         print(json.dumps(data, indent=4, sort_keys=True))
+
+    def daemon_running(self):
+        from lock import lock, unlock
+        lockfd = None
+        try:
+            lockfd = lock(lockfile=rcEnv.paths.daemon_lock, timeout=0, delay=0)
+        except:
+            return True
+        finally:
+            unlock(lockfd)
+        return False
+
+    def daemon_restart(self):
+        import time
+        if self.daemon_running():
+            self._daemon_stop()
+        while True:
+            if not self.daemon_running():
+                break
+            time.sleep(0.1)
+        self.daemon_start()
 
     def daemon_join(self):
         if self.options.secret is None:

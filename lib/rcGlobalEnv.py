@@ -74,6 +74,9 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
     o.pathcomp = os.path.join(o.pathvar, "compliance")
     o.drp_path = os.path.join(o.pathvar, "cache")
 
+    o.daemon_pid = os.path.join(o.pathvar, "osvcd.pid")
+    o.daemon_lock = os.path.join(o.pathlock, "osvcd.lock")
+
     return o
 
 def create_or_update_dir(d):
