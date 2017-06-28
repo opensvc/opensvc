@@ -30,6 +30,7 @@ from rcGlobalEnv import rcEnv, Storage
 import rcCommandWorker
 import rcLogger
 import rcExceptions as ex
+from freezer import Freezer
 from rcScheduler import scheduler_fork, Scheduler, SchedOpts
 from rcConfigParser import RawConfigParser
 from rcColor import formatter
@@ -130,6 +131,13 @@ class Node(Crypt):
         if self.services is None:
             return None
         return list(self.services.values())
+
+    @lazy
+    def freezer(self):
+        """
+        Lazy allocator for the freezer object.
+        """
+        return Freezer("node")
 
     @lazy
     def sched(self):
@@ -2640,6 +2648,18 @@ class Node(Crypt):
         if self.sched.skip_action("compliance_auto"):
             return
         self.action("compliance_auto")
+
+    def freeze(self):
+        """
+        Set the global frozen flag.
+        """
+        self.freezer.global_freeze()
+
+    def thaw(self):
+        """
+        Unset the global frozen flag.
+        """
+        self.freezer.global_thaw()
 
     #
     # daemon actions

@@ -1054,6 +1054,28 @@ specify a data formatter for output of the print* and collector* commands. possi
 show this help message and exit
 
 .RE
+\fBnodemgr freeze\fP
+.RS
+
+freeze services globally, preventing the daemon to orchestrate them. this freeze method preserves the frozen state at service-level (with svcmgr).
+
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+cron mode
+.TP
+.B --debug
+debug mode
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+.TP
+.B -h, --help
+show this help message and exit
+
+.RE
 \fBnodemgr logs\fP
 .RS
 
@@ -1268,6 +1290,28 @@ show this help message and exit
 .RS
 
 shutdown the node to powered off state
+
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+cron mode
+.TP
+.B --debug
+debug mode
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+.TP
+.B -h, --help
+show this help message and exit
+
+.RE
+\fBnodemgr thaw\fP
+.RS
+
+thaw services globally, allowing the daemon to orchestrate them. this thaw method does not actually thaw services frozen at service-level (with svcmgr).
 
 .TP
 .B --color=COLOR

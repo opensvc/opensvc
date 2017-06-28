@@ -45,6 +45,16 @@ class Freezer(object):
         if self.flag != self.base_flag and os.path.exists(self.flag):
             os.unlink(self.flag)
 
+    def global_freeze(self):
+        if os.path.exists(self.base_flag):
+            return
+        open(self.base_flag, 'w').close()
+
+    def global_thaw(self):
+        if not os.path.exists(self.base_flag):
+            return
+        os.unlink(self.base_flag)
+
     def __init__(self, name):
         if not os.path.exists(os.path.join(rcEnv.paths.pathetc, name)):
             self.freeze = self._dummy
