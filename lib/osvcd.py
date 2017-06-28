@@ -1878,32 +1878,52 @@ class Monitor(OsvcThread, Crypt):
         For each service, decide if we have an outdated configuration file
         and fetch the most recent one if needed.
         """
+        from svcBuilder import build, fix_app_link, fix_exe_link
         confs = self.get_services_configs()
         for svcname, data in confs.items():
+            new_service = False
             with SERVICES_LOCK:
                 if svcname not in SERVICES:
-                    continue
+                    new_service = True
             if rcEnv.nodename not in data:
                 # need to check if we should have this config ?
-                continue
-            ref_conf = data[rcEnv.nodename]
-            ref_nodename = rcEnv.nodename
+                new_service = True
+            if new_service:
+                ref_conf = Storage({
+                    "cksum": "",
+                    "updated": "0",
+                })
+                ref_nodename = rcEnv.nodename
+            else:
+                ref_conf = data[rcEnv.nodename]
+                ref_nodename = rcEnv.nodename
             for nodename, conf in data.items():
                 if rcEnv.nodename == nodename:
+                    continue
+                if rcEnv.nodename not in conf.get("scope", []):
+                    # we are not a service node
                     continue
                 if conf.cksum != ref_conf.cksum and \
                    conf.updated > ref_conf.updated:
                     ref_conf = conf
                     ref_nodename = nodename
-            if ref_nodename != rcEnv.nodename:
+            if ref_nodename == rcEnv.nodename:
+                # we already have the most recent version
+                continue
+            with SERVICES_LOCK:
+                if svcname in SERVICES and \
+                   rcEnv.nodename in SERVICES[svcname].nodes and \
+                   ref_nodename in SERVICES[svcname].drpnodes:
+                    # don't fetch drp config from prd nodes
+                    return
+            self.log.info("node %s has the most recent service %s config",
+                          ref_nodename, svcname)
+            self.fetch_service_config(svcname, ref_nodename)
+            if new_service:
+                fix_exe_link(rcEnv.paths.svcmgr, svcname)
+                fix_app_link(svcname)
                 with SERVICES_LOCK:
-                    if rcEnv.nodename in SERVICES[svcname].nodes and \
-                       ref_nodename in SERVICES[svcname].drpnodes:
-                        # don't fetch drp config from prd nodes
-                        return
-                self.log.info("node %s has the most recent service %s config",
-                              ref_nodename, svcname)
-                self.fetch_service_config(svcname, ref_nodename)
+                    SERVICES[svcname] = build(svcname)
 
     def fetch_service_config(self, svcname, nodename):
         """
@@ -1928,11 +1948,18 @@ class Monitor(OsvcThread, Crypt):
             filep.write(resp["data"])
         try:
             with SERVICES_LOCK:
-                svc = SERVICES[svcname]
-            results = svc._validate_config(path=filep.name)
+                if svcname in SERVICES:
+                    svc = SERVICES[svcname]
+                else:
+                    svc = None
+            if svc:
+                results = svc._validate_config(path=filep.name)
+            else:
+                results = {"errors": 0}
             if results["errors"] == 0:
                 import shutil
-                shutil.copy(filep.name, svc.paths.cf)
+                dst = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
+                shutil.copy(filep.name, dst)
             else:
                 self.log.error("the service %s config fetched from node %s is "
                                "not valid", svcname, nodename)
@@ -2539,7 +2566,7 @@ class Monitor(OsvcThread, Crypt):
                 return
 
     def get_services_config(self):
-        from svcBuilder import build
+        from svcBuilder import build, fix_app_link, fix_exe_link
         config = {}
         for cfg in glob.glob(os.path.join(rcEnv.paths.pathetc, "*.conf")):
             svcname = os.path.basename(cfg[:-5])
@@ -2563,9 +2590,12 @@ class Monitor(OsvcThread, Crypt):
                     self.log.error("%s build error: %s", svcname, str(exc))
             else:
                 cksum = last_config["cksum"]
+            with SERVICES_LOCK:
+                scope = sorted(list(SERVICES[svcname].nodes | SERVICES[svcname].drpnodes))
             config[svcname] = {
                 "updated": mtime.strftime(DATEFMT),
                 "cksum": self.fsum(cfg),
+                "scope": scope,
             }
         return config
 
