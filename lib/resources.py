@@ -265,12 +265,14 @@ class Resource(object):
         if blocking and ret != 0:
             raise ex.excError("%s trigger %s blocking error" % (driver, cmd))
 
-    def handle_confirm(self):
+    def handle_confirm(self, action):
         """
         Tasks can require a run confirmation. We want the confirmation checked
         before executing triggers.
         """
         if not hasattr(self, "confirm"):
+            return
+        if action != "run":
             return
         self.confirm()
 
@@ -312,7 +314,7 @@ class Resource(object):
                 return
 
         self.check_requires(action)
-        self.handle_confirm()
+        self.handle_confirm(action)
         self.setup_environ()
         self.action_triggers("pre", action)
         self.action_triggers("blocking_pre", action, blocking=True)
