@@ -423,23 +423,24 @@ class Array(object):
             if target == port["worldWidePortName"]:
                 return port
 
-    def get_hba_domain_used_lun_ids(self, hba_id):
-        domain = self.get_hba_domain(hba_id)
+    def get_domain_used_lun_ids(self, domain):
         return [int(path["LUN"]) for path in domain["Path"]]
 
-    def get_hba_free_lun_id(self, hba_ids):
-        used_lun_ids = set()
-        for hba_id in hba_ids:
-            used_lun_ids |= set(self.get_hba_domain_used_lun_ids(hba_id))
+    def get_free_lun_id(self, used_lun_ids):
         for lun_id in range(65536):
             if lun_id not in used_lun_ids:
                 return lun_id
 
-    def get_hba_domain(self, hba_id):
+    def get_domains(self, hba_id, tgt_id):
+        domains = []
+        port = self.get_target_port(tgt_id)
+        if port is None:
+            return domains
         for domain in self.domain_data:
             for wwn in domain["WWN"]:
-                if hba_id == wwn["WWN"]:
-                    return domain
+                if hba_id == wwn["WWN"] and domain["portName"] == port["displayName"]:
+                    domains.append(domain)
+        return domains
 
     def get_pool_by_name(self, poolname):
         for pool in self.pool_data:
@@ -480,25 +481,27 @@ class Array(object):
         print(json.dumps(data, indent=4))
 
     def translate_mappings(self, mappings):
-        internal_mappings = {}
+        internal_mappings = []
+        used_lun_ids = set()
         for mapping in mappings:
             elements = mapping.split(":")
             hba_id = elements[0]
             targets = elements[-1].split(",")
-            domain = self.get_hba_domain(hba_id)["domainID"]
-            if domain not in self.domain_portname:
-                self.domain_portname[domain] = []
-            self.domain_portname[domain].append(hba_id)
-            if domain not in internal_mappings:
-                internal_mappings[domain] = set()
             for tgt_id in targets:
-                port = self.get_target_port(tgt_id)["displayName"]
-                if port is None:
-                    continue
-                if port not in self.port_portname:
-                    self.port_portname[port] = []
-                self.port_portname[port].append(tgt_id)
-                internal_mappings[domain].add(port)
+                for domain_data in self.get_domains(hba_id, tgt_id):
+                    used_lun_ids |= set(self.get_domain_used_lun_ids(domain_data))
+                    domain = domain_data["domainID"]
+                    portname = domain_data["portName"]
+                    _mapping = {
+                        "domain": domain_data["domainID"],
+                        "portname": domain_data["portName"],
+                    }
+                    if _mapping in internal_mappings:
+                        continue
+                    internal_mappings.append(_mapping)
+        lun = self.get_free_lun_id(used_lun_ids)
+        for idx, mapping in enumerate(internal_mappings):
+            internal_mappings[idx]["lun"] = lun
         return internal_mappings
 
     def del_map(self, devnum=None, mappings=None, **kwargs):
@@ -509,21 +512,22 @@ class Array(object):
         if mappings is not None:
             internal_mappings = self.translate_mappings(mappings)
         else:
-            internal_mappings = {}
+            internal_mappings = []
             for dom in self.domain_data:
                 for path in dom["Path"]:
                     if devnum == path["devNum"]:
-                        domain = path["domainID"]
-                        portname = path["portName"]
-                        if domain not in internal_mappings:
-                            internal_mappings[domain] = set()
-                        internal_mappings[domain].add(portname)
+                        mapping = {
+                            "domain": path["domainID"],
+                            "portname": path["portName"],
+                        }
+                        if mapping not in internal_mappings:
+                            internal_mappings.append(mapping)
 
-        for domain, portnames in internal_mappings.items():
-            for portname in portnames:
-                result = self._del_map(devnum=devnum, domain=domain, portname=portname, **kwargs)
-                if result is not None:
-                    results.append(result)
+        for mapping in internal_mappings:
+            result = self._del_map(devnum=devnum, domain=mapping["domain"],
+                                   portname=mapping["portname"], **kwargs)
+            if result is not None:
+                results.append(result)
         if len(results) > 0:
             return results
 
@@ -550,19 +554,17 @@ class Array(object):
         devnum = self.to_devnum(devnum)
         if mappings is None:
             raise ex.excError("--mappings is mandatory")
-        if lun is None:
-            hba_ids = [mapping.split(":")[0] for mapping in mappings]
-            lun = self.get_hba_free_lun_id(hba_ids)
-        if lun is None:
-            raise ex.excError("Unable to find a free lun id")
         results = []
         if mappings is not None:
             internal_mappings = self.translate_mappings(mappings)
-            for domain, portnames in internal_mappings.items():
-                for portname in portnames:
-                    result = self._add_map(devnum=devnum, domain=domain, portname=portname, lun=lun, **kwargs)
-                    if result is not None:
-                        results.append(result)
+            for mapping in internal_mappings:
+                if lun is None:
+                    lun = mapping["lun"]
+                result = self._add_map(devnum=devnum, domain=mapping["domain"],
+                                       portname=mapping["portname"], lun=lun,
+                                       **kwargs)
+                if result is not None:
+                    results.append(result)
         if len(results) > 0:
             return results
 
