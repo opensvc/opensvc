@@ -2199,7 +2199,7 @@ class Svc(Crypt):
                     _data = data["monitor"]["nodes"][nodename]["services"]["status"][self.svcname]
                 except (KeyError, TypeError) as exc:
                     continue
-                if _data["monitor"]["global_expect"] == states[action]:
+                if _data["monitor"].get("global_expect") == states[action]:
                     global_expect_set.append(nodename)
             if prev_global_expect_set != global_expect_set:
                 for nodename in set(global_expect_set) - prev_global_expect_set:

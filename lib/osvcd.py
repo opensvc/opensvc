@@ -80,9 +80,16 @@ HB_MSG_LOCK = threading.RLock()
 SERVICES = {}
 SERVICES_LOCK = threading.RLock()
 
-# the local monitor data, where the listener can set expected states
-MON_DATA = {}
-MON_DATA_LOCK = threading.RLock()
+# the local service monitor data, where the listener can set expected states
+SMON_DATA = {}
+SMON_DATA_LOCK = threading.RLock()
+
+# the local node monitor data, where the listener can set expected states
+NMON_DATA = Storage({
+    "status": "idle",
+    "status_updated": datetime.datetime.utcnow(),
+})
+NMON_DATA_LOCK = threading.RLock()
 
 # Number of received misencrypted data messages by senders
 BLACKLIST = {}
@@ -360,65 +367,116 @@ class OsvcThread(threading.Thread):
                 nodenames |= svc.nodes | svc.drpnodes
         return nodenames
 
-    def set_smon(self, svcname, status=None, local_expect=None,
-                 global_expect=None, reset_retries=False):
-        global MON_DATA
-        with MON_DATA_LOCK:
-            if svcname not in MON_DATA:
-                MON_DATA[svcname] = Storage({})
+    def set_nmon(self, status=None, local_expect=None, global_expect=None):
+        global NMON_DATA
+        with NMON_DATA_LOCK:
             if status:
-                if status != MON_DATA[svcname].status:
+                if status != NMON_DATA.status:
                     self.log.info(
-                        "service %s monitor status change: %s => %s",
-                        svcname,
-                        MON_DATA[svcname].status if \
-                            MON_DATA[svcname].status else "none",
+                        "node monitor status change: %s => %s",
+                        NMON_DATA.status if \
+                            NMON_DATA.status else "none",
                         status
                     )
-                MON_DATA[svcname].status = status
-                MON_DATA[svcname].status_updated = datetime.datetime.utcnow()
+                NMON_DATA.status = status
+                NMON_DATA.status_updated = datetime.datetime.utcnow()
 
             if local_expect:
                 if local_expect == "unset":
                     local_expect = None
-                if local_expect != MON_DATA[svcname].local_expect:
+                if local_expect != NMON_DATA.local_expect:
                     self.log.info(
-                        "service %s monitor local expect change: %s => %s",
-                        svcname,
-                        MON_DATA[svcname].local_expect if \
-                            MON_DATA[svcname].local_expect else "none",
+                        "node monitor local expect change: %s => %s",
+                        NMON_DATA.local_expect if \
+                            NMON_DATA.local_expect else "none",
                         local_expect
                     )
-                MON_DATA[svcname].local_expect = local_expect
+                NMON_DATA.local_expect = local_expect
 
             if global_expect:
                 if global_expect == "unset":
                     global_expect = None
-                if global_expect != MON_DATA[svcname].global_expect:
+                if global_expect != NMON_DATA.global_expect:
+                    self.log.info(
+                        "node monitor global expect change: %s => %s",
+                        NMON_DATA.global_expect if \
+                            NMON_DATA.global_expect else "none",
+                        global_expect
+                    )
+                NMON_DATA.global_expect = global_expect
+
+        wake_monitor()
+
+    def set_smon(self, svcname, status=None, local_expect=None,
+                 global_expect=None, reset_retries=False):
+        global SMON_DATA
+        with SMON_DATA_LOCK:
+            if svcname not in SMON_DATA:
+                SMON_DATA[svcname] = Storage({})
+            if status:
+                if status != SMON_DATA[svcname].status:
+                    self.log.info(
+                        "service %s monitor status change: %s => %s",
+                        svcname,
+                        SMON_DATA[svcname].status if \
+                            SMON_DATA[svcname].status else "none",
+                        status
+                    )
+                SMON_DATA[svcname].status = status
+                SMON_DATA[svcname].status_updated = datetime.datetime.utcnow()
+
+            if local_expect:
+                if local_expect == "unset":
+                    local_expect = None
+                if local_expect != SMON_DATA[svcname].local_expect:
+                    self.log.info(
+                        "service %s monitor local expect change: %s => %s",
+                        svcname,
+                        SMON_DATA[svcname].local_expect if \
+                            SMON_DATA[svcname].local_expect else "none",
+                        local_expect
+                    )
+                SMON_DATA[svcname].local_expect = local_expect
+
+            if global_expect:
+                if global_expect == "unset":
+                    global_expect = None
+                if global_expect != SMON_DATA[svcname].global_expect:
                     self.log.info(
                         "service %s monitor global expect change: %s => %s",
                         svcname,
-                        MON_DATA[svcname].global_expect if \
-                            MON_DATA[svcname].global_expect else "none",
+                        SMON_DATA[svcname].global_expect if \
+                            SMON_DATA[svcname].global_expect else "none",
                         global_expect
                     )
-                MON_DATA[svcname].global_expect = global_expect
+                SMON_DATA[svcname].global_expect = global_expect
 
-            if reset_retries and "restart" in MON_DATA[svcname]:
+            if reset_retries and "restart" in SMON_DATA[svcname]:
                 self.log.info("service %s monitor resources restart count reset",
                               svcname)
-                del MON_DATA[svcname]["restart"]
+                del SMON_DATA[svcname]["restart"]
         wake_monitor()
+
+    def get_node_monitor(self, datestr=False):
+        """
+        Return the Monitor data of the node.
+        If datestr is set, convert datetimes to a json compatible string.
+        """
+        with NMON_DATA_LOCK:
+            data = Storage(NMON_DATA)
+            if datestr:
+                data.status_updated = data.status_updated.strftime(DATEFMT)
+            return data
 
     def get_service_monitor(self, svcname, datestr=False):
         """
         Return the Monitor data of a service.
         If datestr is set, convert datetimes to a json compatible string.
         """
-        with MON_DATA_LOCK:
-            if svcname not in MON_DATA:
+        with SMON_DATA_LOCK:
+            if svcname not in SMON_DATA:
                 self.set_smon(svcname, "idle")
-            data = Storage(MON_DATA[svcname])
+            data = Storage(SMON_DATA[svcname])
             if datestr:
                 data.status_updated = data.status_updated.strftime(DATEFMT)
             return data
@@ -1737,6 +1795,17 @@ class Listener(OsvcThread, Crypt):
         wake_monitor()
         return {"status": 0}
 
+    def action_set_node_monitor(self, nodename, **kwargs):
+        status = kwargs.get("status")
+        local_expect = kwargs.get("local_expect")
+        global_expect = kwargs.get("global_expect")
+        self.set_nmon(
+            status=status,
+            local_expect=local_expect, global_expect=global_expect,
+        )
+        wake_monitor()
+        return {"status": 0}
+
     def action_join(self, nodename, **kwargs):
         if nodename in self.cluster_nodes:
             self.log.warning("node %s is already joined.",
@@ -2092,6 +2161,7 @@ class Monitor(OsvcThread, Crypt):
     #
     #########################################################################
     def orchestrator(self):
+        self.node_orchestrator()
         with SERVICES_LOCK:
             svcs = SERVICES.values()
         for svc in svcs:
@@ -2164,6 +2234,20 @@ class Monitor(OsvcThread, Crypt):
 
         if len(rids) > 0:
             self.service_start_resources(svc.svcname, rids)
+
+    def node_orchestrator(self):
+        nmon = self.get_node_monitor()
+        if nmon.status != "idle":
+            return
+        self.set_nmon_g_expect_from_status()
+        if nmon.global_expect == "frozen":
+            if not self.freezer.node_frozen():
+                self.log.info("freeze node")
+                self.freezer.node_freeze()
+        elif nmon.global_expect == "thawed":
+            if self.freezer.node_frozen():
+                self.log.info("thaw node")
+                self.freezer.node_thaw()
 
     def service_orchestrator(self, svc):
         if svc.disabled:
@@ -2375,6 +2459,30 @@ class Monitor(OsvcThread, Crypt):
             if svcname not in SERVICES:
                 return
         return SERVICES[svcname]
+
+    #########################################################################
+    #
+    # Cluster nodes aggregations
+    #
+    #########################################################################
+    def get_clu_agg_frozen(self):
+        fstatus = "undef"
+        fstatus_l = []
+        n_instances = 0
+        with CLUSTER_DATA_LOCK:
+            for nodename, node in CLUSTER_DATA.items():
+                fstatus_l.append(node["frozen"])
+                n_instances += 1
+        n_frozen = fstatus_l.count(True)
+        if n_instances == 0:
+            fstatus = 'n/a'
+        elif n_frozen == n_instances:
+            fstatus = 'frozen'
+        elif n_frozen == 0:
+            fstatus = 'thawed'
+        else:
+            fstatus = 'mixed'
+        return fstatus
 
     #########################################################################
     #
@@ -2655,6 +2763,8 @@ class Monitor(OsvcThread, Crypt):
             if not data[svcname]:
                 del data[svcname]
                 continue
+            with SERVICES_LOCK:
+                data[svcname]["frozen"] = SERVICES[svcname].frozen()
             self.set_smon_l_expect_from_status(data, svcname)
             data[svcname]["monitor"] = self.get_service_monitor(svcname,
                                                                 datestr=True)
@@ -2672,41 +2782,55 @@ class Monitor(OsvcThread, Crypt):
     #########################################################################
     @staticmethod
     def reset_smon_retries(svcname, rid):
-        global MON_DATA
-        with MON_DATA_LOCK:
-            if svcname not in MON_DATA:
+        global SMON_DATA
+        with SMON_DATA_LOCK:
+            if svcname not in SMON_DATA:
                 return
-            if "restart" not in MON_DATA[svcname]:
+            if "restart" not in SMON_DATA[svcname]:
                 return
-            if rid in MON_DATA[svcname].restart:
-                del MON_DATA[svcname].restart[rid]
-            if len(MON_DATA[svcname].restart.keys()) == 0:
-                del MON_DATA[svcname].restart
+            if rid in SMON_DATA[svcname].restart:
+                del SMON_DATA[svcname].restart[rid]
+            if len(SMON_DATA[svcname].restart.keys()) == 0:
+                del SMON_DATA[svcname].restart
 
     @staticmethod
     def get_smon_retries(svcname, rid):
-        with MON_DATA_LOCK:
-            if svcname not in MON_DATA:
+        with SMON_DATA_LOCK:
+            if svcname not in SMON_DATA:
                 return 0
-            if "restart" not in MON_DATA[svcname]:
+            if "restart" not in SMON_DATA[svcname]:
                 return 0
-            if rid not in MON_DATA[svcname].restart:
+            if rid not in SMON_DATA[svcname].restart:
                 return 0
             else:
-                return MON_DATA[svcname].restart[rid]
+                return SMON_DATA[svcname].restart[rid]
 
     @staticmethod
     def inc_smon_retries(svcname, rid):
-        global MON_DATA
-        with MON_DATA_LOCK:
-            if svcname not in MON_DATA:
+        global SMON_DATA
+        with SMON_DATA_LOCK:
+            if svcname not in SMON_DATA:
                 return
-            if "restart" not in MON_DATA[svcname]:
-                MON_DATA[svcname].restart = Storage()
-            if rid not in MON_DATA[svcname].restart:
-                MON_DATA[svcname].restart[rid] = 1
+            if "restart" not in SMON_DATA[svcname]:
+                SMON_DATA[svcname].restart = Storage()
+            if rid not in SMON_DATA[svcname].restart:
+                SMON_DATA[svcname].restart[rid] = 1
             else:
-                MON_DATA[svcname].restart[rid] += 1
+                SMON_DATA[svcname].restart[rid] += 1
+
+    def set_nmon_g_expect_from_status(self):
+        nmon = self.get_node_monitor()
+        if nmon.global_expect is None:
+            return
+        local_frozen = self.freezer.node_frozen()
+        if nmon.global_expect == "frozen" and local_frozen:
+            self.log.info("node global expect is %s and is frozen",
+                          nmon.global_expect)
+            self.set_nmon(global_expect="unset")
+        elif nmon.global_expect == "thawed" and not local_frozen:
+            self.log.info("node global expect is %s and is thawed",
+                          nmon.global_expect)
+            self.set_nmon(global_expect="unset")
 
     def set_smon_g_expect_from_status(self, svcname, smon, status):
         if smon.global_expect is None:
@@ -2732,18 +2856,18 @@ class Monitor(OsvcThread, Crypt):
             self.set_smon(svcname, global_expect="unset")
 
     def set_smon_l_expect_from_status(self, data, svcname):
-        global MON_DATA
+        global SMON_DATA
         if svcname not in data:
             return
-        with MON_DATA_LOCK:
-            if svcname not in MON_DATA:
+        with SMON_DATA_LOCK:
+            if svcname not in SMON_DATA:
                 return
             if data[svcname]["avail"] == "up" and \
-               MON_DATA[svcname].local_expect != "started":
+               SMON_DATA[svcname].local_expect != "started":
                 self.log.info("service %s monitor local_expect change "
                               "%s => %s", svcname,
-                              MON_DATA[svcname].local_expect, "started")
-                MON_DATA[svcname].local_expect = "started"
+                              SMON_DATA[svcname].local_expect, "started")
+                SMON_DATA[svcname].local_expect = "started"
 
     def update_hb_data(self):
         """
@@ -2762,6 +2886,7 @@ class Monitor(OsvcThread, Crypt):
             with CLUSTER_DATA_LOCK:
                 CLUSTER_DATA[rcEnv.nodename] = {
                     "frozen": self.freezer.node_frozen(),
+                    "monitor": self.get_node_monitor(datestr=True),
                     "updated": datetime.datetime.utcfromtimestamp(time.time())\
                                                 .strftime('%Y-%m-%dT%H:%M:%SZ'),
                     "services": {
@@ -2791,6 +2916,20 @@ class Monitor(OsvcThread, Crypt):
             return
         nodenames.remove(rcEnv.nodename)
         with CLUSTER_DATA_LOCK:
+            # merge node monitors
+            for nodename in CLUSTER_DATA:
+                global_expect = CLUSTER_DATA[nodename]["monitor"].get("global_expect")
+                if global_expect is None:
+                    continue
+                local_frozen = CLUSTER_DATA[rcEnv.nodename]["frozen"]
+                if (global_expect == "frozen" and not local_frozen) or \
+                   (global_expect == "thawed" and local_frozen):
+                    self.log.info("node %s wants local node %s", nodename, global_expect)
+                    self.set_nmon(global_expect=global_expect)
+                else:
+                    self.log.info("node %s wants local node %s, already is", nodename, global_expect)
+
+            # merge every service monitors
             for svcname in CLUSTER_DATA[rcEnv.nodename]["services"]["status"]:
                 for nodename in nodenames:
                     if nodename not in CLUSTER_DATA:
@@ -2818,6 +2957,7 @@ class Monitor(OsvcThread, Crypt):
         with CLUSTER_DATA_LOCK:
             data.nodes = dict(CLUSTER_DATA)
         data["services"] = {}
+        data["frozen"] = self.get_clu_agg_frozen()
         for svcname in data.nodes[rcEnv.nodename]["services"]["config"]:
             if svcname not in data["services"]:
                 data["services"][svcname] = Storage()

@@ -14,6 +14,7 @@ import datetime
 import sys
 import json
 import socket
+import time
 
 if sys.version_info[0] < 3:
     from urllib2 import Request, urlopen
@@ -695,6 +696,10 @@ class Node(Crypt):
         Looks up which method to handle the action (some are not implemented
         in the Node class), and call the handling method.
         """
+        try:
+            self.async_action(action)
+        except ex.excAbortAction:
+            return 0
         if "_json_" in action:
             self.options.format = "json"
             action = action.replace("_json_", "_")
@@ -2669,6 +2674,53 @@ class Node(Crypt):
         """
         self.freezer.node_thaw()
 
+    def async_action(self, action):
+        """
+        Set the daemon global expected state if the action can be handled
+        by the daemons.
+        """
+        states = {
+            "freeze": "frozen",
+            "thaw": "thawed",
+        }
+        if self.options.crm:
+            return
+        if action not in states:
+            return
+        self.set_node_monitor(global_expect=states[action])
+        self.log.info("%s action requested", action)
+        if not self.options.wait:
+            raise ex.excAbortAction()
+        self.poll_async_action(states[action], self.options.time)
+
+    def poll_async_action(self, state, timeout=None):
+        """
+        Display an asynchronous action progress until its end or timeout
+        """
+        prev_global_expect_set = set()
+        for _ in range(timeout):
+            data = self._daemon_status()
+            global_expect_set = []
+            for nodename in data["monitor"]["nodes"]:
+                try:
+                    _data = data["monitor"]["nodes"][nodename]
+                except (KeyError, TypeError) as exc:
+                    continue
+                if _data["monitor"].get("global_expect") == state:
+                    global_expect_set.append(nodename)
+            if prev_global_expect_set != global_expect_set:
+                for nodename in set(global_expect_set) - prev_global_expect_set:
+                    self.log.info("work starting on %s", nodename)
+                for nodename in prev_global_expect_set - set(global_expect_set):
+                    self.log.info("work over on %s", nodename)
+            if not global_expect_set:
+                self.log.info("final status: frozen=%s",
+                              data["monitor"]["frozen"])
+                raise ex.excAbortAction()
+            prev_global_expect_set = set(global_expect_set)
+            time.sleep(1)
+        raise ex.excError("wait timeout exceeded")
+
     #
     # daemon actions
     #
@@ -3064,4 +3116,23 @@ class Node(Crypt):
                 self.config.set(section, option, value)
 
         self.write_config()
+
+    def set_node_monitor(self, status=None, local_expect=None, global_expect=None):
+        options = {
+            "status": status,
+            "local_expect": local_expect,
+            "global_expect": global_expect,
+        }
+        try:
+            data = self.daemon_send(
+                {"action": "set_node_monitor", "options": options},
+                nodename=self.options.node,
+                silent=True,
+            )
+            if data and data["status"] != 0:
+                self.log.warning("set monitor status failed")
+        except Exception as exc:
+            self.log.warning("set monitor status failed: %s", str(exc))
+
+
 

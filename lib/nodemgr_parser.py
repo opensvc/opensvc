@@ -60,6 +60,10 @@ OPT = Storage({
         "--cron", default=False,
         action="store_true", dest="cron",
         help="cron mode"),
+    "crm": Option(
+        "--crm", default=False,
+        action="store_true", dest="crm",
+        help="Set to disable cluster-wide operations."),
     "debug": Option(
         "--debug", default=False,
         action="store_true", dest="debug",
@@ -201,6 +205,11 @@ OPT = Storage({
     "thr_id": Option(
         "--thread-id", default=None, action="store", dest="thr_id",
         help="specify a daemon thread, as listed in the daemon status output"),
+    "time": Option(
+        "--time", default=300,
+        action="store", dest="time", type="int",
+        help="Number of seconds to wait for an async action to "
+             "finish. Default is 300 seconds."),
     "user": Option(
         "--user", default=None, action="store", dest="user",
         help="authenticate with the collector using the "
@@ -218,6 +227,10 @@ OPT = Storage({
         action="store_true", dest="verbose",
         help="add more information to some print commands: +next "
              "in 'print schedule'"),
+    "wait": Option(
+        "--wait", default=False,
+        action="store_true", dest="wait",
+        help="Wait for asynchronous action termination"),
 })
 
 GLOBAL_OPTS = [
@@ -226,6 +239,12 @@ GLOBAL_OPTS = [
     OPT.debug,
     OPT.format,
     OPT.help,
+]
+
+ASYNC_OPTS = [
+    OPT.crm,
+    OPT.time,
+    OPT.wait,
 ]
 
 DAEMON_OPTS = [
@@ -243,11 +262,13 @@ ACTIONS = {
             'msg': 'freeze services node-wide, preventing the daemon to '
                    'orchestrate them. this freeze method preserves the '
                    'frozen state at service-level (with svcmgr).',
+            'options': ASYNC_OPTS,
         },
         'thaw': {
             'msg': 'thaw services node-wide, allowing the daemon to '
                    'orchestrate them. this thaw method does not actually '
                    'thaw services frozen at service-level (with svcmgr).',
+            'options': ASYNC_OPTS,
         },
         'logs': {
             'msg': 'fancy display of the node logs',
