@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# set OSVC_ROOT_PATH
+test -f /etc/sysconfig/opensvc && . /etc/sysconfig/opensvc
+test -f /etc/default/opensvc && . /etc/default/opensvc
+test -f /etc/defaults/opensvc && . /etc/defaults/opensvc
+
+if [ -z "$OSVC_ROOT_PATH" ]
+then
+	FLAG=/var/lib/opensvc/postinstall.restart
+else
+	FLAG=$OSVC_ROOT_PATH/var/postinstall.restart
+	export PATH=$PATH:$OSVC_ROOT_PATH/bin
+fi
+
+# clean up ligering restart flag
+rm -f $FLAG
+
+# no preinstall if opensvc was not installed yet
+which nodemgr >/dev/null 2>&1 || exit 0
+
+# sanity check
+BUFF=`nodemgr daemon status | grep hb#`
+if [ ! -z "$BUFF" ]
+then
+	# heartbeats configured and 
+	echo "$BUFF" | grep -w X
+	if [ $? -eq 0 ]
+	then
+		echo "heartbeats configured and not all active." >&2
+		echo "set the cluster in optimal state before upgrading." >&2
+		exit 1
+	fi
+fi
+
+# set a flag for postinstall to know if the daemon should be restarted
+nodemgr daemon running >/dev/null 2>&1
+if [ $? -eq 0 ]
+then
+	echo "daemon flagged for restart"
+	touch $FLAG
+fi
+
+# freeze the cluster
+nodemgr freeze --wait
+
+# stop the daemon
+nodemgr daemon stop

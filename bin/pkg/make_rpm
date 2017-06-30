@@ -35,6 +35,9 @@ AutoReqProv: no
 %description
 $(echo ${DESCRIPTION}|fold -s)
 
+%pre
+%{_datadir}/opensvc/bin/preinstall
+
 %post
 /usr/bin/python %{_datadir}/opensvc/bin/postinstall
 

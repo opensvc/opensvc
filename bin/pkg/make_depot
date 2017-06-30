@@ -34,6 +34,7 @@ product
     revision     1.0
     prerequisite Python.PYTHON-RUN
     postinstall  /tmp/$CHROOT_BN/usr/share/opensvc/bin/postinstall
+    preinstall  /tmp/$CHROOT_BN/usr/share/opensvc/bin/preinstall
     file_permissions -o root -g sys
     directory    /tmp/$CHROOT_BN=/
     file         *

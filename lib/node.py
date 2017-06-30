@@ -2700,6 +2700,8 @@ class Node(Crypt):
         prev_global_expect_set = set()
         for _ in range(timeout):
             data = self._daemon_status()
+            if data is None:
+                raise ex.excError("the daemon is not running")
             global_expect_set = []
             for nodename in data["monitor"]["nodes"]:
                 try:
@@ -3129,10 +3131,12 @@ class Node(Crypt):
                 nodename=self.options.node,
                 silent=True,
             )
+            if data is None:
+                raise ex.excError("the daemon is not running")
             if data and data["status"] != 0:
-                self.log.warning("set monitor status failed")
+                raise ex.excError("set monitor status failed")
         except Exception as exc:
-            self.log.warning("set monitor status failed: %s", str(exc))
+            raise ex.excError("set monitor status failed: %s" % str(exc))
 
 
 

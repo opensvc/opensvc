@@ -1178,6 +1178,15 @@ def convert_to_lsb():
         else:
             shutil.copy(p, pathvar)
 
+def restart_daemon():
+    flag = os.path.join(pathvar, "postinstall.restart")
+    if not os.path.exists(flag):
+        return
+    os.unlink(flag)
+    cmd = "%s/nodemgr daemon start" % pathbin
+    logit(cmd, stdout=True)
+    os.system(cmd)
+
 try:
     move_var_files_in_subdirs()
     move_usr_to_opt()
@@ -1196,6 +1205,7 @@ try:
     convert_to_lsb()
     move_env_to_conf()
     dump_install_content()
+    restart_daemon()
     logit("\nOpenSVC postinstall terminated\n",stdout=True)
 except:
     save_exc()

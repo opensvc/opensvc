@@ -38,6 +38,7 @@ PREFIX=        /
 NO_BUILD=      yes
 
 do-install:
+	\${PREFIX}/usr/share/opensvc/bin/preinstall
 	\${CP} -a \${WRKSRC}/* \${PREFIX}/
 	\${PREFIX}/usr/share/opensvc/bin/postinstall
 

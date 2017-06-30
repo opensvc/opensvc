@@ -158,8 +158,14 @@ cat > $REPODIR/postinstall <<EOF
 su root -c "PATH=\${PKG_INSTALL_ROOT}/usr/local/bin:$PATH:/usr/sfw/bin:/usr/local/bin \${PKG_INSTALL_ROOT}$BASE/usr/share/opensvc/bin/postinstall"
 EOF
 
+cat > $REPODIR/preinstall <<EOF
+#!/sbin/sh
+
+su root -c "PATH=\${PKG_INSTALL_ROOT}/usr/local/bin:$PATH:/usr/sfw/bin:/usr/local/bin \${PKG_INSTALL_ROOT}$BASE/usr/share/opensvc/bin/preinstall"
+EOF
+
 echo "----- Creating $PKGNAME build-$RELEASE ..."
-create_pkg -P $REPODIR/postinstall $PKGNAME $CHROOT=$BASE 2> /dev/null <<EOF
+create_pkg -p $REPODIR/preinstall -P $REPODIR/postinstall $PKGNAME $CHROOT=$BASE 2> /dev/null <<EOF
 
 $SUMMARY
 $ARCH
@@ -172,10 +178,11 @@ $CHROOT=$BASE
 
 EOF
 
-echo "----- Cleaning /var/spool/pkg/$PKGNAME $CHROOT $REPODIR/postinstall"
+echo "----- Cleaning /var/spool/pkg/$PKGNAME $CHROOT $REPODIR/preinstall $REPODIR/postinstall"
 [ "$PKGNAME" != "" ] && [ -d /var/spool/pkg/$PKGNAME ] && rm -r /var/spool/pkg/$PKGNAME
 [ -d $CHROOT ] && rm -r $CHROOT
-rm $REPODIR/postinstall
+rm -f $REPODIR/postinstall
+rm -f $REPODIR/preinstall
 
 echo "----- New package available into /tmp/$P"
 cp /tmp/$PKGNAME /tmp/$P && rm /tmp/$PKGNAME
