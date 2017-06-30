@@ -7,6 +7,11 @@ from rcGlobalEnv import rcEnv
 repo_subdir = "tar"
 
 def update(fpath):
+    cmd = sys.executable + ' ' + rcEnv.paths.preinstall
+    ret = os.system(cmd)
+    if ret != 0:
+        return
+
     oldpath = os.getcwd()
     os.chdir("/")
     tar = tarfile.open(fpath)

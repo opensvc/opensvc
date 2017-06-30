@@ -45,6 +45,7 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
         o.pathlock = '/var/lib/opensvc/lock'
         o.pathcron = '/usr/share/opensvc'
         o.postinstall = '/usr/share/opensvc/bin/postinstall'
+        o.preinstall = '/usr/share/opensvc/bin/preinstall'
     else:
         o.pathlib = os.path.join(o.pathsvc, 'lib')
         o.pathbin = os.path.join(o.pathsvc, 'bin')
@@ -56,6 +57,7 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
         o.pathlock = os.path.join(o.pathvar, 'lock')
         o.pathcron = o.pathbin
         o.postinstall = os.path.join(o.pathbin, 'postinstall')
+        o.preinstall = os.path.join(o.pathbin, 'preinstall')
 
     if str(sysname).lower() == "windows":
         o.svcmgr = os.path.join(o.pathsvc, "svcmgr.cmd")
