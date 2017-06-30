@@ -24,7 +24,7 @@ import rcExceptions as ex
 import rcLogger
 import node
 from rcScheduler import scheduler_fork, Scheduler, SchedOpts
-from osvcd import Crypt
+from comm import Crypt
 
 if sys.version_info[0] < 3:
     BrokenPipeError = IOError

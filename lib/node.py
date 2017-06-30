@@ -37,7 +37,7 @@ from rcConfigParser import RawConfigParser
 from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         call, which, purge_cache, read_cf
-from osvcd import Crypt
+from comm import Crypt
 
 if sys.version_info[0] < 3:
     BrokenPipeError = IOError
