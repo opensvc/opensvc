@@ -25,22 +25,34 @@ BLACKLIST_THRESHOLD = 5
 try:
     from Crypto.Cipher import AES
     def _encrypt(message, key, _iv):
+        """
+        Low level encrypter.
+        """
         message = pyaes.util.append_PKCS7_padding(zlib.compress(message.encode()))
         obj = AES.new(key, AES.MODE_CBC, _iv)
         ciphertext = obj.encrypt(message)
         return ciphertext
     def _decrypt(ciphertext, key, _iv):
+        """
+        Low level decrypter.
+        """
         obj = AES.new(key, AES.MODE_CBC, _iv)
         message = obj.decrypt(ciphertext)
         return zlib.decompress(pyaes.util.strip_PKCS7_padding(message))
 except ImportError:
     def _encrypt(message, key, _iv):
-        obj = pyaes.Encrypter(pyaes.AESModeOfOperationCBC(key, _iv=_iv))
+        """
+        Low level encrypter.
+        """
+        obj = pyaes.Encrypter(pyaes.AESModeOfOperationCBC(key, iv=_iv))
         ciphertext = obj.feed(zlib.compress(message.encode()))
         ciphertext += obj.feed()
         return ciphertext
     def _decrypt(ciphertext, key, _iv):
-        obj = pyaes.Decrypter(pyaes.AESModeOfOperationCBC(key, _iv=_iv))
+        """
+        Low level decrypter.
+        """
+        obj = pyaes.Decrypter(pyaes.AESModeOfOperationCBC(key, iv=_iv))
         message = obj.feed(ciphertext)
         message += obj.feed()
         return zlib.decompress(message)
@@ -51,12 +63,18 @@ class Crypt(object):
     Used by child classes to authenticate senders on data receive.
     """
     @staticmethod
-    def _encrypt(message, key, iv):
-        return _encrypt(message, key, iv)
+    def _encrypt(message, key, _iv):
+        """
+        A wrapper over the low level encrypter.
+        """
+        return _encrypt(message, key, _iv)
 
     @staticmethod
-    def _decrypt(ciphertext, key, iv):
-        return _decrypt(ciphertext, key, iv)
+    def _decrypt(ciphertext, key, _iv):
+        """
+        A wrapper over the low level decrypter.
+        """
+        return _decrypt(ciphertext, key, _iv)
 
     @staticmethod
     def gen_iv(urandom=[], locker=threading.RLock()):
@@ -77,6 +95,11 @@ class Crypt(object):
 
     @lazy
     def cluster_nodes(self):
+        """
+        Return the cluster nodes, read from cluster.nodes in the node
+        configuration. If not set, return a list with the local node as the
+        only element.
+        """
         if hasattr(self, "node"):
             config = self.node.config
         else:
@@ -88,6 +111,10 @@ class Crypt(object):
 
     @lazy
     def cluster_name(self):
+        """
+        Return the cluster name, read from cluster.name in the node
+        configuration. If not set, return "default".
+        """
         if hasattr(self, "node"):
             config = self.node.config
         else:
@@ -99,6 +126,10 @@ class Crypt(object):
 
     @lazy
     def cluster_key(self):
+        """
+        Return the key read from cluster.secret in the node configuration.
+        If not already set generate and store a random one.
+        """
         if hasattr(self, "node"):
             config = self.node.config
         else:
@@ -124,12 +155,18 @@ class Crypt(object):
 
     @staticmethod
     def prepare_key(key):
+        """
+        Return the key in a format expected by the encrypter and decrypter.
+        """
         key = key.encode("utf-8")
         if len(key) > 32:
             key = key[:32]
         return key
 
     def decrypt(self, message, cluster_name=None, secret=None, sender_id=None):
+        """
+        Validate the message meta, decrypt and return the data.
+        """
         if cluster_name is None:
             cluster_name = self.cluster_name
         if secret is None:
@@ -173,6 +210,9 @@ class Crypt(object):
             return nodename, data
 
     def encrypt(self, data, cluster_name=None, secret=None):
+        """
+        Encrypt and return data in a wrapping structure.
+        """
         if cluster_name is None:
             cluster_name = self.cluster_name
         if secret is None:
@@ -186,7 +226,11 @@ class Crypt(object):
             "clustername": cluster_name,
             "nodename": rcEnv.nodename,
             "iv": bdecode(base64.urlsafe_b64encode(iv)),
-            "data": bdecode(base64.urlsafe_b64encode(self._encrypt(json.dumps(data), cluster_key, iv))),
+            "data": bdecode(
+                base64.urlsafe_b64encode(
+                    self._encrypt(json.dumps(data), cluster_key, iv)
+                )
+            ),
         }
         return (json.dumps(message)+'\0').encode()
 
@@ -316,5 +360,3 @@ class Crypt(object):
             return
         finally:
             sock.close()
-
-
