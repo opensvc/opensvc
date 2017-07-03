@@ -725,7 +725,7 @@ class Node(Crypt):
             return 0
         else:
             ret = getattr(self, action)()
-            if ret in (None, True):
+            if ret in (None, True, 0):
                 return 0
             elif ret == False:
                 return 1
