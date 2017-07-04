@@ -13,64 +13,36 @@ from subprocess import Popen, PIPE
 import logging
 import json
 import struct
-import stat
 import base64
 import fcntl
 import codecs
 import hashlib
 import glob
-import errno
-import mmap
 from optparse import OptionParser
 
 import rcExceptions as ex
 import rcLogger
+import osvcd_shared as shared
+from rcConfigParser import RawConfigParser
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode, lazy, unset_lazy
-from rcConfigParser import RawConfigParser
 from freezer import Freezer
 from comm import Crypt
 from node import Node
 
+from hb_ucast import HbUcastRx, HbUcastTx
+from hb_mcast import HbMcastRx, HbMcastTx
+from hb_disk import HbDiskRx, HbDiskTx
+
 MON_WAIT_READY = datetime.timedelta(seconds=6)
-DEFAULT_HB_PERIOD = 5
-MAX_MSG_SIZE = 1024 * 1024
-DATEFMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 # The threads store
 THREADS = {}
 THREADS_LOCK = threading.RLock()
 
-# The per-threads configuration, stats and states store
-# The monitor thread states include cluster-wide aggregated data
-CLUSTER_DATA = {}
-CLUSTER_DATA_LOCK = threading.RLock()
-
-# The encrypted message all the heartbeat tx threads send.
-# It is refreshed in the monitor thread loop.
-HB_MSG = None
-HB_MSG_LOCK = threading.RLock()
-
-# CRM services objects. Used to access services properties.
-# The monitor thread reloads a new Svc object when the corresponding
-# configuration file changes.
-SERVICES = {}
-SERVICES_LOCK = threading.RLock()
-
 # A node object instance. Used to access node properties and methods.
 NODE = None
 NODE_LOCK = threading.RLock()
-
-# the local service monitor data, where the listener can set expected states
-SMON_DATA = {}
-SMON_DATA_LOCK = threading.RLock()
-
-# the local node monitor data, where the listener can set expected states
-NMON_DATA = Storage({
-    "status": "idle",
-    "status_updated": datetime.datetime.utcnow(),
-})
-NMON_DATA_LOCK = threading.RLock()
 
 #
 STARTED_STATES = (
@@ -85,37 +57,6 @@ STOPPED_STATES = (
 # thread loop conditions and helpers
 DAEMON_STOP = threading.Event()
 DAEMON_TICKER = threading.Condition()
-HB_TX_TICKER = threading.Condition()
-MON_TICKER = threading.Condition()
-SCHED_TICKER = threading.Condition()
-
-def wake_daemon():
-    """
-    Notify the daemon process to do they periodic job immediatly
-    """
-    with DAEMON_TICKER:
-        DAEMON_TICKER.notify_all()
-
-def wake_heartbeat_tx():
-    """
-    Notify the heartbeat tx thread to do they periodic job immediatly
-    """
-    with HB_TX_TICKER:
-        HB_TX_TICKER.notify_all()
-
-def wake_monitor():
-    """
-    Notify the monitor thread to do they periodic job immediatly
-    """
-    with MON_TICKER:
-        MON_TICKER.notify_all()
-
-def wake_scheduler():
-    """
-    Notify the scheduler thread to do they periodic job immediatly
-    """
-    with SCHED_TICKER:
-        SCHED_TICKER.notify_all()
 
 def fork(func, args=None, kwargs=None):
     """
@@ -177,1089 +118,10 @@ def forked(func):
 
 #############################################################################
 #
-# Base Thread class
-#
-#############################################################################
-class OsvcThread(threading.Thread):
-    """
-    Thread class with a stop() method. The thread itself has to check
-    regularly for the stopped() condition.
-    """
-    stop_tmo = 60
-
-    def __init__(self):
-        super(OsvcThread, self).__init__()
-        self._stop_event = threading.Event()
-        self._node_conf_event = threading.Event()
-        self.created = time.time()
-        self.threads = []
-        self.procs = []
-
-    def notify_config_change(self):
-        """
-        Notify thread the node configuration file changed.
-        """
-        self._node_conf_event.set()
-
-    def stop(self):
-        """
-        Notify thread they need to stop.
-        """
-        self._stop_event.set()
-
-    def unstop(self):
-        """
-        Notify daemon it is free to restart the thread.
-        """
-        self._stop_event.clear()
-
-    def stopped(self):
-        """
-        Return True if the thread excepted state is stopped.
-        """
-        return self._stop_event.is_set()
-
-    def status(self):
-        """
-        Return the thread status data structure to embed in the 'daemon
-        status' data.
-        """
-        if self.stopped():
-            if self.is_alive():
-                state = "stopping"
-            else:
-                state = "stopped"
-        else:
-            if self.is_alive():
-                state = "running"
-            else:
-                state = "terminated"
-        data = Storage({
-            "state": state,
-            "created": datetime.datetime.utcfromtimestamp(self.created)\
-                               .strftime('%Y-%m-%dT%H:%M:%SZ'),
-        })
-        return data
-
-    def push_proc(self, proc,
-                  on_success=None, on_success_args=None, on_success_kwargs=None,
-                  on_error=None, on_error_args=None, on_error_kwargs=None):
-        """
-        Enqueue a structure including a Popen() result and the success and
-        error callbacks.
-        """
-        self.procs.append(Storage({
-            "proc": proc,
-            "on_success": on_success,
-            "on_success_args": on_success_args if on_success_args else [],
-            "on_success_kwargs": on_success_args if on_success_kwargs else {},
-            "on_error": on_error,
-            "on_error_args": on_error_args if on_error_args else [],
-            "on_error_kwargs": on_error_args if on_error_kwargs else {},
-        }))
-
-    def terminate_procs(self):
-        """
-        Send a terminate() to all procs in the queue and wait for their
-        completion.
-        """
-        for data in self.procs:
-            data.proc.terminate()
-            for _ in range(self.stop_tmo):
-                data.proc.poll()
-                if data.proc.returncode is not None:
-                    break
-                time.sleep(1)
-
-    def janitor_procs(self):
-        done = []
-        for idx, data in enumerate(self.procs):
-            data.proc.poll()
-            if data.proc.returncode is not None:
-                done.append(idx)
-                if data.proc.returncode == 0 and data.on_success:
-                    getattr(self, data.on_success)(*data.on_success_args,
-                                                   **data.on_success_kwargs)
-                elif data.proc.returncode != 0 and data.on_error:
-                    getattr(self, data.on_error)(*data.on_error_args,
-                                                 **data.on_error_kwargs)
-        for idx in sorted(done, reverse=True):
-            del self.procs[idx]
-
-    def join_threads(self):
-        for thr in self.threads:
-            thr.join()
-
-    def janitor_threads(self):
-        done = []
-        for idx, thr in enumerate(self.threads):
-            thr.join(0)
-            if not thr.is_alive():
-                done.append(idx)
-        for idx in sorted(done, reverse=True):
-            del self.threads[idx]
-        if len(self.threads) > 2:
-            self.log.info("threads queue length %d", len(self.threads))
-
-    @lazy
-    def freezer(self):
-        return Freezer("node")
-
-    @lazy
-    def config(self):
-        try:
-            config = RawConfigParser()
-            with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as filep:
-                if sys.version_info[0] >= 3:
-                    config.read_file(filep)
-                else:
-                    config.readfp(filep)
-        except Exception as exc:
-            self.log.info("error loading config: %s", exc)
-            raise ex.excAbortAction()
-        return config
-
-    def reload_config(self):
-        if not self._node_conf_event.is_set():
-            return
-        self._node_conf_event.clear()
-        unset_lazy(self, "config")
-        unset_lazy(self, "cluster_name")
-        unset_lazy(self, "cluster_key")
-        unset_lazy(self, "cluster_nodes")
-
-    @staticmethod
-    def get_services_nodenames():
-        """
-        Return the services nodes and drpnodes name, fetching the information
-        from the Svc objects.
-        """
-        nodenames = set()
-        with SERVICES_LOCK:
-            for svc in SERVICES.values():
-                nodenames |= svc.nodes | svc.drpnodes
-        return nodenames
-
-    def set_nmon(self, status=None, local_expect=None, global_expect=None):
-        global NMON_DATA
-        with NMON_DATA_LOCK:
-            if status:
-                if status != NMON_DATA.status:
-                    self.log.info(
-                        "node monitor status change: %s => %s",
-                        NMON_DATA.status if \
-                            NMON_DATA.status else "none",
-                        status
-                    )
-                NMON_DATA.status = status
-                NMON_DATA.status_updated = datetime.datetime.utcnow()
-
-            if local_expect:
-                if local_expect == "unset":
-                    local_expect = None
-                if local_expect != NMON_DATA.local_expect:
-                    self.log.info(
-                        "node monitor local expect change: %s => %s",
-                        NMON_DATA.local_expect if \
-                            NMON_DATA.local_expect else "none",
-                        local_expect
-                    )
-                NMON_DATA.local_expect = local_expect
-
-            if global_expect:
-                if global_expect == "unset":
-                    global_expect = None
-                if global_expect != NMON_DATA.global_expect:
-                    self.log.info(
-                        "node monitor global expect change: %s => %s",
-                        NMON_DATA.global_expect if \
-                            NMON_DATA.global_expect else "none",
-                        global_expect
-                    )
-                NMON_DATA.global_expect = global_expect
-
-        wake_monitor()
-
-    def set_smon(self, svcname, status=None, local_expect=None,
-                 global_expect=None, reset_retries=False):
-        global SMON_DATA
-        with SMON_DATA_LOCK:
-            if svcname not in SMON_DATA:
-                SMON_DATA[svcname] = Storage({})
-            if status:
-                if status != SMON_DATA[svcname].status:
-                    self.log.info(
-                        "service %s monitor status change: %s => %s",
-                        svcname,
-                        SMON_DATA[svcname].status if \
-                            SMON_DATA[svcname].status else "none",
-                        status
-                    )
-                SMON_DATA[svcname].status = status
-                SMON_DATA[svcname].status_updated = datetime.datetime.utcnow()
-
-            if local_expect:
-                if local_expect == "unset":
-                    local_expect = None
-                if local_expect != SMON_DATA[svcname].local_expect:
-                    self.log.info(
-                        "service %s monitor local expect change: %s => %s",
-                        svcname,
-                        SMON_DATA[svcname].local_expect if \
-                            SMON_DATA[svcname].local_expect else "none",
-                        local_expect
-                    )
-                SMON_DATA[svcname].local_expect = local_expect
-
-            if global_expect:
-                if global_expect == "unset":
-                    global_expect = None
-                if global_expect != SMON_DATA[svcname].global_expect:
-                    self.log.info(
-                        "service %s monitor global expect change: %s => %s",
-                        svcname,
-                        SMON_DATA[svcname].global_expect if \
-                            SMON_DATA[svcname].global_expect else "none",
-                        global_expect
-                    )
-                SMON_DATA[svcname].global_expect = global_expect
-
-            if reset_retries and "restart" in SMON_DATA[svcname]:
-                self.log.info("service %s monitor resources restart count reset",
-                              svcname)
-                del SMON_DATA[svcname]["restart"]
-        wake_monitor()
-
-    def get_node_monitor(self, datestr=False):
-        """
-        Return the Monitor data of the node.
-        If datestr is set, convert datetimes to a json compatible string.
-        """
-        with NMON_DATA_LOCK:
-            data = Storage(NMON_DATA)
-            if datestr:
-                data.status_updated = data.status_updated.strftime(DATEFMT)
-            return data
-
-    def get_service_monitor(self, svcname, datestr=False):
-        """
-        Return the Monitor data of a service.
-        If datestr is set, convert datetimes to a json compatible string.
-        """
-        with SMON_DATA_LOCK:
-            if svcname not in SMON_DATA:
-                self.set_smon(svcname, "idle")
-            data = Storage(SMON_DATA[svcname])
-            if datestr:
-                data.status_updated = data.status_updated.strftime(DATEFMT)
-            return data
-
-    def node_command(self, cmd):
-        """
-        A generic nodemgr command Popen wrapper.
-        """
-        cmd = [rcEnv.paths.nodemgr] + cmd
-        self.log.info("execute: %s", " ".join(cmd))
-        proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
-        return proc
-
-    def service_command(self, svcname, cmd):
-        """
-        A generic svcmgr command Popen wrapper.
-        """
-        cmd = [rcEnv.paths.svcmgr, '-s', svcname, "--crm"] + cmd
-        self.log.info("execute: %s", " ".join(cmd))
-        proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
-        return proc
-
-    def add_cluster_node(self, nodename):
-        new_nodes = self.cluster_nodes + [nodename]
-        new_nodes_str = " ".join(new_nodes)
-        cmd = ["set", "--param", "cluster.nodes", "--value", new_nodes_str]
-        proc = self.node_command(cmd)
-        return proc.wait()
-
-#############################################################################
-#
-# Heartbeat parent class
-#
-#############################################################################
-class Hb(OsvcThread):
-    """
-    Heartbeat parent class
-    """
-    def __init__(self, name, role=None):
-        OsvcThread.__init__(self)
-        self.name = name
-        self.id = name + "." + role
-        self.log = logging.getLogger(rcEnv.nodename+".osvcd."+self.id)
-        self.peers = {}
-
-    def status(self):
-        data = OsvcThread.status(self)
-        data.peers = {}
-        for nodename in self.get_services_nodenames():
-            if nodename == rcEnv.nodename:
-                data.peers[nodename] = {}
-                continue
-            if "*" in self.peers:
-                _data = self.peers["*"]
-            else:
-                _data = self.peers.get(nodename, Storage({
-                    "last": 0,
-                    "beating": False,
-                }))
-            data.peers[nodename] = {
-                "last": datetime.datetime.utcfromtimestamp(_data.last)\
-                                         .strftime('%Y-%m-%dT%H:%M:%SZ'),
-                "beating": _data.beating,
-            }
-        return data
-
-    def set_last(self, nodename="*"):
-        if nodename not in self.peers:
-            self.peers[nodename] = Storage({
-                "last": 0,
-                "beating": False,
-            })
-        self.peers[nodename].last = time.time()
-        if not self.peers[nodename].beating:
-            self.log.info("node %s hb status stale => beating", nodename)
-        self.peers[nodename].beating = True
-
-    def is_beating(self, nodename="*"):
-        return self.peers.get(nodename, {"beating": False})["beating"]
-
-    def set_peers_beating(self):
-        for nodename in self.peers:
-            self.set_beating(nodename)
-
-    def set_beating(self, nodename="*"):
-        now = time.time()
-        if nodename not in self.peers:
-            self.peers[nodename] = Storage({
-                "last": 0,
-                "beating": False,
-            })
-        if now > self.peers[nodename].last + self.timeout:
-            beating = False
-        else:
-            beating = True
-        if self.peers[nodename].beating != beating:
-            if beating:
-                self.log.info("node %s hb status stale => beating", nodename)
-            else:
-                self.log.info("node %s hb status beating => stale", nodename)
-        self.peers[nodename].beating = beating
-
-    @staticmethod
-    def get_ip_address(ifname):
-        ifname = str(ifname)
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        return socket.inet_ntoa(fcntl.ioctl(
-            s.fileno(),
-            0x8915,  # SIOCGIFADDR
-            struct.pack('256s', ifname[:15])
-        )[20:24])
-
-    @staticmethod
-    def get_message():
-        with HB_MSG_LOCK:
-            if not HB_MSG:
-                # no data to send yet
-                return
-            return HB_MSG
-
-
-#############################################################################
-#
-# Disk Heartbeat
-#
-#############################################################################
-class HbDisk(Hb, Crypt):
-    """
-    A class factorizing common methods and properties for the disk
-    heartbeat tx and rx child classes.
-    """
-    # 4MB meta size allows 1024 nodes (with 4k pagesize)
-    METASIZE = 4 * 1024 * 1024
-
-    # A 100MB disk can hold 96 nodes
-    SLOTSIZE = 1024 * 1024
-
-    MAX_SLOTS = METASIZE // mmap.PAGESIZE
-    DEFAULT_DISK_TIMEOUT = 15
-
-    def status(self):
-        data = Hb.status(self)
-        data.stats = Storage(self.stats)
-        data.config = {
-            "dev": self.dev,
-            "timeout": self.timeout,
-        }
-        return data
-
-    def unconfigure(self):
-        if hasattr(self, "mm"):
-            self.mm.close()
-        if hasattr(self, "fd"):
-            os.close(self.fd)
-
-    def configure(self):
-        self.stats = Storage({
-            "beats": 0,
-            "bytes": 0,
-            "errors": 0,
-        })
-        self.peer_config = {}
-        if hasattr(self, "node"):
-            config = self.node.config
-        else:
-            config = self.config
-
-        # timeout
-        if self.config.has_option(self.name, "timeout@"+rcEnv.nodename):
-            self.timeout = self.config.getint(self.name, "timeout@"+rcEnv.nodename)
-        elif self.config.has_option(self.name, "timeout"):
-            self.timeout = self.config.getint(self.name, "timeout")
-        else:
-            self.timeout = self.DEFAULT_DISK_TIMEOUT
-
-        try:
-            self.dev = self.config.get(self.name, "dev")
-        except Exception:
-            raise ex.excAbortAction("no %s.dev is not set in node.conf" % self.name)
-
-        if not os.path.exists(self.dev):
-            raise ex.excAbortAction("no %s does not exist" % self.dev)
-
-        statinfo = os.stat(self.dev)
-        if rcEnv.sysname == "Linux":
-            if stat.S_ISBLK(statinfo.st_mode):
-                self.log.info("using directio")
-                self.flags |= os.O_DIRECT | os.O_SYNC
-            else:
-                raise ex.excAbortAction("%s must be a block device" % self.dev)
-        else:
-            if not stat.S_ISCHR(statinfo.st_mode):
-                raise ex.excAbortAction("%s must be a char device" % self.dev)
-
-        try:
-            self.fd = os.open(self.dev, self.flags)
-        except OSError as exc:
-            if exc.errno == errno.EINVAL:
-                raise ex.excAbortAction("%s directio is not supported" % self.dev)
-            else:
-                raise ex.excAbortAction("error opening %s: %s" % (self.dev, str(exc)))
-        except Exception as exc:
-            raise ex.excAbortAction("error opening %s: %s" % (self.dev, str(exc)))
-
-        mmap_kwargs = {}
-        if rcEnv.sysname != "Windows" and not self.flags & os.O_RDWR:
-            self.log.info("mmap %s set read protection", self.dev)
-            mmap_kwargs["prot"] = mmap.PROT_READ
-        try:
-            size = os.lseek(self.fd, 0, os.SEEK_END)
-            os.lseek(self.fd, 0, os.SEEK_SET)
-            self.log.info("mmap %s size %d", self.dev, size)
-            self.mm = mmap.mmap(self.fd, size, **mmap_kwargs)
-        except Exception as exc:
-            os.close(self.fd)
-            raise ex.excAbortAction("mmapping %s: %s" % (self.dev, str(exc)))
-
-        self.load_peer_config()
-
-    @staticmethod
-    def meta_slot_offset(slot):
-        return slot * mmap.PAGESIZE
-
-    def meta_read_slot(self, slot):
-        offset = self.meta_slot_offset(slot)
-        return self.mm[offset:offset+mmap.PAGESIZE]
-
-    def meta_write_slot(self, slot, data):
-        if len(data) > mmap.PAGESIZE:
-            self.log.error("attempt to write too long data in meta slot %d", slot)
-            raise ex.excAbortAction()
-        offset = self.meta_slot_offset(slot)
-        self.mm.seek(offset)
-        self.mm.write(data)
-        self.mm.flush()
-
-    def slot_offset(self, slot):
-        return self.METASIZE + slot * self.SLOTSIZE
-
-    def read_slot(self, slot):
-        offset = self.slot_offset(slot)
-        end = self.mm[offset:offset+self.SLOTSIZE].index("\0")
-        return self.mm[offset:offset+end]
-
-    def write_slot(self, slot, data):
-        if len(data) > self.SLOTSIZE:
-            self.log.error("attempt to write too long data in slot %d", slot)
-            raise ex.excAbortAction()
-        offset = self.slot_offset(slot)
-        self.mm.seek(offset)
-        self.mm.write(data)
-        self.mm.flush()
-
-    def load_peer_config(self, verbose=True):
-        for nodename in self.cluster_nodes:
-            if nodename not in self.peer_config:
-                self.peer_config[nodename] = Storage({
-                    "slot": -1,
-                })
-        for slot in range(self.MAX_SLOTS):
-            buff = self.meta_read_slot(slot)
-            if buff[0] == "\0":
-                return
-            nodename = buff.strip("\0")
-            if nodename not in self.peer_config:
-                continue
-            if self.peer_config[nodename].slot >= 0:
-                if verbose:
-                    self.log.warning("duplicate slot %d for node %s (first %d)",
-                                     slot, nodename,
-                                     self.peer_config[nodename].slot)
-                continue
-            if verbose:
-                self.log.info("detect slot %d for node %s", slot, nodename)
-            self.peer_config[nodename]["slot"] = slot
-
-    def allocate_slot(self):
-        for slot in range(self.MAX_SLOTS):
-            buff = self.meta_read_slot(slot)
-            if buff[0] != "\0":
-                continue
-            self.peer_config[rcEnv.nodename].slot = slot
-            self.meta_write_slot(slot, rcEnv.nodename)
-            self.log.info("allocated slot %d", slot)
-            break
-
-
-class HbDiskTx(HbDisk):
-    """
-    The disk heartbeat tx class.
-    """
-    def __init__(self, name):
-        HbDisk.__init__(self, name, role="tx")
-
-    def run(self):
-        self.flags = os.O_RDWR
-        try:
-            self.configure()
-            if self.peer_config[rcEnv.nodename].slot < 0:
-                self.allocate_slot()
-        except ex.excAbortAction as exc:
-            self.log.error(exc)
-            self.stop()
-            sys.exit(1)
-
-        while True:
-            self.do()
-            if self.stopped():
-                self.unconfigure()
-                sys.exit(0)
-            with HB_TX_TICKER:
-                HB_TX_TICKER.wait(DEFAULT_HB_PERIOD)
-
-    def status(self):
-        data = HbDisk.status(self)
-        data["config"] = {}
-        return data
-
-    def do(self):
-        if rcEnv.nodename not in self.peer_config:
-            return
-        slot = self.peer_config[rcEnv.nodename].slot
-        if slot < 0:
-            return
-        self.reload_config()
-        message = self.get_message()
-        if message is None:
-            return
-
-        try:
-            self.write_slot(slot, message)
-            self.set_last()
-            self.stats.beats += 1
-            self.stats.bytes += len(message)
-            #self.log.info("written to %s slot %s", self.dev, slot)
-        except Exception as exc:
-            self.stats.errors += 1
-            self.log.error("write to %s slot %d error: %s", self.dev,
-                           self.peer_config[rcEnv.nodename]["slot"], exc)
-            return
-        finally:
-            self.set_beating()
-
-class HbDiskRx(HbDisk):
-    """
-    The disk heartbeat rx class.
-    """
-    def __init__(self, name):
-        HbDisk.__init__(self, name, role="rx")
-
-    def run(self):
-        self.flags = os.O_RDONLY
-        try:
-            self.configure()
-        except ex.excAbortAction as exc:
-            self.log.error(exc)
-            self.stop()
-            sys.exit(1)
-        self.log.info("reading on %s", self.dev)
-
-        while True:
-            self.do()
-            if self.stopped():
-                self.unconfigure()
-                sys.exit(0)
-            with HB_TX_TICKER:
-                HB_TX_TICKER.wait(DEFAULT_HB_PERIOD)
-
-    def do(self):
-        self.reload_config()
-        self.load_peer_config(verbose=False)
-        for nodename, data in self.peer_config.items():
-            if nodename == rcEnv.nodename:
-                continue
-            if data.slot < 0:
-                continue
-            try:
-                slot_data = self.read_slot(data.slot)
-                _nodename, _data = self.decrypt(slot_data)
-                if _nodename is None:
-                    # invalid crypt
-                    continue
-                if _nodename != nodename:
-                    self.log.warning("node %s has written its data in node %s "
-                                     "reserved slot", _nodename, nodename)
-                    nodename = _nodename
-                with CLUSTER_DATA_LOCK:
-                    CLUSTER_DATA[nodename] = _data
-                self.stats.beats += 1
-                self.set_last(nodename)
-            except Exception as exc:
-                self.stats.errors += 1
-                self.log.error("read from %s slot %d (%s) error: %s", self.dev,
-                               data.slot, nodename, str(exc))
-                return
-            finally:
-                self.set_beating(nodename)
-
-
-#############################################################################
-#
-# Unicast Heartbeat
-#
-#############################################################################
-class HbUcast(Hb, Crypt):
-    """
-    A class factorizing common methods and properties for the unicast
-    heartbeat tx and rx child classes.
-    """
-    DEFAULT_UCAST_PORT = 10000
-    DEFAULT_UCAST_TIMEOUT = 15
-
-    def status(self):
-        data = Hb.status(self)
-        data.stats = Storage(self.stats)
-        data.config = {
-            "addr": self.peer_config[rcEnv.nodename].addr,
-            "port": self.peer_config[rcEnv.nodename].port,
-            "timeout": self.timeout,
-        }
-        return data
-
-    def configure(self):
-        self.stats = Storage({
-            "beats": 0,
-            "bytes": 0,
-            "errors": 0,
-        })
-        self.peer_config = {}
-        if hasattr(self, "node"):
-            config = self.node.config
-        else:
-            config = self.config
-        try:
-            default_port = config.getint(self.name, "port")
-        except Exception:
-            default_port = self.DEFAULT_UCAST_PORT + 0
-
-        for nodename in self.cluster_nodes:
-            if nodename not in self.peer_config:
-                self.peer_config[nodename] = Storage({
-                    "addr": nodename,
-                    "port": default_port,
-                })
-            if config.has_option(self.name, "addr@"+nodename):
-                self.peer_config[nodename].addr = \
-                    config.get(self.name, "addr@"+nodename)
-            if config.has_option(self.name, "port@"+nodename):
-                self.peer_config[nodename].port = \
-                    config.getint(self.name, "port@"+nodename)
-
-        # timeout
-        if self.config.has_option(self.name, "timeout@"+rcEnv.nodename):
-            self.timeout = \
-                self.config.getint(self.name, "timeout@"+rcEnv.nodename)
-        elif self.config.has_option(self.name, "timeout"):
-            self.timeout = self.config.getint(self.name, "timeout")
-        else:
-            self.timeout = self.DEFAULT_UCAST_TIMEOUT
-
-        for nodename in self.peer_config:
-            if nodename == rcEnv.nodename:
-                continue
-            if self.peer_config[nodename].port is None:
-                self.peer_config[nodename].port = \
-                    self.peer_config[rcEnv.nodename].port
-
-class HbUcastTx(HbUcast):
-    """
-    The unicast heartbeat tx class.
-    """
-    def __init__(self, name):
-        HbUcast.__init__(self, name, role="tx")
-
-    def run(self):
-        try:
-            self.configure()
-        except ex.excAbortAction:
-            return
-
-        while True:
-            self.do()
-            if self.stopped():
-                sys.exit(0)
-            with HB_TX_TICKER:
-                HB_TX_TICKER.wait(DEFAULT_HB_PERIOD)
-
-    def status(self):
-        data = HbUcast.status(self)
-        data["config"] = {}
-        return data
-
-    def do(self):
-        #self.log.info("sending to %s:%s", self.addr, self.port)
-        self.reload_config()
-        message = self.get_message()
-        if message is None:
-            return
-
-        for nodename, config in self.peer_config.items():
-            if nodename == rcEnv.nodename:
-                continue
-            self._do(message, nodename, config)
-
-    def _do(self, message, nodename, config):
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(0.5)
-            sock.bind((self.peer_config[rcEnv.nodename].addr, 0))
-            sock.connect((config.addr, config.port))
-            sock.sendall(message)
-            self.set_last(nodename)
-            self.stats.beats += 1
-            self.stats.bytes += len(message)
-        except socket.timeout as exc:
-            self.stats.errors += 1
-            self.log.warning("send timeout")
-        except socket.error as exc:
-            self.stats.errors += 1
-            self.log.error("send to %s (%s:%d) error: %s", nodename,
-                           config.addr, config.port, str(exc))
-            return
-        finally:
-            self.set_beating(nodename)
-            sock.close()
-
-class HbUcastRx(HbUcast):
-    """
-    The unicast heartbeat rx class.
-    """
-    def __init__(self, name):
-        HbUcast.__init__(self, name, role="rx")
-
-    def run(self):
-        try:
-            self.configure()
-        except ex.excAbortAction:
-            return
-        try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.sock.bind((self.peer_config[rcEnv.nodename].addr,
-                            self.peer_config[rcEnv.nodename].port))
-            self.sock.listen(5)
-            self.sock.settimeout(0.5)
-        except socket.error as exc:
-            self.log.error("init error: %s", str(exc))
-            return
-
-        self.log.info("listening on %s:%s",
-                      self.peer_config[rcEnv.nodename].addr,
-                      self.peer_config[rcEnv.nodename].port)
-
-        while True:
-            self.do()
-            if self.stopped():
-                self.join_threads()
-                self.sock.close()
-                sys.exit(0)
-
-    def do(self):
-        self.reload_config()
-        self.janitor_threads()
-
-        try:
-            conn, addr = self.sock.accept()
-        except socket.timeout:
-            return
-        finally:
-            self.set_peers_beating()
-        thr = threading.Thread(target=self.handle_client, args=(conn, addr))
-        thr.start()
-        self.threads.append(thr)
-
-    def handle_client(self, conn, addr):
-        try:
-            self._handle_client(conn, addr)
-            self.stats.beats += 1
-        finally:
-            conn.close()
-
-    def _handle_client(self, conn, addr):
-        global CLUSTER_DATA
-
-        chunks = []
-        buff_size = 4096
-        while True:
-            chunk = conn.recv(buff_size)
-            self.stats.bytes += len(chunk)
-            if chunk:
-                chunks.append(chunk)
-            if not chunk or chunk.endswith(b"\x00"):
-                break
-        if sys.version_info[0] >= 3:
-            data = b"".join(chunks)
-        else:
-            data = "".join(chunks)
-        del chunks
-
-        nodename, data = self.decrypt(data, sender_id=addr[0])
-        if nodename is None or nodename == rcEnv.nodename:
-            # ignore hb data we sent ourself
-            return
-        elif nodename not in self.cluster_nodes:
-            # decrypt passed, trust it is a new node
-            self.add_cluster_node()
-        if data is None:
-            self.stats.errors += 1
-            self.set_beating(nodename)
-            return
-        #self.log.info("received data from %s %s", nodename, addr)
-        with CLUSTER_DATA_LOCK:
-            CLUSTER_DATA[nodename] = data
-        self.set_last(nodename)
-        self.set_beating(nodename)
-
-
-#############################################################################
-#
-# Multicast Heartbeat
-#
-#############################################################################
-class HbMcast(Hb, Crypt):
-    """
-    A class factorizing common methods and properties for the multicast
-    heartbeat tx and rx child classes.
-    """
-    DEFAULT_MCAST_PORT = 10000
-    DEFAULT_MCAST_ADDR = "224.3.29.71"
-    DEFAULT_MCAST_TIMEOUT = 15
-
-    def status(self):
-        data = Hb.status(self)
-        data.stats = Storage(self.stats)
-        data.config = {
-            "addr": self.addr,
-            "port": self.port,
-            "intf": self.intf,
-            "src_addr": self.src_addr,
-            "timeout": self.timeout,
-        }
-        return data
-
-    def configure(self):
-        self.stats = Storage({
-            "beats": 0,
-            "bytes": 0,
-            "errors": 0,
-        })
-        try:
-            self.port = self.config.getint(self.name, "port")
-        except Exception:
-            self.port = self.DEFAULT_MCAST_PORT
-        try:
-            self.addr = self.config.get(self.name, "addr")
-        except Exception:
-            self.addr = self.DEFAULT_MCAST_ADDR
-        try:
-            self.timeout = self.config.getint(self.name, "timeout")
-        except Exception:
-            self.timeout = self.DEFAULT_MCAST_TIMEOUT
-        group = socket.inet_aton(self.addr)
-        try:
-            self.intf = self.config.get(self.name, "intf")
-            self.src_addr = self.get_ip_address(self.intf)
-            self.mreq = group + socket.inet_aton(self.src_addr)
-        except Exception:
-            self.intf = "any"
-            self.src_addr = "0.0.0.0"
-            self.mreq = struct.pack("4sl", group, socket.INADDR_ANY)
-
-        try:
-            self.intf = self.config.get(self.name, "intf")
-            self.src_addr = self.get_ip_address(self.intf)
-            self.src_naddr = socket.inet_aton(self.src_addr)
-        except Exception:
-            self.intf = "any"
-            self.src_addr = "0.0.0.0"
-            self.src_naddr = socket.INADDR_ANY
-
-
-class HbMcastTx(HbMcast):
-    """
-    The multicast heartbeat tx class.
-    """
-    def __init__(self, name):
-        HbMcast.__init__(self, name, role="tx")
-
-    def run(self):
-        try:
-            self.configure()
-        except ex.excAbortAction:
-            return
-
-        try:
-            addrinfo = socket.getaddrinfo(self.addr, None)[0]
-            self.addr = addrinfo[4][0]
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.group = (self.addr, self.port)
-            ttl = struct.pack('b', 32)
-            self.sock.settimeout(0.2)
-            self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
-        except socket.error as exc:
-            self.log.error("init error: %s", str(exc))
-            return
-
-        while True:
-            self.do()
-            if self.stopped():
-                self.sock.close()
-                sys.exit(0)
-            with HB_TX_TICKER:
-                HB_TX_TICKER.wait(DEFAULT_HB_PERIOD)
-
-    def do(self):
-        #self.log.info("sending to %s:%s", self.addr, self.port)
-        self.reload_config()
-        message = self.get_message()
-        if message is None:
-            return
-
-        try:
-            sent = self.sock.sendto(message, self.group)
-            self.set_last()
-            self.stats.beats += 1
-            self.stats.bytes += len(message)
-        except socket.timeout as exc:
-            self.stats.errors += 1
-            self.log.warning("send timeout")
-        except socket.error as exc:
-            self.stats.errors += 1
-            self.log.warning("send error: %s", exc)
-        finally:
-            self.set_beating()
-
-
-#
-class HbMcastRx(HbMcast):
-    """
-    The multicast heartbeat rx class.
-    """
-    def __init__(self, name):
-        HbMcast.__init__(self, name, role="rx")
-
-    def run(self):
-        try:
-            self.configure()
-        except ex.excAbortAction:
-            return
-        try:
-            addrinfo = socket.getaddrinfo(self.addr, None)[0]
-            self.addr = addrinfo[4][0]
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.bind(('', self.port))
-            self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, self.mreq)
-            self.sock.settimeout(0.2)
-        except socket.error as exc:
-            self.log.error("init error: %s", str(exc))
-            return
-
-        self.log.info("listening on %s:%s", self.addr, self.port)
-
-        while True:
-            self.do()
-            if self.stopped():
-                self.join_threads()
-                self.sock.close()
-                sys.exit(0)
-
-    def do(self):
-        self.reload_config()
-        self.janitor_threads()
-
-        try:
-            data, addr = self.sock.recvfrom(MAX_MSG_SIZE)
-            self.stats.beats += 1
-            self.stats.bytes += len(data)
-        except socket.timeout:
-            self.set_peers_beating()
-            return
-        thr = threading.Thread(target=self.handle_client, args=(data, addr))
-        thr.start()
-        self.threads.append(thr)
-
-    def handle_client(self, message, addr):
-        global CLUSTER_DATA
-        nodename, data = self.decrypt(message, sender_id=addr[0])
-        if nodename is None or nodename == rcEnv.nodename:
-            # ignore hb data we sent ourself
-            return
-        elif nodename not in self.cluster_nodes:
-            # decrypt passed, trust it is a new node
-            self.add_cluster_node()
-        if data is None:
-            self.stats.errors += 1
-            self.set_beating(nodename)
-            return
-        #self.log.info("received data from %s %s", nodename, addr)
-        with CLUSTER_DATA_LOCK:
-            CLUSTER_DATA[nodename] = data
-        self.set_last(nodename)
-        self.set_beating(nodename)
-
-
-#############################################################################
-#
 # Listener Thread
 #
 #############################################################################
-class Listener(OsvcThread, Crypt):
+class Listener(shared.OsvcThread, Crypt):
     sock_tmo = 1.0
 
     def run(self):
@@ -1306,7 +168,7 @@ class Listener(OsvcThread, Crypt):
                 sys.exit(0)
 
     def status(self):
-        data = OsvcThread.status(self)
+        data = shared.OsvcThread.status(self)
         data["stats"] = self.stats
         data["config"] = {
             "port": self.port,
@@ -1448,9 +310,9 @@ class Listener(OsvcThread, Crypt):
         with THREADS_LOCK:
             THREADS[thr_id].stop()
         if thr_id == "scheduler":
-            wake_scheduler()
+            shared.wake_scheduler()
         if thr_id == "monitor":
-            wake_monitor()
+            shared.wake_monitor()
         return {"status": 0}
 
     def action_daemon_start(self, nodename, **kwargs):
@@ -1484,7 +346,7 @@ class Listener(OsvcThread, Crypt):
         if svcname is None:
             return {"error": "no svcname specified", "status": 1}
         self.set_smon(svcname, status="idle", reset_retries=True)
-        wake_monitor()
+        shared.wake_monitor()
         return {"status": 0}
 
     def action_set_service_monitor(self, nodename, **kwargs):
@@ -1500,7 +362,7 @@ class Listener(OsvcThread, Crypt):
             local_expect=local_expect, global_expect=global_expect,
             reset_retries=reset_retries
         )
-        wake_monitor()
+        shared.wake_monitor()
         return {"status": 0}
 
     def action_set_node_monitor(self, nodename, **kwargs):
@@ -1511,7 +373,7 @@ class Listener(OsvcThread, Crypt):
             status=status,
             local_expect=local_expect, global_expect=global_expect,
         )
-        wake_monitor()
+        shared.wake_monitor()
         return {"status": 0}
 
     def action_join(self, nodename, **kwargs):
@@ -1547,7 +409,7 @@ class Listener(OsvcThread, Crypt):
 # Scheduler Thread
 #
 #############################################################################
-class Scheduler(OsvcThread):
+class Scheduler(shared.OsvcThread):
     max_runs = 2
     interval = 60
 
@@ -1566,8 +428,8 @@ class Scheduler(OsvcThread):
         self.janitor_procs()
         self.reload_config()
         now = time.time()
-        with SCHED_TICKER:
-            SCHED_TICKER.wait(self.interval)
+        with shared.SCHED_TICKER:
+            shared.SCHED_TICKER.wait(self.interval)
 
         if len(self.procs) > self.max_runs:
             self.log.warning("%d scheduler runs are already in progress. "
@@ -1592,7 +454,7 @@ class Scheduler(OsvcThread):
 # Monitor Thread
 #
 #############################################################################
-class Monitor(OsvcThread, Crypt):
+class Monitor(shared.OsvcThread, Crypt):
     """
     The monitoring thread collecting local service states and taking decisions.
     """
@@ -1600,7 +462,7 @@ class Monitor(OsvcThread, Crypt):
     default_stdby_nb_restart = 2
 
     def __init__(self):
-        OsvcThread.__init__(self)
+        shared.OsvcThread.__init__(self)
         self._shutdown = False
 
     def run(self):
@@ -1629,15 +491,15 @@ class Monitor(OsvcThread, Crypt):
             self.sync_services_conf()
         self.update_hb_data()
 
-        with MON_TICKER:
-            MON_TICKER.wait(self.monitor_period)
+        with shared.MON_TICKER:
+            shared.MON_TICKER.wait(self.monitor_period)
 
     def shutdown(self):
-        with SERVICES_LOCK:
-            for svcname, svc in SERVICES.items():
+        with shared.SERVICES_LOCK:
+            for svcname, svc in shared.SERVICES.items():
                 self.service_shutdown(svc.svcname)
         self._shutdown = True
-        wake_monitor()
+        shared.wake_monitor()
 
     #########################################################################
     #
@@ -1653,8 +515,8 @@ class Monitor(OsvcThread, Crypt):
         confs = self.get_services_configs()
         for svcname, data in confs.items():
             new_service = False
-            with SERVICES_LOCK:
-                if svcname not in SERVICES:
+            with shared.SERVICES_LOCK:
+                if svcname not in shared.SERVICES:
                     new_service = True
             if rcEnv.nodename not in data:
                 # need to check if we should have this config ?
@@ -1681,10 +543,10 @@ class Monitor(OsvcThread, Crypt):
             if ref_nodename == rcEnv.nodename:
                 # we already have the most recent version
                 continue
-            with SERVICES_LOCK:
-                if svcname in SERVICES and \
-                   rcEnv.nodename in SERVICES[svcname].nodes and \
-                   ref_nodename in SERVICES[svcname].drpnodes:
+            with shared.SERVICES_LOCK:
+                if svcname in shared.SERVICES and \
+                   rcEnv.nodename in shared.SERVICES[svcname].nodes and \
+                   ref_nodename in shared.SERVICES[svcname].drpnodes:
                     # don't fetch drp config from prd nodes
                     return
             self.log.info("node %s has the most recent service %s config",
@@ -1693,8 +555,8 @@ class Monitor(OsvcThread, Crypt):
             if new_service:
                 fix_exe_link(rcEnv.paths.svcmgr, svcname)
                 fix_app_link(svcname)
-                with SERVICES_LOCK:
-                    SERVICES[svcname] = build(svcname)
+                with shared.SERVICES_LOCK:
+                    shared.SERVICES[svcname] = build(svcname)
 
     def fetch_service_config(self, svcname, nodename):
         """
@@ -1718,9 +580,9 @@ class Monitor(OsvcThread, Crypt):
         with codecs.open(tmpfpath, "w", "utf-8") as filep:
             filep.write(resp["data"])
         try:
-            with SERVICES_LOCK:
-                if svcname in SERVICES:
-                    svc = SERVICES[svcname]
+            with shared.SERVICES_LOCK:
+                if svcname in shared.SERVICES:
+                    svc = shared.SERVICES[svcname]
                 else:
                     svc = None
             if svc:
@@ -1870,8 +732,8 @@ class Monitor(OsvcThread, Crypt):
     #########################################################################
     def orchestrator(self):
         self.node_orchestrator()
-        with SERVICES_LOCK:
-            svcs = SERVICES.values()
+        with shared.SERVICES_LOCK:
+            svcs = shared.SERVICES.values()
         for svc in svcs:
             self.service_orchestrator(svc)
             self.resources_orchestrator(svc)
@@ -1884,8 +746,8 @@ class Monitor(OsvcThread, Crypt):
             #self.log.info("service %s orchestrator out (disabled)", svc.svcname)
             return
         try:
-            with CLUSTER_DATA_LOCK:
-                resources = CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]["resources"]
+            with shared.CLUSTER_DATA_LOCK:
+                resources = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]["resources"]
         except KeyError:
             return
 
@@ -2079,8 +941,8 @@ class Monitor(OsvcThread, Crypt):
 
     def failover_placement_leader(self, svc):
         nodenames = []
-        with CLUSTER_DATA_LOCK:
-            for nodename, data in CLUSTER_DATA.items():
+        with shared.CLUSTER_DATA_LOCK:
+            for nodename, data in shared.CLUSTER_DATA.items():
                 if data == "unknown":
                     continue
                 instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
@@ -2112,15 +974,15 @@ class Monitor(OsvcThread, Crypt):
     def failover_placement_leader_load_avg(self, svc):
         top_load = None
         top_node = None
-        with CLUSTER_DATA_LOCK:
-            for nodename in CLUSTER_DATA:
+        with shared.CLUSTER_DATA_LOCK:
+            for nodename in shared.CLUSTER_DATA:
                 instance = self.get_service_instance(svc.svcname, nodename)
                 if instance is None:
                     continue
                 if instance.frozen:
                     continue
                 try:
-                    load = CLUSTER_DATA[nodename]["load"]["15m"]
+                    load = shared.CLUSTER_DATA[nodename]["load"]["15m"]
                 except KeyError:
                     continue
                 if top_load is None or load < top_load:
@@ -2138,14 +1000,14 @@ class Monitor(OsvcThread, Crypt):
         return False
 
     def failover_placement_leader_nodes_order(self, svc):
-        with CLUSTER_DATA_LOCK:
+        with shared.CLUSTER_DATA_LOCK:
             for nodename in svc.ordered_nodes:
                 if nodename == rcEnv.nodename:
                     self.log.info("we have the highest 'nodes order' placement"
                                   " priority for service %s", svc.svcname)
                     return True
-                elif nodename in CLUSTER_DATA and \
-                     CLUSTER_DATA[nodename] != "unknown" and \
+                elif nodename in shared.CLUSTER_DATA and \
+                     shared.CLUSTER_DATA[nodename] != "unknown" and \
                      not svc.frozen():
                     self.log.info("node %s is alive and has a higher 'nodes "
                                   "order' placement priority for service %s",
@@ -2163,10 +1025,10 @@ class Monitor(OsvcThread, Crypt):
 
     @staticmethod
     def get_service(svcname):
-        with SERVICES_LOCK:
-            if svcname not in SERVICES:
+        with shared.SERVICES_LOCK:
+            if svcname not in shared.SERVICES:
                 return
-        return SERVICES[svcname]
+        return shared.SERVICES[svcname]
 
     #########################################################################
     #
@@ -2177,8 +1039,8 @@ class Monitor(OsvcThread, Crypt):
         fstatus = "undef"
         fstatus_l = []
         n_instances = 0
-        with CLUSTER_DATA_LOCK:
-            for nodename, node in CLUSTER_DATA.items():
+        with shared.CLUSTER_DATA_LOCK:
+            for nodename, node in shared.CLUSTER_DATA.items():
                 try:
                     fstatus_l.append(node["frozen"])
                 except KeyError:
@@ -2309,9 +1171,9 @@ class Monitor(OsvcThread, Crypt):
         """
         svcnames = []
         try:
-            with CLUSTER_DATA_LOCK:
-                for svcname in CLUSTER_DATA[rcEnv.nodename]["services"]["status"]:
-                    if CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]["avail"] == "up":
+            with shared.CLUSTER_DATA_LOCK:
+                for svcname in shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"]:
+                    if shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]["avail"] == "up":
                         svcnames.append(svcname)
         except KeyError:
             return []
@@ -2324,13 +1186,13 @@ class Monitor(OsvcThread, Crypt):
         configuration mtime and checksum.
         """
         data = {}
-        with CLUSTER_DATA_LOCK:
-            for nodename in CLUSTER_DATA:
+        with shared.CLUSTER_DATA_LOCK:
+            for nodename in shared.CLUSTER_DATA:
                 try:
-                    for svcname in CLUSTER_DATA[nodename]["services"]["config"]:
+                    for svcname in shared.CLUSTER_DATA[nodename]["services"]["config"]:
                         if svcname not in data:
                             data[svcname] = {}
-                        data[svcname][nodename] = Storage(CLUSTER_DATA[nodename]["services"]["config"][svcname])
+                        data[svcname][nodename] = Storage(shared.CLUSTER_DATA[nodename]["services"]["config"][svcname])
                 except KeyError:
                     pass
         return data
@@ -2341,8 +1203,8 @@ class Monitor(OsvcThread, Crypt):
         Return the specified service status structure on the specified node.
         """
         try:
-            with CLUSTER_DATA_LOCK:
-                return Storage(CLUSTER_DATA[nodename]["services"]["status"][svcname])
+            with shared.CLUSTER_DATA_LOCK:
+                return Storage(shared.CLUSTER_DATA[nodename]["services"]["status"][svcname])
         except KeyError:
             return
 
@@ -2352,11 +1214,11 @@ class Monitor(OsvcThread, Crypt):
         Return the specified service status structures on all nodes.
         """
         instances = {}
-        with CLUSTER_DATA_LOCK:
-            for nodename in CLUSTER_DATA:
+        with shared.CLUSTER_DATA_LOCK:
+            for nodename in shared.CLUSTER_DATA:
                 try:
-                    if svcname in CLUSTER_DATA[nodename]["services"]["status"]:
-                        instances[nodename] = CLUSTER_DATA[nodename]["services"]["status"][svcname]
+                    if svcname in shared.CLUSTER_DATA[nodename]["services"]["status"]:
+                        instances[nodename] = shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]
                 except KeyError:
                     continue
         return instances
@@ -2373,9 +1235,9 @@ class Monitor(OsvcThread, Crypt):
 
     @staticmethod
     def get_last_svc_config(svcname):
-        with CLUSTER_DATA_LOCK:
+        with shared.CLUSTER_DATA_LOCK:
             try:
-                return CLUSTER_DATA[rcEnv.nodename]["services"]["config"][svcname]
+                return shared.CLUSTER_DATA[rcEnv.nodename]["services"]["config"][svcname]
             except KeyError:
                 return
 
@@ -2394,20 +1256,20 @@ class Monitor(OsvcThread, Crypt):
                 mtime = 0
             mtime = datetime.datetime.utcfromtimestamp(mtime)
             last_config = self.get_last_svc_config(svcname)
-            if last_config is None or mtime > datetime.datetime.strptime(last_config["updated"], DATEFMT):
+            if last_config is None or mtime > datetime.datetime.strptime(last_config["updated"], shared.DATEFMT):
                 self.log.info("compute service %s config checksum", svcname)
                 cksum = self.fsum(cfg)
                 try:
-                    with SERVICES_LOCK:
-                        SERVICES[svcname] = build(svcname)
+                    with shared.SERVICES_LOCK:
+                        shared.SERVICES[svcname] = build(svcname)
                 except Exception as exc:
                     self.log.error("%s build error: %s", svcname, str(exc))
             else:
                 cksum = last_config["cksum"]
-            with SERVICES_LOCK:
-                scope = sorted(list(SERVICES[svcname].nodes | SERVICES[svcname].drpnodes))
+            with shared.SERVICES_LOCK:
+                scope = sorted(list(shared.SERVICES[svcname].nodes | shared.SERVICES[svcname].drpnodes))
             config[svcname] = {
-                "updated": mtime.strftime(DATEFMT),
+                "updated": mtime.strftime(shared.DATEFMT),
                 "cksum": self.fsum(cfg),
                 "scope": scope,
             }
@@ -2449,9 +1311,9 @@ class Monitor(OsvcThread, Crypt):
 
         Also update the monitor 'local_expect' field for each service.
         """
-        with CLUSTER_DATA_LOCK:
+        with shared.CLUSTER_DATA_LOCK:
             try:
-                data = CLUSTER_DATA[rcEnv.nodename]["services"]["status"]
+                data = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"]
             except KeyError:
                 data = {}
         for svcname in svcnames:
@@ -2475,8 +1337,8 @@ class Monitor(OsvcThread, Crypt):
             if not data[svcname]:
                 del data[svcname]
                 continue
-            with SERVICES_LOCK:
-                data[svcname]["frozen"] = SERVICES[svcname].frozen()
+            with shared.SERVICES_LOCK:
+                data[svcname]["frozen"] = shared.SERVICES[svcname].frozen()
             self.set_smon_l_expect_from_status(data, svcname)
             data[svcname]["monitor"] = self.get_service_monitor(svcname,
                                                                 datestr=True)
@@ -2494,41 +1356,39 @@ class Monitor(OsvcThread, Crypt):
     #########################################################################
     @staticmethod
     def reset_smon_retries(svcname, rid):
-        global SMON_DATA
-        with SMON_DATA_LOCK:
-            if svcname not in SMON_DATA:
+        with shared.SMON_DATA_LOCK:
+            if svcname not in shared.SMON_DATA:
                 return
-            if "restart" not in SMON_DATA[svcname]:
+            if "restart" not in shared.SMON_DATA[svcname]:
                 return
-            if rid in SMON_DATA[svcname].restart:
-                del SMON_DATA[svcname].restart[rid]
-            if len(SMON_DATA[svcname].restart.keys()) == 0:
-                del SMON_DATA[svcname].restart
+            if rid in shared.SMON_DATA[svcname].restart:
+                del shared.SMON_DATA[svcname].restart[rid]
+            if len(shared.SMON_DATA[svcname].restart.keys()) == 0:
+                del shared.SMON_DATA[svcname].restart
 
     @staticmethod
     def get_smon_retries(svcname, rid):
-        with SMON_DATA_LOCK:
-            if svcname not in SMON_DATA:
+        with shared.SMON_DATA_LOCK:
+            if svcname not in shared.SMON_DATA:
                 return 0
-            if "restart" not in SMON_DATA[svcname]:
+            if "restart" not in shared.SMON_DATA[svcname]:
                 return 0
-            if rid not in SMON_DATA[svcname].restart:
+            if rid not in shared.SMON_DATA[svcname].restart:
                 return 0
             else:
-                return SMON_DATA[svcname].restart[rid]
+                return shared.SMON_DATA[svcname].restart[rid]
 
     @staticmethod
     def inc_smon_retries(svcname, rid):
-        global SMON_DATA
-        with SMON_DATA_LOCK:
-            if svcname not in SMON_DATA:
+        with shared.SMON_DATA_LOCK:
+            if svcname not in shared.SMON_DATA:
                 return
-            if "restart" not in SMON_DATA[svcname]:
-                SMON_DATA[svcname].restart = Storage()
-            if rid not in SMON_DATA[svcname].restart:
-                SMON_DATA[svcname].restart[rid] = 1
+            if "restart" not in shared.SMON_DATA[svcname]:
+                shared.SMON_DATA[svcname].restart = Storage()
+            if rid not in shared.SMON_DATA[svcname].restart:
+                shared.SMON_DATA[svcname].restart[rid] = 1
             else:
-                SMON_DATA[svcname].restart[rid] += 1
+                shared.SMON_DATA[svcname].restart[rid] += 1
 
     def set_nmon_g_expect_from_status(self):
         nmon = self.get_node_monitor()
@@ -2568,35 +1428,31 @@ class Monitor(OsvcThread, Crypt):
             self.set_smon(svcname, global_expect="unset")
 
     def set_smon_l_expect_from_status(self, data, svcname):
-        global SMON_DATA
         if svcname not in data:
             return
-        with SMON_DATA_LOCK:
-            if svcname not in SMON_DATA:
+        with shared.SMON_DATA_LOCK:
+            if svcname not in shared.SMON_DATA:
                 return
             if data[svcname]["avail"] == "up" and \
-               SMON_DATA[svcname].local_expect != "started":
+               shared.SMON_DATA[svcname].local_expect != "started":
                 self.log.info("service %s monitor local_expect change "
                               "%s => %s", svcname,
-                              SMON_DATA[svcname].local_expect, "started")
-                SMON_DATA[svcname].local_expect = "started"
+                              shared.SMON_DATA[svcname].local_expect, "started")
+                shared.SMON_DATA[svcname].local_expect = "started"
 
     def update_hb_data(self):
         """
         Update the heartbeat payload we send to other nodes.
         Crypt it so the tx threads don't have to do it on their own.
         """
-        global CLUSTER_DATA
-        global HB_MSG
-
         #self.log.info("update heartbeat data to send")
         load_avg = os.getloadavg()
         config = self.get_services_config()
         status = self.get_services_status(config.keys())
 
         try:
-            with CLUSTER_DATA_LOCK:
-                CLUSTER_DATA[rcEnv.nodename] = {
+            with shared.CLUSTER_DATA_LOCK:
+                shared.CLUSTER_DATA[rcEnv.nodename] = {
                     "frozen": self.freezer.node_frozen(),
                     "env": rcEnv.node_env,
                     "monitor": self.get_node_monitor(datestr=True),
@@ -2612,9 +1468,9 @@ class Monitor(OsvcThread, Crypt):
                         "15m": load_avg[2],
                     },
                 }
-            with HB_MSG_LOCK:
-                HB_MSG = self.encrypt(CLUSTER_DATA[rcEnv.nodename])
-            wake_heartbeat_tx()
+            with shared.HB_MSG_LOCK:
+                shared.HB_MSG = self.encrypt(shared.CLUSTER_DATA[rcEnv.nodename])
+            shared.wake_heartbeat_tx()
         except ValueError:
             self.log.error("failed to refresh local cluster data: invalid json")
 
@@ -2623,22 +1479,22 @@ class Monitor(OsvcThread, Crypt):
         Set the global expect received through heartbeats as local expect, if
         the service instance is not already in the expected status.
         """
-        with CLUSTER_DATA_LOCK:
-            nodenames = list(CLUSTER_DATA.keys())
+        with shared.CLUSTER_DATA_LOCK:
+            nodenames = list(shared.CLUSTER_DATA.keys())
         if rcEnv.nodename not in nodenames:
             return
         nodenames.remove(rcEnv.nodename)
-        with CLUSTER_DATA_LOCK:
+        with shared.CLUSTER_DATA_LOCK:
             # merge node monitors
-            for nodename in CLUSTER_DATA:
+            for nodename in shared.CLUSTER_DATA:
                 try:
-                    global_expect = CLUSTER_DATA[nodename]["monitor"].get("global_expect")
+                    global_expect = shared.CLUSTER_DATA[nodename]["monitor"].get("global_expect")
                 except KeyError:
                     # sender daemon is outdated
                     continue
                 if global_expect is None:
                     continue
-                local_frozen = CLUSTER_DATA[rcEnv.nodename]["frozen"]
+                local_frozen = shared.CLUSTER_DATA[rcEnv.nodename]["frozen"]
                 if (global_expect == "frozen" and not local_frozen) or \
                    (global_expect == "thawed" and local_frozen):
                     self.log.info("node %s wants local node %s", nodename, global_expect)
@@ -2647,17 +1503,17 @@ class Monitor(OsvcThread, Crypt):
                     self.log.info("node %s wants local node %s, already is", nodename, global_expect)
 
             # merge every service monitors
-            for svcname in CLUSTER_DATA[rcEnv.nodename]["services"]["status"]:
+            for svcname in shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"]:
                 for nodename in nodenames:
-                    if nodename not in CLUSTER_DATA:
+                    if nodename not in shared.CLUSTER_DATA:
                         continue
-                    if svcname not in CLUSTER_DATA[nodename]["services"]["status"]:
+                    if svcname not in shared.CLUSTER_DATA[nodename]["services"]["status"]:
                         continue
-                    global_expect = CLUSTER_DATA[nodename]["services"]["status"][svcname]["monitor"].get("global_expect")
+                    global_expect = shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]["monitor"].get("global_expect")
                     if global_expect is None:
                         continue
-                    local_avail = CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]["avail"]
-                    local_frozen = CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]["frozen"]
+                    local_avail = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]["avail"]
+                    local_frozen = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]["frozen"]
                     status = self.get_agg_avail(svcname)
                     if (global_expect == "stopped" and (local_avail not in STOPPED_STATES or not local_frozen)) or \
                        (global_expect == "started" and (status not in STARTED_STATES or local_frozen)) or \
@@ -2670,9 +1526,9 @@ class Monitor(OsvcThread, Crypt):
 
     def status(self):
         self.update_hb_data()
-        data = OsvcThread.status(self)
-        with CLUSTER_DATA_LOCK:
-            data.nodes = dict(CLUSTER_DATA)
+        data = shared.OsvcThread.status(self)
+        with shared.CLUSTER_DATA_LOCK:
+            data.nodes = dict(shared.CLUSTER_DATA)
         data["services"] = {}
         data["frozen"] = self.get_clu_agg_frozen()
         for svcname in data.nodes[rcEnv.nodename]["services"]["config"]:
@@ -2788,9 +1644,9 @@ class Daemon(object):
         self.log.info("signal stop to all threads")
         for thr in self.threads.values():
             thr.stop()
-        wake_scheduler()
-        wake_monitor()
-        wake_heartbeat_tx()
+        shared.wake_scheduler()
+        shared.wake_monitor()
+        shared.wake_heartbeat_tx()
         for thr_id, thr in self.threads.items():
             self.log.info("waiting for %s to stop", thr_id)
             thr.join()
@@ -2909,7 +1765,7 @@ class Daemon(object):
         try:
             with NODE_LOCK:
                 if NODE:
-                    node.close()
+                    NODE.close()
                 NODE = Node()
             unset_lazy(self, "config")
             if self.last_config_mtime:

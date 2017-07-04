@@ -2193,6 +2193,10 @@ class Svc(Crypt):
         prev_global_expect_set = set()
         for _ in range(self.options.time):
             data = self.node._daemon_status()
+            if data is None:
+                # interrupted, daemon died
+                time.sleep(1)
+                continue
             global_expect_set = []
             for nodename in data["monitor"]["nodes"]:
                 try:
