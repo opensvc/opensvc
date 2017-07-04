@@ -2581,10 +2581,6 @@ class Monitor(OsvcThread, Crypt):
                               SMON_DATA[svcname].local_expect, "started")
                 SMON_DATA[svcname].local_expect = "started"
 
-    def node_env(self):
-        with NODE_LOCK:
-            return NODE._get(param="node.env")
-
     def update_hb_data(self):
         """
         Update the heartbeat payload we send to other nodes.
@@ -2602,7 +2598,7 @@ class Monitor(OsvcThread, Crypt):
             with CLUSTER_DATA_LOCK:
                 CLUSTER_DATA[rcEnv.nodename] = {
                     "frozen": self.freezer.node_frozen(),
-                    "env": self.node_env(),
+                    "env": rcEnv.node_env,
                     "monitor": self.get_node_monitor(datestr=True),
                     "updated": datetime.datetime.utcfromtimestamp(time.time())\
                                                 .strftime('%Y-%m-%dT%H:%M:%SZ'),
