@@ -4257,6 +4257,7 @@ class Svc(Crypt):
         patterns = [
             os.path.join(rcEnv.paths.pathlog, self.svcname+".log*"),
             os.path.join(rcEnv.paths.pathlog, self.svcname+".debug.log*"),
+            os.path.join(rcEnv.paths.pathvar, "FROZEN."+self.svcname),
         ]
         for pattern in patterns:
             for fpath in glob.glob(pattern):
