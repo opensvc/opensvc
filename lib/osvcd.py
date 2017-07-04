@@ -7,14 +7,10 @@ import sys
 import os
 import time
 import datetime
-import socket
 import threading
 from subprocess import Popen, PIPE
 import logging
 import json
-import struct
-import base64
-import fcntl
 import codecs
 import hashlib
 import glob
@@ -26,11 +22,11 @@ import osvcd_shared as shared
 from rcConfigParser import RawConfigParser
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode, lazy, unset_lazy
-from freezer import Freezer
 from comm import Crypt
 from node import Node
 
 from osvcd_lsnr import Listener
+from osvcd_scheduler import Scheduler
 from hb_ucast import HbUcastRx, HbUcastTx
 from hb_mcast import HbMcastRx, HbMcastTx
 from hb_disk import HbDiskRx, HbDiskTx
@@ -110,51 +106,6 @@ def forked(func):
     def _func(*args, **kwargs):
         fork(func, args, kwargs)
     return _func
-
-#############################################################################
-#
-# Scheduler Thread
-#
-#############################################################################
-class Scheduler(shared.OsvcThread):
-    max_runs = 2
-    interval = 60
-
-    def run(self):
-        self.log = logging.getLogger(rcEnv.nodename+".osvcd.scheduler")
-        self.log.info("scheduler started")
-        self.last_run = time.time()
-
-        while True:
-            self.do()
-            if self.stopped():
-                self.terminate_procs()
-                sys.exit(0)
-
-    def do(self):
-        self.janitor_procs()
-        self.reload_config()
-        now = time.time()
-        with shared.SCHED_TICKER:
-            shared.SCHED_TICKER.wait(self.interval)
-
-        if len(self.procs) > self.max_runs:
-            self.log.warning("%d scheduler runs are already in progress. "
-                             "skip this run.", self.max_runs)
-            return
-
-        self.last_run = now
-        self.run_scheduler()
-
-    def run_scheduler(self):
-        self.log.info("run schedulers")
-        cmd = [rcEnv.paths.nodemgr, 'schedulers']
-        try:
-            proc = Popen(cmd, stdout=None, stderr=None, stdin=None,
-                         close_fds=True)
-        except KeyboardInterrupt:
-            return
-        self.push_proc(proc=proc)
 
 #############################################################################
 #
@@ -314,7 +265,6 @@ class Monitor(shared.OsvcThread, Crypt):
     # Node and Service Commands
     #
     #########################################################################
-    #
     def service_start_resources(self, svcname, rids):
         self.set_smon(svcname, "restarting")
         proc = self.service_command(svcname, ["start", "--rid", ",".join(rids)])
@@ -336,7 +286,6 @@ class Monitor(shared.OsvcThread, Crypt):
             self.reset_smon_retries(svcname, rid)
         self.update_hb_data()
 
-    #
     def service_toc(self, svcname):
         proc = self.service_command(svcname, ["toc"])
         self.push_proc(
@@ -351,7 +300,6 @@ class Monitor(shared.OsvcThread, Crypt):
     def service_toc_on_success(self, svcname):
         self.set_smon(svcname, status="idle")
 
-    #
     def service_start(self, svcname):
         self.set_smon(svcname, "starting")
         proc = self.service_command(svcname, ["start"])
@@ -367,7 +315,6 @@ class Monitor(shared.OsvcThread, Crypt):
     def service_start_on_success(self, svcname):
         self.set_smon(svcname, status="idle", local_expect="started")
 
-    #
     def service_stop(self, svcname):
         self.set_smon(svcname, "stopping")
         proc = self.service_command(svcname, ["stop"])
@@ -383,7 +330,6 @@ class Monitor(shared.OsvcThread, Crypt):
     def service_stop_on_success(self, svcname):
         self.set_smon(svcname, status="idle", local_expect="unset")
 
-    #
     def service_shutdown(self, svcname):
         self.set_smon(svcname, "shutdown")
         proc = self.service_command(svcname, ["shutdown"])
@@ -399,7 +345,6 @@ class Monitor(shared.OsvcThread, Crypt):
     def service_shutdown_on_success(self, svcname):
         self.set_smon(svcname, status="idle", local_expect="unset")
 
-    #
     def service_freeze(self, svcname):
         self.set_smon(svcname, "freezing")
         proc = self.service_command(svcname, ["freeze"])
@@ -415,7 +360,6 @@ class Monitor(shared.OsvcThread, Crypt):
     def service_freeze_on_success(self, svcname):
         self.set_smon(svcname, status="idle", local_expect="unset")
 
-    #
     def service_thaw(self, svcname):
         self.set_smon(svcname, "thawing")
         proc = self.service_command(svcname, ["thaw"])
