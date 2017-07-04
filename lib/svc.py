@@ -3389,7 +3389,7 @@ class Svc(Crypt):
             self.async_action(action)
         except ex.excAbortAction:
             return
-        self._action(action, options=options)
+        return self._action(action, options=options)
 
     def _action(self, action, options=None):
         """
@@ -3478,6 +3478,7 @@ class Svc(Crypt):
 
         if options.cluster and options.format != "json":
             raise ex.excError("only the json output format is allowed with --cluster")
+
         if action.startswith("collector_"):
             from collector import Collector
             collector = Collector(options, self.node, self.svcname)
