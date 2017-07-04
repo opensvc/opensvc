@@ -356,7 +356,7 @@ class Crypt(object):
                 return data
         except socket.error as exc:
             if not silent:
-                self.log.error("init error: %s", str(exc))
+                self.log.error("daemon send to %s:%d error: %s", addr, port, str(exc))
             return
         finally:
             sock.close()
