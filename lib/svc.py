@@ -3998,6 +3998,7 @@ class Svc(Crypt):
             print(self._get(self.options.param, self.options.eval))
         except ex.excError as exc:
             print(exc, file=sys.stderr)
+            return 1
         return 0
 
     def _get(self, param=None, evaluate=False):

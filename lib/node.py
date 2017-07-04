@@ -1511,40 +1511,45 @@ class Node(Crypt):
         Print the raw value of any option of any section of the node
         configuration file.
         """
-        if self.options.param is None:
-            print("no parameter. set --param", file=sys.stderr)
+        try:
+            print(self._get(self.options.param))
+        except ex.excError as exc:
+            print(exc, file=sys.stderr)
             return 1
-        elements = self.options.param.split('.')
+        return 0
+
+    def _get(self, param=None):
+        """
+        Verifies the param is set and return the value.
+        """
+
+        if param is None:
+            raise ex.excError("no parameter. set --param")
+        elements = param.split('.')
         if len(elements) != 2:
-            print("malformed parameter. format as 'section.key'",
-                  file=sys.stderr)
-            return 1
+            raise ex.excError("malformed parameter. format as 'section.key'")
         section, option = elements
 
         if not self.config.has_section(section):
             self.config.add_section(section)
 
         if self.config.has_option(section, option):
-            print(self.config.get(section, option))
-            return 0
-        else:
-            if self.options.param in DEPRECATED_KEYWORDS:
-                newkw = DEPRECATED_KEYWORDS[self.options.param]
-                if self.config.has_option(section, newkw):
-                    print("deprecated keyword %s translated to %s" % \
-                          (self.options.param, newkw), file=sys.stderr)
-                    print(self.config.get(section, newkw))
-                    return 0
-            if self.options.param in REVERSE_DEPRECATED_KEYWORDS:
-                for oldkw in REVERSE_DEPRECATED_KEYWORDS[self.options.param]:
-                    if self.config.has_option(section, oldkw):
-                        print("keyword %s not found, translated to deprecated %s" % \
-                              (self.options.param, oldkw), file=sys.stderr)
-                        print(self.config.get(section, oldkw))
-                        return 0
-            print("option '%s' not found in section '%s'"%(option, section),
-                  file=sys.stderr)
-            return 1
+            return self.config.get(section, option)
+
+        if param in DEPRECATED_KEYWORDS:
+            newkw = DEPRECATED_KEYWORDS[param]
+            if self.config.has_option(section, newkw):
+                print("deprecated keyword %s translated to %s" % \
+                      (param, newkw), file=sys.stderr)
+                return self.config.get(section, newkw)
+
+        if param in REVERSE_DEPRECATED_KEYWORDS:
+            for oldkw in REVERSE_DEPRECATED_KEYWORDS[param]:
+                if self.config.has_option(section, oldkw):
+                    print("keyword %s not found, translated to deprecated %s" % \
+                          (param, oldkw), file=sys.stderr)
+                    return self.config.get(section, oldkw)
+        raise ex.excError("option '%s' not found in section '%s'"%(option, section))
 
     def set(self):
         """

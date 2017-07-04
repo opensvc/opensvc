@@ -30,6 +30,7 @@ from rcUtilities import bdecode, lazy, unset_lazy
 from rcConfigParser import RawConfigParser
 from freezer import Freezer
 from comm import Crypt
+from node import Node
 
 MON_WAIT_READY = datetime.timedelta(seconds=6)
 DEFAULT_HB_PERIOD = 5
@@ -55,6 +56,10 @@ HB_MSG_LOCK = threading.RLock()
 # configuration file changes.
 SERVICES = {}
 SERVICES_LOCK = threading.RLock()
+
+# A node object instance. Used to access node properties and methods.
+NODE = None
+NODE_LOCK = threading.RLock()
 
 # the local service monitor data, where the listener can set expected states
 SMON_DATA = {}
@@ -2572,6 +2577,10 @@ class Monitor(OsvcThread, Crypt):
                               SMON_DATA[svcname].local_expect, "started")
                 SMON_DATA[svcname].local_expect = "started"
 
+    def node_env(self):
+        with NODE_LOCK:
+            return NODE._get(param="node.env")
+
     def update_hb_data(self):
         """
         Update the heartbeat payload we send to other nodes.
@@ -2589,6 +2598,7 @@ class Monitor(OsvcThread, Crypt):
             with CLUSTER_DATA_LOCK:
                 CLUSTER_DATA[rcEnv.nodename] = {
                     "frozen": self.freezer.node_frozen(),
+                    "env": self.node_env(),
                     "monitor": self.get_node_monitor(datestr=True),
                     "updated": datetime.datetime.utcfromtimestamp(time.time())\
                                                 .strftime('%Y-%m-%dT%H:%M:%SZ'),
@@ -2880,6 +2890,8 @@ class Daemon(object):
         Reload the node configuration file and notify the threads to do the
         same, if the file's mtime has changed since the last load.
         """
+        global NODE
+
         if not os.path.exists(rcEnv.paths.nodeconf):
             return
         try:
@@ -2891,6 +2903,10 @@ class Daemon(object):
            self.last_config_mtime >= mtime:
             return
         try:
+            with NODE_LOCK:
+                if NODE:
+                    node.close()
+                NODE = Node()
             unset_lazy(self, "config")
             if self.last_config_mtime:
                 self.log.info("node config reloaded (changed)")

@@ -92,6 +92,30 @@ class Sync(Res.Resource, Scheduler):
             return False
         return True
 
+    def peer_env_from_daemon(self, node):
+        data = self.svc.node._daemon_status()
+        return data["monitor"]["nodes"][node]["env"]
+
+    def _remote_node_env(self, node):
+        try:
+            return self.peer_env_from_daemon(node)
+        except Exception as exc:
+            self.log.debug("can't get %s env from daemon: %s", node, exc)
+            pass
+        ruser = self.svc.node.get_ruser(node)
+        rcmd = [rcEnv.paths.nodemgr, 'get', '--param', 'node.env']
+        if ruser != "root":
+            rcmd = ['sudo'] + rcmd
+        cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--'] + rcmd
+        (ret, out, err) = self.call(cmd, cache=True)
+        if ret != 0:
+            return
+        words = out.split()
+        if len(words) == 1:
+            return words[0]
+        else:
+            return out
+
     def remote_node_env(self, node, target):
         if target == 'drpnodes':
             expected_type = list(set(rcEnv.allowed_svc_envs) - set(['PRD']))
@@ -104,21 +128,11 @@ class Sync(Res.Resource, Scheduler):
             self.log.error('unknown sync target: %s'%target)
             raise ex.excError
 
-        ruser = self.svc.node.get_ruser(node)
-        rcmd = [rcEnv.paths.nodemgr, 'get', '--param', 'node.env']
-        if ruser != "root":
-            rcmd = ['sudo'] + rcmd
-
         if node not in cache_remote_node_env:
-            cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--'] + rcmd
-            (ret, out, err) = self.call(cmd, cache=True)
-            if ret != 0:
+            peer_env = self._remote_node_env(node)
+            if peer_env is None:
                 return False
-            words = out.split()
-            if len(words) == 1:
-                cache_remote_node_env[node] = words[0]
-            else:
-                cache_remote_node_env[node] = out
+            cache_remote_node_env[node] = peer_env
 
         if cache_remote_node_env[node] in expected_type:
             return True
