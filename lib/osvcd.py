@@ -2179,7 +2179,11 @@ class Monitor(OsvcThread, Crypt):
         n_instances = 0
         with CLUSTER_DATA_LOCK:
             for nodename, node in CLUSTER_DATA.items():
-                fstatus_l.append(node["frozen"])
+                try:
+                    fstatus_l.append(node["frozen"])
+                except KeyError:
+                    # sender daemon outdated
+                    continue
                 n_instances += 1
         n_frozen = fstatus_l.count(True)
         if n_instances == 0:
@@ -2631,7 +2635,11 @@ class Monitor(OsvcThread, Crypt):
         with CLUSTER_DATA_LOCK:
             # merge node monitors
             for nodename in CLUSTER_DATA:
-                global_expect = CLUSTER_DATA[nodename]["monitor"].get("global_expect")
+                try:
+                    global_expect = CLUSTER_DATA[nodename]["monitor"].get("global_expect")
+                except KeyError:
+                    # sender daemon is outdated
+                    continue
                 if global_expect is None:
                     continue
                 local_frozen = CLUSTER_DATA[rcEnv.nodename]["frozen"]
