@@ -22,6 +22,10 @@ MAX_MSG_SIZE = 1024 * 1024
 THREADS = {}
 THREADS_LOCK = threading.RLock()
 
+# A node object instance. Used to access node properties and methods.
+NODE = None
+NODE_LOCK = threading.RLock()
+
 # CRM services objects. Used to access services properties.
 # The monitor thread reloads a new Svc object when the corresponding
 # configuration file changes.
