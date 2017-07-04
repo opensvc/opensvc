@@ -18,6 +18,10 @@ DEFAULT_HB_PERIOD = 5
 DATEFMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 MAX_MSG_SIZE = 1024 * 1024
 
+# The threads store
+THREADS = {}
+THREADS_LOCK = threading.RLock()
+
 # CRM services objects. Used to access services properties.
 # The monitor thread reloads a new Svc object when the corresponding
 # configuration file changes.
@@ -46,6 +50,7 @@ CLUSTER_DATA = {}
 CLUSTER_DATA_LOCK = threading.RLock()
 
 # thread loop conditions and helpers
+DAEMON_STOP = threading.Event()
 MON_TICKER = threading.Condition()
 SCHED_TICKER = threading.Condition()
 HB_TX_TICKER = threading.Condition()
