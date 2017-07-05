@@ -446,6 +446,145 @@ class Node(Crypt):
         kwargs["log"] = self.log
         return vcall(*args, **kwargs)
 
+    def svcs_selector(self, selector):
+        """
+        Given a selector string, return a list of service names.
+        This exposed method only aggregates ORed elements.
+        """
+        if os.environ.get("OSVC_SERVICE_LINK"):
+            return [os.environ.get("OSVC_SERVICE_LINK")]
+        self.build_services(minimal=True)
+        try:
+            return self._svcs_selector(selector)
+        finally:
+            del self.services
+            self.services = None
+
+    def _svcs_selector(self, selector):
+        if selector is None:
+            return [svc.svcname for svc in self.svcs]
+        elif "," in selector:
+            ored_selectors = selector.split(",")
+        else:
+            ored_selectors = [selector]
+        if selector in (None, ""):
+            result = [svc.svcname for svc in self.svcs]
+        else:
+            result = []
+            for _selector in ored_selectors:
+                for svcname in self.__svcs_selector(_selector):
+                    if svcname not in result:
+                        result.append(svcname)
+        return result
+
+    def __svcs_selector(self, selector):
+        """
+        Given a selector string, return a list of service names.
+        This method only intersect the ANDed elements.
+        """
+        if selector is None:
+            return
+        elif "+" in selector:
+            anded_selectors = selector.split("+")
+        else:
+            anded_selectors = [selector]
+        if selector in (None, ""):
+            result = [svc.svcname for svc in self.svcs]
+        else:
+            result = None
+            for _selector in anded_selectors:
+                svcnames = self.___svcs_selector(_selector)
+                if result is None:
+                    result = svcnames
+                else:
+                    common = set(result) & set(svcnames)
+                    result = [svcname for svcname in result if svcname in common]
+        return result
+
+    def ___svcs_selector(self, selector):
+        """
+        Given a basic selector string (no AND nor OR), return a list of service
+        names.
+        """
+        import fnmatch
+        import re
+
+        ops = r"(<=|>=|<|>|=|~|:)"
+        negate = selector[0] == "!"
+        selector = selector.lstrip("!")
+        elts = re.split(ops, selector)
+
+        def matching(current, op, value):
+            if op in ("<", ">", ">=", "<="):
+                try:
+                    current = float(current)
+                except ValueError:
+                    return False
+            if op == "=":
+                match = current == value
+            elif op == "~":
+                match = re.search(value, current)
+            elif op == ">":
+                match = current > value
+            elif op == ">=":
+                match = current >= value
+            elif op == "<":
+                match = current < value
+            elif op == "<=":
+                match = current <= value
+            elif op == ":":
+                match = True
+            return match
+
+        def svc_matching(svc, param, op, value):
+            try:
+                current = svc._get(param, evaluate=True)
+            except ex.excError:
+                current = None
+            if current is None:
+                if "." in param:
+                    group, _param = param.split(".", 1)
+                else:
+                    group = param
+                    _param = None
+                rids = [section for section in svc.config.sections() if section.split('#')[0] == group]
+                if op == ":" and len(rids) > 0 and _param is None:
+                    return True
+                elif _param:
+                    for rid in rids:
+                        try:
+                            _current = svc._get(rid+"."+_param, evaluate=True)
+                        except ex.excError:
+                            continue
+                        if matching(_current, op, value):
+                            return True
+                return False
+            if current is None:
+                if op == ":":
+                    return True
+            elif matching(current, op, value):
+                return True
+            return False
+
+        if len(elts) == 1:
+            return [svc.svcname for svc in self.svcs if negate ^ fnmatch.fnmatch(svc.svcname, selector)]
+        elif len(elts) != 3:
+            return []
+        param, op, value = elts
+        if op in ("<", ">", ">=", "<="):
+            try:
+                value = float(value)
+            except ValueError:
+                return []
+        result = []
+        for svc in self.svcs:
+            ret = svc_matching(svc, param, op, value)
+            if ret ^ negate:
+                result.append(svc.svcname)
+
+        return result
+
+
     def build_services(self, *args, **kwargs):
         """
         Instanciate a Svc objects for each requested services and add it to
