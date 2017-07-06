@@ -303,7 +303,9 @@ class Listener(shared.OsvcThread, Crypt):
         kwargs:
         * svcname: str
         * cmd: list
+        * sync: boolean
         """
+        sync = kwargs.get("sync", True)
         svcname = kwargs.get("svcname")
         if svcname is None:
             self.log.error("node %s requested a service action without "
@@ -325,14 +327,20 @@ class Listener(shared.OsvcThread, Crypt):
         self.log.info("execute service action requested by node %s: %s",
                       nodename, " ".join(cmd))
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
-        out, err = proc.communicate()
-        result = {
-            "status": 0,
-            "data": {
-                "out": bdecode(out),
-                "err": bdecode(err),
-                "ret": proc.returncode,
-            },
-        }
+        if sync:
+            out, err = proc.communicate()
+            result = {
+                "status": 0,
+                "data": {
+                    "out": bdecode(out),
+                    "err": bdecode(err),
+                    "ret": proc.returncode,
+                },
+            }
+        else:
+            self.push_proc(proc)
+            result = {
+                "status": 0,
+            }
         return result
 

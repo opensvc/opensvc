@@ -2720,7 +2720,8 @@ class Svc(Crypt):
         """
         self.svcunlock()
         for nodename in self.need_postsync:
-            self.remote_action(nodename, 'postsync', waitlock=3600)
+            self.daemon_service_action(['postsync', '--waitlock=3600'],
+                                       nodename=nodename, sync=False)
 
         self.need_postsync = set()
 
@@ -4887,12 +4888,17 @@ class Svc(Crypt):
         except Exception as exc:
             self.log.warning("set monitor status failed: %s", str(exc))
 
-    def daemon_service_action(self, cmd, nodename=None):
+    def daemon_service_action(self, cmd, nodename=None, sync=True):
+        """
+        Execute a service action on a peer node.
+        If sync is set, wait for the action result.
+        """
         if nodename is None:
             nodename = self.options.node
         options = {
             "svcname": self.svcname,
             "cmd": cmd,
+            "sync": sync,
         }
         self.log.info("request action '%s' on node %s", " ".join(cmd), nodename)
         try:
