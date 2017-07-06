@@ -123,7 +123,8 @@ class HbUcastTx(HbUcast):
             self.stats.bytes += len(message)
         except socket.timeout as exc:
             self.stats.errors += 1
-            self.log.warning("send timeout")
+            self.log.warning("send to %s (%s:%d) timeout", nodename,
+                             config.addr, config.port)
         except socket.error as exc:
             self.stats.errors += 1
             self.log.error("send to %s (%s:%d) error: %s", nodename,
