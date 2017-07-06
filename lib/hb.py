@@ -72,12 +72,16 @@ class Hb(shared.OsvcThread):
             beating = False
         else:
             beating = True
+        need_forget = False
         if self.peers[nodename].beating != beating:
             if beating:
                 self.log.info("node %s hb status stale => beating", nodename)
             else:
                 self.log.info("node %s hb status beating => stale", nodename)
+                need_forget = True
         self.peers[nodename].beating = beating
+        if need_forget:
+            self.forget_peer_data(nodename)
 
     @staticmethod
     def get_ip_address(ifname):

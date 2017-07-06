@@ -384,4 +384,37 @@ class OsvcThread(threading.Thread):
         proc = self.node_command(cmd)
         return proc.wait()
 
+    def forget_peer_data(self, nodename):
+        """
+        Purge a stale peer data if all rx threads are down.
+        """
+        if not self.peer_down(nodename):
+            self.log.info("other rx threads still receive from node %s",
+                          nodename)
+            return
+        self.log.info("no rx thread still receive from node %s. flush its data",
+                      nodename)
+        with CLUSTER_DATA_LOCK:
+            try:
+                del CLUSTER_DATA[nodename]
+            except KeyError:
+                pass
+
+    def peer_down(self, nodename):
+        """
+        Return True if no rx threads receive data from the specified peer
+        node.
+        """
+        with THREADS_LOCK:
+            for thr_id, thread in THREADS.items():
+                if not thr_id.endswith(".rx"):
+                    continue
+                rx_status = thread.status()
+                try:
+                    peer_status = rx_status["peers"][nodename]["beating"]
+                except KeyError:
+                    continue
+                if peer_status:
+                    return False
+        return True
 
