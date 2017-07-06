@@ -3857,9 +3857,14 @@ class Svc(Crypt):
         Service online migration.
         """
         self.destination_node_sanity_checks()
-        self.master_prstop()
+        self.svcunlock()
+        self.clear(nodename=rcEnv.nodename)
+        self.clear(nodename=self.options.destination_node)
+        self.daemon_mon_action("freeze", wait=True, timeout=120)
+        src_node = self.current_node()
+        self.daemon_service_action(["prstop"], nodename=src_node)
         try:
-            self.remote_action(nodename=self.options.destination_node, action='startfs --master')
+            self.daemon_service_action(["startfs", "--master"], nodename=self.options.destination_node)
             self._migrate()
         except:
             if self.has_resourceset(['disk.scsireserv']):
@@ -3868,8 +3873,8 @@ class Svc(Crypt):
                                "either on source node or destination node, "
                                "depending on your problem analysis.")
             raise
-        self.master_stopfs()
-        self.remote_action(nodename=self.options.destination_node, action='prstart --master')
+        self.daemon_service_action(["stop"], nodename=src_node)
+        self.daemon_service_action(["prstart", "--master"], nodename=self.options.destination_node)
 
     def switch(self):
         """
