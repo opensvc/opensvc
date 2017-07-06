@@ -8,6 +8,7 @@ import os
 import threading
 import logging
 import codecs
+import gc
 from optparse import OptionParser
 
 import rcExceptions as ex
@@ -184,6 +185,7 @@ class Daemon(object):
             if shared.DAEMON_STOP.is_set():
                 self.stop_threads()
                 break
+            gc.collect()
             with DAEMON_TICKER:
                 DAEMON_TICKER.wait(1)
         self.log.info("daemon graceful stop")
