@@ -34,10 +34,10 @@ class ColorStreamHandler(logging.StreamHandler):
 
             l[0] = namefmt % l[0]
             l[0] = colorize(l[0], color.BOLD)
-            l[1] = "%-7s" % l[1]
-            l[1] = l[1].replace("ERROR", colorize("ERROR", color.RED))
-            l[1] = l[1].replace("WARNING", colorize("WARNING", color.BROWN))
-            l[1] = l[1].replace("INFO", colorize("INFO", color.LIGHTBLUE))
+            l[1] = l[1].replace("ERROR", colorize("E", color.RED))
+            l[1] = l[1].replace("WARNING", colorize("W", color.BROWN))
+            l[1] = l[1].replace("DEBUG", colorize("D", color.LIGHTBLUE))
+            l[1] = l[1].replace("INFO", " ")
             return " ".join(l)
 
         return c(text)
