@@ -496,11 +496,15 @@ ACTIONS = {
         },
         'freeze': {
             'msg': 'set up a flag to block actions on this service',
-            'options': ASYNC_ACTION_OPTS,
+            'options': ASYNC_ACTION_OPTS + [
+                OPT.node,
+            ],
         },
         'thaw': {
             'msg': 'remove the flag to unblock actions on this service',
-            'options': ASYNC_ACTION_OPTS,
+            'options': ASYNC_ACTION_OPTS + [
+                OPT.node,
+            ],
         },
         'toc': {
             'msg': 'Trigger the service pre_monitor_action script and monitor_action method. Beware, this might crash or reboot the node.',

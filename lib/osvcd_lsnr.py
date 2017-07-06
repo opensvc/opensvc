@@ -11,6 +11,7 @@ from subprocess import Popen, PIPE
 
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
+from rcUtilities import bdecode, drop_option
 from comm import Crypt
 
 class Listener(shared.OsvcThread, Crypt):
@@ -296,4 +297,42 @@ class Listener(shared.OsvcThread, Crypt):
                     result["data"][section][key] = val
         return result
 
+    def action_service_action(self, nodename, **kwargs):
+        """
+        Execute a CRM command on behalf of a peer node.
+        kwargs:
+        * svcname: str
+        * cmd: list
+        """
+        svcname = kwargs.get("svcname")
+        if svcname is None:
+            self.log.error("node %s requested a service action without "
+                           "specifying the service name", nodename)
+            return {
+                "status": 1,
+            }
+        cmd = kwargs.get("cmd")
+        if cmd is None or len(cmd) == 0:
+            self.log.error("node %s requested a service action without "
+                           "specifying the command", nodename)
+            return {
+                "status": 1,
+            }
+
+        cmd = drop_option("--node", cmd, drop_value=True)
+        cmd = drop_option("--daemon", cmd)
+        cmd = [rcEnv.paths.svcmgr, "-s", svcname] + cmd + ["--crm"]
+        self.log.info("execute service action requested by node %s: %s",
+                      nodename, " ".join(cmd))
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
+        out, err = proc.communicate()
+        result = {
+            "status": 0,
+            "data": {
+                "out": bdecode(out),
+                "err": bdecode(err),
+                "ret": proc.returncode,
+            },
+        }
+        return result
 

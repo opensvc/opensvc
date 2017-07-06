@@ -19,7 +19,9 @@ from resourceset import ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
-from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, try_decode, eval_expr, convert_bool, action_triggers, read_cf
+from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
+                        try_decode, eval_expr, convert_bool, action_triggers, \
+                        read_cf, drop_option
 import rcExceptions as ex
 import rcLogger
 import node
@@ -37,6 +39,13 @@ def signal_handler(*args):
     raise ex.excSignal
 
 DEFAULT_WAITLOCK = 60
+
+ACTION_TGT_STATE = {
+    "start": "started",
+    "stop": "stopped",
+    "freeze": "frozen",
+    "thaw": "thawed",
+}
 
 DEFAULT_STATUS_GROUPS = [
     "container",
@@ -2171,27 +2180,37 @@ class Svc(Crypt):
         mtime = os.stat(self.paths.cf).st_mtime
         print(mtime)
 
-    def async_action(self, action):
-        states = {
-            "start": "started",
-            "stop": "stopped",
-            "freeze": "frozen",
-            "thaw": "thawed",
-        }
+    def async_action(self, action, wait=None, timeout=None):
+        if self.options.node and self.options.node != rcEnv.nodename:
+            cmd = sys.argv[1:]
+            cmd = drop_option("--node", cmd, drop_value=True)
+            ret = self.daemon_service_action(cmd)
+            if ret == 0:
+                raise ex.excAbortAction()
+            else:
+                raise ex.excError()
         if self.options.crm:
             return
-        if action not in states:
+        if action not in ACTION_TGT_STATE:
             return
         if self.command_is_scoped():
             return
-        self.set_service_monitor(global_expect=states[action])
+        self.daemon_mon_action(action, wait=wait, timeout=timeout)
+        raise ex.excAbortAction()
+
+    def daemon_mon_action(self, action, wait=None, timeout=None):
+        self.set_service_monitor(global_expect=ACTION_TGT_STATE[action])
         self.log.info("%s action requested", action)
-        if not self.options.wait:
-            raise ex.excAbortAction()
+        if wait is None:
+            wait = self.options.wait
+        if timeout is None:
+            timeout = self.options.time
+        if not wait:
+            return
 
         # poll global service status
         prev_global_expect_set = set()
-        for _ in range(self.options.time):
+        for _ in range(timeout):
             data = self.node._daemon_status()
             if data is None:
                 # interrupted, daemon died
@@ -2203,7 +2222,7 @@ class Svc(Crypt):
                     _data = data["monitor"]["nodes"][nodename]["services"]["status"][self.svcname]
                 except (KeyError, TypeError) as exc:
                     continue
-                if _data["monitor"].get("global_expect") == states[action]:
+                if _data["monitor"].get("global_expect") == ACTION_TGT_STATE[action]:
                     global_expect_set.append(nodename)
             if prev_global_expect_set != global_expect_set:
                 for nodename in set(global_expect_set) - prev_global_expect_set:
@@ -2215,10 +2234,20 @@ class Svc(Crypt):
                               data["monitor"]["services"][self.svcname]["avail"],
                               data["monitor"]["services"][self.svcname]["overall"],
                               data["monitor"]["services"][self.svcname]["frozen"])
-                raise ex.excAbortAction()
+                return
             prev_global_expect_set = set(global_expect_set)
             time.sleep(1)
         raise ex.excError("wait timeout exceeded")
+
+    def current_node(self):
+        data = self.node._daemon_status()
+        for nodename, _data in data["monitor"]["nodes"].items():
+            try:
+                __data = _data["services"]["status"][self.svcname]
+            except KeyError:
+                continue
+            if __data["avail"] == "up":
+                return nodename
 
     def boot(self):
         """
@@ -3809,9 +3838,11 @@ class Svc(Crypt):
         * the specified destination is the current node
         * the specified destination is not a service candidate node
         """
+        if self.clustertype != "failover":
+            raise ex.excError("this service clustertype is not 'failover'")
         if self.options.destination_node is None:
             raise ex.excError("a destination node must be provided this action")
-        if self.options.destination_node == rcEnv.nodename:
+        if self.options.destination_node == self.current_node():
             raise ex.excError("the destination is the source node")
         if self.options.destination_node not in self.nodes:
             raise ex.excError("the destination node %s is not in the service "
@@ -3842,8 +3873,12 @@ class Svc(Crypt):
         Service move to another node.
         """
         self.destination_node_sanity_checks()
-        self.stop()
-        self.remote_action(nodename=self.options.destination_node, action='start')
+        self.svcunlock()
+        self.clear(nodename=rcEnv.nodename)
+        self.clear(nodename=self.options.destination_node)
+        self.daemon_mon_action("stop", wait=True, timeout=120)
+        self.daemon_service_action(["start"], nodename=self.options.destination_node)
+        self.daemon_mon_action("thaw", wait=True, timeout=120)
 
     def collector_rest_get(self, *args, **kwargs):
         kwargs["svcname"] = self.svcname
@@ -4819,15 +4854,18 @@ class Svc(Crypt):
     # daemon communications
     #
     #########################################################################
-    def clear(self):
+    def clear(self, nodename=None):
+        if nodename is None:
+            nodename = self.options.node
         options = {
             "svcname": self.svcname,
         }
         data = self.daemon_send(
             {"action": "clear", "options": options},
-            nodename=self.options.node,
+            nodename=nodename,
         )
-        print(json.dumps(data, indent=4, sort_keys=True))
+        if data is None or data["status"] != 0:
+            raise ex.excError("clear on node %s failed" % nodename)
 
     def set_service_monitor(self, status=None, local_expect=None, global_expect=None):
         options = {
@@ -4846,6 +4884,39 @@ class Svc(Crypt):
                 self.log.warning("set monitor status failed")
         except Exception as exc:
             self.log.warning("set monitor status failed: %s", str(exc))
+
+    def daemon_service_action(self, cmd, nodename=None):
+        if nodename is None:
+            nodename = self.options.node
+        options = {
+            "svcname": self.svcname,
+            "cmd": cmd,
+        }
+        self.log.info("request action '%s' on node %s", " ".join(cmd), nodename)
+        try:
+            data = self.daemon_send(
+                {"action": "service_action", "options": options},
+                nodename=nodename,
+                silent=True,
+            )
+        except Exception as exc:
+            self.log.error("service action on node %s failed: %s",
+                           nodename, exc)
+            return 1
+        if data is None or data["status"] != 0:
+            self.log.error("service action on node %s failed",
+                           nodename)
+            return 1
+        if "data" not in data:
+            return 0
+        data = data["data"]
+        if data.get("out") and len(data["out"]) > 0:
+            for line in data["out"].splitlines():
+               print(line)
+        if data.get("err") and len(data["err"]) > 0:
+            for line in data["err"].splitlines():
+               print(line, file=sys.stderr)
+        return data["ret"]
 
 
     #########################################################################

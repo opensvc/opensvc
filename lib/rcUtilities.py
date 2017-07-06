@@ -972,6 +972,25 @@ def read_cf(fpath, defaults=None):
             config.readfp(ofile)
     return config
 
+def drop_option(option, cmd, drop_value=False):
+    """
+    Drop an option, and its value if requested, from an argv
+    """
+    to_drop = []
+    for i, word in enumerate(cmd):
+        if word == option:
+            if drop_value:
+                to_drop += [i, i+1]
+            else:
+                to_drop += [i]
+            continue
+        if word.startswith(option+"="):
+            to_drop += [i]
+            continue
+    for idx in sorted(to_drop, reverse=True):
+        del cmd[idx]
+    return cmd
+
 if __name__ == "__main__":
     #print("call(('id','-a'))")
     #(r,output,err)=call(("/usr/bin/id","-a"))
