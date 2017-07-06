@@ -2184,6 +2184,8 @@ class Svc(Crypt):
         if self.options.node and self.options.node != rcEnv.nodename:
             cmd = sys.argv[1:]
             cmd = drop_option("--node", cmd, drop_value=True)
+            cmd = drop_option("-s", cmd, drop_value=True)
+            cmd = drop_option("--service", cmd, drop_value=True)
             ret = self.daemon_service_action(cmd)
             if ret == 0:
                 raise ex.excAbortAction()
