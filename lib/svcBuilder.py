@@ -2987,7 +2987,7 @@ def setup_logging(svcnames):
             max_svcname_len = n
 
     rcLogger.max_svcname_len = max_svcname_len
-    log = rcLogger.initLogger('init')
+    log = rcLogger.initLogger(rcEnv.nodename)
 
 def build(name, minimal=False, svcconf=None):
     """build(name) is in charge of Svc creation
@@ -3304,7 +3304,7 @@ def build_services(status=None, svcnames=None, create_instance=False,
             svc = build(name, minimal=minimal)
         except (ex.excError, ex.excInitError) as e:
             errors.append("%s: %s" % (name, str(e)))
-            svclog = rcLogger.initLogger(name, handlers=["file", "syslog"])
+            svclog = rcLogger.initLogger(rcEnv.nodename+"."+name, handlers=["file", "syslog"])
             svclog.error(str(e))
             continue
         except ex.excAbortAction:

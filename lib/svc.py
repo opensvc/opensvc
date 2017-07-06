@@ -435,7 +435,7 @@ class Svc(Crypt):
 
     @lazy
     def log(self):
-        return rcLogger.initLogger(self.svcname)
+        return rcLogger.initLogger(rcEnv.nodename+"."+self.svcname)
 
     @lazy
     def sched(self):
@@ -1161,10 +1161,6 @@ class Svc(Crypt):
                 # this is a log line continuation (command output for ex.)
                 return line
 
-            if not rcLogger.include_svcname:
-                elements[1] = elements[1].replace(self.svcname, "").lstrip(".")
-            if len(elements[1]) > rcLogger.namelen:
-                elements[1] = "*"+elements[1][-(rcLogger.namelen-1):]
             elements[1] = rcLogger.namefmt % elements[1]
             elements[1] = colorize(elements[1], color.BOLD)
             elements[2] = "%-7s" % elements[2]

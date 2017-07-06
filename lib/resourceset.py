@@ -310,7 +310,12 @@ class ResourceSet(object):
         """
         Lazy init for the resource logger.
         """
-        return logging.getLogger(self.type)
+        name = ".".join((
+            rcEnv.nodename,
+            self.svc.svcname,
+            self.type
+        ))
+        return logging.getLogger(name)
 
 if __name__ == "__main__":
     pass

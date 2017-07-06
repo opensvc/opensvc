@@ -99,7 +99,7 @@ class Resource(object):
         """
         Return the resource label used in logs entries.
         """
-        label = ""
+        label = rcEnv.nodename + "."
         if hasattr(self, "svc"):
             label += self.svc.svcname + '.'
 
