@@ -1,6 +1,7 @@
 """
 Scheduler Thread
 """
+import os
 import sys
 import logging
 import time
@@ -17,6 +18,11 @@ class Scheduler(shared.OsvcThread):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.scheduler")
         self.log.info("scheduler started")
         self.last_run = time.time()
+        if hasattr(os, "devnull"):
+            devnull = os.devnull
+        else:
+            devnull = "/dev/null"
+        self.devnull = os.open(devnull, os.O_RDWR)
 
         while True:
             self.do()
@@ -43,8 +49,8 @@ class Scheduler(shared.OsvcThread):
         self.log.info("run schedulers")
         cmd = [rcEnv.paths.nodemgr, 'schedulers']
         try:
-            proc = Popen(cmd, stdout=None, stderr=None, stdin=None,
-                         close_fds=True)
+            proc = Popen(cmd, stdout=self.devnull, stderr=self.devnull,
+                         stdin=self.devnull, close_fds=True)
         except KeyboardInterrupt:
             return
         self.push_proc(proc=proc)
