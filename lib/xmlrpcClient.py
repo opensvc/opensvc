@@ -319,14 +319,14 @@ class Collector(object):
         else:
             self.submit("begin_action", *args)
 
-    def end_action(self, svc, action, begin, end, logfile, sync=True):
+    def end_action(self, svc, action, begin, end, alogfile, sync=True):
         err = 'ok'
         dateprev = None
         res = None
         res_err = None
         pid = None
         msg = None
-        lines = open(logfile, 'r').read()
+        lines = open(alogfile, 'r').read()
         pids = set([])
 
         """Example logfile line:
@@ -354,7 +354,7 @@ class Collector(object):
             """
             if res is not None and dateprev is not None:
                 res = res.lower()
-                res = res.replace(svc.svcname+'.','')
+                res = res.replace(rcEnv.nodename+'.'+svc.svcname+'.','')
                 vals.append([svc.svcname,
                              res+' '+action,
                              rcEnv.nodename,
@@ -392,7 +392,7 @@ class Collector(object):
         """
         if dateprev is not None:
             res = res.lower()
-            res = res.replace(svc.svcname+'.','')
+            res = res.replace(rcEnv.nodename+'.'+svc.svcname+'.','')
             vals.append([svc.svcname,
                          res+' '+action,
                          rcEnv.nodename,
