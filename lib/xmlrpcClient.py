@@ -36,8 +36,6 @@ from rcGlobalEnv import rcEnv
 import rcStatus
 import rcExceptions as ex
 
-hostId = __import__('hostid'+rcEnv.sysname)
-hostid = hostId.hostid()
 rcEnv.warned = False
 
 import logging
@@ -304,14 +302,12 @@ class Collector(object):
         args = [['svcname',
              'action',
              'hostname',
-             'hostid',
              'version',
              'begin',
              'cron'],
             [str(svc.svcname),
              str(action),
              str(rcEnv.nodename),
-             str(hostid),
              str(svc.node.agent_version()),
              str(begin),
              '1' if svc.options.cron else '0']
@@ -339,7 +335,6 @@ class Collector(object):
         vars = ['svcname',
                 'action',
                 'hostname',
-                'hostid',
                 'pid',
                 'begin',
                 'end',
@@ -363,7 +358,6 @@ class Collector(object):
                 vals.append([svc.svcname,
                              res+' '+action,
                              rcEnv.nodename,
-                             hostid,
                              pid,
                              dateprev,
                              date,
@@ -402,7 +396,6 @@ class Collector(object):
             vals.append([svc.svcname,
                          res+' '+action,
                          rcEnv.nodename,
-                         hostid,
                          pid,
                          dateprev,
                          date,
@@ -431,7 +424,6 @@ class Collector(object):
             ['svcname',
              'action',
              'hostname',
-             'hostid',
              'pid',
              'begin',
              'end',
@@ -441,7 +433,6 @@ class Collector(object):
             [str(svc.svcname),
              str(action),
              str(rcEnv.nodename),
-             str(hostid),
              ','.join(map(str, pids)),
              str(begin),
              str(end),
@@ -538,8 +529,7 @@ class Collector(object):
                 return buff
             return
 
-        vars = ['svc_hostid',
-                'svc_name',
+        vars = ['svc_name',
                 'svc_flex_min_nodes',
                 'svc_flex_max_nodes',
                 'svc_flex_cpu_low_threshold',
@@ -556,8 +546,7 @@ class Collector(object):
                 'svc_drnoaction',
                 'svc_ha']
 
-        vals = [hostid,
-                svc.svcname,
+        vals = [svc.svcname,
                 svc.clustertype,
                 svc.flex_min_nodes,
                 svc.flex_max_nodes,
