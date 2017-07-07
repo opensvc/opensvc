@@ -3795,13 +3795,12 @@ class Svc(Crypt):
                                               prefix=self.svcname+'.'+action)
         actionlogfile = tmpfile.name
         tmpfile.close()
-        log = logging.getLogger()
         fmt = "%(asctime)s;;%(name)s;;%(levelname)s;;%(message)s;;%(process)d;;EOL"
         actionlogformatter = logging.Formatter(fmt)
         actionlogfilehandler = logging.FileHandler(actionlogfile)
         actionlogfilehandler.setFormatter(actionlogformatter)
         actionlogfilehandler.setLevel(logging.INFO)
-        log.addHandler(actionlogfilehandler)
+        self.log.addHandler(actionlogfilehandler)
         if "/svcmgr.py" in sys.argv:
             self.log.info(" ".join(sys.argv))
 
@@ -3809,7 +3808,7 @@ class Svc(Crypt):
 
         # Push result and logs to database
         actionlogfilehandler.close()
-        log.removeHandler(actionlogfilehandler)
+        self.log.removeHandler(actionlogfilehandler)
         end = datetime.datetime.now()
         self.dblogger(action, begin, end, actionlogfile)
         return err
