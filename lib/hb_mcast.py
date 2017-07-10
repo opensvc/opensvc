@@ -102,7 +102,7 @@ class HbMcastTx(HbMcast):
                 self.sock.close()
                 sys.exit(0)
             with shared.HB_TX_TICKER:
-                shared.HB_TX_TICKER.wait(shared.DEFAULT_HB_PERIOD)
+                shared.HB_TX_TICKER.wait(self.default_hb_period)
 
     def do(self):
         #self.log.info("sending to %s:%s", self.addr, self.port)

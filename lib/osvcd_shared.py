@@ -14,7 +14,6 @@ from rcUtilities import lazy, unset_lazy
 from rcGlobalEnv import rcEnv, Storage
 from freezer import Freezer
 
-DEFAULT_HB_PERIOD = 5
 DATEFMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 MAX_MSG_SIZE = 1024 * 1024
 

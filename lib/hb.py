@@ -15,6 +15,8 @@ class Hb(shared.OsvcThread):
     """
     Heartbeat parent class
     """
+    default_hb_period = 5
+
     def __init__(self, name, role=None):
         shared.OsvcThread.__init__(self)
         self.name = name

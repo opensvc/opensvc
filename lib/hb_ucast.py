@@ -92,7 +92,7 @@ class HbUcastTx(HbUcast):
             if self.stopped():
                 sys.exit(0)
             with shared.HB_TX_TICKER:
-                shared.HB_TX_TICKER.wait(shared.DEFAULT_HB_PERIOD)
+                shared.HB_TX_TICKER.wait(self.default_hb_period)
 
     def status(self):
         data = HbUcast.status(self)
