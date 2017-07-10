@@ -2320,6 +2320,10 @@ class Node(Crypt):
                         if ret is None:
                             ret = 0
                         err += ret
+                except ex.excError:
+                    if need_aggregate:
+                        continue
+                    raise
                 except ex.MonitorAction:
                     svc.action('toc')
                 except ex.excSignal:
