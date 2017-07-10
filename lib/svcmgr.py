@@ -235,7 +235,10 @@ def _main(node, argv=None):
         node.options.format = options.format
     except AttributeError:
         pass
-    options.svcs = node.svcs_selector(options.svcs)
+    if action != "create":
+        options.svcs = node.svcs_selector(options.svcs)
+    else:
+        options.svcs = options.svcs.split(",")
     node.options.single_service = options.svcs is not None and \
                                   len(options.svcs) == 1
 
