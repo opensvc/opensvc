@@ -13,7 +13,6 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
-from svc import Svc
 from rcUtilities import convert_size, cmdline2list, ximport, \
                         check_privs
 
@@ -2994,12 +2993,14 @@ def build(name, minimal=False, svcconf=None):
     it return None if service Name is not managed by local node
     else it return new Svc instance
     """
+    import svc
+
     #
     # node discovery is hidden in a separate module to
     # keep it separate from the framework stuff
     #
     discover_node()
-    svc = Svc(svcname=name)
+    svc = svc.Svc(svcname=name)
 
     try:
         encapnodes = [n.lower() for n in svc.conf_get_string_scope('DEFAULT', "encapnodes").split() if n != ""]
