@@ -141,19 +141,19 @@ def test_validate_config():
     assert ret == 0
 
 def test_frozen():
-    ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
+    ret = svcmgr.main(argv=["frozen", "-s", "unittest", "--crm"])
     assert ret == 0
 
 def test_freeze():
-    ret = svcmgr.main(argv=["freeze", "-s", "unittest"])
+    ret = svcmgr.main(argv=["freeze", "-s", "unittest", "--crm"])
     assert ret == 0
-    ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
+    ret = svcmgr.main(argv=["frozen", "-s", "unittest", "--crm"])
     assert ret == 1
 
 def test_thaw():
-    ret = svcmgr.main(argv=["thaw", "-s", "unittest"])
+    ret = svcmgr.main(argv=["thaw", "-s", "unittest", "--crm"])
     assert ret == 0
-    ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
+    ret = svcmgr.main(argv=["frozen", "-s", "unittest", "--crm"])
     assert ret == 0
 
 def test_logs():
