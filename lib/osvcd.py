@@ -8,7 +8,6 @@ import os
 import threading
 import logging
 import codecs
-import gc
 from optparse import OptionParser
 
 import rcExceptions as ex
@@ -185,7 +184,6 @@ class Daemon(object):
             if shared.DAEMON_STOP.is_set():
                 self.stop_threads()
                 break
-            gc.collect()
             with DAEMON_TICKER:
                 DAEMON_TICKER.wait(1)
         self.log.info("daemon graceful stop")
@@ -236,7 +234,9 @@ class Daemon(object):
             self.threads["scheduler"].start()
             changed = True
 
-        self.read_config()
+        mtime = self.read_config()
+        if mtime:
+            unset_lazy(self, "config_hbs")
 
         for hb_type, txc, rxc in HEARTBEATS:
             for name in self.get_config_hb(hb_type):
@@ -256,18 +256,22 @@ class Daemon(object):
             self.threads["monitor"].start()
             changed = True
 
-        # clean up deleted heartbeats
-        thr_ids = self.threads.keys()
-        for thr_id in thr_ids:
-            if not thr_id.startswith("hb#"):
-                continue
-            name = thr_id.replace(".tx", "").replace(".rx", "")
-            if not self.config.has_section(name):
+        if mtime is not None:
+            # clean up deleted heartbeats
+            thr_ids = self.threads.keys()
+            sections = self.config.sections()
+            for thr_id in thr_ids:
+                if not thr_id.startswith("hb#"):
+                    continue
+                name = thr_id.replace(".tx", "").replace(".rx", "")
+                if name in sections:
+                    continue
                 self.log.info("heartbeat %s removed from configuration. stop "
                               "thread %s", name, thr_id)
                 self.threads[thr_id].stop()
                 self.threads[thr_id].join()
                 del self.threads[thr_id]
+                changed = True
 
         if changed:
             with shared.THREADS_LOCK:
@@ -278,8 +282,6 @@ class Daemon(object):
         Reload the node configuration file and notify the threads to do the
         same, if the file's mtime has changed since the last load.
         """
-        if not os.path.exists(rcEnv.paths.nodeconf):
-            return
         try:
             mtime = os.path.getmtime(rcEnv.paths.nodeconf)
         except Exception as exc:
@@ -305,23 +307,33 @@ class Daemon(object):
                 self.threads[thr_id].notify_config_change()
         except Exception as exc:
             self.log.warning("failed to load config: %s", str(exc))
+        return mtime
 
     def get_config_hb(self, hb_type=None):
         """
         Parse the node configuration and return the list of heartbeat
         section names matching the specified type.
         """
-        hbs = []
+        return self.config_hbs.get(hb_type, [])
+
+    @lazy
+    def config_hbs(self):
+        """
+        Parse the node configuration and return a dictionary of heartbeat
+        section names indexed by heartbeat type.
+        """
+        hbs = {}
         for section in self.config.sections():
             if not section.startswith("hb#"):
                 continue
             try:
                 section_type = self.config.get(section, "type")
             except Exception:
-                section_type = None
-            if hb_type and section_type != hb_type:
                 continue
-            hbs.append(section)
+            if section_type not in hbs:
+                hbs[section_type] = [section]
+            else:
+                hbs[section_type].append(section)
         return hbs
 
 #############################################################################
