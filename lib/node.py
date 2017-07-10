@@ -3178,7 +3178,9 @@ class Node(Crypt):
 
     def daemon_stop(self):
         data = self._daemon_stop()
-        print(json.dumps(data, indent=4, sort_keys=True))
+        if data.get("status") == 0:
+            return
+        raise ex.excError(json.dumps(data, indent=4, sort_keys=True))
 
     def daemon_start(self):
         options = {}
@@ -3191,7 +3193,9 @@ class Node(Crypt):
             {"action": "daemon_start", "options": options},
             nodename=self.options.node,
         )
-        print(json.dumps(data, indent=4, sort_keys=True))
+        if data.get("status") == 0:
+            return
+        raise ex.excError(json.dumps(data, indent=4, sort_keys=True))
 
     def daemon_running(self):
         if self._daemon_running():
