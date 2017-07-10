@@ -668,6 +668,11 @@ ACTIONS = {
                    'local node.',
             'options': ACTION_OPTS + START_ACTION_OPTS
         },
+        'giveback': {
+            'msg': 'stop the service on its current node and start on the '
+                   'node chosen by the placement policy.',
+            'options': ACTION_OPTS + START_ACTION_OPTS
+        },
         'migrate': {
             'msg': 'live migrate the service to the remote node. '
                    '--to <node> specify the remote node to migrate the '

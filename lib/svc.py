@@ -3875,7 +3875,7 @@ class Svc(Crypt):
 
     def takeover(self):
         """
-        Service move to another node.
+        Service move to local node.
         """
         self.destination_node_sanity_checks(rcEnv.nodename)
         self.svcunlock()
@@ -3883,6 +3883,16 @@ class Svc(Crypt):
         self.clear(nodename=self.options.destination_node)
         self.daemon_mon_action("stop", wait=True, timeout=120)
         self.daemon_service_action(["start"], nodename=rcEnv.nodename)
+        self.daemon_mon_action("thaw", wait=True, timeout=120)
+
+    def giveback(self):
+        """
+        Service move to best node.
+        """
+        self.svcunlock()
+        self.clear(nodename=rcEnv.nodename)
+        self.clear(nodename=self.options.destination_node)
+        self.daemon_mon_action("stop", wait=True, timeout=120)
         self.daemon_mon_action("thaw", wait=True, timeout=120)
 
     def switch(self):

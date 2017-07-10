@@ -1,6 +1,6 @@
 
 
-svcmgr="boot clear collector compliance create delete disable dns docker edit enable freeze frozen get logs ls migrate pg postsync presync print provision prstart prstatus prstop pull push resource restart resync run scheduler set shutdown start startapp startcontainer startdisk startfs startip startshare startstandby status stonith stop stopapp stopcontainer stopdisk stopfs stopip stopshare switch sync takeover thaw toc unprovision unset update validate"
+svcmgr="boot clear collector compliance create delete disable dns docker edit enable freeze frozen get giveback logs ls migrate pg postsync presync print provision prstart prstatus prstop pull push resource restart resync run scheduler set shutdown start startapp startcontainer startdisk startfs startip startshare startstandby status stonith stop stopapp stopcontainer stopdisk stopfs stopip stopshare switch sync takeover thaw toc unprovision unset update validate"
 svcmgr_collector="ack alerts asset checks create disks events list log networks show tag untag"
 svcmgr_collector_ack="action unavailability"
 svcmgr_collector_create="tag"
@@ -90,6 +90,7 @@ svcmgr_stopip="--color --crm --cron --daemon --debug --dry-run --env --local --m
 svcmgr_sync_drp="--color --crm --cron --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_sync_nodes="--color --crm --cron --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_prstop="--color --crm --cron --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
+svcmgr_giveback="--color --crm --cron --daemon --debug --disable-rollback --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_boot="--color --crm --cron --daemon --debug --disable-rollback --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_switch="--color --crm --cron --daemon --debug --disable-rollback --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --to --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_start="--color --crm --cron --daemon --debug --disable-rollback --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --time --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
