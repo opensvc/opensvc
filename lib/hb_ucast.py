@@ -114,7 +114,7 @@ class HbUcastTx(HbUcast):
     def _do(self, message, message_bytes, nodename, config):
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(0.5)
+            sock.settimeout(2)
             sock.bind((self.peer_config[rcEnv.nodename].addr, 0))
             sock.connect((config.addr, config.port))
             sock.sendall(message)
@@ -152,7 +152,7 @@ class HbUcastRx(HbUcast):
             self.sock.bind((self.peer_config[rcEnv.nodename].addr,
                             self.peer_config[rcEnv.nodename].port))
             self.sock.listen(5)
-            self.sock.settimeout(0.5)
+            self.sock.settimeout(2)
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
             return

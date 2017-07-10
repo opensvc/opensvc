@@ -90,7 +90,7 @@ class HbMcastTx(HbMcast):
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.group = (self.addr, self.port)
             ttl = struct.pack('b', 32)
-            self.sock.settimeout(0.2)
+            self.sock.settimeout(2)
             self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
@@ -105,12 +105,12 @@ class HbMcastTx(HbMcast):
                 shared.HB_TX_TICKER.wait(self.default_hb_period)
 
     def do(self):
-        #self.log.info("sending to %s:%s", self.addr, self.port)
         self.reload_config()
         message, message_bytes = self.get_message()
         if message is None:
             return
 
+        #self.log.info("sending to %s:%s", self.addr, self.port)
         try:
             sent = self.sock.sendto(message, self.group)
             self.set_last()
@@ -145,7 +145,7 @@ class HbMcastRx(HbMcast):
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.sock.bind(('', self.port))
             self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, self.mreq)
-            self.sock.settimeout(0.2)
+            self.sock.settimeout(2)
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
             return
