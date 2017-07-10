@@ -663,6 +663,11 @@ ACTIONS = {
                 OPT.to,
             ],
         },
+        'takeover': {
+            'msg': 'stop the service on its current node and start on the '
+                   'local node.',
+            'options': ACTION_OPTS + START_ACTION_OPTS
+        },
         'migrate': {
             'msg': 'live migrate the service to the remote node. '
                    '--to <node> specify the remote node to migrate the '

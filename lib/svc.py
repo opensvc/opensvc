@@ -3829,7 +3829,7 @@ class Svc(Crypt):
         self.sub_set_action("container.hpvm", "_migrate")
         self.sub_set_action("container.esx", "_migrate")
 
-    def destination_node_sanity_checks(self):
+    def destination_node_sanity_checks(self, destination_node=None):
         """
         Raise an excError if
         * the destination node --to arg not set
@@ -3838,13 +3838,15 @@ class Svc(Crypt):
         """
         if self.clustertype != "failover":
             raise ex.excError("this service clustertype is not 'failover'")
-        if self.options.destination_node is None:
+        if destination_node is None:
+            destination_node = self.options.destination_node
+        if destination_node is None:
             raise ex.excError("a destination node must be provided this action")
-        if self.options.destination_node == self.current_node():
+        if destination_node == self.current_node():
             raise ex.excError("the destination is the source node")
-        if self.options.destination_node not in self.nodes:
+        if destination_node not in self.nodes:
             raise ex.excError("the destination node %s is not in the service "
-                              "nodes list" % self.options.destination_node)
+                              "nodes list" % destination_node)
 
     @_master_action
     def migrate(self):
@@ -3870,6 +3872,18 @@ class Svc(Crypt):
             raise
         self.daemon_service_action(["stop"], nodename=src_node)
         self.daemon_service_action(["prstart", "--master"], nodename=self.options.destination_node)
+
+    def takeover(self):
+        """
+        Service move to another node.
+        """
+        self.destination_node_sanity_checks(rcEnv.nodename)
+        self.svcunlock()
+        self.clear(nodename=rcEnv.nodename)
+        self.clear(nodename=self.options.destination_node)
+        self.daemon_mon_action("stop", wait=True, timeout=120)
+        self.daemon_service_action(["start"], nodename=rcEnv.nodename)
+        self.daemon_mon_action("thaw", wait=True, timeout=120)
 
     def switch(self):
         """
