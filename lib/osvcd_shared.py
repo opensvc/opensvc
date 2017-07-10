@@ -35,6 +35,7 @@ SERVICES_LOCK = threading.RLock()
 # The encrypted message all the heartbeat tx threads send.
 # It is refreshed in the monitor thread loop.
 HB_MSG = None
+HB_MSG_LEN = 0
 HB_MSG_LOCK = threading.RLock()
 
 # the local service monitor data, where the listener can set expected states
@@ -228,6 +229,7 @@ class OsvcThread(threading.Thread):
         if not self._node_conf_event.is_set():
             return
         self._node_conf_event.clear()
+        self.log.info("config change event received")
         unset_lazy(self, "config")
         unset_lazy(self, "cluster_name")
         unset_lazy(self, "cluster_key")

@@ -102,16 +102,16 @@ class HbUcastTx(HbUcast):
     def do(self):
         #self.log.info("sending to %s:%s", self.addr, self.port)
         self.reload_config()
-        message = self.get_message()
+        message, message_bytes = self.get_message()
         if message is None:
             return
 
         for nodename, config in self.peer_config.items():
             if nodename == rcEnv.nodename:
                 continue
-            self._do(message, nodename, config)
+            self._do(message, message_bytes, nodename, config)
 
-    def _do(self, message, nodename, config):
+    def _do(self, message, message_bytes, nodename, config):
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(0.5)
@@ -120,7 +120,7 @@ class HbUcastTx(HbUcast):
             sock.sendall(message)
             self.set_last(nodename)
             self.stats.beats += 1
-            self.stats.bytes += len(message)
+            self.stats.bytes += message_bytes
         except socket.timeout as exc:
             self.stats.errors += 1
             self.log.warning("send to %s (%s:%d) timeout", nodename,

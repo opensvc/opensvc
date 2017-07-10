@@ -98,8 +98,8 @@ class Hb(shared.OsvcThread):
         with shared.HB_MSG_LOCK:
             if not shared.HB_MSG:
                 # no data to send yet
-                return
-            return shared.HB_MSG
+                return None, 0
+            return shared.HB_MSG, shared.HB_MSG_LEN
 
 
 

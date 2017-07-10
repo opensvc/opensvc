@@ -1038,6 +1038,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 }
             with shared.HB_MSG_LOCK:
                 shared.HB_MSG = self.encrypt(shared.CLUSTER_DATA[rcEnv.nodename])
+                shared.HB_MSG_LEN = len(shared.HB_MSG)
             shared.wake_heartbeat_tx()
         except ValueError:
             self.log.error("failed to refresh local cluster data: invalid json")

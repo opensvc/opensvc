@@ -212,7 +212,7 @@ class HbDiskTx(HbDisk):
         if slot < 0:
             return
         self.reload_config()
-        message = self.get_message()
+        message, message_bytes = self.get_message()
         if message is None:
             return
 
@@ -220,7 +220,7 @@ class HbDiskTx(HbDisk):
             self.write_slot(slot, message)
             self.set_last()
             self.stats.beats += 1
-            self.stats.bytes += len(message)
+            self.stats.bytes += message_bytes
             #self.log.info("written to %s slot %s", self.dev, slot)
         except Exception as exc:
             self.stats.errors += 1

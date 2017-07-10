@@ -107,7 +107,7 @@ class HbMcastTx(HbMcast):
     def do(self):
         #self.log.info("sending to %s:%s", self.addr, self.port)
         self.reload_config()
-        message = self.get_message()
+        message, message_bytes = self.get_message()
         if message is None:
             return
 
@@ -115,7 +115,7 @@ class HbMcastTx(HbMcast):
             sent = self.sock.sendto(message, self.group)
             self.set_last()
             self.stats.beats += 1
-            self.stats.bytes += len(message)
+            self.stats.bytes += message_bytes
         except socket.timeout as exc:
             self.stats.errors += 1
             self.log.warning("send timeout")
