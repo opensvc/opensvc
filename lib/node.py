@@ -864,10 +864,13 @@ class Node(Crypt):
             return 0
         else:
             ret = getattr(self, action)()
-            if ret in (None, True, 0):
+            if ret is None:
                 return 0
-            elif ret == False:
-                return 1
+            elif isinstance(ret, bool):
+                if ret:
+                    return 0
+                else:
+                    return 1
             return ret
 
     @formatter
