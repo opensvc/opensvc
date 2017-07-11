@@ -127,8 +127,9 @@ class Listener(shared.OsvcThread, Crypt):
             if result:
                 message = self.encrypt(result)
                 conn.sendall(message)
-                self.log.info("responded to %s, %s:%d", nodename,
-                              addr[0], addr[1])
+                message_len = len(message)
+                self.stats.sessions.tx += message_len
+                self.stats.sessions.clients[addr[0]].tx += message_len
 
     #########################################################################
     #
