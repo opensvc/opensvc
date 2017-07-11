@@ -17,7 +17,7 @@ from comm import Crypt
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode
 
-MON_WAIT_READY = datetime.timedelta(seconds=6)
+MON_WAIT_READY = datetime.timedelta(seconds=16)
 
 STARTED_STATES = (
     "up",
@@ -212,9 +212,11 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def service_toc_on_error(self, svcname):
         self.set_smon(svcname, "idle")
+        self.update_hb_data()
 
     def service_toc_on_success(self, svcname):
         self.set_smon(svcname, status="idle")
+        self.update_hb_data()
 
     def service_start(self, svcname):
         self.set_smon(svcname, "starting")
@@ -227,9 +229,11 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def service_start_on_error(self, svcname):
         self.set_smon(svcname, "start failed")
+        self.update_hb_data()
 
     def service_start_on_success(self, svcname):
         self.set_smon(svcname, status="idle", local_expect="started")
+        self.update_hb_data()
 
     def service_stop(self, svcname):
         self.set_smon(svcname, "stopping")
@@ -242,9 +246,11 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def service_stop_on_error(self, svcname):
         self.set_smon(svcname, "stop failed")
+        self.update_hb_data()
 
     def service_stop_on_success(self, svcname):
         self.set_smon(svcname, status="idle", local_expect="unset")
+        self.update_hb_data()
 
     def service_shutdown(self, svcname):
         self.set_smon(svcname, "shutdown")
@@ -257,9 +263,11 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def service_shutdown_on_error(self, svcname):
         self.set_smon(svcname, "idle")
+        self.update_hb_data()
 
     def service_shutdown_on_success(self, svcname):
         self.set_smon(svcname, status="idle", local_expect="unset")
+        self.update_hb_data()
 
     def service_freeze(self, svcname):
         self.set_smon(svcname, "freezing")
@@ -272,9 +280,11 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def service_freeze_on_error(self, svcname):
         self.set_smon(svcname, "idle")
+        self.update_hb_data()
 
     def service_freeze_on_success(self, svcname):
         self.set_smon(svcname, status="idle", local_expect="unset")
+        self.update_hb_data()
 
     def service_thaw(self, svcname):
         self.set_smon(svcname, "thawing")
@@ -287,9 +297,11 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def service_thaw_on_error(self, svcname):
         self.set_smon(svcname, "idle")
+        self.update_hb_data()
 
     def service_thaw_on_success(self, svcname):
         self.set_smon(svcname, status="idle", local_expect="unset")
+        self.update_hb_data()
 
 
     #########################################################################
@@ -432,7 +444,7 @@ class Monitor(shared.OsvcThread, Crypt):
                     self.set_smon(svc.svcname, "idle")
                 else:
                     if smon.status_updated < (now - MON_WAIT_READY):
-                        self.log.info("failover service %s status %s/ready for"
+                        self.log.info("failover service %s status %s/ready for "
                                       "%s", svc.svcname, status,
                                       now-smon.status_updated)
                         self.service_start(svc.svcname)

@@ -3915,7 +3915,7 @@ class Svc(Crypt):
         self.svcunlock()
         self.clear(nodename=rcEnv.nodename)
         self.clear(nodename=self.options.destination_node)
-        self.daemon_mon_action("freeze", wait=True, timeout=120)
+        self.daemon_mon_action("freeze", wait=True, timeout=self.options.time)
         src_node = self.current_node()
         self.daemon_service_action(["prstop"], nodename=src_node)
         try:
@@ -3939,9 +3939,9 @@ class Svc(Crypt):
         self.svcunlock()
         self.clear(nodename=rcEnv.nodename)
         self.clear(nodename=self.options.destination_node)
-        self.daemon_mon_action("stop", wait=True, timeout=120)
+        self.daemon_mon_action("stop", wait=True, timeout=self.options.time)
         self.daemon_service_action(["start"], nodename=rcEnv.nodename)
-        self.daemon_mon_action("thaw", wait=True, timeout=120)
+        self.daemon_mon_action("thaw", wait=True, timeout=self.options.time)
 
     def giveback(self):
         """
@@ -3950,8 +3950,8 @@ class Svc(Crypt):
         self.svcunlock()
         self.clear(nodename=rcEnv.nodename)
         self.clear(nodename=self.options.destination_node)
-        self.daemon_mon_action("stop", wait=True, timeout=120)
-        self.daemon_mon_action("thaw", wait=True, timeout=120)
+        self.daemon_mon_action("stop", wait=True, timeout=self.options.time)
+        self.daemon_mon_action("thaw", wait=True, timeout=self.options.time)
 
     def switch(self):
         """
@@ -3961,9 +3961,9 @@ class Svc(Crypt):
         self.svcunlock()
         self.clear(nodename=rcEnv.nodename)
         self.clear(nodename=self.options.destination_node)
-        self.daemon_mon_action("stop", wait=True, timeout=120)
+        self.daemon_mon_action("stop", wait=True, timeout=self.options.time)
         self.daemon_service_action(["start"], nodename=self.options.destination_node)
-        self.daemon_mon_action("thaw", wait=True, timeout=120)
+        self.daemon_mon_action("thaw", wait=True, timeout=self.options.time)
 
     def collector_rest_get(self, *args, **kwargs):
         kwargs["svcname"] = self.svcname
