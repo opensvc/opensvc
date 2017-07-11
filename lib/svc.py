@@ -557,6 +557,11 @@ class Svc(Crypt):
         except ex.OptNotFound:
             return ""
 
+    def get_node(self):
+        if self.node is None:
+            self.node = node.Node()
+        return self.node
+
     def __lt__(self, other):
         """
         Order by service name
@@ -3488,8 +3493,8 @@ class Svc(Crypt):
         try:
             self.action_rid_before_depends = self.options_to_rids(options)
         except ex.excAbortAction as exc:
-            self.log.info(exc)
-            return
+            self.log.error(exc)
+            return 1
 
         depends = set()
         for rid in self.action_rid_before_depends:
