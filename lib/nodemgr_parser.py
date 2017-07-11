@@ -140,6 +140,10 @@ OPT = Storage({
         "--node", default="",
         action="store", dest="node",
         help="the node to send a request to. if not specified the local node is targeted."),
+    "nopager": Option(
+        "--no-pager", default=False,
+        action="store_true", dest="nopager",
+        help="do not display the command result in a pager."),
     "opt_object": Option(
         "--object", default=[], action="append", dest="objects",
         help="an object to limit a push* action to. multiple "
@@ -272,6 +276,9 @@ ACTIONS = {
         },
         'logs': {
             'msg': 'fancy display of the node logs',
+            'options': [
+                OPT.nopager,
+            ]
         },
         'shutdown': {
             'msg': 'shutdown the node to powered off state',

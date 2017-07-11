@@ -2711,10 +2711,13 @@ class Node(Crypt):
             elements[2] = elements[2].replace("INFO", colorize("INFO", color.LIGHTBLUE))
             return " ".join(elements)
 
-        try:
-            pipe = os.popen('TERM=xterm less -R', 'w')
-        except:
-            pipe = sys.stdout
+        pipe = sys.stdout
+        if not self.options.nopager:
+            try:
+                pipe = os.popen('TERM=xterm less -R', 'w')
+            except:
+                pass
+
         try:
             for _logfile in [logfile+".1", logfile]:
                 if not os.path.exists(_logfile):

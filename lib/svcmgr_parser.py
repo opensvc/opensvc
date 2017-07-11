@@ -178,6 +178,10 @@ OPT = Storage({
         "--node", default="",
         action="store", dest="node",
         help="the node to send a request to. if not specified the local node is targeted."),
+    "nopager": Option(
+        "--no-pager", default=False,
+        action="store_true", dest="nopager",
+        help="do not display the command result in a pager."),
     "parallel": Option(
         "-p", "--parallel", default=False,
         action="store_true", dest="parallel",
@@ -732,6 +736,9 @@ ACTIONS = {
         },
         'logs': {
             'msg': 'display the service logs in the pager',
+            'options': [
+                OPT.nopager,
+            ]
         },
     },
     'Service configuration': {
