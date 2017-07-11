@@ -272,8 +272,7 @@ class Listener(shared.OsvcThread, Crypt):
 
     def action_join(self, nodename, **kwargs):
         if nodename in self.cluster_nodes:
-            self.log.warning("node %s is already joined.",
-                             nodename)
+            self.log.info("node %s rejoins", nodename)
             new_nodes = self.cluster_nodes
         else:
             self.add_cluster_node(nodename)
