@@ -928,6 +928,8 @@ class Resource(object):
         """
         if element is None:
             return
+        if element == "impossible":
+            raise ex.excContinueAction("skip impossible requirement")
         if element.count("(") == 1:
             rid, states = element.rstrip(")").split("(")
             states = states.split(",")
