@@ -3275,6 +3275,11 @@ class Node(Crypt):
             for option, value in _data.items():
                 self.config.set(section, option, value)
 
+        # remove obsolete hb configurations
+        for section in self.config.sections():
+            if section.startswith("hb#") and section not in data:
+                self.config.remove_section(section)
+
         self.write_config()
 
     def set_node_monitor(self, status=None, local_expect=None, global_expect=None):
