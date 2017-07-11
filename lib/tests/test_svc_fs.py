@@ -21,7 +21,7 @@ class TestSvc:
             self.svc.node.close()
 
     def setUp(self):
-        rcLogger.DEFAULT_HANDLERS = []
+        rcLogger.DEFAULT_HANDLERS = ["file"]
         self.svc = svc.Svc(SVCNAME)
         r = resFsLinux.Mount(rid="fs#1",
                              mount_point="/srv/"+SVCNAME,
@@ -39,12 +39,8 @@ class TestSvc:
         assert ret == 0
 
     def test_004_action_on_wrong_rid(self):
-        try:
-            self.svc.action("start", {"rid": "fs#2", "crm": True})
-            # shouldn't reach here, fs#2 doesn't exist
-            assert False
-        except ex.excError:
-            assert True
+        ret = self.svc.action("start", {"rid": "fs#2", "crm": True})
+        assert ret == 1
 
     def test_005_update(self):
         ret = self.svc.action("update", {
@@ -61,7 +57,7 @@ class TestSvc:
         assert ret == 0
 
     def test_007_start(self):
-        ret = self.svc.action("start", {"--crm": True})
+        ret = self.svc.action("start", {"crm": True})
         assert ret == 0
 
     def test_008_stop(self):
