@@ -418,17 +418,20 @@ class Monitor(shared.OsvcThread, Crypt):
             #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
             return
         if status in (None, "undef", "n/a"):
-            #self.log.info("service %s orchestrator out (agg avail status %s)", svc.svcname, status)
+            #self.log.info("service %s orchestrator out (agg avail status %s)",
+            #              svc.svcname, status)
             return
         if svc.anti_affinity:
             intersection = set(self.get_local_svcnames()) & set(svc.anti_affinity)
             if len(intersection) > 0:
-                #self.log.info("service %s orchestrator out (anti-affinity with %s)", svc.svcname, ','.join(intersection))
+                #self.log.info("service %s orchestrator out (anti-affinity with %s)",
+                #              svc.svcname, ','.join(intersection))
                 return
         if svc.affinity:
             intersection = set(self.get_local_svcnames()) & set(svc.affinity)
             if len(intersection) < len(set(svc.affinity)):
-                #self.log.info("service %s orchestrator out (affinity with %s)", svc.svcname, ','.join(intersection))
+                #self.log.info("service %s orchestrator out (affinity with %s)",
+                #              svc.svcname, ','.join(intersection))
                 return
 
         now = datetime.datetime.utcnow()
@@ -439,19 +442,33 @@ class Monitor(shared.OsvcThread, Crypt):
                     self.log.info("abort 'ready' because the local instance "
                                   "has started")
                     self.set_smon(svc.svcname, "idle")
-                elif status == "up":
+                    return
+                if status == "up":
                     self.log.info("abort 'ready' because an instance has started")
                     self.set_smon(svc.svcname, "idle")
-                else:
-                    if smon.status_updated < (now - MON_WAIT_READY):
-                        self.log.info("failover service %s status %s/ready for "
-                                      "%s", svc.svcname, status,
-                                      now-smon.status_updated)
-                        self.service_start(svc.svcname)
-                    else:
-                        self.log.info("service %s will start in %s",
-                                      svc.svcname,
-                                      str(smon.status_updated+MON_WAIT_READY-now))
+                    return
+                peer = self.better_peer_ready(svc)
+                if peer:
+                    self.log.info("abort 'ready' because node %s has a better "
+                                  "placement score for service %s and is also "
+                                  "ready", peer, svc.svcname)
+                    self.set_smon(svc.svcname, "idle")
+                    return
+                peer = self.peer_transitioning(svc)
+                if peer:
+                    self.log.info("abort 'ready' because node %s is already "
+                                  "acting on service %s", peer, svc.svcname)
+                    self.set_smon(svc.svcname, "idle")
+                    return
+                if smon.status_updated < (now - MON_WAIT_READY):
+                    self.log.info("failover service %s status %s/ready for "
+                                  "%s", svc.svcname, status,
+                                  now-smon.status_updated)
+                    self.service_start(svc.svcname)
+                    return
+                self.log.info("service %s will start in %s",
+                              svc.svcname,
+                              str(smon.status_updated+MON_WAIT_READY-now))
             elif smon.status == "idle":
                 if status not in ("down", "stdby down", "stdby up"):
                     return
@@ -601,6 +618,30 @@ class Monitor(shared.OsvcThread, Crypt):
             elif instance["monitor"]["status"] in ("restarting", "starting", "ready"):
                 n_up += 1
         return n_up
+
+    def peer_transitioning(self, svc):
+        """
+        Return the nodename of the first peer with the service in a transition
+        state.
+        """
+        for nodename, instance in self.get_service_instances(svc.svcname).items():
+            if nodename == rcEnv.nodename:
+                continue
+            if instance["monitor"]["status"].endswith("ing"):
+                return nodename
+
+    def better_peer_ready(self, svc):
+        """
+        Return the nodename of the first peer with the service in ready state, or
+        None if we are placement leader or no peer is in ready state.
+        """
+        if self.failover_placement_leader(svc):
+            return
+        for nodename, instance in self.get_service_instances(svc.svcname).items():
+            if nodename == rcEnv.nodename:
+                continue
+            if instance["monitor"]["status"] == "ready":
+                return nodename
 
     @staticmethod
     def get_service(svcname):
