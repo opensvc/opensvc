@@ -31,16 +31,16 @@ class TestSvc:
         self.svc += r
 
     def test_002_start(self):
-        ret = self.svc.action("start")
+        ret = self.svc.action("start", {"crm": True})
         assert ret == 0
 
     def test_003_restart(self):
-        ret = self.svc.action("restart")
+        ret = self.svc.action("restart", {"crm": True})
         assert ret == 0
 
     def test_004_action_on_wrong_rid(self):
         try:
-            self.svc.action("start", {"rid": "fs#2"})
+            self.svc.action("start", {"rid": "fs#2", "crm": True})
             # shouldn't reach here, fs#2 doesn't exist
             assert False
         except ex.excError:
@@ -61,11 +61,11 @@ class TestSvc:
         assert ret == 0
 
     def test_007_start(self):
-        ret = self.svc.action("start")
+        ret = self.svc.action("start", {"--crm": True})
         assert ret == 0
 
     def test_008_stop(self):
-        ret = self.svc.action("stop")
+        ret = self.svc.action("stop", {"crm": True})
         assert ret == 0
 
     def test_009_delete_rid_unprovision(self):
@@ -73,10 +73,14 @@ class TestSvc:
         assert ret == 0
 
     def test_010_delete_unprovision(self):
-        ret = self.svc.action("delete", {"unprovision": True})
+        ret = self.svc.action("delete", {"unprovision": True, "crm": True})
         assert ret == 0
 
     def test_011_pull_provision(self):
-        ret = self.svc.action("pull", {"provision": True})
+        ret = self.svc.action("pull", {"provision": True, "crm": True})
+        assert ret == 0
+
+    def test_012_delete_unprovision(self):
+        ret = self.svc.action("delete", {"unprovision": True, "crm": True})
         assert ret == 0
 

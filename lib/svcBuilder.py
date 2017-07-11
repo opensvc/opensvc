@@ -3127,43 +3127,6 @@ def build(name, minimal=False, svcconf=None):
         svc.ha = True
 
     try:
-        svc.flex_min_nodes = svc.conf_get_int_scope('DEFAULT', 'flex_min_nodes')
-    except ex.OptNotFound:
-        svc.flex_min_nodes = 1
-    if svc.flex_min_nodes < 0:
-        svc.flex_min_nodes = 0
-    nb_nodes = len(svc.nodes|svc.drpnodes)
-    if svc.flex_min_nodes > nb_nodes:
-        svc.flex_min_nodes = nb_nodes
-
-    try:
-        svc.flex_max_nodes = svc.conf_get_int_scope('DEFAULT', 'flex_max_nodes')
-    except ex.OptNotFound:
-        svc.flex_max_nodes = nb_nodes
-    if svc.flex_max_nodes < nb_nodes:
-        svc.flex_max_nodes = nb_nodes
-    if svc.flex_max_nodes < svc.flex_min_nodes:
-        svc.flex_max_nodes = svc.flex_min_nodes
-
-    try:
-        svc.flex_cpu_low_threshold = svc.conf_get_int_scope('DEFAULT', 'flex_cpu_low_threshold')
-    except ex.OptNotFound:
-        svc.flex_cpu_low_threshold = 10
-    if svc.flex_cpu_low_threshold < 0:
-        raise ex.excInitError("invalid flex_cpu_low_threshold '%d' (<0)."%svc.flex_cpu_low_threshold)
-    if svc.flex_cpu_low_threshold > 100:
-        raise ex.excInitError("invalid flex_cpu_low_threshold '%d' (>100)."%svc.flex_cpu_low_threshold)
-
-    try:
-        svc.flex_cpu_high_threshold = svc.conf_get_int_scope('DEFAULT', 'flex_cpu_high_threshold')
-    except ex.OptNotFound:
-        svc.flex_cpu_high_threshold = 90
-    if svc.flex_cpu_high_threshold < 0:
-        raise ex.excInitError("invalid flex_cpu_high_threshold '%d' (<0)."%svc.flex_cpu_high_threshold)
-    if svc.flex_cpu_high_threshold > 100:
-        raise ex.excInitError("invalid flex_cpu_high_threshold '%d' (>100)."%svc.flex_cpu_high_threshold)
-
-    try:
         svc.show_disabled = svc.conf_get_boolean_scope('DEFAULT', 'show_disabled')
     except ex.OptNotFound:
         svc.show_disabled = True

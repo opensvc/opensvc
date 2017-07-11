@@ -498,6 +498,56 @@ class Svc(Crypt):
             return True
 
     @lazy
+    def flex_min_nodes(self):
+        try:
+           val = self.conf_get_int_scope('DEFAULT', 'flex_min_nodes')
+        except ex.OptNotFound:
+           return 1
+        if val < 0:
+           val = 0
+        nb_nodes = len(self.nodes|self.drpnodes)
+        if val > nb_nodes:
+           val = nb_nodes
+        return val
+
+    @lazy
+    def flex_max_nodes(self):
+        nb_nodes = len(self.nodes|self.drpnodes)
+        try:
+           val = self.conf_get_int_scope('DEFAULT', 'flex_max_nodes')
+        except ex.OptNotFound:
+           return nb_nodes
+        if val < nb_nodes:
+           val = nb_nodes
+        if val < self.flex_min_nodes:
+           val = self.flex_min_nodes
+        return val
+
+    @lazy
+    def flex_cpu_low_threshold(self):
+        try:
+            val = self.conf_get_int_scope('DEFAULT', 'flex_cpu_low_threshold')
+        except ex.OptNotFound:
+            return 10
+        if val < 0:
+            return 0
+        if val > 100:
+            return 100
+        return val
+
+    @lazy
+    def flex_cpu_high_threshold(self):
+        try:
+            val = self.conf_get_int_scope('DEFAULT', 'flex_cpu_high_threshold')
+        except ex.OptNotFound:
+            return 90
+        if val < self.flex_cpu_low_threshold:
+            return self.flex_cpu_low_threshold
+        if val > 100:
+            return 100
+        return val
+
+    @lazy
     def app(self):
         """
         Return the service app code.
