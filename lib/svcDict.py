@@ -4203,7 +4203,7 @@ class KeyDict(KeywordStore):
                   at=True,
                   example="ip#0 fs#0(down,stdby down)",
                   default="",
-                  text="A whitespace-separated list of conditions to meet to accept running a '%s' action. A condition is expressed as <rid>(<state>,...). If states are omitted, 'up,stdby up' is used as the default expected states." % action
+                  text="A whitespace-separated list of conditions to meet to accept running a '%s' action. A condition is expressed as <rid>(<state>,...). If states are omitted, 'up,stdby up' is used as the default expected states. The 'impossible' value always disables the action." % action
                 )
 
 
