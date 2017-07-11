@@ -23,6 +23,8 @@ operators = {
     ast.Mult: op.mul,
     ast.Div: op.truediv,
     ast.Pow: op.pow,
+    ast.BitOr: op.or_,
+    ast.BitAnd: op.and_,
     ast.BitXor: op.xor,
     ast.USub: op.neg,
     ast.FloorDiv: op.floordiv,
@@ -41,11 +43,14 @@ def eval_expr(expr):
     """ arithmetic expressions evaluator
     """
     def eval_(node):
+        _safe_names = {'None': None, 'True': True, 'False': False}
         if isinstance(node, ast.Num): # <number>
             return node.n
         elif isinstance(node, ast.Str):
             return node.s
         elif isinstance(node, ast.Name):
+            if node.id in _safe_names:
+                return _safe_names[node.id]
             return node.id
         elif isinstance(node, ast.Tuple):
             return tuple(node.elts)
