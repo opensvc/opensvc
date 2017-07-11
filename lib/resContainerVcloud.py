@@ -8,12 +8,15 @@ from rcUtilities import qcall
 from rcUtilitiesLinux import check_ping
 import resContainer
 
-from libcloud.utils.py3 import urlparse
-
-urlparse = urlparse.urlparse
-
-def get_url_path(url):
-    return urlparse(url.strip()).path
+try:
+    from libcloud.utils.py3 import urlparse
+    urlparse = urlparse.urlparse
+    def get_url_path(url):
+        return urlparse(url.strip()).path
+except ImportError:
+    urlparse = None
+    def get_url_path(url):
+        return
 
 class CloudVm(resContainer.Container):
     startup_timeout = 240
@@ -49,11 +52,14 @@ class CloudVm(resContainer.Container):
         drv = self.get_cloud().driver
         vms = drv._get_vm_elements(vapp_or_vm_id)
         for vm in vms:
+            path = get_url_path(vm.get('href'))
+            if path is None:
+                raise ex.excError("libcloud is not installed")
             res = drv.connection.request(
-                '%s/power/action/%s' % (get_url_path(vm.get('href')), operation),
+                '%s/power/action/%s' % (path, operation),
                 method='POST')
-            drv._wait_for_task_completion(res.object.get('href'))
-            res = drv.connection.request(get_url_path(vm.get('href')))
+            drv._wait_for_task_completion(path)
+            res = drv.connection.request(path)
 
     def get_size(self):
         c = self.get_cloud()
