@@ -258,7 +258,7 @@ class Daemon(object):
 
         if mtime is not None:
             # clean up deleted heartbeats
-            thr_ids = self.threads.keys()
+            thr_ids = list(self.threads.keys())
             sections = self.config.sections()
             for thr_id in thr_ids:
                 if not thr_id.startswith("hb#"):
