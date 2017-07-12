@@ -379,9 +379,12 @@ class OsvcThread(threading.Thread):
         return proc
 
     def add_cluster_node(self, nodename):
-        new_nodes = self.cluster_nodes + [nodename]
-        new_nodes_str = " ".join(new_nodes)
-        cmd = ["set", "--param", "cluster.nodes", "--value", new_nodes_str]
+        cmd = ["set", "--param", "cluster.nodes", "--add", nodename]
+        proc = self.node_command(cmd)
+        return proc.wait()
+
+    def remove_cluster_node(self, nodename):
+        cmd = ["set", "--param", "cluster.nodes", "--remove", nodename]
         proc = self.node_command(cmd)
         return proc.wait()
 

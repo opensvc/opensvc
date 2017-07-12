@@ -432,10 +432,15 @@ ACTIONS = {
             ],
          },
         'daemon_join': {
-            'msg': 'stop a daemon thread.',
+            'msg': 'join the node, specified by --node <node>, cluster.',
             'options': DAEMON_OPTS + [
                 OPT.secret,
             ],
+         },
+        'daemon_leave': {
+            'msg': 'inform peer nodes we leave the cluster. make sure the '
+                   'left nodes are no longer in the services nodes list '
+                   'before leaving, so the other nodes won\'t takeover',
          },
     },
     'Push data to the collector': {

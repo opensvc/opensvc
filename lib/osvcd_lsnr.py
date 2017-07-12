@@ -270,17 +270,22 @@ class Listener(shared.OsvcThread, Crypt):
         shared.wake_monitor()
         return {"status": 0}
 
+    def action_leave(self, nodename, **kwargs):
+        if nodename not in self.cluster_nodes:
+            self.log.info("node %s already left", nodename)
+            return
+        ret = self.remove_cluster_node(nodename)
+        result = {
+            "status": ret,
+        }
+        return result
+
     def action_join(self, nodename, **kwargs):
         if nodename in self.cluster_nodes:
             self.log.info("node %s rejoins", nodename)
             new_nodes = self.cluster_nodes
         else:
             self.add_cluster_node(nodename)
-            new_nodes = self.cluster_nodes + [nodename]
-            new_nodes_str = " ".join(new_nodes)
-            cmd = ["set", "--param", "cluster.nodes", "--value", new_nodes_str]
-            proc = self.node_command(cmd)
-            ret = proc.wait()
         result = {
             "status": 0,
             "data": {

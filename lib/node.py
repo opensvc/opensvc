@@ -3234,6 +3234,60 @@ class Node(Crypt):
             time.sleep(0.1)
         self.daemon_start()
 
+    def daemon_leave(self):
+        try:
+            cluster_nodes = self._get("cluster.nodes")
+        except ex.excError:
+            self.log.info("local node is not member of a cluster")
+            return
+        cluster_nodes = sorted(cluster_nodes.split(" "))
+        if rcEnv.nodename in cluster_nodes:
+            cluster_nodes.remove(rcEnv.nodename)
+        if len(cluster_nodes) == 0:
+            self.log.info("local node is not member of a cluster")
+            return
+
+        # freeze and remember the initial frozen state
+        initially_frozen = self.frozen()
+        if not initially_frozen:
+            self.freeze()
+            self.log.info("freeze local node")
+        else:
+            self.log.info("local node is already frozen")
+
+        # leave other nodes
+        errors = 0
+        for nodename in cluster_nodes:
+            if nodename == rcEnv.nodename:
+                continue
+            data = self.daemon_send(
+                {"action": "leave"},
+                nodename=nodename,
+            )
+            if data is None:
+                self.log.error("leave node %s failed", nodename)
+                errors += 1
+            else:
+                self.log.info("leave node %s", self.options.node)
+
+        # remove obsolete hb configurations
+        for section in self.config.sections():
+            if section.startswith("hb#"):
+                self.log.info("remove heartbeat %s", section)
+                self.config.remove_section(section)
+            self.config.remove_section("cluster")
+
+        self.write_config()
+
+        # leave node frozen if initially frozen or we failed joining all nodes
+        if initially_frozen:
+            self.log.warning("local node is left frozen as it was already before leave")
+        elif errors > 0:
+            self.log.warning("local node is left frozen due to leave errors")
+        else:
+            self.thaw()
+            self.log.info("thaw local node")
+
     def daemon_join(self):
         if self.options.secret is None:
             raise ex.excError("--secret must be set")
