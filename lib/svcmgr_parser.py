@@ -58,10 +58,6 @@ OPT = Storage({
         action="store", dest="parm_config",
         help="the configuration file to use when creating or "
              "installing a service"),
-    "crm": Option(
-        "--crm", default=False,
-        action="store_true", dest="crm",
-        help="Set to disable cluster-wide operations."),
     "cron": Option(
         "--cron", default=False,
         action="store_true", dest="cron",
@@ -178,6 +174,10 @@ OPT = Storage({
         "--node", default="",
         action="store", dest="node",
         help="the node to send a request to. if not specified the local node is targeted."),
+    "nopager": Option(
+        "--no-pager", default=False,
+        action="store_true", dest="nopager",
+        help="do not display the command result in a pager."),
     "parallel": Option(
         "-p", "--parallel", default=False,
         action="store_true", dest="parallel",
@@ -320,7 +320,6 @@ SVCMGR_OPTS = [
 
 GLOBAL_OPTS = SVCMGR_OPTS + [
     OPT.cluster,
-    OPT.crm,
     OPT.color,
     OPT.cron,
     OPT.daemon,
@@ -496,11 +495,17 @@ ACTIONS = {
         },
         'freeze': {
             'msg': 'set up a flag to block actions on this service',
-            'options': ASYNC_ACTION_OPTS,
+            'options': ASYNC_ACTION_OPTS + [
+                OPT.node,
+                OPT.local,
+            ],
         },
         'thaw': {
             'msg': 'remove the flag to unblock actions on this service',
-            'options': ASYNC_ACTION_OPTS,
+            'options': ASYNC_ACTION_OPTS + [
+                OPT.node,
+                OPT.local,
+            ],
         },
         'toc': {
             'msg': 'Trigger the service pre_monitor_action script and monitor_action method. Beware, this might crash or reboot the node.',
@@ -659,6 +664,16 @@ ACTIONS = {
                 OPT.to,
             ],
         },
+        'takeover': {
+            'msg': 'stop the service on its current node and start on the '
+                   'local node.',
+            'options': ACTION_OPTS + START_ACTION_OPTS
+        },
+        'giveback': {
+            'msg': 'stop the service on its current node and start on the '
+                   'node chosen by the placement policy.',
+            'options': ACTION_OPTS + START_ACTION_OPTS
+        },
         'migrate': {
             'msg': 'live migrate the service to the remote node. '
                    '--to <node> specify the remote node to migrate the '
@@ -718,6 +733,9 @@ ACTIONS = {
         },
         'logs': {
             'msg': 'display the service logs in the pager',
+            'options': [
+                OPT.nopager,
+            ]
         },
     },
     'Service configuration': {

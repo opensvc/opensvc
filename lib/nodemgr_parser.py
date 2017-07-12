@@ -60,10 +60,6 @@ OPT = Storage({
         "--cron", default=False,
         action="store_true", dest="cron",
         help="cron mode"),
-    "crm": Option(
-        "--crm", default=False,
-        action="store_true", dest="crm",
-        help="Set to disable cluster-wide operations."),
     "debug": Option(
         "--debug", default=False,
         action="store_true", dest="debug",
@@ -114,6 +110,10 @@ OPT = Storage({
         action="store", dest="like",
         help="a sql like filtering expression. leading and "
              "trailing wildcards are automatically set."),
+    "local": Option(
+        "--local", default=False,
+        action="store_true", dest="local",
+        help="Set to disable cluster-wide operations."),
     "lun": Option(
         "--lun", default=None, action="store", dest="lun",
         help="specify a logical unit number to scan for new block devices. "
@@ -140,6 +140,10 @@ OPT = Storage({
         "--node", default="",
         action="store", dest="node",
         help="the node to send a request to. if not specified the local node is targeted."),
+    "nopager": Option(
+        "--no-pager", default=False,
+        action="store_true", dest="nopager",
+        help="do not display the command result in a pager."),
     "opt_object": Option(
         "--object", default=[], action="append", dest="objects",
         help="an object to limit a push* action to. multiple "
@@ -242,7 +246,7 @@ GLOBAL_OPTS = [
 ]
 
 ASYNC_OPTS = [
-    OPT.crm,
+    OPT.local,
     OPT.time,
     OPT.wait,
 ]
@@ -272,6 +276,9 @@ ACTIONS = {
         },
         'logs': {
             'msg': 'fancy display of the node logs',
+            'options': [
+                OPT.nopager,
+            ]
         },
         'shutdown': {
             'msg': 'shutdown the node to powered off state',
@@ -425,10 +432,15 @@ ACTIONS = {
             ],
          },
         'daemon_join': {
-            'msg': 'stop a daemon thread.',
+            'msg': 'join the node, specified by --node <node>, cluster.',
             'options': DAEMON_OPTS + [
                 OPT.secret,
             ],
+         },
+        'daemon_leave': {
+            'msg': 'inform peer nodes we leave the cluster. make sure the '
+                   'left nodes are no longer in the services nodes list '
+                   'before leaving, so the other nodes won\'t takeover',
          },
     },
     'Push data to the collector': {

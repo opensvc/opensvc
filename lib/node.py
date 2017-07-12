@@ -446,6 +446,145 @@ class Node(Crypt):
         kwargs["log"] = self.log
         return vcall(*args, **kwargs)
 
+    def svcs_selector(self, selector):
+        """
+        Given a selector string, return a list of service names.
+        This exposed method only aggregates ORed elements.
+        """
+        if os.environ.get("OSVC_SERVICE_LINK"):
+            return [os.environ.get("OSVC_SERVICE_LINK")]
+        self.build_services(minimal=True)
+        try:
+            return self._svcs_selector(selector)
+        finally:
+            del self.services
+            self.services = None
+
+    def _svcs_selector(self, selector):
+        if selector is None:
+            return [svc.svcname for svc in self.svcs]
+        elif "," in selector:
+            ored_selectors = selector.split(",")
+        else:
+            ored_selectors = [selector]
+        if selector in (None, ""):
+            result = [svc.svcname for svc in self.svcs]
+        else:
+            result = []
+            for _selector in ored_selectors:
+                for svcname in self.__svcs_selector(_selector):
+                    if svcname not in result:
+                        result.append(svcname)
+        return result
+
+    def __svcs_selector(self, selector):
+        """
+        Given a selector string, return a list of service names.
+        This method only intersect the ANDed elements.
+        """
+        if selector is None:
+            return
+        elif "+" in selector:
+            anded_selectors = selector.split("+")
+        else:
+            anded_selectors = [selector]
+        if selector in (None, ""):
+            result = [svc.svcname for svc in self.svcs]
+        else:
+            result = None
+            for _selector in anded_selectors:
+                svcnames = self.___svcs_selector(_selector)
+                if result is None:
+                    result = svcnames
+                else:
+                    common = set(result) & set(svcnames)
+                    result = [svcname for svcname in result if svcname in common]
+        return result
+
+    def ___svcs_selector(self, selector):
+        """
+        Given a basic selector string (no AND nor OR), return a list of service
+        names.
+        """
+        import fnmatch
+        import re
+
+        ops = r"(<=|>=|<|>|=|~|:)"
+        negate = selector[0] == "!"
+        selector = selector.lstrip("!")
+        elts = re.split(ops, selector)
+
+        def matching(current, op, value):
+            if op in ("<", ">", ">=", "<="):
+                try:
+                    current = float(current)
+                except ValueError:
+                    return False
+            if op == "=":
+                match = current == value
+            elif op == "~":
+                match = re.search(value, current)
+            elif op == ">":
+                match = current > value
+            elif op == ">=":
+                match = current >= value
+            elif op == "<":
+                match = current < value
+            elif op == "<=":
+                match = current <= value
+            elif op == ":":
+                match = True
+            return match
+
+        def svc_matching(svc, param, op, value):
+            try:
+                current = svc._get(param, evaluate=True)
+            except ex.excError:
+                current = None
+            if current is None:
+                if "." in param:
+                    group, _param = param.split(".", 1)
+                else:
+                    group = param
+                    _param = None
+                rids = [section for section in svc.config.sections() if section.split('#')[0] == group]
+                if op == ":" and len(rids) > 0 and _param is None:
+                    return True
+                elif _param:
+                    for rid in rids:
+                        try:
+                            _current = svc._get(rid+"."+_param, evaluate=True)
+                        except ex.excError:
+                            continue
+                        if matching(_current, op, value):
+                            return True
+                return False
+            if current is None:
+                if op == ":":
+                    return True
+            elif matching(current, op, value):
+                return True
+            return False
+
+        if len(elts) == 1:
+            return [svc.svcname for svc in self.svcs if negate ^ fnmatch.fnmatch(svc.svcname, selector)]
+        elif len(elts) != 3:
+            return []
+        param, op, value = elts
+        if op in ("<", ">", ">=", "<="):
+            try:
+                value = float(value)
+            except ValueError:
+                return []
+        result = []
+        for svc in self.svcs:
+            ret = svc_matching(svc, param, op, value)
+            if ret ^ negate:
+                result.append(svc.svcname)
+
+        return result
+
+
     def build_services(self, *args, **kwargs):
         """
         Instanciate a Svc objects for each requested services and add it to
@@ -725,10 +864,13 @@ class Node(Crypt):
             return 0
         else:
             ret = getattr(self, action)()
-            if ret in (None, True, 0):
+            if ret is None:
                 return 0
-            elif ret == False:
-                return 1
+            elif isinstance(ret, bool):
+                if ret:
+                    return 0
+                else:
+                    return 1
             return ret
 
     @formatter
@@ -2181,6 +2323,10 @@ class Node(Crypt):
                         if ret is None:
                             ret = 0
                         err += ret
+                except ex.excError:
+                    if need_aggregate:
+                        continue
+                    raise
                 except ex.MonitorAction:
                     svc.action('toc')
                 except ex.excSignal:
@@ -2565,10 +2711,13 @@ class Node(Crypt):
             elements[2] = elements[2].replace("INFO", colorize("INFO", color.LIGHTBLUE))
             return " ".join(elements)
 
-        try:
-            pipe = os.popen('TERM=xterm less -R', 'w')
-        except:
-            pipe = sys.stdout
+        pipe = sys.stdout
+        if not self.options.nopager:
+            try:
+                pipe = os.popen('TERM=xterm less -R', 'w')
+            except:
+                pass
+
         try:
             for _logfile in [logfile+".1", logfile]:
                 if not os.path.exists(_logfile):
@@ -2688,7 +2837,7 @@ class Node(Crypt):
             "freeze": "frozen",
             "thaw": "thawed",
         }
-        if self.options.crm:
+        if self.options.local:
             return
         if action not in states:
             return
@@ -3039,7 +3188,9 @@ class Node(Crypt):
 
     def daemon_stop(self):
         data = self._daemon_stop()
-        print(json.dumps(data, indent=4, sort_keys=True))
+        if data.get("status") == 0:
+            return
+        raise ex.excError(json.dumps(data, indent=4, sort_keys=True))
 
     def daemon_start(self):
         options = {}
@@ -3052,7 +3203,9 @@ class Node(Crypt):
             {"action": "daemon_start", "options": options},
             nodename=self.options.node,
         )
-        print(json.dumps(data, indent=4, sort_keys=True))
+        if data.get("status") == 0:
+            return
+        raise ex.excError(json.dumps(data, indent=4, sort_keys=True))
 
     def daemon_running(self):
         if self._daemon_running():
@@ -3081,11 +3234,74 @@ class Node(Crypt):
             time.sleep(0.1)
         self.daemon_start()
 
+    def daemon_leave(self):
+        try:
+            cluster_nodes = self._get("cluster.nodes")
+        except ex.excError:
+            self.log.info("local node is not member of a cluster")
+            return
+        cluster_nodes = sorted(cluster_nodes.split(" "))
+        if rcEnv.nodename in cluster_nodes:
+            cluster_nodes.remove(rcEnv.nodename)
+        if len(cluster_nodes) == 0:
+            self.log.info("local node is not member of a cluster")
+            return
+
+        # freeze and remember the initial frozen state
+        initially_frozen = self.frozen()
+        if not initially_frozen:
+            self.freeze()
+            self.log.info("freeze local node")
+        else:
+            self.log.info("local node is already frozen")
+
+        # leave other nodes
+        errors = 0
+        for nodename in cluster_nodes:
+            if nodename == rcEnv.nodename:
+                continue
+            data = self.daemon_send(
+                {"action": "leave"},
+                nodename=nodename,
+            )
+            if data is None:
+                self.log.error("leave node %s failed", nodename)
+                errors += 1
+            else:
+                self.log.info("leave node %s", self.options.node)
+
+        # remove obsolete hb configurations
+        for section in self.config.sections():
+            if section.startswith("hb#"):
+                self.log.info("remove heartbeat %s", section)
+                self.config.remove_section(section)
+            self.config.remove_section("cluster")
+
+        self.write_config()
+
+        # leave node frozen if initially frozen or we failed joining all nodes
+        if initially_frozen:
+            self.log.warning("local node is left frozen as it was already before leave")
+        elif errors > 0:
+            self.log.warning("local node is left frozen due to leave errors")
+        else:
+            self.thaw()
+            self.log.info("thaw local node")
+
     def daemon_join(self):
         if self.options.secret is None:
             raise ex.excError("--secret must be set")
         if self.options.node is None:
             raise ex.excError("--node must be set")
+
+        # freeze and remember the initial frozen state
+        initially_frozen = self.frozen()
+        if not initially_frozen:
+            self.freeze()
+            self.log.info("freeze local node")
+        else:
+            self.log.info("local node is already frozen")
+
         if not self.config.has_section("cluster"):
             self.config.add_section("cluster")
         data = self.daemon_send(
@@ -3094,9 +3310,8 @@ class Node(Crypt):
             cluster_name="join",
             secret=self.options.secret,
         )
-        print(json.dumps(data, indent=4, sort_keys=True))
         if data is None:
-            raise ex.excError("join failed")
+            raise ex.excError("join node %s failed" % self.options.node)
         data = data.get("data")
         if data is None:
             raise ex.excError("join failed: no data in response")
@@ -3117,12 +3332,48 @@ class Node(Crypt):
             if not section.startswith("hb#"):
                 continue
             if self.config.has_section(section):
+                self.log.info("update heartbeat %s", section)
                 self.config.remove_section(section)
+            else:
+                self.log.info("add heartbeat %s", section)
             self.config.add_section(section)
             for option, value in _data.items():
                 self.config.set(section, option, value)
 
+        # remove obsolete hb configurations
+        for section in self.config.sections():
+            if section.startswith("hb#") and section not in data:
+                self.log.info("remove heartbeat %s", section)
+                self.config.remove_section(section)
+
         self.write_config()
+        self.log.info("join node %s", self.options.node)
+
+        # join other nodes
+        errors = 0
+        for nodename in cluster_nodes:
+            if nodename in (rcEnv.nodename, self.options.node):
+                continue
+            data = self.daemon_send(
+                {"action": "join"},
+                nodename=nodename,
+                cluster_name="join",
+                secret=self.options.secret,
+            )
+            if data is None:
+                self.log.error("join node %s failed", nodename)
+                errors += 1
+            else:
+                self.log.info("join node %s", self.options.node)
+
+        # leave node frozen if initially frozen or we failed joining all nodes
+        if initially_frozen:
+            self.log.warning("local node is left frozen as it was already before join")
+        elif errors > 0:
+            self.log.warning("local node is left frozen due to join errors")
+        else:
+            self.thaw()
+            self.log.info("thaw local node")
 
     def set_node_monitor(self, status=None, local_expect=None, global_expect=None):
         options = {

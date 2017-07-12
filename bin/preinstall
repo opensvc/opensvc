@@ -19,6 +19,17 @@ rm -f $FLAG
 # no preinstall if opensvc was not installed yet
 which nodemgr >/dev/null 2>&1 || exit 0
 
+nodemgr daemon running >/dev/null 2>&1
+RUNNING=$?
+
+# option not found => upgrade from 1.8-
+if [ $RUNNING -eq 2 ]
+then
+	touch $FLAG
+	svcmgr freeze
+	exit 0
+fi
+
 # sanity check
 BUFF=`nodemgr daemon status | grep hb#`
 if [ ! -z "$BUFF" ]

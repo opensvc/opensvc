@@ -23,6 +23,8 @@ operators = {
     ast.Mult: op.mul,
     ast.Div: op.truediv,
     ast.Pow: op.pow,
+    ast.BitOr: op.or_,
+    ast.BitAnd: op.and_,
     ast.BitXor: op.xor,
     ast.USub: op.neg,
     ast.FloorDiv: op.floordiv,
@@ -41,11 +43,14 @@ def eval_expr(expr):
     """ arithmetic expressions evaluator
     """
     def eval_(node):
+        _safe_names = {'None': None, 'True': True, 'False': False}
         if isinstance(node, ast.Num): # <number>
             return node.n
         elif isinstance(node, ast.Str):
             return node.s
         elif isinstance(node, ast.Name):
+            if node.id in _safe_names:
+                return _safe_names[node.id]
             return node.id
         elif isinstance(node, ast.Tuple):
             return tuple(node.elts)
@@ -971,6 +976,25 @@ def read_cf(fpath, defaults=None):
         else:
             config.readfp(ofile)
     return config
+
+def drop_option(option, cmd, drop_value=False):
+    """
+    Drop an option, and its value if requested, from an argv
+    """
+    to_drop = []
+    for i, word in enumerate(cmd):
+        if word == option:
+            if drop_value:
+                to_drop += [i, i+1]
+            else:
+                to_drop += [i]
+            continue
+        if word.startswith(option+"="):
+            to_drop += [i]
+            continue
+    for idx in sorted(to_drop, reverse=True):
+        del cmd[idx]
+    return cmd
 
 if __name__ == "__main__":
     #print("call(('id','-a'))")

@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2017\-06\-28
+.TH SVCMGR 1 2017\-07\-11
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -1980,6 +1980,9 @@ Number of seconds to wait for an async action to finish. Default is 300 seconds.
 .B --wait
 Wait for asynchronous action termination
 .TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2060,11 +2063,90 @@ Number of seconds to wait for the action lock acquire.
 show this help message and exit
 
 .RE
+\fBsvcmgr giveback\fP
+.RS
+
+stop the service on its current node and start on the node chosen by the placement policy.
+
+.TP
+.B --dry-run
+Show the action execution plan
+.TP
+.B -f, --force
+force action, ignore sanity check warnings
+.TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --master
+option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
+.TP
+.B --rid=PARM_RID
+comma-separated list of resource to limit action to
+.TP
+.B --slave=SLAVE
+option to set to limit the action scope to the service resources in the specified, comma-separated, slaves
+.TP
+.B --slaves
+option to set to limit the action scope to all slave service resources
+.TP
+.B --subsets=PARM_SUBSETS
+comma-separated list of resource subsets to limit action to
+.TP
+.B --tags=PARM_TAGS
+comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+Number of seconds to wait for the action lock acquire.
+.TP
+.B -h, --help
+show this help message and exit
+
+.RE
 \fBsvcmgr logs\fP
 .RS
 
 display the service logs in the pager
 
+.TP
+.B --no-pager
+do not display the command result in a pager.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -6107,6 +6189,82 @@ Number of seconds to wait for the action lock acquire.
 show this help message and exit
 
 .RE
+\fBsvcmgr takeover\fP
+.RS
+
+stop the service on its current node and start on the local node.
+
+.TP
+.B --dry-run
+Show the action execution plan
+.TP
+.B -f, --force
+force action, ignore sanity check warnings
+.TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --master
+option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
+.TP
+.B --rid=PARM_RID
+comma-separated list of resource to limit action to
+.TP
+.B --slave=SLAVE
+option to set to limit the action scope to the service resources in the specified, comma-separated, slaves
+.TP
+.B --slaves
+option to set to limit the action scope to all slave service resources
+.TP
+.B --subsets=PARM_SUBSETS
+comma-separated list of resource subsets to limit action to
+.TP
+.B --tags=PARM_TAGS
+comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+Exit without resource activation rollback on start action error
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+comma-separated list of service to operate on
+.TP
+.B --status=PARM_STATUS
+operate only on service in the specified status (up/down/warn)
+.TP
+.B -c, --cluster
+Execute an action on all cluster nodes, aggregate the json outputs.
+.TP
+.B --crm
+Set to disable cluster-wide operations.
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+used by cron'ed action to tell the collector to treat the log entries as such
+.TP
+.B --daemon
+a flag inhibiting the daemonization. set by the daemonization routine.
+.TP
+.B --debug
+debug mode
+.TP
+.B --env=ENV
+export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
+.TP
+.B -p, --parallel
+start actions on specified services in parallel
+.TP
+.B --waitlock=PARM_WAITLOCK
+Number of seconds to wait for the action lock acquire.
+.TP
+.B -h, --help
+show this help message and exit
+
+.RE
 \fBsvcmgr thaw\fP
 .RS
 
@@ -6118,6 +6276,9 @@ Number of seconds to wait for an async action to finish. Default is 300 seconds.
 .TP
 .B --wait
 Wait for asynchronous action termination
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on

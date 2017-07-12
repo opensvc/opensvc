@@ -4,14 +4,17 @@ import sys
 import os
 import json
 from optparse import Option
-import requests
 
-from rcConfigParser import RawConfigParser
 import rcExceptions as ex
+from rcConfigParser import RawConfigParser
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import convert_size, bdecode
 from rcOptParser import OptParser
 
+try:
+    import requests
+except ImportError:
+    raise ex.excInitError("the requests module must be installed")
 
 try:
     requests.packages.urllib3.disable_warnings()

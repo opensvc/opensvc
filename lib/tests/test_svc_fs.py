@@ -21,7 +21,7 @@ class TestSvc:
             self.svc.node.close()
 
     def setUp(self):
-        rcLogger.DEFAULT_HANDLERS = []
+        rcLogger.DEFAULT_HANDLERS = ["file"]
         self.svc = svc.Svc(SVCNAME)
         r = resFsLinux.Mount(rid="fs#1",
                              mount_point="/srv/"+SVCNAME,
@@ -31,20 +31,16 @@ class TestSvc:
         self.svc += r
 
     def test_002_start(self):
-        ret = self.svc.action("start")
+        ret = self.svc.action("start", {"local": True})
         assert ret == 0
 
     def test_003_restart(self):
-        ret = self.svc.action("restart")
+        ret = self.svc.action("restart", {"local": True})
         assert ret == 0
 
     def test_004_action_on_wrong_rid(self):
-        try:
-            self.svc.action("start", {"rid": "fs#2"})
-            # shouldn't reach here, fs#2 doesn't exist
-            assert False
-        except ex.excError:
-            assert True
+        ret = self.svc.action("start", {"rid": "fs#2", "local": True})
+        assert ret == 1
 
     def test_005_update(self):
         ret = self.svc.action("update", {
@@ -61,11 +57,11 @@ class TestSvc:
         assert ret == 0
 
     def test_007_start(self):
-        ret = self.svc.action("start")
+        ret = self.svc.action("start", {"local": True})
         assert ret == 0
 
     def test_008_stop(self):
-        ret = self.svc.action("stop")
+        ret = self.svc.action("stop", {"local": True})
         assert ret == 0
 
     def test_009_delete_rid_unprovision(self):
@@ -73,10 +69,14 @@ class TestSvc:
         assert ret == 0
 
     def test_010_delete_unprovision(self):
-        ret = self.svc.action("delete", {"unprovision": True})
+        ret = self.svc.action("delete", {"unprovision": True, "local": True})
         assert ret == 0
 
     def test_011_pull_provision(self):
-        ret = self.svc.action("pull", {"provision": True})
+        ret = self.svc.action("pull", {"provision": True, "local": True})
+        assert ret == 0
+
+    def test_012_delete_unprovision(self):
+        ret = self.svc.action("delete", {"unprovision": True, "local": True})
         assert ret == 0
 

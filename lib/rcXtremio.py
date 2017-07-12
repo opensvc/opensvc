@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import sys
 import os
-import requests
 import ConfigParser
 import json
 
@@ -12,6 +11,10 @@ from rcUtilities import justcall,convert_size
 from rcOptParser import OptParser
 from optparse import Option
 
+try:
+    import requests
+except ImportError:
+    raise ex.excInitError("the requests module must be installed")
 
 try:
     requests.packages.urllib3.disable_warnings()

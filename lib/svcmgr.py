@@ -77,7 +77,7 @@ def get_build_kwargs(optparser, options, action):
         if os.environ.get("OSVC_SERVICE_LINK"):
             build_kwargs["svcnames"] = [os.environ.get("OSVC_SERVICE_LINK")]
         if hasattr(options, "svcs") and options.svcs is not None:
-            build_kwargs["svcnames"] = options.svcs.split(',')
+            build_kwargs["svcnames"] = options.svcs
 
     if hasattr(options, "status") and options.status is not None:
         build_kwargs["status"] = [rcStatus.status_value(s) for s in options.status.split(",")]
@@ -235,8 +235,12 @@ def _main(node, argv=None):
         node.options.format = options.format
     except AttributeError:
         pass
+    if action != "create":
+        options.svcs = node.svcs_selector(options.svcs)
+    else:
+        options.svcs = options.svcs.split(",")
     node.options.single_service = options.svcs is not None and \
-                                  len(options.svcs.split(",")) == 1
+                                  len(options.svcs) == 1
 
     build_kwargs = get_build_kwargs(optparser, options, action)
 

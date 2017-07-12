@@ -145,19 +145,19 @@ def test_frozen():
     assert ret == 0
 
 def test_freeze():
-    ret = svcmgr.main(argv=["freeze", "-s", "unittest"])
+    ret = svcmgr.main(argv=["freeze", "-s", "unittest", "--local"])
     assert ret == 0
     ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
     assert ret == 1
 
 def test_thaw():
-    ret = svcmgr.main(argv=["thaw", "-s", "unittest"])
+    ret = svcmgr.main(argv=["thaw", "-s", "unittest", "--local"])
     assert ret == 0
     ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
     assert ret == 0
 
 def test_logs():
-    ret = svcmgr.main(argv=["logs", "-s", "unittest"])
+    ret = svcmgr.main(argv=["logs", "-s", "unittest", "--no-pager"])
     assert ret == 0
 
 def test_push():

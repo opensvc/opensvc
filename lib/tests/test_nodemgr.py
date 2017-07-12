@@ -146,7 +146,7 @@ def test_nodemgr_pushdisks():
     assert ret == 0
 
 def test_nodemgr_logs():
-    ret = nodemgr.main(argv=["logs"])
+    ret = nodemgr.main(argv=["logs", "--no-pager"])
     assert ret == 0
 
 

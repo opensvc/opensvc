@@ -13,7 +13,6 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
-from svc import Svc
 from rcUtilities import convert_size, cmdline2list, ximport, \
                         check_privs
 
@@ -2987,19 +2986,21 @@ def setup_logging(svcnames):
             max_svcname_len = n
 
     rcLogger.max_svcname_len = max_svcname_len
-    log = rcLogger.initLogger('init')
+    log = rcLogger.initLogger(rcEnv.nodename)
 
 def build(name, minimal=False, svcconf=None):
     """build(name) is in charge of Svc creation
     it return None if service Name is not managed by local node
     else it return new Svc instance
     """
+    import svc
+
     #
     # node discovery is hidden in a separate module to
     # keep it separate from the framework stuff
     #
     discover_node()
-    svc = Svc(svcname=name)
+    svc = svc.Svc(svcname=name)
 
     try:
         encapnodes = [n.lower() for n in svc.conf_get_string_scope('DEFAULT', "encapnodes").split() if n != ""]
@@ -3124,43 +3125,6 @@ def build(name, minimal=False, svcconf=None):
 
     if 'flex' in svc.clustertype:
         svc.ha = True
-
-    try:
-        svc.flex_min_nodes = svc.conf_get_int_scope('DEFAULT', 'flex_min_nodes')
-    except ex.OptNotFound:
-        svc.flex_min_nodes = 1
-    if svc.flex_min_nodes < 0:
-        svc.flex_min_nodes = 0
-    nb_nodes = len(svc.nodes|svc.drpnodes)
-    if svc.flex_min_nodes > nb_nodes:
-        svc.flex_min_nodes = nb_nodes
-
-    try:
-        svc.flex_max_nodes = svc.conf_get_int_scope('DEFAULT', 'flex_max_nodes')
-    except ex.OptNotFound:
-        svc.flex_max_nodes = nb_nodes
-    if svc.flex_max_nodes < nb_nodes:
-        svc.flex_max_nodes = nb_nodes
-    if svc.flex_max_nodes < svc.flex_min_nodes:
-        svc.flex_max_nodes = svc.flex_min_nodes
-
-    try:
-        svc.flex_cpu_low_threshold = svc.conf_get_int_scope('DEFAULT', 'flex_cpu_low_threshold')
-    except ex.OptNotFound:
-        svc.flex_cpu_low_threshold = 10
-    if svc.flex_cpu_low_threshold < 0:
-        raise ex.excInitError("invalid flex_cpu_low_threshold '%d' (<0)."%svc.flex_cpu_low_threshold)
-    if svc.flex_cpu_low_threshold > 100:
-        raise ex.excInitError("invalid flex_cpu_low_threshold '%d' (>100)."%svc.flex_cpu_low_threshold)
-
-    try:
-        svc.flex_cpu_high_threshold = svc.conf_get_int_scope('DEFAULT', 'flex_cpu_high_threshold')
-    except ex.OptNotFound:
-        svc.flex_cpu_high_threshold = 90
-    if svc.flex_cpu_high_threshold < 0:
-        raise ex.excInitError("invalid flex_cpu_high_threshold '%d' (<0)."%svc.flex_cpu_high_threshold)
-    if svc.flex_cpu_high_threshold > 100:
-        raise ex.excInitError("invalid flex_cpu_high_threshold '%d' (>100)."%svc.flex_cpu_high_threshold)
 
     try:
         svc.show_disabled = svc.conf_get_boolean_scope('DEFAULT', 'show_disabled')
@@ -3304,7 +3268,7 @@ def build_services(status=None, svcnames=None, create_instance=False,
             svc = build(name, minimal=minimal)
         except (ex.excError, ex.excInitError) as e:
             errors.append("%s: %s" % (name, str(e)))
-            svclog = rcLogger.initLogger(name, handlers=["file", "syslog"])
+            svclog = rcLogger.initLogger(rcEnv.nodename+"."+name, handlers=["file", "syslog"])
             svclog.error(str(e))
             continue
         except ex.excAbortAction:

@@ -100,8 +100,8 @@ class Crypt(object):
         configuration. If not set, return a list with the local node as the
         only element.
         """
-        if hasattr(self, "node"):
-            config = self.node.config
+        if hasattr(self, "get_node"):
+            config = self.get_node().config
         else:
             config = self.config
         try:
@@ -115,8 +115,8 @@ class Crypt(object):
         Return the cluster name, read from cluster.name in the node
         configuration. If not set, return "default".
         """
-        if hasattr(self, "node"):
-            config = self.node.config
+        if hasattr(self, "get_node"):
+            config = self.get_node().config
         else:
             config = self.config
         try:
@@ -130,8 +130,8 @@ class Crypt(object):
         Return the key read from cluster.secret in the node configuration.
         If not already set generate and store a random one.
         """
-        if hasattr(self, "node"):
-            config = self.node.config
+        if hasattr(self, "get_node"):
+            config = self.get_node().config
         else:
             config = self.config
         try:
@@ -178,13 +178,13 @@ class Crypt(object):
             message = json.loads(message)
         except ValueError:
             if len(message) > 0:
-                self.log.error("misformatted encrypted message: %s",
-                               repr(message))
+                self.log.error("misformatted encrypted message from %s: %s",
+                               sender_id, repr(message))
             return None, None
         if cluster_name != "join" and \
            message.get("clustername") not in (cluster_name, "join"):
-            self.log.warning("discard message from cluster %s",
-                             message.get("clustername"))
+            self.log.warning("discard message from cluster %s, sender %s",
+                             message.get("clustername"), sender_id)
             return None, None
         if cluster_key is None:
             return None, None
@@ -287,8 +287,8 @@ class Crypt(object):
         """
         Get the listener address and port from node.conf.
         """
-        if hasattr(self, "node"):
-            config = self.node.config
+        if hasattr(self, "get_node"):
+            config = self.get_node().config
         else:
             config = self.config
         if nodename == rcEnv.nodename:

@@ -99,7 +99,7 @@ class Resource(object):
         """
         Return the resource label used in logs entries.
         """
-        label = ""
+        label = rcEnv.nodename + "."
         if hasattr(self, "svc"):
             label += self.svc.svcname + '.'
 
@@ -810,6 +810,8 @@ class Resource(object):
         """
         if element is None:
             return
+        if element == "impossible":
+            raise ex.excContinueAction("skip impossible requirement")
         if element.count("(") == 1:
             rid, states = element.rstrip(")").split("(")
             states = states.split(",")
