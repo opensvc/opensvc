@@ -3239,6 +3239,15 @@ class Node(Crypt):
             raise ex.excError("--secret must be set")
         if self.options.node is None:
             raise ex.excError("--node must be set")
+
+        # freeze and remember the initial frozen state
+        initially_frozen = self.frozen()
+        if not initially_frozen:
+            self.freeze()
+            self.log.info("freeze local node")
+        else:
+            self.log.info("local node is already frozen")
+
         if not self.config.has_section("cluster"):
             self.config.add_section("cluster")
         data = self.daemon_send(
@@ -3247,9 +3256,8 @@ class Node(Crypt):
             cluster_name="join",
             secret=self.options.secret,
         )
-        print(json.dumps(data, indent=4, sort_keys=True))
         if data is None:
-            raise ex.excError("join failed")
+            raise ex.excError("join node %s failed" % self.options.node)
         data = data.get("data")
         if data is None:
             raise ex.excError("join failed: no data in response")
@@ -3270,7 +3278,10 @@ class Node(Crypt):
             if not section.startswith("hb#"):
                 continue
             if self.config.has_section(section):
+                self.log.info("update heartbeat %s", section)
                 self.config.remove_section(section)
+            else:
+                self.log.info("add heartbeat %s", section)
             self.config.add_section(section)
             for option, value in _data.items():
                 self.config.set(section, option, value)
@@ -3278,9 +3289,37 @@ class Node(Crypt):
         # remove obsolete hb configurations
         for section in self.config.sections():
             if section.startswith("hb#") and section not in data:
+                self.log.info("remove heartbeat %s", section)
                 self.config.remove_section(section)
 
         self.write_config()
+        self.log.info("join node %s", self.options.node)
+
+        # join other nodes
+        errors = 0
+        for nodename in cluster_nodes:
+            if nodename in (rcEnv.nodename, self.options.node):
+                continue
+            data = self.daemon_send(
+                {"action": "join"},
+                nodename=nodename,
+                cluster_name="join",
+                secret=self.options.secret,
+            )
+            if data is None:
+                self.log.error("join node %s failed", nodename)
+                errors += 1
+            else:
+                self.log.info("join node %s", self.options.node)
+
+        # leave node frozen if initially frozen or we failed joining all nodes
+        if initially_frozen:
+            self.log.warning("local node is left frozen as it was already before join")
+        elif errors > 0:
+            self.log.warning("local node is left frozen due to join errors")
+        else:
+            self.thaw()
+            self.log.info("thaw local node")
 
     def set_node_monitor(self, status=None, local_expect=None, global_expect=None):
         options = {
