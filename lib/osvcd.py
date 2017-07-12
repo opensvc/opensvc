@@ -30,7 +30,7 @@ DAEMON_TICKER = threading.Condition()
 HEARTBEATS = (
     ("multicast", HbMcastTx, HbMcastRx),
     ("unicast", HbUcastTx, HbUcastRx),
-    ("dsk", HbDiskTx, HbDiskRx),
+    ("disk", HbDiskTx, HbDiskRx),
 )
 
 def fork(func, args=None, kwargs=None):
