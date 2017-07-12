@@ -183,8 +183,8 @@ class Crypt(object):
             return None, None
         if cluster_name != "join" and \
            message.get("clustername") not in (cluster_name, "join"):
-            self.log.warning("discard message from cluster %s",
-                             message.get("clustername"))
+            self.log.warning("discard message from cluster %s, sender %s",
+                             message.get("clustername"), sender_id)
             return None, None
         if cluster_key is None:
             return None, None
