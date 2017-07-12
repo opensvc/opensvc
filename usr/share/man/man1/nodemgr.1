@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2017\-07\-11
+.TH NODEMGR 1 2017\-07\-12
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -1060,7 +1060,7 @@ show this help message and exit
 freeze services node-wide, preventing the daemon to orchestrate them. this freeze method preserves the frozen state at service-level (with svcmgr).
 
 .TP
-.B --crm
+.B --local
 Set to disable cluster-wide operations.
 .TP
 .B --time=TIME
@@ -1348,7 +1348,7 @@ show this help message and exit
 thaw services node-wide, allowing the daemon to orchestrate them. this thaw method does not actually thaw services frozen at service-level (with svcmgr).
 
 .TP
-.B --crm
+.B --local
 Set to disable cluster-wide operations.
 .TP
 .B --time=TIME
@@ -1715,7 +1715,7 @@ show this help message and exit
 \fBnodemgr daemon join\fP
 .RS
 
-stop a daemon thread.
+join the node, specified by --node <node>, cluster.
 
 .TP
 .B --node=NODE
@@ -1723,6 +1723,28 @@ the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --secret=SECRET
 the cluster secret used as the AES key in the cluster communications.
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+cron mode
+.TP
+.B --debug
+debug mode
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+.TP
+.B -h, --help
+show this help message and exit
+
+.RE
+\fBnodemgr daemon leave\fP
+.RS
+
+inform peer nodes we leave the cluster. make sure the left nodes are no longer in the services nodes list before leaving, so the other nodes won't takeover
+
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
