@@ -328,7 +328,7 @@ class Listener(shared.OsvcThread, Crypt):
 
         cmd = drop_option("--node", cmd, drop_value=True)
         cmd = drop_option("--daemon", cmd)
-        cmd = [rcEnv.paths.svcmgr, "-s", svcname] + cmd + ["--crm"]
+        cmd = [rcEnv.paths.svcmgr, "-s", svcname] + cmd + ["--local"]
         self.log.info("execute service action requested by node %s: %s",
                       nodename, " ".join(cmd))
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)

@@ -405,7 +405,7 @@ class Svc(Crypt):
         # merged by the cmdline parser
         self.options = Storage(
             color="auto",
-            crm=False,
+            local=False,
             slaves=False,
             slave=None,
             master=False,
@@ -2245,7 +2245,7 @@ class Svc(Crypt):
                 raise ex.excAbortAction()
             else:
                 raise ex.excError()
-        if self.options.crm:
+        if self.options.local:
             return
         if action not in ACTION_TGT_STATE:
             return
@@ -2791,8 +2791,8 @@ class Svc(Crypt):
             rcmd += ['--debug']
         if self.options.dry_run:
             rcmd += ['--dry-run']
-        if self.options.crm and action_mode:
-            rcmd += ['--crm']
+        if self.options.local and action_mode:
+            rcmd += ['--local']
         if self.options.cron:
             rcmd += ['--cron']
         if self.options.waitlock != DEFAULT_WAITLOCK:

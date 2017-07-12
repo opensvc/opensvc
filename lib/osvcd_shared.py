@@ -373,7 +373,7 @@ class OsvcThread(threading.Thread):
         """
         A generic svcmgr command Popen wrapper.
         """
-        cmd = [rcEnv.paths.svcmgr, '-s', svcname, "--crm"] + cmd
+        cmd = [rcEnv.paths.svcmgr, '-s', svcname, "--local"] + cmd
         self.log.info("execute: %s", " ".join(cmd))
         proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
         return proc

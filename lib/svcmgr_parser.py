@@ -58,10 +58,6 @@ OPT = Storage({
         action="store", dest="parm_config",
         help="the configuration file to use when creating or "
              "installing a service"),
-    "crm": Option(
-        "--crm", default=False,
-        action="store_true", dest="crm",
-        help="Set to disable cluster-wide operations."),
     "cron": Option(
         "--cron", default=False,
         action="store_true", dest="cron",
@@ -324,7 +320,6 @@ SVCMGR_OPTS = [
 
 GLOBAL_OPTS = SVCMGR_OPTS + [
     OPT.cluster,
-    OPT.crm,
     OPT.color,
     OPT.cron,
     OPT.daemon,
@@ -502,12 +497,14 @@ ACTIONS = {
             'msg': 'set up a flag to block actions on this service',
             'options': ASYNC_ACTION_OPTS + [
                 OPT.node,
+                OPT.local,
             ],
         },
         'thaw': {
             'msg': 'remove the flag to unblock actions on this service',
             'options': ASYNC_ACTION_OPTS + [
                 OPT.node,
+                OPT.local,
             ],
         },
         'toc': {

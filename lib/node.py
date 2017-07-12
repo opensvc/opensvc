@@ -2837,7 +2837,7 @@ class Node(Crypt):
             "freeze": "frozen",
             "thaw": "thawed",
         }
-        if self.options.crm:
+        if self.options.local:
             return
         if action not in states:
             return

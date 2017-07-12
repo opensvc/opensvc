@@ -60,10 +60,6 @@ OPT = Storage({
         "--cron", default=False,
         action="store_true", dest="cron",
         help="cron mode"),
-    "crm": Option(
-        "--crm", default=False,
-        action="store_true", dest="crm",
-        help="Set to disable cluster-wide operations."),
     "debug": Option(
         "--debug", default=False,
         action="store_true", dest="debug",
@@ -114,6 +110,10 @@ OPT = Storage({
         action="store", dest="like",
         help="a sql like filtering expression. leading and "
              "trailing wildcards are automatically set."),
+    "local": Option(
+        "--local", default=False,
+        action="store_true", dest="local",
+        help="Set to disable cluster-wide operations."),
     "lun": Option(
         "--lun", default=None, action="store", dest="lun",
         help="specify a logical unit number to scan for new block devices. "
@@ -246,7 +246,7 @@ GLOBAL_OPTS = [
 ]
 
 ASYNC_OPTS = [
-    OPT.crm,
+    OPT.local,
     OPT.time,
     OPT.wait,
 ]
