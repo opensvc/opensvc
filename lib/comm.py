@@ -178,8 +178,8 @@ class Crypt(object):
             message = json.loads(message)
         except ValueError:
             if len(message) > 0:
-                self.log.error("misformatted encrypted message: %s",
-                               repr(message))
+                self.log.error("misformatted encrypted message from %s: %s",
+                               sender_id, repr(message))
             return None, None
         if cluster_name != "join" and \
            message.get("clustername") not in (cluster_name, "join"):
