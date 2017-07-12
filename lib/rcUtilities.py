@@ -388,30 +388,52 @@ def call(argv,
         ret = 0
     if not empty_string(buff[1]):
         if err_to_info:
-            log.info('stderr:\n' + buff[1])
+            log.info('stderr:')
+            for line in buff[1].split("\n"):
+                log.info(line)
         elif err_to_warn:
-            log.warning('stderr:\n' + buff[1])
+            log.warning('stderr:')
+            for line in buff[1].split("\n"):
+                log.warning(line)
         elif errlog:
             if ret != 0:
-                log.error('stderr:\n' + buff[1])
+                log.error('stderr:')
+                for line in buff[1].split("\n"):
+                    log.error(line)
             elif warn_to_info:
-                log.info('command successful but stderr:\n' + buff[1])
+                log.info('command successful but stderr:')
+                for line in buff[1].split("\n"):
+                    log.info(line)
             else:
-                log.warning('command successful but stderr:\n' + buff[1])
+                log.warning('command successful but stderr:')
+                for line in buff[1].split("\n"):
+                    log.warning(line)
         elif errdebug:
-            log.debug('stderr:\n' + buff[1])
+            log.debug('stderr:')
+            for line in buff[1].split("\n"):
+                log.debug(line)
     if not empty_string(buff[0]):
         if outlog:
             if ret == 0:
-                log.info('output:\n' + buff[0])
+                log.info('output:')
+                for line in buff[0].split("\n"):
+                    log.info(line)
             elif err_to_info:
-                log.info('command failed with stdout:\n' + buff[0])
+                log.info('command failed with stdout:')
+                for line in buff[0].split("\n"):
+                    log.info(line)
             elif err_to_warn:
-                log.warning('command failed with stdout:\n' + buff[0])
+                log.warning('command failed with stdout:')
+                for line in buff[0].split("\n"):
+                    log.warning(line)
             else:
-                log.error('command failed with stdout:\n' + buff[0])
+                log.error('command failed with stdout:')
+                for line in buff[0].split("\n"):
+                    log.error(line)
         elif outdebug:
-            log.debug('output:\n' + buff[0])
+            log.debug('output:')
+            for line in buff[0].split("\n"):
+                log.debug(line)
 
     return (ret, buff[0], buff[1])
 

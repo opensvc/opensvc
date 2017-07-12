@@ -319,3 +319,24 @@ def print_color_config(fpath):
     except Exception as exc:
         raise ex.excError(exc)
 
+def colorize_log_line(line, last=None):
+    """
+    Format a log line, colorizing the log level.
+    Return the line as a string buffer.
+    """
+    import rcLogger
+    line = line.rstrip("\n")
+    elements = line.split(" - ")
+
+    if len(elements) < 3 or elements[2] not in ("DEBUG", "INFO", "WARNING", "ERROR"):
+        return
+
+    elements[1] = rcLogger.namefmt % elements[1]
+    elements[1] = colorize(elements[1], color.BOLD)
+    elements[2] = "%-7s" % elements[2]
+    elements[2] = elements[2].replace("ERROR", colorize("ERROR", color.RED))
+    elements[2] = elements[2].replace("WARNING", colorize("WARNING", color.BROWN))
+    elements[2] = elements[2].replace("INFO", colorize("INFO", color.LIGHTBLUE))
+    return " ".join(elements)
+
+

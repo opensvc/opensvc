@@ -7,6 +7,7 @@ import socket
 import logging
 import threading
 import codecs
+import time
 from subprocess import Popen, PIPE
 
 import osvcd_shared as shared
@@ -123,7 +124,7 @@ class Listener(shared.OsvcThread, Crypt):
             p = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
             p.communicate()
         else:
-            result = self.router(nodename, data)
+            result = self.router(nodename, data, conn)
             if result:
                 message = self.encrypt(result)
                 conn.sendall(message)
@@ -136,7 +137,7 @@ class Listener(shared.OsvcThread, Crypt):
     # Actions
     #
     #########################################################################
-    def router(self, nodename, data):
+    def router(self, nodename, data, conn):
         """
         For a request data, extract the requested action and options,
         translate into a method name, and execute this method with options
@@ -150,7 +151,7 @@ class Listener(shared.OsvcThread, Crypt):
         if not hasattr(self, fname):
             return {"error": "action not supported", "status": 1}
         options = data.get("options", {})
-        return getattr(self, fname)(nodename, **options)
+        return getattr(self, fname)(nodename, conn=conn, **options)
 
     def action_daemon_blacklist_clear(self, nodename, **kwargs):
         """
@@ -348,4 +349,50 @@ class Listener(shared.OsvcThread, Crypt):
                 "status": 0,
             }
         return result
+
+    def action_service_logs(self, nodename, **kwargs):
+        conn = kwargs.get("conn")
+        svcname = kwargs.get("svcname")
+        backlog = kwargs.get("backlog", False)
+        if svcname is None:
+            return {
+                "status": 1,
+            }
+        logfile = os.path.join(rcEnv.paths.pathlog, svcname+".log")
+        with open(logfile, "r") as ofile:
+            if backlog:
+                try:
+                    ofile.seek(-1024*100, 2)
+                except:
+                    ofile.seek(0)
+            else:
+                ofile.seek(0, 2)
+            lines = []
+            msg_size = 0
+            while True:
+                line = ofile.readline()
+                line_size = len(line)
+                if line_size == 0:
+                    if msg_size > 0:
+                        message = self.encrypt(lines)
+                        try:
+                            conn.sendall(message)
+                        except Exception as exc:
+                            if hasattr(exc, "errno") and exc.errno == 32:
+                                # Broken pipe (client has left)
+                                break
+                    if backlog:
+                        break
+                    else:
+                        time.sleep(0.1)
+                        lines = []
+                        msg_size = 0
+                        continue
+                lines.append(line)
+                msg_size += line_size
+                if msg_size > shared.MAX_MSG_SIZE:
+                    message = self.encrypt(lines)
+                    conn.sendall(message)
+                    msg_size = 0
+                    lines = []
 

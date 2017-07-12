@@ -40,6 +40,10 @@ def signal_handler(*args):
 
 DEFAULT_WAITLOCK = 60
 
+ACTION_NO_ASYNC = {
+    "logs",
+}
+
 ACTION_TGT_STATE = {
     "start": "started",
     "stop": "stopped",
@@ -410,6 +414,7 @@ class Svc(Crypt):
             slave=None,
             master=False,
             cron=False,
+            follow=False,
             force=False,
             remote=False,
             debug=False,
@@ -1187,68 +1192,6 @@ class Svc(Crypt):
             svc_config[section] = tmpsection
         unset_lazy(self, "config")
         return svc_config
-
-    def logs(self):
-        """
-        Extract and display the service logs, honoring --no-pager, --color and
-        --debug
-        """
-        if len(self.log.handlers) == 0:
-            return
-
-        if self.options.debug:
-            logfile = os.path.join(rcEnv.paths.pathlog, self.svcname+".debug.log")
-        else:
-            logfile = os.path.join(rcEnv.paths.pathlog, self.svcname+".log")
-
-        if not os.path.exists(logfile):
-            return
-
-        from rcColor import color, colorize
-        def fmt(line):
-            """
-            Format a log line, colorizing the log level.
-            Return the line as a string buffer.
-            """
-            line = line.rstrip("\n")
-            elements = line.split(" - ")
-
-            if len(elements) < 3 or elements[2] not in ("DEBUG", "INFO", "WARNING", "ERROR"):
-                # this is a log line continuation (command output for ex.)
-                return line
-
-            elements[1] = rcLogger.namefmt % elements[1]
-            elements[1] = colorize(elements[1], color.BOLD)
-            elements[2] = "%-7s" % elements[2]
-            elements[2] = elements[2].replace("ERROR", colorize("ERROR", color.RED))
-            elements[2] = elements[2].replace("WARNING", colorize("WARNING", color.BROWN))
-            elements[2] = elements[2].replace("INFO", colorize("INFO", color.LIGHTBLUE))
-            return " ".join(elements)
-
-        pipe = sys.stdout
-        if not self.options.nopager:
-            try:
-                pipe = os.popen('TERM=xterm less -R', 'w')
-            except:
-                pass
-
-        try:
-            for _logfile in [logfile+".1", logfile]:
-                if not os.path.exists(_logfile):
-                    continue
-                with open(_logfile, "r") as ofile:
-                    for line in ofile.readlines():
-                        buff = fmt(line)
-                        if buff:
-                            pipe.write(buff+"\n")
-        except BrokenPipeError:
-            try:
-                sys.stdout = os.fdopen(1)
-            except (AttributeError, OSError, IOError):
-                pass
-        finally:
-            if pipe != sys.stdout:
-                pipe.close()
 
     def print_resource_status(self):
         """
@@ -2235,6 +2178,8 @@ class Svc(Crypt):
         print(mtime)
 
     def async_action(self, action, wait=None, timeout=None):
+        if action in ACTION_NO_ASYNC:
+            return
         if self.options.node is not None and self.options.node != "":
             cmd = sys.argv[1:]
             cmd = drop_option("--node", cmd, drop_value=True)
@@ -4770,7 +4715,10 @@ class Svc(Crypt):
         A helper method to save stacks in the service log.
         """
         self.log.error("unexpected error. stack saved in the service debug log")
-        self.log.debug("", exc_info=True)
+        import traceback
+        buff = traceback.format_exc()
+        for line in buff.splitlines():
+            self.log.debug(line)
 
     def vcall(self, *args, **kwargs):
         """
@@ -4934,11 +4882,63 @@ class Svc(Crypt):
             return
         self.action("compliance_auto")
 
+    def logs(self, nodename=None):
+        try:
+            self._logs(nodename=nodename)
+        except ex.excSignal:
+            return
+
+    def _logs(self, nodename=None):
+        if nodename is None:
+            nodename = self.options.node
+        from rcColor import colorize_log_line
+        lines = []
+        for nodename in list(self.nodes|self.drpnodes):
+            lines += self.daemon_backlogs(nodename)
+            for line in sorted(lines):
+                line = colorize_log_line(line)
+                if line:
+                    print(line)
+        if not self.options.follow:
+            return
+        for line in self.daemon_logs():
+            line = colorize_log_line(line)
+            if line:
+                print(line)
+
     #########################################################################
     #
     # daemon communications
     #
     #########################################################################
+    def daemon_backlogs(self, nodename):
+        options = {
+            "svcname": self.svcname,
+            "backlog": True,
+        }
+        for lines in self.daemon_get_stream(
+            {"action": "service_logs", "options": options},
+            nodename=nodename,
+        ):
+            if lines is None:
+                break
+            for line in lines:
+                yield line
+
+    def daemon_logs(self):
+        options = {
+            "svcname": self.svcname,
+            "backlog": False,
+        }
+        for lines in self.daemon_get_streams(
+            {"action": "service_logs", "options": options},
+            nodenames=list(self.nodes|self.drpnodes),
+        ):
+            if lines is None:
+                break
+            for line in lines:
+                yield line
+
     def clear(self, nodename=None):
         if nodename is None:
             nodename = self.options.node

@@ -321,6 +321,25 @@ class Crypt(object):
                 port = rcEnv.listener_port
         return addr, port
 
+    def recv_message(self, sock, cluster_name=None, secret=None):
+        """
+        Receive, decrypt and return a message from a socket.
+        """
+        chunks = []
+        while True:
+            chunk = sock.recv(4096)
+            if chunk:
+                chunks.append(chunk)
+            if not chunk or chunk.endswith(b"\x00"):
+                break
+        if sys.version_info[0] >= 3:
+            data = b"".join(chunks)
+        else:
+            data = "".join(chunks)
+        nodename, data = self.decrypt(data, cluster_name=cluster_name,
+                                      secret=secret)
+        return data
+
     def daemon_send(self, data, nodename=None, with_result=True, silent=False,
                     cluster_name=None, secret=None):
         """
@@ -340,19 +359,7 @@ class Crypt(object):
                 return
             sock.sendall(message)
             if with_result:
-                chunks = []
-                while True:
-                    chunk = sock.recv(4096)
-                    if chunk:
-                        chunks.append(chunk)
-                    if not chunk or chunk.endswith(b"\x00"):
-                        break
-                if sys.version_info[0] >= 3:
-                    data = b"".join(chunks)
-                else:
-                    data = "".join(chunks)
-                nodename, data = self.decrypt(data, cluster_name=cluster_name,
-                                              secret=secret)
+                data = self.recv_message(sock, cluster_name=cluster_name, secret=secret)
                 return data
         except socket.error as exc:
             if not silent:
@@ -360,3 +367,68 @@ class Crypt(object):
             return
         finally:
             sock.close()
+
+    def daemon_get_stream(self, data, nodename=None, cluster_name=None,
+                          secret=None):
+        """
+        Send a request to the daemon running on nodename and yield the results
+        fetched if with_result is set.
+        """
+        if nodename is None:
+            nodename = rcEnv.nodename
+        addr, port = self.get_listener_info(nodename)
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(6.2)
+            sock.connect((addr, port))
+            message = self.encrypt(data, cluster_name=cluster_name,
+                                   secret=secret)
+            if message is None:
+                return
+            sock.sendall(message)
+            while True:
+                data = self.recv_message(sock, cluster_name=cluster_name, secret=secret)
+                yield data
+        except socket.error as exc:
+            self.log.error("daemon send to %s:%d error: %s", addr, port, str(exc))
+        finally:
+            sock.close()
+
+    def daemon_get_streams(self, data, nodenames=None, cluster_name=None,
+                           secret=None):
+        """
+        Send a request to the daemon running on nodename and yield the results
+        fetched if with_result is set.
+        """
+        import select
+        if nodenames is None:
+            nodenames = [rcEnv.nodename]
+
+        socks = []
+        for nodename in nodenames:
+            addr, port = self.get_listener_info(nodename)
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(6.2)
+                sock.connect((addr, port))
+                message = self.encrypt(data, cluster_name=cluster_name,
+                                       secret=secret)
+                if message is None:
+                    return
+                sock.sendall(message)
+                socks.append(sock)
+            except socket.error as exc:
+                self.log.error("daemon send to %s:%d error: %s", addr, port, str(exc))
+
+        try:
+            while True:
+                ready_to_read = select.select(socks, [], [], 1)[0]
+                for sock in ready_to_read:
+                    data = self.recv_message(sock, cluster_name=cluster_name, secret=secret)
+                    if data is None:
+                        continue
+                    yield data
+        finally:
+            for sock in socks:
+                sock.close()
+

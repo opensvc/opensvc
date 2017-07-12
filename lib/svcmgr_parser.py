@@ -108,6 +108,10 @@ OPT = Storage({
         action="store_true", dest="eval",
         help="If set with the 'get' action, the printed value of "
              "--param is scoped and dereferenced."),
+    "follow": Option(
+        "--follow", default=False,
+        action="store_true", dest="follow",
+        help="with logs action, follow the logs as they come."),
     "force": Option(
         "-f", "--force", default=False,
         action="store_true", dest="force",
@@ -734,6 +738,8 @@ ACTIONS = {
         'logs': {
             'msg': 'display the service logs in the pager',
             'options': [
+                OPT.follow,
+                OPT.node,
                 OPT.nopager,
             ]
         },
