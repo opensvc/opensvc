@@ -31,6 +31,11 @@ OPT = Storage({
         action="store", dest="author",
         help="the acker name to log when used with the "
              "'collector ack unavailability' action"),
+    "backlog": Option(
+        "--backlog", default=None,
+        action="store", dest="backlog",
+        help="A size expression telling the logs action to fetch at most "
+             "as much data from the log file tail. Default is 10k."),
     "begin": Option(
         "--begin", default=None,
         action="store", dest="begin",
@@ -738,6 +743,7 @@ ACTIONS = {
         'logs': {
             'msg': 'display the service logs in the pager',
             'options': [
+                OPT.backlog,
                 OPT.follow,
                 OPT.node,
                 OPT.nopager,

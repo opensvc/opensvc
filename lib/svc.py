@@ -4887,6 +4887,10 @@ class Svc(Crypt):
             self._logs(nodename=nodename)
         except ex.excSignal:
             return
+        except (OSError, IOError) as exc:
+            if exc.errno == 32:
+                # broken pipe
+                return
 
     def _logs(self, nodename=None):
         if nodename is None:
@@ -4914,7 +4918,7 @@ class Svc(Crypt):
     def daemon_backlogs(self, nodename):
         options = {
             "svcname": self.svcname,
-            "backlog": True,
+            "backlog": self.options.backlog,
         }
         for lines in self.daemon_get_stream(
             {"action": "service_logs", "options": options},
@@ -4928,7 +4932,7 @@ class Svc(Crypt):
     def daemon_logs(self):
         options = {
             "svcname": self.svcname,
-            "backlog": False,
+            "backlog": 0,
         }
         for lines in self.daemon_get_streams(
             {"action": "service_logs", "options": options},

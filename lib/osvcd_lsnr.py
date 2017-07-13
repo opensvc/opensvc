@@ -12,7 +12,7 @@ from subprocess import Popen, PIPE
 
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
-from rcUtilities import bdecode, drop_option
+from rcUtilities import bdecode, drop_option, convert_size
 from comm import Crypt
 
 class Listener(shared.OsvcThread, Crypt):
@@ -351,21 +351,48 @@ class Listener(shared.OsvcThread, Crypt):
         return result
 
     def action_service_logs(self, nodename, **kwargs):
+        """
+        Send service logs.
+        kwargs:
+        * svcname
+        * conn: the connexion socket to the requester
+        * backlog: the number of bytes to send from the tail default is 10k.
+                   A negative value means send the whole file.
+                   The 0 value means follow the file.
+        """
         conn = kwargs.get("conn")
         svcname = kwargs.get("svcname")
-        backlog = kwargs.get("backlog", False)
+        backlog = kwargs.get("backlog")
+        if backlog is None:
+            backlog = 1024 * 10
+        else:
+            backlog = convert_size(backlog, _to='B')
+        self.log.info("send %s log to node %s, backlog %d", svcname, nodename,
+                      backlog)
         if svcname is None:
             return {
                 "status": 1,
             }
         logfile = os.path.join(rcEnv.paths.pathlog, svcname+".log")
-        with open(logfile, "r") as ofile:
-            if backlog:
-                try:
-                    ofile.seek(-1024*100, 2)
-                except:
-                    ofile.seek(0)
+        if backlog > 0:
+            fsize = os.path.getsize(logfile)
+            if backlog > fsize:
+                skip = 0
             else:
+                skip = fsize - backlog
+
+        with open(logfile, "r") as ofile:
+            if backlog > 0:
+                try:
+                    ofile.seek(skip)
+                except Exception as exc:
+                    self.log.info(str(exc))
+                    ofile.seek(0)
+            elif backlog < 0:
+                # send whole file
+                ofile.seek(0)
+            else:
+                # send no backlog (follow)
                 ofile.seek(0, 2)
             lines = []
             msg_size = 0
@@ -381,9 +408,11 @@ class Listener(shared.OsvcThread, Crypt):
                             if hasattr(exc, "errno") and exc.errno == 32:
                                 # Broken pipe (client has left)
                                 break
-                    if backlog:
+                    if backlog != 0:
+                        # don't follow file
                         break
                     else:
+                        # follow
                         time.sleep(0.1)
                         lines = []
                         msg_size = 0
