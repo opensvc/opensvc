@@ -367,8 +367,6 @@ class Listener(shared.OsvcThread, Crypt):
             backlog = 1024 * 10
         else:
             backlog = convert_size(backlog, _to='B')
-        self.log.info("send %s log to node %s, backlog %d", svcname, nodename,
-                      backlog)
         if svcname is None:
             return {
                 "status": 1,
@@ -383,19 +381,25 @@ class Listener(shared.OsvcThread, Crypt):
 
         with open(logfile, "r") as ofile:
             if backlog > 0:
+                self.log.info("send %s log to node %s, backlog %d",
+                              svcname, nodename, backlog)
                 try:
                     ofile.seek(skip)
                 except Exception as exc:
                     self.log.info(str(exc))
                     ofile.seek(0)
             elif backlog < 0:
-                # send whole file
+                self.log.info("send %s log to node %s, whole file",
+                              svcname, nodename)
                 ofile.seek(0)
             else:
-                # send no backlog (follow)
+                self.log.info("follow %s log for node %s",
+                              svcname, nodename)
                 ofile.seek(0, 2)
             lines = []
             msg_size = 0
+            conn.settimeout(1)
+            loops = 0
             while True:
                 line = ofile.readline()
                 line_size = len(line)
@@ -412,7 +416,16 @@ class Listener(shared.OsvcThread, Crypt):
                         # don't follow file
                         break
                     else:
+                        loops += 1
                         # follow
+                        if loops > 10:
+                            try:
+                                conn.send(b"\0")
+                                loops = 0
+                            except Exception as exc:
+                                self.log.info("stop following %s log for node %s: %s",
+                                              svcname, nodename, exc)
+                                break
                         time.sleep(0.1)
                         lines = []
                         msg_size = 0
