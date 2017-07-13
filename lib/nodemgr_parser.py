@@ -259,7 +259,7 @@ ACTIONS = {
     'Node actions': {
         'frozen': {
             'msg': 'return 0 if all the services are frozen node-wide, '
-                   'preventing the daemon to orchestrate them. return 1'
+                   'preventing the daemon to orchestrate them. return 1 '
                    'otherwise',
         },
         'freeze': {
