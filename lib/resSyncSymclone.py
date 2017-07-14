@@ -61,6 +61,20 @@ class syncSymclone(resSync.Sync):
                 return True
         return False
 
+    def wait_restored(self):
+        interval = 10
+        count = self.restore_timeout // interval
+        if count == 0:
+            count = 1
+        cmd = self.symclone_cmd() + ['verify', '-restored', '-i', str(interval), '-c', str(count)]
+        ret, out, err = self.vcall(cmd)
+        if ret == 0:
+           return
+        cmd = self.symclone_cmd() + ['-noprompt', 'terminate', '-restored']
+        cmd = " ".join(cmd)
+        raise ex.excError("timeout waiting for devs to become 'restored'. "
+                          "once restored, you can terminate running: " + cmd)
+
     def wait_for_active(self):
         delay = 10
         self.active_pairs = []
@@ -213,6 +227,7 @@ class syncSymclone(resSync.Sync):
             ass = " or ".join(self.active_states)
             raise ex.excError("%s not in active state (%s)" % (ina, ass))
         self.restore()
+        self.wait_restored()
         self.terminate_restore()
 
     def start(self):
@@ -225,6 +240,7 @@ class syncSymclone(resSync.Sync):
                  pairs=[],
                  precopy=True,
                  consistent=True,
+                 restore_timeout=None,
                  **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
@@ -241,6 +257,7 @@ class syncSymclone(resSync.Sync):
             raise ex.excInitError("unsupported symclone driver type %s", self.type)
         self.activate_timeout = 20
         self.recreate_timeout = 20
+        self.restore_timeout = restore_timeout
         self.precopy = precopy
         self.pairs_written = {}
         self.label = "symclone symid %s pairs %s" % (symid, " ".join(pairs))
@@ -255,6 +272,11 @@ class syncSymclone(resSync.Sync):
         self.last = None
         self.showdevs_etree = {}
         self.default_schedule = "@0"
+        if restore_timeout is None:
+            self.restore_timeout = 300
+        else:
+            self.restore_timeout = restore_timeout
+
 
     def __str__(self):
         return "%s symid=%s pairs=%s" % (resSync.Sync.__str__(self),\

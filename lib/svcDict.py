@@ -3646,6 +3646,19 @@ class KeywordSyncSymclonePrecopy(Keyword):
                   text="Use -precopy on recreate."
                 )
 
+class KeywordSyncSymcloneRestoreTimeout(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="restore_timeout",
+                  at=True,
+                  rtype=["symclone", "symsnap"],
+                  required=False,
+                  default=300,
+                  text="Maximum wait time for the clone to read the restored state."
+                )
+
 class KeywordSyncSymcloneSymid(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4212,7 +4225,7 @@ class KeyDict(KeywordStore):
                   at=True,
                   example="ip#0 fs#0(down,stdby down)",
                   default="",
-                  text="A whitespace-separated list of conditions to meet to accept running a '%s' action. A condition is expressed as <rid>(<state>,...). If states are omitted, 'up,stdby up' is used as the default expected states. The 'impossible' value always disables the action." % action
+                  text="A whitespace-separated list of conditions to meet to accept running a '%s' action. A condition is expressed as <rid>(<state>,...). If states are omitted, 'up,stdby up' is used as the default expected states." % action
                 )
 
 
@@ -4462,6 +4475,7 @@ class KeyDict(KeywordStore):
         self += KeywordSyncSymSrdfsRdfg()
         self += KeywordSyncSymcloneConsistent()
         self += KeywordSyncSymcloneSymid()
+        self += KeywordSyncSymcloneRestoreTimeout()
         self += KeywordSyncSymclonePairs()
         self += KeywordSyncSymclonePrecopy()
         self += KeywordSyncDcsckptDcs()
