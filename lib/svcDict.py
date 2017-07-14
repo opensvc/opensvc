@@ -4055,6 +4055,22 @@ class KeyDict(KeywordStore):
                   at=True,
                   text="A command or script to execute after the resource sync_update action. Errors do not interrupt the action."
                 )
+        def kw_pre_sync_restore(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="pre_sync_restore",
+                  generic=True,
+                  at=True,
+                  text="A command or script to execute before the resource sync_restore action. Errors do not interrupt the action."
+                )
+        def kw_post_sync_restore(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="post_sync_restore",
+                  generic=True,
+                  at=True,
+                  text="A command or script to execute after the resource sync_restore action. Errors do not interrupt the action."
+                )
         def kw_pre_run(resource):
             return Keyword(
                   section=resource,
@@ -4200,6 +4216,22 @@ class KeyDict(KeywordStore):
                   at=True,
                   text="A command or script to execute after the resource sync_update action. Errors interrupt the action."
                 )
+        def kw_blocking_pre_sync_restore(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_pre_sync_restore",
+                  generic=True,
+                  at=True,
+                  text="A command or script to execute before the resource sync_restore action. Errors interrupt the action."
+                )
+        def kw_blocking_post_sync_restore(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="blocking_post_sync_restore",
+                  generic=True,
+                  at=True,
+                  text="A command or script to execute after the resource sync_restore action. Errors interrupt the action."
+                )
         def kw_blocking_pre_run(resource):
             return Keyword(
                   section=resource,
@@ -4258,6 +4290,8 @@ class KeyDict(KeywordStore):
             self += kw_post_sync_resync(r)
             self += kw_pre_sync_update(r)
             self += kw_post_sync_update(r)
+            self += kw_pre_sync_restore(r)
+            self += kw_post_sync_restore(r)
             self += kw_pre_run(r)
             self += kw_post_run(r)
 
@@ -4277,12 +4311,14 @@ class KeyDict(KeywordStore):
             self += kw_blocking_post_sync_resync(r)
             self += kw_blocking_pre_sync_update(r)
             self += kw_blocking_post_sync_update(r)
+            self += kw_blocking_pre_sync_restore(r)
+            self += kw_blocking_post_sync_restore(r)
             self += kw_blocking_pre_run(r)
             self += kw_blocking_post_run(r)
 
             for action in ["unprovision", "provision", "start", "stop",
                            "sync_nodes", "sync_drp", "sync_update",
-                           "sync_break", "sync_resync", "run"]:
+                           "sync_break", "sync_resync", "sync_restore", "run"]:
                 self += kw_requires(r, action)
 
         self += KeywordMode()

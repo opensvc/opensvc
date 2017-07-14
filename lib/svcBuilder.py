@@ -467,6 +467,7 @@ def add_triggers(svc, resource, conf, section):
       'post_sync_nodes', 'post_sync_drp',
       'post_sync_resync', 'pre_sync_resync',
       'post_sync_update', 'pre_sync_update',
+      'post_sync_restore', 'pre_sync_restore',
       'post_run', 'pre_run',
     ]
     compat_triggers = [
@@ -474,6 +475,7 @@ def add_triggers(svc, resource, conf, section):
       'post_syncnodes', 'post_syncdrp',
       'post_syncresync', 'pre_syncresync',
       'post_syncupdate', 'pre_syncupdate',
+      'post_syncrestore', 'pre_syncrestore',
     ]
     for trigger in triggers + compat_triggers:
         for prefix in ("", "blocking_"):
