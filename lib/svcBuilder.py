@@ -2634,6 +2634,11 @@ def _add_sync_symclone(svc, s, t):
         pass
 
     try:
+        kwargs['restore_timeout'] = svc.conf_get_int(s, 'restore_timeout')
+    except ex.OptNotFound:
+        pass
+
+    try:
         kwargs['consistent'] = svc.conf_get_boolean(s, 'consistent')
     except ex.OptNotFound:
         pass
