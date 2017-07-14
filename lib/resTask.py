@@ -99,6 +99,7 @@ class Task(Res.Resource):
             raise ex.excError("timeout waiting for confirmation")
 
         if buff == "yes":
+            signal.alarm(0)
             self.log.info("run confirmed")
         else:
             raise ex.excError("run aborted")
