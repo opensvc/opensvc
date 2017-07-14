@@ -193,7 +193,12 @@ class ResourceSet(object):
 
         resources = [res for res in resources if self.tag_match(res.tags, tags)]
         self.log.debug("resources after tags[%s] filter: %s",
-                       str(tags), ','.join([res.rid for res in resources]))
+                       ','.join(tags),
+                       ','.join([res.rid for res in resources]))
+
+        disabled_rids = [res.rid for res in resources if res.disabled]
+        if len(disabled_rids) > 0:
+            self.log.info("%s disabled", ",".join(disabled_rids))
 
         resources = [res for res in resources if not res.disabled]
         self.log.debug("resources after 'disable' filter: %s",
