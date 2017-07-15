@@ -70,6 +70,7 @@ $(echo ${DESCRIPTION}|fold -s)
 %{_datadir}/opensvc/bin/svcmon
 %attr(0755,-,-) %{_datadir}/opensvc/bin/opensvc
 %attr(0755,-,-) %{_datadir}/opensvc/bin/postinstall
+%attr(0755,-,-) %{_datadir}/opensvc/bin/preinstall
 %{_bindir}/nodemgr
 %{_bindir}/svcmgr
 %{_bindir}/svcmon
