@@ -10,7 +10,8 @@ then
 	FLAG=/var/lib/opensvc/postinstall.restart
 else
 	FLAG=$OSVC_ROOT_PATH/var/postinstall.restart
-	export PATH=$PATH:$OSVC_ROOT_PATH/bin
+	PATH=$PATH:$OSVC_ROOT_PATH/bin
+	export PATH
 fi
 
 # clean up ligering restart flag
