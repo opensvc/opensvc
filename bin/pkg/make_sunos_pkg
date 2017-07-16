@@ -158,11 +158,7 @@ cat > $REPODIR/postinstall <<EOF
 su root -c "PATH=\${PKG_INSTALL_ROOT}/usr/local/bin:$PATH:/usr/sfw/bin:/usr/local/bin \${PKG_INSTALL_ROOT}$BASE/usr/share/opensvc/bin/postinstall"
 EOF
 
-cat > $REPODIR/preinstall <<EOF
-#!/sbin/sh
-
-su root -c "PATH=\${PKG_INSTALL_ROOT}/usr/local/bin:$PATH:/usr/sfw/bin:/usr/local/bin \${PKG_INSTALL_ROOT}$BASE/usr/share/opensvc/bin/preinstall"
-EOF
+cp $CHROOT/usr/share/opensvc/bin/preinstall $REPODIR/preinstall
 
 echo "----- Creating $PKGNAME build-$RELEASE ..."
 create_pkg -p $REPODIR/preinstall -P $REPODIR/postinstall $PKGNAME $CHROOT=$BASE 2> /dev/null <<EOF
