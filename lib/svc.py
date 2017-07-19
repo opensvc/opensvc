@@ -21,10 +21,11 @@ import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
 from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         try_decode, eval_expr, convert_bool, action_triggers, \
-                        read_cf, drop_option, convert_duration
+                        read_cf, drop_option, convert_duration, convert_size
 import rcExceptions as ex
 import rcLogger
 import node
+import svcDict
 from rcScheduler import scheduler_fork, Scheduler, SchedOpts
 from comm import Crypt
 
@@ -379,8 +380,6 @@ class Svc(Crypt):
         self.conf = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
         self.node = None
         self.comment = ""
-        self.drp_type = ""
-        self.drnoaction = False
         self.clustertype = "failover"
         self.placement = "nodes order"
         self.show_disabled = False
@@ -496,7 +495,7 @@ class Svc(Crypt):
         met. Otherwise return False.
         """
         try:
-            return self.conf_get_boolean_scope("DEFAULT", "constraints")
+            return self.conf_get("DEFAULT", "constraints")
         except ex.OptNotFound:
             return True
         except ex.excError:
@@ -505,7 +504,7 @@ class Svc(Crypt):
     @lazy
     def flex_min_nodes(self):
         try:
-           val = self.conf_get_int_scope('DEFAULT', 'flex_min_nodes')
+           val = self.conf_get('DEFAULT', 'flex_min_nodes')
         except ex.OptNotFound:
            return 1
         if val < 0:
@@ -519,7 +518,7 @@ class Svc(Crypt):
     def flex_max_nodes(self):
         nb_nodes = len(self.nodes|self.drpnodes)
         try:
-           val = self.conf_get_int_scope('DEFAULT', 'flex_max_nodes')
+           val = self.conf_get('DEFAULT', 'flex_max_nodes')
         except ex.OptNotFound:
            return nb_nodes
         if val < nb_nodes:
@@ -531,7 +530,7 @@ class Svc(Crypt):
     @lazy
     def flex_cpu_low_threshold(self):
         try:
-            val = self.conf_get_int_scope('DEFAULT', 'flex_cpu_low_threshold')
+            val = self.conf_get('DEFAULT', 'flex_cpu_low_threshold')
         except ex.OptNotFound:
             return 10
         if val < 0:
@@ -543,7 +542,7 @@ class Svc(Crypt):
     @lazy
     def flex_cpu_high_threshold(self):
         try:
-            val = self.conf_get_int_scope('DEFAULT', 'flex_cpu_high_threshold')
+            val = self.conf_get('DEFAULT', 'flex_cpu_high_threshold')
         except ex.OptNotFound:
             return 90
         if val < self.flex_cpu_low_threshold:
@@ -558,7 +557,7 @@ class Svc(Crypt):
         Return the service app code.
         """
         try:
-            return self.conf_get_string_scope("DEFAULT", "app")
+            return self.conf_get("DEFAULT", "app")
         except ex.OptNotFound:
             return ""
 
@@ -653,7 +652,7 @@ class Svc(Crypt):
             )
 
         try:
-            monitor_schedule = self.conf_get_string_scope('DEFAULT', 'monitor_schedule')
+            monitor_schedule = self.conf_get('DEFAULT', 'monitor_schedule')
         except ex.OptNotFound:
             monitor_schedule = None
 
@@ -706,7 +705,7 @@ class Svc(Crypt):
         if not self.config.has_section(subset_section):
             return False
         try:
-            return self.conf_get_boolean_scope(subset_section, "parallel")
+            return self.conf_get(subset_section, "parallel")
         except ex.OptNotFound:
             return False
 
@@ -1156,7 +1155,7 @@ class Svc(Crypt):
             if key in data:
                 continue
             if evaluate:
-                data[key] = self.conf_get_string_scope('env', key)
+                data[key] = self.conf_get('env', key)
             else:
                 data[key] = config["env"][key]
         return data
@@ -4530,15 +4529,12 @@ class Svc(Crypt):
         The validate config core method.
         Returns a dict with the list of syntax warnings and errors.
         """
-        from svcDict import KeyDict, deprecated_sections
         from svcBuilder import build
-        from rcUtilities import convert_size
         try:
             import ConfigParser
         except ImportError:
             import configparser as ConfigParser
 
-        data = KeyDict(provision=True)
         ret = {
             "errors": 0,
             "warnings": 0,
@@ -4585,16 +4581,17 @@ class Svc(Crypt):
             Fetch the value and convert it to expected type.
             """
             _option = option.split("@")[0]
-            value = self.conf_get_string_scope(section, _option, config=config)
-            if isinstance(key.default, bool):
-                return bool(value)
-            elif isinstance(key.default, int):
-                try:
-                    return int(value)
-                except ValueError:
-                    # might be a size string like 11mib
-                    return convert_size(value)
-            return value
+            value = self.conf_get(section, _option, config=config)
+            if key.convert == "duration":
+                return convert_duration(value)
+            elif key.convert == "size":
+                return convert_size(value)
+            elif key.convert == "boolean":
+                return convert_bool(value)
+            elif key.convert == "integer":
+                return int(value)
+            else:
+                return value
 
         def check_candidates(key, section, option, value):
             """
@@ -4627,25 +4624,25 @@ class Svc(Crypt):
             err += check_candidates(key, section, option, value)
             return err
 
-        def validate_default_options(config, data, ret):
+        def validate_default_options(config, ret):
             """
             Validate DEFAULT section options.
             """
             for option in config.defaults():
-                key = data.sections["DEFAULT"].getkey(option)
+                key = svcDict.svc_keys.sections["DEFAULT"].getkey(option)
                 if key is None:
                     found = False
                     # the option can be set in the DEFAULT section for the
                     # benefit of a resource section
                     for section in config.sections():
                         family = section.split("#")[0]
-                        if family not in list(data.sections.keys()) + \
-                           list(deprecated_sections.keys()):
+                        if family not in list(svcDict.svc_keys.sections.keys()) + \
+                           list(svcDict.deprecated_sections.keys()):
                             continue
-                        if family in deprecated_sections:
-                            results = deprecated_sections[family]
+                        if family in svcDict.deprecated_sections:
+                            results = svcDict.deprecated_sections[family]
                             family = results[0]
-                        if data.sections[family].getkey(option) is not None:
+                        if svcDict.svc_keys.sections[family].getkey(option) is not None:
                             found = True
                             break
                     if not found:
@@ -4656,7 +4653,7 @@ class Svc(Crypt):
                     ret["errors"] += check_known_option(key, "DEFAULT", option)
             return ret
 
-        def validate_resources_options(config, data, ret):
+        def validate_resources_options(config, ret):
             """
             Validate resource sections options.
             """
@@ -4670,20 +4667,20 @@ class Svc(Crypt):
                     rtype = config.get(section, "type")
                 else:
                     rtype = None
-                if family not in list(data.sections.keys()) + list(deprecated_sections.keys()):
+                if family not in list(svcDict.svc_keys.sections.keys()) + list(svcDict.deprecated_sections.keys()):
                     self.log.warning("ignored section %s", section)
                     ret["warnings"] += 1
                     continue
-                if family in deprecated_sections:
+                if family in svcDict.deprecated_sections:
                     self.log.warning("deprecated section prefix %s", family)
                     ret["warnings"] += 1
-                    family, rtype = deprecated_sections[family]
+                    family, rtype = svcDict.deprecated_sections[family]
                 for option in config.options(section):
                     if option in config.defaults():
                         continue
-                    key = data.sections[family].getkey(option, rtype=rtype)
+                    key = svcDict.svc_keys.sections[family].getkey(option, rtype=rtype)
                     if key is None:
-                        key = data.sections[family].getkey(option)
+                        key = svcDict.svc_keys.sections[family].getkey(option)
                     if key is None:
                         self.log.warning("ignored option %s.%s, driver %s", section,
                                          option, rtype if rtype else "generic")
@@ -4704,8 +4701,8 @@ class Svc(Crypt):
                 ret["errors"] += 1
             return ret
 
-        ret = validate_default_options(config, data, ret)
-        ret = validate_resources_options(config, data, ret)
+        ret = validate_default_options(config, ret)
+        ret = validate_resources_options(config, ret)
         ret = validate_build(path, ret)
 
         return ret
@@ -4796,9 +4793,7 @@ class Svc(Crypt):
                 sections[section][option] = value
 
         import svcBuilder
-        from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue
 
-        keys = KeyDict(provision=self.options.provision)
         rid = []
 
         for data in self.options.resource:
@@ -4835,8 +4830,8 @@ class Svc(Crypt):
 
             if is_resource:
                 try:
-                    sections[section].update(keys.update(section, data))
-                except (MissKeyNoDefault, KeyInvalidValue) as exc:
+                    sections[section].update(svcDict.svc_keys.update(section, data))
+                except (svcDict.MissKeyNoDefault, svcDict.KeyInvalidValue) as exc:
                     if not self.options.interactive:
                         raise ex.excError(str(exc))
                 rid.append(section)
@@ -5136,7 +5131,33 @@ class Svc(Crypt):
             self.ref_cache[key] = val
         return val
 
-    def conf_get(self, s, o, t, scope=False, impersonate=None, use_default=True, config=None):
+    def conf_get(self, s, o, t=None, scope=None, impersonate=None, use_default=True, config=None):
+        section = s.split("#")[0]
+        if s != "env":
+            key = svcDict.svc_keys[section].getkey(o)
+            if key is None:
+                if scope is None and t is None:
+                    raise ValueError("keyword not found in the services configuration dictionary: %s.%s" % \
+                                     (s, o))
+                else:
+                    # passing 't' and 'scope' skips svc_keys validation.
+                    # used for deprecated keywords.
+                    pass
+            else:
+                if scope is None:
+                    scope = key.at
+                if t is None:
+                    t = key.convert
+        else:
+            # env key are always string and scopable
+            t = "string"
+            scope = True
+
+        if scope is None:
+            scope = False
+        if t is None:
+            t = "string"
+        
         if not scope:
             val = self.conf_get_val_unscoped(s, o, use_default=use_default, config=config)
         else:
@@ -5150,19 +5171,16 @@ class Svc(Crypt):
             else:
                 raise
 
-        if t == 'string':
-            pass
-        elif t == 'boolean':
-            val = convert_bool(val)
-        elif t == 'integer':
-            try:
-                val = int(val)
-            except:
-                val = convert_size(val)
+        if t == "duration":
+            return convert_duration(val)
+        elif t == "size":
+            return convert_size(val)
+        elif t == "boolean":
+            return convert_bool(val)
+        elif t == "integer":
+            return int(val)
         else:
-            raise Exception("unknown keyword type: %s" % t)
-
-        return val
+            return val
 
     def conf_get_val_unscoped(self, s, o, use_default=True, config=None):
         if config is None:
@@ -5233,24 +5251,6 @@ class Svc(Crypt):
 
         return val
 
-    def conf_get_string(self, s, o, use_default=True, config=None):
-        return self.conf_get(s, o, 'string', scope=False, use_default=use_default, config=config)
-
-    def conf_get_string_scope(self, s, o, impersonate=None, use_default=True, config=None):
-        return self.conf_get(s, o, 'string', scope=True, impersonate=impersonate, use_default=use_default, config=config)
-
-    def conf_get_boolean(self, s, o, use_default=True, config=None):
-        return self.conf_get(s, o, 'boolean', scope=False, use_default=use_default, config=config)
-
-    def conf_get_boolean_scope(self, s, o, impersonate=None, use_default=True, config=None):
-        return self.conf_get(s, o, 'boolean', scope=True, impersonate=impersonate, use_default=use_default, config=config)
-
-    def conf_get_int(self, s, o, use_default=True, config=None):
-        return self.conf_get(s, o, 'integer', scope=False, use_default=use_default, config=config)
-
-    def conf_get_int_scope(self, s, o, impersonate=None, use_default=True, config=None):
-        return self.conf_get(s, o, 'integer', scope=True, impersonate=impersonate, use_default=use_default, config=config)
-
     def get_pg_settings(self, s):
         d = {}
         options = (
@@ -5269,7 +5269,7 @@ class Svc(Crypt):
         for option in options:
             _option = self.conf_has_option_scoped(s, option)
             if _option:
-                d[option] = self.conf_get_string_scope(s, option)
+                d[option] = self.conf_get(s, option)
 
         return d
 

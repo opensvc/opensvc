@@ -23,7 +23,7 @@ os.environ['PATH'] += ':/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/us
 
 def get_tags(svc, section):
     try:
-        s = svc.conf_get_string_scope(section, 'tags')
+        s = svc.conf_get(section, 'tags')
     except ex.OptNotFound:
         s = ""
     return set(s.split())
@@ -31,7 +31,7 @@ def get_tags(svc, section):
 def get_optional(svc, section):
     if not svc.config.has_section(section):
         try:
-            return svc.conf_get_boolean_scope("DEFAULT", "optional")
+            return svc.conf_get("DEFAULT", "optional")
         except:
             return False
 
@@ -48,14 +48,14 @@ def get_optional(svc, section):
         return False
 
     try:
-        return svc.conf_get_boolean_scope(section, "optional")
+        return svc.conf_get(section, "optional")
     except:
         return False
 
 def get_monitor(svc, section):
     if not svc.config.has_section(section):
         try:
-            return svc.conf_get_boolean_scope("DEFAULT", "monitor")
+            return svc.conf_get("DEFAULT", "monitor")
         except:
             return False
 
@@ -72,7 +72,7 @@ def get_monitor(svc, section):
         return False
 
     try:
-        return svc.conf_get_boolean_scope(section, "monitor")
+        return svc.conf_get(section, "monitor")
     except:
         return False
 
@@ -80,7 +80,7 @@ def get_rcmd(svc, section):
     if not svc.config.has_section(section):
         return
     try:
-        return svc.conf_get_string_scope(section, 'rcmd').split()
+        return svc.conf_get(section, 'rcmd').split()
     except ex.OptNotFound:
         return
 
@@ -88,7 +88,7 @@ def get_subset(svc, section):
     if not svc.config.has_section(section):
         return
     try:
-        return svc.conf_get_string_scope(section, 'subset')
+        return svc.conf_get(section, 'subset')
     except ex.OptNotFound:
         return
     return
@@ -97,7 +97,7 @@ def get_osvc_root_path(svc, section):
     if not svc.config.has_section(section):
         return
     try:
-        return svc.conf_get_string_scope(section, 'osvc_root_path')
+        return svc.conf_get(section, 'osvc_root_path')
     except ex.OptNotFound:
         return
     return
@@ -106,13 +106,13 @@ def get_restart(svc, section):
     if not svc.config.has_section(section):
         if svc.config.has_option('DEFAULT', 'restart'):
             try:
-                return svc.conf_get_int_scope(section, 'restart')
+                return svc.conf_get(section, 'restart')
             except ex.OptNotFound:
                 return 0
         else:
             return 0
     try:
-        return svc.conf_get_int_scope(section, 'restart')
+        return svc.conf_get(section, 'restart')
     except ex.OptNotFound:
         return 0
     return 0
@@ -133,7 +133,7 @@ def get_disabled(svc, section):
     # unscopable enable_on option (takes precedence over disable and disable_on)
     nodes = set([])
     if svc.config.has_option(section, 'enable_on'):
-        l = svc.conf_get_string_scope(section, "enable_on").split()
+        l = svc.conf_get(section, "enable_on").split()
         for i in l:
             if i == 'nodes': nodes |= svc.nodes
             elif i == 'drpnodes': nodes |= svc.drpnodes
@@ -143,7 +143,7 @@ def get_disabled(svc, section):
 
     # scoped disable option
     try:
-        r = svc.conf_get_boolean_scope(section, 'disable')
+        r = svc.conf_get(section, 'disable')
     except ex.OptNotFound:
         r = False
     except Exception as e:
@@ -171,7 +171,7 @@ def need_scsireserv(svc, section):
     """
     r = False
     try:
-        r = svc.conf_get_boolean_scope(section, 'scsireserv')
+        r = svc.conf_get(section, 'scsireserv')
     except ex.OptNotFound:
         defaults = svc.config.defaults()
         if 'scsireserv' in defaults:
@@ -190,12 +190,12 @@ def add_scsireserv(svc, resource, section):
     pr_rid = resource.rid+"pr"
 
     try:
-        kwargs["prkey"] = svc.conf_get_string_scope(resource.rid, 'prkey')
+        kwargs["prkey"] = svc.conf_get(resource.rid, 'prkey')
     except ex.OptNotFound:
         pass
 
     try:
-        pa = svc.conf_get_boolean_scope(resource.rid, 'no_preempt_abort')
+        pa = svc.conf_get(resource.rid, 'no_preempt_abort')
     except ex.OptNotFound:
         pa = False
 
@@ -234,14 +234,22 @@ def add_scsireserv(svc, resource, section):
 
 def add_requires(svc, resource, section):
     actions = [
-      'unprovision', 'provision'
+      'unprovision', 'provision',
       'stop', 'start',
-      'sync_nodes', 'sync_drp', 'sync_resync', 'sync_break', 'sync_update',
-      'run',
     ]
+    if resource.type == "sync":
+        actions += [
+            'sync_nodes', 'sync_drp',
+            'sync_resync', 'sync_break',
+            'sync_update',
+        ]
+    if resource.type == "task":
+        actions += [
+            'run',
+        ]
     for action in actions:
         try:
-            s = svc.conf_get_string_scope(section, action+'_requires')
+            s = svc.conf_get(section, action+'_requires')
         except ex.OptNotFound:
             continue
         s = s.replace("stdby ", "stdby_")
@@ -267,18 +275,18 @@ def get_sync_args(svc, s):
     defaults = svc.config.defaults()
 
     if svc.config.has_option(s, 'sync_max_delay'):
-        kwargs['sync_max_delay'] = svc.conf_get_int_scope(s, 'sync_max_delay')
+        kwargs['sync_max_delay'] = svc.conf_get(s, 'sync_max_delay')
     elif 'sync_max_delay' in defaults:
-        kwargs['sync_max_delay'] = svc.conf_get_int_scope('DEFAULT', 'sync_max_delay')
+        kwargs['sync_max_delay'] = svc.conf_get('DEFAULT', 'sync_max_delay')
 
     if svc.config.has_option(s, 'schedule'):
-        kwargs['schedule'] = svc.conf_get_string_scope(s, 'schedule')
+        kwargs['schedule'] = svc.conf_get(s, 'schedule')
     elif svc.config.has_option(s, 'period') or svc.config.has_option(s, 'sync_period'):
         # old schedule syntax compatibility
         from rcScheduler import Scheduler
         kwargs['schedule'] = Scheduler().sched_convert_to_schedule(svc.config, s, prefix='sync_')
     elif 'sync_schedule' in defaults:
-        kwargs['schedule'] = svc.conf_get_string_scope('DEFAULT', 'sync_schedule')
+        kwargs['schedule'] = svc.conf_get('DEFAULT', 'sync_schedule')
     elif 'sync_period' in defaults:
         # old schedule syntax compatibility for internal sync
         from rcScheduler import Scheduler
@@ -313,7 +321,7 @@ def add_resource(svc, restype, s):
     if not svc.encap and 'encap' in tags:
         svc.has_encap_resources = True
         try:
-            subset = svc.conf_get_string_scope(s, 'subset')
+            subset = svc.conf_get(s, 'subset')
         except ex.OptNotFound:
             subset = None
         svc.encap_resources[s] = Storage({
@@ -332,7 +340,7 @@ def add_ip_gce(svc, s):
     kwargs = {}
 
     try:
-        rtype = svc.conf_get_string_scope(s, 'type')
+        rtype = svc.conf_get(s, 'type')
     except ex.OptNotFound:
         rtype = None
 
@@ -340,29 +348,29 @@ def add_ip_gce(svc, s):
         return
 
     try:
-        kwargs['ipname'] = svc.conf_get_string_scope(s, 'ipname')
+        kwargs['ipname'] = svc.conf_get(s, 'ipname')
     except ex.OptNotFound:
         svc.log.error("ipname must be defined in config file section %s" % s)
         return
 
     try:
-        kwargs['ipdev'] = svc.conf_get_string_scope(s, 'ipdev')
+        kwargs['ipdev'] = svc.conf_get(s, 'ipdev')
     except ex.OptNotFound:
         svc.log.error("ipdev must be defined in config file section %s" % s)
         return
 
     try:
-        kwargs['eip'] = svc.conf_get_string_scope(s, 'eip')
+        kwargs['eip'] = svc.conf_get(s, 'eip')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['routename'] = svc.conf_get_string_scope(s, 'routename')
+        kwargs['routename'] = svc.conf_get(s, 'routename')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['gce_zone'] = svc.conf_get_string_scope(s, 'gce_zone')
+        kwargs['gce_zone'] = svc.conf_get(s, 'gce_zone')
     except ex.OptNotFound:
         pass
 
@@ -384,7 +392,7 @@ def add_ip_amazon(svc, s):
     kwargs = {}
 
     try:
-        rtype = svc.conf_get_string_scope(s, 'type')
+        rtype = svc.conf_get(s, 'type')
     except ex.OptNotFound:
         rtype = None
 
@@ -392,19 +400,19 @@ def add_ip_amazon(svc, s):
         return
 
     try:
-        kwargs['ipname'] = svc.conf_get_string_scope(s, 'ipname')
+        kwargs['ipname'] = svc.conf_get(s, 'ipname')
     except ex.OptNotFound:
         svc.log.error("nor ipname and ipname@%s defined in config file section %s"%(rcEnv.nodename, s))
         return
 
     try:
-        kwargs['ipdev'] = svc.conf_get_string_scope(s, 'ipdev')
+        kwargs['ipdev'] = svc.conf_get(s, 'ipdev')
     except ex.OptNotFound:
         svc.log.error("ipdev must be defined in config file section %s" % s)
         return
 
     try:
-        kwargs['eip'] = svc.conf_get_string_scope(s, 'eip')
+        kwargs['eip'] = svc.conf_get(s, 'eip')
     except ex.OptNotFound:
         pass
 
@@ -427,7 +435,7 @@ def add_ip(svc, s):
     section. Ip objects are stored in a list in the service object.
     """
     try:
-        rtype = svc.conf_get_string_scope(s, 'type')
+        rtype = svc.conf_get(s, 'type')
     except ex.OptNotFound:
         rtype = None
 
@@ -439,48 +447,48 @@ def add_ip(svc, s):
     kwargs = {}
 
     try:
-        kwargs['ipname'] = svc.conf_get_string_scope(s, 'ipname')
+        kwargs['ipname'] = svc.conf_get(s, 'ipname')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['ipdev'] = svc.conf_get_string_scope(s, 'ipdev')
+        kwargs['ipdev'] = svc.conf_get(s, 'ipdev')
     except ex.OptNotFound:
         svc.log.error('ipdev not found in ip section %s'%s)
         return
 
     try:
-        kwargs['ipdevExt'] = svc.conf_get_string_scope(s, 'ipdevext')
+        kwargs['ipdevExt'] = svc.conf_get(s, 'ipdevext')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['mask'] = svc.conf_get_string_scope(s, 'netmask')
+        kwargs['mask'] = svc.conf_get(s, 'netmask')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['gateway'] = svc.conf_get_string_scope(s, 'gateway')
+        kwargs['gateway'] = svc.conf_get(s, 'gateway')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['zone'] = svc.conf_get_string_scope(s, 'zone')
+        kwargs['zone'] = svc.conf_get(s, 'zone')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['container_rid'] = svc.conf_get_string_scope(s, 'container_rid')
+        kwargs['container_rid'] = svc.conf_get(s, 'container_rid')
     except ex.OptNotFound:
         pass
 
     if rtype == "docker":
         try:
-            kwargs['network'] = svc.conf_get_string_scope(s, 'network')
+            kwargs['network'] = svc.conf_get(s, 'network')
         except ex.OptNotFound:
             pass
         try:
-            kwargs['del_net_route'] = svc.conf_get_boolean_scope(s, 'del_net_route')
+            kwargs['del_net_route'] = svc.conf_get(s, 'del_net_route')
         except ex.OptNotFound:
             pass
 
@@ -512,13 +520,13 @@ def add_md(svc, s):
     kwargs = {}
 
     try:
-        kwargs['uuid'] = svc.conf_get_string_scope(s, 'uuid')
+        kwargs['uuid'] = svc.conf_get(s, 'uuid')
     except ex.OptNotFound:
         svc.log.error("uuid must be set in section %s"%s)
         return
 
     try:
-        kwargs['shared'] = svc.conf_get_string_scope(s, 'shared')
+        kwargs['shared'] = svc.conf_get(s, 'shared')
     except ex.OptNotFound:
         if len(svc.nodes|svc.drpnodes) < 2:
             kwargs['shared'] = False
@@ -553,7 +561,7 @@ def add_drbd(svc, s):
     kwargs = {}
 
     try:
-        kwargs['res'] = svc.conf_get_string(s, 'res')
+        kwargs['res'] = svc.conf_get(s, 'res')
     except ex.OptNotFound:
         svc.log.error("res must be set in section %s"%s)
         return
@@ -606,7 +614,7 @@ def add_stonith(svc, s):
     kwargs = {}
 
     try:
-        _type = svc.conf_get_string(s, 'type')
+        _type = svc.conf_get(s, 'type')
         if len(_type) > 1:
             _type = _type[0].upper()+_type[1:].lower()
     except ex.OptNotFound:
@@ -615,11 +623,11 @@ def add_stonith(svc, s):
 
     if _type in ('Ilo'):
         try:
-            kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+            kwargs['name'] = svc.conf_get(s, 'name')
         except ex.OptNotFound:
             pass
         try:
-            kwargs['name'] = svc.conf_get_string_scope(s, 'target')
+            kwargs['name'] = svc.conf_get(s, 'target')
         except ex.OptNotFound:
             pass
 
@@ -628,7 +636,7 @@ def add_stonith(svc, s):
             return
     elif _type in ('Callout'):
         try:
-            kwargs['cmd'] = svc.conf_get_string_scope(s, 'cmd')
+            kwargs['cmd'] = svc.conf_get(s, 'cmd')
         except ex.OptNotFound:
             pass
 
@@ -661,7 +669,7 @@ def add_loop(svc, s):
     kwargs = {}
 
     try:
-        kwargs['loopFile'] = svc.conf_get_string_scope(s, 'file')
+        kwargs['loopFile'] = svc.conf_get(s, 'file')
     except ex.OptNotFound:
         svc.log.error("file must be set in section %s"%s)
         return
@@ -689,7 +697,7 @@ def add_loop(svc, s):
 def add_disk_disk(svc, s):
     kwargs = {}
     try:
-        kwargs['disk_id'] = svc.conf_get_string_scope(s, 'disk_id')
+        kwargs['disk_id'] = svc.conf_get(s, 'disk_id')
     except ex.OptNotFound:
         pass
 
@@ -711,13 +719,13 @@ def add_disk_disk(svc, s):
 def add_disk_gce(svc, s):
     kwargs = {}
     try:
-        kwargs['names'] = svc.conf_get_string_scope(s, 'names').split()
+        kwargs['names'] = svc.conf_get(s, 'names').split()
     except ex.OptNotFound:
         svc.log.error("names must be set in section %s"%s)
         return
 
     try:
-        kwargs['gce_zone'] = svc.conf_get_string_scope(s, 'gce_zone')
+        kwargs['gce_zone'] = svc.conf_get(s, 'gce_zone')
     except ex.OptNotFound:
         svc.log.error("gce_zone must be set in section %s"%s)
         return
@@ -740,7 +748,7 @@ def add_disk_gce(svc, s):
 def add_disk_amazon(svc, s):
     kwargs = {}
     try:
-        kwargs['volumes'] = svc.conf_get_string_scope(s, 'volumes').split()
+        kwargs['volumes'] = svc.conf_get(s, 'volumes').split()
     except ex.OptNotFound:
         svc.log.error("volumes must be set in section %s"%s)
         return
@@ -763,23 +771,23 @@ def add_disk_amazon(svc, s):
 def add_rados(svc, s):
     kwargs = {}
     try:
-        kwargs['images'] = svc.conf_get_string_scope(s, 'images').split()
+        kwargs['images'] = svc.conf_get(s, 'images').split()
     except ex.OptNotFound:
         pass
     try:
-        kwargs['keyring'] = svc.conf_get_string_scope(s, 'keyring')
+        kwargs['keyring'] = svc.conf_get(s, 'keyring')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['client_id'] = svc.conf_get_string_scope(s, 'client_id')
+        kwargs['client_id'] = svc.conf_get(s, 'client_id')
     except ex.OptNotFound:
         pass
     try:
-        lock_shared_tag = svc.conf_get_string_scope(s, 'lock_shared_tag')
+        lock_shared_tag = svc.conf_get(s, 'lock_shared_tag')
     except ex.OptNotFound:
         lock_shared_tag = None
     try:
-        lock = svc.conf_get_string_scope(s, 'lock')
+        lock = svc.conf_get(s, 'lock')
     except ex.OptNotFound:
         lock = None
 
@@ -818,27 +826,27 @@ def add_raw(svc, s):
     kwargs = {}
     disk_type = "Raw"+rcEnv.sysname
     try:
-        zone = svc.conf_get_string_scope(s, 'zone')
+        zone = svc.conf_get(s, 'zone')
     except:
         zone = None
     try:
-        kwargs['user'] = svc.conf_get_string_scope(s, 'user')
+        kwargs['user'] = svc.conf_get(s, 'user')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['group'] = svc.conf_get_string_scope(s, 'group')
+        kwargs['group'] = svc.conf_get(s, 'group')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['perm'] = svc.conf_get_string_scope(s, 'perm')
+        kwargs['perm'] = svc.conf_get(s, 'perm')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['create_char_devices'] = svc.conf_get_boolean_scope(s, 'create_char_devices')
+        kwargs['create_char_devices'] = svc.conf_get(s, 'create_char_devices')
     except ex.OptNotFound:
         pass
     try:
-        devs = svc.conf_get_string_scope(s, 'devs')
+        devs = svc.conf_get(s, 'devs')
         if zone is not None:
             devs = devs.replace(":", ":<%s>" % zone)
         kwargs['devs'] = set(devs.split())
@@ -849,7 +857,7 @@ def add_raw(svc, s):
     # backward compat : the dummy keyword is deprecated in favor of
     # the standard "noaction" tag.
     try:
-        dummy = svc.conf_get_boolean_scope(s, 'dummy')
+        dummy = svc.conf_get(s, 'dummy', t="boolean", scope=True)
     except ex.OptNotFound:
         dummy = False
 
@@ -882,29 +890,29 @@ def add_gandi(svc, s):
     disk_type = "Gandi"
     kwargs = {}
     try:
-        kwargs['cloud_id'] = svc.conf_get_string_scope(s, 'cloud_id')
+        kwargs['cloud_id'] = svc.conf_get(s, 'cloud_id')
     except ex.OptNotFound:
         svc.log.error("cloud_id must be set in section %s"%s)
         return
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         svc.log.error("name must be set in section %s"%s)
         return
     try:
-        kwargs['node'] = svc.conf_get_string_scope(s, 'node')
+        kwargs['node'] = svc.conf_get(s, 'node')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['user'] = svc.conf_get_string_scope(s, 'user')
+        kwargs['user'] = svc.conf_get(s, 'user')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['group'] = svc.conf_get_string_scope(s, 'user')
+        kwargs['group'] = svc.conf_get(s, 'user')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['perm'] = svc.conf_get_string_scope(s, 'perm')
+        kwargs['perm'] = svc.conf_get(s, 'perm')
     except ex.OptNotFound:
         pass
 
@@ -930,7 +938,7 @@ def add_gandi(svc, s):
 
 def add_disk_compat(svc, s):
     try:
-        disk_type = svc.conf_get_string_scope(s, 'type')
+        disk_type = svc.conf_get(s, 'type')
     except ex.OptNotFound:
         disk_type = s.split("#")[0]
     if len(disk_type) >= 2:
@@ -985,11 +993,11 @@ def add_veritas(svc, s):
     kwargs = {}
     try:
         # deprecated keyword 'vgname'
-        kwargs['name'] = svc.conf_get_string_scope(s, 'vgname')
+        kwargs['name'] = svc.conf_get(s, 'vgname')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         if "name" not in kwargs:
             svc.log.error("name must be set in section %s"%s)
@@ -1024,17 +1032,17 @@ def add_vg(svc, s):
     disk_type = rcEnv.sysname
     kwargs = {}
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'vgname')
+        kwargs['name'] = svc.conf_get(s, 'vgname')
     except ex.OptNotFound:
         pass
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         if "name" not in kwargs:
             svc.log.error("name must be set in section %s"%s)
             return
     try:
-        kwargs['dsf'] = svc.conf_get_boolean_scope(s, 'dsf')
+        kwargs['dsf'] = svc.conf_get(s, 'dsf')
     except ex.OptNotFound:
         pass
     kwargs['always_on'] = always_on_nodes_set(svc, s)
@@ -1059,13 +1067,13 @@ def add_vg(svc, s):
 
 def add_sync(svc, s):
     try:
-        rtype = svc.conf_get_string_scope(s, 'type')
+        rtype = svc.conf_get(s, 'type')
     except ex.OptNotFound:
         rtype = "rsync"
     globals()["add_sync_"+rtype](svc, s)
 
 def add_container(svc, s):
-    rtype = svc.conf_get_string_scope(s, 'type')
+    rtype = svc.conf_get(s, 'type')
     globals()["add_container_"+rtype](svc, s)
 
 def add_disk(svc, s):
@@ -1075,7 +1083,7 @@ def add_disk(svc, s):
     kwargs = {}
 
     try:
-        disk_type = svc.conf_get_string_scope(s, 'type')
+        disk_type = svc.conf_get(s, 'type')
     except ex.OptNotFound:
         disk_type = s.split("#")[0]
 
@@ -1132,7 +1140,7 @@ def add_vmdg(svc, s):
     kwargs = {}
 
     try:
-        kwargs['container_id'] = svc.conf_get_string_scope(s, 'container_id')
+        kwargs['container_id'] = svc.conf_get(s, 'container_id')
     except ex.OptNotFound:
         svc.log.error("container_id must be set in section %s"%s)
         return
@@ -1142,7 +1150,7 @@ def add_vmdg(svc, s):
         return
 
     try:
-        container_type = svc.conf_get_string_scope(kwargs['container_id'], 'type')
+        container_type = svc.conf_get(kwargs['container_id'], 'type')
     except ex.OptNotFound:
         svc.log.error("type must be set in section %s"%kwargs['container_id'])
         return
@@ -1173,12 +1181,12 @@ def add_zpool(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'poolname')
+        kwargs['name'] = svc.conf_get(s, 'poolname')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         pass
 
@@ -1187,7 +1195,7 @@ def add_zpool(svc, s):
         return
 
     try:
-        zone = svc.conf_get_string_scope(s, 'zone')
+        zone = svc.conf_get(s, 'zone')
     except ex.OptNotFound:
         zone = None
 
@@ -1214,7 +1222,7 @@ def add_zpool(svc, s):
 
 def add_share(svc, s):
     try:
-        _type = svc.conf_get_string_scope(s, 'type')
+        _type = svc.conf_get(s, 'type')
     except ex.OptNotFound:
         svc.log.error("type must be set in section %s"%s)
         return
@@ -1228,13 +1236,13 @@ def add_share_nfs(svc, s):
     kwargs = {}
 
     try:
-        kwargs['path'] = svc.conf_get_string_scope(s, 'path')
+        kwargs['path'] = svc.conf_get(s, 'path')
     except ex.OptNotFound:
         svc.log.error("path must be set in section %s"%s)
         return
 
     try:
-        kwargs['opts'] = svc.conf_get_string_scope(s, 'opts')
+        kwargs['opts'] = svc.conf_get(s, 'opts')
     except ex.OptNotFound:
         svc.log.error("opts must be set in section %s"%s)
         return
@@ -1263,28 +1271,28 @@ def add_fs_directory(svc, s):
     kwargs = {}
 
     try:
-        kwargs['path'] = svc.conf_get_string_scope(s, 'path')
+        kwargs['path'] = svc.conf_get(s, 'path')
     except ex.OptNotFound:
         svc.log.error("path must be set in section %s"%s)
         return
 
     try:
-        kwargs['user'] = svc.conf_get_string_scope(s, 'user')
+        kwargs['user'] = svc.conf_get(s, 'user')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['group'] = svc.conf_get_string_scope(s, 'group')
+        kwargs['group'] = svc.conf_get(s, 'group')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['perm'] = svc.conf_get_string_scope(s, 'perm')
+        kwargs['perm'] = svc.conf_get(s, 'perm')
     except ex.OptNotFound:
         pass
 
     try:
-        zone = svc.conf_get_string_scope(s, 'zone')
+        zone = svc.conf_get(s, 'zone')
     except:
         zone = None
 
@@ -1331,7 +1339,7 @@ def add_fs(svc, s):
     kwargs = {}
 
     try:
-        kwargs['fs_type'] = svc.conf_get_string_scope(s, 'type')
+        kwargs['fs_type'] = svc.conf_get(s, 'type')
     except ex.OptNotFound:
         kwargs['fs_type'] = ""
 
@@ -1340,13 +1348,13 @@ def add_fs(svc, s):
         return
 
     try:
-        kwargs['device'] = svc.conf_get_string_scope(s, 'dev')
+        kwargs['device'] = svc.conf_get(s, 'dev')
     except ex.OptNotFound:
         svc.log.error("dev must be set in section %s"%s)
         return
 
     try:
-        kwargs['mount_point'] = svc.conf_get_string_scope(s, 'mnt')
+        kwargs['mount_point'] = svc.conf_get(s, 'mnt')
     except ex.OptNotFound:
         svc.log.error("mnt must be set in section %s"%s)
         return
@@ -1358,17 +1366,17 @@ def add_fs(svc, s):
         kwargs['mount_point'] = kwargs['mount_point'][0:-1]
 
     try:
-        kwargs['mount_options'] = svc.conf_get_string_scope(s, 'mnt_opt')
+        kwargs['mount_options'] = svc.conf_get(s, 'mnt_opt')
     except ex.OptNotFound:
         kwargs['mount_options'] = ""
 
     try:
-        kwargs['snap_size'] = svc.conf_get_int_scope(s, 'snap_size')
+        kwargs['snap_size'] = svc.conf_get(s, 'snap_size')
     except ex.OptNotFound:
         pass
 
     try:
-        zone = svc.conf_get_string_scope(s, 'zone')
+        zone = svc.conf_get(s, 'zone')
     except:
         zone = None
 
@@ -1417,12 +1425,12 @@ def add_container_esx(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
@@ -1447,12 +1455,12 @@ def add_container_hpvm(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
@@ -1477,12 +1485,12 @@ def add_container_ldom(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
@@ -1507,12 +1515,12 @@ def add_container_vbox(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
@@ -1537,12 +1545,12 @@ def add_container_xen(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
@@ -1567,17 +1575,17 @@ def add_container_zone(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['delete_on_stop'] = svc.conf_get_boolean_scope(s, 'delete_on_stop')
+        kwargs['delete_on_stop'] = svc.conf_get(s, 'delete_on_stop')
     except ex.OptNotFound:
         pass
 
@@ -1604,23 +1612,23 @@ def add_container_vcloud(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['cloud_id'] = svc.conf_get_string_scope(s, 'cloud_id')
+        kwargs['cloud_id'] = svc.conf_get(s, 'cloud_id')
     except ex.OptNotFound:
         svc.log.error("cloud_id must be set in section %s"%s)
         return
 
     try:
-        kwargs['vapp'] = svc.conf_get_string_scope(s, 'vapp')
+        kwargs['vapp'] = svc.conf_get(s, 'vapp')
     except ex.OptNotFound:
         svc.log.error("vapp must be set in section %s"%s)
         return
@@ -1647,40 +1655,40 @@ def add_container_amazon(svc, s):
 
     # mandatory keywords
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['cloud_id'] = svc.conf_get_string_scope(s, 'cloud_id')
+        kwargs['cloud_id'] = svc.conf_get(s, 'cloud_id')
     except ex.OptNotFound:
         svc.log.error("cloud_id must be set in section %s"%s)
         return
 
     # optional keywords
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     # provisioning keywords
     try:
-        kwargs['image_id'] = svc.conf_get_string_scope(s, 'image_id')
+        kwargs['image_id'] = svc.conf_get(s, 'image_id')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['size'] = svc.conf_get_string_scope(s, 'size')
+        kwargs['size'] = svc.conf_get(s, 'size')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['key_name'] = svc.conf_get_string_scope(s, 'key_name')
+        kwargs['key_name'] = svc.conf_get(s, 'key_name')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['subnet'] = svc.conf_get_string_scope(s, 'subnet')
+        kwargs['subnet'] = svc.conf_get(s, 'subnet')
     except ex.OptNotFound:
         pass
 
@@ -1705,35 +1713,35 @@ def add_container_openstack(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['cloud_id'] = svc.conf_get_string_scope(s, 'cloud_id')
+        kwargs['cloud_id'] = svc.conf_get(s, 'cloud_id')
     except ex.OptNotFound:
         svc.log.error("cloud_id must be set in section %s"%s)
         return
 
     try:
-        kwargs['size'] = svc.conf_get_string_scope(s, 'size')
+        kwargs['size'] = svc.conf_get(s, 'size')
     except ex.OptNotFound:
         svc.log.error("size must be set in section %s"%s)
         return
 
     try:
-        kwargs['key_name'] = svc.conf_get_string_scope(s, 'key_name')
+        kwargs['key_name'] = svc.conf_get(s, 'key_name')
     except ex.OptNotFound:
         svc.log.error("key_name must be set in section %s"%s)
         return
 
     try:
-        kwargs['shared_ip_group'] = svc.conf_get_string_scope(s, 'shared_ip_group')
+        kwargs['shared_ip_group'] = svc.conf_get(s, 'shared_ip_group')
     except ex.OptNotFound:
         pass
 
@@ -1758,12 +1766,12 @@ def add_container_vz(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
@@ -1788,13 +1796,13 @@ def add_container_kvm(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         svc.log.error("name must be set in section %s"%s)
         return
 
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
@@ -1819,12 +1827,12 @@ def add_container_srp(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
@@ -1849,17 +1857,17 @@ def add_container_lxc(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['cf'] = svc.conf_get_string_scope(s, 'cf')
+        kwargs['cf'] = svc.conf_get(s, 'cf')
     except ex.OptNotFound:
         pass
 
@@ -1885,23 +1893,23 @@ def add_container_docker(svc, s):
     kwargs = {}
 
     try:
-        kwargs['run_image'] = svc.conf_get_string_scope(s, 'run_image')
+        kwargs['run_image'] = svc.conf_get(s, 'run_image')
     except ex.OptNotFound:
         svc.log.error("'run_image' parameter is mandatory in section %s"%s)
         return
 
     try:
-        kwargs['run_command'] = svc.conf_get_string_scope(s, 'run_command')
+        kwargs['run_command'] = svc.conf_get(s, 'run_command')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['run_args'] = svc.conf_get_string_scope(s, 'run_args')
+        kwargs['run_args'] = svc.conf_get(s, 'run_args')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['docker_service'] = svc.conf_get_boolean_scope(s, 'docker_service')
+        kwargs['docker_service'] = svc.conf_get(s, 'docker_service')
     except ex.OptNotFound:
         pass
 
@@ -1926,19 +1934,19 @@ def add_container_ovm(svc, s):
     kwargs = {}
 
     try:
-        kwargs['uuid'] = svc.conf_get_string_scope(s, 'uuid')
+        kwargs['uuid'] = svc.conf_get(s, 'uuid')
     except ex.OptNotFound:
         svc.log.error("uuid must be set in section %s"%s)
         return
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         svc.log.error("name must be set in section %s"%s)
         return
 
     try:
-        kwargs['guestos'] = svc.conf_get_string_scope(s, 'guestos')
+        kwargs['guestos'] = svc.conf_get(s, 'guestos')
     except ex.OptNotFound:
         pass
 
@@ -1963,24 +1971,24 @@ def add_container_jail(svc, s):
     kwargs = {}
 
     try:
-        kwargs['jailroot'] = svc.conf_get_string_scope(s, 'jailroot')
+        kwargs['jailroot'] = svc.conf_get(s, 'jailroot')
     except ex.OptNotFound:
         svc.log.error("jailroot must be set in section %s"%s)
         return
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         svc.log.error("name must be set in section %s"%s)
         return
 
     try:
-        kwargs['ips'] = svc.conf_get_string_scope(s, 'ips').split()
+        kwargs['ips'] = svc.conf_get(s, 'ips').split()
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['ip6s'] = svc.conf_get_string_scope(s, 'ip6s').split()
+        kwargs['ip6s'] = svc.conf_get(s, 'ip6s').split()
     except ex.OptNotFound:
         pass
 
@@ -2040,7 +2048,7 @@ def add_sync_docker(svc, s):
     kwargs = {}
 
     try:
-        kwargs['target'] = svc.conf_get_string_scope(s, 'target').split(' ')
+        kwargs['target'] = svc.conf_get(s, 'target').split(' ')
     except ex.OptNotFound:
         return
 
@@ -2059,25 +2067,25 @@ def add_sync_btrfs(svc, s):
     kwargs = {}
 
     try:
-        kwargs['src'] = svc.conf_get_string_scope(s, 'src')
+        kwargs['src'] = svc.conf_get(s, 'src')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have src set" % s)
         return
 
     try:
-        kwargs['dst'] = svc.conf_get_string_scope(s, 'dst')
+        kwargs['dst'] = svc.conf_get(s, 'dst')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have dst set" % s)
         return
 
     try:
-        kwargs['target'] = svc.conf_get_string_scope(s, 'target').split()
+        kwargs['target'] = svc.conf_get(s, 'target').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have target set" % s)
         return
 
     try:
-        kwargs['recursive'] = svc.conf_get_boolean(s, 'recursive')
+        kwargs['recursive'] = svc.conf_get(s, 'recursive')
     except ex.OptNotFound:
         pass
 
@@ -2096,25 +2104,25 @@ def add_sync_zfs(svc, s):
     kwargs = {}
 
     try:
-        kwargs['src'] = svc.conf_get_string_scope(s, 'src')
+        kwargs['src'] = svc.conf_get(s, 'src')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have src set" % s)
         return
 
     try:
-        kwargs['dst'] = svc.conf_get_string_scope(s, 'dst')
+        kwargs['dst'] = svc.conf_get(s, 'dst')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have dst set" % s)
         return
 
     try:
-        kwargs['target'] = svc.conf_get_string_scope(s, 'target').split()
+        kwargs['target'] = svc.conf_get(s, 'target').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have target set" % s)
         return
 
     try:
-        kwargs['recursive'] = svc.conf_get_boolean(s, 'recursive')
+        kwargs['recursive'] = svc.conf_get(s, 'recursive')
     except ex.OptNotFound:
         pass
 
@@ -2133,14 +2141,14 @@ def add_sync_dds(svc, s):
     kwargs = {}
 
     try:
-        kwargs['src'] = svc.conf_get_string_scope(s, 'src')
+        kwargs['src'] = svc.conf_get(s, 'src')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have src set" % s)
         return
 
     dsts = {}
     for node in svc.nodes | svc.drpnodes:
-        dst = svc.conf_get_string_scope(s, 'dst', impersonate=node)
+        dst = svc.conf_get(s, 'dst', impersonate=node)
         dsts[node] = dst
 
     if len(dsts) == 0:
@@ -2150,23 +2158,23 @@ def add_sync_dds(svc, s):
     kwargs['dsts'] = dsts
 
     try:
-        kwargs['target'] = svc.conf_get_string_scope(s, 'target').split()
+        kwargs['target'] = svc.conf_get(s, 'target').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have target set" % s)
         return
 
     try:
-        kwargs['sender'] = svc.conf_get_string(s, 'sender')
+        kwargs['sender'] = svc.conf_get(s, 'sender')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['snap_size'] = svc.conf_get_int_scope(s, 'snap_size')
+        kwargs['snap_size'] = svc.conf_get(s, 'snap_size')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['delta_store'] = svc.conf_get_string_scope(s, 'delta_store')
+        kwargs['delta_store'] = svc.conf_get(s, 'delta_store')
     except ex.OptNotFound:
         pass
 
@@ -2185,13 +2193,13 @@ def add_sync_dcsckpt(svc, s):
     kwargs = {}
 
     try:
-        kwargs['dcs'] = set(svc.conf_get_string_scope(s, 'dcs').split())
+        kwargs['dcs'] = set(svc.conf_get(s, 'dcs').split())
     except ex.OptNotFound:
         svc.log.error("config file section %s must have 'dcs' set" % s)
         return
 
     try:
-        kwargs['manager'] = set(svc.conf_get_string_scope(s, 'manager').split())
+        kwargs['manager'] = set(svc.conf_get(s, 'manager').split())
     except ex.OptNotFound:
         svc.log.error("config file section %s must have 'manager' set" % s)
         return
@@ -2226,19 +2234,19 @@ def add_sync_dcssnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['dcs'] = set(svc.conf_get_string(s, 'dcs').split())
+        kwargs['dcs'] = set(svc.conf_get(s, 'dcs').split())
     except ex.OptNotFound:
         svc.log.error("config file section %s must have 'dcs' set" % s)
         return
 
     try:
-        kwargs['manager'] = set(svc.conf_get_string(s, 'manager').split())
+        kwargs['manager'] = set(svc.conf_get(s, 'manager').split())
     except ex.OptNotFound:
         svc.log.error("config file section %s must have 'manager' set" % s)
         return
 
     try:
-        kwargs['snapname'] = set(svc.conf_get_string(s, 'snapname').split())
+        kwargs['snapname'] = set(svc.conf_get(s, 'snapname').split())
     except ex.OptNotFound:
         svc.log.error("config file section %s must have 'snapname' set" % s)
         return
@@ -2261,28 +2269,28 @@ def add_sync_s3(svc, s):
     kwargs = {}
 
     try:
-        kwargs['full_schedule'] = svc.conf_get_string_scope(s, 'full_schedule')
+        kwargs['full_schedule'] = svc.conf_get(s, 'full_schedule')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['options'] = svc.conf_get_string_scope(s, 'options').split()
+        kwargs['options'] = svc.conf_get(s, 'options').split()
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['snar'] = svc.conf_get_string_scope(s, 'snar')
+        kwargs['snar'] = svc.conf_get(s, 'snar')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['bucket'] = svc.conf_get_string_scope(s, 'bucket')
+        kwargs['bucket'] = svc.conf_get(s, 'bucket')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have bucket set" % s)
         return
 
     try:
-        kwargs['src'] = svc.conf_get_string_scope(s, 'src').split()
+        kwargs['src'] = svc.conf_get(s, 'src').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have src set" % s)
         return
@@ -2302,22 +2310,22 @@ def add_sync_zfssnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['keep'] = svc.conf_get_int_scope(s, 'keep')
+        kwargs['keep'] = svc.conf_get(s, 'keep')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['recursive'] = svc.conf_get_boolean_scope(s, 'recursive')
+        kwargs['recursive'] = svc.conf_get(s, 'recursive')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['dataset'] = svc.conf_get_string_scope(s, 'dataset').split()
+        kwargs['dataset'] = svc.conf_get(s, 'dataset').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have dataset set" % s)
         return
@@ -2337,17 +2345,17 @@ def add_sync_btrfssnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string_scope(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['keep'] = svc.conf_get_int_scope(s, 'keep')
+        kwargs['keep'] = svc.conf_get(s, 'keep')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['subvol'] = svc.conf_get_string_scope(s, 'subvol').split()
+        kwargs['subvol'] = svc.conf_get(s, 'subvol').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have subvol set" % s)
         return
@@ -2367,12 +2375,12 @@ def add_sync_necismsnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['array'] = svc.conf_get_string_scope(s, 'array')
+        kwargs['array'] = svc.conf_get(s, 'array')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['devs'] = svc.conf_get_string_scope(s, 'devs')
+        kwargs['devs'] = svc.conf_get(s, 'devs')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have devs set" % s)
         return
@@ -2395,13 +2403,13 @@ def add_sync_evasnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['eva_name'] = svc.conf_get_string(s, 'eva_name')
+        kwargs['eva_name'] = svc.conf_get(s, 'eva_name')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have eva_name set" % s)
         return
 
     try:
-        kwargs['snap_name'] = svc.conf_get_string(s, 'snap_name')
+        kwargs['snap_name'] = svc.conf_get(s, 'snap_name')
     except ex.OptNotFound:
         kwargs['snap_name'] = svc.svcname
 
@@ -2433,13 +2441,13 @@ def add_sync_hp3parsnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['array'] = svc.conf_get_string_scope(s, 'array')
+        kwargs['array'] = svc.conf_get(s, 'array')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have array set" % s)
         return
 
     try:
-        vv_names = svc.conf_get_string_scope(s, 'vv_names').split()
+        vv_names = svc.conf_get(s, 'vv_names').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have vv_names set" % s)
         return
@@ -2468,21 +2476,21 @@ def add_sync_hp3par(svc, s):
     kwargs = {}
 
     try:
-        kwargs['mode'] = svc.conf_get_string_scope(s, 'mode')
+        kwargs['mode'] = svc.conf_get(s, 'mode')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have mode set" % s)
         return
 
     try:
-        kwargs['array'] = svc.conf_get_string_scope(s, 'array')
+        kwargs['array'] = svc.conf_get(s, 'array')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have array set" % s)
         return
 
     rcg_names = {}
     for node in svc.nodes | svc.drpnodes:
-        array = svc.conf_get_string_scope(s, 'array', impersonate=node)
-        rcg = svc.conf_get_string_scope(s, 'rcg', impersonate=node)
+        array = svc.conf_get(s, 'array', impersonate=node)
+        rcg = svc.conf_get(s, 'rcg', impersonate=node)
         rcg_names[array] = rcg
 
     if len(rcg_names) == 0:
@@ -2509,19 +2517,19 @@ def add_sync_symsrdfs(svc, s):
     kwargs = {}
 
     try:
-        kwargs['symdg'] = svc.conf_get_string(s, 'symdg')
+        kwargs['symdg'] = svc.conf_get(s, 'symdg')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have symdg set" % s)
         return
 
     try:
-        kwargs['rdfg'] = svc.conf_get_int(s, 'rdfg')
+        kwargs['rdfg'] = svc.conf_get(s, 'rdfg')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have rdfg number set" % s)
         return
 
     try:
-        kwargs['symid'] = svc.conf_get_string_scope(s, 'symid')
+        kwargs['symid'] = svc.conf_get(s, 'symid')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have symid" % s)
         return
@@ -2545,17 +2553,17 @@ def add_sync_radosclone(svc, s):
     kwargs = {}
 
     try:
-        kwargs['client_id'] = svc.conf_get_string_scope(s, 'client_id')
+        kwargs['client_id'] = svc.conf_get(s, 'client_id')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['keyring'] = svc.conf_get_string_scope(s, 'keyring')
+        kwargs['keyring'] = svc.conf_get(s, 'keyring')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['pairs'] = svc.conf_get_string_scope(s, 'pairs').split()
+        kwargs['pairs'] = svc.conf_get(s, 'pairs').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have pairs set" % s)
         return
@@ -2578,17 +2586,17 @@ def add_sync_radossnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['client_id'] = svc.conf_get_string_scope(s, 'client_id')
+        kwargs['client_id'] = svc.conf_get(s, 'client_id')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['keyring'] = svc.conf_get_string_scope(s, 'keyring')
+        kwargs['keyring'] = svc.conf_get(s, 'keyring')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['images'] = svc.conf_get_string_scope(s, 'images').split()
+        kwargs['images'] = svc.conf_get(s, 'images').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have images set" % s)
         return
@@ -2617,34 +2625,34 @@ def _add_sync_symclone(svc, s, t):
     kwargs = {}
     kwargs['type'] = t
     try:
-        kwargs['pairs'] = svc.conf_get_string(s, 'pairs').split()
+        kwargs['pairs'] = svc.conf_get(s, 'pairs').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have pairs set" % s)
         return
 
     try:
-        kwargs['symid'] = svc.conf_get_string_scope(s, 'symid')
+        kwargs['symid'] = svc.conf_get(s, 'symid')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have sid set" % s)
         return
 
     try:
-        kwargs['recreate_timeout'] = svc.conf_get_int(s, 'recreate_timeout')
+        kwargs['recreate_timeout'] = svc.conf_get(s, 'recreate_timeout')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['restore_timeout'] = svc.conf_get_int(s, 'restore_timeout')
+        kwargs['restore_timeout'] = svc.conf_get(s, 'restore_timeout')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['consistent'] = svc.conf_get_boolean(s, 'consistent')
+        kwargs['consistent'] = svc.conf_get(s, 'consistent')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['precopy'] = svc.conf_get_boolean(s, 'precopy')
+        kwargs['precopy'] = svc.conf_get(s, 'precopy')
     except ex.OptNotFound:
         pass
 
@@ -2666,25 +2674,25 @@ def add_sync_ibmdssnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['pairs'] = svc.conf_get_string(s, 'pairs').split()
+        kwargs['pairs'] = svc.conf_get(s, 'pairs').split()
     except ex.OptNotFound:
         svc.log.error("config file section %s must have pairs set" % s)
         return
 
     try:
-        kwargs['array'] = svc.conf_get_string(s, 'array')
+        kwargs['array'] = svc.conf_get(s, 'array')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have array set" % s)
         return
 
     try:
-        kwargs['bgcopy'] = svc.conf_get_boolean(s, 'bgcopy')
+        kwargs['bgcopy'] = svc.conf_get(s, 'bgcopy')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have bgcopy set" % s)
         return
 
     try:
-        kwargs['recording'] = svc.conf_get_boolean(s, 'recording')
+        kwargs['recording'] = svc.conf_get(s, 'recording')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have recording set" % s)
         return
@@ -2707,19 +2715,19 @@ def add_sync_nexenta(svc, s):
     kwargs = {}
 
     try:
-        kwargs['name'] = svc.conf_get_string(s, 'name')
+        kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have 'name' set" % s)
         return
 
     try:
-        kwargs['path'] = svc.conf_get_string_scope(s, 'path')
+        kwargs['path'] = svc.conf_get(s, 'path')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have path set" % s)
         return
 
     try:
-        kwargs['reversible'] = svc.conf_get_boolean_scope(s, "reversible")
+        kwargs['reversible'] = svc.conf_get(s, "reversible")
     except:
         pass
 
@@ -2760,13 +2768,13 @@ def add_sync_netapp(svc, s):
     kwargs = {}
 
     try:
-        kwargs['path'] = svc.conf_get_string_scope(s, 'path')
+        kwargs['path'] = svc.conf_get(s, 'path')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have path set" % s)
         return
 
     try:
-        kwargs['user'] = svc.conf_get_string_scope(s, 'user')
+        kwargs['user'] = svc.conf_get(s, 'user')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have user set" % s)
         return
@@ -2813,7 +2821,7 @@ def add_sync_rsync(svc, s):
     kwargs = {}
     kwargs['src'] = []
     try:
-        _s = svc.conf_get_string_scope(s, 'src')
+        _s = svc.conf_get(s, 'src')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have src set" % s)
         return
@@ -2822,25 +2830,25 @@ def add_sync_rsync(svc, s):
         kwargs['src'] += glob.glob(src)
 
     try:
-        kwargs['dst'] = svc.conf_get_string_scope(s, 'dst')
+        kwargs['dst'] = svc.conf_get(s, 'dst')
     except ex.OptNotFound:
         svc.log.error("config file section %s must have dst set" % s)
         return
 
     try:
-        kwargs['dstfs'] = svc.conf_get_string_scope(s, 'dstfs')
+        kwargs['dstfs'] = svc.conf_get(s, 'dstfs')
     except ex.OptNotFound:
         pass
 
     try:
-        _s = svc.conf_get_string_scope(s, 'options')
+        _s = svc.conf_get(s, 'options')
         options += _s.split()
     except ex.OptNotFound:
         pass
 
     try:
         # for backward compat (use options keyword now)
-        _s = svc.conf_get_string_scope(s, 'exclude')
+        _s = svc.conf_get(s, 'exclude')
         options += _s.split()
     except ex.OptNotFound:
         pass
@@ -2848,18 +2856,18 @@ def add_sync_rsync(svc, s):
     kwargs['options'] = options
 
     try:
-        kwargs['snap'] = svc.conf_get_boolean_scope(s, 'snap')
+        kwargs['snap'] = svc.conf_get(s, 'snap')
     except ex.OptNotFound:
         pass
 
     try:
-        _s = svc.conf_get_string_scope(s, 'target')
+        _s = svc.conf_get(s, 'target')
         target = _s.split()
     except ex.OptNotFound:
         target = []
 
     try:
-        kwargs['bwlimit'] = svc.conf_get_int_scope(s, 'bwlimit')
+        kwargs['bwlimit'] = svc.conf_get(s, 'bwlimit')
     except ex.OptNotFound:
         pass
 
@@ -2882,23 +2890,23 @@ def add_task(svc, s):
     kwargs = {}
 
     try:
-        kwargs['command'] = svc.conf_get_string_scope(s, 'command')
+        kwargs['command'] = svc.conf_get(s, 'command')
     except ex.OptNotFound:
         svc.log.error("'command' is not defined in config file section %s"%s)
         return
 
     try:
-        kwargs['on_error'] = svc.conf_get_string_scope(s, 'on_error')
+        kwargs['on_error'] = svc.conf_get(s, 'on_error')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['user'] = svc.conf_get_string_scope(s, 'user')
+        kwargs['user'] = svc.conf_get(s, 'user')
     except ex.OptNotFound:
         pass
 
     try:
-        kwargs['confirmation'] = svc.conf_get_boolean_scope(s, 'confirmation')
+        kwargs['confirmation'] = svc.conf_get(s, 'confirmation')
     except ex.OptNotFound:
         pass
 
@@ -2921,13 +2929,13 @@ def add_app(svc, s):
     kwargs = {}
 
     try:
-        kwargs['script'] = svc.conf_get_string_scope(s, 'script')
+        kwargs['script'] = svc.conf_get(s, 'script')
     except ex.OptNotFound:
         svc.log.error("'script' is not defined in config file section %s"%s)
         return
 
     try:
-        kwargs['start'] = svc.conf_get_int_scope(s, 'start')
+        kwargs['start'] = svc.conf_get(s, 'start')
     except ex.OptNotFound:
         pass
     except:
@@ -2935,7 +2943,7 @@ def add_app(svc, s):
         return
 
     try:
-        kwargs['stop'] = svc.conf_get_int_scope(s, 'stop')
+        kwargs['stop'] = svc.conf_get(s, 'stop')
     except ex.OptNotFound:
         pass
     except:
@@ -2943,7 +2951,7 @@ def add_app(svc, s):
         return
 
     try:
-        kwargs['check'] = svc.conf_get_int_scope(s, 'check')
+        kwargs['check'] = svc.conf_get(s, 'check')
     except ex.OptNotFound:
         pass
     except:
@@ -2951,7 +2959,7 @@ def add_app(svc, s):
         return
 
     try:
-        kwargs['info'] = svc.conf_get_int_scope(s, 'info')
+        kwargs['info'] = svc.conf_get(s, 'info')
     except ex.OptNotFound:
         pass
     except:
@@ -2959,7 +2967,7 @@ def add_app(svc, s):
         return
 
     try:
-        kwargs['timeout'] = svc.conf_get_int_scope(s, 'timeout')
+        kwargs['timeout'] = svc.conf_get(s, 'timeout')
     except ex.OptNotFound:
         pass
 
@@ -3008,25 +3016,25 @@ def build(name, minimal=False, svcconf=None):
     svc = svc.Svc(svcname=name)
 
     try:
-        encapnodes = [n.lower() for n in svc.conf_get_string_scope('DEFAULT', "encapnodes").split() if n != ""]
+        encapnodes = [n.lower() for n in svc.conf_get('DEFAULT', "encapnodes").split() if n != ""]
     except ex.OptNotFound:
         encapnodes = []
     svc.encapnodes = set(encapnodes)
 
     try:
-        nodes = [n.lower() for n in svc.conf_get_string_scope('DEFAULT', "nodes").split() if n != ""]
+        nodes = [n.lower() for n in svc.conf_get('DEFAULT', "nodes").split() if n != ""]
     except ex.OptNotFound:
         nodes = [rcEnv.nodename]
     svc.ordered_nodes = nodes
     svc.nodes = set(nodes)
 
     try:
-        drpnodes = [n.lower() for n in svc.conf_get_string_scope('DEFAULT', "drpnodes").split() if n != ""]
+        drpnodes = [n.lower() for n in svc.conf_get('DEFAULT', "drpnodes").split() if n != ""]
     except ex.OptNotFound:
         drpnodes = []
 
     try:
-        drpnode = svc.conf_get_string_scope('DEFAULT', "drpnode").lower()
+        drpnode = svc.conf_get('DEFAULT', "drpnode").lower()
         if drpnode not in drpnodes and drpnode != "":
             drpnodes.append(drpnode)
     except ex.OptNotFound:
@@ -3035,7 +3043,7 @@ def build(name, minimal=False, svcconf=None):
     svc.drpnodes = set(drpnodes)
 
     try:
-        flex_primary = svc.conf_get_string_scope('DEFAULT', "flex_primary").lower()
+        flex_primary = svc.conf_get('DEFAULT', "flex_primary").lower()
     except ex.OptNotFound:
         if len(nodes) > 0:
             flex_primary = nodes[0]
@@ -3044,7 +3052,7 @@ def build(name, minimal=False, svcconf=None):
     svc.flex_primary = flex_primary
 
     try:
-        drp_flex_primary = svc.conf_get_string_scope('DEFAULT', "drp_flex_primary").lower()
+        drp_flex_primary = svc.conf_get('DEFAULT', "drp_flex_primary").lower()
     except ex.OptNotFound:
         if len(drpnodes) > 0:
             drp_flex_primary = drpnodes[0]
@@ -3053,7 +3061,7 @@ def build(name, minimal=False, svcconf=None):
     svc.drp_flex_primary = drp_flex_primary
 
     try:
-        svc.placement = svc.conf_get_string_scope('DEFAULT', "placement").lower()
+        svc.placement = svc.conf_get('DEFAULT', "placement").lower()
     except ex.OptNotFound:
         pass
 
@@ -3062,12 +3070,12 @@ def build(name, minimal=False, svcconf=None):
     # Store and validate the service type
     #
     if svc.conf_has_option_scoped("DEFAULT", "env"):
-        svc.svc_env = svc.conf_get_string_scope('DEFAULT', "env")
+        svc.svc_env = svc.conf_get('DEFAULT', "env")
     elif svc.conf_has_option_scoped("DEFAULT", "service_type"):
-        svc.svc_env = svc.conf_get_string_scope('DEFAULT', "service_type")
+        svc.svc_env = svc.conf_get('DEFAULT', "service_type")
 
     try:
-        svc.lock_timeout = svc.conf_get_int_scope('DEFAULT', 'lock_timeout')
+        svc.lock_timeout = svc.conf_get('DEFAULT', 'lock_timeout')
     except ex.OptNotFound:
         pass
 
@@ -3077,17 +3085,17 @@ def build(name, minimal=False, svcconf=None):
         pass
 
     try:
-        svc.presnap_trigger = svc.conf_get_string_scope('DEFAULT', 'presnap_trigger').split()
+        svc.presnap_trigger = svc.conf_get('DEFAULT', 'presnap_trigger').split()
     except ex.OptNotFound:
         pass
 
     try:
-        svc.postsnap_trigger = svc.conf_get_string_scope('DEFAULT', 'postsnap_trigger').split()
+        svc.postsnap_trigger = svc.conf_get('DEFAULT', 'postsnap_trigger').split()
     except ex.OptNotFound:
         pass
 
     try:
-        svc.disable_rollback = not svc.conf_get_boolean_scope('DEFAULT', "rollback")
+        svc.disable_rollback = not svc.conf_get('DEFAULT', "rollback")
     except ex.OptNotFound:
         pass
 
@@ -3100,12 +3108,12 @@ def build(name, minimal=False, svcconf=None):
     # amazon options
     #
     try:
-        svc.aws = svc.conf_get_string_scope("DEFAULT", 'aws')
+        svc.aws = svc.conf_get("DEFAULT", 'aws')
     except ex.OptNotFound:
         pass
 
     try:
-        svc.aws_profile = svc.conf_get_string_scope("DEFAULT", 'aws_profile')
+        svc.aws_profile = svc.conf_get("DEFAULT", 'aws_profile')
     except ex.OptNotFound:
         pass
 
@@ -3113,18 +3121,18 @@ def build(name, minimal=False, svcconf=None):
     # process group options
     #
     try:
-        svc.create_pg = svc.conf_get_boolean_scope("DEFAULT", 'create_pg')
+        svc.create_pg = svc.conf_get("DEFAULT", 'create_pg')
     except ex.OptNotFound:
         pass
 
     try:
-        anti_affinity = svc.conf_get_string_scope('DEFAULT', 'anti_affinity')
-        svc.anti_affinity = set(svc.conf_get_string_scope('DEFAULT', 'anti_affinity').split())
+        anti_affinity = svc.conf_get('DEFAULT', 'anti_affinity')
+        svc.anti_affinity = set(svc.conf_get('DEFAULT', 'anti_affinity').split())
     except ex.OptNotFound:
         pass
 
     try:
-        svc.clustertype = svc.conf_get_string_scope('DEFAULT', 'cluster_type')
+        svc.clustertype = svc.conf_get('DEFAULT', 'cluster_type')
     except ex.OptNotFound:
         pass
 
@@ -3132,7 +3140,7 @@ def build(name, minimal=False, svcconf=None):
         svc.ha = True
 
     try:
-        svc.show_disabled = svc.conf_get_boolean_scope('DEFAULT', 'show_disabled')
+        svc.show_disabled = svc.conf_get('DEFAULT', 'show_disabled')
     except ex.OptNotFound:
         svc.show_disabled = True
 
@@ -3142,37 +3150,27 @@ def build(name, minimal=False, svcconf=None):
         raise ex.excInitError('not allowed to run on this node (svc env=%s node env=%s)' % (svc.svc_env, rcEnv.node_env))
 
     try:
-        svc.drp_type = svc.conf_get_string_scope('DEFAULT', 'drp_type')
+        svc.comment = svc.conf_get('DEFAULT', 'comment')
     except ex.OptNotFound:
         pass
 
     try:
-        svc.comment = svc.conf_get_string_scope('DEFAULT', 'comment')
+        svc.monitor_action = svc.conf_get('DEFAULT', "monitor_action")
     except ex.OptNotFound:
         pass
 
     try:
-        svc.monitor_action = svc.conf_get_string_scope('DEFAULT', "monitor_action")
+        svc.pre_monitor_action = svc.conf_get('DEFAULT', "pre_monitor_action")
     except ex.OptNotFound:
         pass
 
     try:
-        svc.pre_monitor_action = svc.conf_get_string_scope('DEFAULT', "pre_monitor_action")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        svc.drnoaction = svc.conf_get_boolean_scope('DEFAULT', "drnoaction")
-    except ex.OptNotFound:
-        pass
-
-    try:
-        svc.bwlimit = svc.conf_get_int_scope('DEFAULT', "bwlimit")
+        svc.bwlimit = svc.conf_get('DEFAULT', "bwlimit")
     except ex.OptNotFound:
         svc.bwlimit = None
 
     try:
-        svc.clustername = svc.conf_get_string_scope('DEFAULT', "cluster")
+        svc.clustername = svc.conf_get('DEFAULT', "cluster")
     except ex.OptNotFound:
         pass
 
@@ -3271,7 +3269,7 @@ def build_services(status=None, svcnames=None, create_instance=False,
     for name in svcnames:
         try:
             svc = build(name, minimal=minimal)
-        except (ex.excError, ex.excInitError) as e:
+        except (ex.excError, ex.excInitError, ValueError) as e:
             errors.append("%s: %s" % (name, str(e)))
             svclog = rcLogger.initLogger(rcEnv.nodename+"."+name, handlers=["file", "syslog"])
             svclog.error(str(e))

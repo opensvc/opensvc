@@ -8,7 +8,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
 
    def do_mkfs(self):
        try:
-           opts = self.r.svc.conf_get_string_scope(self.r.rid, "mkfs_opt").split()
+           opts = self.r.svc.conf_get(self.r.rid, "mkfs_opt").split()
        except:
            opts = []
        cmd = self.mkfs + opts + [self.mkfs_dev]

@@ -19,9 +19,9 @@ class ProvisioningDisk(Provisioning):
             raise ex.excError
 
         try:
-            self.size = self.r.svc.conf_get_string_scope(self.r.rid, "size")
+            self.size = self.r.svc.conf_get(self.r.rid, "size")
             self.size = convert_size(self.size, _to="m")
-            self.vg = self.r.svc.conf_get_string_scope(self.r.rid, "vg")
+            self.vg = self.r.svc.conf_get(self.r.rid, "vg")
         except Exception as e:
             self.r.log.info("skip lv provisioning: %s" % str(e))
             return

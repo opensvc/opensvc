@@ -646,7 +646,7 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         attr = compat_triggers[attr]
 
     try:
-        cmd = svc.conf_get_string_scope(section, attr, use_default=False)
+        cmd = svc.conf_get(section, attr, use_default=False)
     except ex.OptNotFound:
         return
 
@@ -744,7 +744,7 @@ def convert_bool(s):
         return True
     if str(s).lower() in ("no",  "n", "false", "f", "0", "0.0", "", "none", "[]", "{}"):
         return False
-    raise Exception('Invalid value for boolean conversion: ' + str(s))
+    raise ValueError('Invalid value for boolean conversion: ' + str(s))
 
 def convert_duration(s, _to="s"):
     """
@@ -764,7 +764,7 @@ def convert_duration(s, _to="s"):
       1 => 1
     """
     if s is None:
-        raise ex.excError("convert duration error: None is not a valid duration")
+        raise ValueError("convert duration error: None is not a valid duration")
 
     units = {
         "w": 604800,
@@ -790,7 +790,7 @@ def convert_duration(s, _to="s"):
         try:
             _duration = int(_duration)
         except ValueError:
-            raise ex.excError("invalid duration format: %s at index %d" % (s, idx))
+            raise ValueError("invalid duration format: %s at index %d" % (s, idx))
         duration += _duration * units[unit]
         prev = idx + 1
 
@@ -823,7 +823,7 @@ def convert_size(s, _to='', _round=1):
     try:
         start_idx = l.index(unit)
     except:
-        raise Exception("unsupported unit in converted value: %s" % s)
+        raise ValueError("unsupported unit in converted value: %s" % s)
 
     for i in range(start_idx):
         size *= factor
@@ -843,7 +843,7 @@ def convert_size(s, _to='', _round=1):
     try:
         end_idx = l.index(unit)
     except:
-        raise Exception("unsupported target unit: %s" % unit)
+        raise ValueError("unsupported target unit: %s" % unit)
 
     for i in range(end_idx):
         size /= factor
@@ -1077,6 +1077,6 @@ if __name__ == "__main__":
     for s in (1, "1", "1w1d1h1m1s", "1d", "1d1w", "2m2s", "Ad", "1dd", "-1", "-1s"):
         try:
             print(s, "=>", convert_duration(s, _to="d"))
-        except ex.excError as exc:
+        except ValueError as exc:
             print(exc)
 

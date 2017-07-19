@@ -97,7 +97,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
             raise ex.excError
 
     def provisioner(self):
-        self.r.device = self.r.svc.conf_get_string_scope(self.r.rid, "dev")
+        self.r.device = self.r.svc.conf_get(self.r.rid, "dev")
         if self.r.device.startswith("LABEL=") or self.r.device.startswith("UUID="):
             self.r.log.info("skip formatting because dev is specified by LABEL or UUID")
         else:

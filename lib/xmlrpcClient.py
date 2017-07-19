@@ -539,11 +539,9 @@ class Collector(object):
                 'svc_drpnode',
                 'svc_drpnodes',
                 'svc_comment',
-                'svc_drptype',
                 'svc_app',
                 'svc_containertype',
                 'svc_config',
-                'svc_drnoaction',
                 'svc_ha']
 
         vals = [svc.svcname,
@@ -557,10 +555,8 @@ class Collector(object):
                 svc.drpnode,
                 ' '.join(svc.drpnodes),
                 svc.comment,
-                svc.drp_type,
                 svc.app,
                 repr_config(svc.svcname),
-                svc.drnoaction,
                 '1' if svc.ha else '0']
 
         args = [vars, vals]

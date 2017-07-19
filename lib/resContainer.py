@@ -40,7 +40,7 @@ class Container(Res.Resource):
     @lazy
     def vm_hostname(self):
         try:
-            hostname = self.svc.conf_get_string_scope(self.rid, "hostname")
+            hostname = self.svc.conf_get(self.rid, "hostname")
         except ex.OptNotFound:
             hostname = self.name
         return hostname

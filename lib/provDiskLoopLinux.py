@@ -25,7 +25,7 @@ class ProvisioningDisk(Provisioning):
     def provisioner(self):
         try:
             self.path = self.r.loopFile
-            self.size = self.r.svc.conf_get_string_scope(self.r.rid, "size")
+            self.size = self.r.svc.conf_get(self.r.rid, "size")
         except Exception as e:
             raise ex.excError(str(e))
         if os.path.exists(self.path):

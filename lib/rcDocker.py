@@ -28,7 +28,7 @@ class DockerLib(object):
 
         try:
             self.docker_daemon_private = \
-                self.svc.conf_get_boolean_scope('DEFAULT', 'docker_daemon_private')
+                self.svc.conf_get('DEFAULT', 'docker_daemon_private')
         except ex.OptNotFound:
             self.docker_daemon_private = True
         if rcEnv.sysname != "Linux":
@@ -36,37 +36,37 @@ class DockerLib(object):
 
         try:
             self.docker_exe_init = \
-                self.svc.conf_get_string_scope('DEFAULT', 'docker_exe')
+                self.svc.conf_get('DEFAULT', 'docker_exe')
         except ex.OptNotFound:
             self.docker_exe_init = None
 
         try:
             self.dockerd_exe_init = \
-                self.svc.conf_get_string_scope('DEFAULT', 'dockerd_exe')
+                self.svc.conf_get('DEFAULT', 'dockerd_exe')
         except ex.OptNotFound:
             self.dockerd_exe_init = None
 
         try:
             self.docker_data_dir = \
-                self.svc.conf_get_string_scope('DEFAULT', 'docker_data_dir')
+                self.svc.conf_get('DEFAULT', 'docker_data_dir')
         except ex.OptNotFound:
             self.docker_data_dir = None
 
         try:
             self.docker_daemon_args = \
-                self.svc.conf_get_string_scope('DEFAULT', 'docker_daemon_args').split()
+                self.svc.conf_get('DEFAULT', 'docker_daemon_args').split()
         except ex.OptNotFound:
             self.docker_daemon_args = []
 
         try:
             self.docker_swarm_args = \
-                self.svc.conf_get_string_scope('DEFAULT', 'docker_swarm_args').split()
+                self.svc.conf_get('DEFAULT', 'docker_swarm_args').split()
         except ex.OptNotFound:
             self.docker_swarm_args = []
 
         try:
             self.docker_swarm_managers = \
-                self.svc.conf_get_string_scope('DEFAULT', 'docker_swarm_managers').split()
+                self.svc.conf_get('DEFAULT', 'docker_swarm_managers').split()
         except ex.OptNotFound:
             self.docker_swarm_managers = []
 

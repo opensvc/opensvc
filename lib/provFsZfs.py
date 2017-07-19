@@ -26,7 +26,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
 
         nv_list = dict()
         try:
-            size = self.r.svc.conf_get_string_scope(self.r.rid, "size")
+            size = self.r.svc.conf_get(self.r.rid, "size")
         except:
             size = None
         if size:

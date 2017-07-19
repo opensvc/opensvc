@@ -358,7 +358,7 @@ class Ip(Res.Resource):
             return
 
         try:
-            self.svc.conf_get_boolean_scope(self.rid, "dns_update")
+            self.svc.conf_get(self.rid, "dns_update")
         except ex.OptNotFound:
             self.log.debug("skip dns update: dns_update is not set")
             return
@@ -368,7 +368,7 @@ class Ip(Res.Resource):
             return
 
         try:
-            dns_name_suffix = self.svc.conf_get_string_scope( self.rid, "dns_name_suffix")
+            dns_name_suffix = self.svc.conf_get( self.rid, "dns_name_suffix")
         except ex.OptNotFound:
             dns_name_suffix = None
             self.log.debug("dns update: dns_name_suffix is not set")
@@ -450,7 +450,7 @@ class Ip(Res.Resource):
         import ipaddress
 
         try:
-            self.svc.conf_get_string_scope(self.rid, "ipname")
+            self.svc.conf_get(self.rid, "ipname")
             self.log.info("skip allocate: an ip is already defined")
             return
         except ex.OptNotFound:
@@ -462,7 +462,7 @@ class Ip(Res.Resource):
 
         try:
             # explicit network setting
-            network = self.svc.conf_get_string_scope(self.rid, "network")
+            network = self.svc.conf_get(self.rid, "network")
         except ex.OptNotFound:
             network = None
 
@@ -486,7 +486,7 @@ class Ip(Res.Resource):
         }
 
         try:
-            post_data["name"] = self.svc.conf_get_string_scope(self.rid, "dns_name_suffix")
+            post_data["name"] = self.svc.conf_get(self.rid, "dns_name_suffix")
         except ex.OptNotFound:
             self.log.debug("allocate: dns_name_suffix is not set")
 
@@ -539,7 +539,7 @@ class Ip(Res.Resource):
         post_data = {}
 
         try:
-            post_data["name"] = self.svc.conf_get_string_scope(self.rid, "dns_name_suffix")
+            post_data["name"] = self.svc.conf_get(self.rid, "dns_name_suffix")
         except ex.OptNotFound:
             self.log.debug("allocate: dns_name_suffix is not set")
 

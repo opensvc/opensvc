@@ -44,13 +44,13 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
 
         self.section = r.svc.config.defaults()
         try:
-            self.rootfs = self.r.svc.conf_get_string_scope(self.r.rid, 'rootfs')
+            self.rootfs = self.r.svc.conf_get(self.r.rid, 'rootfs')
         except ex.OptNotFound:
             self.rootfs = None
             return
 
         try:
-            self.template = self.r.svc.conf_get_string_scope(self.r.rid, 'template')
+            self.template = self.r.svc.conf_get(self.r.rid, 'template')
         except ex.OptNotFound:
             self.template =None
             return

@@ -36,14 +36,14 @@ class Disk(Res.Resource):
     @lazy
     def array_name(self):
         try:
-            return self.svc.conf_get_string_scope(self.rid, "array")
+            return self.svc.conf_get(self.rid, "array")
         except:
             raise ex.excError("disk %s: missing the 'array' provisioning parameter" % self.rid)
 
     @lazy
     def diskgroup(self):
         try:
-            return self.svc.conf_get_string_scope(self.rid, "diskgroup")
+            return self.svc.conf_get(self.rid, "diskgroup")
         except:
             raise ex.excError("disk %s: missing the 'diskgroup' provisioning parameter" % self.rid)
 
@@ -130,11 +130,11 @@ class Disk(Res.Resource):
             self.log.info("skip provision: 'disk_id' is already set")
             return
         try:
-            size = self.svc.conf_get_string_scope(self.rid, "size")
+            size = self.svc.conf_get(self.rid, "size")
         except:
             raise ex.excError("disk %s: missing the 'size' provisioning parameter" % self.rid)
         try:
-            slo = self.svc.conf_get_string_scope(self.rid, "slo")
+            slo = self.svc.conf_get(self.rid, "slo")
         except:
             slo = None
 

@@ -43,8 +43,8 @@ class ProvisioningFs(Provisioning):
         if self.r.fs_type in self.r.netfs:
             return
 
-        self.dev = self.r.svc.conf_get_string_scope(self.r.rid, "dev")
-        self.mnt = self.r.svc.conf_get_string_scope(self.r.rid, "mnt")
+        self.dev = self.r.svc.conf_get(self.r.rid, "dev")
+        self.mnt = self.r.svc.conf_get(self.r.rid, "mnt")
 
         if not os.path.exists(self.mnt):
             os.makedirs(self.mnt)
@@ -81,7 +81,7 @@ class ProvisioningFs(Provisioning):
             self.do_mkfs()
         elif hasattr(self, "mkfs"):
             try:
-                opts = self.r.svc.conf_get_string_scope(self.r.rid, "mkfs_opt").split()
+                opts = self.r.svc.conf_get(self.r.rid, "mkfs_opt").split()
             except:
                 opts = []
             cmd = self.mkfs + opts + [self.mkfs_dev]

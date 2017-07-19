@@ -24,7 +24,7 @@ class ProvisioningDisk(Provisioning):
         Return the device path in the /dev/<vg>/<lv> format
         """
         try:
-            dev = self.r.svc.conf_get_string_scope(self.r.rid, "dev")
+            dev = self.r.svc.conf_get(self.r.rid, "dev")
         except ex.OptNotFound:
             raise ex.excError("the '%s.dev' keyword is mandatory" % self.r.rid)
 
@@ -36,7 +36,7 @@ class ProvisioningDisk(Provisioning):
             dev = _dev
 
         try:
-            vg = self.r.svc.conf_get_string_scope(self.r.rid, "vg")
+            vg = self.r.svc.conf_get(self.r.rid, "vg")
         except ex.OptNotFound:
             raise ex.excError("the '%s.vg' keyword is mandatory" % self.r.rid)
 
@@ -64,7 +64,7 @@ class ProvisioningDisk(Provisioning):
 
     def unprovisioner(self):
         try:
-            vg = self.r.svc.conf_get_string_scope(self.r.rid, "vg")
+            vg = self.r.svc.conf_get(self.r.rid, "vg")
         except:
             self.r.log.debug("skip lv unprovision: no vg option")
             return
@@ -114,13 +114,13 @@ class ProvisioningDisk(Provisioning):
             return
 
         try:
-            self.size = self.r.svc.conf_get_string_scope(self.r.rid, "size")
+            self.size = self.r.svc.conf_get(self.r.rid, "size")
             self.size = str(self.size).upper()
             if "%" not in self.size:
                 size_parm = ["-L", str(convert_size(self.size, _to="m"))+'M']
             else:
                 size_parm = ["-l", self.size]
-            vg = self.r.svc.conf_get_string_scope(self.r.rid, "vg")
+            vg = self.r.svc.conf_get(self.r.rid, "vg")
         except Exception as e:
             self.r.log.info("skip lv provisioning: %s" % str(e))
             return

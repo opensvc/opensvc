@@ -29,7 +29,7 @@ class ProvisioningDisk(Provisioning):
             return
 
         try:
-            self.pvs = self.r.svc.conf_get_string_scope(self.r.rid, "pvs")
+            self.pvs = self.r.svc.conf_get(self.r.rid, "pvs")
         except ex.OptNotFound:
             raise ex.excError("the 'pvs' parameter is mandatory for provisioning")
 

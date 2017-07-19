@@ -41,6 +41,7 @@ class Keyword(object):
                  validator=None,
                  candidates=None,
                  strict_candidates=True,
+                 convert=None,
                  depends=[],
                  text="",
                  example="foo",
@@ -63,6 +64,7 @@ class Keyword(object):
         self.text = text
         self.example = example
         self.provisioning = provisioning
+        self.convert = convert
 
         if self.default_text is None:
             self.default_text = self.default
@@ -101,12 +103,16 @@ class Keyword(object):
         s = '#\n'
         s += "# keyword:       %s\n"%self.keyword
         s += "# ----------------------------------------------------------------------------\n"
+        s += "#  scopable:     %s\n"%str(self.at)
         s += "#  required:     %s\n"%str(self.required)
         s += "#  provisioning: %s\n"%str(self.provisioning)
         s += "#  default:      %s\n"%str(self.default_text)
-        s += "#  candidates:   %s\n"%candidates
-        s += "#  depends:      %s\n"%depends
-        s += "#  scopable:     %s\n"%str(self.at)
+        if self.candidates:
+            s += "#  candidates:   %s\n"%candidates
+        if depends:
+            s += "#  depends:      %s\n"%depends
+        if self.convert:
+            s += "#  convert:      %s\n"%str(self.convert)
         s += '#\n'
         if self.text:
             wrapper = TextWrapper(subsequent_indent="#%9s"%"", width=78)
@@ -125,7 +131,7 @@ class Keyword(object):
         if self.deprecated():
             return ''
 
-        wrapper = TextWrapper(subsequent_indent="%15s"%"", width=78)
+        wrapper = TextWrapper(subsequent_indent="%16s"%"", width=78)
 
         depends = ""
         for d in self.depends:
@@ -152,7 +158,7 @@ class Keyword(object):
         s += "  depends:      %s\n"%depends
         s += "  scopable:     %s\n"%str(self.at)
         if self.text:
-            s += wrapper.fill("  help:        "+self.text)
+            s += wrapper.fill("  help:         "+self.text)
         if self.at:
             s += "\n\nPrefix the value with '@<node> ', '@nodes ', '@drpnodes ', '@flex_primary', '@drp_flex_primary' or '@encapnodes '\n"
             s += "to specify a scope-specific value.\n"
@@ -534,7 +540,8 @@ class KeywordLockTimeout(Keyword):
                   required=False,
                   order=10,
                   default=60,
-                  text="The duration in seconds the agent wait for the action lock acquisition before aborting the action. The svcmgr --waitlock parameter overrides this option."
+                  convert="duration",
+                  text="A duration expression, like '1m30s'. The maximum wait time for the action lock acquire. The svcmgr --waitlock option overrides this parameter."
                 )
 
 class KeywordMode(Keyword):
@@ -560,6 +567,7 @@ class KeywordRollback(Keyword):
                   required=False,
                   order=11,
                   default=True,
+                  convert="boolean",
                   text="If set to False, the default rollback on action error is inhibited, leaving the service in its half-started state."
                 )
 
@@ -600,6 +608,31 @@ class KeywordDefaultSyncSchedule(Keyword):
                   order=11,
                   default="04:00-06:00@121",
                   text="The default sync resources schedule. See usr/share/doc/template.node.conf for the schedule syntax."
+                )
+
+class KeywordDefaultAws(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="aws",
+                  at=True,
+                  required=False,
+                  order=11,
+                  text="The aws cli executable fullpath. If not provided, aws is expected to be found in the PATH."
+                )
+
+class KeywordDefaultAwsProfile(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="aws_profile",
+                  at=True,
+                  required=False,
+                  default="default",
+                  order=11,
+                  text="The profile to use with the AWS api."
                 )
 
 class KeywordResinfoSchedule(Keyword):
@@ -729,6 +762,7 @@ class KeywordDockerDaemonPrivate(Keyword):
                   at=True,
                   required=False,
                   default=True,
+                  convert="boolean",
                   order=11,
                   text="If set to False, this service will use the system's shared docker daemon instance. This is parameter is forced to False on non-Linux systems.",
                   example="True"
@@ -769,6 +803,7 @@ class KeywordSubsetParallel(Keyword):
                   at=True,
                   candidates=(True, False),
                   default=False,
+                  convert="boolean",
                   text="If set to true, actions are executed in parallel amongst the subset member resources.",
                   required=False,
                   order=2
@@ -836,6 +871,7 @@ class KeywordContainerZoneDeleteOnStop(Keyword):
                   candidates=(True, False),
                   text="If set to true, the zone configuration is deleted after a resource stop. The agent maintains an export of the configuration for the next start. This export is replicated to the other nodes and drp nodes so they can take over the zone even if it is completely hosted on a shared disk.",
                   default=False,
+                  convert="boolean",
                   required=False,
                   order=1
                 )
@@ -851,6 +887,7 @@ class KeywordDockerDockerService(Keyword):
                   required=False,
                   rtype="docker",
                   default=False,
+                  convert="boolean",
                   candidates=(True, False),
                   text="If set to True, run this container as a docker service, which is possible if the cluster_type is set to flex and the docker swarm properly initialized.",
                   example=False
@@ -1128,6 +1165,7 @@ class KeywordSrpPrmCores(Keyword):
                   order=11,
                   rtype="srp",
                   default=1,
+                  convert="integer",
                   provisioning=True,
                   text="The number of core to bind the SRP container to."
                 )
@@ -1222,7 +1260,7 @@ class KeywordPrKey(Keyword):
                   text="Defines a specific default persistent reservation key for the service. A prkey set in a resource takes priority. If no prkey is specified in the service nor in the DEFAULT section, the prkey in node.conf is used. If node.conf has no prkey set, the hostid is computed and written in node.conf."
                 )
 
-class KeywordNoPreemptAbort(Keyword):
+class KeywordDefaultNoPreemptAbort(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1233,6 +1271,7 @@ class KeywordNoPreemptAbort(Keyword):
                   required=False,
                   candidates=(True, False),
                   default=False,
+                  convert="boolean",
                   text="If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
                 )
 
@@ -1259,6 +1298,7 @@ class KeywordShowDisabled(Keyword):
                   order=15,
                   required=False,
                   default=True,
+                  convert="boolean",
                   candidates=[True, False],
                   text="Specifies if the disabled resources must be included in the print status and json status output."
                 )
@@ -1311,6 +1351,7 @@ class KeywordFlexMinNodes(Keyword):
                   order=16,
                   required=False,
                   default=1,
+                  convert="integer",
                   depends=[("cluster_type", ["flex"])],
                   text="Minimum number of active nodes in the cluster. Below this number alerts are raised by the collector, and the collector won't stop any more service instances."
                 )
@@ -1324,6 +1365,7 @@ class KeywordFlexMaxNodes(Keyword):
                   order=16,
                   required=False,
                   default=10,
+                  convert="integer",
                   depends=[("cluster_type", ["flex"])],
                   text="Maximum number of active nodes in the cluster. Above this number alerts are raised by the collector, and the collector won't start any more service instances. 0 means unlimited."
                 )
@@ -1337,6 +1379,7 @@ class KeywordFlexCpuMinThreshold(Keyword):
                   order=16,
                   required=False,
                   default=10,
+                  convert="integer",
                   depends=[("cluster_type", ["flex"])],
                   text="Cluster-wide load average below which flex service instances will be stopped.",
                 )
@@ -1350,6 +1393,7 @@ class KeywordFlexCpuMaxThreshold(Keyword):
                   order=16,
                   required=False,
                   default=70,
+                  convert="integer",
                   depends=[("cluster_type", ["flex"])],
                   text="Cluster-wide load average above which flex new service instances will be started.",
                 )
@@ -1437,7 +1481,7 @@ class KeywordApp(Keyword):
                   keyword="app",
                   order=24,
                   default="DEFAULT",
-                  text="Used to identify who is responsible for is service, who is billable and provides a most useful filtering key. Better keep it a short code."
+                  text="Used to identify who is responsible for this service, who is billable and provides a most useful filtering key. Better keep it a short code."
                 )
 
 class KeywordComment(Keyword):
@@ -1450,7 +1494,7 @@ class KeywordComment(Keyword):
                   text="Helps users understand the role of the service, which is nice to on-call support people having to operate on a service they are not usually responsible for."
                 )
 
-class KeywordScsireserv(Keyword):
+class KeywordDefaultScsireserv(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
@@ -1459,6 +1503,7 @@ class KeywordScsireserv(Keyword):
                   at=True,
                   order=25,
                   default=False,
+                  convert="boolean",
                   candidates=(True, False),
                   text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
                 )
@@ -1482,6 +1527,7 @@ class KeywordSyncInterval(KeywordInteger):
                   keyword="sync_interval",
                   order=26,
                   default=121,
+                  convert="duration",
                   text="Set the minimum delay between syncs in minutes. If a sync is triggered through crond or manually, it is skipped if last sync occurred less than 'sync_min_delay' ago. The mecanism is enforced by a timestamp created upon each sync completion in <pathvar>/sync/[service]![dst]"
                 )
 
@@ -1493,6 +1539,7 @@ class KeywordSyncMaxDelay(KeywordInteger):
                   keyword="sync_max_delay",
                   order=27,
                   default=1440,
+                  convert="duration",
                   text="Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The cron job frequency should be set between 'sync_min_delay' and 'sync_max_delay'"
                 )
 
@@ -1553,6 +1600,7 @@ class KeywordCreatePg(Keyword):
                   keyword="create_pg",
                   order=30,
                   default=True,
+                  convert="boolean",
                   candidates=(True, False),
                   text="Use process containers when possible. Containers allow capping memory, swap and cpu usage per service. Lxc containers are naturally containerized, so skip containerization of their startapp."
                 )
@@ -1849,6 +1897,7 @@ class KeywordSyncZfsSnapRecursive(Keyword):
                   required=False,
                   example="true",
                   default=True,
+                  convert="boolean",
                   text="Set to true to snap recursively the datasets."
                 )
 
@@ -1891,6 +1940,7 @@ class KeywordSyncZfsSnapKeep(Keyword):
                   at=True,
                   required=True,
                   default=3,
+                  convert="integer",
                   example="3",
                   text="The maximum number of snapshots to retain."
                 )
@@ -1934,6 +1984,7 @@ class KeywordSyncBtrfsSnapKeep(Keyword):
                   at=True,
                   required=True,
                   default=3,
+                  convert="integer",
                   example="3",
                   text="The maximum number of snapshots to retain."
                 )
@@ -1990,6 +2041,7 @@ class KeywordSyncBtrfsRecursive(Keyword):
                   at=True,
                   required=False,
                   default=False,
+                  convert="boolean",
                   candidates=[True, False],
                   text="Also replicate subvolumes in the src tree."
                 )
@@ -2043,6 +2095,7 @@ class KeywordSyncZfsRecursive(Keyword):
                   at=True,
                   order=13,
                   default=True,
+                  convert="boolean",
                   candidates=(True, False),
                   text="Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
                 )
@@ -2140,6 +2193,7 @@ class KeywordSyncRsyncSnap(Keyword):
                   order=14,
                   candidates=(True, False),
                   default=False,
+                  convert="boolean",
                   text="If set to true, OpenSVC will try to snapshot the first snapshottable parent of the source of the sync and try to sync from the snap."
                 )
 
@@ -2183,6 +2237,7 @@ class KeywordSyncSyncMaxDelay(KeywordInteger):
                   section="sync",
                   keyword="sync_max_delay",
                   default=1440,
+                  convert="duration",
                   text="Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The cron job frequency should be set between 'sync_min_delay' and 'sync_max_delay'."
                 )
 
@@ -2232,6 +2287,7 @@ class KeywordIpDnsUpdate(Keyword):
                   order=12,
                   at=True,
                   default=False,
+                  convert="boolean",
                   required=False,
                   candidates=[True, False],
                   text="Setting this parameter triggers a DNS update. The record created is formatted as <svcname>.<app>.<managed zone>, unless dns_record_name is specified."
@@ -2362,7 +2418,6 @@ class KeywordDiskGceDescription(Keyword):
                   order=5,
                   at=True,
                   required=False,
-                  default=True,
                   text="An optional, textual description for the disks being created.",
                   example="foo"
                 )
@@ -2378,7 +2433,6 @@ class KeywordDiskGceImage(Keyword):
                   order=5,
                   at=True,
                   required=False,
-                  default=True,
                   text="An image to apply to the disks being created. When using this option, the size of the disks must be at least as large as the image size.",
                   example="centos-7"
                 )
@@ -2394,7 +2448,6 @@ class KeywordDiskGceImageProject(Keyword):
                   order=5,
                   at=True,
                   required=False,
-                  default=True,
                   text="The project against which all image references will be resolved.",
                   example="myprj"
                 )
@@ -2410,7 +2463,7 @@ class KeywordDiskGceSize(Keyword):
                   order=3,
                   at=True,
                   required=False,
-                  default=True,
+                  convert="size",
                   text="Indicates the size of the disks. The OpenSVC size converter is used to produce gce compatible size, so k, K, kib, KiB, kb, KB, ki, Ki and all their g, t, p, e variants are supported.",
                   example="20g"
                 )
@@ -2426,7 +2479,6 @@ class KeywordDiskGceSourceSnapshot(Keyword):
                   order=5,
                   at=True,
                   required=False,
-                  default=True,
                   text="A source snapshot used to create the disks. It is safe to delete a snapshot after a disk has been created from the snapshot. In such cases, the disks will no longer reference the deleted snapshot. When using this option, the size of the disks must be at least as large as the snapshot size.",
                   example="mysrcsnap"
                 )
@@ -2443,7 +2495,6 @@ class KeywordDiskGceDiskType(Keyword):
                   order=5,
                   at=True,
                   required=False,
-                  default=True,
                   text="Specifies the type of disk to create. To get a list of available disk types, run 'gcloud compute disk-types list'. The default disk type is pd-standard.",
                   example="pd-standard"
                 )
@@ -2698,6 +2749,7 @@ class KeywordDiskRawCreateCharDevices(Keyword):
                   at=True,
                   required=False,
                   default=True,
+                  convert="boolean",
                   text="On Linux, char devices are not automatically created when devices are discovered. If set to True (the default), the raw resource driver will create and delete them using the raw kernel driver.",
                   example="false"
                 )
@@ -2862,6 +2914,7 @@ class KeywordDiskMdSpares(Keyword):
                   keyword="spares",
                   rtype="md",
                   provisioning=True,
+                  convert="integer",
                   example="0",
                   text="The md number of spare devices to use with mdadm create command"
                 )
@@ -2963,6 +3016,7 @@ class KeywordDiskDsf(Keyword):
                   keyword="dsf",
                   candidates=(True, False),
                   default=True,
+                  convert="boolean",
                   text="HP-UX only. 'dsf' must be set to false for LVM to use never-multipathed /dev/dsk/... devices. Otherwize, ad-hoc multipathed /dev/disk/... devices."
                 )
 
@@ -2973,8 +3027,80 @@ class KeywordDiskScsireserv(Keyword):
                   section="disk",
                   keyword="scsireserv",
                   default=False,
+                  convert="boolean",
                   candidates=(True, False),
-                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
+                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
+                )
+
+class KeywordDiskNoPreemptAbort(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  keyword="no_preempt_abort",
+                  order=15,
+                  at=True,
+                  required=False,
+                  candidates=(True, False),
+                  default=False,
+                  convert="boolean",
+                  text="If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
+                )
+
+class KeywordFsScsireserv(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="scsireserv",
+                  default=False,
+                  convert="boolean",
+                  candidates=(True, False),
+                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
+                )
+
+class KeywordFsNoPreemptAbort(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="no_preempt_abort",
+                  order=15,
+                  at=True,
+                  required=False,
+                  candidates=(True, False),
+                  default=False,
+                  convert="boolean",
+                  text="If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
+                )
+
+class KeywordContainerScsireserv(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  rtype=["hpvm", "kvm", "ovm"],
+                  keyword="scsireserv",
+                  default=False,
+                  convert="boolean",
+                  candidates=(True, False),
+                  text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
+                )
+
+class KeywordContainerNoPreemptAbort(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  rtype=["hpvm", "kvm", "ovm"],
+                  keyword="no_preempt_abort",
+                  order=15,
+                  at=True,
+                  required=False,
+                  candidates=(True, False),
+                  default=False,
+                  convert="boolean",
+                  text="If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
                 )
 
 class KeywordDiskPvs(Keyword):
@@ -3260,7 +3386,8 @@ class KeywordLoopSize(Keyword):
                   keyword="size",
                   at=True,
                   required=True,
-                  default=10,
+                  default="100m",
+                  convert="size",
                   text="The size of the loop file to provision.",
                   provisioning=True
                 )
@@ -3348,6 +3475,7 @@ class KeywordSyncIbmdssnapBgcopy(Keyword):
                   rtype="ibmdssnap",
                   candidates=[True, False],
                   required=True,
+                  convert="boolean",
                   text="Initiate a background copy of the source data block to the paired devices upon resync."
                 )
 
@@ -3361,6 +3489,7 @@ class KeywordSyncIbmdssnapRecording(Keyword):
                   rtype="ibmdssnap",
                   candidates=[True, False],
                   required=True,
+                  convert="boolean",
                   text="Track only changed data blocks instead of copying the whole source data to the paired devices."
                 )
 
@@ -3641,6 +3770,7 @@ class KeywordSyncSymSrdfsRdfg(Keyword):
                   keyword="rdfg",
                   at=False,
                   rtype="symsrdfs",
+                  convert="integer",
                   required=True,
                   text="Name of the RDF group pairing the source and target devices."
                 )
@@ -3655,7 +3785,22 @@ class KeywordSyncSymclonePrecopy(Keyword):
                   rtype="symclone",
                   required=False,
                   default=True,
+                  convert="boolean",
                   text="Use -precopy on recreate."
+                )
+
+class KeywordSyncSymcloneRecreateTimeout(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="recreate_timeout",
+                  at=True,
+                  rtype=["symclone", "symsnap"],
+                  required=False,
+                  default=300,
+                  convert="duration",
+                  text="Maximum wait time for the clone to reach the created state."
                 )
 
 class KeywordSyncSymcloneRestoreTimeout(Keyword):
@@ -3668,7 +3813,8 @@ class KeywordSyncSymcloneRestoreTimeout(Keyword):
                   rtype=["symclone", "symsnap"],
                   required=False,
                   default=300,
-                  text="Maximum wait time for the clone to read the restored state."
+                  convert="duration",
+                  text="Maximum wait time for the clone to reach the restored state."
                 )
 
 class KeywordSyncSymcloneSymid(Keyword):
@@ -3705,6 +3851,7 @@ class KeywordSyncSymcloneConsistent(Keyword):
                   rtype=["symclone", "symsnap"],
                   at=True,
                   default=True,
+                  convert="boolean",
                   text="Use -consistent in symclone commands.",
                 )
 
@@ -3787,6 +3934,7 @@ class KeywordTaskConfirmation(Keyword):
                   at=True,
                   order=1,
                   default=False,
+                  convert="boolean",
                   required=False,
                   candidates=(True, False),
                   text="If set to True, ask for an interactive confirmation to run the task. This flag can be used for dangerous tasks like data-restore.",
@@ -3862,6 +4010,7 @@ class KeyDict(KeywordStore):
                   generic=True,
                   at=True,
                   default=0,
+                  convert="integer",
                   text="The agent will try to restart a resource n times before falling back to the monitor action."
                 )
         def kw_monitor(resource):
@@ -3872,6 +4021,7 @@ class KeyDict(KeywordStore):
                   at=True,
                   candidates=(True, False),
                   default=False,
+                  convert="boolean",
                   text="A down monitored resource will trigger a node suicide if the monitor thinks it should be up and the resource can not be restarted."
                 )
         def kw_disable(resource):
@@ -3882,6 +4032,7 @@ class KeyDict(KeywordStore):
                   at=True,
                   candidates=(True, False),
                   default=False,
+                  convert="boolean",
                   text="A disabled resource will be ignored on service startup and shutdown."
                 )
         def kw_disable_on(resource):
@@ -3908,6 +4059,7 @@ class KeyDict(KeywordStore):
                   at=True,
                   candidates=(True, False),
                   default=False,
+                  convert="boolean",
                   text="Possible values are 'true' or 'false'. Actions on resource will be tried upon service startup and shutdown, but action failures will be logged and passed over. Useful for resources like dump filesystems for example."
                 )
         def kw_always_on(resource):
@@ -4254,7 +4406,7 @@ class KeyDict(KeywordStore):
 
         self += kw_disable("DEFAULT")
 
-        for r in ["sync", "ip", "fs", "disk", "share", "container", "app", "task", "stonith"]:
+        for r in ["DEFAULT", "sync", "ip", "fs", "disk", "share", "container", "app", "task", "stonith"]:
             self += kw_restart(r)
             self += kw_tags(r)
             self += kw_subset(r)
@@ -4286,7 +4438,7 @@ class KeyDict(KeywordStore):
             for action in ["unprovision", "provision", "start", "stop"]:
                 self += kw_requires(r, action)
 
-        for r in ["sync"]:
+        for r in ["DEFAULT", "sync"]:
             self += kw_pre_sync_nodes(r)
             self += kw_post_sync_nodes(r)
             self += kw_pre_sync_drp(r)
@@ -4313,7 +4465,7 @@ class KeyDict(KeywordStore):
                            "sync_break", "sync_resync", "sync_restore", "run"]:
                 self += kw_requires(r, action)
 
-        for r in ["task"]:
+        for r in ["DEFAULT", "task"]:
             self += kw_pre_run(r)
             self += kw_post_run(r)
 
@@ -4336,7 +4488,6 @@ class KeyDict(KeywordStore):
         self += KeywordDockerSwarmManagers()
         self += KeywordAffinity()
         self += KeywordAntiAffinity()
-        self += KeywordNoPreemptAbort()
         self += KeywordShowDisabled()
         self += KeywordCluster()
         self += KeywordClusterType()
@@ -4362,7 +4513,8 @@ class KeyDict(KeywordStore):
         self += KeywordEncapnodes()
         self += KeywordApp()
         self += KeywordComment()
-        self += KeywordScsireserv()
+        self += KeywordDefaultScsireserv()
+        self += KeywordDefaultNoPreemptAbort()
         self += KeywordBwlimit()
         self += KeywordSyncInterval()
         self += KeywordSyncMaxDelay()
@@ -4393,6 +4545,7 @@ class KeyDict(KeywordStore):
         self += KeywordSyncZfsSnapRecursive()
         self += KeywordSyncZfsSnapDataset()
         self += KeywordSyncZfsSnapKeep()
+        self += KeywordSyncS3Snar()
         self += KeywordSyncS3Src()
         self += KeywordSyncS3Options()
         self += KeywordSyncS3Bucket()
@@ -4412,6 +4565,8 @@ class KeyDict(KeywordStore):
         self += KeywordSyncRsyncDstfs()
         self += KeywordSyncRsyncBwlimit()
         self += KeywordDefaultSyncSchedule()
+        self += KeywordDefaultAws()
+        self += KeywordDefaultAwsProfile()
         self += KeywordSyncSchedule()
         self += KeywordSyncSyncMaxDelay()
         self += KeywordIpType()
@@ -4472,6 +4627,7 @@ class KeyDict(KeywordStore):
         self += KeywordDiskImageFormat()
         self += KeywordDiskOptions()
         self += KeywordDiskScsireserv()
+        self += KeywordDiskNoPreemptAbort()
         self += KeywordDiskPvs()
         self += KeywordZPoolName()
         self += KeywordZPoolPoolname()
@@ -4486,6 +4642,8 @@ class KeyDict(KeywordStore):
         self += KeywordFsMkfsOpt()
         self += KeywordFsSnapSize()
         self += KeywordFsVg()
+        self += KeywordFsScsireserv()
+        self += KeywordFsNoPreemptAbort()
         self += KeywordFsSize()
         self += KeywordFsDirPath()
         self += KeywordFsDirUser()
@@ -4516,6 +4674,7 @@ class KeyDict(KeywordStore):
         self += KeywordSyncSymcloneConsistent()
         self += KeywordSyncSymcloneSymid()
         self += KeywordSyncSymcloneRestoreTimeout()
+        self += KeywordSyncSymcloneRecreateTimeout()
         self += KeywordSyncSymclonePairs()
         self += KeywordSyncSymclonePrecopy()
         self += KeywordSyncDcsckptDcs()
@@ -4546,10 +4705,13 @@ class KeyDict(KeywordStore):
         self += KeywordStonithCalloutCmd()
         self += KeywordContainerType()
         self += KeywordContainerZoneDeleteOnStop()
+        self += KeywordContainerScsireserv()
+        self += KeywordContainerNoPreemptAbort()
+        self += KeywordContainerOrigin()
+        self += KeywordContainerRcmd()
         self += KeywordVmName()
         self += KeywordVmHostname()
         self += KeywordOsvcRootPath()
-        self += KeywordContainerRcmd()
         self += KeywordGuestos()
         self += KeywordRootfs()
         self += KeywordLxcCf()
@@ -4569,7 +4731,6 @@ class KeyDict(KeywordStore):
         self += KeywordDockerRunArgs()
         self += KeywordSnap()
         self += KeywordSnapof()
-        self += KeywordContainerOrigin()
         self += KeywordSrpIp()
         self += KeywordSrpRootpath()
         self += KeywordSrpPrmCores()
@@ -4582,8 +4743,9 @@ class KeyDict(KeywordStore):
         self += KeywordTaskUser()
         self += KeywordTaskSchedule()
 
+svc_keys = KeyDict(provision=True)
+
 if __name__ == "__main__":
-    store = KeyDict()
-    store.print_templates()
-    #print(store.DEFAULT.app)
-    #print(store['DEFAULT'])
+    svc_keys.print_templates()
+    #print(svc_keys.container.getkey("cf"))
+    #print(svc_keys['DEFAULT'])
