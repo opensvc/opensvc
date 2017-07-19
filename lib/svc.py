@@ -2206,6 +2206,7 @@ class Svc(Crypt):
             wait = self.options.wait
         if timeout is None:
             timeout = self.options.time
+        timeout = convert_duration(timeout)
         if not wait:
             return
 
@@ -3859,7 +3860,7 @@ class Svc(Crypt):
         self.svcunlock()
         self.clear(nodename=rcEnv.nodename)
         self.clear(nodename=self.options.destination_node)
-        self.daemon_mon_action("freeze", wait=True, timeout=self.options.time)
+        self.daemon_mon_action("freeze", wait=True)
         src_node = self.current_node()
         self.daemon_service_action(["prstop"], nodename=src_node)
         try:
@@ -3883,9 +3884,9 @@ class Svc(Crypt):
         self.svcunlock()
         self.clear(nodename=rcEnv.nodename)
         self.clear(nodename=self.options.destination_node)
-        self.daemon_mon_action("stop", wait=True, timeout=self.options.time)
+        self.daemon_mon_action("stop", wait=True)
         self.daemon_service_action(["start"], nodename=rcEnv.nodename)
-        self.daemon_mon_action("thaw", wait=True, timeout=self.options.time)
+        self.daemon_mon_action("thaw", wait=True)
 
     def giveback(self):
         """
@@ -3894,8 +3895,8 @@ class Svc(Crypt):
         self.svcunlock()
         self.clear(nodename=rcEnv.nodename)
         self.clear(nodename=self.options.destination_node)
-        self.daemon_mon_action("stop", wait=True, timeout=self.options.time)
-        self.daemon_mon_action("thaw", wait=True, timeout=self.options.time)
+        self.daemon_mon_action("stop", wait=True)
+        self.daemon_mon_action("thaw", wait=True)
 
     def switch(self):
         """
@@ -3905,9 +3906,9 @@ class Svc(Crypt):
         self.svcunlock()
         self.clear(nodename=rcEnv.nodename)
         self.clear(nodename=self.options.destination_node)
-        self.daemon_mon_action("stop", wait=True, timeout=self.options.time)
+        self.daemon_mon_action("stop", wait=True)
         self.daemon_service_action(["start"], nodename=self.options.destination_node)
-        self.daemon_mon_action("thaw", wait=True, timeout=self.options.time)
+        self.daemon_mon_action("thaw", wait=True)
 
     def collector_rest_get(self, *args, **kwargs):
         kwargs["svcname"] = self.svcname

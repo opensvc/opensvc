@@ -68,7 +68,7 @@ svcmgr_collector_asset="--color --cron --daemon --debug --env --format --status 
 svcmgr_prstatus="--color --cron --daemon --debug --env --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_takeover="--color --cron --daemon --debug --disable-rollback --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_sync_update="--color --cron --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
-svcmgr_logs="--color --cron --daemon --debug --env --no-pager --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_logs="--backlog --color --cron --daemon --debug --env --follow --no-pager --node --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_migrate="--color --cron --daemon --debug --disable-rollback --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --to --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_print_resource_status="--color --cron --daemon --debug --env --format --refresh --rid --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_presync="--color --cron --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
@@ -262,7 +262,7 @@ nodemgr_collector_ack_action="--author --color --comment --cron --debug --format
 nodemgr_collector_alerts="--color --cron --debug --format -h --help"
 nodemgr_collector_asset="--color --cron --debug --format -h --help"
 
-opts_with_arg=( "--add" "--api" "--app" "--author" "--begin" "--broadcast" "--color" "--comment" "--config" "--duration" "--end" "--env" "--format" "--hba" "--id" "--index" "--like" "--lun" "--mac" "--message" "--module" "--moduleset" "--node" "--object" "--param" "--password" "--remove" "--resource" "--rid" "--ruleset" "--ruleset-date" "--secret" "--service" "--slave" "--stats-dir" "--status" "--subsets" "--symcli-db-file" "--tag" "--tags" "--target" "--template" "--thread-id" "--time" "--to" "--user" "--value" "--waitlock" "-s" )
+opts_with_arg=( "--add" "--api" "--app" "--author" "--backlog" "--begin" "--broadcast" "--color" "--comment" "--config" "--duration" "--end" "--env" "--format" "--hba" "--id" "--index" "--like" "--lun" "--mac" "--message" "--module" "--moduleset" "--node" "--object" "--param" "--password" "--remove" "--resource" "--rid" "--ruleset" "--ruleset-date" "--secret" "--service" "--slave" "--stats-dir" "--status" "--subsets" "--symcli-db-file" "--tag" "--tags" "--target" "--template" "--thread-id" "--time" "--to" "--user" "--value" "--waitlock" "-s" )
 
 
 

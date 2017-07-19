@@ -287,10 +287,10 @@ OPT = Storage({
              "served by the collector, to use when creating or "
              "installing a service"),
     "time": Option(
-        "--time", default=300,
-        action="store", dest="time", type="int",
-        help="Number of seconds to wait for an async action to "
-             "finish. Default is 300 seconds."),
+        "--time", default="300",
+        action="store", dest="time",
+        help="A duration expression like '1m5s'. The maximum wait time for an "
+             "async action to finish. Default is 300 seconds."),
     "to": Option(
         "--to", default=None,
         action="store", dest="parm_destination_node",
@@ -363,6 +363,7 @@ START_ACTION_OPTS = [
 
 DAEMON_OPTS = [
     OPT.node,
+    OPT.local,
 ]
 
 ACTIONS = {
@@ -669,25 +670,25 @@ ACTIONS = {
             'msg': 'stop the service on the local node and start on the '
                    'remote node. --to <node> specify the remote node to '
                    'switch the service to.',
-            'options': ACTION_OPTS + START_ACTION_OPTS + [
+            'options': ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
                 OPT.to,
             ],
         },
         'takeover': {
             'msg': 'stop the service on its current node and start on the '
                    'local node.',
-            'options': ACTION_OPTS + START_ACTION_OPTS
+            'options': ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS
         },
         'giveback': {
             'msg': 'stop the service on its current node and start on the '
                    'node chosen by the placement policy.',
-            'options': ACTION_OPTS + START_ACTION_OPTS
+            'options': ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS
         },
         'migrate': {
             'msg': 'live migrate the service to the remote node. '
                    '--to <node> specify the remote node to migrate the '
                    'service to.',
-            'options': ACTION_OPTS + START_ACTION_OPTS + [
+            'options': ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
                 OPT.to,
             ],
         },

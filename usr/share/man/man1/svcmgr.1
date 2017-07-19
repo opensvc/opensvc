@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2017\-07\-12
+.TH SVCMGR 1 2017\-07\-19
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -51,7 +51,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -79,7 +79,7 @@ a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavail
 a comment to log when used with the 'collector ack unavailability' action
 .TP
 .B --duration=DURATION
-a duration expressed in minutes. used with the 'collector ack unavailability' action
+a duration expression like '10m'. used with the 'collector ack unavailability' action
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
@@ -109,7 +109,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -152,7 +152,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -195,7 +195,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -238,7 +238,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -281,7 +281,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -324,7 +324,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -373,7 +373,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -422,7 +422,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -468,7 +468,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -520,7 +520,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -563,7 +563,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -606,7 +606,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -658,7 +658,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -701,7 +701,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -744,7 +744,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -787,7 +787,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -835,7 +835,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -878,7 +878,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -921,7 +921,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -976,7 +976,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1031,7 +1031,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1077,7 +1077,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1120,7 +1120,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1163,7 +1163,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1209,7 +1209,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1264,7 +1264,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1319,7 +1319,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1359,7 +1359,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1399,7 +1399,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1439,7 +1439,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1479,7 +1479,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1519,7 +1519,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1594,7 +1594,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1637,7 +1637,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1686,7 +1686,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1756,7 +1756,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1796,7 +1796,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1845,7 +1845,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1858,7 +1858,7 @@ set up a flag to block actions on this service
 
 .TP
 .B --time=TIME
-Number of seconds to wait for an async action to finish. Default is 300 seconds.
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
 .TP
 .B --wait
 Wait for asynchronous action termination
@@ -1897,7 +1897,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -1937,7 +1937,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2010,7 +2010,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2021,6 +2021,15 @@ show this help message and exit
 
 display the service logs in the pager
 
+.TP
+.B --backlog=BACKLOG
+A size expression telling the logs action to fetch at most as much data from the log file tail. Default is 10k.
+.TP
+.B --follow
+with logs action, follow the logs as they come.
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --no-pager
 do not display the command result in a pager.
@@ -2053,7 +2062,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2093,7 +2102,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2169,7 +2178,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2239,7 +2248,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2309,7 +2318,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2379,7 +2388,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2449,7 +2458,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2519,7 +2528,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2559,7 +2568,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2611,7 +2620,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2663,7 +2672,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2712,7 +2721,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2758,7 +2767,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2810,7 +2819,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2883,7 +2892,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2956,7 +2965,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -2996,7 +3005,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3066,7 +3075,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3109,7 +3118,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3149,7 +3158,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3189,7 +3198,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3229,7 +3238,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3299,7 +3308,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3372,7 +3381,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3445,7 +3454,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3515,7 +3524,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3555,7 +3564,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3625,7 +3634,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3671,7 +3680,7 @@ comma-separated list of resource tags to limit action to. The + separator can be
 Exit without resource activation rollback on start action error
 .TP
 .B --time=TIME
-Number of seconds to wait for an async action to finish. Default is 300 seconds.
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
 .TP
 .B --wait
 Wait for asynchronous action termination
@@ -3704,7 +3713,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3777,7 +3786,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3850,7 +3859,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3923,7 +3932,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -3996,7 +4005,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4069,7 +4078,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4142,7 +4151,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4215,7 +4224,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4258,7 +4267,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4328,7 +4337,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4371,7 +4380,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --time=TIME
-Number of seconds to wait for an async action to finish. Default is 300 seconds.
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
 .TP
 .B --wait
 Wait for asynchronous action termination
@@ -4404,7 +4413,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4474,7 +4483,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4544,7 +4553,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4614,7 +4623,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4684,7 +4693,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4754,7 +4763,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4824,7 +4833,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4900,7 +4909,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -4970,7 +4979,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5040,7 +5049,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5110,7 +5119,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5180,7 +5189,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5250,7 +5259,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5320,7 +5329,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5390,7 +5399,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5460,7 +5469,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5530,7 +5539,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5600,7 +5609,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5670,7 +5679,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5740,7 +5749,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5810,7 +5819,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5880,7 +5889,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5953,7 +5962,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -5966,7 +5975,7 @@ remove the flag to unblock actions on this service
 
 .TP
 .B --time=TIME
-Number of seconds to wait for an async action to finish. Default is 300 seconds.
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
 .TP
 .B --wait
 Wait for asynchronous action termination
@@ -6005,7 +6014,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -6045,7 +6054,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -6115,7 +6124,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -6202,7 +6211,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -6275,7 +6284,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -6321,7 +6330,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -6367,7 +6376,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -6410,7 +6419,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -6465,7 +6474,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -6508,7 +6517,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -6587,7 +6596,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit
@@ -6627,7 +6636,7 @@ export the uppercased variable in the os environment. with the create action onl
 start actions on specified services in parallel
 .TP
 .B --waitlock=PARM_WAITLOCK
-Number of seconds to wait for the action lock acquire.
+A duration expression like '5s'. The maximum wait time for the action lock acquire.
 .TP
 .B -h, --help
 show this help message and exit

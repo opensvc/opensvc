@@ -36,7 +36,7 @@ from rcScheduler import scheduler_fork, Scheduler, SchedOpts
 from rcConfigParser import RawConfigParser
 from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
-                        call, which, purge_cache, read_cf
+                        call, which, purge_cache, read_cf, convert_duration
 from comm import Crypt
 
 if sys.version_info[0] < 3:
@@ -2845,13 +2845,17 @@ class Node(Crypt):
         self.log.info("%s action requested", action)
         if not self.options.wait:
             raise ex.excAbortAction()
-        self.poll_async_action(states[action], self.options.time)
+        self.poll_async_action(states[action])
 
     def poll_async_action(self, state, timeout=None):
         """
         Display an asynchronous action progress until its end or timeout
         """
         prev_global_expect_set = set()
+        if timeout is None:
+            timeout = self.options.time
+        timeout = convert_duration(timeout)
+
         for _ in range(timeout):
             data = self._daemon_status()
             if data is None:
