@@ -94,7 +94,7 @@ OPT = Storage({
     "duration": Option(
         "--duration", default=None,
         action="store", dest="duration", type="int",
-        help="a duration expressed in minutes. used with the "
+        help="a duration expression like '10m'. used with the "
              "'collector ack unavailability' action"),
     "end": Option(
         "--end", default=None,

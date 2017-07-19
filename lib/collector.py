@@ -6,7 +6,7 @@ import re
 import datetime
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_exe, justcall, banner
+from rcUtilities import is_exe, justcall, banner, convert_duration
 from subprocess import *
 
 class Collector(object):
@@ -41,7 +41,7 @@ class Collector(object):
         if self.options.comment is not None:
             opts['comment'] = self.options.comment
         if self.options.duration is not None:
-            opts['duration'] = self.options.duration
+            opts['duration'] = convert_duration(self.options.duration, _to="m")
         if self.options.account:
             opts['account'] = "1"
         else:
@@ -68,7 +68,7 @@ class Collector(object):
         if self.options.comment is not None:
             opts['comment'] = self.options.comment
         if self.options.duration is not None:
-            opts['duration'] = self.options.duration
+            opts['duration'] = convert_duration(self.options.duration, _to="m")
         if self.options.account:
             opts['account'] = "1"
         else:
@@ -91,7 +91,7 @@ class Collector(object):
         if self.options.end is not None:
             opts['end'] = self.options.end
         if self.options.duration is not None:
-            opts['duration'] = self.options.duration
+            opts['duration'] = convert_duration(self.options.duration, _to="m")
 
         d = self.collector.call('collector_list_actions', opts)
         if d is None:
