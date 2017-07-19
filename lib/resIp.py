@@ -7,7 +7,7 @@ import os
 
 import resources as Res
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall, which, getaddr
+from rcUtilities import qcall, which, getaddr, convert_duration
 import rcStatus
 import rcExceptions as ex
 
@@ -233,7 +233,7 @@ class Ip(Res.Resource):
         """
         import lock
         if self.svc.options.waitlock >= 0:
-            timeout = self.svc.options.waitlock
+            timeout = convert_duration(self.svc.options.waitlock)
         else:
             timeout = 120
         delay = 1

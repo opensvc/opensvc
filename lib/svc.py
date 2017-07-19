@@ -21,7 +21,7 @@ import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
 from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         try_decode, eval_expr, convert_bool, action_triggers, \
-                        read_cf, drop_option
+                        read_cf, drop_option, convert_duration
 import rcExceptions as ex
 import rcLogger
 import node
@@ -3674,9 +3674,8 @@ class Svc(Crypt):
             ))
 
         err = 0
-        if options.waitlock >= 0:
-            waitlock = options.waitlock
-        else:
+        waitlock = convert_duration(options.waitlock)
+        if waitlock < 0:
             waitlock = self.lock_timeout
 
         try:

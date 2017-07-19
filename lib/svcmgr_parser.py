@@ -93,7 +93,7 @@ OPT = Storage({
         help="Show the action execution plan"),
     "duration": Option(
         "--duration", default=None,
-        action="store", dest="duration", type="int",
+        action="store", dest="duration",
         help="a duration expression like '10m'. used with the "
              "'collector ack unavailability' action"),
     "end": Option(
@@ -316,10 +316,10 @@ OPT = Storage({
         action="store_true", dest="wait",
         help="Wait for asynchronous action termination"),
     "waitlock": Option(
-        "--waitlock", default=-1,
-        action="store", dest="parm_waitlock", type="int",
-        help="Number of seconds to wait for the action lock "
-             "acquire."),
+        "--waitlock", default="-1",
+        action="store", dest="parm_waitlock",
+        help="A duration expression like '5s'. The maximum wait time for the "
+             "action lock acquire."),
 })
 
 SVCMGR_OPTS = [

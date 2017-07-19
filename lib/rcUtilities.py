@@ -1074,7 +1074,7 @@ if __name__ == "__main__":
     #print("status: ", r, "output:", output)
     #print(convert_size("10000 KiB", _to='MiB', _round=3))
     #print(convert_size("10M", _to='', _round=4096))
-    for s in (1, "1", "1w1d1h1m1s", "1d", "1d1w", "2m2s", "Ad", "1dd"):
+    for s in (1, "1", "1w1d1h1m1s", "1d", "1d1w", "2m2s", "Ad", "1dd", "-1", "-1s"):
         try:
             print(s, "=>", convert_duration(s, _to="d"))
         except ex.excError as exc:
