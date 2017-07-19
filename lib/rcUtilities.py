@@ -746,6 +746,52 @@ def convert_bool(s):
         return False
     raise Exception('Invalid value for boolean conversion: ' + str(s))
 
+def convert_duration(s):
+    """
+    Convert a string representation of a duration to seconds.
+    Supported units (case insensitive):
+      w: week
+      d: day
+      h: hour
+      m: minute
+      s: second
+    Example:
+      1w => 604800
+      1d => 86400
+      1h => 3600
+      1h1m => 3660
+      1h2s => 3602
+      1 => 1
+    """
+    try:
+        s = int(s)
+        return s
+    except ValueError:
+        pass
+
+    units = {
+        "w": 604800,
+        "d": 86400,
+        "h": 3600,
+        "m": 60,
+        "s": 1,
+    }
+    s = s.lower()
+    duration = 0
+    prev = 0
+    for idx, unit in enumerate(s):
+        if unit not in units:
+            continue
+        _duration = s[prev:idx]
+        try:
+            _duration = int(_duration)
+        except ValueError:
+            raise ex.excError("invalid duration format: %s at index %d" % (s, idx))
+        duration += _duration * units[unit]
+        prev = idx + 1
+
+    return duration
+
 def convert_size(s, _to='', _round=1):
     l = ['', 'K', 'M', 'G', 'T', 'P', 'Z', 'E']
     if type(s) in (int, float):
@@ -1022,6 +1068,11 @@ if __name__ == "__main__":
     #print("call(('id','-a'))")
     #(r,output,err)=call(("/usr/bin/id","-a"))
     #print("status: ", r, "output:", output)
-    print(convert_size("10000 KiB", _to='MiB', _round=3))
-    print(convert_size("10M", _to='', _round=4096))
+    #print(convert_size("10000 KiB", _to='MiB', _round=3))
+    #print(convert_size("10M", _to='', _round=4096))
+    for s in (1, "1", "1w1d1h1m1s", "1d", "1d1w", "2m2s", "Ad", "1dd"):
+        try:
+            print(s, "=>", convert_duration(s))
+        except ex.excError as exc:
+            print(exc)
 
