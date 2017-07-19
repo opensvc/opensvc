@@ -746,7 +746,7 @@ def convert_bool(s):
         return False
     raise Exception('Invalid value for boolean conversion: ' + str(s))
 
-def convert_duration(s):
+def convert_duration(s, _to="s"):
     """
     Convert a string representation of a duration to seconds.
     Supported units (case insensitive):
@@ -763,11 +763,8 @@ def convert_duration(s):
       1h2s => 3602
       1 => 1
     """
-    try:
-        s = int(s)
-        return s
-    except ValueError:
-        pass
+    if s is None:
+        raise ex.excError("convert duration error: None is not a valid duration")
 
     units = {
         "w": 604800,
@@ -776,6 +773,13 @@ def convert_duration(s):
         "m": 60,
         "s": 1,
     }
+
+    try:
+        s = int(s)
+        return s // units[_to]
+    except ValueError:
+        pass
+
     s = s.lower()
     duration = 0
     prev = 0
@@ -790,7 +794,7 @@ def convert_duration(s):
         duration += _duration * units[unit]
         prev = idx + 1
 
-    return duration
+    return duration // units[_to]
 
 def convert_size(s, _to='', _round=1):
     l = ['', 'K', 'M', 'G', 'T', 'P', 'Z', 'E']
@@ -1072,7 +1076,7 @@ if __name__ == "__main__":
     #print(convert_size("10M", _to='', _round=4096))
     for s in (1, "1", "1w1d1h1m1s", "1d", "1d1w", "2m2s", "Ad", "1dd"):
         try:
-            print(s, "=>", convert_duration(s))
+            print(s, "=>", convert_duration(s, _to="d"))
         except ex.excError as exc:
             print(exc)
 
