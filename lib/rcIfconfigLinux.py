@@ -37,9 +37,9 @@ class ifconfig(rcIfconfig.ifconfig):
                 """
                 _line = line.split()
                 ifname = _line[1].strip(":")
-                if "@if" in ifname:
-                    ifkname = ifname[ifname.index("@if"):]
-                    ifname = ifname[:ifname.index("@if")]
+                if "@" in ifname:
+                    ifkname = ifname[ifname.index("@"):]
+                    ifname = ifname[:ifname.index("@")]
                 else:
                     ifkname = None
                 i = rcIfconfig.interface(ifname)
