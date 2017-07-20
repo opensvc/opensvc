@@ -134,13 +134,16 @@ class Container(Res.Resource):
                 Container.getaddr(self)
             if not hasattr(self, 'addr'):
                 raise ex.excError()
-            u = __import__("rcUtilities"+rcEnv.sysname)
-            ping = u.check_ping
-            self.log.info("test %s ip %s availability"%(self.name, self.addr))
-            if ping(self.addr):
-                return True
         except:
-            self.log.info("could not resolve %s to an ip address. skip ip availability test."%self.name)
+            self.log.info("could not resolve %s to an ip address" % self.vm_hostname)
+            return True
+
+        u = __import__("rcUtilities"+rcEnv.sysname)
+        ping = u.check_ping
+        self.log.info("test %s ip %s availability" % (self.name, self.addr))
+        if ping(self.addr):
+            self.log.info("address %s is alive" % self.addr)
+            return True
 
         return False
 
