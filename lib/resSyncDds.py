@@ -367,8 +367,6 @@ class syncDds(resSync.Sync):
                  target=None,
                  src=None,
                  dsts={},
-                 delta_store=None,
-                 sender=None,
                  snap_size=0,
                  **kwargs):
         resSync.Sync.__init__(self,
@@ -381,10 +379,6 @@ class syncDds(resSync.Sync):
         self.src = src
         self.dsts = dsts
         self.snap_size = snap_size
-        if delta_store is None:
-            self.delta_store = rcEnv.paths.pathvar
-        else:
-            self.delta_store = delta_store
 
     def __str__(self):
         return "%s target=%s src=%s" % (resSync.Sync.__str__(self),\

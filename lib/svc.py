@@ -239,7 +239,8 @@ STATUS_TYPES = [
     "sync.necismsnap",
     "sync.netapp",
     "sync.nexenta",
-    "sync.rados",
+    "sync.radossnap",
+    "sync.radosclone",
     "sync.rsync",
     "sync.symclone",
     "sync.symsnap",
@@ -2820,7 +2821,8 @@ class Svc(Crypt):
     def sync_resync(self):
         self.sub_set_action("sync.netapp", "sync_resync")
         self.sub_set_action("sync.nexenta", "sync_resync")
-        self.sub_set_action("sync.rados", "sync_resync")
+        self.sub_set_action("sync.radossnap", "sync_resync")
+        self.sub_set_action("sync.radosclone", "sync_resync")
         self.sub_set_action("sync.dds", "sync_resync")
         self.sub_set_action("sync.symclone", "sync_resync")
         self.sub_set_action("sync.symsnap", "sync_resync")
@@ -5131,19 +5133,60 @@ class Svc(Crypt):
             self.ref_cache[key] = val
         return val
 
-    def conf_get(self, s, o, t=None, scope=None, impersonate=None, use_default=True, config=None):
+    def conf_get(self, s, o, t=None, scope=None, impersonate=None,
+                 use_default=True, config=None):
         section = s.split("#")[0]
+        try:
+            rtype = self.config.get(s, "type")
+            fkey = ".".join((section, rtype, o))
+        except:
+            rtype = None
+            fkey = ".".join((section, o))
+
+        deprecated_keyword = svcDict.reverse_deprecated_keywords.get(fkey)
+
+        # 1st try: supported keyword
+        try:
+            return self._conf_get(s, o, t=t, scope=scope, impersonate=impersonate,
+                                  use_default=use_default, config=config,
+                                  section=section, rtype=rtype)
+        except ex.RequiredOptNotFound:
+            if deprecated_keyword is None:
+                self.log.error("%s.%s is mandatory" % (s, o))
+                raise
+        except ex.OptNotFound:
+            if deprecated_keyword is None:
+                raise
+
+        # 2nd try: deprecated keyword
+        try:
+            return self._conf_get(s, deprecated_keyword, t=t, scope=scope,
+                                  impersonate=impersonate,
+                                  use_default=use_default, config=config,
+                                  section=section, rtype=rtype)
+        except ex.RequiredOptNotFound:
+            self.log.error("%s.%s is mandatory" % (s, o))
+            raise
+
+    def _conf_get(self, s, o, t=None, scope=None, impersonate=None,
+                 use_default=True, config=None, section=None, rtype=None):
+        default = None
+        required = False
+        deprecated = False
         if s != "env":
-            key = svcDict.svc_keys[section].getkey(o)
+            key = svcDict.svc_keys[section].getkey(o, rtype)
             if key is None:
                 if scope is None and t is None:
-                    raise ValueError("keyword not found in the services configuration dictionary: %s.%s" % \
+                    raise ValueError("%s.%s not found in the services configuration dictionary" % \
                                      (s, o))
                 else:
                     # passing 't' and 'scope' skips svc_keys validation.
-                    # used for deprecated keywords.
+                    # used for keywords not in svc_keys.
                     pass
             else:
+                deprecated = (key.keyword != o)
+                required = key.required
+                default = key.default
                 if scope is None:
                     scope = key.at
                 if t is None:
@@ -5158,10 +5201,18 @@ class Svc(Crypt):
         if t is None:
             t = "string"
         
-        if not scope:
-            val = self.conf_get_val_unscoped(s, o, use_default=use_default, config=config)
-        else:
-            val = self.conf_get_val_scoped(s, o, impersonate=impersonate, use_default=use_default, config=config)
+        try:
+            if not scope:
+                val = self.conf_get_val_unscoped(s, o, use_default=use_default, config=config)
+            else:
+                val = self.conf_get_val_scoped(s, o, use_default=use_default, config=config,
+                                               impersonate=impersonate)
+        except ex.OptNotFound as exc:
+            if required:
+                raise ex.RequiredOptNotFound
+            else:
+                exc.default = default
+                raise exc
 
         try:
             val = self.handle_references(val, scope=scope, impersonate=impersonate)

@@ -4,6 +4,7 @@ from rcGlobalEnv import rcEnv
 from textwrap import TextWrapper
 from rcNode import node_get_node_env
 
+# deprecated => supported
 deprecated_keywords = {
   "DEFAULT.service_type": "env",
   "disk.lvm.vgname": "name",
@@ -11,6 +12,18 @@ deprecated_keywords = {
   "disk.vg.vgname": "name",
   "sync.rsync.exclude": "options",
   "disk.zpool.poolname": "name",
+  "stonith.ilo.name": "target",
+}
+
+# supported => deprecated
+reverse_deprecated_keywords = {
+  "DEFAULT.env": "service_type",
+  "disk.lvm.name": "vgname",
+  "disk.pool.name": "poolname",
+  "disk.vg.name": "vgname",
+  "sync.rsync.options": "exclude",
+  "disk.zpool.name": "poolname",
+  "stonith.ilo.target": "name",
 }
 
 deprecated_sections = {
@@ -312,10 +325,22 @@ class Section(object):
                 return None
             keyword, node = l
         if rtype:
+            fkey = ".".join((self.section, rtype, keyword))
+            if fkey in deprecated_keywords:
+                keyword = deprecated_keywords[fkey]
             for k in self.keywords:
-                if k.keyword == keyword and k.rtype and rtype in k.rtype:
+                if k.keyword != keyword:
+                    continue
+                if k.rtype is None:
+                    return k
+                elif isinstance(k.rtype, list) and rtype in k.rtype:
+                    return k
+                elif rtype == k.rtype:
                     return k
         else:
+            fkey = ".".join((self.section, keyword))
+            if fkey in deprecated_keywords:
+                keyword = deprecated_keywords[fkey]
             for k in self.keywords:
                 if k.keyword == keyword:
                     return k
@@ -537,7 +562,6 @@ class KeywordLockTimeout(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="lock_timeout",
-                  required=False,
                   order=10,
                   default=60,
                   convert="duration",
@@ -550,7 +574,6 @@ class KeywordMode(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="mode",
-                  required=False,
                   order=10,
                   default="hosted",
                   candidates=["hosted"],
@@ -564,7 +587,6 @@ class KeywordRollback(Keyword):
                   section="DEFAULT",
                   keyword="rollback",
                   at=True,
-                  required=False,
                   order=11,
                   default=True,
                   convert="boolean",
@@ -578,7 +600,6 @@ class KeywordCompSchedule(Keyword):
                   section="DEFAULT",
                   keyword="comp_schedule",
                   at=True,
-                  required=False,
                   order=11,
                   default="00:00-06:00@361",
                   text="The service compliance run schedule. See usr/share/doc/template.node.conf for the schedule syntax."
@@ -591,7 +612,6 @@ class KeywordStatusSchedule(Keyword):
                   section="DEFAULT",
                   keyword="status_schedule",
                   at=True,
-                  required=False,
                   order=11,
                   default="@10",
                   text="The service status evaluation schedule. See usr/share/doc/template.node.conf for the schedule syntax."
@@ -604,7 +624,6 @@ class KeywordDefaultSyncSchedule(Keyword):
                   section="DEFAULT",
                   keyword="sync_schedule",
                   at=True,
-                  required=False,
                   order=11,
                   default="04:00-06:00@121",
                   text="The default sync resources schedule. See usr/share/doc/template.node.conf for the schedule syntax."
@@ -617,7 +636,6 @@ class KeywordDefaultAws(Keyword):
                   section="DEFAULT",
                   keyword="aws",
                   at=True,
-                  required=False,
                   order=11,
                   text="The aws cli executable fullpath. If not provided, aws is expected to be found in the PATH."
                 )
@@ -629,7 +647,6 @@ class KeywordDefaultAwsProfile(Keyword):
                   section="DEFAULT",
                   keyword="aws_profile",
                   at=True,
-                  required=False,
                   default="default",
                   order=11,
                   text="The profile to use with the AWS api."
@@ -642,7 +659,6 @@ class KeywordResinfoSchedule(Keyword):
                   section="DEFAULT",
                   keyword="resinfo_schedule",
                   at=True,
-                  required=False,
                   order=11,
                   default="@60",
                   text="The service resource info push schedule. See usr/share/doc/template.node.conf for the schedule syntax."
@@ -655,7 +671,6 @@ class KeywordMonitorSchedule(Keyword):
                   section="DEFAULT",
                   keyword="monitor_schedule",
                   at=True,
-                  required=False,
                   order=11,
                   default="@1",
                   text="The service resource monitor schedule. See usr/share/doc/template.node.conf for the schedule syntax."
@@ -668,7 +683,6 @@ class KeywordPushSchedule(Keyword):
                   section="DEFAULT",
                   keyword="push_schedule",
                   at=True,
-                  required=False,
                   order=11,
                   default="00:00-06:00@361",
                   text="The service configuration emission to the collector schedule. See usr/share/doc/template.node.conf for the schedule syntax."
@@ -681,7 +695,6 @@ class KeywordFlexPrimary(Keyword):
                   section="DEFAULT",
                   keyword="flex_primary",
                   at=True,
-                  required=False,
                   order=11,
                   depends=[('cluster_type', ["flex"])],
                   default_text="<first node of the nodes parameter>",
@@ -695,7 +708,6 @@ class KeywordDrpFlexPrimary(Keyword):
                   section="DEFAULT",
                   keyword="drp_flex_primary",
                   at=True,
-                  required=False,
                   order=11,
                   depends=[('cluster_type', ["flex"])],
                   default_text="<first node of the drpnodes parameter>",
@@ -710,7 +722,6 @@ class KeywordDockerSwarmManagers(Keyword):
                   keyword="docker_swarm_managers",
                   order=20,
                   at=True,
-                  required=False,
                   text="List of nodes promoted as docker swarm managers.The flex primary node is implicitely a manager. Whitespace separated."
                 )
 
@@ -721,7 +732,6 @@ class KeywordDockerExe(Keyword):
                   section="DEFAULT",
                   keyword="docker_exe",
                   at=True,
-                  required=False,
                   order=12,
                   text="If you have multiple docker versions installed and want the service to stick to a version whatever the PATH definition, you should set this parameter to the full path to the docker executable.",
                   example="/usr/bin/docker-1.8"
@@ -734,7 +744,6 @@ class KeywordDockerdExe(Keyword):
                   section="DEFAULT",
                   keyword="dockerd_exe",
                   at=True,
-                  required=False,
                   order=12,
                   text="If you have multiple docker versions installed and want the service to stick to a version whatever the PATH definition, you should set this parameter to the full path to the docker daemon executable.",
                   example="/usr/bin/dockerd-1.8"
@@ -747,7 +756,6 @@ class KeywordDockerDataDir(Keyword):
                   section="DEFAULT",
                   keyword="docker_data_dir",
                   at=True,
-                  required=False,
                   order=12,
                   text="If the service has docker-type container resources and docker_daemon_private is set to True, the service handles the startup of a private docker daemon. Its socket is <pathvar>/<svcname>/docker.sock, and its data directory must be specified using this parameter. This organization is necessary to enable service relocalization.",
                   example="/srv/svc1/data/docker"
@@ -760,7 +768,6 @@ class KeywordDockerDaemonPrivate(Keyword):
                   section="DEFAULT",
                   keyword="docker_daemon_private",
                   at=True,
-                  required=False,
                   default=True,
                   convert="boolean",
                   order=11,
@@ -775,7 +782,6 @@ class KeywordDockerDaemonArgs(Keyword):
                   section="DEFAULT",
                   keyword="docker_daemon_args",
                   at=True,
-                  required=False,
                   order=12,
                   text="If the service has docker-type container resources, the service handles the startup of a private docker daemon. OpenSVC sets the socket and data dir parameters. Admins can set extra parameters using this keyword. For example, it can be useful to set the --ip parameter for a docker registry service.",
                   example="--ip 1.2.3.4"
@@ -788,7 +794,6 @@ class KeywordDockerSwarmArgs(Keyword):
                   section="DEFAULT",
                   keyword="docker_swarm_args",
                   at=True,
-                  required=False,
                   order=12,
                   text="The arguments passed to docker swarm init on the flex primary, and to docker swarm join on the the other nodes. The --token argument must not be specified, as it is handled by the agent. Scoping this parameter permits to set additional parameters on the flex_primary for use with swarm init only, like --autolock.",
                   example="--advertize-addr {ip#0.ipname} --listen-addr {ip#0.ipname}",
@@ -805,7 +810,6 @@ class KeywordSubsetParallel(Keyword):
                   default=False,
                   convert="boolean",
                   text="If set to true, actions are executed in parallel amongst the subset member resources.",
-                  required=False,
                   order=2
                 )
 
@@ -827,6 +831,7 @@ class KeywordStonithTarget(Keyword):
         Keyword.__init__(
                   self,
                   section="stonith",
+                  rtype="ilo",
                   keyword="target",
                   at=True,
                   text="The server management console to pass the stonith command to, as defined in the corresponding auth.conf section title.",
@@ -842,6 +847,7 @@ class KeywordStonithCalloutCmd(Keyword):
                   rtype="callout",
                   at=True,
                   keyword="cmd",
+                  default="/bin/false",
                   text="The command to execute on target to stonith.",
                   required=True,
                   order=3
@@ -872,7 +878,6 @@ class KeywordContainerZoneDeleteOnStop(Keyword):
                   text="If set to true, the zone configuration is deleted after a resource stop. The agent maintains an export of the configuration for the next start. This export is replicated to the other nodes and drp nodes so they can take over the zone even if it is completely hosted on a shared disk.",
                   default=False,
                   convert="boolean",
-                  required=False,
                   order=1
                 )
 
@@ -884,7 +889,6 @@ class KeywordDockerDockerService(Keyword):
                   keyword="docker_service",
                   at=True,
                   order=9,
-                  required=False,
                   rtype="docker",
                   default=False,
                   convert="boolean",
@@ -900,8 +904,8 @@ class KeywordDockerRunImage(Keyword):
                   section="container",
                   keyword="run_image",
                   at=True,
+                  required=True,
                   order=9,
-                  required=False,
                   rtype="docker",
                   text="The docker image pull, and run the container with.",
                   example="83f2a3dd2980"
@@ -915,7 +919,6 @@ class KeywordDockerRunCommand(Keyword):
                   keyword="run_command",
                   at=True,
                   order=1,
-                  required=False,
                   rtype="docker",
                   text="The command to execute in the docker container on run.",
                   example="/opt/tomcat/bin/catalina.sh"
@@ -929,7 +932,6 @@ class KeywordDockerRunArgs(Keyword):
                   keyword="run_args",
                   at=True,
                   order=2,
-                  required=False,
                   rtype="docker",
                   text="Extra arguments to pass to the docker run command, like volume and port mappings.",
                   example="-v /opt/docker.opensvc.com/vol1:/vol1:rw -p 37.59.71.25:8080:8080"
@@ -1003,7 +1005,6 @@ class KeywordLxcCf(Keyword):
                   keyword="cf",
                   rtype="lxc",
                   text="Defines a lxc configuration file in a non-standard location.",
-                  required=False,
                   provisioning=True,
                   example="/srv/mycontainer/config"
                 )
@@ -1041,6 +1042,7 @@ class KeywordVmName(Keyword):
                   at=True,
                   order=2,
                   rtype=rcEnv.vt_supported,
+                  default_text="the service name",
                   text="This need to be set if the virtual machine name is different from the service name."
                 )
 
@@ -1067,6 +1069,20 @@ class KeywordContainerRcmd(Keyword):
                   rtype="lxc",
                   example="lxc-attach -e -n osvtavnprov01 -- ",
                   text="An container remote command override the agent default"
+                )
+
+class KeywordContainerVapp(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="vapp",
+                  rtype="vcloud",
+                  required=True,
+                  at=True,
+                  order=2,
+                  example="MyVapp",
+                  text="The Vcloud Virtual App hosting the VM."
                 )
 
 class KeywordOsvcRootPath(Keyword):
@@ -1151,6 +1167,7 @@ class KeywordKeyName(Keyword):
                   section="container",
                   keyword="key_name",
                   at=True,
+                  required=True,
                   order=11,
                   rtype=rcEnv.vt_cloud,
                   text="The key name, as known to the cloud manager, to trust in the provisioned vm."
@@ -1202,6 +1219,7 @@ class KeywordCloudId(Keyword):
                   self,
                   section="container",
                   keyword="cloud_id",
+                  required=True,
                   at=True,
                   order=11,
                   rtype=rcEnv.vt_cloud,
@@ -1215,6 +1233,7 @@ class KeywordVmUuid(Keyword):
                   section="container",
                   keyword="uuid",
                   at=True,
+                  required=True,
                   order=11,
                   rtype="ovm",
                   text="The virtual machine unique identifier used to pass commands on the VM."
@@ -1228,7 +1247,6 @@ class KeywordAffinity(Keyword):
                   keyword="affinity",
                   at=True,
                   order=15,
-                  required=False,
                   default=None,
                   text="A whitespace separated list of services that should be started on the node to allow the monitor to start this service.",
                   example="svc1 svc2"
@@ -1242,7 +1260,6 @@ class KeywordAntiAffinity(Keyword):
                   keyword="anti_affinity",
                   at=True,
                   order=15,
-                  required=False,
                   default=None,
                   text="A whitespace separated list of services that should not be started on the node to allow the monitor to start this service.",
                   example="svc1 svc2"
@@ -1256,7 +1273,6 @@ class KeywordPrKey(Keyword):
                   keyword="prkey",
                   order=15,
                   at=True,
-                  required=False,
                   text="Defines a specific default persistent reservation key for the service. A prkey set in a resource takes priority. If no prkey is specified in the service nor in the DEFAULT section, the prkey in node.conf is used. If node.conf has no prkey set, the hostid is computed and written in node.conf."
                 )
 
@@ -1268,7 +1284,6 @@ class KeywordDefaultNoPreemptAbort(Keyword):
                   keyword="no_preempt_abort",
                   order=15,
                   at=True,
-                  required=False,
                   candidates=(True, False),
                   default=False,
                   convert="boolean",
@@ -1282,7 +1297,6 @@ class KeywordCluster(Keyword):
                   section="DEFAULT",
                   keyword="cluster",
                   order=15,
-                  required=False,
                   default=None,
                   text="The symbolic name of the cluster. Used to label shared disks represented to tiers-2 consumers like containers.",
                   example="cluster1"
@@ -1296,7 +1310,6 @@ class KeywordShowDisabled(Keyword):
                   keyword="show_disabled",
                   at=True,
                   order=15,
-                  required=False,
                   default=True,
                   convert="boolean",
                   candidates=[True, False],
@@ -1311,7 +1324,6 @@ class KeywordClusterType(Keyword):
                   keyword="cluster_type",
                   at=True,
                   order=15,
-                  required=False,
                   default="failover",
                   candidates=["failover", "flex"],
                   text="failover: the service is allowed to be up on one node at a time. allactive: the service must be up on all nodes. flex: the service can be up on n out of m nodes (n <= m), n/m must be in the [flex_min_nodes, flex_max_nodes] range."
@@ -1324,7 +1336,6 @@ class KeywordPlacement(Keyword):
                   section="DEFAULT",
                   keyword="placement",
                   order=16,
-                  required=False,
                   default="nodes order",
                   candidates=["nodes order", "load avg"],
                   text="Set a service instances placement policy. nodes order: the left-most available node is allowed to start a service instance when necessary. load avg: the least loaded node.",
@@ -1337,7 +1348,6 @@ class KeywordConstraints(Keyword):
                   section="DEFAULT",
                   keyword="constraints",
                   order=16,
-                  required=False,
                   example="nodename==n2",
                   text="an expression constraining the service instance placement to matching nodes.",
                 )
@@ -1349,7 +1359,6 @@ class KeywordFlexMinNodes(Keyword):
                   section="DEFAULT",
                   keyword="flex_min_nodes",
                   order=16,
-                  required=False,
                   default=1,
                   convert="integer",
                   depends=[("cluster_type", ["flex"])],
@@ -1363,7 +1372,6 @@ class KeywordFlexMaxNodes(Keyword):
                   section="DEFAULT",
                   keyword="flex_max_nodes",
                   order=16,
-                  required=False,
                   default=10,
                   convert="integer",
                   depends=[("cluster_type", ["flex"])],
@@ -1377,7 +1385,6 @@ class KeywordFlexCpuMinThreshold(Keyword):
                   section="DEFAULT",
                   keyword="flex_cpu_min_threshold",
                   order=16,
-                  required=False,
                   default=10,
                   convert="integer",
                   depends=[("cluster_type", ["flex"])],
@@ -1391,7 +1398,6 @@ class KeywordFlexCpuMaxThreshold(Keyword):
                   section="DEFAULT",
                   keyword="flex_cpu_max_threshold",
                   order=16,
-                  required=False,
                   default=70,
                   convert="integer",
                   depends=[("cluster_type", ["flex"])],
@@ -1405,7 +1411,6 @@ class KeywordServiceType(Keyword):
                   section="DEFAULT",
                   keyword="service_type",
                   order=15,
-                  required=False,
                   candidates=rcEnv.allowed_svc_envs,
                   text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node env."
                 )
@@ -1417,7 +1422,6 @@ class KeywordServiceEnv(Keyword):
                   section="DEFAULT",
                   keyword="env",
                   order=15,
-                  required=True,
                   default=node_get_node_env(),
                   default_text="<same as node env>",
                   candidates=rcEnv.allowed_svc_envs,
@@ -1432,7 +1436,6 @@ class KeywordNodes(Keyword):
                   keyword="nodes",
                   order=20,
                   at=True,
-                  required=True,
                   default=rcEnv.nodename,
                   default_text="<hostname of the current node>",
                   text="List of cluster local nodes able to start the service.  Whitespace separated."
@@ -1733,7 +1736,6 @@ class KeywordAppTimeout(Keyword):
                   keyword="timeout",
                   order=9,
                   at=True,
-                  required=False,
                   text="Wait for <n> seconds max before declaring the app launcher action a failure. If no timeout is specified, the agent waits indefinitely for the app launcher to return. The timeout parameter can be coupled with optional=True to not abort a service start when an app launcher did not return.",
                   example="180"
                 )
@@ -1746,7 +1748,6 @@ class KeywordAppStart(Keyword):
                   keyword="start",
                   at=True,
                   order=10,
-                  required=False,
                   text="Start up sequencing number."
                 )
 
@@ -1758,7 +1759,6 @@ class KeywordAppStop(Keyword):
                   keyword="stop",
                   at=True,
                   order=11,
-                  required=False,
                   text="Stop sequencing number."
                 )
 
@@ -1770,7 +1770,6 @@ class KeywordAppCheck(Keyword):
                   keyword="check",
                   at=True,
                   order=11,
-                  required=False,
                   text="Check up sequencing number."
                 )
 
@@ -1782,7 +1781,6 @@ class KeywordAppInfo(Keyword):
                   keyword="info",
                   at=True,
                   order=12,
-                  required=False,
                   text="Info up sequencing number."
                 )
 
@@ -1793,7 +1791,6 @@ class KeywordSyncType(Keyword):
                   section="sync",
                   keyword="type",
                   order=10,
-                  required=True,
                   candidates=("rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "symsnap", "hp3par", "hp3parsnap", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "zfssnap", "btrfssnap", "rados", "s3"),
                   default="rsync",
                   text="Point a sync driver to use."
@@ -1809,7 +1806,6 @@ class KeywordSyncDockerTarget(Keyword):
                   order=11,
                   at=True,
                   required=True,
-                  default=None,
                   candidates=["nodes", "drpnodes", "nodes drpnodes"],
                   text="Destination nodes of the sync."
                 )
@@ -1823,7 +1819,6 @@ class KeywordSyncS3Snar(Keyword):
                   rtype="s3",
                   order=10,
                   at=True,
-                  required=False,
                   example="/srv/mysvc/var/sync.1.snar",
                   text="The GNU tar snar file full path. The snar file stored the GNU tar metadata needed to do an incremental tarball. If the service fails over shared disks the snar file should be stored there, so the failover node can continue the incremental cycle."
                 )
@@ -1851,7 +1846,6 @@ class KeywordSyncS3Options(Keyword):
                   rtype="s3",
                   order=10,
                   at=True,
-                  required=False,
                   example="--exclude *.pyc",
                   text="Options passed to GNU tar for archiving."
                 )
@@ -1881,7 +1875,6 @@ class KeywordSyncS3FullSchedule(Keyword):
                   at=True,
                   required=True,
                   example="@1441 sun",
-                  default="@1441 sun",
                   text="The schedule of full backups. sync_update actions are triggered according to the resource 'schedule' parameter, and do a full backup if the current date matches the 'full_schedule' parameter or an incremental backup otherwise."
                 )
 
@@ -1894,7 +1887,6 @@ class KeywordSyncZfsSnapRecursive(Keyword):
                   rtype="zfssnap",
                   order=10,
                   at=True,
-                  required=False,
                   example="true",
                   default=True,
                   convert="boolean",
@@ -1910,7 +1902,6 @@ class KeywordSyncZfsSnapName(Keyword):
                   rtype="zfssnap",
                   order=10,
                   at=True,
-                  required=False,
                   example="weekly",
                   text="A name included in the snapshot name to avoid retention conflicts between multiple zfs snapshot resources. A full snapshot name is formatted as <subvol>.<name>.snap.<datetime>. Example: data.weekly.snap.2016-03-09.10:09:52"
                 )
@@ -1938,7 +1929,6 @@ class KeywordSyncZfsSnapKeep(Keyword):
                   rtype="zfssnap",
                   order=10,
                   at=True,
-                  required=True,
                   default=3,
                   convert="integer",
                   example="3",
@@ -1954,7 +1944,6 @@ class KeywordSyncBtrfsSnapName(Keyword):
                   rtype="btrfssnap",
                   order=10,
                   at=True,
-                  required=False,
                   example="weekly",
                   text="A name included in the snapshot name to avoid retention conflicts between multiple btrfs snapshot resources. A full snapshot name is formatted as <subvol>.<name>.snap.<datetime>. Example: data.weekly.snap.2016-03-09.10:09:52"
                 )
@@ -1982,7 +1971,6 @@ class KeywordSyncBtrfsSnapKeep(Keyword):
                   rtype="btrfssnap",
                   order=10,
                   at=True,
-                  required=True,
                   default=3,
                   convert="integer",
                   example="3",
@@ -2025,7 +2013,6 @@ class KeywordSyncBtrfsTarget(Keyword):
                   order=11,
                   at=True,
                   required=True,
-                  default=None,
                   candidates=["nodes", "drpnodes", "nodes drpnodes"],
                   text="Destination nodes of the sync."
                 )
@@ -2039,7 +2026,6 @@ class KeywordSyncBtrfsRecursive(Keyword):
                   rtype="btrfs",
                   order=10,
                   at=True,
-                  required=False,
                   default=False,
                   convert="boolean",
                   candidates=[True, False],
@@ -2248,8 +2234,8 @@ class KeywordIpIpname(Keyword):
                   section="ip",
                   keyword="ipname",
                   order=12,
+                  required=True,
                   at=True,
-                  required=False,
                   text="The DNS name or IP address of the ip resource. Can be different from one node to the other, in which case '@nodename' can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter. With the amazon driver, the special <allocate> value tells the provisioner to assign a new private address."
                 )
 
@@ -2261,7 +2247,6 @@ class KeywordIpDnsNameSuffix(Keyword):
                   keyword="dns_name_suffix",
                   order=12,
                   at=True,
-                  required=False,
                   text="Add the value as a suffix to the DNS record name. The record created is thus formatted as <svcname>-<dns_name_suffix>.<app>.<managed zone>."
                 )
 
@@ -2273,7 +2258,6 @@ class KeywordIpNetwork(Keyword):
                   keyword="network",
                   order=12,
                   at=True,
-                  required=False,
                   example="10.0.0.0",
                   text="The network, in dotted notation, from where the ip provisioner allocates. Also used by the docker ip driver to delete the network route if del_net_route is set to true.",
                 )
@@ -2288,7 +2272,6 @@ class KeywordIpDnsUpdate(Keyword):
                   at=True,
                   default=False,
                   convert="boolean",
-                  required=False,
                   candidates=[True, False],
                   text="Setting this parameter triggers a DNS update. The record created is formatted as <svcname>.<app>.<managed zone>, unless dns_record_name is specified."
                 )
@@ -2301,7 +2284,6 @@ class KeywordIpZone(Keyword):
                   keyword="zone",
                   order=12,
                   at=True,
-                  required=False,
                   text="The zone name the ip resource is linked to. If set, the ip is plumbed from the global in the zone context.",
                   example="zone1"
                 )
@@ -2329,7 +2311,6 @@ class KeywordIpAmazonEip(Keyword):
                   keyword="eip",
                   order=12,
                   at=True,
-                  required=False,
                   text="The public elastic ip to associate to <ipname>. The special <allocate> value tells the provisioner to assign a new public address.",
                   example="52.27.90.63"
                 )
@@ -2344,7 +2325,6 @@ class KeywordIpAmazonCascadeAllocation(Keyword):
                   provisioning=True,
                   order=13,
                   at=True,
-                  required=False,
                   text="Set new allocated ip as value to other ip resources ipname parameter. The syntax is a whitespace separated list of <rid>.ipname[@<scope>].",
                   example="ip#1.ipname ip#1.ipname@nodes"
                 )
@@ -2360,7 +2340,6 @@ class KeywordIpAmazonDockerDaemonIp(Keyword):
                   order=13,
                   at=False,
                   candidates=[True, False],
-                  required=False,
                   text="Set new allocated ip as value as a '--ip <addr>' argument in the DEFAULT.docker_daemon_args parameter.",
                   example="True"
                 )
@@ -2373,7 +2352,6 @@ class KeywordDiskPrKey(Keyword):
                   keyword="prkey",
                   order=15,
                   at=True,
-                  required=False,
                   text="Defines a specific persistent reservation key for the resource. Takes priority over the service-level defined prkey and the node.conf specified prkey."
                 )
 
@@ -2417,7 +2395,6 @@ class KeywordDiskGceDescription(Keyword):
                   provisioning=True,
                   order=5,
                   at=True,
-                  required=False,
                   text="An optional, textual description for the disks being created.",
                   example="foo"
                 )
@@ -2432,7 +2409,6 @@ class KeywordDiskGceImage(Keyword):
                   provisioning=True,
                   order=5,
                   at=True,
-                  required=False,
                   text="An image to apply to the disks being created. When using this option, the size of the disks must be at least as large as the image size.",
                   example="centos-7"
                 )
@@ -2447,7 +2423,6 @@ class KeywordDiskGceImageProject(Keyword):
                   provisioning=True,
                   order=5,
                   at=True,
-                  required=False,
                   text="The project against which all image references will be resolved.",
                   example="myprj"
                 )
@@ -2462,7 +2437,6 @@ class KeywordDiskGceSize(Keyword):
                   provisioning=True,
                   order=3,
                   at=True,
-                  required=False,
                   convert="size",
                   text="Indicates the size of the disks. The OpenSVC size converter is used to produce gce compatible size, so k, K, kib, KiB, kb, KB, ki, Ki and all their g, t, p, e variants are supported.",
                   example="20g"
@@ -2478,7 +2452,6 @@ class KeywordDiskGceSourceSnapshot(Keyword):
                   provisioning=True,
                   order=5,
                   at=True,
-                  required=False,
                   text="A source snapshot used to create the disks. It is safe to delete a snapshot after a disk has been created from the snapshot. In such cases, the disks will no longer reference the deleted snapshot. When using this option, the size of the disks must be at least as large as the snapshot size.",
                   example="mysrcsnap"
                 )
@@ -2494,7 +2467,6 @@ class KeywordDiskGceDiskType(Keyword):
                   provisioning=True,
                   order=5,
                   at=True,
-                  required=False,
                   text="Specifies the type of disk to create. To get a list of available disk types, run 'gcloud compute disk-types list'. The default disk type is pd-standard.",
                   example="pd-standard"
                 )
@@ -2509,7 +2481,6 @@ class KeywordIpGceRoutename(Keyword):
                   provisioning=False,
                   order=13,
                   at=True,
-                  required=False,
                   text="Set the gce route name",
                   example="rt-ip1"
                 )
@@ -2524,7 +2495,6 @@ class KeywordIpGceZone(Keyword):
                   provisioning=False,
                   order=13,
                   at=True,
-                  required=False,
                   text="Set the gce ip route next hop zone",
                   example="europe-west1-b"
                 )
@@ -2538,7 +2508,6 @@ class KeywordIpType(Keyword):
                   at=True,
                   candidates=[None, 'crossbow', 'amazon', 'docker', 'gce'],
                   text="The opensvc ip driver name.",
-                  required=False,
                   order=10,
                   example="crossbow",
                 )
@@ -2564,8 +2533,8 @@ class KeywordIpIpdevext(Keyword):
                   keyword="ipdevext",
                   order=12,
                   at=True,
-                  required=False,
                   example="v4",
+                  default="v4",
                   text="The interface name extension for crossbow ipadm configuration."
                 )
 
@@ -2578,7 +2547,7 @@ class KeywordIpDelNetRoute(Keyword):
                   keyword="del_net_route",
                   order=12,
                   at=True,
-                  required=False,
+                  default=False,
                   example="true",
                   text="Some docker ip configuration requires dropping the network route autoconfigured when installing the ip address. In this case set this parameter to true, and also set the network parameter."
                 )
@@ -2603,7 +2572,6 @@ class KeywordIpGateway(Keyword):
                   keyword="gateway",
                   at=True,
                   order=14,
-                  required=False,
                   text="A zone ip provisioning parameter used in the sysidcfg formatting. The format is decimal for IPv4, ex: 255.255.252.0, and octal for IPv6, ex: 64.",
                   provisioning=True
                 )
@@ -2616,7 +2584,6 @@ class KeywordDiskType(Keyword):
                   keyword="type",
                   at=True,
                   order=9,
-                  required=False,
                   default="vg",
                   candidates=['disk', 'veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'zpool', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm', 'vg', 'amazon', 'gce'],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
@@ -2631,7 +2598,6 @@ class KeywordDiskDiskDiskId(Keyword):
                   keyword="disk_id",
                   order=10,
                   at=True,
-                  required=False,
                   text="The wwn of the disk.",
                   example="6589cfc00000097484f0728d8b2118a6"
                 )
@@ -2645,7 +2611,6 @@ class KeywordDiskDiskSize(Keyword):
                   keyword="size",
                   order=11,
                   at=True,
-                  required=False,
                   provisioning=True,
                   text="The size of the disk to provision.",
                   example="15g"
@@ -2660,7 +2625,6 @@ class KeywordDiskDiskArray(Keyword):
                   keyword="array",
                   order=11,
                   at=True,
-                  required=False,
                   provisioning=True,
                   text="The array to provision the disk from.",
                   example="xtremio-prod1"
@@ -2675,7 +2639,6 @@ class KeywordDiskDiskDiskGroup(Keyword):
                   keyword="diskgroup",
                   order=11,
                   at=True,
-                  required=False,
                   provisioning=True,
                   text="The array disk group to provision the disk from.",
                   example="default"
@@ -2690,7 +2653,6 @@ class KeywordDiskDiskSlo(Keyword):
                   keyword="slo",
                   order=11,
                   at=True,
-                  required=False,
                   provisioning=True,
                   text="The provisionned disk service level objective. This keyword is honored on arrays supporting this (ex: EMC VMAX)",
                   example="Optimized"
@@ -2733,7 +2695,6 @@ class KeywordDiskRawZone(Keyword):
                   keyword="zone",
                   order=12,
                   at=True,
-                  required=False,
                   text="The zone name the raw resource is linked to. If set, the raw files are configured from the global reparented to the zonepath.",
                   example="zone1"
                 )
@@ -2747,7 +2708,6 @@ class KeywordDiskRawCreateCharDevices(Keyword):
                   keyword="create_char_devices",
                   order=10,
                   at=True,
-                  required=False,
                   default=True,
                   convert="boolean",
                   text="On Linux, char devices are not automatically created when devices are discovered. If set to True (the default), the raw resource driver will create and delete them using the raw kernel driver.",
@@ -2777,7 +2737,6 @@ class KeywordDiskRawGroup(Keyword):
                   rtype="raw",
                   order=11,
                   at=True,
-                  required=False,
                   example="sys",
                   text="The group that should be owner of the device. Either in numeric or symbolic form."
                 )
@@ -2791,24 +2750,10 @@ class KeywordDiskRawPerm(Keyword):
                   rtype="raw",
                   order=11,
                   at=True,
-                  required=False,
                   example="600",
                   text="The permissions the device should have. A string representing the octal permissions."
                 )
 
-
-class KeywordDiskVgname(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="disk",
-                  rtype=["lvm", "vg"],
-                  keyword="vgname",
-                  order=10,
-                  at=True,
-                  required=True,
-                  text="The name of the volume group"
-                )
 
 class KeywordDiskVgName(Keyword):
     def __init__(self):
@@ -2832,7 +2777,6 @@ class KeywordDiskOptions(Keyword):
                   keyword="options",
                   default="",
                   at=True,
-                  required=False,
                   provisioning=True,
                   text="The vgcreate options to use upon vg provisioning."
                 )
@@ -2882,7 +2826,6 @@ class KeywordDiskMdLayout(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  required=False,
                   at=True,
                   keyword="layout",
                   rtype="md",
@@ -2895,7 +2838,6 @@ class KeywordDiskMdChunk(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  required=False,
                   at=True,
                   keyword="chunk",
                   rtype="md",
@@ -2909,7 +2851,6 @@ class KeywordDiskMdSpares(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  required=False,
                   at=True,
                   keyword="spares",
                   rtype="md",
@@ -2931,6 +2872,18 @@ class KeywordDiskMdShared(Keyword):
                   text="Trigger additional checks on the passive nodes. If not specified, the shared parameter defaults to True if no multiple nodes and drpnodes are defined and no md section parameter use scoping."
                 )
 
+class KeywordSyncRadosPairs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="sync",
+                  keyword="pairs",
+                  rtype="radosclone",
+                  required=True,
+                  at=True,
+                  text="The rados clone device pairs."
+                )
+
 class KeywordDiskClientId(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -2938,7 +2891,7 @@ class KeywordDiskClientId(Keyword):
                   section="disk",
                   keyword="client_id",
                   rtype="rados",
-                  text="Client id to use for authentication with the rados servers"
+                  text="Client id to use for authentication with the rados servers."
                 )
 
 class KeywordDiskKeyring(Keyword):
@@ -2947,9 +2900,8 @@ class KeywordDiskKeyring(Keyword):
                   self,
                   section="disk",
                   keyword="keyring",
-                  required=False,
                   rtype="rados",
-                  text="keyring to look for the client id secret for authentication with the rados servers"
+                  text="keyring to look for the client id secret for authentication with the rados servers."
                 )
 
 class KeywordDiskLock(Keyword):
@@ -3004,7 +2956,19 @@ class KeywordDiskImages(Keyword):
                   section="disk",
                   rtype="rados",
                   keyword="images",
+                  required=True,
                   text="The rados image names handled by this vg resource. whitespace separated."
+                )
+
+class KeywordSyncRadosImages(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="radossnap",
+                  keyword="images",
+                  required=True,
+                  text="The rados image names handled by this sync resource. whitespace separated."
                 )
 
 class KeywordDiskDsf(Keyword):
@@ -3040,7 +3004,6 @@ class KeywordDiskNoPreemptAbort(Keyword):
                   keyword="no_preempt_abort",
                   order=15,
                   at=True,
-                  required=False,
                   candidates=(True, False),
                   default=False,
                   convert="boolean",
@@ -3067,7 +3030,6 @@ class KeywordFsNoPreemptAbort(Keyword):
                   keyword="no_preempt_abort",
                   order=15,
                   at=True,
-                  required=False,
                   candidates=(True, False),
                   default=False,
                   convert="boolean",
@@ -3079,7 +3041,6 @@ class KeywordContainerScsireserv(Keyword):
         Keyword.__init__(
                   self,
                   section="container",
-                  rtype=["hpvm", "kvm", "ovm"],
                   keyword="scsireserv",
                   default=False,
                   convert="boolean",
@@ -3092,11 +3053,9 @@ class KeywordContainerNoPreemptAbort(Keyword):
         Keyword.__init__(
                   self,
                   section="container",
-                  rtype=["hpvm", "kvm", "ovm"],
                   keyword="no_preempt_abort",
                   order=15,
                   at=True,
-                  required=False,
                   candidates=(True, False),
                   default=False,
                   convert="boolean",
@@ -3140,16 +3099,16 @@ class KeywordZPoolName(Keyword):
                   text="The name of the zfs pool"
                 )
 
-class KeywordZPoolPoolname(Keyword):
+class KeywordZPoolZone(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
+                  rtype="zpool",
                   section="disk",
-                  rtype=["zpool", "pool"],
-                  keyword="poolname",
-                  order=10,
+                  keyword="zone",
+                  order=11,
                   at=True,
-                  text="The name of the zfs pool"
+                  text="The zone name the zpool refers to. If set, the zpool is activated in the zone context."
                 )
 
 class KeywordVmdgContainerid(Keyword):
@@ -3159,8 +3118,8 @@ class KeywordVmdgContainerid(Keyword):
                   section="disk",
                   rtype="vmdg",
                   keyword="container_id",
+                  required=True,
                   at=True,
-                  required=False,
                   text="The id of the container whose configuration to extract the disk mapping from."
                 )
 
@@ -3172,6 +3131,7 @@ class KeywordDiskDrbdRes(Keyword):
                   rtype="drbd",
                   keyword="res",
                   order=11,
+                  required=True,
                   text="The name of the drbd resource associated with this service resource. OpenSVC expect the resource configuration file to reside in '/etc/drbd.d/resname.res'. The 'sync#i0' resource will take care of replicating this file to remote nodes."
                 )
 
@@ -3233,7 +3193,6 @@ class KeywordFsZone(Keyword):
                   keyword="zone",
                   order=11,
                   at=True,
-                  required=False,
                   text="The zone name the fs refers to. If set, the fs mount point is reparented into the zonepath rootfs."
                 )
 
@@ -3291,7 +3250,6 @@ class KeywordFsMkfsOpt(Keyword):
                   section="fs",
                   keyword="mkfs_opt",
                   provisioning=True,
-                  required=False,
                   at=True,
                   order=13,
                   text="Eventual mkfs additional options."
@@ -3344,7 +3302,6 @@ class KeywordFsDirUser(Keyword):
                   rtype="directory",
                   order=11,
                   at=True,
-                  required=False,
                   example="root",
                   text="The user that should be owner of the directory. Either in numeric or symbolic form."
                 )
@@ -3358,7 +3315,6 @@ class KeywordFsDirGroup(Keyword):
                   rtype="directory",
                   order=11,
                   at=True,
-                  required=False,
                   example="sys",
                   text="The group that should be owner of the directory. Either in numeric or symbolic form."
                 )
@@ -3372,7 +3328,6 @@ class KeywordFsDirPerm(Keyword):
                   rtype="directory",
                   order=11,
                   at=True,
-                  required=False,
                   example="1777",
                   text="The permissions the directory should have. A string representing the octal permissions."
                 )
@@ -3587,7 +3542,6 @@ class KeywordSyncHp3parMode(Keyword):
                   rtype="hp3par",
                   required=True,
                   candidates=["async", "sync"],
-                  default="async",
                   text="Replication mode: Synchronous or Asynchronous"
                 )
 
@@ -3598,7 +3552,6 @@ class KeywordSyncHp3parMethod(Keyword):
                   section="sync",
                   keyword="method",
                   rtype="hp3par",
-                  required=False,
                   candidates=["ssh", "cli"],
                   default="ssh",
                   at=True,
@@ -3783,7 +3736,6 @@ class KeywordSyncSymclonePrecopy(Keyword):
                   keyword="precopy",
                   at=True,
                   rtype="symclone",
-                  required=False,
                   default=True,
                   convert="boolean",
                   text="Use -precopy on recreate."
@@ -3797,7 +3749,6 @@ class KeywordSyncSymcloneRecreateTimeout(Keyword):
                   keyword="recreate_timeout",
                   at=True,
                   rtype=["symclone", "symsnap"],
-                  required=False,
                   default=300,
                   convert="duration",
                   text="Maximum wait time for the clone to reach the created state."
@@ -3811,7 +3762,6 @@ class KeywordSyncSymcloneRestoreTimeout(Keyword):
                   keyword="restore_timeout",
                   at=True,
                   rtype=["symclone", "symsnap"],
-                  required=False,
                   default=300,
                   convert="duration",
                   text="Maximum wait time for the clone to reach the restored state."
@@ -3837,7 +3787,6 @@ class KeywordSyncSymclonePairs(Keyword):
                   rtype=["symclone", "symsnap"],
                   required=True,
                   at=True,
-                  default=None,
                   text="Whitespace-separated list of devices <src>:<dst> devid pairs to drive with this resource.",
                   example="00B60:00B61 00B62:00B63",
                 )
@@ -3935,7 +3884,6 @@ class KeywordTaskConfirmation(Keyword):
                   order=1,
                   default=False,
                   convert="boolean",
-                  required=False,
                   candidates=(True, False),
                   text="If set to True, ask for an interactive confirmation to run the task. This flag can be used for dangerous tasks like data-restore.",
                 )
@@ -3948,7 +3896,6 @@ class KeywordTaskOnError(Keyword):
                   keyword="on_error",
                   at=True,
                   order=1,
-                  required=False,
                   text="A command to execute on 'run' action if 'command' returned an error.",
                   example="/srv/{svcname}/data/scripts/task_on_error.sh"
                 )
@@ -3961,7 +3908,6 @@ class KeywordTaskUser(Keyword):
                   keyword="user",
                   at=True,
                   order=2,
-                  required=False,
                   text="The user to impersonate when running the task command. The default user is root.",
                   example="admin"
                 )
@@ -3982,8 +3928,6 @@ class KeyDict(KeywordStore):
     def __init__(self, provision=False):
         KeywordStore.__init__(self, provision)
 
-        import os
-
         def kw_tags(resource):
             return Keyword(
                   section=resource,
@@ -3991,7 +3935,7 @@ class KeyDict(KeywordStore):
                   generic=True,
                   at=True,
                   candidates=None,
-                  default=None,
+                  default="",
                   text="A list of tags. Arbitrary tags can be used to limit action scope to resources with a specific tag. Some tags can influence the driver behaviour. For example the 'encap' tag assigns the resource to the encapsulated service, 'noaction' avoids any state changing action from the driver, 'nostatus' forces the status to n/a."
                 )
         def kw_subset(resource):
@@ -4608,7 +4552,6 @@ class KeyDict(KeywordStore):
         self += KeywordDiskRawUser()
         self += KeywordDiskRawGroup()
         self += KeywordDiskRawPerm()
-        self += KeywordDiskVgname()
         self += KeywordDiskVgName()
         self += KeywordDiskDsf()
         self += KeywordDiskImages()
@@ -4619,6 +4562,8 @@ class KeyDict(KeywordStore):
         self += KeywordDiskMdLayout()
         self += KeywordDiskMdSpares()
         self += KeywordDiskMdShared()
+        self += KeywordSyncRadosPairs()
+        self += KeywordSyncRadosImages()
         self += KeywordDiskClientId()
         self += KeywordDiskKeyring()
         self += KeywordDiskLock()
@@ -4630,8 +4575,8 @@ class KeyDict(KeywordStore):
         self += KeywordDiskNoPreemptAbort()
         self += KeywordDiskPvs()
         self += KeywordZPoolName()
-        self += KeywordZPoolPoolname()
         self += KeywordZPoolVdev()
+        self += KeywordZPoolZone()
         self += KeywordVmdgContainerid()
         self += KeywordDiskDrbdRes()
         self += KeywordFsType()
@@ -4709,6 +4654,7 @@ class KeyDict(KeywordStore):
         self += KeywordContainerNoPreemptAbort()
         self += KeywordContainerOrigin()
         self += KeywordContainerRcmd()
+        self += KeywordContainerVapp()
         self += KeywordVmName()
         self += KeywordVmHostname()
         self += KeywordOsvcRootPath()

@@ -172,7 +172,7 @@ class syncRadosSnap(resSync.Sync):
                  **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
-                              type="sync.rados",
+                              type="sync.radossnap",
                               **kwargs)
 
         self.fmt_label("snap", images)
@@ -207,7 +207,7 @@ class syncRadosClone(syncRadosSnap):
                  pairs=[],
                  client_id=None,
                  keyring=None,
-                 type="sync.rados",
+                 type="sync.radosclone",
                  sync_max_delay=None,
                  schedule=None,
                  optional=False,

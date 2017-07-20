@@ -241,6 +241,7 @@ class syncSymclone(resSync.Sync):
                  precopy=True,
                  consistent=True,
                  restore_timeout=None,
+                 recreate_timeout=None,
                  **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
@@ -256,7 +257,7 @@ class syncSymclone(resSync.Sync):
         else:
             raise ex.excInitError("unsupported symclone driver type %s", self.type)
         self.activate_timeout = 20
-        self.recreate_timeout = 20
+        self.recreate_timeout = recreate_timeout
         self.restore_timeout = restore_timeout
         self.precopy = precopy
         self.pairs_written = {}

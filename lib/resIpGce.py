@@ -14,7 +14,6 @@ class Ip(resIp.Ip, rcGce.Gce):
                  rid=None,
                  ipname=None,
                  ipdev=None,
-                 eip=None,
                  routename=None,
                  gce_zone=None,
                  **kwargs):
@@ -24,10 +23,6 @@ class Ip(resIp.Ip, rcGce.Gce):
                           ipdev=ipdev,
                           **kwargs)
         self.label = "gce ip %s@%s" % (ipname, ipdev)
-        if eip:
-            self.label += ", eip %s" % eip
-
-        self.eip = eip
         self.routename = routename
         self.gce_zone = gce_zone
 

@@ -17,8 +17,23 @@ class excError(Exception):
         return str(self.value)
 
 class OptNotFound(Exception):
-    """ Service config file option not found
     """
+    Service config file option not found.
+    Raised by Svc::conf_get().
+    The default property is used to propagate the keyword default value.
+    """
+    def __init__(self, value="", default=None):
+        self.value = value
+        self.default = default
+    def __str__(self):
+        return "%s default: %s" % (str(self.value), repr(self.default))
+
+class RequiredOptNotFound(Exception):
+    """
+    Required service config file option not found.
+    Raised by Svc::conf_get().
+    """
+    pass
 
 class excSignal(Exception):
     """ Termination signal received
