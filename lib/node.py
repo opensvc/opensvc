@@ -2108,12 +2108,12 @@ class Node(object):
         return False
 
     @staticmethod
-    def action_need_aggregate(action):
+    def action_need_aggregate(action, options):
         """
         Returns True if the action returns data from multiple sources (nodes
         or services) to arrange for display.
         """
-        if action.startswith("print_"):
+        if action.startswith("print_") and options.format == "json":
             return True
         if action.startswith("json_"):
             return True
@@ -2138,7 +2138,7 @@ class Node(object):
         err = 0
         data = Storage()
         data.outs = {}
-        need_aggregate = self.action_need_aggregate(action)
+        need_aggregate = self.action_need_aggregate(action, options)
 
         # generic cache janitoring
         purge_cache()
