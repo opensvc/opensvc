@@ -16,6 +16,7 @@ import osvcd_shared as shared
 from comm import Crypt
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode
+from svcBuilder import build, fix_app_link, fix_exe_link
 
 MON_WAIT_READY = datetime.timedelta(seconds=16)
 
@@ -85,7 +86,6 @@ class Monitor(shared.OsvcThread, Crypt):
         For each service, decide if we have an outdated configuration file
         and fetch the most recent one if needed.
         """
-        from svcBuilder import build, fix_app_link, fix_exe_link
         confs = self.get_services_configs()
         for svcname, data in confs.items():
             new_service = False
@@ -173,6 +173,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 return
         finally:
             os.unlink(tmpfpath)
+        shared.SERVICES[svcname] = build(svcname)
         self.log.info("the service %s config fetched from node %s is now "
                       "installed", svcname, nodename)
 
@@ -319,10 +320,10 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def resources_orchestrator(self, svc):
         if svc.frozen():
-            #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
+            #self.log.info("resource %s orchestrator out (frozen)", svc.svcname)
             return
         if svc.disabled:
-            #self.log.info("service %s orchestrator out (disabled)", svc.svcname)
+            #self.log.info("resource %s orchestrator out (disabled)", svc.svcname)
             return
         try:
             with shared.CLUSTER_DATA_LOCK:
@@ -332,6 +333,8 @@ class Monitor(shared.OsvcThread, Crypt):
 
         def monitored_resource(svc, rid, resource):
             if not resource["monitor"]:
+                return []
+            if resource["disable"]:
                 return []
             if smon.local_expect != "started":
                 return []
@@ -863,7 +866,6 @@ class Monitor(shared.OsvcThread, Crypt):
                 return
 
     def get_services_config(self):
-        from svcBuilder import build
         config = {}
         for cfg in glob.glob(os.path.join(rcEnv.paths.pathetc, "*.conf")):
             svcname = os.path.basename(cfg[:-5])
