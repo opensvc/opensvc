@@ -1514,7 +1514,7 @@ class Node(Crypt):
         try:
             self.task_sysreport()
         except (OSError, ex.excError) as exc:
-            print(exc)
+            print(exc, file=sys.stderr)
             return 1
 
     @scheduler_fork
@@ -1713,7 +1713,7 @@ class Node(Crypt):
             try:
                 self.config.add_section(section)
             except ValueError as exc:
-                print(exc)
+                print(exc, file=sys.stderr)
                 return 1
         self.config.set(section, option, self.options.value)
         self.write_config()
@@ -2323,10 +2323,10 @@ class Node(Crypt):
                         if ret is None:
                             ret = 0
                         err += ret
-                except ex.excError:
-                    if need_aggregate:
-                        continue
-                    raise
+                except ex.excError as exc:
+                    if not need_aggregate:
+                        print("%s: %s" % (svc.svcname, exc), file=sys.stderr)
+                    continue
                 except ex.MonitorAction:
                     svc.action('toc')
                 except ex.excSignal:
