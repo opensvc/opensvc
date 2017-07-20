@@ -353,10 +353,10 @@ class App(Resource):
             "disk.drbd",
             "hb"
         ]))
-        if n_ref_res > 0 and str(status["overall"]) not in ("up", "n/a"):
-            self.log.debug("abort resApp status because ip+fs status is %s", status["overall"])
+        if n_ref_res > 0 and str(status["avail"]) not in ("up", "n/a"):
+            self.log.debug("abort resApp status because needed resources avail status is %s", status["avail"])
             if verbose:
-                self.status_log("ip+fs status is %s, skip check"%status["overall"], "info")
+                self.status_log("needed resources avail status is %s, skip check"%status["avail"], "info")
             self.status_log("not evaluated (instance not up)", "info")
             return rcStatus.NA
 
