@@ -632,9 +632,6 @@ class Svc(Crypt):
                     self.compliance_auto()
                 else:
                     self.action(action)
-            except ex.MonitorAction as exc:
-                self.svcunlock()
-                self.action("toc")
             except ex.excError as exc:
                 self.log.error(exc)
             except:
@@ -3730,9 +3727,6 @@ class Svc(Crypt):
         except ex.excSignal:
             self.log.error("interrupted by signal")
             err = 1
-        except ex.MonitorAction:
-            self.svcunlock()
-            raise
         except:
             err = 1
             self.save_exc()

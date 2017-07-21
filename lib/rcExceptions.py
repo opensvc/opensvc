@@ -1,10 +1,3 @@
-class MonitorAction(Exception):
-    """
-    A class dedicated to propagate up the stack a need to run the
-    resource_monitor action.
-    """
-    pass
-
 class excEncapUnjoignable(Exception):
     pass
 

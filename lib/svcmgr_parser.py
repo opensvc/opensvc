@@ -693,8 +693,8 @@ ACTIONS = {
             ],
         },
         'resource_monitor': {
-            'msg': 'detect monitored resource failures and trigger '
-                   'monitor_action',
+            'msg': 'refresh only monitored resource status. This action is '
+                   'scheduleable, usually every minute.',
             'options': ACTION_OPTS,
         },
         'stonith': {

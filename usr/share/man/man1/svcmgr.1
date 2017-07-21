@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2017\-07\-19
+.TH SVCMGR 1 2017\-07\-21
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -1609,6 +1609,9 @@ clear the monitor status of the service on the node pointed by --node. If --node
 .B --node=NODE
 the node to send a request to. if not specified the local node is targeted.
 .TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -1982,6 +1985,12 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
+.B --time=TIME
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on
 .TP
@@ -2146,6 +2155,12 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .TP
 .B --disable-rollback
 Exit without resource activation rollback on start action error
+.TP
+.B --time=TIME
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination
 .TP
 .B --to=PARM_DESTINATION_NODE
 remote node to start or migrate the service to
@@ -3247,7 +3262,7 @@ show this help message and exit
 \fBsvcmgr resource monitor\fP
 .RS
 
-detect monitored resource failures and trigger monitor_action
+refresh only monitored resource status. This action is scheduleable, usually every minute.
 
 .TP
 .B --dry-run
@@ -4878,6 +4893,12 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .B --disable-rollback
 Exit without resource activation rollback on start action error
 .TP
+.B --time=TIME
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination
+.TP
 .B --to=PARM_DESTINATION_NODE
 remote node to start or migrate the service to
 .TP
@@ -5933,6 +5954,12 @@ comma-separated list of resource tags to limit action to. The + separator can be
 .TP
 .B --disable-rollback
 Exit without resource activation rollback on start action error
+.TP
+.B --time=TIME
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 comma-separated list of service to operate on

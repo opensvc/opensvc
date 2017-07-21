@@ -91,7 +91,6 @@ class Node(Crypt):
         return self.nodename
 
     def __init__(self):
-        self.ex_monitor_action_exit_code = 251
         self.config = None
         self.auth_config = None
         self.clusters = None
@@ -1794,9 +1793,6 @@ class Node(Crypt):
         """
         try:
             ret = svc.action(action, options)
-        except ex.MonitorAction:
-            self.close()
-            sys.exit(self.ex_monitor_action_exit_code)
         finally:
             self.close()
             sys.exit(1)
@@ -2327,8 +2323,6 @@ class Node(Crypt):
                     if not need_aggregate:
                         print("%s: %s" % (svc.svcname, exc), file=sys.stderr)
                     continue
-                except ex.MonitorAction:
-                    svc.action('toc')
                 except ex.excSignal:
                     break
 
@@ -2336,9 +2330,7 @@ class Node(Crypt):
             for svcname in data.procs:
                 data.procs[svcname].join()
                 ret = data.procs[svcname].exitcode
-                if ret == self.ex_monitor_action_exit_code:
-                    data.svcs[svcname].action('toc')
-                elif ret > 0:
+                if ret > 0:
                     # r is negative when data.procs[svcname] is killed by signal.
                     # in this case, we don't want to decrement the err counter.
                     err += ret
