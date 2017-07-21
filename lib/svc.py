@@ -1506,6 +1506,9 @@ class Svc(object):
         else:
             g_vals = []
             for container_name, container in data["encap"].items():
+                if "frozen" not in container:
+                    # no encap agent
+                    continue
                 vhostname = container.get("hostname", container_name)
                 for rid, resource in container['resources'].items():
                     r_vals.append([
