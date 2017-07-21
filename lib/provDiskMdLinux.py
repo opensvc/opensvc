@@ -1,7 +1,7 @@
 from provisioning import Provisioning
 import os
 import rcExceptions as ex
-from rcUtilities import convert_size
+from converters import convert_size
 from subprocess import *
 
 class ProvisioningDisk(Provisioning):

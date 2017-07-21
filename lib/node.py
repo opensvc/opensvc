@@ -36,7 +36,8 @@ from rcScheduler import scheduler_fork, Scheduler, SchedOpts
 from rcConfigParser import RawConfigParser
 from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
-                        call, which, purge_cache, read_cf, convert_duration
+                        call, which, purge_cache, read_cf
+from converters import convert_duration
 from comm import Crypt
 
 if sys.version_info[0] < 3:

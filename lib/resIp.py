@@ -7,7 +7,8 @@ import os
 
 import resources as Res
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall, which, getaddr, convert_duration
+from rcUtilities import qcall, which, getaddr
+from converters import convert_duration
 import rcStatus
 import rcExceptions as ex
 

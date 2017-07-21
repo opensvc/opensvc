@@ -10,7 +10,8 @@ from xml.etree.ElementTree import XML, fromstring
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage
-from rcUtilities import justcall, which, convert_size
+from rcUtilities import justcall, which
+from converters import convert_size
 from rcOptParser import OptParser
 from optparse import Option
 

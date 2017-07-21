@@ -20,8 +20,9 @@ from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
 from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
-                        try_decode, eval_expr, convert_bool, action_triggers, \
-                        read_cf, drop_option, convert_duration, convert_size
+                        try_decode, eval_expr, action_triggers, read_cf, \
+                        drop_option
+from converters import *
 import rcExceptions as ex
 import rcLogger
 import node
@@ -4603,20 +4604,13 @@ class Svc(Crypt):
 
         def get_val(key, section, option):
             """
-            Fetch the value and convert it to expected type.
+            Fetch the value and convert it to the expected type.
             """
             _option = option.split("@")[0]
             value = self.conf_get(section, _option, config=config)
-            if key.convert == "duration":
-                return convert_duration(value)
-            elif key.convert == "size":
-                return convert_size(value)
-            elif key.convert == "boolean":
-                return convert_bool(value)
-            elif key.convert == "integer":
-                return int(value)
-            else:
+            if key.convert in (None, "string"):
                 return value
+            return globals()["convert_"+key.convert](value)
 
         def check_candidates(key, section, option, value):
             """
@@ -5245,16 +5239,9 @@ class Svc(Crypt):
             else:
                 raise
 
-        if t == "duration":
-            return convert_duration(val)
-        elif t == "size":
-            return convert_size(val)
-        elif t == "boolean":
-            return convert_bool(val)
-        elif t == "integer":
-            return int(val)
-        else:
+        if t in (None, "string"):
             return val
+        return globals()["convert_"+t](val)
 
     def conf_get_val_unscoped(self, s, o, use_default=True, config=None):
         if config is None:

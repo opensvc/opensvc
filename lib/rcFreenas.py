@@ -8,7 +8,8 @@ from optparse import Option
 import rcExceptions as ex
 from rcConfigParser import RawConfigParser
 from rcGlobalEnv import rcEnv, Storage
-from rcUtilities import convert_size, bdecode
+from rcUtilities import bdecode
+from converters import convert_size
 from rcOptParser import OptParser
 
 try:

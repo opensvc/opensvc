@@ -7,7 +7,8 @@ import json
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage
-from rcUtilities import justcall,convert_size
+from rcUtilities import justcall
+from converters import convert_size
 from rcOptParser import OptParser
 from optparse import Option
 

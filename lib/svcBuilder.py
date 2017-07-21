@@ -13,8 +13,8 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
-from rcUtilities import convert_size, cmdline2list, ximport, \
-                        check_privs
+from rcUtilities import cmdline2list, ximport, check_privs
+from converters import convert_size
 
 if 'PATH' not in os.environ:
     os.environ['PATH'] = ""

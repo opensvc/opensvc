@@ -1,6 +1,7 @@
 import os
 import provFs
-from rcUtilities import which, convert_size
+from rcUtilities import which
+from converters import convert_size
 from rcGlobalEnv import rcEnv
 from rcZfs import Dataset
 import rcExceptions as ex

@@ -80,27 +80,6 @@ def test_protected_dir():
     assert protected_dir("/bin/") == True
     assert protected_dir("/mysvc") == False
 
-def test_convert_bool():
-    assert convert_bool("tRue") == True
-    assert convert_bool("y") == True
-    assert convert_bool("Y") == True
-    assert convert_bool("1") == True
-    assert convert_bool(1) == True
-    assert convert_bool("FaLse") == False
-    assert convert_bool("no") == False
-    assert convert_bool("n") == False
-    assert convert_bool("0") == False
-    assert convert_bool(0) == False
-
-def test_convert_size():
-    assert convert_size("1k") == 1024
-    assert convert_size("1K") == 1024
-    assert convert_size("1KB") == 1024
-    assert convert_size("1 K") == 1024
-    assert convert_size("1 Ki") == 1000
-    assert convert_size("1 KiB") == 1000
-    assert convert_size("1.1 Ki") == 1100
-
 def test_cidr_to_dotted():
     assert cidr_to_dotted(22) == "255.255.252.0"
 

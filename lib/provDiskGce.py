@@ -1,6 +1,6 @@
 from provisioning import Provisioning
 import rcExceptions as ex
-from rcUtilities import convert_size
+from converters import convert_size
 
 class ProvisioningDisk(Provisioning):
     def __init__(self, r):

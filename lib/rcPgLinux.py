@@ -2,7 +2,8 @@ import os
 import re
 import glob
 import rcExceptions as ex
-from rcUtilities import justcall, convert_size
+from rcUtilities import justcall
+from converters import convert_size
 
 default_cgroup_mntpt = '/cgroup'
 

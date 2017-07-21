@@ -12,7 +12,8 @@ from subprocess import Popen, PIPE
 
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
-from rcUtilities import bdecode, drop_option, convert_size
+from rcUtilities import bdecode, drop_option
+from converters import convert_size
 from comm import Crypt
 
 class Listener(shared.OsvcThread, Crypt):

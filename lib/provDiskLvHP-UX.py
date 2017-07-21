@@ -1,5 +1,6 @@
 from provisioning import Provisioning
-from rcUtilities import justcall, which, convert_size
+from rcUtilities import justcall, which
+from converters import convert_size
 from rcGlobalEnv import rcEnv
 import os
 import rcExceptions as ex

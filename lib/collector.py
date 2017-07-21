@@ -6,7 +6,8 @@ import re
 import datetime
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_exe, justcall, banner, convert_duration
+from rcUtilities import is_exe, justcall, banner
+from converters import convert_duration
 from subprocess import *
 
 class Collector(object):
