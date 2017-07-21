@@ -1378,12 +1378,12 @@ class KeywordFlexMaxNodes(Keyword):
                   text="Maximum number of active nodes in the cluster. Above this number alerts are raised by the collector, and the collector won't start any more service instances. 0 means unlimited."
                 )
 
-class KeywordFlexCpuMinThreshold(Keyword):
+class KeywordFlexCpuLowThreshold(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="flex_cpu_min_threshold",
+                  keyword="flex_cpu_low_threshold",
                   order=16,
                   default=10,
                   convert="integer",
@@ -1391,28 +1391,17 @@ class KeywordFlexCpuMinThreshold(Keyword):
                   text="Cluster-wide load average below which flex service instances will be stopped.",
                 )
 
-class KeywordFlexCpuMaxThreshold(Keyword):
+class KeywordFlexCpuHighThreshold(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="flex_cpu_max_threshold",
+                  keyword="flex_cpu_high_threshold",
                   order=16,
                   default=70,
                   convert="integer",
                   depends=[("cluster_type", ["flex"])],
                   text="Cluster-wide load average above which flex new service instances will be started.",
-                )
-
-class KeywordServiceType(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="DEFAULT",
-                  keyword="service_type",
-                  order=15,
-                  candidates=rcEnv.allowed_svc_envs,
-                  text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node env."
                 )
 
 class KeywordServiceEnv(Keyword):
@@ -2131,17 +2120,6 @@ class KeywordSyncRsyncTags(Keyword):
                   at=True,
                   rtype="rsync",
                   text="The sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the rsync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
-                )
-
-class KeywordSyncRsyncExclude(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="sync",
-                  keyword="exclude",
-                  rtype="rsync",
-                  at=True,
-                  text="A whitespace-separated list of --exclude params passed unchanged to rsync. The 'options' keyword is preferred now."
                 )
 
 class KeywordSyncRsyncOptions(Keyword):
@@ -4447,10 +4425,9 @@ class KeyDict(KeywordStore):
         self += KeywordPushSchedule()
         self += KeywordFlexMinNodes()
         self += KeywordFlexMaxNodes()
-        self += KeywordFlexCpuMinThreshold()
-        self += KeywordFlexCpuMaxThreshold()
+        self += KeywordFlexCpuLowThreshold()
+        self += KeywordFlexCpuHighThreshold()
         self += KeywordServiceEnv()
-        self += KeywordServiceType()
         self += KeywordNodes()
         self += KeywordDrpnode()
         self += KeywordDrpnodes()
@@ -4502,7 +4479,6 @@ class KeyDict(KeywordStore):
         self += KeywordSyncRsyncSrc()
         self += KeywordSyncRsyncDst()
         self += KeywordSyncRsyncTags()
-        self += KeywordSyncRsyncExclude()
         self += KeywordSyncRsyncOptions()
         self += KeywordSyncRsyncTarget()
         self += KeywordSyncRsyncSnap()
