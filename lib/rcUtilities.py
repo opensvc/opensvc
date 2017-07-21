@@ -739,12 +739,37 @@ def getaddr_caching(name, log=None):
         log.info("fetched %s address for name %s from cache" % (addr, name))
     return addr
 
+#############################################################################
+#
+# Converters
+#
+#############################################################################
 def convert_bool(s):
-    if str(s).lower() in ("yes", "y", "true",  "t", "1"):
+    true_vals = (
+        "yes",
+        "y",
+        "true",
+        "t",
+        "1"
+    )
+    false_vals = (
+        "no",
+        "n",
+        "false",
+        "f",
+        "0",
+        "0.0",
+        "",
+        "none",
+        "[]",
+        "{}"
+    )
+    s = str(s).lower()
+    if s in true_vals:
         return True
-    if str(s).lower() in ("no",  "n", "false", "f", "0", "0.0", "", "none", "[]", "{}"):
+    if s in false_vals:
         return False
-    raise ValueError('Invalid value for boolean conversion: ' + str(s))
+    raise ValueError('convert boolean error: ' + s)
 
 def convert_duration(s, _to="s"):
     """
@@ -774,6 +799,9 @@ def convert_duration(s, _to="s"):
         "s": 1,
     }
 
+    if _to not in units:
+        raise ValueError("convert duration error: unsupported target unit %s" % _to)
+
     try:
         s = int(s)
         return s // units[_to]
@@ -790,7 +818,7 @@ def convert_duration(s, _to="s"):
         try:
             _duration = int(_duration)
         except ValueError:
-            raise ValueError("invalid duration format: %s at index %d" % (s, idx))
+            raise ValueError("convert duration error: invalid format %s at index %d" % (s, idx))
         duration += _duration * units[unit]
         prev = idx + 1
 
@@ -823,7 +851,7 @@ def convert_size(s, _to='', _round=1):
     try:
         start_idx = l.index(unit)
     except:
-        raise ValueError("unsupported unit in converted value: %s" % s)
+        raise ValueError("convert size error: unsupported unit in %s" % s)
 
     for i in range(start_idx):
         size *= factor
@@ -843,7 +871,7 @@ def convert_size(s, _to='', _round=1):
     try:
         end_idx = l.index(unit)
     except:
-        raise ValueError("unsupported target unit: %s" % unit)
+        raise ValueError("convert size error: unsupported target unit %s" % unit)
 
     for i in range(end_idx):
         size /= factor
