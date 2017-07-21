@@ -352,6 +352,7 @@ class Svc(Crypt):
             initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.d'),
             alt_initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.dir'),
             push_flag=os.path.join(rcEnv.paths.pathvar, self.svcname, 'last_pushed_config'),
+            tmp_cf=os.path.join(rcEnv.paths.pathtmp, self.svcname+".conf.tmp")
         )
         self.resources_by_id = {}
         self.encap_resources = {}
@@ -2888,21 +2889,46 @@ class Svc(Crypt):
         or --recover options.
         """
         import shutil
-        path = os.path.join(rcEnv.paths.pathtmp, self.svcname+".conf.tmp")
-        if os.path.exists(path):
+        if os.path.exists(self.paths.tmp_cf):
             if self.options.recover:
                 pass
             elif self.options.discard:
-                shutil.copy(self.paths.cf, path)
+                shutil.copy(self.paths.cf, self.paths.tmp_cf)
             else:
-                raise ex.excError("%s exists: service is already being edited. "
-                                  "Set --discard to edit from the current "
-                                  "configuration, or --recover to open the "
-                                  "unapplied config" % path)
+                self.edit_config_diff()
+                print("%s exists: service is already being edited. Set "
+                      "--discard to edit from the current configuration, "
+                      "or --recover to open the unapplied config" % \
+                      self.paths.tmp_cf, file=sys.stderr)
+                raise ex.excError
         else:
-            shutil.copy(self.paths.cf, path)
+            shutil.copy(self.paths.cf, self.paths.tmp_cf)
         return path
 
+    def edit_config_diff(self):
+        """
+        Display the diff between the current config and the pending
+        unvalidated config.
+        """
+        from subprocess import call
+
+        def diff_capable(opts):
+            cmd = ["diff"] + opts + [self.paths.cf, self.paths.cf]
+            cmd_results = justcall(cmd)
+            if cmd_results[2] == 0:
+                return True
+            return False
+
+        if not os.path.exists(self.paths.tmp_cf):
+            return
+        if diff_capable(["-u", "--color"]):
+            cmd = ["diff", "-u", "--color", self.paths.cf, self.paths.tmp_cf]
+        elif diff_capable(["-u"]):
+            cmd = ["diff", "-u", self.paths.cf, self.paths.tmp_cf]
+        else:
+            cmd = ["diff", self.paths.cf, self.paths.tmp_cf]
+        call(cmd)
+        
     def edit_config(self):
         """
         Execute an editor on the service configuration file.
