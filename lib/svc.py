@@ -1524,6 +1524,9 @@ class Svc(Crypt):
         else:
             g_vals = []
             for rid, container in data["encap"].items():
+                if "frozen" not in container:
+                    # no encap agent
+                    continue
                 vhostname = container.get("hostname", self.resources_by_id[rid].name)
                 container_type = self.resources_by_id[rid].type.replace("container.", "")
                 for rid, resource in container['resources'].items():
