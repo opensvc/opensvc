@@ -4277,7 +4277,7 @@ class Svc(Crypt):
                     done = True
 
         if not done:
-            while lines[-1].strip() == "":
+            while len(lines) > 0 and lines[-1].strip() == "":
                 lines.pop()
             if not in_section:
                 # section in last position and no option => add section
