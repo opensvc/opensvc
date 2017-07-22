@@ -2907,7 +2907,7 @@ class Svc(Crypt):
                 raise ex.excError
         else:
             shutil.copy(self.paths.cf, self.paths.tmp_cf)
-        return path
+        return self.paths.tmp_cf
 
     def edit_config_diff(self):
         """
