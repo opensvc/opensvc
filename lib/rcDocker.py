@@ -137,7 +137,7 @@ class DockerLib(object):
         """
         The "docker service ls" output.
         """
-        cmd = self.docker_cmd + ['service', 'ls']
+        cmd = self.docker_cmd + ['service', 'ls', "--format", "{{.ID}}::{{.Name}}::{{.Mode}}::{{.Replicas}}::{{.Image}}"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError(err)
@@ -208,31 +208,16 @@ class DockerLib(object):
         A hash of services data as found in "docker service ls",
         indexed by service name.
         """
-        lines = self.docker_service_ls.splitlines()
-        if len(lines) < 2:
-            return
-        header = lines[0].strip().split()
-        try:
-            service_id_idx = header.index('ID')
-            service_name_idx = header.index('NAME')
-            service_mode_idx = header.index('MODE')
-            service_replicas_idx = header.index('REPLICAS')
-            service_image_idx = header.index('IMAGE')
-        except (IndexError, ValueError):
-            return
-        ref_len = len(header)
         data = {}
-        for line in lines[1:]:
-            line = line.strip().split()
-            if len(line) != ref_len:
-                continue
-            service_name = line[service_name_idx].strip()
+        for line in self.docker_service_ls.splitlines():
+            line = line.strip().split("::")
+            service_name = line[1].strip()
             data[service_name] = {
                 "name": service_name,
-                "id": line[service_id_idx].strip(),
-                "mode": line[service_mode_idx].strip(),
-                "replicas": line[service_replicas_idx].strip().split("/"),
-                "image": line[service_image_idx].strip(),
+                "id": line[0].strip(),
+                "mode": line[2].strip(),
+                "replicas": line[3].strip().split("/"),
+                "image": line[4].strip(),
             }
         return data
 
