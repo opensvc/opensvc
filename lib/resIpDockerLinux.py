@@ -97,7 +97,14 @@ class Ip(Res.Ip):
         ifconfig = rcIfconfig.ifconfig(ip_out=out)
         return ifconfig
 
+    def abort_start(self):
+        if not self.container.docker_service:
+            return Res.Ip.abort_start(self)
+        return False
+
     def is_up(self):
+        if not self.container.is_up():
+            return False
         ifconfig = self.get_docker_ifconfig()
         if ifconfig is None:
             return False
@@ -139,6 +146,8 @@ class Ip(Res.Ip):
         return ret
 
     def startip_cmd(self):
+        if self._status() != rcStatus.STDBY_DOWN:
+            return 0, "", ""
         if self.container_running_elsewhere():
             return 0, "", ""
 
