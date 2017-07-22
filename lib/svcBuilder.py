@@ -368,11 +368,11 @@ def add_ip(svc, s):
             kwargs['ipdevExt'] = svc.conf_get(s, 'ipdevext')
         except ex.OptNotFound as exc:
             kwargs['ipdevExt'] = exc.default
-        if 'zone' in kwargs:
+        if zone is not None:
             svc.log.error("'zone' and 'type=crossbow' are incompatible in section %s"%s)
             return
         ip = __import__('resIpCrossbow')
-    elif 'zone' in kwargs:
+    elif zone is not None:
         kwargs['zone'] = zone
         ip = __import__('resIpZone')
     elif rtype == "docker":

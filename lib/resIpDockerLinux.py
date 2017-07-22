@@ -30,7 +30,7 @@ class Ip(Res.Ip):
         self.del_net_route = del_net_route
         self.container_rid = str(container_rid)
         self.label = str(ipname) + '@' + ipdev + '@' + self.container_rid
-        self.tags.add("docker")
+        self.tags = self.tags | set(["docker"])
         self.tags.add(container_rid)
 
     def on_add(self):
