@@ -5163,15 +5163,19 @@ class Svc(Crypt):
     def conf_get(self, s, o, t=None, scope=None, impersonate=None,
                  use_default=True, config=None):
         """
-        Handle keyword deprecation.
+        Handle keyword and section deprecation.
         """
         section = s.split("#")[0]
-        try:
-            rtype = self.config.get(s, "type")
+        if section in svcDict.deprecated_sections:
+            section, rtype = svcDict.deprecated_sections[section]
             fkey = ".".join((section, rtype, o))
-        except:
-            rtype = None
-            fkey = ".".join((section, o))
+        else:
+            try:
+                rtype = self.config.get(s, "type")
+                fkey = ".".join((section, rtype, o))
+            except:
+                rtype = None
+                fkey = ".".join((section, o))
 
         deprecated_keyword = svcDict.reverse_deprecated_keywords.get(fkey)
 
@@ -5216,6 +5220,7 @@ class Svc(Crypt):
             key = svcDict.svc_keys[section].getkey(o, rtype)
             if key is None:
                 if scope is None and t is None:
+                    raise
                     raise ValueError("%s.%s not found in the services configuration dictionary" % \
                                      (s, o))
                 else:
