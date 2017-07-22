@@ -405,8 +405,8 @@ class Docker(resContainer.Container):
             instances.append(inst)
         return instances
 
-    def service_hosted_instances(self):
-        out = self.svc.dockerlib.get_ps()
+    def service_hosted_instances(self, refresh=False):
+        out = self.svc.dockerlib.get_ps(refresh=refresh)
         return [line.split()[0] for line in out.splitlines() \
                 if self.service_name in line and \
                 "Exited" not in line and \
@@ -524,7 +524,7 @@ class Docker(resContainer.Container):
 
     def is_down(self):
         if self.docker_service:
-            hosted = len(self.service_hosted_instances())
+            hosted = len(self.service_hosted_instances(refresh=True))
             if hosted > 0:
                 return False
             return True

@@ -4,6 +4,7 @@
 The module implementing the DockerLib class.
 """
 import os
+import errno
 from distutils.version import LooseVersion as V
 
 import json
@@ -590,15 +591,25 @@ class DockerLib(object):
                           " shut it down", pid)
         import signal
         import time
-        tries = 10
+        tries = 15
         os.kill(pid, signal.SIGTERM)
+        unset_lazy(self, "docker_info")
+
         while self.docker_running() and tries > 0:
+            unset_lazy(self, "docker_info")
             tries -= 1
             time.sleep(1)
-        if tries == 0:
+        if self.docker_running() and tries == 0:
             self.svc.log.warning("dockerd did not stop properly. send a kill "
                                  "signal")
-            os.kill(pid, signal.SIGKILL)
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except OSError as exc:
+                if exc.errno == errno.ESRCH:
+                    # already dead
+                    pass
+                else:
+                    raise ex.excError("failed to kill docker daemon: %s" % str(exc))
 
     @lazy
     def dockerd_cmd(self):
@@ -743,7 +754,7 @@ class DockerLib(object):
             with open(self.docker_pid_file, "r") as ofile:
                 buff = ofile.read()
         except IOError as exc:
-            if exc.errno == 2:
+            if exc.errno == errno.ENOENT:
                 return False
             return ex.excError("docker_running: "+str(exc))
         self.svc.log.debug("docker_running: pid found in pid file %s", buff)
