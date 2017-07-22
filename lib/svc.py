@@ -1230,12 +1230,12 @@ class Svc(Crypt):
                     continue
                 if subpfx and not subpfx.startswith(color.END):
                     subpfx = color.END + subpfx
-                    lines += wrap(
-                        msg,
-                        initial_indent=subpfx,
-                        subsequent_indent=subpfx,
-                        width=width
-                    )
+                lines += wrap(
+                    msg,
+                    initial_indent=subpfx,
+                    subsequent_indent=subpfx,
+                    width=width
+                )
             _color = None
             for line in lines:
                 if " info: " in line:
