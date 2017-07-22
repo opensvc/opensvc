@@ -247,6 +247,9 @@ def _main(node, argv=None):
     if action != "create":
         try:
             node.build_services(**build_kwargs)
+        except IOError as exc:
+            print(exc, file=sys.stderr)
+            build_err = True
         except ex.excError as exc:
             print(exc, file=sys.stderr)
             build_err = True
