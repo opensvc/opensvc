@@ -4480,9 +4480,16 @@ class Svc(Crypt):
                         argv[idx:idx] = ["--email", self.svcname+"@"+rcEnv.nodename]
             for idx, arg in enumerate(argv):
                 if re.match(r'\{container#\w+\}', arg):
-                    container_name = self.svcname + "." + arg.strip("{}").replace("#", ".")
+                    container_rid = arg.strip("{}")
+                    if container_rid not in self.resources_by_id:
+                        continue
+                    container = self.resources_by_id[container_rid]
+                    if container.docker_service:
+                        name = container.service_name
+                    else:
+                        name = container.container_name
                     del argv[idx]
-                    argv.insert(idx, container_name)
+                    argv.insert(idx, name)
             return argv
 
         if len(containers) == 0:
