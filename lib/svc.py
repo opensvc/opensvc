@@ -4608,15 +4608,21 @@ class Svc(Crypt):
             """
             _option = option.split("@")[0]
             value = self.conf_get(section, _option, config=config)
-            if key.convert in (None, "string"):
-                return value
-            return globals()["convert_"+key.convert](value)
+            return value
 
         def check_candidates(key, section, option, value):
             """
             Verify the specified option value is in allowed candidates.
             """
-            if key.strict_candidates and key.candidates and value not in key.candidates:
+            if not key.strict_candidates:
+                return 0
+            if key.candidates is None:
+                return 0
+            if isinstance(value, (list, tuple, set)):
+                valid = len(set(value) - set(key.candidates)) == 0
+            else:
+                valid = value in key.candidates
+            if not valid:
                 if isinstance(key.candidates, (set, list, tuple)):
                     candidates = ", ".join(key.candidates)
                 else:
@@ -5078,11 +5084,13 @@ class Svc(Crypt):
 
             val = self._handle_reference(ref, _section, _v, scope=scope, impersonate=impersonate, config=config)
 
-            if return_length:
-                return str(len(val.split()))
-
-            if not index is None:
-                return val.split()[index]
+            if return_length or index is not None:
+                if is_string(val):
+                    val = val.split()
+                if return_length:
+                    return str(len(val))
+                if index is not None:
+                    return val[index]
 
             return val
 
@@ -5109,6 +5117,8 @@ class Svc(Crypt):
         try:
             return self.conf_get(_section, _v, "string", scope=scope, impersonate=impersonate, config=config)
         except ex.OptNotFound as exc:
+            return exc.default
+        except ex.RequiredOptNotFound:
             raise ex.excError("%s: unresolved reference (%s)" % (ref, str(exc)))
 
         raise ex.excError("%s: unknown reference" % ref)
@@ -5152,6 +5162,9 @@ class Svc(Crypt):
 
     def conf_get(self, s, o, t=None, scope=None, impersonate=None,
                  use_default=True, config=None):
+        """
+        Handle keyword deprecation.
+        """
         section = s.split("#")[0]
         try:
             rtype = self.config.get(s, "type")
@@ -5187,9 +5200,18 @@ class Svc(Crypt):
 
     def _conf_get(self, s, o, t=None, scope=None, impersonate=None,
                  use_default=True, config=None, section=None, rtype=None):
-        default = None
-        required = False
-        deprecated = False
+        """
+        Get keyword properties and handle inheritance.
+        """
+        inheritance = "leaf"
+        kwargs = {
+            "default": None,
+            "required": False,
+            "deprecated": False,
+            "impersonate": impersonate,
+            "use_default": use_default,
+            "config": config,
+        }
         if s != "env":
             key = svcDict.svc_keys[section].getkey(o, rtype)
             if key is None:
@@ -5201,9 +5223,10 @@ class Svc(Crypt):
                     # used for keywords not in svc_keys.
                     pass
             else:
-                deprecated = (key.keyword != o)
-                required = key.required
-                default = key.default
+                kwargs["deprecated"] = (key.keyword != o)
+                kwargs["required"] = key.required
+                kwargs["default"] = key.default
+                inheritance = key.inheritance
                 if scope is None:
                     scope = key.at
                 if t is None:
@@ -5218,6 +5241,27 @@ class Svc(Crypt):
         if t is None:
             t = "string"
         
+        kwargs["scope"] = scope
+        kwargs["t"] = t
+
+        # in order of probability
+        if inheritance == "leaf > head":
+            return self.__conf_get(s, o, **kwargs)
+        if inheritance == "leaf":
+            kwargs["use_default"] = False
+            return self.__conf_get(s, o, **kwargs)
+        if inheritance == "head":
+            return self.__conf_get("DEFAULT", o, **kwargs)
+        if inheritance == "head > leaf":
+            try:
+                return self.__conf_get("DEFAULT", o, **kwargs)
+            except ex.OptNotFound:
+                kwargs["use_default"] = False
+                return self.__conf_get(s, o, **kwargs)
+        raise ex.excError("unknown inheritance value: %s" % str(inheritance))
+
+    def __conf_get(self, s, o, t=None, scope=None, impersonate=None, use_default=None, config=None,
+                   default=None, required=None, deprecated=None):
         try:
             if not scope:
                 val = self.conf_get_val_unscoped(s, o, use_default=use_default, config=config)
@@ -5250,7 +5294,10 @@ class Svc(Crypt):
             return config.get(s, o)
         raise ex.OptNotFound("unscoped keyword %s.%s not found" % (s, o))
 
-    def conf_has_option_scoped(self, s, o, impersonate=None, config=None):
+    def conf_has_option_scoped(self, s, o, impersonate=None, config=None, scope_order=None):
+        """
+        Handles the keyword scope_order property, at and impersonate
+        """
         if config is None:
             config = self.config
         if impersonate is None:
@@ -5266,27 +5313,26 @@ class Svc(Crypt):
         else:
             options = config._sections[s].keys()
 
-        if o+"@"+nodename in options:
-            return o+"@"+nodename
-        elif o+"@nodes" in options and \
-             nodename in self.nodes:
-            return s, o+"@nodes"
-        elif o+"@drpnodes" in options and \
-             nodename in self.drpnodes:
-            return o+"@drpnodes"
-        elif o+"@encapnodes" in options and \
-             nodename in self.encapnodes:
-            return o+"@encapnodes"
-        elif o+"@flex_primary" in options and \
-             nodename == self.flex_primary:
-            return o+"@flex_primary"
-        elif o+"@drp_flex_primary" in options and \
-             nodename == self.drp_flex_primary:
-            return o+"@drp_flex_primary"
-        elif o in options:
-            return o
+        candidates = [
+            (o+"@"+nodename, True),
+            (o+"@nodes", nodename in self.nodes),
+            (o+"@drpnodes", nodename in self.drpnodes),
+            (o+"@encapnodes", nodename in self.encapnodes),
+            (o+"@flex_primary", nodename == self.flex_primary),
+            (o+"@drp_flex_primary", nodename == self.drp_flex_primary),
+            (o, True),
+        ]
 
-    def conf_get_val_scoped(self, s, o, impersonate=None, use_default=True, config=None):
+        if scope_order == "head: generic > specific" and s == "DEFAULT":
+            candidates.reverse()
+        elif scope_order == "generic > specific":
+            candidates.reverse()
+
+        for option, condition in candidates:
+            if option in options and condition:
+                return option
+
+    def conf_get_val_scoped(self, s, o, impersonate=None, use_default=True, config=None, scope_order=None):
         if config is None:
             config = self.config
         if impersonate is None:
@@ -5294,14 +5340,19 @@ class Svc(Crypt):
         else:
             nodename = impersonate
 
-        option = self.conf_has_option_scoped(s, o, impersonate=impersonate, config=config)
+        option = self.conf_has_option_scoped(s, o, impersonate=impersonate,
+                                             config=config,
+                                             scope_order=scope_order)
         if option is None and not use_default:
             raise ex.OptNotFound("scoped keyword %s.%s not found" % (s, o))
 
         if option is None and use_default:
             if s != "DEFAULT":
                 # fallback to default
-                return self.conf_get_val_scoped("DEFAULT", o, impersonate=impersonate, config=config)
+                return self.conf_get_val_scoped("DEFAULT", o,
+                                                impersonate=impersonate,
+                                                config=config,
+                                                scope_order=scope_order)
             else:
                 raise ex.OptNotFound("scoped keyword %s.%s not found" % (s, o))
 

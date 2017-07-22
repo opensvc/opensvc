@@ -26,75 +26,33 @@ def get_tags(svc, section):
         s = svc.conf_get(section, 'tags')
     except ex.OptNotFound as exc:
         s = exc.default
-    return set(s.split())
+    return s
 
 def get_optional(svc, section):
-    if not svc.config.has_section(section):
-        try:
-            return svc.conf_get("DEFAULT", "optional")
-        except:
-            return False
-
-    # deprecated
-    if svc.config.has_option(section, 'optional_on'):
-        nodes = set([])
-        l = svc.config.get(section, "optional_on").split()
-        for i in l:
-            if i == 'nodes': nodes |= svc.nodes
-            elif i == 'drpnodes': nodes |= svc.drpnodes
-            else: nodes |= set([i.lower()])
-        if rcEnv.nodename in nodes:
-            return True
-        return False
-
     try:
         return svc.conf_get(section, "optional")
-    except:
-        return False
+    except ex.OptNotFound as exc:
+        return exc.default
 
 def get_monitor(svc, section):
-    if not svc.config.has_section(section):
-        try:
-            return svc.conf_get("DEFAULT", "monitor")
-        except:
-            return False
-
-    # deprecated
-    if svc.config.has_option(section, 'monitor_on'):
-        nodes = set([])
-        l = svc.config.get(section, "monitor_on").split()
-        for i in l:
-            if i == 'nodes': nodes |= svc.nodes
-            elif i == 'drpnodes': nodes |= svc.drpnodes
-            else: nodes |= set([i.lower()])
-        if rcEnv.nodename in nodes:
-            return True
-        return False
-
     try:
         return svc.conf_get(section, "monitor")
-    except:
-        return False
+    except ex.OptNotFound as exc:
+        return exc.default
 
 def get_rcmd(svc, section):
-    if not svc.config.has_section(section):
-        return
     try:
-        return svc.conf_get(section, 'rcmd').split()
+        return svc.conf_get(section, 'rcmd')
     except ex.OptNotFound as exc:
         return exc.default
 
 def get_subset(svc, section):
-    if not svc.config.has_section(section):
-        return
     try:
         return svc.conf_get(section, 'subset')
     except ex.OptNotFound as exc:
         return exc.default
 
 def get_osvc_root_path(svc, section):
-    if not svc.config.has_section(section):
-        return
     try:
         return svc.conf_get(section, 'osvc_root_path')
     except ex.OptNotFound as exc:
@@ -102,68 +60,18 @@ def get_osvc_root_path(svc, section):
     return
 
 def get_restart(svc, section):
-    if not svc.config.has_section(section):
-        if svc.config.has_option('DEFAULT', 'restart'):
-            try:
-                return svc.conf_get(section, 'restart')
-            except ex.OptNotFound as exc:
-                return exc.default
-        else:
-            return 0
     try:
         return svc.conf_get(section, 'restart')
     except ex.OptNotFound as exc:
         return exc.default
 
 def get_disabled(svc, section):
-    # service-level disable takes precedence over all resource-level disable method
-    if svc.config.has_option('DEFAULT', 'disable'):
-        svc_disable = svc.config.getboolean("DEFAULT", "disable")
-    else:
-        svc_disable = False
-
-    if svc_disable is True:
-        return True
-
-    if section == "":
-        return svc_disable
-
-    # unscopable enable_on option (takes precedence over disable and disable_on)
-    nodes = set([])
-    if svc.config.has_option(section, 'enable_on'):
-        l = svc.conf_get(section, "enable_on").split()
-        for i in l:
-            if i == 'nodes': nodes |= svc.nodes
-            elif i == 'drpnodes': nodes |= svc.drpnodes
-            else: nodes |= set([i.lower()])
-        if rcEnv.nodename in nodes:
-            return False
-
-    # scoped disable option
     try:
-        r = svc.conf_get(section, 'disable')
+        return svc.conf_get(section, 'disable')
     except ex.OptNotFound as exc:
-        r = exc.default
-    except Exception as e:
-        print(e, "... consider section as disabled")
-        r = True
-    if r:
-        return r
+        return exc.default
 
-    # unscopable disable_on option
-    nodes = set([])
-    if svc.config.has_option(section, 'disable_on'):
-        l = svc.config.get(section, "disable_on").split()
-        for i in l:
-            if i == 'nodes': nodes |= svc.nodes
-            elif i == 'drpnodes': nodes |= svc.drpnodes
-            else: nodes |= set([i.lower()])
-    if rcEnv.nodename in nodes:
-        return True
-
-    return False
-
-def need_scsireserv(svc, section):
+def get_scsireserv(svc, section):
     """scsireserv = true can be set globally or in a specific
     resource section
     """
@@ -173,7 +81,7 @@ def need_scsireserv(svc, section):
         return exc.default
 
 def add_scsireserv(svc, resource, section):
-    if not need_scsireserv(svc, section):
+    if not get_scsireserv(svc, section):
         return
     try:
         sr = __import__('resScsiReserv'+rcEnv.sysname)
@@ -252,9 +160,9 @@ def add_requires(svc, resource, section):
 
 def always_on_nodes_set(svc, section):
     try:
-        always_on_opt = svc.config.get(section, "always_on").split()
-    except:
-        always_on_opt = []
+        always_on_opt = svc.conf_get(section, "always_on")
+    except ex.OptNotFound as exc:
+        always_on_opt = exc.default
     always_on = set([])
     if 'nodes' in always_on_opt:
         always_on |= svc.nodes
@@ -652,7 +560,7 @@ def add_disk_disk(svc, s):
 
 def add_disk_gce(svc, s):
     kwargs = {}
-    kwargs['names'] = svc.conf_get(s, 'names').split()
+    kwargs['names'] = svc.conf_get(s, 'names')
     kwargs['gce_zone'] = svc.conf_get(s, 'gce_zone')
 
     kwargs['always_on'] = always_on_nodes_set(svc, s)
@@ -672,7 +580,7 @@ def add_disk_gce(svc, s):
 
 def add_disk_amazon(svc, s):
     kwargs = {}
-    kwargs['volumes'] = svc.conf_get(s, 'volumes').split()
+    kwargs['volumes'] = svc.conf_get(s, 'volumes')
 
     kwargs['always_on'] = always_on_nodes_set(svc, s)
     kwargs['rid'] = s
@@ -689,28 +597,25 @@ def add_disk_amazon(svc, s):
     add_requires(svc, r, s)
     svc += r
 
-def add_rados(svc, s):
+def add_disk_rados(svc, s):
     kwargs = {}
-    try:
-        kwargs['images'] = svc.conf_get(s, 'images').split()
-    except ex.OptNotFound as exc:
-        pass
+    kwargs['images'] = svc.conf_get(s, 'images')
     try:
         kwargs['keyring'] = svc.conf_get(s, 'keyring')
     except ex.OptNotFound as exc:
-        pass
+        kwargs['keyring'] = exc.default
     try:
         kwargs['client_id'] = svc.conf_get(s, 'client_id')
     except ex.OptNotFound as exc:
-        pass
+        kwargs['client_id'] = exc.default
     try:
         lock_shared_tag = svc.conf_get(s, 'lock_shared_tag')
     except ex.OptNotFound as exc:
-        lock_shared_tag = None
+        lock_shared_tag = exc.default
     try:
         lock = svc.conf_get(s, 'lock')
     except ex.OptNotFound as exc:
-        lock = None
+        lock = exc.default
 
     kwargs['always_on'] = always_on_nodes_set(svc, s)
     kwargs['rid'] = s
@@ -748,39 +653,30 @@ def add_raw(svc, s):
     disk_type = "Raw"+rcEnv.sysname
     try:
         zone = svc.conf_get(s, 'zone')
-    except:
-        zone = None
+    except ex.OptNotFound as exc:
+        zone = exc.default
 
-    devs = svc.conf_get(s, 'devs')
+    kwargs['devs'] = svc.conf_get(s, 'devs')
 
     if zone is not None:
-        devs = devs.replace(":", ":<%s>" % zone)
-
-    kwargs['devs'] = set(devs.split())
+        kwargs['devs'] = set([dev.replace(":", ":<%s>" % zone) for dev in kwargs['devs']])
 
     try:
         kwargs['user'] = svc.conf_get(s, 'user')
     except ex.OptNotFound as exc:
-        pass
+        kwargs['user'] = exc.default
     try:
         kwargs['group'] = svc.conf_get(s, 'group')
     except ex.OptNotFound as exc:
-        pass
+        kwargs['group'] = exc.default
     try:
         kwargs['perm'] = svc.conf_get(s, 'perm')
     except ex.OptNotFound as exc:
-        pass
+        kwargs['perm'] = exc.default
     try:
         kwargs['create_char_devices'] = svc.conf_get(s, 'create_char_devices')
     except ex.OptNotFound as exc:
-        pass
-
-    # backward compat : the dummy keyword is deprecated in favor of
-    # the standard "noaction" tag.
-    try:
-        dummy = svc.conf_get(s, 'dummy', t="boolean", scope=True)
-    except ex.OptNotFound as exc:
-        dummy = False
+        kwargs['create_char_devices'] = exc.default
 
     kwargs['always_on'] = always_on_nodes_set(svc, s)
     kwargs['rid'] = s
@@ -798,8 +694,6 @@ def add_raw(svc, s):
         return
 
     r = m.Disk(**kwargs)
-    if dummy:
-        r.tags.add("noaction")
     if zone is not None:
         r.tags.add('zone')
         r.tags.add(zone)
@@ -889,7 +783,7 @@ def add_disk_compat(svc, s):
         add_disk_amazon(svc, s)
         return
     if disk_type == 'Rados':
-        add_rados(svc, s)
+        add_disk_rados(svc, s)
         return
     if disk_type == 'Raw':
         add_raw(svc, s)
@@ -1018,7 +912,7 @@ def add_disk(svc, s):
         add_disk_amazon(svc, s)
         return
     if disk_type == 'Rados':
-        add_rados(svc, s)
+        add_disk_rados(svc, s)
         return
     if disk_type == 'Raw':
         add_raw(svc, s)
@@ -1797,14 +1691,14 @@ def add_container_jail(svc, s):
         kwargs['name'] = svc.svcname
 
     try:
-        kwargs['ips'] = svc.conf_get(s, 'ips').split()
+        kwargs['ips'] = svc.conf_get(s, 'ips')
     except ex.OptNotFound as exc:
-        pass
+        kwargs['ips'] = exc.default
 
     try:
-        kwargs['ip6s'] = svc.conf_get(s, 'ip6s').split()
+        kwargs['ip6s'] = svc.conf_get(s, 'ip6s')
     except ex.OptNotFound as exc:
-        pass
+        kwargs['ip6s'] = exc.default
 
     m = __import__('resContainerJail')
 
@@ -1861,10 +1755,7 @@ def add_mandatory_syncs(svc):
 def add_sync_docker(svc, s):
     kwargs = {}
 
-    try:
-        kwargs['target'] = svc.conf_get(s, 'target').split(' ')
-    except ex.OptNotFound as exc:
-        return
+    kwargs['target'] = svc.conf_get(s, 'target')
 
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(svc, s)
@@ -1882,7 +1773,7 @@ def add_sync_btrfs(svc, s):
 
     kwargs['src'] = svc.conf_get(s, 'src')
     kwargs['dst'] = svc.conf_get(s, 'dst')
-    kwargs['target'] = svc.conf_get(s, 'target').split()
+    kwargs['target'] = svc.conf_get(s, 'target')
 
     try:
         kwargs['recursive'] = svc.conf_get(s, 'recursive')
@@ -1905,7 +1796,7 @@ def add_sync_zfs(svc, s):
 
     kwargs['src'] = svc.conf_get(s, 'src')
     kwargs['dst'] = svc.conf_get(s, 'dst')
-    kwargs['target'] = svc.conf_get(s, 'target').split()
+    kwargs['target'] = svc.conf_get(s, 'target')
 
     try:
         kwargs['recursive'] = svc.conf_get(s, 'recursive')
@@ -1927,7 +1818,7 @@ def add_sync_dds(svc, s):
     kwargs = {}
 
     kwargs['src'] = svc.conf_get(s, 'src')
-    kwargs['target'] = svc.conf_get(s, 'target').split()
+    kwargs['target'] = svc.conf_get(s, 'target')
 
     dsts = {}
     for node in svc.nodes | svc.drpnodes:
@@ -1959,8 +1850,8 @@ def add_sync_dds(svc, s):
 def add_sync_dcsckpt(svc, s):
     kwargs = {}
 
-    kwargs['dcs'] = set(svc.conf_get(s, 'dcs').split())
-    kwargs['manager'] = set(svc.conf_get(s, 'manager').split())
+    kwargs['dcs'] = svc.conf_get(s, 'dcs')
+    kwargs['manager'] = svc.conf_get(s, 'manager')
     raw_pairs = svc.conf_get(s, 'pairs')
 
     import json
@@ -1991,19 +1882,19 @@ def add_sync_dcssnap(svc, s):
     kwargs = {}
 
     try:
-        kwargs['dcs'] = set(svc.conf_get(s, 'dcs').split())
+        kwargs['dcs'] = svc.conf_get(s, 'dcs')
     except ex.OptNotFound as exc:
         svc.log.error("config file section %s must have 'dcs' set" % s)
         return
 
     try:
-        kwargs['manager'] = set(svc.conf_get(s, 'manager').split())
+        kwargs['manager'] = svc.conf_get(s, 'manager')
     except ex.OptNotFound as exc:
         svc.log.error("config file section %s must have 'manager' set" % s)
         return
 
     try:
-        kwargs['snapname'] = set(svc.conf_get(s, 'snapname').split())
+        kwargs['snapname'] = svc.conf_get(s, 'snapname')
     except ex.OptNotFound as exc:
         svc.log.error("config file section %s must have 'snapname' set" % s)
         return
@@ -2028,29 +1919,20 @@ def add_sync_s3(svc, s):
     try:
         kwargs['full_schedule'] = svc.conf_get(s, 'full_schedule')
     except ex.OptNotFound as exc:
-        pass
+        kwargs['full_schedule'] = exc.default
 
     try:
-        kwargs['options'] = svc.conf_get(s, 'options').split()
+        kwargs['options'] = svc.conf_get(s, 'options')
     except ex.OptNotFound as exc:
-        pass
+        kwargs['options'] = exc.default
 
     try:
         kwargs['snar'] = svc.conf_get(s, 'snar')
     except ex.OptNotFound as exc:
-        pass
+        kwargs['snar'] = exc.default
 
-    try:
-        kwargs['bucket'] = svc.conf_get(s, 'bucket')
-    except ex.OptNotFound as exc:
-        svc.log.error("config file section %s must have bucket set" % s)
-        return
-
-    try:
-        kwargs['src'] = svc.conf_get(s, 'src').split()
-    except ex.OptNotFound as exc:
-        svc.log.error("config file section %s must have src set" % s)
-        return
+    kwargs['bucket'] = svc.conf_get(s, 'bucket')
+    kwargs['src'] = svc.conf_get(s, 'src')
 
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(svc, s)
@@ -2081,11 +1963,7 @@ def add_sync_zfssnap(svc, s):
     except ex.OptNotFound as exc:
         pass
 
-    try:
-        kwargs['dataset'] = svc.conf_get(s, 'dataset').split()
-    except ex.OptNotFound as exc:
-        svc.log.error("config file section %s must have dataset set" % s)
-        return
+    kwargs['dataset'] = svc.conf_get(s, 'dataset')
 
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(svc, s)
@@ -2111,11 +1989,7 @@ def add_sync_btrfssnap(svc, s):
     except ex.OptNotFound as exc:
         pass
 
-    try:
-        kwargs['subvol'] = svc.conf_get(s, 'subvol').split()
-    except ex.OptNotFound as exc:
-        svc.log.error("config file section %s must have subvol set" % s)
-        return
+    kwargs['subvol'] = svc.conf_get(s, 'subvol')
 
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(svc, s)
@@ -2198,7 +2072,7 @@ def add_sync_hp3parsnap(svc, s):
     kwargs = {}
 
     kwargs['array'] = svc.conf_get(s, 'array')
-    vv_names = svc.conf_get(s, 'vv_names').split()
+    vv_names = svc.conf_get(s, 'vv_names')
 
     if len(vv_names) == 0:
         svc.log.error("config file section %s must have at least one vv_name set" % s)
@@ -2287,7 +2161,7 @@ def add_sync_radosclone(svc, s):
     except ex.OptNotFound as exc:
         pass
 
-    kwargs['pairs'] = svc.conf_get(s, 'pairs').split()
+    kwargs['pairs'] = svc.conf_get(s, 'pairs')
 
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(svc, s)
@@ -2316,7 +2190,7 @@ def add_sync_radossnap(svc, s):
     except ex.OptNotFound as exc:
         pass
 
-    kwargs['images'] = svc.conf_get(s, 'images').split()
+    kwargs['images'] = svc.conf_get(s, 'images')
 
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(svc, s)
@@ -2341,7 +2215,7 @@ def add_sync_symclone(svc, s):
 def _add_sync_symclone(svc, s, t):
     kwargs = {}
     kwargs['type'] = t
-    kwargs['pairs'] = svc.conf_get(s, 'pairs').split()
+    kwargs['pairs'] = svc.conf_get(s, 'pairs')
     kwargs['symid'] = svc.conf_get(s, 'symid')
 
     try:
@@ -2381,7 +2255,7 @@ def _add_sync_symclone(svc, s, t):
 def add_sync_ibmdssnap(svc, s):
     kwargs = {}
 
-    kwargs['pairs'] = svc.conf_get(s, 'pairs').split()
+    kwargs['pairs'] = svc.conf_get(s, 'pairs')
     kwargs['array'] = svc.conf_get(s, 'array')
     kwargs['bgcopy'] = svc.conf_get(s, 'bgcopy')
     kwargs['recording'] = svc.conf_get(s, 'recording')
@@ -2452,47 +2326,39 @@ def add_sync_rsync(svc, s):
         # internal syncs have their own dedicated add function
         return
 
-    options = []
     kwargs = {}
     kwargs['src'] = []
     _s = svc.conf_get(s, 'src')
-    for src in _s.split():
+    for src in _s:
         kwargs['src'] += glob.glob(src)
 
     kwargs['dst'] = svc.conf_get(s, 'dst')
 
     try:
-        kwargs['dstfs'] = svc.conf_get(s, 'dstfs')
+        kwargs['options'] = svc.conf_get(s, 'options')
     except ex.OptNotFound as exc:
-        pass
+        kwargs['options'] = exc.default
 
     try:
-        _s = svc.conf_get(s, 'options')
-        options += _s.split()
+        kwargs['dstfs'] = svc.conf_get(s, 'dstfs')
     except ex.OptNotFound as exc:
-        pass
-
-    kwargs['options'] = options
+        kwargs['dstfs'] = exc.default
 
     try:
         kwargs['snap'] = svc.conf_get(s, 'snap')
     except ex.OptNotFound as exc:
-        pass
-
-    try:
-        _s = svc.conf_get(s, 'target')
-        target = _s.split()
-    except ex.OptNotFound as exc:
-        target = []
+        kwargs['snap'] = exc.default
 
     try:
         kwargs['bwlimit'] = svc.conf_get(s, 'bwlimit')
     except ex.OptNotFound as exc:
         pass
 
+    target = svc.conf_get(s, 'target')
     targethash = {}
     if 'nodes' in target: targethash['nodes'] = svc.nodes
     if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
+
     kwargs['target'] = targethash
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(svc, s)
@@ -2627,22 +2493,22 @@ def build(name, minimal=False, svcconf=None):
     svc = svc.Svc(svcname=name)
 
     try:
-        encapnodes = [n.lower() for n in svc.conf_get('DEFAULT', "encapnodes").split() if n != ""]
+        encapnodes = svc.conf_get('DEFAULT', "encapnodes")
     except ex.OptNotFound as exc:
-        encapnodes = []
+        encapnodes = exc.default
     svc.encapnodes = set(encapnodes)
 
     try:
-        nodes = [n.lower() for n in svc.conf_get('DEFAULT', "nodes").split() if n != ""]
+        nodes = svc.conf_get('DEFAULT', "nodes")
     except ex.OptNotFound as exc:
-        nodes = [rcEnv.nodename]
+        nodes = exc.default
     svc.ordered_nodes = nodes
     svc.nodes = set(nodes)
 
     try:
-        drpnodes = [n.lower() for n in svc.conf_get('DEFAULT', "drpnodes").split() if n != ""]
+        drpnodes = svc.conf_get('DEFAULT', "drpnodes")
     except ex.OptNotFound as exc:
-        drpnodes = []
+        drpnodes = exc.default
 
     try:
         drpnode = svc.conf_get('DEFAULT', "drpnode").lower()
@@ -2672,7 +2538,7 @@ def build(name, minimal=False, svcconf=None):
     svc.drp_flex_primary = drp_flex_primary
 
     try:
-        svc.placement = svc.conf_get('DEFAULT', "placement").lower()
+        svc.placement = svc.conf_get('DEFAULT', "placement")
     except ex.OptNotFound as exc:
         pass
 
@@ -2696,12 +2562,12 @@ def build(name, minimal=False, svcconf=None):
         pass
 
     try:
-        svc.presnap_trigger = svc.conf_get('DEFAULT', 'presnap_trigger').split()
+        svc.presnap_trigger = svc.conf_get('DEFAULT', 'presnap_trigger')
     except ex.OptNotFound as exc:
         pass
 
     try:
-        svc.postsnap_trigger = svc.conf_get('DEFAULT', 'postsnap_trigger').split()
+        svc.postsnap_trigger = svc.conf_get('DEFAULT', 'postsnap_trigger')
     except ex.OptNotFound as exc:
         pass
 
@@ -2737,8 +2603,12 @@ def build(name, minimal=False, svcconf=None):
         pass
 
     try:
-        anti_affinity = svc.conf_get('DEFAULT', 'anti_affinity')
-        svc.anti_affinity = set(svc.conf_get('DEFAULT', 'anti_affinity').split())
+        svc.affinity = svc.conf_get('DEFAULT', 'affinity')
+    except ex.OptNotFound as exc:
+        pass
+
+    try:
+        svc.anti_affinity = svc.conf_get('DEFAULT', 'anti_affinity')
     except ex.OptNotFound as exc:
         pass
 

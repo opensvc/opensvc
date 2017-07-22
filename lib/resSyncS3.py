@@ -17,7 +17,7 @@ class syncS3(resSync.Sync):
                  options=[],
                  bucket=None,
                  snar=None,
-                 full_schedule="* sun",
+                 full_schedule="@1441 sun",
                  **kwargs):
         resSync.Sync.__init__(self, rid=rid, type="sync.s3", **kwargs)
         self.label = "s3 backup"

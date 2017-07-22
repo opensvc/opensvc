@@ -49,6 +49,8 @@ class Keyword(object):
                  required=False,
                  generic=False,
                  at=False,
+                 inheritance="leaf > head",
+                 scope_order="specific > generic",
                  default=None,
                  default_text=None,
                  validator=None,
@@ -78,6 +80,8 @@ class Keyword(object):
         self.example = example
         self.provisioning = provisioning
         self.convert = convert
+        self.inheritance = inheritance
+        self.scope_order = scope_order
 
         if self.default_text is None:
             self.default_text = self.default
@@ -100,7 +104,7 @@ class Keyword(object):
         if self.deprecated():
             return ''
 
-        wrapper = TextWrapper(subsequent_indent="#%15s"%"", width=78)
+        wrapper = TextWrapper(subsequent_indent="#%18s"%"", width=78)
 
         depends = " && ".join(map(lambda d: "%s in %s"%(d[0], d[1]), self.depends))
         if depends == "":
@@ -114,21 +118,23 @@ class Keyword(object):
             candidates += " ..."
 
         s = '#\n'
-        s += "# keyword:       %s\n"%self.keyword
+        s += "# keyword:          %s\n"%self.keyword
         s += "# ----------------------------------------------------------------------------\n"
-        s += "#  scopable:     %s\n"%str(self.at)
-        s += "#  required:     %s\n"%str(self.required)
-        s += "#  provisioning: %s\n"%str(self.provisioning)
-        s += "#  default:      %s\n"%str(self.default_text)
+        s += "#  scopable:        %s\n"%str(self.at)
+        s += "#  required:        %s\n"%str(self.required)
+        s += "#  provisioning:    %s\n"%str(self.provisioning)
+        s += "#  default:         %s\n"%str(self.default_text)
+        s += "#  inheritance:     %s\n"%str(self.inheritance)
+        s += "#  scope order:     %s\n"%str(self.scope_order)
         if self.candidates:
-            s += "#  candidates:   %s\n"%candidates
+            s += "#  candidates:      %s\n"%candidates
         if depends:
-            s += "#  depends:      %s\n"%depends
+            s += "#  depends:         %s\n"%depends
         if self.convert:
-            s += "#  convert:      %s\n"%str(self.convert)
+            s += "#  convert:         %s\n"%str(self.convert)
         s += '#\n'
         if self.text:
-            wrapper = TextWrapper(subsequent_indent="#%9s"%"", width=78)
+            wrapper = TextWrapper(subsequent_indent="#%12s"%"", width=78)
             s += wrapper.fill("#  desc:  "+self.text) + "\n"
         s += '#\n'
         if self.default_text is not None:
@@ -1064,6 +1070,7 @@ class KeywordContainerRcmd(Keyword):
                   self,
                   section="container",
                   keyword="rcmd",
+                  convert="shlex",
                   at=True,
                   order=2,
                   rtype="lxc",
@@ -1091,6 +1098,7 @@ class KeywordOsvcRootPath(Keyword):
                   self,
                   section="container",
                   keyword="osvc_root_path",
+                  inheritance="head",
                   at=True,
                   order=2,
                   rtype=rcEnv.vt_supported,
@@ -1108,7 +1116,6 @@ class KeywordGuestos(Keyword):
                   rtype=rcEnv.vt_supported,
                   order=11,
                   candidates=["unix", "windows"],
-                  default=None,
                   text="The operating system in the virtual machine."
                 )
 
@@ -1118,6 +1125,7 @@ class KeywordJailIps(Keyword):
                   self,
                   section="container",
                   keyword="ips",
+                  convert="list",
                   at=True,
                   rtype="jail",
                   order=11,
@@ -1130,6 +1138,7 @@ class KeywordJailIp6s(Keyword):
                   self,
                   section="container",
                   keyword="ip6s",
+                  convert="list",
                   at=True,
                   rtype="jail",
                   order=11,
@@ -1245,9 +1254,9 @@ class KeywordAffinity(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="affinity",
+                  convert="set",
                   at=True,
                   order=15,
-                  default=None,
                   text="A whitespace separated list of services that should be started on the node to allow the monitor to start this service.",
                   example="svc1 svc2"
                 )
@@ -1258,9 +1267,9 @@ class KeywordAntiAffinity(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="anti_affinity",
+                  convert="set",
                   at=True,
                   order=15,
-                  default=None,
                   text="A whitespace separated list of services that should not be started on the node to allow the monitor to start this service.",
                   example="svc1 svc2"
                 )
@@ -1297,7 +1306,6 @@ class KeywordCluster(Keyword):
                   section="DEFAULT",
                   keyword="cluster",
                   order=15,
-                  default=None,
                   text="The symbolic name of the cluster. Used to label shared disks represented to tiers-2 consumers like containers.",
                   example="cluster1"
                 )
@@ -1425,7 +1433,8 @@ class KeywordNodes(Keyword):
                   keyword="nodes",
                   order=20,
                   at=True,
-                  default=rcEnv.nodename,
+                  default=[rcEnv.nodename],
+                  convert="list_lower",
                   default_text="<hostname of the current node>",
                   text="List of cluster local nodes able to start the service.  Whitespace separated."
                 )
@@ -1450,6 +1459,8 @@ class KeywordDrpnodes(Keyword):
                   keyword="drpnodes",
                   order=21,
                   at=True,
+                  convert="list_lower",
+                  default=[],
                   text="Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for 'sync' resources.",
                   example="node1 node2"
                 )
@@ -1461,6 +1472,8 @@ class KeywordEncapnodes(Keyword):
                   section="DEFAULT",
                   keyword="encapnodes",
                   order=21,
+                  convert="list_lower",
+                  default=[],
                   text="The list of containers handled by this service and with an OpenSVC agent installed to handle the encapsulated resources. With this parameter set, parameters can be scoped with the @encapnodes suffix.",
                   example="vm1 vm2"
                 )
@@ -1541,6 +1554,7 @@ class KeywordPresnapTrigger(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="presnap_trigger",
+                  convert="shlex",
                   order=28,
                   text="Define a command to run before creating snapshots. This is most likely what you need to use plug a script to put you data in a coherent state (alter begin backup and the like).",
                   example="/srv/svc1/etc/init.d/pre_snap.sh"
@@ -1552,6 +1566,7 @@ class KeywordPostsnapTrigger(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="postsnap_trigger",
+                  convert="shlex",
                   order=29,
                   text="Define a command to run after snapshots are created. This is most likely what you need to use plug a script to undo the actions of 'presnap_trigger'.",
                   example="/srv/svc1/etc/init.d/post_snap.sh"
@@ -1565,7 +1580,6 @@ class KeywordMonitorAction(Keyword):
                   keyword="monitor_action",
                   at=True,
                   order=30,
-                  default=None,
                   candidates=("reboot", "crash", "freezestop"),
                   text="The action to take when a monitored resource is not up nor standby up, and if the resource restart procedure has failed.",
                   example="reboot"
@@ -1579,7 +1593,6 @@ class KeywordPreMonitorAction(Keyword):
                   keyword="pre_monitor_action",
                   at=True,
                   order=30,
-                  default=None,
                   text="A script to execute before the monitor_action. For example, if the monitor_action is set to freezestop, the script can decide to crash the server if it detects a situation were the freezestop can not succeed (ex. fs can not be umounted with a dead storage array).",
                   example="/bin/true"
                 )
@@ -1791,11 +1804,12 @@ class KeywordSyncDockerTarget(Keyword):
                   self,
                   section="sync",
                   keyword="target",
+                  convert="list",
                   rtype="docker",
                   order=11,
                   at=True,
                   required=True,
-                  candidates=["nodes", "drpnodes", "nodes drpnodes"],
+                  candidates=["nodes", "drpnodes"],
                   text="Destination nodes of the sync."
                 )
 
@@ -1818,6 +1832,7 @@ class KeywordSyncS3Src(Keyword):
                   self,
                   section="sync",
                   keyword="src",
+                  convert="list",
                   rtype="s3",
                   order=10,
                   at=True,
@@ -1832,6 +1847,7 @@ class KeywordSyncS3Options(Keyword):
                   self,
                   section="sync",
                   keyword="options",
+                  convert="list",
                   rtype="s3",
                   order=10,
                   at=True,
@@ -1862,7 +1878,6 @@ class KeywordSyncS3FullSchedule(Keyword):
                   rtype="s3",
                   order=10,
                   at=True,
-                  required=True,
                   example="@1441 sun",
                   text="The schedule of full backups. sync_update actions are triggered according to the resource 'schedule' parameter, and do a full backup if the current date matches the 'full_schedule' parameter or an incremental backup otherwise."
                 )
@@ -1901,6 +1916,7 @@ class KeywordSyncZfsSnapDataset(Keyword):
                   self,
                   section="sync",
                   keyword="dataset",
+                  convert="list",
                   rtype="zfssnap",
                   order=10,
                   at=True,
@@ -1943,6 +1959,7 @@ class KeywordSyncBtrfsSnapSubvol(Keyword):
                   self,
                   section="sync",
                   keyword="subvol",
+                  convert="list",
                   rtype="btrfssnap",
                   order=10,
                   at=True,
@@ -1972,6 +1989,7 @@ class KeywordSyncBtrfsSrc(Keyword):
                   self,
                   section="sync",
                   keyword="src",
+                  convert="list",
                   rtype="btrfs",
                   order=10,
                   at=True,
@@ -1998,11 +2016,12 @@ class KeywordSyncBtrfsTarget(Keyword):
                   self,
                   section="sync",
                   keyword="target",
+                  convert="list",
                   rtype="btrfs",
                   order=11,
                   at=True,
                   required=True,
-                  candidates=["nodes", "drpnodes", "nodes drpnodes"],
+                  candidates=["nodes", "drpnodes"],
                   text="Destination nodes of the sync."
                 )
 
@@ -2053,10 +2072,11 @@ class KeywordSyncZfsTarget(Keyword):
                   self,
                   section="sync",
                   keyword="target",
+                  convert="list",
                   rtype="zfs",
                   order=12,
                   required=True,
-                  candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
+                  candidates=['nodes', 'drpnodes'],
                   text="Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
                 )
 
@@ -2082,6 +2102,8 @@ class KeywordSyncZfsTags(Keyword):
                   section="sync",
                   keyword="tags",
                   rtype="zfs",
+                  convert="set",
+                  default=set(),
                   at=True,
                   text="The zfs sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the sync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
                 )
@@ -2092,6 +2114,7 @@ class KeywordSyncRsyncSrc(Keyword):
                   self,
                   section="sync",
                   keyword="src",
+                  convert="list",
                   rtype="rsync",
                   order=10,
                   at=True,
@@ -2117,6 +2140,8 @@ class KeywordSyncRsyncTags(Keyword):
                   self,
                   section="sync",
                   keyword="tags",
+                  convert="set",
+                  default=set(),
                   at=True,
                   rtype="rsync",
                   text="The sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the rsync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
@@ -2128,6 +2153,7 @@ class KeywordSyncRsyncOptions(Keyword):
                   self,
                   section="sync",
                   keyword="options",
+                  convert="list",
                   at=True,
                   rtype="rsync",
                   text="A whitespace-separated list of params passed unchanged to rsync. Typical usage is ACL preservation activation."
@@ -2139,10 +2165,11 @@ class KeywordSyncRsyncTarget(Keyword):
                   self,
                   section="sync",
                   keyword="target",
+                  convert="list",
                   rtype="rsync",
                   order=12,
                   required=True,
-                  candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
+                  candidates=['nodes', 'drpnodes'],
                   text="Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
                 )
 
@@ -2188,7 +2215,6 @@ class KeywordSyncSchedule(Keyword):
                   self,
                   section="sync",
                   keyword="schedule",
-                  default=None,
                   at=True,
                   text="Set the this resource synchronization schedule. See usr/share/doc/node.conf for the schedule syntax reference.",
                   example='["00:00-01:00@61 mon", "02:00-03:00@61 tue-sun"]'
@@ -2340,6 +2366,7 @@ class KeywordDiskGceNames(Keyword):
                   section="disk",
                   rtype="gce",
                   keyword="names",
+                  convert="list",
                   provisioning=False,
                   order=1,
                   at=True,
@@ -2643,6 +2670,7 @@ class KeywordDiskAmazonVolumes(Keyword):
                   section="disk",
                   rtype="amazon",
                   keyword="volumes",
+                  convert="list",
                   order=10,
                   at=True,
                   required=True,
@@ -2657,6 +2685,7 @@ class KeywordDiskRawDevs(Keyword):
                   section="disk",
                   rtype="raw",
                   keyword="devs",
+                  convert="set",
                   order=10,
                   at=True,
                   required=True,
@@ -2686,7 +2715,7 @@ class KeywordDiskRawCreateCharDevices(Keyword):
                   keyword="create_char_devices",
                   order=10,
                   at=True,
-                  default=True,
+                  default=False,
                   convert="boolean",
                   text="On Linux, char devices are not automatically created when devices are discovered. If set to True (the default), the raw resource driver will create and delete them using the raw kernel driver.",
                   example="false"
@@ -2701,7 +2730,6 @@ class KeywordDiskRawUser(Keyword):
                   rtype="raw",
                   order=11,
                   at=True,
-                  required=True,
                   example="root",
                   text="The user that should be owner of the device. Either in numeric or symbolic form."
                 )
@@ -2856,6 +2884,7 @@ class KeywordSyncRadosPairs(Keyword):
                   self,
                   section="sync",
                   keyword="pairs",
+                  convert="list",
                   rtype="radosclone",
                   required=True,
                   at=True,
@@ -2934,6 +2963,7 @@ class KeywordDiskImages(Keyword):
                   section="disk",
                   rtype="rados",
                   keyword="images",
+                  convert="list",
                   required=True,
                   text="The rados image names handled by this vg resource. whitespace separated."
                 )
@@ -2945,6 +2975,7 @@ class KeywordSyncRadosImages(Keyword):
                   section="disk",
                   rtype="radossnap",
                   keyword="images",
+                  convert="list",
                   required=True,
                   text="The rados image names handled by this sync resource. whitespace separated."
                 )
@@ -3378,6 +3409,7 @@ class KeywordSyncIbmdssnapPairs(Keyword):
                   self,
                   section="sync",
                   keyword="pairs",
+                  convert="list",
                   at=True,
                   rtype="ibmdssnap",
                   required=True,
@@ -3493,6 +3525,7 @@ class KeywordSyncHp3parSnapVvnames(Keyword):
                   self,
                   section="sync",
                   keyword="vv_names",
+                  convert="list",
                   rtype="hp3parsnap",
                   required=True,
                   at=True,
@@ -3554,6 +3587,7 @@ class KeywordSyncDcsckptDcs(Keyword):
                   self,
                   section="sync",
                   keyword="dcs",
+                  convert="set",
                   rtype="dcsckpt",
                   required=True,
                   text="Whitespace-separated list of DataCore heads, as seen by the manager."
@@ -3565,6 +3599,7 @@ class KeywordSyncDcsckptManager(Keyword):
                   self,
                   section="sync",
                   keyword="manager",
+                  convert="set",
                   rtype="dcsckpt",
                   required=True,
                   text="The DataCore manager name running a ssh daemon, as set in the auth.conf section title."
@@ -3609,6 +3644,7 @@ class KeywordSyncDcssnapSnapname(Keyword):
                   self,
                   section="sync",
                   keyword="snapname",
+                  convert="set",
                   rtype="dcssnap",
                   required=True,
                   text="Whitespace-separated list of snapshot device names, as seen by the DataCore manager."
@@ -3762,6 +3798,7 @@ class KeywordSyncSymclonePairs(Keyword):
                   self,
                   section="sync",
                   keyword="pairs",
+                  convert="list",
                   rtype=["symclone", "symsnap"],
                   required=True,
                   at=True,
@@ -3811,9 +3848,10 @@ class KeywordSyncDdsTarget(Keyword):
                   self,
                   section="sync",
                   keyword="target",
+                  convert="list",
                   rtype="dds",
                   required=True,
-                  candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
+                  candidates=['nodes', 'drpnodes'],
                   text="Accepted values are 'drpnodes', 'nodes' or both, whitespace-separated. Points the target nodes to replay the binary-deltas on. Be warned that starting the service on a target node without a 'stop-sync_update-start cycle, will break the synchronization, so this mode is usually restricted to drpnodes sync, and should not be used to replicate data between nodes with automated services failover."
                 )
 
@@ -3910,19 +3948,20 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="tags",
+                  convert="set",
                   generic=True,
                   at=True,
                   candidates=None,
-                  default="",
+                  default=set(),
                   text="A list of tags. Arbitrary tags can be used to limit action scope to resources with a specific tag. Some tags can influence the driver behaviour. For example the 'encap' tag assigns the resource to the encapsulated service, 'noaction' avoids any state changing action from the driver, 'nostatus' forces the status to n/a."
                 )
         def kw_subset(resource):
             return Keyword(
                   section=resource,
                   keyword="subset",
+                  inheritance="leaf",
                   generic=True,
                   at=True,
-                  default=None,
                   text="Assign the resource to a specific subset."
                 )
         def kw_restart(resource):
@@ -3950,28 +3989,14 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="disable",
+                  inheritance="head > leaf",
+                  scope_order="generic > specific",
                   generic=True,
                   at=True,
                   candidates=(True, False),
                   default=False,
                   convert="boolean",
                   text="A disabled resource will be ignored on service startup and shutdown."
-                )
-        def kw_disable_on(resource):
-            return Keyword(
-                  section=resource,
-                  keyword="disable_on",
-                  generic=True,
-                  default=[],
-                  text="A whitelist-separated list of nodes to disable the resource on. A disabled resource will be ignored on service startup and shutdown."
-                )
-        def kw_enable_on(resource):
-            return Keyword(
-                  section=resource,
-                  keyword="enable_on",
-                  generic=True,
-                  default=[],
-                  text="A whitelist-separated list of nodes to enable the resource on. Takes precedence over disable and disable_on."
                 )
         def kw_optional(resource):
             return Keyword(
@@ -3989,7 +4014,10 @@ class KeyDict(KeywordStore):
                   section=resource,
                   keyword="always_on",
                   generic=True,
-                  candidates=['nodes', 'drpnodes', 'nodes drpnodes'],
+                  convert="list",
+                  default=[],
+                  candidates=['nodes', 'drpnodes'],
+                  strict_candidates=False,
                   text="Possible values are 'nodes', 'drpnodes' or 'nodes drpnodes', or a list of nodes. Sets the nodes on which the resource is always kept up. Primary usage is file synchronization receiving on non-shared disks. Don't set this on shared disk !! danger !!"
                 )
         def kw_pre_unprovision(resource):
@@ -4334,8 +4362,6 @@ class KeyDict(KeywordStore):
             self += kw_subset(r)
             self += kw_monitor(r)
             self += kw_disable(r)
-            self += kw_disable_on(r)
-            self += kw_enable_on(r)
             self += kw_optional(r)
             self += kw_always_on(r)
 
