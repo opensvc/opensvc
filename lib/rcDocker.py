@@ -821,12 +821,12 @@ class DockerLib(object):
             raise ex.excError(results[1])
         token = None
         for line in results[0].splitlines():
-            if "--token" in line:
-                token = line.split()[1]
+            line = line.split()
+            if "--token" not in line:
                 continue
-            if token and ":" in line:
-                addr = line.strip()
-                return {"token": token, "addr": addr}
+            token = line[line.index("--token")+1]
+            addr = line[-1]
+            return {"token": token, "addr": addr}
         raise ex.excError("unable to determine the swarm worker join token")
 
     def swarm_initialized(self):
