@@ -301,6 +301,12 @@ def main(argv=None):
     except ex.excError as exc:
         print(exc, file=sys.stderr)
         return 1
+    except IOError as exc:
+        if exc.errno == errno.EACCESS:
+            print(exc, file=sys.stderr)
+            return 1
+        else:
+            raise
     except KeyboardInterrupt:
         return 1
     finally:
