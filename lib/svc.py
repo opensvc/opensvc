@@ -709,6 +709,31 @@ class Svc(Crypt):
         except ex.OptNotFound:
             return False
 
+    def add_requires(self, resource):
+        actions = [
+          'unprovision', 'provision',
+          'stop', 'start',
+        ]
+        if resource.type == "sync":
+            actions += [
+                'sync_nodes', 'sync_drp',
+                'sync_resync', 'sync_break',
+                'sync_update',
+            ]
+        if resource.type == "task":
+            actions += [
+                'run',
+            ]
+        for action in actions:
+            try:
+                s = self.conf_get(resource.rid, action+'_requires')
+            except ex.OptNotFound:
+                continue
+            s = s.replace("stdby ", "stdby_")
+            l = s.split(" ")
+            l = list(map(lambda x: x.replace("stdby_", "stdby "), l))
+            setattr(resource, action+'_requires', l)
+
     def __iadd__(self, other):
         """
         Svc += ResourceSet
@@ -749,6 +774,7 @@ class Svc(Crypt):
 
         if isinstance(other, Resource) and other.rid and "#" in other.rid:
             other.pg_settings = self.get_pg_settings(other.rid)
+            self.add_requires(other)
             self.resources_by_id[other.rid] = other
 
         other.svc = self

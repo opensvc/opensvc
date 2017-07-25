@@ -133,31 +133,6 @@ def add_scsireserv(svc, resource, section):
     r = sr.ScsiReserv(**kwargs)
     svc += r
 
-def add_requires(svc, resource, section):
-    actions = [
-      'unprovision', 'provision',
-      'stop', 'start',
-    ]
-    if resource.type == "sync":
-        actions += [
-            'sync_nodes', 'sync_drp',
-            'sync_resync', 'sync_break',
-            'sync_update',
-        ]
-    if resource.type == "task":
-        actions += [
-            'run',
-        ]
-    for action in actions:
-        try:
-            s = svc.conf_get(section, action+'_requires')
-        except ex.OptNotFound:
-            continue
-        s = s.replace("stdby ", "stdby_")
-        l = s.split(" ")
-        l = list(map(lambda x: x.replace("stdby_", "stdby "), l))
-        setattr(resource, action+'_requires', l)
-
 def always_on_nodes_set(svc, section):
     try:
         always_on_opt = svc.conf_get(section, "always_on")
@@ -275,7 +250,6 @@ def add_ip_gce(svc, s):
     kwargs['monitor'] = get_monitor(svc, s)
     kwargs['restart'] = get_restart(svc, s)
     r = ip.Ip(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_ip_amazon(svc, s):
@@ -308,7 +282,6 @@ def add_ip_amazon(svc, s):
     kwargs['monitor'] = get_monitor(svc, s)
     kwargs['restart'] = get_restart(svc, s)
     r = ip.Ip(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_ip(svc, s):
@@ -389,7 +362,6 @@ def add_ip(svc, s):
     kwargs['monitor'] = get_monitor(svc, s)
     kwargs['restart'] = get_restart(svc, s)
     r = ip.Ip(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_md(svc, s):
@@ -422,7 +394,6 @@ def add_md(svc, s):
     kwargs['restart'] = get_restart(svc, s)
     m = __import__('resDiskMdLinux')
     r = m.Disk(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -444,7 +415,6 @@ def add_drbd(svc, s):
     kwargs['restart'] = get_restart(svc, s)
     mod = __import__('resDiskDrbd')
     r = mod.Drbd(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_vdisk(svc, s):
@@ -470,7 +440,6 @@ def add_vdisk(svc, s):
     kwargs['restart'] = get_restart(svc, s)
     m = __import__('resDiskVdisk')
     r = m.Disk(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -505,7 +474,6 @@ def add_stonith(svc, s):
         return
 
     r = st.Stonith(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_loop(svc, s):
@@ -532,7 +500,6 @@ def add_loop(svc, s):
         return
 
     r = m.Disk(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 
@@ -555,7 +522,6 @@ def add_disk_disk(svc, s):
     m = __import__('resDiskDisk'+rcEnv.sysname)
 
     r = m.Disk(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_disk_gce(svc, s):
@@ -575,7 +541,6 @@ def add_disk_gce(svc, s):
     m = __import__('resDiskGce')
 
     r = m.Disk(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_disk_amazon(svc, s):
@@ -594,7 +559,6 @@ def add_disk_amazon(svc, s):
     m = __import__('resDiskAmazon')
 
     r = m.Disk(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_disk_rados(svc, s):
@@ -633,7 +597,6 @@ def add_disk_rados(svc, s):
         return
 
     r = m.Disk(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
     if not lock:
@@ -644,7 +607,6 @@ def add_disk_rados(svc, s):
     kwargs["lock"] = lock
     kwargs["lock_shared_tag"] = lock_shared_tag
     r = m.DiskLock(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 
@@ -697,7 +659,6 @@ def add_raw(svc, s):
     if zone is not None:
         r.tags.add('zone')
         r.tags.add(zone)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -740,7 +701,6 @@ def add_gandi(svc, s):
         return
 
     r = m.Disk(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -817,7 +777,6 @@ def add_veritas(svc, s):
         return
 
     r = m.Disk(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -852,7 +811,6 @@ def add_vg(svc, s):
         return
 
     r = m.Disk(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -957,7 +915,6 @@ def add_vmdg(svc, s):
     kwargs['restart'] = get_restart(svc, s)
 
     r = m.Disk(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -991,7 +948,6 @@ def add_zpool(svc, s):
         r.tags.add('zone')
         r.tags.add(zone)
 
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1026,7 +982,6 @@ def add_share_nfs(svc, s):
 
     r = m.Share(**kwargs)
 
-    add_requires(svc, r, s)
     svc += r
 
 def add_fs_directory(svc, s):
@@ -1087,7 +1042,6 @@ def add_fs_directory(svc, s):
         r.tags.add(zone)
         r.tags.add('zone')
 
-    add_requires(svc, r, s)
     svc += r
 
 def add_fs(svc, s):
@@ -1166,7 +1120,6 @@ def add_fs(svc, s):
         r.tags.add(zone)
         r.tags.add('zone')
 
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1196,7 +1149,6 @@ def add_container_esx(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Esx(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1226,7 +1178,6 @@ def add_container_hpvm(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.HpVm(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1256,7 +1207,6 @@ def add_container_ldom(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Ldom(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1286,7 +1236,6 @@ def add_container_vbox(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Vbox(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1316,7 +1265,6 @@ def add_container_xen(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Xen(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1351,7 +1299,6 @@ def add_container_zone(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Zone(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1387,7 +1334,6 @@ def add_container_vcloud(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.CloudVm(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1439,7 +1385,6 @@ def add_container_amazon(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.CloudVm(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1482,7 +1427,6 @@ def add_container_openstack(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.CloudVm(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1512,7 +1456,6 @@ def add_container_vz(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Vz(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1542,7 +1485,6 @@ def add_container_kvm(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Kvm(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1572,7 +1514,6 @@ def add_container_srp(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Srp(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1608,7 +1549,6 @@ def add_container_lxc(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Lxc(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1645,7 +1585,6 @@ def add_container_docker(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Docker(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1677,7 +1616,6 @@ def add_container_ovm(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Ovm(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1713,7 +1651,6 @@ def add_container_jail(svc, s):
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     r = m.Jail(**kwargs)
-    add_requires(svc, r, s)
     svc += r
     add_scsireserv(svc, r, s)
 
@@ -1788,7 +1725,6 @@ def add_sync_btrfs(svc, s):
     kwargs.update(get_sync_args(svc, s))
     btrfs = __import__('resSyncBtrfs')
     r = btrfs.SyncBtrfs(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_zfs(svc, s):
@@ -1811,7 +1747,6 @@ def add_sync_zfs(svc, s):
     kwargs.update(get_sync_args(svc, s))
     zfs = __import__('resSyncZfs')
     r = zfs.SyncZfs(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_dds(svc, s):
@@ -1844,7 +1779,6 @@ def add_sync_dds(svc, s):
     kwargs.update(get_sync_args(svc, s))
     dds = __import__('resSyncDds')
     r = dds.syncDds(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_dcsckpt(svc, s):
@@ -1875,7 +1809,6 @@ def add_sync_dcsckpt(svc, s):
     except:
         sc = __import__('resSyncDcsCkpt')
     r = sc.syncDcsCkpt(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_dcssnap(svc, s):
@@ -1910,7 +1843,6 @@ def add_sync_dcssnap(svc, s):
     except:
         sc = __import__('resSyncDcsSnap')
     r = sc.syncDcsSnap(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_s3(svc, s):
@@ -1942,7 +1874,6 @@ def add_sync_s3(svc, s):
     kwargs.update(get_sync_args(svc, s))
     sc = __import__('resSyncS3')
     r = sc.syncS3(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_zfssnap(svc, s):
@@ -1973,7 +1904,6 @@ def add_sync_zfssnap(svc, s):
     kwargs.update(get_sync_args(svc, s))
     sc = __import__('resSyncZfsSnap')
     r = sc.syncZfsSnap(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_btrfssnap(svc, s):
@@ -1999,7 +1929,6 @@ def add_sync_btrfssnap(svc, s):
     kwargs.update(get_sync_args(svc, s))
     sc = __import__('resSyncBtrfsSnap')
     r = sc.syncBtrfsSnap(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_necismsnap(svc, s):
@@ -2027,7 +1956,6 @@ def add_sync_necismsnap(svc, s):
     except:
         sc = __import__('resSyncNecIsmSnap')
     r = sc.syncNecIsmSnap(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_evasnap(svc, s):
@@ -2065,7 +1993,6 @@ def add_sync_evasnap(svc, s):
     except:
         sc = __import__('resSyncEvasnap')
     r = sc.syncEvasnap(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_hp3parsnap(svc, s):
@@ -2091,7 +2018,6 @@ def add_sync_hp3parsnap(svc, s):
     except:
         sc = __import__('resSyncHp3parSnap')
     r = sc.syncHp3parSnap(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_hp3par(svc, s):
@@ -2123,7 +2049,6 @@ def add_sync_hp3par(svc, s):
     except:
         sc = __import__('resSyncHp3par')
     r = sc.syncHp3par(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_symsrdfs(svc, s):
@@ -2144,7 +2069,6 @@ def add_sync_symsrdfs(svc, s):
     except:
         sc = __import__('resSyncSymSrdfS')
     r = sc.syncSymSrdfS(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 
@@ -2174,7 +2098,6 @@ def add_sync_radosclone(svc, s):
     except:
         sc = __import__('resSyncRados')
     r = sc.syncRadosClone(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_radossnap(svc, s):
@@ -2203,7 +2126,6 @@ def add_sync_radossnap(svc, s):
     except:
         sc = __import__('resSyncRados')
     r = sc.syncRadosSnap(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_symsnap(svc, s):
@@ -2249,7 +2171,6 @@ def _add_sync_symclone(svc, s, t):
     except:
         sc = __import__('resSyncSymclone')
     r = sc.syncSymclone(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_ibmdssnap(svc, s):
@@ -2271,7 +2192,6 @@ def add_sync_ibmdssnap(svc, s):
     except:
         m = __import__('resSyncIbmdsSnap')
     r = m.syncIbmdsSnap(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_nexenta(svc, s):
@@ -2295,7 +2215,6 @@ def add_sync_nexenta(svc, s):
 
     import resSyncNexenta
     r = resSyncNexenta.syncNexenta(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_netapp(svc, s):
@@ -2318,7 +2237,6 @@ def add_sync_netapp(svc, s):
 
     import resSyncNetapp
     r = resSyncNetapp.syncNetapp(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_sync_rsync(svc, s):
@@ -2368,7 +2286,6 @@ def add_sync_rsync(svc, s):
     kwargs.update(get_sync_args(svc, s))
 
     r = resSyncRsync.Rsync(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_task(svc, s):
@@ -2402,7 +2319,6 @@ def add_task(svc, s):
 
     import resTask
     r = resTask.Task(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 def add_app(svc, s):
@@ -2458,7 +2374,6 @@ def add_app(svc, s):
     kwargs['restart'] = get_restart(svc, s)
 
     r = resApp.App(**kwargs)
-    add_requires(svc, r, s)
     svc += r
 
 
