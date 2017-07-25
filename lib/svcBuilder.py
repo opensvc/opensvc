@@ -71,68 +71,6 @@ def get_disabled(svc, section):
     except ex.OptNotFound as exc:
         return exc.default
 
-def get_scsireserv(svc, section):
-    """scsireserv = true can be set globally or in a specific
-    resource section
-    """
-    try:
-        return svc.conf_get(section, 'scsireserv')
-    except ex.OptNotFound as exc:
-        return exc.default
-
-def add_scsireserv(svc, resource, section):
-    if not get_scsireserv(svc, section):
-        return
-    try:
-        sr = __import__('resScsiReserv'+rcEnv.sysname)
-    except ImportError:
-        sr = __import__('resScsiReserv')
-
-    kwargs = {}
-    pr_rid = resource.rid+"pr"
-
-    try:
-        kwargs["prkey"] = svc.conf_get(resource.rid, 'prkey')
-    except ex.OptNotFound as exc:
-        kwargs["prkey"] = exc.default
-
-    try:
-        kwargs['no_preempt_abort'] = svc.conf_get(resource.rid, 'no_preempt_abort')
-    except ex.OptNotFound as exc:
-        kwargs['no_preempt_abort'] = exc.default
-
-    try:
-        kwargs['optional'] = get_optional(svc, pr_rid)
-    except ex.OptNotFound:
-        kwargs['optional'] = resource.is_optional()
-
-    try:
-        kwargs['disabled'] = get_disabled(svc, pr_rid)
-    except ex.OptNotFound:
-        kwargs['disabled'] = resource.is_disabled()
-
-    try:
-        kwargs['restart'] = get_restart(svc, pr_rid)
-    except ex.OptNotFound:
-        kwargs['restart'] = resource.restart
-
-    try:
-        kwargs['monitor'] = get_monitor(svc, pr_rid)
-    except ex.OptNotFound:
-        kwargs['monitor'] = resource.monitor
-
-    try:
-        kwargs['tags'] = get_tags(svc, pr_rid)
-    except:
-        kwargs['tags'] = set([])
-
-    kwargs['rid'] = resource.rid
-    kwargs['tags'] |= resource.tags
-    kwargs['peer_resource'] = resource
-
-    r = sr.ScsiReserv(**kwargs)
-    svc += r
-
 def always_on_nodes_set(svc, section):
     try:
         always_on_opt = svc.conf_get(section, "always_on")
@@ -395,7 +333,6 @@ def add_md(svc, s):
     m = __import__('resDiskMdLinux')
     r = m.Disk(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_drbd(svc, s):
     """Parse the configuration file and add a drbd object for each [drbd#n]
@@ -441,7 +378,6 @@ def add_vdisk(svc, s):
     m = __import__('resDiskVdisk')
     r = m.Disk(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_stonith(svc, s):
     if rcEnv.nodename in svc.drpnodes:
@@ -660,7 +596,6 @@ def add_raw(svc, s):
         r.tags.add('zone')
         r.tags.add(zone)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_gandi(svc, s):
     disk_type = "Gandi"
@@ -702,7 +637,6 @@ def add_gandi(svc, s):
 
     r = m.Disk(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_disk_compat(svc, s):
     try:
@@ -778,7 +712,6 @@ def add_veritas(svc, s):
 
     r = m.Disk(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_vg(svc, s):
     try:
@@ -812,7 +745,6 @@ def add_vg(svc, s):
 
     r = m.Disk(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_sync(svc, s):
     try:
@@ -916,7 +848,6 @@ def add_vmdg(svc, s):
 
     r = m.Disk(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_zpool(svc, s):
     """Parse the configuration file and add a zpool object for each disk.zpool
@@ -949,7 +880,6 @@ def add_zpool(svc, s):
         r.tags.add(zone)
 
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_share(svc, s):
     _type = svc.conf_get(s, 'type')
@@ -1121,7 +1051,6 @@ def add_fs(svc, s):
         r.tags.add('zone')
 
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_esx(svc, s):
     kwargs = {}
@@ -1150,7 +1079,6 @@ def add_container_esx(svc, s):
 
     r = m.Esx(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_hpvm(svc, s):
     kwargs = {}
@@ -1179,7 +1107,6 @@ def add_container_hpvm(svc, s):
 
     r = m.HpVm(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_ldom(svc, s):
     kwargs = {}
@@ -1208,7 +1135,6 @@ def add_container_ldom(svc, s):
 
     r = m.Ldom(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_vbox(svc, s):
     kwargs = {}
@@ -1237,7 +1163,6 @@ def add_container_vbox(svc, s):
 
     r = m.Vbox(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_xen(svc, s):
     kwargs = {}
@@ -1266,7 +1191,6 @@ def add_container_xen(svc, s):
 
     r = m.Xen(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_zone(svc, s):
     kwargs = {}
@@ -1300,7 +1224,6 @@ def add_container_zone(svc, s):
 
     r = m.Zone(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 
 
@@ -1335,7 +1258,6 @@ def add_container_vcloud(svc, s):
 
     r = m.CloudVm(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_amazon(svc, s):
     kwargs = {}
@@ -1386,7 +1308,6 @@ def add_container_amazon(svc, s):
 
     r = m.CloudVm(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_openstack(svc, s):
     kwargs = {}
@@ -1428,7 +1349,6 @@ def add_container_openstack(svc, s):
 
     r = m.CloudVm(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_vz(svc, s):
     kwargs = {}
@@ -1457,7 +1377,6 @@ def add_container_vz(svc, s):
 
     r = m.Vz(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_kvm(svc, s):
     kwargs = {}
@@ -1486,7 +1405,6 @@ def add_container_kvm(svc, s):
 
     r = m.Kvm(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_srp(svc, s):
     kwargs = {}
@@ -1515,7 +1433,6 @@ def add_container_srp(svc, s):
 
     r = m.Srp(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_lxc(svc, s):
     kwargs = {}
@@ -1550,7 +1467,6 @@ def add_container_lxc(svc, s):
 
     r = m.Lxc(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_docker(svc, s):
     kwargs = {}
@@ -1586,7 +1502,6 @@ def add_container_docker(svc, s):
 
     r = m.Docker(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_ovm(svc, s):
     kwargs = {}
@@ -1617,7 +1532,6 @@ def add_container_ovm(svc, s):
 
     r = m.Ovm(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_container_jail(svc, s):
     kwargs = {}
@@ -1652,7 +1566,6 @@ def add_container_jail(svc, s):
 
     r = m.Jail(**kwargs)
     svc += r
-    add_scsireserv(svc, r, s)
 
 def add_mandatory_syncs(svc):
     """Mandatory files to sync:

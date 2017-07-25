@@ -709,6 +709,76 @@ class Svc(Crypt):
         except ex.OptNotFound:
             return False
 
+    def get_scsireserv(self, rid):
+        """
+        Get the 'scsireserv' config keyword value for rid.
+        """
+        try:
+            return self.conf_get(rid, 'scsireserv')
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    def add_scsireserv(self, resource):
+        """
+        Add a 'pr' suffixed co-resource.
+        """
+        try:
+            if not self.get_scsireserv(resource.rid):
+                # scsireserv not enabled on this resource
+                return
+        except Exception:
+            # scsireserv not supported on this resource
+            return
+
+        try:
+            sr = __import__('resScsiReserv'+rcEnv.sysname)
+        except ImportError:
+            sr = __import__('resScsiReserv')
+
+        kwargs = {}
+        pr_rid = resource.rid+"pr"
+
+        try:
+            kwargs["prkey"] = self.conf_get(resource.rid, 'prkey')
+        except ex.OptNotFound as exc:
+            kwargs["prkey"] = exc.default
+
+        try:
+            kwargs['no_preempt_abort'] = self.conf_get(resource.rid, 'no_preempt_abort')
+        except ex.OptNotFound as exc:
+            kwargs['no_preempt_abort'] = exc.default
+
+        try:
+            kwargs['optional'] = self.conf_get(pr_rid, "optional")
+        except ex.OptNotFound:
+            kwargs['optional'] = resource.is_optional()
+
+        try:
+            kwargs['disabled'] = self.conf_get(pr_rid, "disable")
+        except ex.OptNotFound:
+            kwargs['disabled'] = resource.is_disabled()
+
+        try:
+            kwargs['restart'] = self.conf_get(pr_rid, "restart")
+        except ex.OptNotFound:
+            kwargs['restart'] = resource.restart if hasattr(resource, "restart") else False
+
+        try:
+            kwargs['monitor'] = self.conf_get(pr_rid, "monitor")
+        except ex.OptNotFound:
+            kwargs['monitor'] = resource.monitor
+
+        try:
+            kwargs['tags'] = self.conf_get(pr_rid, "tags")
+        except ex.OptNotFound as exc:
+            kwargs['tags'] = resource.tags
+
+        kwargs['rid'] = resource.rid
+        kwargs['peer_resource'] = resource
+
+        r = sr.ScsiReserv(**kwargs)
+        self += r
+
     def add_requires(self, resource):
         actions = [
           'unprovision', 'provision',
@@ -774,6 +844,7 @@ class Svc(Crypt):
 
         if isinstance(other, Resource) and other.rid and "#" in other.rid:
             other.pg_settings = self.get_pg_settings(other.rid)
+            self.add_scsireserv(other)
             self.add_requires(other)
             self.resources_by_id[other.rid] = other
 
@@ -5206,7 +5277,7 @@ class Svc(Crypt):
             try:
                 rtype = self.config.get(s, "type")
                 fkey = ".".join((section, rtype, o))
-            except:
+            except Exception:
                 rtype = None
                 fkey = ".".join((section, o))
 
