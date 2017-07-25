@@ -134,7 +134,7 @@ class Keyword(object):
             s += "#  convert:         %s\n"%str(self.convert)
         s += '#\n'
         if self.text:
-            wrapper = TextWrapper(subsequent_indent="#%12s"%"", width=78)
+            wrapper = TextWrapper(subsequent_indent="#%9s"%"", width=78)
             s += wrapper.fill("#  desc:  "+self.text) + "\n"
         s += '#\n'
         if self.default_text is not None:

@@ -2674,7 +2674,7 @@ def create(svcname, resources=[], interactive=False, provision=False):
                 del(d["rtype"])
             defaults.update(d)
 
-    from svcDict import KeyDict, MissKeyNoDefault, KeyInvalidValue
+    from svcdict import KeyDict, MissKeyNoDefault, KeyInvalidValue
     try:
         keys = KeyDict(provision=provision)
         defaults.update(keys.update('DEFAULT', defaults))

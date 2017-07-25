@@ -26,7 +26,7 @@ from converters import *
 import rcExceptions as ex
 import rcLogger
 import node
-import svcDict
+import svcdict
 from rcScheduler import scheduler_fork, Scheduler, SchedOpts
 from comm import Crypt
 
@@ -4758,20 +4758,20 @@ class Svc(Crypt):
             Validate DEFAULT section options.
             """
             for option in config.defaults():
-                key = svcDict.SVCKEYS.sections["DEFAULT"].getkey(option)
+                key = svcdict.SVCKEYS.sections["DEFAULT"].getkey(option)
                 if key is None:
                     found = False
                     # the option can be set in the DEFAULT section for the
                     # benefit of a resource section
                     for section in config.sections():
                         family = section.split("#")[0]
-                        if family not in list(svcDict.SVCKEYS.sections.keys()) + \
-                           list(svcDict.deprecated_sections.keys()):
+                        if family not in list(svcdict.SVCKEYS.sections.keys()) + \
+                           list(svcdict.deprecated_sections.keys()):
                             continue
-                        if family in svcDict.deprecated_sections:
-                            results = svcDict.deprecated_sections[family]
+                        if family in svcdict.deprecated_sections:
+                            results = svcdict.deprecated_sections[family]
                             family = results[0]
-                        if svcDict.SVCKEYS.sections[family].getkey(option) is not None:
+                        if svcdict.SVCKEYS.sections[family].getkey(option) is not None:
                             found = True
                             break
                     if not found:
@@ -4789,27 +4789,27 @@ class Svc(Crypt):
             for section in config.sections():
                 if section == "env":
                     # the "env" section is not handled by a resource driver, and is
-                    # unknown to the svcDict. Just ignore it.
+                    # unknown to the svcdict. Just ignore it.
                     continue
                 family = section.split("#")[0]
                 if config.has_option(section, "type"):
                     rtype = config.get(section, "type")
                 else:
                     rtype = None
-                if family not in list(svcDict.SVCKEYS.sections.keys()) + list(svcDict.deprecated_sections.keys()):
+                if family not in list(svcdict.SVCKEYS.sections.keys()) + list(svcdict.deprecated_sections.keys()):
                     self.log.warning("ignored section %s", section)
                     ret["warnings"] += 1
                     continue
-                if family in svcDict.deprecated_sections:
+                if family in svcdict.deprecated_sections:
                     self.log.warning("deprecated section prefix %s", family)
                     ret["warnings"] += 1
-                    family, rtype = svcDict.deprecated_sections[family]
+                    family, rtype = svcdict.deprecated_sections[family]
                 for option in config.options(section):
                     if option in config.defaults():
                         continue
-                    key = svcDict.SVCKEYS.sections[family].getkey(option, rtype=rtype)
+                    key = svcdict.SVCKEYS.sections[family].getkey(option, rtype=rtype)
                     if key is None:
-                        key = svcDict.SVCKEYS.sections[family].getkey(option)
+                        key = svcdict.SVCKEYS.sections[family].getkey(option)
                     if key is None:
                         self.log.warning("ignored option %s.%s, driver %s", section,
                                          option, rtype if rtype else "generic")
@@ -4959,8 +4959,8 @@ class Svc(Crypt):
 
             if is_resource:
                 try:
-                    sections[section].update(svcDict.SVCKEYS.update(section, data))
-                except (svcDict.MissKeyNoDefault, svcDict.KeyInvalidValue) as exc:
+                    sections[section].update(svcdict.SVCKEYS.update(section, data))
+                except (svcdict.MissKeyNoDefault, svcdict.KeyInvalidValue) as exc:
                     if not self.options.interactive:
                         raise ex.excError(str(exc))
                 rid.append(section)
@@ -5270,8 +5270,8 @@ class Svc(Crypt):
         Handle keyword and section deprecation.
         """
         section = s.split("#")[0]
-        if section in svcDict.deprecated_sections:
-            section, rtype = svcDict.deprecated_sections[section]
+        if section in svcdict.deprecated_sections:
+            section, rtype = svcdict.deprecated_sections[section]
             fkey = ".".join((section, rtype, o))
         else:
             try:
@@ -5281,7 +5281,7 @@ class Svc(Crypt):
                 rtype = None
                 fkey = ".".join((section, o))
 
-        deprecated_keyword = svcDict.reverse_deprecated_keywords.get(fkey)
+        deprecated_keyword = svcdict.reverse_deprecated_keywords.get(fkey)
 
         # 1st try: supported keyword
         try:
@@ -5321,7 +5321,7 @@ class Svc(Crypt):
             "config": config,
         }
         if s != "env":
-            key = svcDict.SVCKEYS[section].getkey(o, rtype)
+            key = svcdict.SVCKEYS[section].getkey(o, rtype)
             if key is None:
                 if scope is None and t is None:
                     raise ValueError("%s.%s not found in the services "
