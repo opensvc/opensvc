@@ -4758,20 +4758,20 @@ class Svc(Crypt):
             Validate DEFAULT section options.
             """
             for option in config.defaults():
-                key = svcDict.svc_keys.sections["DEFAULT"].getkey(option)
+                key = svcDict.SVCKEYS.sections["DEFAULT"].getkey(option)
                 if key is None:
                     found = False
                     # the option can be set in the DEFAULT section for the
                     # benefit of a resource section
                     for section in config.sections():
                         family = section.split("#")[0]
-                        if family not in list(svcDict.svc_keys.sections.keys()) + \
+                        if family not in list(svcDict.SVCKEYS.sections.keys()) + \
                            list(svcDict.deprecated_sections.keys()):
                             continue
                         if family in svcDict.deprecated_sections:
                             results = svcDict.deprecated_sections[family]
                             family = results[0]
-                        if svcDict.svc_keys.sections[family].getkey(option) is not None:
+                        if svcDict.SVCKEYS.sections[family].getkey(option) is not None:
                             found = True
                             break
                     if not found:
@@ -4796,7 +4796,7 @@ class Svc(Crypt):
                     rtype = config.get(section, "type")
                 else:
                     rtype = None
-                if family not in list(svcDict.svc_keys.sections.keys()) + list(svcDict.deprecated_sections.keys()):
+                if family not in list(svcDict.SVCKEYS.sections.keys()) + list(svcDict.deprecated_sections.keys()):
                     self.log.warning("ignored section %s", section)
                     ret["warnings"] += 1
                     continue
@@ -4807,9 +4807,9 @@ class Svc(Crypt):
                 for option in config.options(section):
                     if option in config.defaults():
                         continue
-                    key = svcDict.svc_keys.sections[family].getkey(option, rtype=rtype)
+                    key = svcDict.SVCKEYS.sections[family].getkey(option, rtype=rtype)
                     if key is None:
-                        key = svcDict.svc_keys.sections[family].getkey(option)
+                        key = svcDict.SVCKEYS.sections[family].getkey(option)
                     if key is None:
                         self.log.warning("ignored option %s.%s, driver %s", section,
                                          option, rtype if rtype else "generic")
@@ -4959,7 +4959,7 @@ class Svc(Crypt):
 
             if is_resource:
                 try:
-                    sections[section].update(svcDict.svc_keys.update(section, data))
+                    sections[section].update(svcDict.SVCKEYS.update(section, data))
                 except (svcDict.MissKeyNoDefault, svcDict.KeyInvalidValue) as exc:
                     if not self.options.interactive:
                         raise ex.excError(str(exc))
@@ -5321,15 +5321,14 @@ class Svc(Crypt):
             "config": config,
         }
         if s != "env":
-            key = svcDict.svc_keys[section].getkey(o, rtype)
+            key = svcDict.SVCKEYS[section].getkey(o, rtype)
             if key is None:
                 if scope is None and t is None:
-                    raise
-                    raise ValueError("%s.%s not found in the services configuration dictionary" % \
-                                     (s, o))
+                    raise ValueError("%s.%s not found in the services "
+                                     "configuration dictionary" % (s, o))
                 else:
-                    # passing 't' and 'scope' skips svc_keys validation.
-                    # used for keywords not in svc_keys.
+                    # passing 't' and 'scope' skips SVCKEYS validation.
+                    # used for keywords not in SVCKEYS.
                     pass
             else:
                 kwargs["deprecated"] = (key.keyword != o)

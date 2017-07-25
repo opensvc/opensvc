@@ -4691,9 +4691,9 @@ class KeyDict(KeywordStore):
         self += KeywordTaskUser()
         self += KeywordTaskSchedule()
 
-svc_keys = KeyDict(provision=True)
+SVCKEYS = KeyDict(provision=True)
 
 if __name__ == "__main__":
-    svc_keys.print_templates()
-    #print(svc_keys.container.getkey("cf"))
-    #print(svc_keys['DEFAULT'])
+    SVCKEYS.print_templates()
+    #print(SVCKEYS.container.getkey("cf"))
+    #print(SVCKEYS['DEFAULT'])
