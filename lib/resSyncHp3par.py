@@ -89,7 +89,10 @@ class syncHp3par(resSync.Sync):
 
     def can_sync(self, target=None, s=None):
         data = self.showrcopy()
-        last = data['vv'][0]['LastSyncTime']
+        try:
+            last = data['vv'][0]['LastSyncTime']
+        except IndexError:
+            return False
         if self.skip_sync(datetime.datetime.utcnow()-last):
             return False
         return True
