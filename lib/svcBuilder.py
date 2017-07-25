@@ -1,11 +1,8 @@
 from __future__ import print_function
 import os
 import sys
-import logging
 import re
-import socket
 import glob
-import platform
 
 from rcGlobalEnv import rcEnv, Storage
 from rcNode import discover_node
@@ -14,7 +11,6 @@ import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
 from rcUtilities import cmdline2list, ximport, check_privs
-from converters import convert_size
 
 if 'PATH' not in os.environ:
     os.environ['PATH'] = ""
@@ -207,7 +203,7 @@ def add_ip_amazon(svc, s):
     try:
         kwargs['eip'] = svc.conf_get(s, 'eip')
     except ex.OptNotFound as exc:
-        kwargs['eip'] =  None
+        kwargs['eip'] = None
 
     ip = __import__('resIpAmazon')
 
@@ -314,7 +310,7 @@ def add_md(svc, s):
             kwargs['shared'] = False
             svc.log.debug("md %s shared param defaults to %s due to single node configuration"%(s, kwargs['shared']))
         else:
-            l = [ p for p in svc.config.options(s) if "@" in p ]
+            l = [p for p in svc.config.options(s) if "@" in p]
             if len(l) > 0:
                 kwargs['shared'] = False
                 svc.log.debug("md %s shared param defaults to %s due to scoped configuration"%(s, kwargs['shared']))
@@ -358,9 +354,9 @@ def add_vdisk(svc, s):
     kwargs = {}
     devpath = {}
 
-    for attr, val in conf.items(s):
+    for attr, val in svc.config.items(s):
         if 'path@' in attr:
-            devpath[attr.replace('path@','')] = val
+            devpath[attr.replace('path@', '')] = val
 
     if len(devpath) == 0:
         svc.log.error("path@node must be set in section %s"%s)
@@ -390,9 +386,9 @@ def add_stonith(svc, s):
     if len(_type) > 1:
         _type = _type[0].upper()+_type[1:].lower()
 
-    if _type in ('Ilo'):
+    if _type == 'Ilo':
         kwargs['name'] = svc.conf_get(s, 'target')
-    elif _type in ('Callout'):
+    elif _type == 'Callout':
         kwargs['cmd'] = svc.conf_get(s, 'cmd')
 
     kwargs['rid'] = s
@@ -761,8 +757,6 @@ def add_disk(svc, s):
     """Parse the configuration file and add a disk object for each [disk#n]
     section. Disk objects are stored in a list in the service object.
     """
-    kwargs = {}
-
     try:
         disk_type = svc.conf_get(s, 'type')
     except ex.OptNotFound as exc:
@@ -822,7 +816,7 @@ def add_vmdg(svc, s):
 
     kwargs['container_id'] = svc.conf_get(s, 'container_id')
 
-    if not conf.has_section(kwargs['container_id']):
+    if not svc.config.has_section(kwargs['container_id']):
         svc.log.error("%s.container_id points to an invalid section"%kwargs['container_id'])
         return
 
@@ -993,9 +987,8 @@ def add_fs(svc, s):
     kwargs['mount_point'] = svc.conf_get(s, 'mnt')
 
     if kwargs['mount_point'][-1] != "/" and kwargs['mount_point'][-1] == '/':
-        """ Remove trailing / to not risk losing rsync src trailing /
-            upon snap mountpoint substitution.
-        """
+        # Remove trailing / to not risk losing rsync src trailing / upon snap
+        # mountpoint substitution.
         kwargs['mount_point'] = kwargs['mount_point'][0:-1]
 
     try:
@@ -1887,8 +1880,8 @@ def add_sync_evasnap(svc, s):
 
     import json
     pairs = []
-    if 'pairs' in conf.options(s):
-        pairs = json.loads(conf.get(s, 'pairs'))
+    if 'pairs' in svc.config.options(s):
+        pairs = json.loads(svc.config.get(s, 'pairs'))
     if len(pairs) == 0:
         svc.log.error("config file section %s must have pairs set" % s)
         return
@@ -2018,12 +2011,12 @@ def add_sync_radossnap(svc, s):
 
     try:
         kwargs['client_id'] = svc.conf_get(s, 'client_id')
-    except ex.OptNotFound as exc:
+    except ex.OptNotFound:
         pass
 
     try:
         kwargs['keyring'] = svc.conf_get(s, 'keyring')
-    except ex.OptNotFound as exc:
+    except ex.OptNotFound:
         pass
 
     kwargs['images'] = svc.conf_get(s, 'images')
@@ -2187,8 +2180,10 @@ def add_sync_rsync(svc, s):
 
     target = svc.conf_get(s, 'target')
     targethash = {}
-    if 'nodes' in target: targethash['nodes'] = svc.nodes
-    if 'drpnodes' in target: targethash['drpnodes'] = svc.drpnodes
+    if 'nodes' in target:
+        targethash['nodes'] = svc.nodes
+    if 'drpnodes' in target:
+        targethash['drpnodes'] = svc.drpnodes
 
     kwargs['target'] = targethash
     kwargs['rid'] = s
@@ -2294,7 +2289,6 @@ def setup_logging(svcnames):
     """Setup logging to stream + logfile, and logfile rotation
     class Logger instance name: 'log'
     """
-    global log
     max_svcname_len = 0
 
     # compute max svcname length to align logging stream output
@@ -2304,7 +2298,7 @@ def setup_logging(svcnames):
             max_svcname_len = n
 
     rcLogger.max_svcname_len = max_svcname_len
-    log = rcLogger.initLogger(rcEnv.nodename)
+    rcLogger.initLogger(rcEnv.nodename)
 
 def build(name, minimal=False, svcconf=None):
     """build(name) is in charge of Svc creation
@@ -2404,10 +2398,7 @@ def build(name, minimal=False, svcconf=None):
     except ex.OptNotFound as exc:
         pass
 
-    if rcEnv.nodename in svc.encapnodes:
-        svc.encap = True
-    else:
-        svc.encap = False
+    svc.encap = rcEnv.nodename in svc.encapnodes
 
     #
     # amazon options
@@ -2453,8 +2444,7 @@ def build(name, minimal=False, svcconf=None):
     except ex.OptNotFound as exc:
         svc.show_disabled = True
 
-    """ prune service whose service type does not match host mode
-    """
+    # prune service whose service type does not match host mode
     if svc.svc_env != 'PRD' and rcEnv.node_env == 'PRD':
         raise ex.excInitError('not allowed to run on this node (svc env=%s node env=%s)' % (svc.svc_env, rcEnv.node_env))
 
@@ -2530,7 +2520,7 @@ def list_services():
         os.makedirs(rcEnv.paths.pathetc)
 
     s = glob.glob(os.path.join(rcEnv.paths.pathetc, '*.conf'))
-    s = list(map(lambda x: os.path.basename(x)[:-5], s))
+    s = [os.path.basename(x)[:-5] for x in s]
 
     l = []
     for name in s:
@@ -2557,7 +2547,7 @@ def build_services(status=None, svcnames=None, create_instance=False,
     errors = []
     services = {}
 
-    if type(svcnames) == str:
+    if isinstance(svcnames, str):
         svcnames = [svcnames]
 
     if len(svcnames) == 0:
@@ -2592,7 +2582,7 @@ def build_services(status=None, svcnames=None, create_instance=False,
         if status is not None and not svc.status() in status:
             continue
         services[svc.svcname] = svc
-    return [ s for n, s in sorted(services.items()) ], errors
+    return [s for _, s in sorted(services.items())], errors
 
 def create(svcname, resources=[], interactive=False, provision=False):
     if not isinstance(svcname, list):
@@ -2614,7 +2604,7 @@ def create(svcname, resources=[], interactive=False, provision=False):
         print(cf, "already exists. save as "+svcname+".conf.bak", file=sys.stderr)
         shutil.move(cf, os.path.join(rcEnv.paths.pathtmp, svcname+".conf.bak"))
     try:
-       f = open(cf, 'w')
+        f = open(cf, 'w')
     except:
         print("failed to open", cf, "for writing", file=sys.stderr)
         return {"ret": 1}
@@ -2644,20 +2634,20 @@ def create(svcname, resources=[], interactive=False, provision=False):
                 rtypes[rtype] += 1
             else:
                 rtypes[rtype] = 0
-            del(d['rid'])
+            del d['rid']
             if section in sections:
                 sections[section].update(d)
             else:
                 sections[section] = d
         elif 'rtype' in d and d["rtype"] == "env":
-            del(d["rtype"])
+            del d["rtype"]
             if "env" in sections:
                 sections["env"].update(d)
             else:
                 sections["env"] = d
         elif 'rtype' in d and d["rtype"] != "DEFAULT":
             if 'rid' in d:
-               del(d['rid'])
+                del d['rid']
             rtype = d['rtype']
             if rtype in rtypes:
                 section = '%s#%d'%(rtype, rtypes[rtype])
@@ -2671,7 +2661,7 @@ def create(svcname, resources=[], interactive=False, provision=False):
                 sections[section] = d
         else:
             if "rtype" in d:
-                del(d["rtype"])
+                del d["rtype"]
             defaults.update(d)
 
     from svcdict import KeyDict, MissKeyNoDefault, KeyInvalidValue
@@ -2716,7 +2706,7 @@ def fix_app_link(svcname):
     if os.name != 'posix':
         return
     try:
-        p = os.readlink(src)
+        os.readlink(src)
     except:
         if not os.path.exists(dst):
             os.makedirs(dst)
@@ -2734,4 +2724,3 @@ def fix_exe_link(dst, src):
     if p != dst:
         os.unlink(src)
         os.symlink(dst, src)
-
