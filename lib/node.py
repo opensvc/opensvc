@@ -868,9 +868,9 @@ class Node(Crypt):
                 return 0
             elif isinstance(ret, bool):
                 if ret:
-                    return 0
-                else:
                     return 1
+                else:
+                    return 0
             return ret
 
     @formatter

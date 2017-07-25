@@ -10,6 +10,7 @@ import socket
 from StringIO import StringIO
 
 import svcmgr
+import nodemgr
 
 UNICODE_STRING = "bêh"
 
@@ -142,6 +143,30 @@ def test_validate_config():
 
 def test_frozen():
     ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
+    assert ret == 0
+
+def test_node_freeze():
+    ret = nodemgr.main(argv=["freeze", "--local"])
+    assert ret == 0
+    ret = nodemgr.main(argv=["frozen"])
+    assert ret == 1
+    ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
+    assert ret == 1
+
+def test_node_refreeze():
+    ret = nodemgr.main(argv=["freeze", "--local"])
+    assert ret == 0
+
+def test_node_thaw():
+    ret = nodemgr.main(argv=["thaw", "--local"])
+    assert ret == 0
+    ret = nodemgr.main(argv=["frozen"])
+    assert ret == 0
+    ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
+    assert ret == 0
+
+def test_node_rethaw():
+    ret = nodemgr.main(argv=["thaw", "--local"])
     assert ret == 0
 
 def test_freeze():
