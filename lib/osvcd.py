@@ -137,6 +137,16 @@ class Daemon(object):
         self.log.info("daemon started")
         self._run()
 
+    def init_nodeconf(self):
+        if not os.path.exists(rcEnv.paths.pathetc):
+            self.log.info("create dir %s", rcEnv.paths.pathetc)
+            os.makedirs(rcEnv.paths.pathetc)
+        if not os.path.exists(rcEnv.paths.nodeconf):
+            self.log.info("create %s", rcEnv.paths.nodeconf)
+            with open(rcEnv.paths.nodeconf, "a") as ofile:
+                ofile.write("")
+            os.chmod(rcEnv.paths.nodeconf, 0o0600)
+
     @lazy
     def config(self):
         """
@@ -144,6 +154,7 @@ class Daemon(object):
         Abstracting python2/3 differences in the parser modules and utf8
         handling.
         """
+        self.init_nodeconf()
         try:
             config = RawConfigParser()
             with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as filep:
@@ -282,6 +293,7 @@ class Daemon(object):
         Reload the node configuration file and notify the threads to do the
         same, if the file's mtime has changed since the last load.
         """
+        self.init_nodeconf()
         try:
             mtime = os.path.getmtime(rcEnv.paths.nodeconf)
         except Exception as exc:
