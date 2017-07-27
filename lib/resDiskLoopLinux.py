@@ -62,6 +62,10 @@ class Disk(Res.Disk):
     def __init__(self, rid, loopFile, **kwargs):
         Res.Disk.__init__(self, rid, loopFile, **kwargs)
 
+    def devlist(self):
+        self.loop = file_to_loop(self.loopFile)
+        return set(self.loop)
+
     def provision(self):
         m = __import__("provDiskLoopLinux")
         prov = m.ProvisioningDisk(self)
