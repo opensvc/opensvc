@@ -856,13 +856,13 @@ class Svc(Crypt):
             self.log.debug("unexpected object addition to the service: %s",
                            str(other))
 
+        other.svc = self
+
         if isinstance(other, Resource) and other.rid and "#" in other.rid:
             other.pg_settings = self.get_pg_settings(other.rid)
             self.add_scsireserv(other)
             self.add_requires(other)
             self.resources_by_id[other.rid] = other
-
-        other.svc = self
 
         if not other.is_disabled() and hasattr(other, "on_add"):
             other.on_add()
