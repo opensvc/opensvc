@@ -100,21 +100,26 @@ class Crypt(object):
         configuration. If not set, return a list with the local node as the
         only element.
         """
+        if hasattr(self, "get_node"):
+            config = self.get_node().config
+        else:
+            config = self.config
+        try:
+            return config.get("cluster", "nodes").split()
+        except Exception as exc:
+            pass
         if hasattr(self, "node"):
             node = self.get_node()
         elif hasattr(self, "write_config"):
             node = self
         else:
             node = None
-        try:
-            nodes = node.config.get("cluster", "nodes").split()
-        except Exception:
-            nodes = [rcEnv.nodename]
-            if node is not None:
-                if not node.config.has_section("cluster"):
-                    node.config.add_section("cluster")
-                node.config.set("cluster", "nodes", " ".join(nodes))
-                node.write_config()
+        nodes = [rcEnv.nodename]
+        if node is not None:
+            if not node.config.has_section("cluster"):
+                node.config.add_section("cluster")
+            node.config.set("cluster", "nodes", " ".join(nodes))
+            node.write_config()
         return nodes
 
     @lazy
@@ -123,21 +128,26 @@ class Crypt(object):
         Return the cluster name, read from cluster.name in the node
         configuration. If not set, return "default".
         """
+        if hasattr(self, "get_node"):
+            config = self.get_node().config
+        else:
+            config = self.config
+        try:
+            return config.get("cluster", "name")
+        except Exception as exc:
+            pass
         if hasattr(self, "node"):
-            node = self.get_node()
+            node = self.node
         elif hasattr(self, "write_config"):
             node = self
         else:
             node = None
-        try:
-            name = node.config.get("cluster", "name")
-        except Exception:
-            name = "default"
-            if node is not None:
-                if not node.config.has_section("cluster"):
-                    node.config.add_section("cluster")
-                node.config.set("cluster", "name", name)
-                node.write_config()
+        name = "default"
+        if node is not None:
+            if not node.config.has_section("cluster"):
+                node.config.add_section("cluster")
+            node.config.set("cluster", "name", name)
+            node.write_config()
         return name
 
     @lazy

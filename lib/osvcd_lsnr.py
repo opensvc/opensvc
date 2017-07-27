@@ -285,9 +285,10 @@ class Listener(shared.OsvcThread, Crypt):
     def action_join(self, nodename, **kwargs):
         if nodename in self.cluster_nodes:
             self.log.info("node %s rejoins", nodename)
-            new_nodes = self.cluster_nodes
         else:
             self.add_cluster_node(nodename)
+            unset_lazy(self, "cluster_nodes")
+        new_nodes = self.cluster_nodes
         result = {
             "status": 0,
             "data": {
@@ -302,6 +303,7 @@ class Listener(shared.OsvcThread, Crypt):
                 result["data"][section] = {}
                 for key, val in self.config.items(section):
                     result["data"][section][key] = val
+        print(result)
         return result
 
     def action_service_action(self, nodename, **kwargs):
