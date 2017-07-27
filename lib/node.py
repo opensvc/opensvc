@@ -3185,6 +3185,8 @@ class Node(Crypt):
 
     def daemon_stop(self):
         data = self._daemon_stop()
+        if data is None:
+            return
         if data.get("status") == 0:
             return
         raise ex.excError(json.dumps(data, indent=4, sort_keys=True))
