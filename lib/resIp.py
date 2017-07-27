@@ -75,7 +75,7 @@ class Ip(Res.Resource):
             self.log.debug("resolving %s", self.ipname)
             self.addr = getaddr(self.ipname, cache_fallback=cache_fallback, log=self.log)
         except Exception as exc:
-            if not self.disabled:
+            if not self.is_disabled():
                 raise ex.excError("could not resolve name %s: %s" % (self.ipname, str(exc)))
 
     def __str__(self):

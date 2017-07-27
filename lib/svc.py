@@ -403,7 +403,6 @@ class Svc(Crypt):
         self.postsnap_trigger = None
         self.monitor_action = None
         self.pre_monitor_action = None
-        self.disabled = False
         self.anti_affinity = None
         self.affinity = None
         self.lock_timeout = DEFAULT_WAITLOCK
@@ -490,6 +489,13 @@ class Svc(Crypt):
         from compliance import Compliance
         comp = Compliance(self)
         return comp
+
+    @lazy
+    def disabled(self):
+        try:
+            return self.conf_get("DEFAULT", "disable")
+        except ex.OptNotFound as exc:
+            return exc.default
 
     @lazy
     def constraints(self):
@@ -688,6 +694,14 @@ class Svc(Crypt):
             schedule_option="resinfo_schedule"
         )
 
+    def purge_status_caches(self):
+        """
+        Purge the json cache and each resource status on-disk cache.
+        """
+        self.purge_status_last()
+        if os.path.exists(self.status_data_dump):
+            os.unlink(self.status_data_dump)
+
     def purge_status_last(self):
         """
         Purge all service resources on-disk status caches.
@@ -850,7 +864,7 @@ class Svc(Crypt):
 
         other.svc = self
 
-        if not other.disabled and hasattr(other, "on_add"):
+        if not other.is_disabled() and hasattr(other, "on_add"):
             other.on_add()
 
         return self
@@ -964,7 +978,7 @@ class Svc(Crypt):
             for resource in rset.resources:
                 if not self.encap and 'encap' in resource.tags:
                     continue
-                if discard_disabled and resource.disabled:
+                if discard_disabled and resource.is_disabled():
                     continue
                 resources.append(resource)
         return resources
@@ -1153,7 +1167,9 @@ class Svc(Crypt):
         Return a structure containing hierarchical status of
         the service.
         """
-        if not from_resource_status_cache and not self.options.refresh and os.path.exists(self.status_data_dump):
+        if not from_resource_status_cache and \
+           not self.options.refresh and \
+           os.path.exists(self.status_data_dump):
             try:
                 with open(self.status_data_dump, 'r') as filep:
                     return json.load(filep)
@@ -1220,7 +1236,8 @@ class Svc(Crypt):
                 json.dump(data, filep)
             os.utime(self.status_data_dump, (-1, data["mtime"]))
         except Exception as exc:
-            self.log.warning("failed to update %s: %s" % (self.status_data_dump, str(exc)))
+            self.log.warning("failed to update %s: %s",
+                             self.status_data_dump, str(exc))
         return data
 
     def update_status_data(self):
@@ -2520,7 +2537,7 @@ class Svc(Crypt):
 
         procs = {}
         for resource in self.get_resources():
-            if resource.skip or resource.disabled:
+            if resource.skip or resource.is_disabled():
                 continue
             if not hasattr(resource, 'abort_start'):
                 continue
@@ -3599,7 +3616,7 @@ class Svc(Crypt):
             if not options.dry_run and action != "resource_monitor" and \
                not action.startswith("docker"):
                 self.log.debug("purge all resource status file caches")
-                self.purge_status_last()
+                self.purge_status_caches()
 
         self.setup_environ(action=action)
         self.setup_signal_handlers()
@@ -4127,7 +4144,8 @@ class Svc(Crypt):
         if len(elements) == 1:
             elements.insert(0, "DEFAULT")
         elif len(elements) != 2:
-            print("malformed parameter. format as 'section.key'", file=sys.stderr)
+            print("malformed parameter. format as 'section.key'",
+                  file=sys.stderr)
             return 1
         section, option = elements
         try:
@@ -4406,19 +4424,44 @@ class Svc(Crypt):
             if rid != 'DEFAULT' and not self.config.has_section(rid):
                 self.log.error("service %s has no resource %s", self.svcname, rid)
                 continue
-            self.log.info("set %s.disable = %s", rid, str(disable))
-            self.config.set(rid, "disable", str(disable).lower())
 
-        #
-        # if we set DEFAULT.disable = True,
-        # we don't want res#n.disable = False
-        #
-        if rids == ["DEFAULT"] and disable:
-            for section in self.config.sections():
-                if self.config.has_option(section, "disable") and \
-                   not self.config.getboolean(section, "disable"):
-                    self.log.info("remove %s.disable = false", section)
-                    self.config.remove_option(section, "disable")
+            if disable:
+                self.log.info("set %s.disable = true", rid)
+                self.config.set(rid, "disable", "true")
+            elif self.config.has_option(rid, "disable"):
+                self.log.info("remove %s.disable", rid)
+                self.config.remove_option(rid, "disable")
+
+            #
+            # if we set <section>.disable = <bool>,
+            # remove <section>.disable@<scope> = <not bool>
+            #
+            if rid == "DEFAULT":
+                items = self.config.defaults().items()
+            else:
+                items = self.config.items(rid)
+            for option, value in items:
+                if not option.startswith("disable@"):
+                    continue
+                if value == True:
+                    continue
+                self.log.info("remove %s.%s = false", rid, option)
+                self.config.remove_option(rid, option)
+
+
+        unset_lazy(self, "disabled")
+
+        # update the resource objects disable prop
+        for rid in rids:
+            if rid == "DEFAULT":
+                continue
+            resource = self.get_resource(rid)
+            if resource is None:
+                continue
+            if disable:
+                resource.disable()
+            else:
+                resource.enable()
 
         try:
             self.write_config()
@@ -4556,14 +4599,14 @@ class Svc(Crypt):
                 if arg in ("%instances%", "{instances}"):
                     del argv[idx]
                     instances = [resource.container_name for resource in containers
-                                 if not resource.skip and not resource.disabled]
+                                 if not resource.skip and not resource.is_disabled()]
                     for instance in instances:
                         argv.insert(idx, instance)
             for idx, arg in enumerate(argv):
                 if arg in ("%images%", "{images}"):
                     del argv[idx]
                     images = list(set([resource.run_image for resource in containers
-                                       if not resource.skip and not resource.disabled]))
+                                       if not resource.skip and not resource.is_disabled()]))
                     for image in images:
                         argv.insert(idx, image)
             for idx, arg in enumerate(argv):

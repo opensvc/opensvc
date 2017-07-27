@@ -103,6 +103,11 @@ class ResourceSet(object):
         for resource in self.resources:
             resource.purge_status_last()
 
+    def is_disabled(self):
+        if self.svc.disabled:
+            return self.svc.disabled
+        return self.disabled
+
     def status(self, **kwargs):
         """
         Return the aggregate status a ResourceSet.
@@ -196,11 +201,11 @@ class ResourceSet(object):
                        ','.join(tags),
                        ','.join([res.rid for res in resources]))
 
-        disabled_rids = [res.rid for res in resources if res.disabled]
+        disabled_rids = [res.rid for res in resources if res.is_disabled()]
         if len(disabled_rids) > 0:
             self.log.info("%s disabled", ",".join(disabled_rids))
 
-        resources = [res for res in resources if not res.disabled]
+        resources = [res for res in resources if not res.is_disabled()]
         self.log.debug("resources after 'disable' filter: %s",
                        ','.join([res.rid for res in resources]))
 
@@ -238,7 +243,7 @@ class ResourceSet(object):
             for resource in resources:
                 if not resource.can_rollback and action == "rollback":
                     continue
-                if resource.skip or resource.disabled:
+                if resource.skip or resource.is_disabled():
                     continue
                 proc = Process(target=self.action_job, args=(resource, action,))
                 proc.start()

@@ -2378,11 +2378,6 @@ def build(name, minimal=False, svcconf=None):
     except ex.OptNotFound as exc:
         pass
 
-    if svc.config.has_option('DEFAULT', 'disable'):
-        svc.disabled = svc.config.getboolean("DEFAULT", "disable")
-    else:
-        pass
-
     try:
         svc.presnap_trigger = svc.conf_get('DEFAULT', 'presnap_trigger')
     except ex.OptNotFound as exc:

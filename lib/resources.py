@@ -165,6 +165,8 @@ class Resource(object):
         """
         Accessor for the disabled resource property.
         """
+        if self.svc.disabled:
+            return True
         return self.disabled
 
     def set_optional(self):
@@ -341,7 +343,7 @@ class Resource(object):
         if self.skip_resource_action(action):
             self.log.debug('action: skip action on filtered-out resource')
             return True
-        if self.disabled:
+        if self.is_disabled():
             self.log.debug('action: skip action on disabled resource')
             return True
         if not hasattr(self, action):
@@ -410,7 +412,7 @@ class Resource(object):
         refresh = kwargs.get("refresh", False)
         ignore_nostatus = kwargs.get("ignore_nostatus", False)
 
-        if self.disabled:
+        if self.is_disabled():
             return rcStatus.NA
 
         if not ignore_nostatus and "nostatus" in self.tags:
@@ -607,7 +609,7 @@ class Resource(object):
                 self.label,
                 self.status_logs_str(color=color),
                 self.monitor,
-                self.disabled,
+                self.is_disabled(),
                 self.optional,
                 encap)
 

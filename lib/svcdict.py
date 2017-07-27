@@ -3989,8 +3989,7 @@ class KeyDict(KeywordStore):
             return Keyword(
                   section=resource,
                   keyword="disable",
-                  inheritance="head > leaf",
-                  scope_order="generic > specific",
+                  inheritance="leaf",
                   generic=True,
                   at=True,
                   candidates=(True, False),

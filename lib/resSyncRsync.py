@@ -101,7 +101,7 @@ class Rsync(resSync.Sync):
         """ Checks are ordered by cost
         """
 
-        if self.skip or self.is_disabled():
+        if self.is_disabled():
             return set([])
 
         """ DRP nodes are not allowed to sync nodes nor drpnodes

@@ -55,7 +55,7 @@ class Container(Res.Resource):
             self.log.debug("resolving %s" % self.vm_hostname)
             self.addr = getaddr(self.vm_hostname, cache_fallback=cache_fallback, log=self.log)
         except Exception as e:
-            if not self.disabled:
+            if not self.is_disabled():
                 raise ex.excError("could not resolve name %s: %s" % (self.vm_hostname, str(e)))
 
     def __str__(self):
