@@ -8,7 +8,7 @@ import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              devs_to_disks
-from rcUtilities import which, justcall
+from rcUtilities import which, justcall, lazy
 
 class Disk(resDisk.Disk):
     startup_timeout = 10
@@ -16,7 +16,7 @@ class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  uuid=None,
-                 shared=False,
+                 shared=None,
                  **kwargs):
         self.uuid = uuid
         self.shared = shared
@@ -28,10 +28,29 @@ class Disk(resDisk.Disk):
                           **kwargs)
         self.label = "md " + uuid
 
+    @lazy
+    def is_shared(self):
+        if self.shared is not None:
+            return self.shared
+        if len(svc.nodes|svc.drpnodes) < 2:
+            self.log.debug("shared param defaults to 'false' due to single "
+                           "node configuration" % s)
+            return False
+        l = [p for p in self.svc.config.options(s) if \
+             p.startswith("uuid@")]
+        if len(l) > 0:
+            self.log.debug("shared param defaults to 'false' due to scoped "
+                           "configuration" % s)
+            return False
+        else:
+            self.log.debug("shared param defaults to 'true' due to unscoped "
+                           "configuration" % s)
+            return True
+
     def info(self):
         data = [
           ["uuid", self.uuid],
-          ["shared", str(self.shared).lower()],
+          ["shared", str(self.is_shared).lower()],
         ]
         return self.fmt_info(data)
 
@@ -66,7 +85,7 @@ class Disk(resDisk.Disk):
         pass
 
     def down_state_alerts(self):
-        if not self.shared:
+        if not self.is_shared:
             return
         devnames = self.md_config_import()
         devnames = set([d for d in devnames if not d.startswith("md")])
@@ -82,14 +101,14 @@ class Disk(resDisk.Disk):
             self.status_log("md member missing: %s" % ", ".join(sorted(list(not_found))))
 
     def presync(self):
-        if not self.shared:
+        if not self.is_shared:
             return
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "hb"]))
         if self.svc.options.force or s['overall'].status == rcStatus.UP:
             self.md_config_export()
 
     def files_to_sync(self):
-        if not self.shared:
+        if not self.is_shared:
             return []
         return [self.md_config_file_name()]
 

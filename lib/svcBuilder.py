@@ -305,19 +305,8 @@ def add_md(svc, s):
 
     try:
         kwargs['shared'] = svc.conf_get(s, 'shared')
-    except ex.OptNotFound:
-        if len(svc.nodes|svc.drpnodes) < 2:
-            kwargs['shared'] = False
-            svc.log.debug("md %s shared param defaults to %s due to single node configuration"%(s, kwargs['shared']))
-        else:
-            l = [p for p in svc.config.options(s) if "@" in p]
-            if len(l) > 0:
-                kwargs['shared'] = False
-                svc.log.debug("md %s shared param defaults to %s due to scoped configuration"%(s, kwargs['shared']))
-            else:
-                kwargs['shared'] = True
-                svc.log.debug("md %s shared param defaults to %s due to unscoped configuration"%(s, kwargs['shared']))
-
+    except ex.OptNotFound as exc:
+        kwargs['shared'] = exc.default
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(svc, s)
     kwargs['tags'] = get_tags(svc, s)

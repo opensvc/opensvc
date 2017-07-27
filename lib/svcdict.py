@@ -2875,7 +2875,12 @@ class KeywordDiskMdShared(Keyword):
                   candidates=(True, False),
                   at=True,
                   rtype="md",
-                  text="Trigger additional checks on the passive nodes. If not specified, the shared parameter defaults to True if no multiple nodes and drpnodes are defined and no md section parameter use scoping."
+                  default_text="<false if single-node or uuid is not scoped, "
+                               "true otherwise>",
+                  text="Trigger additional checks on the passive nodes. "
+                       "If not specified, the shared parameter defaults to "
+                       "True if no multiple nodes and drpnodes are defined "
+                       "and no md section parameter use scoping.",
                 )
 
 class KeywordSyncRadosPairs(Keyword):
