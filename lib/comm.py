@@ -100,14 +100,22 @@ class Crypt(object):
         configuration. If not set, return a list with the local node as the
         only element.
         """
-        if hasattr(self, "get_node"):
-            config = self.get_node().config
+        if hasattr(self, "node"):
+            node = self.get_node()
+        elif hasattr(self, "write_config"):
+            node = self
         else:
-            config = self.config
+            node = None
         try:
-            return config.get("cluster", "nodes").split()
+            nodes = node.config.get("cluster", "nodes").split()
         except Exception:
-            return [rcEnv.nodename]
+            nodes = [rcEnv.nodename]
+            if node is not None:
+                if not node.config.has_section("cluster"):
+                    node.config.add_section("cluster")
+                node.config.set("cluster", "nodes", " ".join(nodes))
+                node.write_config()
+        return nodes
 
     @lazy
     def cluster_name(self):
@@ -115,14 +123,22 @@ class Crypt(object):
         Return the cluster name, read from cluster.name in the node
         configuration. If not set, return "default".
         """
-        if hasattr(self, "get_node"):
-            config = self.get_node().config
+        if hasattr(self, "node"):
+            node = self.get_node()
+        elif hasattr(self, "write_config"):
+            node = self
         else:
-            config = self.config
+            node = None
         try:
-            return config.get("cluster", "name")
+            name = node.config.get("cluster", "name")
         except Exception:
-            return "default"
+            name = "default"
+            if node is not None:
+                if not node.config.has_section("cluster"):
+                    node.config.add_section("cluster")
+                node.config.set("cluster", "name", name)
+                node.write_config()
+        return name
 
     @lazy
     def cluster_key(self):
