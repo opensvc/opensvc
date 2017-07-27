@@ -113,8 +113,8 @@ class Rsync(resSync.Sync):
 
         """Discard the local node from the set
         """
-        if target in self.target.keys():
-            targets = self.target[target].copy()
+        if target in self.target:
+            targets = self.target_nodes(target)
         else:
             return set([])
 
@@ -213,7 +213,7 @@ class Rsync(resSync.Sync):
 
     def sync(self, target):
         self.add_resource_files_to_sync()
-        if target not in self.target.keys():
+        if target not in self.target:
             if not self.svc.options.cron:
                 self.log.info('%s => %s sync not applicable to %s', 
                               " ".join(self.src), self.dst, target)
@@ -354,7 +354,7 @@ class Rsync(resSync.Sync):
         """
         target = set([])
         for i in self.target:
-            target |= self.target[i]
+            target |= self.target_nodes(i)
         if len(target - set([rcEnv.nodename])) == 0:
             self.status_log("no destination nodes", "info")
             return rcStatus.NA
@@ -383,7 +383,7 @@ class Rsync(resSync.Sync):
 
         """ sync state on DRP nodes where the service is UP
         """
-        if 'drpnodes' in self.target and rcEnv.nodename in self.target['drpnodes']:
+        if 'drpnodes' in self.target and rcEnv.nodename in self.target_nodes('drpnodes'):
             self.status_log("service up on drp node, sync disabled", "info")
             return rcStatus.NA
 
@@ -424,7 +424,7 @@ class Rsync(resSync.Sync):
                  src=[],
                  dst=None,
                  options=[],
-                 target={},
+                 target=[],
                  dstfs=None,
                  snap=False,
                  bwlimit=None,
@@ -439,12 +439,12 @@ class Rsync(resSync.Sync):
             if rcEnv.paths.drp_path in dst:
                 self.label = "rsync system files to drpnodes"
             else:
-                self.label = "rsync svc config to %s"%(', '.join(sorted(target.keys())))
+                self.label = "rsync svc config to %s"%(', '.join(sorted(target)))
         else:
             _src = ', '.join(src)
             if len(_src) > 300:
                 _src = _src[0:300]
-            _dst = ', '.join(target.keys())
+            _dst = ', '.join(target)
             self.label = "rsync %s to %s"%(_src, _dst)
         self.src = src
         self.dst = dst
@@ -471,7 +471,7 @@ class Rsync(resSync.Sync):
           ["bwlimit", self.bwlimit if self.bwlimit else ""],
           ["snap", str(self.snap).lower()],
           ["timeout", str(self.timeout)],
-          ["target", " ".join(list(self.target.keys()))],
+          ["target", " ".join(sorted(self.target))],
           ["options", " ".join(self.options)],
         ]
         return self.fmt_info(data)

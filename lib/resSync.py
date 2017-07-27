@@ -29,6 +29,16 @@ class Sync(Res.Resource, Scheduler):
 
         Res.Resource.__init__(self, rid=rid, **kwargs)
 
+    def target_nodes(self, target):
+        """
+        Validate the target (either nodes or drpnodes), and return the
+        corresponding set from the parent Svc object properties with the same
+        name.
+        """
+        if target not in ("nodes", "drpnodes"):
+            raise ex.excError("invalid target: %s" % target)
+        return set([node for node in getattr(self.svc, target)])
+
     def can_sync(self, target):
         return True
 

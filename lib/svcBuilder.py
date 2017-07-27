@@ -1580,14 +1580,13 @@ def add_mandatory_syncs(svc):
         src = add_file(src, svc.paths.alt_initd)
         dst = os.path.join("/")
         exclude = ['--exclude=*.core']
-        targethash = {'nodes': svc.nodes, 'drpnodes': svc.drpnodes}
         kwargs['rid'] = "sync#i0"
         kwargs['src'] = src
         kwargs['dst'] = dst
         kwargs['options'] = ['-R']+exclude
         if svc.config.has_option(kwargs['rid'], 'options'):
             kwargs['options'] += cmdline2list(svc.config.get(kwargs['rid'], 'options'))
-        kwargs['target'] = targethash
+        kwargs['target'] = ["nodes", "drpnodes"]
         kwargs['internal'] = True
         kwargs['disabled'] = get_disabled(svc, kwargs['rid'])
         kwargs['optional'] = get_optional(svc, kwargs['rid'])
@@ -2178,14 +2177,7 @@ def add_sync_rsync(svc, s):
     except ex.OptNotFound as exc:
         pass
 
-    target = svc.conf_get(s, 'target')
-    targethash = {}
-    if 'nodes' in target:
-        targethash['nodes'] = svc.nodes
-    if 'drpnodes' in target:
-        targethash['drpnodes'] = svc.drpnodes
-
-    kwargs['target'] = targethash
+    kwargs['target'] = svc.conf_get(s, 'target')
     kwargs['rid'] = s
     kwargs['subset'] = get_subset(svc, s)
     kwargs['tags'] = get_tags(svc, s)
