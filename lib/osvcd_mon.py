@@ -869,6 +869,8 @@ class Monitor(shared.OsvcThread, Crypt):
         config = {}
         for cfg in glob.glob(os.path.join(rcEnv.paths.pathetc, "*.conf")):
             svcname = os.path.basename(cfg[:-5])
+            if svcname == "node":
+                continue
             linkp = os.path.join(rcEnv.paths.pathetc, svcname)
             if not os.path.exists(linkp):
                 continue
@@ -1093,7 +1095,10 @@ class Monitor(shared.OsvcThread, Crypt):
                 }
             with shared.HB_MSG_LOCK:
                 shared.HB_MSG = self.encrypt(shared.CLUSTER_DATA[rcEnv.nodename])
-                shared.HB_MSG_LEN = len(shared.HB_MSG)
+                if shared.HB_MSG is None:
+                    shared.HB_MSG_LEN = 0
+                else:
+                    shared.HB_MSG_LEN = len(shared.HB_MSG)
             shared.wake_heartbeat_tx()
         except ValueError:
             self.log.error("failed to refresh local cluster data: invalid json")

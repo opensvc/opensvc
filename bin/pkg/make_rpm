@@ -36,7 +36,7 @@ AutoReqProv: no
 $(echo ${DESCRIPTION}|fold -s)
 
 %pre
-%{_datadir}/opensvc/bin/preinstall
+$(cat $OSVC/bin/preinstall)
 
 %post
 /usr/bin/python %{_datadir}/opensvc/bin/postinstall
