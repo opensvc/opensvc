@@ -1660,7 +1660,7 @@ class Node(Crypt):
             return 1
         return 0
 
-    def _get(self, param=None):
+    def _get(self, param=None, evaluate=False):
         """
         Verifies the param is set and return the value.
         """
@@ -1695,27 +1695,62 @@ class Node(Crypt):
 
     def set(self):
         """
-        Set any option in any section of the node configuration file
+        The 'set' action entrypoint.
+        Verifies the --param and --value are set, set DEFAULT as section
+        if no section was specified, and set the value using the internal
+        _set() method.
         """
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
-        if self.options.value is None:
-            print("no value. set --value", file=sys.stderr)
+        if self.options.value is not None:
+            value = self.options.value
+        elif self.options.remove is not None:
+            try:
+                value = self._get(self.options.param, self.options.eval).split()
+            except ex.excError as exc:
+                value = []
+            if self.options.remove not in value:
+                return 0
+            value.remove(self.options.remove)
+            value = " ".join(value)
+        elif self.options.add is not None:
+            try:
+                value = self._get(self.options.param, self.options.eval).split()
+            except ex.excError as exc:
+                value = []
+            if self.options.add in value:
+                return 0
+            index = self.options.index if self.options.index is not None else len(value)
+            value.insert(index, self.options.add)
+            value = " ".join(value)
+        else:
+            print("no value. set --value or --remove", file=sys.stderr)
             return 1
         elements = self.options.param.split('.')
-        if len(elements) != 2:
-            print("malformed parameter. format as 'section.key'",
-                  file=sys.stderr)
+        if len(elements) == 1:
+            elements.insert(0, "DEFAULT")
+        elif len(elements) != 2:
+            print("malformed parameter. format as 'section.key'", file=sys.stderr)
             return 1
-        section, option = elements
+        try:
+            self._set(elements[0], elements[1], value)
+        except ex.excError as exc:
+            print(exc, file=sys.stderr)
+            return 1
+        return 0
+
+    def _set(self, section, option, value):
+        """
+        Set any option in any section of the node configuration file
+        """
         if not self.config.has_section(section):
             try:
                 self.config.add_section(section)
             except ValueError as exc:
                 print(exc, file=sys.stderr)
                 return 1
-        self.config.set(section, option, self.options.value)
+        self.config.set(section, option, value)
         self.write_config()
         return 0
 

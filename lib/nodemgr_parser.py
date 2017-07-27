@@ -13,6 +13,12 @@ OPT = Storage({
         help="specify a collector api url different from the "
              "one set in node.conf. Honored by the 'collector "
              "cli' action."),
+    "add": Option(
+        "--add", default=None,
+        action="store",
+        help="a list member to add from the value pointed by "
+             "--param in a set action. If --index is set, add "
+             "the new element at that position in the list"),
     "app": Option(
         "--app", default=None, action="store", dest="app",
         help="Optional with the register command, register the "
@@ -100,6 +106,11 @@ OPT = Storage({
         "--id", default=0,
         action="store", dest="id", type="int",
         help="specify an id to act on"),
+    "index": Option(
+        "--index", default=None,
+        action="store", type="int",
+        help="the position in the list pointed by --param where to add "
+             "the new element on a set action"),
     "insecure": Option(
         "--insecure", default=False,
         action="store_true", dest="insecure",
@@ -165,6 +176,11 @@ OPT = Storage({
         "--refresh-api", default=False,
         action="store_true", dest="refresh_api",
         help="The OpenSVC collector api url"),
+    "remove": Option(
+        "--remove", default=None,
+        action="store",
+        help="a list member to drop from the value pointed by "
+             "--param in a set action"),
     "ruleset": Option(
         "--ruleset", default="",
         action="store", dest="ruleset",
@@ -389,6 +405,9 @@ ACTIONS = {
             'options': [
                 OPT.param,
                 OPT.value,
+                OPT.add,
+                OPT.remove,
+                OPT.index,
             ],
         },
         'unset': {
