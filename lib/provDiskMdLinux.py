@@ -1,6 +1,7 @@
 from provisioning import Provisioning
 import os
 import rcExceptions as ex
+from rcUtilities import which
 from converters import convert_size
 from subprocess import *
 
@@ -9,6 +10,8 @@ class ProvisioningDisk(Provisioning):
         Provisioning.__init__(self, r)
 
     def provisioner(self):
+        if which("mdadm") is None:
+            raise ex.excError("mdadm is not installed")
         self.provisioner_md()
         self.r.log.info("provisioned")
         self.r.start()
