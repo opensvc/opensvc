@@ -197,18 +197,28 @@ class Listener(shared.OsvcThread, Crypt):
             self.log.info("stop daemon requested")
             shared.DAEMON_STOP.set()
             return {"status": 0}
-        with shared.THREADS_LOCK:
-            has_thr = thr_id in shared.THREADS
-        if not has_thr:
-            self.log.info("stop thread requested on non-existing thread")
-            return {"error": "thread does not exist"*50, "status": 1}
-        self.log.info("stop thread requested")
-        with shared.THREADS_LOCK:
-            shared.THREADS[thr_id].stop()
-        if thr_id == "scheduler":
-            shared.wake_scheduler()
-        if thr_id == "monitor":
-            shared.wake_monitor()
+        elif thr_id == "tx":
+            thr_ids = [thr_id for thr_id in shared.THREADS.keys() if thr_id.endswith("tx")]
+        else:
+            thr_ids = [thr_id]
+        for thr_id in thr_ids:
+            with shared.THREADS_LOCK:
+                has_thr = thr_id in shared.THREADS
+            if not has_thr:
+                self.log.info("stop thread requested on non-existing thread")
+                return {"error": "thread does not exist"*50, "status": 1}
+            self.log.info("stop thread %s requested", thr_id)
+            with shared.THREADS_LOCK:
+                shared.THREADS[thr_id].stop()
+            if thr_id == "scheduler":
+                shared.wake_scheduler()
+            elif thr_id == "monitor":
+                shared.wake_monitor()
+            elif thr_id.endswith("tx"):
+                shared.wake_heartbeat_tx()
+            if kwargs.get("wait", False):
+                with shared.THREADS_LOCK:
+                    shared.THREADS[thr_id].join()
         return {"status": 0}
 
     def action_daemon_start(self, nodename, **kwargs):
@@ -284,11 +294,11 @@ class Listener(shared.OsvcThread, Crypt):
 
     def action_join(self, nodename, **kwargs):
         if nodename in self.cluster_nodes:
+            new_nodes = self.cluster_nodes
             self.log.info("node %s rejoins", nodename)
         else:
+            new_nodes = self.cluster_nodes + [nodename]
             self.add_cluster_node(nodename)
-            unset_lazy(self, "cluster_nodes")
-        new_nodes = self.cluster_nodes
         result = {
             "status": 0,
             "data": {
@@ -303,7 +313,6 @@ class Listener(shared.OsvcThread, Crypt):
                 result["data"][section] = {}
                 for key, val in self.config.items(section):
                     result["data"][section][key] = val
-        print(result)
         return result
 
     def action_service_action(self, nodename, **kwargs):

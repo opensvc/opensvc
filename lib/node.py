@@ -3290,6 +3290,12 @@ class Node(Crypt):
             self.log.info("local node is already frozen")
 
         # leave other nodes
+        options = {"thr_id": "tx", "wait": True}
+        data = self.daemon_send(
+            {"action": "daemon_stop", "options": options},
+            nodename=rcEnv.nodename,
+        )
+
         errors = 0
         for nodename in cluster_nodes:
             if nodename == rcEnv.nodename:
