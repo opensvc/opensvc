@@ -233,6 +233,8 @@ class OsvcThread(threading.Thread):
         unset_lazy(self, "cluster_name")
         unset_lazy(self, "cluster_key")
         unset_lazy(self, "cluster_nodes")
+        if hasattr(self, "reconfigure"):
+            getattr(self, "reconfigure")()
 
     @staticmethod
     def get_services_nodenames():
@@ -381,7 +383,8 @@ class OsvcThread(threading.Thread):
     def add_cluster_node(self, nodename):
         cmd = ["set", "--param", "cluster.nodes", "--add", nodename]
         proc = self.node_command(cmd)
-        return proc.wait()
+        ret = proc.wait()
+        return ret
 
     def remove_cluster_node(self, nodename):
         cmd = ["set", "--param", "cluster.nodes", "--remove", nodename]

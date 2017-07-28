@@ -35,6 +35,12 @@ class HbUcast(Hb, Crypt):
             "bytes": 0,
             "errors": 0,
         })
+        self._configure()
+
+    def reconfigure(self):
+        self._configure()
+
+    def _configure(self):
         self.peer_config = {}
         if hasattr(self, "node"):
             config = self.node.config

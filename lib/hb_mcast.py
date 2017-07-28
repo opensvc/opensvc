@@ -39,6 +39,12 @@ class HbMcast(Hb, Crypt):
             "bytes": 0,
             "errors": 0,
         })
+        self._configure()
+
+    def reconfigure(self):
+        self._configure()
+
+    def _configure(self):
         try:
             self.port = self.config.getint(self.name, "port")
         except Exception:
