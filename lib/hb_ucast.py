@@ -67,13 +67,6 @@ class HbUcast(Hb, Crypt):
         else:
             self.timeout = self.DEFAULT_UCAST_TIMEOUT
 
-        for nodename in self.peer_config:
-            if nodename == rcEnv.nodename:
-                continue
-            if self.peer_config[nodename].port is None:
-                self.peer_config[nodename].port = \
-                    self.peer_config[rcEnv.nodename].port
-
 class HbUcastTx(HbUcast):
     """
     The unicast heartbeat tx class.
