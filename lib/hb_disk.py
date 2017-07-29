@@ -6,6 +6,7 @@ import os
 import mmap
 import stat
 import errno
+import contextlib
 
 import osvcd_shared as shared
 import rcExceptions as ex
@@ -36,12 +37,6 @@ class HbDisk(Hb, Crypt):
         }
         return data
 
-    def unconfigure(self):
-        if hasattr(self, "mm"):
-            self.mm.close()
-        if hasattr(self, "fd"):
-            os.close(self.fd)
-
     def configure(self):
         self.stats = Storage({
             "beats": 0,
@@ -51,7 +46,6 @@ class HbDisk(Hb, Crypt):
         self._configure()
 
     def reconfigure(self):
-        self.unconfigure()
         self._configure()
 
     def _configure(self):
@@ -88,8 +82,13 @@ class HbDisk(Hb, Crypt):
             if not stat.S_ISCHR(statinfo.st_mode):
                 raise ex.excAbortAction("%s must be a char device" % self.dev)
 
+        with self.dio_mm() as mm:
+            self.load_peer_config(mm=mm)
+
+    @contextlib.contextmanager
+    def dio_mm(self):
         try:
-            self.fd = os.open(self.dev, self.flags)
+            fd = os.open(self.dev, self.flags)
         except OSError as exc:
             if exc.errno == errno.EINVAL:
                 raise ex.excAbortAction("%s directio is not supported" % self.dev)
@@ -100,61 +99,63 @@ class HbDisk(Hb, Crypt):
 
         mmap_kwargs = {}
         if rcEnv.sysname != "Windows" and not self.flags & os.O_RDWR:
-            self.log.info("mmap %s set read protection", self.dev)
+            #self.log.info("mmap %s set read protection", self.dev)
             mmap_kwargs["prot"] = mmap.PROT_READ
         try:
-            size = os.lseek(self.fd, 0, os.SEEK_END)
-            os.lseek(self.fd, 0, os.SEEK_SET)
-            self.log.info("mmap %s size %d", self.dev, size)
-            self.mm = mmap.mmap(self.fd, size, **mmap_kwargs)
+            size = os.lseek(fd, 0, os.SEEK_END)
+            os.lseek(fd, 0, os.SEEK_SET)
+            #self.log.debug("%s size %d", self.dev, size)
+            mm = mmap.mmap(fd, size, **mmap_kwargs)
+            yield mm
         except Exception as exc:
-            os.close(self.fd)
+            os.close(fd)
             raise ex.excAbortAction("mmapping %s: %s" % (self.dev, str(exc)))
-
-        self.load_peer_config()
+        finally:
+            mm.close()
+            os.close(fd)
 
     @staticmethod
     def meta_slot_offset(slot):
         return slot * mmap.PAGESIZE
 
-    def meta_read_slot(self, slot):
+    def meta_read_slot(self, slot, mm=None):
         offset = self.meta_slot_offset(slot)
-        return self.mm[offset:offset+mmap.PAGESIZE]
+        return mm[offset:offset+mmap.PAGESIZE]
 
-    def meta_write_slot(self, slot, data):
+    def meta_write_slot(self, slot, data, mm=None):
         if len(data) > mmap.PAGESIZE:
             self.log.error("attempt to write too long data in meta slot %d", slot)
             raise ex.excAbortAction()
-        offset = self.meta_slot_offset(slot)
-        self.mm.seek(offset)
-        self.mm.write(data)
-        self.mm.flush()
+        offset = self.meta_slot_offset(slot, mm=mm)
+        mm.seek(offset)
+        mm.write(data)
+        mm.flush()
 
     def slot_offset(self, slot):
         return self.METASIZE + slot * self.SLOTSIZE
 
-    def read_slot(self, slot):
+    def read_slot(self, slot, mm=None):
         offset = self.slot_offset(slot)
-        end = self.mm[offset:offset+self.SLOTSIZE].index("\0")
-        return self.mm[offset:offset+end]
+        end = mm[offset:offset+self.SLOTSIZE].index("\0")
+        return mm[offset:offset+end]
 
-    def write_slot(self, slot, data):
+    def write_slot(self, slot, data, mm=None):
         if len(data) > self.SLOTSIZE:
             self.log.error("attempt to write too long data in slot %d", slot)
             raise ex.excAbortAction()
         offset = self.slot_offset(slot)
-        self.mm.seek(offset)
-        self.mm.write(data)
-        self.mm.flush()
+        mm.seek(offset)
+        mm.write(data)
+        mm.flush()
 
-    def load_peer_config(self, verbose=True):
+    def load_peer_config(self, mm=None, verbose=True):
         for nodename in self.cluster_nodes:
             if nodename not in self.peer_config:
                 self.peer_config[nodename] = Storage({
                     "slot": -1,
                 })
         for slot in range(self.MAX_SLOTS):
-            buff = self.meta_read_slot(slot)
+            buff = self.meta_read_slot(slot, mm=mm)
             if buff[0] == "\0":
                 return
             nodename = buff.strip("\0")
@@ -188,6 +189,9 @@ class HbDiskTx(HbDisk):
     def __init__(self, name):
         HbDisk.__init__(self, name, role="tx")
 
+    def _configure(self):
+        HbDisk._configure(self)
+
     def run(self):
         self.flags = os.O_RDWR
         try:
@@ -202,7 +206,6 @@ class HbDiskTx(HbDisk):
         while True:
             self.do()
             if self.stopped():
-                self.unconfigure()
                 sys.exit(0)
             with shared.HB_TX_TICKER:
                 shared.HB_TX_TICKER.wait(self.default_hb_period)
@@ -213,6 +216,10 @@ class HbDiskTx(HbDisk):
         return data
 
     def do(self):
+        with self.dio_mm() as mm:
+            self._do(mm)
+
+    def _do(self, mm):
         if rcEnv.nodename not in self.peer_config:
             return
         slot = self.peer_config[rcEnv.nodename].slot
@@ -224,7 +231,7 @@ class HbDiskTx(HbDisk):
             return
 
         try:
-            self.write_slot(slot, message)
+            self.write_slot(slot, message, mm=mm)
             self.set_last()
             self.stats.beats += 1
             self.stats.bytes += message_bytes
@@ -258,21 +265,24 @@ class HbDiskRx(HbDisk):
         while True:
             self.do()
             if self.stopped():
-                self.unconfigure()
                 sys.exit(0)
             with shared.HB_TX_TICKER:
                 shared.HB_TX_TICKER.wait(self.default_hb_period)
 
     def do(self):
+        with self.dio_mm() as mm:
+            self._do(mm)
+
+    def _do(self, mm):
         self.reload_config()
-        self.load_peer_config(verbose=False)
+        self.load_peer_config(verbose=False, mm=mm)
         for nodename, data in self.peer_config.items():
             if nodename == rcEnv.nodename:
                 continue
             if data.slot < 0:
                 continue
             try:
-                slot_data = self.read_slot(data.slot)
+                slot_data = self.read_slot(data.slot, mm=mm)
                 _nodename, _data = self.decrypt(slot_data)
                 if _nodename is None:
                     # invalid crypt
