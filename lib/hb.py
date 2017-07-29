@@ -28,7 +28,7 @@ class Hb(shared.OsvcThread):
         data = shared.OsvcThread.status(self)
         data.peers = {}
         for nodename in self.cluster_nodes:
-            if nodename == rcEnv.nodename and self.id.endswith(".rx"):
+            if nodename == rcEnv.nodename:
                 data.peers[nodename] = {}
                 continue
             if "*" in self.peers:
