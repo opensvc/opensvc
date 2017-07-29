@@ -3031,18 +3031,13 @@ class Node(Crypt):
                 "|",
             ]
             for nodename in nodenames:
-                if nodename == daemon_node:
-                    line.append("")
-                    continue
-                if nodename not in _data["peers"]:
-                    status = " "
+                if nodename not in _data["peers"] or "beating" not in _data["peers"][nodename]:
+                    status = "n/a"
+                elif _data["peers"][nodename]["beating"]:
+                    status = "up"
                 else:
-                    status = _data["peers"][nodename]["beating"]
-                if status != " ":
-                    if status:
-                        status = colorize(unicons["up"], color.GREEN)
-                    else:
-                        status = colorize(unicons["down"], color.RED)
+                    status = "down"
+                status = colorize_status(status, lpad=0).replace(status, unicons[status])
                 line.append(status)
             out.append(line)
 
