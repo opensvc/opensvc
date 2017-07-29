@@ -169,6 +169,8 @@ class Disk(resDisk.Disk):
         return "unknown"
 
     def has_it(self):
+        if self.uuid == "":
+            return False
         state = self.detail_status().split(", ")[0]
         states = (
           "clean",
