@@ -4248,13 +4248,19 @@ class Svc(Crypt):
         if self.options.value is not None:
             value = self.options.value
         elif self.options.remove is not None:
-            value = self._get(self.options.param, self.options.eval).split()
+            try:
+                value = self._get(self.options.param, self.options.eval).split()
+            except ex.excError as exc:
+                value = []
             if self.options.remove not in value:
                 return 0
             value.remove(self.options.remove)
             value = " ".join(value)
         elif self.options.add is not None:
-            value = self._get(self.options.param, self.options.eval).split()
+            try:
+                value = self._get(self.options.param, self.options.eval).split()
+            except ex.excError as exc:
+                value = []
             if self.options.add in value:
                 return 0
             index = self.options.index if self.options.index is not None else len(value)
@@ -5231,6 +5237,10 @@ class Svc(Crypt):
 
             val = self._handle_reference(ref, _section, _v, scope=scope, impersonate=impersonate, config=config)
 
+            if val is None:
+                # deferred
+                return
+
             if return_length or index is not None:
                 if is_string(val):
                     val = val.split()
@@ -5261,6 +5271,18 @@ class Svc(Crypt):
         if _section != "DEFAULT" and not config.has_section(_section):
             raise ex.excError("%s: section %s does not exist" % (ref, _section))
 
+        # deferrable refs
+        if _v == "devlist":
+            try:
+                return list(self.get_resource(_section).devlist())
+            except:
+                return
+        elif _v == "disklist":
+            try:
+                return list(self.get_resource(_section).disklist())
+            except:
+                return
+
         try:
             return self.conf_get(_section, _v, "string", scope=scope, impersonate=impersonate, config=config)
         except ex.OptNotFound as exc:
@@ -5279,6 +5301,9 @@ class Svc(Crypt):
                 return s
             ref = m.group(0).strip("{}")
             val = self.handle_reference(ref, scope=scope, impersonate=impersonate, config=config)
+            if val is None:
+                # deferred
+                return
             s = s[:m.start()] + val + s[m.end():]
 
     @staticmethod
