@@ -3303,7 +3303,7 @@ class Node(Crypt):
                 self.log.error("leave node %s failed", nodename)
                 errors += 1
             else:
-                self.log.info("leave node %s", self.options.node)
+                self.log.info("leave node %s", nodename)
 
         # remove obsolete hb configurations
         for section in self.config.sections():
@@ -3399,7 +3399,7 @@ class Node(Crypt):
                 self.log.error("join node %s failed", nodename)
                 errors += 1
             else:
-                self.log.info("join node %s", self.options.node)
+                self.log.info("join node %s", nodename)
 
         # leave node frozen if initially frozen or we failed joining all nodes
         if initially_frozen:
