@@ -71,8 +71,7 @@ class ProvisioningDisk(Provisioning):
         self.r.uuid = os.path.basename(name)
         uuid = self.get_real_uuid(name)
         self.r.uuid = uuid
-        self.r.svc.config.set(self.r.rid, "uuid", uuid)
-        self.r.svc.write_config()
+        self.r.svc._set(self.r.rid, "uuid", uuid)
 
     def get_real_uuid(self, name):
         buff = self.r.detail()
