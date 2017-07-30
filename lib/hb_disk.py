@@ -108,7 +108,6 @@ class HbDisk(Hb, Crypt):
             mm = mmap.mmap(fd, size, **mmap_kwargs)
             yield mm
         except Exception as exc:
-            os.close(fd)
             raise ex.excAbortAction("mmapping %s: %s" % (self.dev, str(exc)))
         finally:
             mm.close()
@@ -126,7 +125,7 @@ class HbDisk(Hb, Crypt):
         if len(data) > mmap.PAGESIZE:
             self.log.error("attempt to write too long data in meta slot %d", slot)
             raise ex.excAbortAction()
-        offset = self.meta_slot_offset(slot, mm=mm)
+        offset = self.meta_slot_offset(slot)
         mm.seek(offset)
         mm.write(data)
         mm.flush()
@@ -173,12 +172,13 @@ class HbDisk(Hb, Crypt):
 
     def allocate_slot(self):
         for slot in range(self.MAX_SLOTS):
-            buff = self.meta_read_slot(slot)
-            if buff[0] != "\0":
-                continue
-            self.peer_config[rcEnv.nodename].slot = slot
-            self.meta_write_slot(slot, rcEnv.nodename)
-            self.log.info("allocated slot %d", slot)
+            with self.dio_mm() as mm:
+                buff = self.meta_read_slot(slot, mm=mm)
+                if buff[0] != "\0":
+                    continue
+                self.peer_config[rcEnv.nodename].slot = slot
+                self.meta_write_slot(slot, rcEnv.nodename, mm=mm)
+                self.log.info("allocated slot %d", slot)
             break
 
 
