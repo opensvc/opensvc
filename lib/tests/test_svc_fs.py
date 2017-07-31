@@ -33,6 +33,7 @@ class TestSvc:
     def test_002_start(self):
         ret = self.svc.action("start", {"local": True})
         assert ret == 0
+        assert self.svc.get_resource("fs#1").is_up() == True
 
     def test_003_restart(self):
         ret = self.svc.action("restart", {"local": True})
