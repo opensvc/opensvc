@@ -150,6 +150,8 @@ def convert_size(s, _to='', _round=1):
     then to the target unit specified by <_to>, and finally round to a
     <_round> lowest multiple.
     """
+    if s is None:
+        return
     l = ['', 'K', 'M', 'G', 'T', 'P', 'Z', 'E']
     if type(s) in (int, float):
         s = str(s)
@@ -161,7 +163,7 @@ def convert_size(s, _to='', _round=1):
     size = s
     unit = ""
     for i, c in enumerate(s):
-        if not c.isdigit() and c != '.':
+        if not c.isdigit() and c not in ('.', '-'):
             size = s[:i]
             unit = s[i:].strip()
             break
