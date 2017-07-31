@@ -2271,7 +2271,10 @@ class Svc(Crypt):
         if categories is None:
             categories = ("exposed", "sub", "base")
         data = {}
-        resources = [self.get_resource(rid) for rid in self.action_rid]
+        if self.action_rid == []:
+            resources = self.get_resources()
+        else:
+            resources = [self.get_resource(rid) for rid in self.action_rid]
         for resource in resources:
             for cat in categories:
                 devs = sorted(list(getattr(resource, cat+"_devs")()))
@@ -2282,6 +2285,16 @@ class Svc(Crypt):
                 data[resource.rid]["type"] = resource.type
                 data[resource.rid][cat] = devs
         return data
+
+    def sub_devs(self):
+        """
+        Return the list of sub devices of each resource, aggregated as a single         list. Used by the checkers to parent checks to a service.
+        """
+        data = self.devs(categories=["sub"])
+        devs = set()
+        for rid, _data in data.items():
+            devs |= set(_data.get("sub", []))
+        return devs
 
     def print_config_mtime(self):
         """
