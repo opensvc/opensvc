@@ -28,8 +28,8 @@ class ProvisioningFs(provFs.ProvisioningFs):
         nv_list = dict()
         try:
             size = self.r.svc.conf_get(self.r.rid, "size")
-        except:
-            size = None
+        except ex.OptNotFound as exc:
+            size = exc.default
         if size:
             nv_list['refquota'] = "%dM" % convert_size(size, _to="m")
         ds.verify_prop(nv_list)

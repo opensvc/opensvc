@@ -3095,6 +3095,8 @@ class KeywordZPoolVdev(Keyword):
                   section="disk",
                   rtype=["zpool", "pool"],
                   keyword="vdev",
+                  required=True,
+                  convert="list",
                   order=11,
                   at=True,
                   provisioning=True,
@@ -3227,10 +3229,31 @@ class KeywordFsSize(Keyword):
         Keyword.__init__(
                   self,
                   section="fs",
+                  rtype=["ext2", "ext3", "ext4", "xfs", "btrfs", "vfat",
+                         "reiserfs", "jfs", "jfs2", "bfs", "msdos", "ufs",
+                         "ufs2", "minix", "xia", "ext", "umsdos", "hpfs",
+                         "ntfs", "reiserfs4", "vxfs", "hfs", "hfsplus",
+                         "qnx4", "ocfs", "ocfs2", "nilfs", "jffs", "jffs2",
+                         "tux3", "f2fs", "logfs", "gfs", "gfs2", "gpfs",],
                   keyword="size",
                   required=True,
+                  convert="size",
                   at=True,
                   text="The size in MB of the logical volume to provision for this filesystem.",
+                  provisioning=True
+                )
+
+class KeywordFsZfsSize(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  rtype="zfs",
+                  keyword="size",
+                  required=False,
+                  convert="size",
+                  at=True,
+                  text="The quota in MB of the provisionned dataset.",
                   provisioning=True
                 )
 
@@ -4596,6 +4619,7 @@ class KeyDict(KeywordStore):
         self += KeywordFsScsireserv()
         self += KeywordFsNoPreemptAbort()
         self += KeywordFsSize()
+        self += KeywordFsZfsSize()
         self += KeywordFsDirPath()
         self += KeywordFsDirUser()
         self += KeywordFsDirGroup()

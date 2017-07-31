@@ -20,7 +20,7 @@ class ProvisioningDisk(Provisioning):
     def provisioner(self):
         try:
             self.name = self.r.name
-            self.vdev = self.r.svc.conf_get(self.r.rid, "vdev").split()
+            self.vdev = self.r.svc.conf_get(self.r.rid, "vdev")
         except Exception as e:
             raise ex.excError(str(e))
 
