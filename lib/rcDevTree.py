@@ -266,11 +266,19 @@ class DevTree(object):
             return None
         return self.dev[devname]
 
+    def get_devs_by_devpaths(self, devpaths):
+        devs = set()
+        for devpath in devpaths:
+            dev = self.get_dev_by_devpath(devpath)
+            if dev is None:
+                continue
+            devs.add(dev)
+        return devs
+
     def get_dev_by_devpath(self, devpath):
         for dev in self.dev.values():
             if devpath in dev.devpath:
                 return dev
-        return None
 
     def blacklist(self, dev):
         """ overload this fn with os specific implementation
