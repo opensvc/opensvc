@@ -60,7 +60,7 @@ class Disk(resDisk.Disk):
         data = self.get_lvs_attr()
         if self.name not in data:
             # no lv ... happens in provisioning, where lv are not created yet
-            self.log.info("no logical volumes. consider up")
+            self.log.debug("no logical volumes. consider up")
             return True
         for attr in data[self.name].values():
             if re.search('....a.', attr) is not None:
