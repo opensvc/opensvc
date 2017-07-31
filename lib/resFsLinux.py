@@ -2,7 +2,7 @@
 Linux Fs resource driver module
 """
 import os
-from stat import ST_MODE, S_ISREG, S_ISBLK
+from stat import ST_MODE, ST_INO, S_ISREG, S_ISBLK, S_ISDIR
 
 from rcGlobalEnv import rcEnv
 import rcMountsLinux as rcMounts
@@ -142,7 +142,8 @@ class Mount(Res.Mount):
         # might be mount using a /dev/mapper/ name too
         elements = self.device.split('/')
         if len(elements) == 4 and elements[2] != "mapper":
-            dev = "/dev/mapper/%s-%s" % (elements[2].replace('-', '--'), elements[3].replace('-', '--'))
+            dev = "/dev/mapper/%s-%s" % (elements[2].replace('-', '--'),
+                                         elements[3].replace('-', '--'))
             ret = self.mounts.has_mount(dev, self.mount_point)
             if ret:
                 return True
@@ -179,6 +180,16 @@ class Mount(Res.Mount):
                     ret = self.mounts.has_mount(dev, os.path.realpath(self.mount_point))
                     if ret:
                         return True
+            elif S_ISDIR(mode):
+                try:
+                    mnt_fstat = os.stat(self.mount_point)
+                    mnt_ino = mnt_fstat[ST_INO]
+                except:
+                    self.log.debug("can not stat %s", self.mount_point)
+                    return False
+                dev_ino = fstat[ST_INO]
+                if dev_ino == mnt_ino:
+                    return True
 
         return False
 
