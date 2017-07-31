@@ -26,10 +26,10 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         self.disk_id = {}
         self.itn = {}
 
-    def get_disks(self):
-        if len(self.disks) > 0:
+    def get_devs(self):
+        if len(self.devs) > 0:
             return
-        self.disks = map(lambda x: str(x.replace('/disk/', '/rdisk/')), self.peer_resource.disklist())
+        self.devs = map(lambda x: str(x.replace('/disk/', '/rdisk/')), self.peer_resource.base_devs())
 
     def scsireserv_supported(self):
         if which('scu') is None:

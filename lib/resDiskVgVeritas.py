@@ -73,30 +73,28 @@ class Disk(resDisk.Disk):
         (ret, out, err) = self.vcall(cmd)
         return ret
 
-    def disklist(self):
-        """disklist() search vg disks from
-        output of : vxdisk -g vgname -q  path
-
-        disklist(self) update self.disks[]
+    def sub_devs(self):
         """
-        if len(self.disks) > 0 :
-            return self.disks
+        parse "vxdisk -g <vgname> -q path"
+        """
+        if len(self.sub_devs_cache) > 0 :
+            return self.sub_devs_cache
 
-        disks = set([])
+        devs = set([])
         cmd = [ 'vxdisk', '-g', self.name, '-q', 'list' ]
         (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0 :
-            self.disks = disks
-            return disks
+            self.sub_devs_cache = devs
+            return devs
         for line in out.split('\n'):
-            disk = line.split(" ")[0]
-            if disk != '' :
-                if re.match('^.*s[0-9]$', disk) is None:
-                    disk += "s2"
-                disks.add("/dev/rdsk/" + disk )
+            dev = line.split(" ")[0]
+            if dev != '' :
+                if re.match('^.*s[0-9]$', dev) is None:
+                    dev += "s2"
+                devs.add("/dev/rdsk/" + dev)
 
-        self.log.debug("found disks %s held by pool %s" % (disks, self.name))
-        self.disks = disks
+        self.log.debug("found devs %s held by vg %s" % (devs, self.name))
+        self.sub_devs_cache = devs
 
-        return disks
+        return devs
 

@@ -67,10 +67,7 @@ class Mount(Res.Mount):
 
         return False
 
-    def devlist(self):
-        return self.disklist()
-
-    def disklist(self):
+    def sub_devs(self):
         if '#' in self.device:
             dom, fset = self.device.split('#')
             for r in self.svc.get_resources('disk.vg'):

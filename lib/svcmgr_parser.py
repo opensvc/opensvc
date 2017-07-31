@@ -648,8 +648,9 @@ ACTIONS = {
         'push_service_status': {
             'msg': 'push service and its resources status to database',
         },
-        'print_disklist': {
-            'msg': 'print service disk list',
+        'print_base_devs': {
+            'msg': 'print the list of base devices the service or the '
+                   'specified resources are layered on.',
             'options': [
                 OPT.format,
                 OPT.rid,
@@ -657,8 +658,29 @@ ACTIONS = {
                 OPT.subsets,
             ],
         },
-        'print_devlist': {
-            'msg': 'print service device list',
+        'print_exposed_devs': {
+            'msg': 'print the list of devices the service or the specified '
+                   'resources expose.',
+            'options': [
+                OPT.format,
+                OPT.rid,
+                OPT.tags,
+                OPT.subsets,
+            ],
+        },
+        'print_sub_devs': {
+            'msg': 'print the list of devices the service or the specified '
+                   'resources are layered on.',
+            'options': [
+                OPT.format,
+                OPT.rid,
+                OPT.tags,
+                OPT.subsets,
+            ],
+        },
+        'print_devs': {
+            'msg': 'aggregate the information of print base, sub and exposed '
+                   'devices',
             'options': [
                 OPT.format,
                 OPT.rid,
@@ -1086,8 +1108,9 @@ DEPRECATED_ACTIONS = [
     "collector_json_status",
     "push_appinfo",
     "json_config",
-    "json_devlist",
-    "json_disklist",
+    "json_devs",
+    "json_sub_devs",
+    "json_base_devs",
     "json_env",
     "json_schedule",
     "json_status",

@@ -127,7 +127,7 @@ class Mount(Res.Mount):
                 return True
 
         # might be a mount by label or uuid
-        for dev in self.devlist():
+        for dev in self.sub_devs():
             ret = self.mounts.has_mount(dev, self.mount_point)
             if ret:
                 return True
@@ -184,7 +184,7 @@ class Mount(Res.Mount):
 
     def realdev(self):
         if self.device.startswith("LABEL=") or self.device.startswith("UUID="):
-            _dev = label_to_dev(self.device)
+            _dev = label_to_dev(self.device, self.svc.node.devtree)
             if _dev:
                 return _dev
             return self.device
@@ -289,7 +289,7 @@ class Mount(Res.Mount):
             return True
         return False
 
-    def _disklist(self):
+    def sub_devs(self):
         dev = self.realdev()
         if dev is None:
             return set([])
@@ -324,14 +324,8 @@ class Mount(Res.Mount):
         devs = get_blockdev_sd_slaves(syspath)
         return devs
 
-    def disklist(self):
-        return devs_to_disks(self, self._disklist())
-
-    def devlist(self):
-        dev = self.realdev()
-        if dev is None:
-            return set([])
-        return set([dev])
+    def sub_disks(self):
+        return devs_to_disks(self, self.sub_devs())
 
     def can_check_writable(self):
         if self.fs_type == "zfs":
@@ -508,7 +502,7 @@ class Mount(Res.Mount):
         for holder_dev in holder_devs:
             holders_devpaths |= set(holder_dev.devpath)
         holders_devpaths -= set(dev.devpath)
-        holders_handled_by_resources = self.svc.devlist(filtered=False) & holders_devpaths
+        holders_handled_by_resources = self.svc.exposed_devs(filtered=False) & holders_devpaths
         if len(holders_handled_by_resources) > 0:
             raise ex.excError("resource %s has holders handled by other "
                               "resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
@@ -517,9 +511,7 @@ class Mount(Res.Mount):
 
     def remove_holders(self):
         import glob
-        import rcDevTreeLinux
-        tree = rcDevTreeLinux.DevTree()
-        tree.load()
+        tree = self.svc.node.devtree
         dev_realpath = os.path.realpath(self.device)
         self.remove_dev_holders(dev_realpath, tree)
 

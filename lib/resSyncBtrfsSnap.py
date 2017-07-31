@@ -67,7 +67,7 @@ class syncBtrfsSnap(resSync.Sync):
         if label in self.btrfs:
             return self.btrfs[label]
         try:
-            self.btrfs[label] = rcBtrfs.Btrfs(label=label, log=self.log)
+            self.btrfs[label] = rcBtrfs.Btrfs(label=label, resource=self)
         except rcBtrfs.ExecError as e:
             raise ex.excError(str(e))
         return self.btrfs[label]

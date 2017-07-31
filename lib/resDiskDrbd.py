@@ -26,7 +26,6 @@ class Drbd(Res.Resource):
         self.res = res
         self.label = "drbd "+res
         self.drbdadm = None
-        self.disks = set()
 
     def __str__(self):
         return "%s resource=%s" % (Res.Resource.__str__(self),\
@@ -48,7 +47,7 @@ class Drbd(Res.Resource):
                 raise exc.excError
         return [self.drbdadm] + cmd.split() + [self.res]
 
-    def devlist(self):
+    def exposed_devs(self):
         devps = set()
 
         (ret, out, err) = self.call(self.drbdadm_cmd('dump-xml'))
@@ -72,11 +71,7 @@ class Drbd(Res.Resource):
                 devps |= set([d.text])
         return devps
 
-    def disklist(self):
-        if self.disks != set():
-            return self.disks
-
-        self.disks = set()
+    def sub_devs(self):
         devps = set()
 
         (ret, out, err) = self.call(self.drbdadm_cmd('dump-xml'))
@@ -99,13 +94,7 @@ class Drbd(Res.Resource):
                     continue
                 devps |= set([d.text])
 
-        try:
-            u = __import__('rcUtilities'+rcEnv.sysname)
-            self.disks = u.devs_to_disks(self, devps)
-        except:
-            self.disks = devps
-
-        return self.disks
+        return devps
 
     def drbdadm_down(self):
         (ret, out, err) = self.vcall(self.drbdadm_cmd('down'))

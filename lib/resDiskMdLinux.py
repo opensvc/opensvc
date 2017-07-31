@@ -1,4 +1,5 @@
 import re
+import json
 import os
 import glob
 import time
@@ -8,7 +9,7 @@ import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              devs_to_disks
-from rcUtilities import which, justcall, lazy
+from rcUtilities import which, justcall, lazy, fcache
 
 class Disk(resDisk.Disk):
     startup_timeout = 10
@@ -55,31 +56,26 @@ class Disk(resDisk.Disk):
         return self.fmt_info(data)
 
     def md_config_file_name(self):
-        return os.path.join(rcEnv.paths.pathvar, 'md_' + self.uuid + '.disklist')
+        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname,
+                            self.rid+"."+'.disks')
 
     def md_config_import(self):
         p = self.md_config_file_name()
         if not os.path.exists(p):
             return set()
-        with open(p, "r") as f:
-            buff = f.read()
-        disks = set(buff.split("\n"))
-        disks -= set([""])
-        return disks
+        with open(p, "r") as ofile:
+            return json.load(ofile)
 
     def md_config_export(self):
-        from rcDevTreeLinux import DevTree
-        dt = DevTree()
-        dt.load()
-        disks = self.devlist()
+        devs = self.sub_devs()
         disk_ids = set()
-        for disk in disks:
-            treedev = dt.get_dev_by_devpath(disk)
+        for dev in devs:
+            treedev = self.svc.node.get_dev_by_devpath(dev)
             if not treedev:
                 continue
             disk_ids.add(treedev.alias)
-        with open(self.md_config_file_name(), "w") as f:
-             f.write("\n".join(disk_ids))
+        with open(self.md_config_file_name(), "w") as ofile:
+             json.dump(disk_ids, ofile)
 
     def postsync(self):
         pass
@@ -92,9 +88,7 @@ class Disk(resDisk.Disk):
         if len(devnames) == 0:
             return
 
-        from rcDevTreeLinux import DevTree
-        dt = DevTree()
-        dt.load()
+        dt = self.svc.node.devtree
         aliases = set([d.alias for d in dt.dev.values()])
         not_found = devnames - aliases
         if len(not_found) > 0:
@@ -126,6 +120,12 @@ class Disk(resDisk.Disk):
 
     def devpath(self):
         return "/dev/md/"+self.uuid
+
+    def exposed_devs(self):
+        try:
+            return set([os.path.realpath(self.md_devpath())])
+        except:
+            return set()
 
     def assemble(self):
         cmd = [self.mdadm, "--assemble", self.devpath(), "-u", self.uuid]
@@ -217,19 +217,16 @@ class Disk(resDisk.Disk):
     def _create_static_name(self):
         self.create_static_name(self.md_devpath())
 
-    def devlist(self):
-        if self.devs != set():
-            return self.devs
-
+    @fcache
+    def sub_devs(self):
         try:
             devpath = self.md_devpath()
         except ex.excError as e:
-            return self.devlist_inactive()
+            return self.sub_devs_inactive()
         if os.path.exists(devpath):
-            self.devs = self.devlist_active()
+            return self.sub_devs_active()
         else:
-            self.devs = self.devlist_inactive()
-        return self.devs
+            return self.sub_devs_inactive()
 
     def mdadm_scan(self):
         cmd = [self.mdadm, "--detail", "--scan"]
@@ -239,7 +236,7 @@ class Disk(resDisk.Disk):
         cmd = [self.mdadm, "-E", "--scan", "-v"]
         return justcall(cmd)
 
-    def devlist_inactive(self):
+    def sub_devs_inactive(self):
         devs = set()
         out, err, ret = self.mdadm_scan_v()
         if ret != 0:
@@ -262,7 +259,7 @@ class Disk(resDisk.Disk):
         self.log.debug("found devs %s held by md %s" % (devs, self.uuid))
         return devs
 
-    def devlist_active(self):
+    def sub_devs_active(self):
         devs = set()
 
         try:
@@ -281,17 +278,6 @@ class Disk(resDisk.Disk):
 
         self.log.debug("found devs %s held by md %s" % (devs, self.uuid))
         return devs
-
-    def disklist(self):
-        if self.disks != set():
-            return self.disks
-
-        self.disks = set()
-
-        members = self.devlist()
-        self.disks = devs_to_disks(self, members)
-        self.log.debug("found disks %s held by md %s" % (self.disks, self.uuid))
-        return self.disks
 
     def provision(self):
         m = __import__("provDiskMdLinux")

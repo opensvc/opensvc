@@ -47,10 +47,8 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         self.prtype = 'wero'
         self.leg_mpath_disable()
 
-    def get_disks(self):
-        if len(self.disks) > 0:
-            return
-        self.disks = mpath_to_path(self.peer_resource.disklist())
+    def get_devs(self):
+        self.devs = mpath_to_path(self.peer_resource.base_devs())
 
     def scsireserv_supported(self):
         if which('scu') is None:

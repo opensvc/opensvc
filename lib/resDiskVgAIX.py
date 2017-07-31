@@ -225,12 +225,13 @@ class Disk(resDisk.Disk):
          {'hdisk': 'hdisk5', 'pvid': 'none', 'vg': 'None'}]
 	"""
 
-    def disklist(self):
+    def sub_devs(self):
         if self.is_active():
-            return self.disklist_active()
-        return self.disklist_inactive()
+            return self.sub_devs_active()
+        return self.sub_devs_inactive()
 
-    def disklist_active(self):
+    def sub_devs_active(self):
+        devs = set()
         cmd = ['lsvg', '-p', self.name]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
@@ -240,20 +241,20 @@ class Disk(resDisk.Disk):
             x = e.split()
             if len(x) != 5:
                 continue
-            self.disks |= set([x[0]])
+            devs |= set([x[0]])
 
-        return self.disks
+        return devs
 
-    def disklist_inactive(self):
-        self.disks = set([])
+    def sub_devs_inactive(self):
+        devs = set()
         if not os.path.exists(self.vgfile_name()):
-            return self.disks
+            return devs
         with open(self.vgfile_name()) as f:
             s = f.read()
         try:
             data = json.loads(s)
         except:
-            return self.disks
+            return devs
         for l in data:
             pvid = l.get('pvid')
             if pvid is None:
@@ -261,6 +262,6 @@ class Disk(resDisk.Disk):
             hdisk = self.pvid2hdisk(pvid)
             if hdisk == "notfound":
                 continue
-            self.disks.add(hdisk)
-        return self.disks
+            devs.add(hdisk)
+        return devs
 

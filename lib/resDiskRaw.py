@@ -32,10 +32,10 @@ class Disk(resDisk.Disk):
         self.create_char_devices = create_char_devices
         self.original_devs = devs
 
-        self.devs = set([])
-        self.devs_not_found = set([])
-        self.dst_devs_not_found = set([])
-        self.major_minor_errs = set([])
+        self.devs = set()
+        self.devs_not_found = set()
+        self.dst_devs_not_found = set()
+        self.major_minor_errs = set()
         self.devs_map = {}
 
     def verify_dev(self, path):
@@ -80,9 +80,9 @@ class Disk(resDisk.Disk):
         return path
 
     def validate_devs(self):
-        self.devs = set([])
-        self.devs_not_found = set([])
-        self.dst_devs_not_found = set([])
+        self.devs = set()
+        self.devs_not_found = set()
+        self.dst_devs_not_found = set()
         for dev in self.original_devs:
             if ":" in dev:
                 try:
@@ -378,6 +378,6 @@ class Disk(resDisk.Disk):
         else:
             self.log.info("%s already unlinked" % dst)
 
-    def disklist(self):
+    def sub_devs(self):
         return self.devs
 

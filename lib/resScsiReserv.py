@@ -12,7 +12,7 @@ hostId = __import__('hostid'+rcEnv.sysname)
 
 class ScsiReserv(Res.Resource):
     """Define method to acquire and release scsi SPC-3 persistent reservations
-    on disks held by a service
+    on devs held by a service
     """
     def __init__(self,
                  rid=None,
@@ -21,7 +21,7 @@ class ScsiReserv(Res.Resource):
                  prkey=None,
                  **kwargs):
         self.no_preempt_abort = no_preempt_abort
-        self.disks = set([])
+        self.devs = set([])
         self.preempt_timeout = 10
         self.prtype = '5'
         self.hostid = None
@@ -33,14 +33,14 @@ class ScsiReserv(Res.Resource):
                               **kwargs)
 
     def set_label(self):
-        self.get_disks()
-        if len(self.disks) == 0:
+        self.get_devs()
+        if len(self.devs) == 0:
             self.label = 'preserv 0 scsi disk'
-        elif len(', '.join(self.disks)) > 248:
-            self.label = 'preserv '+', '.join(self.disks)[0:248]
+        elif len(', '.join(self.devs)) > 248:
+            self.label = 'preserv '+', '.join(self.devs)[0:248]
             self.label += " ..."
         else:
-            self.label = ', '.join(self.disks)
+            self.label = ', '.join(self.devs)
 
     def get_hostid(self):
         if self.hostid:
@@ -95,14 +95,14 @@ class ScsiReserv(Res.Resource):
             raise ex.excError
         return self._disk_preempt_reservation(disk, oldkey)
 
-    def get_disks(self):
-        if len(self.disks) > 0:
+    def get_devs(self):
+        if len(self.devs) > 0:
             return
-        self.disks = self.peer_resource.disklist()
+        self.devs = self.peer_resource.base_devs()
 
     def ack_all_unit_attention(self):
-        self.get_disks()
-        for d in self.disks:
+        self.get_devs()
+        for d in self.devs:
             try:
                 if self.ack_unit_attention(d) != 0:
                     return 1
@@ -112,9 +112,9 @@ class ScsiReserv(Res.Resource):
 
     def register(self):
         self.log.debug("starting register. prkey %s"%self.hostid)
-        self.get_disks()
+        self.get_devs()
         r = 0
-        for d in self.disks:
+        for d in self.devs:
             try:
                 r += self.ack_unit_attention(d)
                 r += self.disk_register(d)
@@ -124,9 +124,9 @@ class ScsiReserv(Res.Resource):
 
     def unregister(self):
         self.log.debug("starting unregister. prkey %s"%self.hostid)
-        self.get_disks()
+        self.get_devs()
         r = 0
-        for d in self.disks:
+        for d in self.devs:
             try:
                 r += self.ack_unit_attention(d)
                 if not self.disk_registered(d):
@@ -148,9 +148,9 @@ class ScsiReserv(Res.Resource):
 
     def reserve(self):
         self.log.debug("starting reserve. prkey %s"%self.hostid)
-        self.get_disks()
+        self.get_devs()
         r = 0
-        for d in self.disks:
+        for d in self.devs:
             try:
                 r += self.ack_unit_attention(d)
                 key = self.get_reservation_key(d)
@@ -167,9 +167,9 @@ class ScsiReserv(Res.Resource):
 
     def release(self):
         self.log.debug("starting release. prkey %s"%self.hostid)
-        self.get_disks()
+        self.get_devs()
         r = 0
-        for d in self.disks:
+        for d in self.devs:
             try:
                 r += self.ack_unit_attention(d)
                 if not self.disk_reserved(d):
@@ -181,9 +181,9 @@ class ScsiReserv(Res.Resource):
 
     def clear(self):
         self.log.debug("starting clear. prkey %s"%self.hostid)
-        self.get_disks()
+        self.get_devs()
         r = 0
-        for d in self.disks:
+        for d in self.devs:
             try:
                 r += self.ack_unit_attention(d)
                 if not self.disk_reserved(d):
@@ -198,7 +198,7 @@ class ScsiReserv(Res.Resource):
         if self.ack_all_unit_attention() != 0:
             return rcStatus.WARN
         r = rcStatus.Status()
-        for d in self.disks:
+        for d in self.devs:
             try:
                 key = self.get_reservation_key(d)
                 if key is None:

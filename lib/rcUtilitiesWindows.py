@@ -31,3 +31,6 @@ def get_drives():
             drives.append(letter)
         bitmask >>= 1
     return drives
+
+def devs_to_disks(self, devs=set()):
+    return devs

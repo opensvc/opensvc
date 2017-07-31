@@ -3,6 +3,7 @@ import os
 import rcExceptions as ex
 import resContainer
 from rcGlobalEnv import rcEnv
+from rcUtilities import fcache
 
 rcU = __import__("rcUtilities" + os.uname()[0])
 
@@ -128,11 +129,9 @@ class Ovm(resContainer.Container):
             return False
         return True
 
+    @fcache
     def devmap(self):
-        if hasattr(self, "devmapping"):
-            return self.devmapping
-
-        self.devmapping = []
+        devmapping = []
 
         cf = self.find_vmcf()
         with open(cf, 'r') as f:
@@ -152,28 +151,12 @@ class Ovm(resContainer.Container):
                 if not d[0].startswith('phy:'):
                     continue
                 l = [d[0].strip('phy:'), d[1]]
-                self.devmapping.append(l)
+                devmapping.append(l)
             break
 
-        return self.devmapping
+        return devmapping
 
-    def devlist(self):
-        if hasattr(self, 'devs') and self.devs != set():
-            return self.devs
-        self.devs = set(map(lambda x: x[0], self.devmap()))
-        return self.devs
+    def sub_devs(self):
+        devs = set(map(lambda x: x[0], self.devmap()))
+        return devs
 
-    def disklist(self):
-        if hasattr(self, 'disks') and self.disks != set():
-            return self.disks
-
-        self.disks = set()
-        devps = self.devlist()
-
-        try:
-            u = __import__('rcUtilities'+rcEnv.sysname)
-            self.disks = u.devs_to_disks(self, devps)
-        except:
-            self.disks = devps
-
-        return self.disks

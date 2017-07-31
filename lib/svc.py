@@ -90,12 +90,16 @@ ACTIONS_NO_STATUS_CHANGE = [
     "get",
     "json_config",
     "json_status",
-    "json_disklist",
-    "json_devlist",
+    "json_devs",
+    "json_exposed_devs",
+    "json_sub_devs",
+    "json_base_devs",
     "logs",
     "print_config",
-    "print_devlist",
-    "print_disklist",
+    "print_devs",
+    "print_exposed_devs",
+    "print_sub_devs",
+    "print_base_devs",
     "print_config_mtime",
     "print_resource_status",
     "print_schedule",
@@ -359,8 +363,6 @@ class Svc(Crypt):
         self.encap_resources = {}
         self.resourcesets = []
         self.resourcesets_by_type = {}
-        self.disks = set()
-        self.devs = set()
 
         self.ref_cache = {}
         self.encap_json_status_cache = {}
@@ -2213,77 +2215,73 @@ class Svc(Crypt):
         self.group_status_cache = status
         return status
 
-    def print_disklist(self):
+    def print_exposed_devs(self):
+        self.print_devs(categories=["exposed"])
+
+    def print_sub_devs(self):
+        self.print_devs(categories=["sub"])
+
+    def print_base_devs(self):
+        self.print_devs(categories=["base"])
+
+    def print_devs(self, categories=None):
         """
-        Print the list of disks the service handles.
+        Print the list of devices the service exposes.
         """
+        if categories is None:
+            categories = ["exposed", "sub", "base"]
+        data = self.devs(categories=categories)
         if self.options.format is not None:
-            return self.print_disklist_data()
-        disks = self.disklist()
-        if len(disks) > 0:
-            print('\n'.join(disks))
+            return data
+        from forest import forest
+        from rcColor import color
+        pdata = {
+            "data": {
+                "text": self.svcname,
+                "color": color.BOLD,
+            },
+            "children": [],
+        }
+        for rid, _data in data.items():
+            _pdata = {
+                "data": {
+                    "text": "%s (%s)" % (rid, _data["type"]),
+                    "color": color.BROWN,
+                },
+                "children": [],
+            }
+            for cat, __data in _data.items():
+                if cat == "type":
+                    continue
+                __pdata = {
+                    "data": {
+                        "text": cat,
+                        "color": color.LIGHTBLUE,
+                    },
+                    "children": [{"data": {"text": dev}} for dev in __data],
+                }
+                _pdata["children"].append(__pdata)
+            pdata["children"].append(_pdata)
+        print(forest(pdata, columns=1))
 
-    def print_devlist(self):
+    def devs(self, categories=None):
         """
-        Print the list of devices the service handles.
+        Return the list of devices the service exposes.
         """
-        if self.options.format is not None:
-            return self.print_devlist_data()
-        devs = self.devlist()
-        if len(devs) > 0:
-            print('\n'.join(devs))
-
-    def print_disklist_data(self):
-        """
-        Return the list of disks the service handles.
-        """
-        return list(self.disklist())
-
-    def print_devlist_data(self):
-        """
-        Return the list of devices the service handles.
-        """
-        return list(self.devlist())
-
-    def disklist(self):
-        """
-        Return the set of disks the service handles, from cache if possible.
-        """
-        if len(self.disks) == 0:
-            self.disks = self._disklist()
-        return self.disks
-
-    def _disklist(self):
-        """
-        Return the set of disks the service handles.
-        """
-        disks = set()
-        for resource in self.get_resources():
-            if resource.skip:
-                continue
-            disks |= resource.disklist()
-        self.log.debug("found disks %s held by service", disks)
-        return disks
-
-    def devlist(self, filtered=True):
-        """
-        Return the set of devices the service handles, from cache if possible.
-        """
-        if len(self.devs) == 0:
-            self.devs = self._devlist(filtered=filtered)
-        return self.devs
-
-    def _devlist(self, filtered=True):
-        """
-        Return the set of devices the service handles.
-        """
-        devs = set()
-        for resource in self.get_resources():
-            if filtered and resource.skip:
-                continue
-            devs |= resource.devlist()
-        self.log.debug("found devs %s held by service", devs)
-        return devs
+        if categories is None:
+            categories = ("exposed", "sub", "base")
+        data = {}
+        resources = [self.get_resource(rid) for rid in self.action_rid]
+        for resource in resources:
+            for cat in categories:
+                devs = sorted(list(getattr(resource, cat+"_devs")()))
+                if len(devs) == 0:
+                    continue
+                if resource.rid not in data:
+                    data[resource.rid] = {}
+                data[resource.rid]["type"] = resource.type
+                data[resource.rid][cat] = devs
+        return data
 
     def print_config_mtime(self):
         """
@@ -5272,15 +5270,15 @@ class Svc(Crypt):
             raise ex.excError("%s: section %s does not exist" % (ref, _section))
 
         # deferrable refs
-        if _v == "devlist":
+        for dref in ("exposed_devs", "base_devs", "sub_devs"):
+            if _v != dref:
+                continue
             try:
-                return list(self.get_resource(_section).devlist())
-            except:
-                return
-        elif _v == "disklist":
-            try:
-                return list(self.get_resource(_section).disklist())
-            except:
+                res = self.get_resource(_section)
+                devs = getattr(res, dref)()
+                return list(devs)
+            except Exception as exc:
+                print(exc)
                 return
 
         try:

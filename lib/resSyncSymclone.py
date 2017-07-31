@@ -267,7 +267,6 @@ class syncSymclone(resSync.Sync):
         self.symid = symid
         self.pairs = pairs
         self.consistent = consistent
-        self.disks = set([])
         self.svcstatus = {}
         self.active_pairs = []
         self.last = None

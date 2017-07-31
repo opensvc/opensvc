@@ -188,7 +188,7 @@ class Disk(resDisk.Disk):
         for holder_dev in holder_devs:
             holders_devpaths |= set(holder_dev.devpath)
         holders_devpaths -= set(dev.devpath)
-        holders_handled_by_resources = self.svc.devlist(filtered=False) & holders_devpaths
+        holders_handled_by_resources = self.svc.sub_devs(filtered=False) & holders_devpaths
         if len(holders_handled_by_resources) > 0:
             raise ex.excError("resource %s has holders handled by other resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
         for holder_dev in holder_devs:
@@ -196,9 +196,7 @@ class Disk(resDisk.Disk):
 
     def remove_holders(self):
         import glob
-        import rcDevTreeLinux
-        tree = rcDevTreeLinux.DevTree()
-        tree.load()
+        tree = self.svc.node.devtree
         for lvdev in glob.glob("/dev/mapper/%s-*"%self.name.replace("-", "--")):
              if "_rimage_" in lvdev or "_rmeta_" in lvdev or \
                 "_mimage_" in lvdev or " _mlog_" in lvdev or \
@@ -252,41 +250,26 @@ class Disk(resDisk.Disk):
             data[vgname].append(pvname.strip())
         return data
 
-    def devlist(self):
+    def sub_devs(self):
         if not self.has_it():
             return set()
-        if self.devs != set():
-            return self.devs
-
-        self.devs = set()
-
+        devs = set()
         data = self.vg_pvs()
         if self.name in data:
-            self.devs |= set(data[self.name])
+            devs |= set(data[self.name])
+        return devs
 
+    def exposed_devs(self):
+        if not self.has_it():
+            return set()
+        devs = set()
         data = self.vg_lvs()
         if self.name in data:
-            l = []
             for lvname in data[self.name]:
                 lvp = "/dev/"+self.name+"/"+lvname
                 if os.path.exists(lvp):
-                    self.devs.add(lvp)
-
-        if len(self.devs) > 0:
-            self.log.debug("found devs %s held by vg %s" % (self.devs, self.name))
-
-        return self.devs
-
-    def disklist(self):
-        if self.disks != set():
-            return self.disks
-
-        self.disks = set()
-
-        pvs = self.devlist()
-        self.disks = devs_to_disks(self, pvs)
-        self.log.debug("found disks %s held by vg %s" % (self.disks, self.name))
-        return self.disks
+                    devs.add(lvp)
+        return devs
 
     def unprovision(self):
         m = __import__("provDiskVgLinux")

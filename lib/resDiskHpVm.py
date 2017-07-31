@@ -53,7 +53,7 @@ class Disk(resVg.Disk):
             self.write_share()
 
     def sharefile_name(self):
-        return os.path.join(rcEnv.paths.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.share')
+        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, self.rid + '.share')
 
     def get_devs(self):
         cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-l', 'all']
@@ -79,10 +79,10 @@ class Disk(resVg.Disk):
 
     def write_share(self):
         devs = self.get_devs()
-        disklist = self.disklist()
+        sub_devs = self.sub_devs()
         with open(self.sharefile_name(), 'w') as f:
             for dev in devs:
-                if dev not in disklist:
+                if dev not in sub_devs:
                     continue
                 f.write("%s:%s\n"%(dev, devs[dev]['share']))
 
@@ -120,18 +120,19 @@ class Disk(resVg.Disk):
         if errors > 0:
             raise ex.excError
 
-    def disklist(self):
+    def sub_devs(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-d', '-P', self.container_name]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = p.communicate()
         if p.returncode != 0:
             raise ex.excError
 
+        devs = set()
         for line in buff[0].split('\n'):
             l = line.split(':')
             if len(l) < 5:
                 continue
             if l[3] != 'disk':
                 continue
-            self.disks |= set([l[4]])
-        return self.disks
+            devs |= set([l[4]])
+        return devs

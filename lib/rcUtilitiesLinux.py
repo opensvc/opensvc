@@ -92,7 +92,7 @@ def loop_is_deleted(dev):
         return True
     return False
 
-def label_to_dev(label):
+def label_to_dev(label, tree=None):
     """
        blkid can return a device slave of a drbd, as drbd is
        transparent wrt to signature detection. Detect this case
@@ -120,10 +120,11 @@ def label_to_dev(label):
     elif len(devps) == 1:
         return devps[0]
 
-    from rcDevTreeLinux import DevTree
-    tree = DevTree()
-    tree.load()
-    devs = set([ tree.get_dev_by_devpath(devp) for devp in devps ]) - set([None])
+    if tree is None:
+        from rcDevTreeLinux import DevTree
+        tree = DevTree()
+        tree.load()
+    devs = tree.get_devs_by_devpaths(devps)
     for dev in devs:
         parent_devps = set()
         for p in dev.parents:
@@ -235,7 +236,7 @@ def devs_to_disks(self, devs=set([])):
             syspath = '/sys/block/' + dm + '/slaves'
             disks |= get_blockdev_sd_slaves(syspath)
         elif lo_major != 0 and os.major(statinfo.st_rdev) == lo_major:
-            self.log.debug("skip loop device %s from disklist"%dev)
+            self.log.debug("skip loop device %s from disk list"%dev)
             pass
         else:
             parent = get_partition_parent(dev)

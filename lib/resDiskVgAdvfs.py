@@ -3,6 +3,7 @@ import resDisk
 from rcUtilities import justcall
 import os
 import rcExceptions as ex
+import json
 
 import re
 
@@ -18,19 +19,18 @@ class Disk(resDisk.Disk):
                           **kwargs)
         self.label = 'fdmn ' + name
 
-    def disklist_name(self):
-        return os.path.join(rcEnv.paths.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.disklist')
+    def sub_devs_name(self):
+        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, self.rid + '.sub_devs')
 
     def files_to_sync(self):
-        return [self.disklist_name()]
+        return [self.sub_devs_name()]
 
     def presync(self):
         """ this one is exported as a service command line arg
         """
-        dl = self._disklist()
-        import json
-        with open(self.disklist_name(), 'w') as f:
-            f.write(json.dumps(list(dl)))
+        dl = self._sub_devs()
+        with open(self.sub_devs_name(), 'w') as f:
+            json.dump(list(dl), f)
 
     def has_it(self):
         """Returns True if the pool is present
@@ -60,44 +60,38 @@ class Disk(resDisk.Disk):
     def do_stop(self):
         pass
 
-    def disklist(self):
-        if not os.path.exists(self.disklist_name()):
+    def sub_devs(self):
+        if not os.path.exists(self.sub_devs_name()):
             s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
             import rcStatus
             if s['overall'].status == rcStatus.UP:
-                self.log.debug("no disklist cache file and service up ... refresh disklist cache")
+                self.log.debug("no sub_devs cache file and service up ... refresh sub_devs cache")
                 self.presync()
             else:
-                self.log.debug("no disklist cache file and service not up ... unable to evaluate disklist")
+                self.log.debug("no sub_devs cache file and service not up ... unable to evaluate sub_devs")
                 return set([])
-        with open(self.disklist_name(), 'r') as f:
-            buff = f.read()
-        import json
-        try:
-            dl = set(json.loads(buff))
+        with open(self.sub_devs_name(), 'r') as f:
+            return set(json.load(f))
         except:
-            self.log.error("corrupted disklist cache file %s"%self.disklist_name())
+            self.log.error("corrupted sub_devs cache file %s"%self.sub_devs_name())
             raise ex.excError
-        return dl
 
-
-    def _disklist(self):
+    def _sub_devs(self):
         # return cache if initialized
-        if len(self.disks) > 0 :
-            return self.disks
+        if len(self.sub_devs_cache) > 0 :
+            return self.sub_devs_cache
 
-        disks = set([])
         if not os.path.exists("/etc/fdmns/"+self.name):
-            return disks
+            return set()
 
         import glob
         dl = glob.glob("/etc/fdmns/"+self.name+"/*")
         dl = map(lambda x: os.readlink(x), dl)
-        self.disks = set(dl)
+        self.sub_devs_cache = set(dl)
 
-        self.log.debug("found disks %s held by pool %s" % (disks, self.name))
-        return self.disks
+        self.log.debug("found sub devs %s held by fdmn %s" % (dl, self.name))
+        return self.sub_devs_cache
 
 if __name__ == "__main__":
     p=Disk(name="dom1")
-    print p._disklist()
+    print p._sub_devs()

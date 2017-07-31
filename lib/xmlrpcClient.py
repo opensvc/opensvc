@@ -597,8 +597,6 @@ class Collector(object):
             m = __import__("rcDevTree"+rcEnv.sysname)
         except ImportError:
             return
-        tree = m.DevTree()
-        tree.load(di=disks)
         vars = ['disk_id',
                 'disk_svcname',
                 'disk_size',
@@ -635,13 +633,13 @@ class Collector(object):
                     served_disks += map(lambda x: (x[0], r.vm_hostname+'.'+x[1], cluster), r.devmap())
 
                 try:
-                    devpaths = r.devlist()
+                    devpaths = r.sub_devs()
                 except Exception as e:
                     print(e)
                     devpaths = []
 
                 for devpath in devpaths:
-                    for d, used, region in tree.get_top_devs_usage_for_devpath(devpath):
+                    for d, used, region in node.devtree.get_top_devs_usage_for_devpath(devpath):
                         disk_id = disks.disk_id(d)
                         if disk_id is None or disk_id == "":
                             """ no point pushing to db an empty entry
@@ -685,7 +683,7 @@ class Collector(object):
         region = 0
 
         try:
-            devpaths = node.devlist(tree)
+            devpaths = node.devlist()
         except Exception as e:
             print(e)
             devpaths = []

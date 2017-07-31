@@ -1,6 +1,6 @@
 from rcGlobalEnv import rcEnv
 import resDisk
-from rcUtilities import qcall, which, lazy
+from rcUtilities import qcall, which, lazy, fcache
 import os
 import rcExceptions as ex
 import glob
@@ -30,19 +30,19 @@ class Disk(resDisk.Disk):
         return self.fmt_info(data)
 
     @lazy
-    def disklist_name(self):
-        return os.path.join(rcEnv.paths.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.disklist')
+    def sub_devs_name(self):
+        return os.path.join(rcEnv.paths.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.sub_devs')
 
     def files_to_sync(self):
-        return [self.disklist_name]
+        return [self.sub_devs_name]
 
     def presync(self):
         """ this one is exported as a service command line arg
         """
         if not self.has_it():
             return
-        dl = self._disklist()
-        with open(self.disklist_name, 'w') as f:
+        dl = self._sub_devs()
+        with open(self.sub_devs_name, 'w') as f:
             f.write(json.dumps(list(dl)))
 
     def has_it(self):
@@ -95,25 +95,25 @@ class Disk(resDisk.Disk):
         (ret, out, err) = self.vcall(cmd)
         return ret
 
-    def disklist(self):
-        if not os.path.exists(self.disklist_name):
+    def sub_devs(self):
+        if not os.path.exists(self.sub_devs_name):
             if self.is_up():
-                self.log.debug("no disklist cache file and resource up ... refresh disklist cache")
+                self.log.debug("no sub devs cache file and resource up ... refresh sub devs cache")
                 self.presync()
             else:
-                self.log.debug("no disklist cache file and service not up ... unable to evaluate disklist")
+                self.log.debug("no sub devs cache file and service not up ... unable to evaluate sub devs")
                 return set([])
-        with open(self.disklist_name, 'r') as f:
+        with open(self.sub_devs_name, 'r') as f:
             buff = f.read()
         try:
             dl = set(json.loads(buff))
         except:
-            self.log.error("corrupted disklist cache file %s"%self.disklist_name)
+            self.log.error("corrupted sub devs cache file %s"%self.sub_devs_name)
             raise ex.excError
-        dl = self.remap_cached_disklist_controller(dl)
+        dl = self.remap_cached_sub_devs_controller(dl)
         return dl
 
-    def remap_cached_disklist_controller(self, dl):
+    def remap_cached_sub_devs_controller(self, dl):
         if rcEnv.sysname != "SunOS":
             return dl
         mapping = self.get_wwn_map()
@@ -139,7 +139,8 @@ class Disk(resDisk.Disk):
                     wwid = mapping[wwid]
                     l = glob.glob("/dev/rdsk/*"+wwid+d0+"s2")
             if len(l) != 1:
-                self.log.warning("discard disk %s from disklist cache: not found" % wwid)
+                self.log.warning("discard disk %s from sub devs cache: "
+                                 "not found", wwid)
                 continue
             self.log.debug("remapped device %s to %s" % (d, l[0]))
             vdl.append(l[0])
@@ -147,7 +148,8 @@ class Disk(resDisk.Disk):
 
     def get_wwn_map(self):
         mapping = {}
-        wwn_maps = glob.glob(os.path.join(rcEnv.paths.pathvar, self.svc.svcname, "wwn_map.*"))
+        wwn_maps = glob.glob(os.path.join(rcEnv.paths.pathvar,
+                                          self.svc.svcname, "wwn_map.*"))
         for fpath in wwn_maps:
             try:
                 with open(fpath, "r") as filep:
@@ -160,20 +162,13 @@ class Disk(resDisk.Disk):
                     mapping[r2] = r1
         return mapping
 
-    def _disklist(self):
-        """disklist() search zpool vdevs from
-        output of : zpool status poolname if status cmd == 0
-        else
-        output of : zpool import output if status cmd == 0
-
-        disklist(self) update self.disks[]
+    @fcache
+    def _sub_devs(self):
         """
-
-        # return cache if initialized
-        if len(self.disks) > 0 :
-            return self.disks
-
-        disks = set([])
+        Search zpool vdevs from the output of "zpool status poolname" if
+        imported else from the output of "zpool import".
+        """
+        devs = set([])
         cmd = [ 'zpool', 'status', self.name ]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
@@ -194,10 +189,9 @@ class Disk(resDisk.Disk):
                         continue
                     if not disk.startswith("/dev/rdsk/"):
                         disk = "/dev/rdsk/" + disk
-                disks.add(disk)
+                devs.add(disk)
 
-        self.log.debug("found disks %s held by pool %s" % (disks, self.name))
-        for d in disks:
+        for d in devs:
             if "emcpower" in d:
                 regex = re.compile('[a-g]$', re.UNICODE)
                 d = regex.sub('c', d)
@@ -206,9 +200,9 @@ class Disk(resDisk.Disk):
             else:
                 regex = re.compile('s[0-9]*$', re.UNICODE)
                 d = regex.sub('s2', d)
-            self.disks.add(d)
+            devs.add(d)
 
-        return self.disks
+        return devs
 
     def unprovision(self):
         m = __import__("provDiskZpool")

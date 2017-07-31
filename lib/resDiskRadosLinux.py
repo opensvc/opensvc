@@ -157,14 +157,14 @@ class Disk(resDisk.Disk):
             self.do_stop_one(image)
         self.showmapped(refresh=True)
 
-    def disklist(self):
+    def exposed_disks(self):
         l = set([])
         for image in self.images:
             s = ".".join(("rbd", image.replace("/", ".")))
             l.add(s)
         return l
 
-    def devlist(self):
+    def exposed_devs(self):
         l = set([])
         for image in self.images:
             s = self.devname(image)

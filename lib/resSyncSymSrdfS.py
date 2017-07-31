@@ -557,7 +557,6 @@ class syncSymSrdfS(resSync.Sync):
         self.rdfg = rdfg
         self.symdevs = symdevs
         self.precopy_timeout = precopy_timeout
-        self.disks = set([])
         self.symdev = {}
         self.pdevs = {}
         self.svcstatus = {}

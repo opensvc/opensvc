@@ -7,9 +7,9 @@ import rcStatus
 import resDiskRaw
 
 class Disk(resDiskRaw.Disk):
-    def disklist(self):
-        devs = self.devlist()
-        l = set([])
+    def sub_disks(self):
+        devs = self.sub_devs()
+        l = set()
         for dev in devs:
             if re.match("^/dev/rdsk/c[0-9]*", dev) is None:
                 continue
@@ -25,9 +25,9 @@ class Disk(resDiskRaw.Disk):
             l.add(dev)
         return l
 
-    def devlist(self):
+    def sub_devs(self):
         self.validate_devs()
-        l = set([])
+        l = set()
         for dev in self.devs:
             if not os.path.exists(dev):
                 continue

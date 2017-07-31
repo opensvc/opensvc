@@ -5,6 +5,7 @@ import re
 import rcExceptions as ex
 from rcGlobalEnv import *
 from rcUtilities import justcall, cache, lazy, unset_lazy
+from rcUtilitiesLinux import devs_to_disks
 
 class Disk(resDiskRaw.Disk):
     def __init__(self,
@@ -245,12 +246,11 @@ class Disk(resDiskRaw.Disk):
                 dev_t = f.read().strip()
                 self.sys_devs[dev_t] = '/dev/'+dev
 
-    def disklist(self):
-        sys_devs = self.devlist()
-        from rcUtilitiesLinux import devs_to_disks
+    def sub_disks(self):
+        sys_devs = self.sub_devs()
         return devs_to_disks(self, sys_devs)
 
-    def devlist(self):
+    def sub_devs(self):
         """ Admins can set arbitrary named devices, for example /dev/oracle/DGREDO_MYSID.
             Resolve those names into well known systems device names, so that they can be
             found in the DevTree

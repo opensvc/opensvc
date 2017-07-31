@@ -646,25 +646,69 @@ class Resource(object):
             time.sleep(delay)
         raise ex.excError(errmsg)
 
-    def devlist(self):
+    def base_devs(self):
+        """
+        List devices the resource holds at the base of the dev tree.
+        """
+        devps = self.sub_devs() | self.exposed_devs()
+        devs = self.svc.node.devtree.get_devs_by_devpaths(devps)
+        base_devs = set()
+        for dev in devs:
+            top_devs = dev.get_top_devs()
+            for dev in top_devs:
+                base_devs.add(os.path.realpath(dev.devpath[0]))
+        return base_devs
+
+    def sub_devs(self):
         """
         List devices the resource holds.
         """
-        return self.disklist()
+        return set()
 
-    @staticmethod
-    def default_disklist():
+    def exposed_devs(self):
         """
-        If not superceded, this method return an empty disk set.
+        List devices the resource exposes.
         """
         return set()
 
-    def disklist(self):
+    def base_disks(self):
+        """
+        List disks the resource holds at the base of the dev tree. Some
+        resource have none, and can leave this function as is.
+        """
+        devs = self.base_devs()
+        try:
+            u = __import__('rcUtilities'+rcEnv.sysname)
+            disks = u.devs_to_disks(self, devs)
+        except:
+            disks = devs
+        return disks
+
+    def sub_disks(self):
         """
         List disks the resource holds. Some resource have none, and can leave
         this function as is.
         """
-        return self.default_disklist()
+        devs = self.sub_devs()
+        try:
+            u = __import__('rcUtilities'+rcEnv.sysname)
+            disks = u.devs_to_disks(self, devs)
+        except:
+            disks = devs
+        return disks
+
+    def exposed_disks(self):
+        """
+        List disks the resource exposes. Some resource have none, and can leave
+        this function as is.
+        """
+        devs = self.exposed_devs()
+        try:
+            u = __import__('rcUtilities'+rcEnv.sysname)
+            disks = u.devs_to_disks(self, devs)
+        except:
+            disks = devs
+        return disks
 
     def presync(self):
         """

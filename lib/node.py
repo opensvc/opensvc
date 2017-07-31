@@ -1835,20 +1835,22 @@ class Node(Crypt):
         self.close()
         sys.exit(ret)
 
-    @staticmethod
-    def devlist(tree=None):
+    @lazy
+    def devtree(self):
+        try:
+            mod = __import__("rcDevTree"+rcEnv.sysname)
+        except ImportError:
+            return
+        tree = mod.DevTree()
+        tree.load()
+        return tree
+
+    def devlist(self):
         """
         Return the node's top-level device paths
         """
-        if tree is None:
-            try:
-                mod = __import__("rcDevTree"+rcEnv.sysname)
-            except ImportError:
-                return
-            tree = mod.DevTree()
-            tree.load()
         devpaths = []
-        for dev in tree.get_top_devs():
+        for dev in self.devtree.get_top_devs():
             if len(dev.devpath) > 0:
                 devpaths.append(dev.devpath[0])
         return devpaths

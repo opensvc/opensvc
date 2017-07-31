@@ -33,10 +33,10 @@ class Disk(resDisk.Disk):
         return [self.mapfile_name(), self.mkfsfile_name()]
 
     def mapfile_name(self):
-        return os.path.join(rcEnv.paths.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.map')
+        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, self.rid + '.map')
 
     def mkfsfile_name(self):
-        return os.path.join(rcEnv.paths.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.mksf')
+        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, self.rid + '.mksf')
 
     def has_it(self):
         """ returns True if the volume is present
@@ -69,9 +69,8 @@ class Disk(resDisk.Disk):
         if len(buff) == 0:
             return
         mksf = {}
-        if len(self.disks) == 0:
-            self.disks = self.disklist()
-        dsf_names = map(self.dsf_name, self.disks)
+        devs = self.sub_devs()
+        dsf_names = map(self.dsf_name, devs)
         with open(self.mkfsfile_name(), 'w') as f:
             for line in buff.split('\n'):
                 if len(line) == 0:
@@ -285,32 +284,32 @@ class Disk(resDisk.Disk):
         self.can_rollback = True
         self.do_start()
 
-    def disklist(self):
+    def sub_devs(self):
         need_export = False
         if not self.is_active() and not self.is_imported():
             self.do_import()
             need_export = True
 
-        self.disks = set([])
+        self.sub_devs_cache = set()
         if os.path.exists('/etc/lvmtab'):
-            self.disks |= self._disklist('/etc/lvmtab')
+            self.sub_devs_cache |= self._sub_devs('/etc/lvmtab')
         if os.path.exists('/etc/lvmtab_p'):
-            self.disks |= self._disklist('/etc/lvmtab_p')
+            self.sub_devs_cache |= self._sub_devs('/etc/lvmtab_p')
 
         if need_export:
             self.do_export()
 
-        return self.disks
+        return self.sub_devs_cache
 
-    def _disklist(self, tabp):
+    def _sub_devs(self, tabp):
         cmd = ['strings', tabp]
-        (ret, out, err) = self.call(cmd)
+        ret, out, err = self.call(cmd)
         if ret != 0:
             raise ex.excError
 
         tab = out.split('\n')
         insection = False
-        disks = set([])
+        devs = set([])
         for e in tab:
             """ move to the first disk of the vg
             """
@@ -323,9 +322,9 @@ class Disk(resDisk.Disk):
                 continue
             if not e.startswith('/dev/disk') and not e.startswith('/dev/dsk'):
                 break
-            disks |= set([e])
+            devs |= set([e])
 
-        return disks
+        return devs
 
     def lock(self, timeout=30, delay=1):
         import lock

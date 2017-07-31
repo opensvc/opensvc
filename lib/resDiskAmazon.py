@@ -226,14 +226,14 @@ class Disk(resDisk.Disk, Amazon):
             self.do_stop_one(volume)
         self.get_mapped_bdevs(refresh=True)
 
-    def devlist(self):
+    def exposed_devs(self):
         devs = self.get_mapped_devs(volumes=self.volumes)
         if len(devs) == 0:
             return set(devs)
         return set([ self.mangle_devpath(r) for r in devs ])
 
-    def disklist(self):
-        disks = set([ r.rstrip("1234567890") for r in self.devlist() ])
+    def exposed_disks(self):
+        disks = set([ r.rstrip("1234567890") for r in self.sub_devs() ])
         return disks
 
     def provision(self):

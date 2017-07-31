@@ -159,7 +159,7 @@ class Mount(Res.Resource):
         else:
             return self.status_stdby(rcStatus.DOWN)
 
-    def devlist(self):
+    def sub_devs(self):
         pseudofs = [
           'lofs',
           'none',

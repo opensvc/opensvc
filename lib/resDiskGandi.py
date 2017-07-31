@@ -219,5 +219,3 @@ class Disk(resDisk.Disk):
     def shutdown(self):
         pass
 
-    def disklist(self):
-        return []

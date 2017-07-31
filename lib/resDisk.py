@@ -15,14 +15,9 @@ class Disk(Res.Resource):
     def __init__(self, rid=None, name=None, **kwargs):
         Res.Resource.__init__(self, rid, **kwargs)
         self.name = name
-        self.disks = set()
-        self.devs = set()
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
-
-    def disklist(self):
-        return self.disks
 
     def has_it(self): return False
     def is_up(self): return False

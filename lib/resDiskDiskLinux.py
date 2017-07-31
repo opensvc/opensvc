@@ -22,7 +22,7 @@ class Disk(resDiskDisk.Disk):
             return rcStatus.DOWN
         return rcStatus.NA
 
-    def devlist(self):
+    def exposed_devs(self):
         try:
             dev = os.path.realpath(self.devpath)
             return set([dev])

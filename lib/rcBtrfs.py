@@ -19,19 +19,20 @@ class Btrfs(object):
     #snapvol = ".osvcsnap"
     snapvol = ""
 
-    def __init__(self, path=None, label=None, node=None, log=None):
+    def __init__(self, path=None, label=None, node=None, resource=None):
         self.path = path
         self.label = label
         self.node = node
+        self.resource = resource
 
-        if log is None:
+        if self.resource is None:
             if Btrfs.log is None:
                 Btrfs.log = logging.getLogger("BTRFS")
                 Btrfs.log.addHandler(logging.StreamHandler(sys.stdout))
                 Btrfs.log.setLevel(logging.INFO)
             self.log = Btrfs.log
         else:
-            self.log = log
+            self.log = self.resource.log
 
         if path is not None:
             if not self.dir_exists(path):
@@ -51,7 +52,8 @@ class Btrfs(object):
         if hasattr(self, "dev"):
             return
         if self.node is None:
-            self.dev = label_to_dev("LABEL="+self.label)
+            self.dev = label_to_dev("LABEL="+self.label,
+                                    tree=self.resource.svc.node.devtree)
         else:
             return
         if self.dev is None:

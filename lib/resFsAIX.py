@@ -103,7 +103,7 @@ class Mount(Res.Mount):
         mps = set([])
         return mps
 
-    def disklist(self):
+    def sub_devs(self):
         dev = self.realdev()
         if dev is None:
             return set([])

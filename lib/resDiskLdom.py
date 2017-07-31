@@ -34,8 +34,12 @@ class Disk(m.Disk):
     def do_stop(self):
         pass
 
-    def disklist(self):
-        """ VCC|name=vccname|...
+    def sub_devs(self):
+        return self.exposed_devs()
+
+    def exposed_devs(self):
+        """
+            VCC|name=vccname|...
             VDS|name=vdsname|...
             |vol=volname|..|dev=/dev/...|....
             |vol=volname1|..|dev=/dev/...|....
@@ -47,8 +51,9 @@ class Disk(m.Disk):
             DOMAIN|..
             VDISK|name=...|vol=volname@vds|...
             VDISK|name=...|vol=volname2@vds2|...
-            """
+        """
         vdevname2dev = {}
+        devs = set()
 
         cmd = [ '/usr/sbin/ldm', 'list-services' , '-p' ]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
@@ -81,7 +86,8 @@ class Disk(m.Disk):
             else:
                 vds = ''
 
-        cmd = ['/usr/sbin/ldm', 'list', '-o', 'disk', '-p', self.svc.resources_by_id[self.container_id].name]
+        cmd = ['/usr/sbin/ldm', 'list', '-o', 'disk', '-p',
+               self.svc.resources_by_id[self.container_id].name]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = p.communicate()
         if p.returncode != 0:
@@ -94,5 +100,5 @@ class Disk(m.Disk):
                     if name_value[0] == 'vol' and len(name_value) == 2 :
                         vol = name_value[1]
                         if vol in vdevname2dev:
-                            self.disks |= set([ vdevname2dev[vol] ])
-        return self.disks
+                            devs |= set([ vdevname2dev[vol] ])
+        return devs

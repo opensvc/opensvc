@@ -70,7 +70,7 @@ class check(checks.check):
 
     def find_svc(self, dev):
         for svc in self.svcs:
-            if dev in svc.disklist():
+            if dev in svc.sub_devs():
                 return svc.svcname
         return ''
 

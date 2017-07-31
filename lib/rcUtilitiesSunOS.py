@@ -50,3 +50,6 @@ def get_solaris_version():
             osver = lines[0]
 
     return float(osver)
+
+def devs_to_disks(self, devs=set()):
+    return devs

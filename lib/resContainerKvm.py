@@ -148,27 +148,10 @@ class Kvm(resContainer.Container):
         prov = m.ProvisioningKvm(self)
         prov.provisioner()
 
-    def devlist(self):
-        if hasattr(self, 'devs') and self.devs != set():
-            return self.devs
-
+    def sub_devs(self):
         devmapping = self.devmap()
-        self.devs = set(map(lambda x: x[0], devmapping))
-        return self.devs
-
-    def disklist(self):
-        if hasattr(self, 'disks'):
-            return self.disks
-        if not hasattr(self, 'devs'):
-            self.devlist()
-        devps = self.devs
-        try:
-            u = __import__('rcUtilities'+rcEnv.sysname)
-            self.disks = u.devs_to_disks(self, devps)
-        except:
-            self.disks = devps
-
-        return self.disks
+        devs = set(map(lambda x: x[0], devmapping))
+        return devs
 
     def devmap(self):
         if hasattr(self, "devmapping"):

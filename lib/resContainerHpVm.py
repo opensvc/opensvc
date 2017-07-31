@@ -118,11 +118,11 @@ class HpVm(resContainer.Container):
         if ret != 0:
             raise ex.excError
 
-    def disklist(self):
-        return self.vg.disklist()
+    def sub_disks(self):
+        return self.vg.sub_disks()
 
-    def devlist(self):
-        return self.vg.devlist()
+    def sub_devs(self):
+        return self.vg.sub_devs()
 
     def presync(self):
         return self.vg.presync()

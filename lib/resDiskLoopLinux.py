@@ -62,7 +62,7 @@ class Disk(Res.Disk):
     def __init__(self, rid, loopFile, **kwargs):
         Res.Disk.__init__(self, rid, loopFile, **kwargs)
 
-    def devlist(self):
+    def exposed_devs(self):
         self.loop = file_to_loop(self.loopFile)
         return set(self.loop)
 

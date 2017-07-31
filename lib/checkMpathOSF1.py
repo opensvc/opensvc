@@ -11,7 +11,7 @@ class check(checks.check):
         for svc in self.svcs:
             if svc not in self.svcdevs:
                 try:
-                    devs = svc.disklist()
+                    devs = svc.sub_devs()
                 except Exception as e:
                     devs = []
                 self.svcdevs[svc] = devs

@@ -417,8 +417,4 @@ if __name__ == "__main__":
             }
         ]
     }
-    #print(forest(TESTDATA, columns=3))
-    import json
-    with open("/tmp/foo", "r") as f:
-        TESTDATA = json.load(f)
-    print(forest(TESTDATA, columns=1))
+    print(forest(TESTDATA, columns=3))

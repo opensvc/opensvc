@@ -65,7 +65,7 @@ class check(checks.check):
                         devs.append(d)
         for d in devs:
             for svc in self.svcs:
-                if '/dev/rdsk/'+d in svc.disklist():
+                if '/dev/rdsk/'+d in svc.sub_devs():
                     return svc.svcname
         return ''
 

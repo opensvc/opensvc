@@ -18,14 +18,13 @@ class Disk(Res.Resource):
                               **kwargs)
         self.label = "vdisk "+name
         self.name = name
-        self.disks = set()
         self.devpath = devpath
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
-    def disklist(self):
-        return self.disks
+    def sub_devs(self):
+        return self.devpath.keys()
 
     def remap(self):
         path = self.devpath[rcEnv.nodename]

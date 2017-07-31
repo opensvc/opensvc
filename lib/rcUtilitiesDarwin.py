@@ -14,3 +14,5 @@ def check_ping(addr, timeout=5, count=1):
         return True
     return False
 
+def devs_to_disks(self, devs=set()):
+    return devs

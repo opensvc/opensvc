@@ -30,7 +30,7 @@ class ProvisioningDisk(Provisioning):
             raise ex.excError("the '%s.dev' keyword is mandatory" % self.r.rid)
 
         if dev.startswith("LABEL=") or dev.startswith("UUID="):
-            _dev = label_to_dev(dev)
+            _dev = label_to_dev(dev, tree=self.r.svc.node.devtree)
             if _dev is None:
                 self.r.log.info("unable to find device identified by %s", dev)
                 return

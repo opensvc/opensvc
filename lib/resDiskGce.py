@@ -168,11 +168,11 @@ class Disk(resDisk.Disk, rcGce.Gce):
         index = self.names.index(name)
         return ".".join([self.svc.svcname, self.rid.replace("#", "."), str(index)])
 
-    def devlist(self):
+    def exposed_devs(self):
         attached = self.get_attached_disks()
         return set(["/dev/disk/by-id/google-"+d["deviceName"] for d in attached if d["name"] in self.names])
 
-    def disklist(self):
+    def exposed_disks(self):
         attached = self.get_attached_disks()
         return set([d["deviceName"] for d in attached if d["name"] in self.names])
 
