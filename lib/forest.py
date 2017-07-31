@@ -62,6 +62,8 @@ def forest(data, columns=1, separator="  "):
             """
             Recursion function.
             """
+            if "data" in data and isinstance(data["data"], dict):
+                data["data"] = [data["data"]]
             for idx, col in enumerate(data.get("data", [])):
                 if isinstance(col, dict):
                     col = [col]
@@ -415,4 +417,8 @@ if __name__ == "__main__":
             }
         ]
     }
-    print(forest(TESTDATA, columns=3))
+    #print(forest(TESTDATA, columns=3))
+    import json
+    with open("/tmp/foo", "r") as f:
+        TESTDATA = json.load(f)
+    print(forest(TESTDATA, columns=1))
