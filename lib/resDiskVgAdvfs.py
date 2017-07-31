@@ -70,8 +70,9 @@ class Disk(resDisk.Disk):
             else:
                 self.log.debug("no sub_devs cache file and service not up ... unable to evaluate sub_devs")
                 return set([])
-        with open(self.sub_devs_name(), 'r') as f:
-            return set(json.load(f))
+        try:
+            with open(self.sub_devs_name(), 'r') as f:
+                return set(json.load(f))
         except:
             self.log.error("corrupted sub_devs cache file %s"%self.sub_devs_name())
             raise ex.excError
