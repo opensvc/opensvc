@@ -191,6 +191,7 @@ class Disk(resDisk.Disk):
                         disk = "/dev/rdsk/" + disk
                 devs.add(disk)
 
+        vdevs = set()
         for d in devs:
             if "emcpower" in d:
                 regex = re.compile('[a-g]$', re.UNICODE)
@@ -200,9 +201,9 @@ class Disk(resDisk.Disk):
             else:
                 regex = re.compile('s[0-9]*$', re.UNICODE)
                 d = regex.sub('s2', d)
-            devs.add(d)
+            vdevs.add(d)
 
-        return devs
+        return vdevs
 
     def unprovision(self):
         m = __import__("provDiskZpool")
