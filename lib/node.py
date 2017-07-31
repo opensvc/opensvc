@@ -2354,6 +2354,9 @@ class Node(Crypt):
                     else:
                         if ret is None:
                             ret = 0
+                        elif isinstance(ret, dict) and "error" in ret:
+                            print(ret["error"], file=sys.stderr)
+                            ret = 1
                         err += ret
                 except ex.excError as exc:
                     if not need_aggregate:
