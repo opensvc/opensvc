@@ -15,11 +15,19 @@ NEXT_NODE = "|- "
 CONT_NODE = "|  "
 CONT_LAST_NODE = "   "
 
-def forest(data, columns=1, separator="  "):
+def forest(data, columns=1, separator="  ", widths=None):
     """
     Print a nested dict structure as a tree.
     Each node is considered tabular, with cells content aligned
     and wrapped.
+
+    The widths parameter can used to set per-column min/max or exact widths:
+
+    widths = [
+        (0, 10),   # col1: min 0, max 10 chars
+        None,      # col2: no constraints, auto detect
+        10         # col3: exactly 10 chars
+    ]
 
     Example:
 
@@ -53,7 +61,7 @@ def forest(data, columns=1, separator="  "):
     `- node2 foo
 
     """
-    def get_pads(data, columns):
+    def get_pads(data, columns, widths=None):
         """
         Analyse data length in data columns and return a list of columns length,
         with no regards to terminal width constraint.
@@ -65,6 +73,13 @@ def forest(data, columns=1, separator="  "):
             if "data" in data and isinstance(data["data"], dict):
                 data["data"] = [data["data"]]
             for idx, col in enumerate(data.get("data", [])):
+                try:
+                    _width = widths[idx]
+                except IndexError:
+                    _width = None
+                if isinstance(_width, int):
+                    pads[idx] = _width
+                    continue
                 if isinstance(col, dict):
                     col = [col]
                 for fragment in col:
@@ -75,12 +90,20 @@ def forest(data, columns=1, separator="  "):
                         width = len(text)
                     if width > pads[idx]:
                         pads[idx] = width
+                        if isinstance(_width, (list, tuple)):
+                            _min, _max = _width
+                            if _min is not None and pads[idx] < _min:
+                                pads[idx] = _min
+                            if _max is not None and pads[idx] > _max:
+                                pads[idx] = _max
             next_depth = depth + 1
             for child in data.get("children", []):
                 pads, depth, max_depth = rpads(child, pads, next_depth, max_depth)
                 if depth > max_depth:
                     max_depth = depth
             return pads, depth, max_depth
+        if widths is None:
+            widths = [None] * columns
         pads = [0] * columns
         pads, _, max_depth = rpads(data, pads)
         return pads, max_depth
@@ -252,7 +275,7 @@ def forest(data, columns=1, separator="  "):
             _data["children"].append(wrap_data(child, pads))
         return _data
 
-    pads, depth = get_pads(data, columns)
+    pads, depth = get_pads(data, columns, widths=widths)
     pads = adjust_pads(pads, columns, depth, separator)
     data = wrap_data(data, pads)
     #import json
@@ -332,15 +355,18 @@ class Forest(object):
     col.add_text("err", color.RED)
 
     """
-    def __init__(self):
+    def __init__(self, separator="  ", widths=None):
         self.data = {
             "data": [],
             "children": []
         }
         self.columns = 1
+        self.separator = separator
+        self.widths = widths
 
     def __str__(self):
-        return forest(self.data, self.columns)
+        return forest(self.data, self.columns, separator=self.separator,
+                      widths=self.widths)
 
     def get_node(self, node_id, ref_node=None):
         """
