@@ -80,8 +80,9 @@ class ManPageFormatter(optparse.HelpFormatter):
         commands = "\n".join(l[1:])
 
         # highlight actions
-        commands = re.sub(r'^  (?!.*?  )(.*)$', lambda pat: ".RE\n\\fB"+pat.group(1)+"\\fP\n.RS", commands, flags=re.MULTILINE)
-        commands = re.sub(r'^  ([\w ]+)  ', lambda pat: ".RE\n\\fB"+pat.group(1)+"\\fP  \n..RS", commands, flags=re.MULTILINE)
+        commands = re.sub(r'^  ((svcmgr|nodemgr|svcmon) .*)$',
+                          lambda pat: ".RE\n\\fB"+pat.group(1)+"\\fP\n.RS",
+                          commands, flags=re.MULTILINE)
 
         # highlight sections
         commands = re.sub(r'^(\w.+)\n(-+)', lambda pat: "\\fR"+pat.group(1).upper()+"\\fP", commands, flags=re.MULTILINE)

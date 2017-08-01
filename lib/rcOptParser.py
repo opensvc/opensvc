@@ -11,10 +11,36 @@ from __future__ import unicode_literals
 import os
 import sys
 import optparse
-from textwrap import TextWrapper
+import textwrap
 import rcColor
 from rcUtilities import term_width, is_string
 import rcExceptions as ex
+
+
+class OsvcHelpFormatter(optparse.TitledHelpFormatter):
+    def format_option(self, option):
+        result = []
+        opts = self.option_strings[option]
+        opt_width = self.help_position - self.current_indent - 2
+        if len(opts) > opt_width:
+            opts = "%*s%s\n" % (self.current_indent, "", opts)
+            indent_first = self.help_position
+        else:                       # start help on same line as opts
+            opts = "%*s%-*s  " % (self.current_indent, "", opt_width, opts)
+            indent_first = 0
+        result.append(opts)
+        if option.help:
+            help_text = self.expand_default(option)
+            help_lines = []
+            for block in help_text.splitlines():
+                help_lines += textwrap.wrap(block, self.help_width)
+            result.append("%*s%s\n" % (indent_first, "", help_lines[0]))
+            result.extend(["%*s%s\n" % (self.help_position, "", line)
+                           for line in help_lines[1:]])
+        elif opts[-1] != "\n":
+            result.append("\n")
+        result.append("\n")
+        return "".join(result)
 
 class OptionParserNoHelpOptions(optparse.OptionParser):
     def format_help(self, formatter=None):
@@ -56,9 +82,9 @@ class OptParser(object):
         self.indent = indent
         self.subsequent_indent = " " * self.indent
         if formatter is None:
-            self.formatter = optparse.TitledHelpFormatter(self.indent,
-                                                          self.indent+2,
-                                                          self.width)
+            self.formatter = OsvcHelpFormatter(self.indent,
+                                               self.indent+2,
+                                               self.width)
         else:
             self.formatter = formatter
         self.formatter.format_heading = lambda x: "\n"
@@ -106,7 +132,8 @@ class OptParser(object):
         else:
             desc = "  " + fancya
         desc += '\n\n'
-        wrapper = TextWrapper(subsequent_indent=self.subsequent_indent, width=self.width)
+        wrapper = textwrap.TextWrapper(subsequent_indent=self.subsequent_indent,
+                                       width=self.width)
         text = self.subsequent_indent + self.actions[section][action]["msg"]
         desc += wrapper.fill(text)
         desc += '\n'
