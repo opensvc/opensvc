@@ -69,7 +69,10 @@ def forest(data, columns=1, separator="  "):
                     col = [col]
                 for fragment in col:
                     text = fragment.get("text", "")
-                    width = len(text)
+                    if text is None:
+                        width = 0
+                    else:
+                        width = len(text)
                     if width > pads[idx]:
                         pads[idx] = width
             next_depth = depth + 1
@@ -167,6 +170,8 @@ def forest(data, columns=1, separator="  "):
         """
         Return lines split by the text wrapper wrapping at <width>.
         """
+        if width == 0:
+            return []
         return wrap(
             text,
             initial_indent="",
