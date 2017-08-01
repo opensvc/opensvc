@@ -2233,36 +2233,24 @@ class Svc(Crypt):
         data = self.devs(categories=categories)
         if self.options.format is not None:
             return data
-        from forest import forest
+        from forest import Forest
         from rcColor import color
-        pdata = {
-            "data": {
-                "text": self.svcname,
-                "color": color.BOLD,
-            },
-            "children": [],
-        }
+        tree = Forest()
+        node1 = tree.add_node()
+        node1.add_column(self.svcname, color.BOLD)
         for rid, _data in data.items():
-            _pdata = {
-                "data": {
-                    "text": "%s (%s)" % (rid, _data["type"]),
-                    "color": color.BROWN,
-                },
-                "children": [],
-            }
+            node = node1.add_node()
+            text = "%s (%s)" % (rid, _data["type"])
+            node.add_column(text, color.BROWN)
             for cat, __data in _data.items():
                 if cat == "type":
                     continue
-                __pdata = {
-                    "data": {
-                        "text": cat,
-                        "color": color.LIGHTBLUE,
-                    },
-                    "children": [{"data": {"text": dev}} for dev in __data],
-                }
-                _pdata["children"].append(__pdata)
-            pdata["children"].append(_pdata)
-        print(forest(pdata, columns=1))
+                catnode = node.add_node()
+                catnode.add_column(cat, color.LIGHTBLUE)
+                for dev in __data:
+                    devnode = catnode.add_node()
+                    devnode.add_column(dev)
+        print(tree)
 
     def devs(self, categories=None):
         """
