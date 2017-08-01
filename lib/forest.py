@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 from textwrap import wrap
 
 from rcUtilities import term_width
-from rcColor import color, colorize
+from rcColor import colorize
 
 LAST_NODE = "`- "
 NEXT_NODE = "|- "
@@ -255,166 +255,111 @@ def forest(data, columns=1, separator="  "):
 
     return recurse(data, pads, depth)
 
-if __name__ == "__main__":
-    TESTDATA = {
-        "data": [
-            {
-                "text": "node",
-                "color": color.BOLD
-            }
-        ],
-        "children": [
-            {
-                "data": [
-                    {
-                        "text": "node"
-                    },
-                    {
-                        "text": "up",
-                        "color": color.GREEN,
-                    },
-                ],
-                "children": [
-                    {
-                        "data": [
-                            {
-                                "text": "node"
-                            },
-                            {
-                                "text": "foo",
-                                "color": color.BLUE
-                            },
-                            [
-                                {
-                                    "text": "label",
-                                },
-                                {
-                                    "text": "warning: this is a long warning "
-                                            "message, hopefully overflowing "
-                                            "the horizontal space of the "
-                                            "terminal",
-                                    "color": color.BROWN
-                                },
-                                {
-                                    "text": "error: this is a long error "
-                                            "message, hopefully overflowing "
-                                            "the horizontal space of the terminal",
-                                    "color": color.RED
-                                },
-                            ],
-                        ],
-                        "children": [
-                            {
-                                "data": [
-                                    {
-                                        "text": "node"
-                                    },
-                                    {
-                                        "text": "foo",
-                                        "color": color.BLUE
-                                    },
-                                    {
-                                        "text": "veeeeeee",
-                                    }
-                                ],
-                                "children": [
-                                ]
-                            },
-                            {
-                                "data": [
-                                    {
-                                        "text": "node"
-                                    },
-                                    {
-                                        "text": "foooooooooooooooooooooooooooo"
-                                                "ooooooooooooooooooooooooooooo",
-                                        "color": color.BLUE
-                                    },
-                                    {
-                                        "text": "veeeeeee",
-                                        "color": color.RED
-                                    }
-                                ],
-                                "children": [
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "data": [
-                            {
-                                "text": "node"
-                            },
-                            {
-                                "text": "fooooooooooooooooooooooooooooooooooo"
-                                        "oooooooooooooooooooooo",
-                                "color": color.BLUE
-                            },
-                            {
-                                "text": "veeeeeee",
-                                "color": color.RED
-                            }
-                        ],
-                        "children": [
-                        ]
-                    }
-                ]
-            },
-            {
-                "data": [
-                    {
-                        "text": "node"
-                    },
-                    {
-                        "text": "foo",
-                        "color": color.BLUE
-                    },
-                    {
-                        "text": "veeeeeeeeeeeeeeeeerrrrrrrrrrrrrrrrrrrrrrrrrr"
-                                "rrrrrrrrrrrrrrrrrrrrryyyyyyyyyyyyyyyllllllll"
-                                "lllllllonggggggggggggggggggggggggg textttttt"
-                                "tttttttt with small words too. and phrase.\n"
-                                "and newlines.\nand unicodes bêèh.",
-                        "color": color.RED
-                    }
-                ],
-                "children": [
-                    {
-                        "data": [
-                            {
-                                "text": "node"
-                            },
-                            {
-                                "text": "foo",
-                                "color": color.BLUE
-                            },
-                            {
-                                "text": "veeeeeee",
-                                "color": color.RED
-                            }
-                        ],
-                        "children": [
-                        ]
-                    },
-                    {
-                        "data": [
-                            {
-                                "text": "node"
-                            },
-                            {
-                                "text": "foo",
-                                "color": color.BLUE
-                            },
-                            {
-                                "text": "veeeeeee",
-                                "color": color.RED
-                            }
-                        ],
-                        "children": [
-                        ]
-                    }
-                ]
-            }
-        ]
+class Column(object):
+    """
+    The Forest Node Column object, offering a method to add extra phrases
+    to the column.
+    """
+    def __init__(self, node=None, idx=0):
+        self.idx = idx
+        self.node = node
+
+    def add_text(self, text="", color=None):
+        """
+        Add a phrase to this column.
+        """
+        self.node.node["data"][self.idx].append({
+            "text": text,
+            "color": color
+        })
+
+class Node(object):
+    """
+    The Forest Node object, offering methods to add columns to the node.
+    """
+    def __init__(self, forest, node_id):
+        self.forest = forest
+        self.node_id = node_id
+        self.node = self.forest.get_node(node_id)
+
+    def add_column(self, text="", color=None):
+        """
+        Add and return a column to the node with text and color.
+        Extra phrases can be added through the returned Column object.
+        """
+        if "data" not in self.node:
+            self.node["data"] = []
+        self.node["data"].append([{
+            "text": text,
+            "color": color
+        }])
+        columns = len(self.node["data"])
+        if columns > self.forest.columns:
+            self.forest.columns = columns
+        return Column(node=self, idx=columns-1)
+
+    def add_node(self):
+        """
+        Add and return a new Node, child of this node.
+        """
+        return self.forest.add_node(parent_id=self.node_id)
+
+class Forest(object):
+    """
+    The forest object, offering methods to populate and print the tree.
+
+    Example:
+
+    tree = Forest()
+    overall_node = tree.add_node()
+    overall_node.add_column("overall")
+
+    node = overall_node.add_node()
+    node.add_column("avail")
+    node.add_column()
+    node.add_column("up", color.GREEN)
+    node = node.add_node()
+    node.add_column("res#id")
+    node.add_column("....")
+    node.add_column("up", color.GREEN)
+    col = node.add_column("label")
+    col.add_text("warn", color.BROWN)
+    col.add_text("err", color.RED)
+
+    """
+    data = {
+        "data": [],
+        "children": []
     }
-    print(forest(TESTDATA, columns=3))
+    columns = 1
+
+    def __str__(self):
+        return forest(self.data, self.columns)
+
+    def get_node(self, node_id, ref_node=None):
+        """
+        Return the Node object identified by node_id.
+        """
+        if ref_node is None:
+            ref_node = self.data
+        else:
+            ref_node = ref_node["children"][node_id[0]]
+        if len(node_id) == 1:
+            return ref_node
+        return self.get_node(node_id[1:], ref_node)
+
+    def add_node(self, parent_id=None):
+        """
+        Add a node to the forest under the node identified by parent_id.
+        """
+        if parent_id is None:
+            parent_id = []
+            parent = self.data
+        else:
+            parent = self.get_node(parent_id)
+        if "children" not in parent:
+            parent["children"] = []
+        node_id = parent_id + [len(parent["children"])]
+        parent["children"].append({})
+        return Node(self, node_id)
+
