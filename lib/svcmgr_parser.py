@@ -240,7 +240,31 @@ OPT = Storage({
     "service": Option(
         "-s", "--service", default=None,
         action="store", dest="parm_svcs",
-        help="comma-separated list of service to operate on"),
+        help="A service selector expression [!]<expr>[<sep>[!]<expr>].\n"
+             "Where\n"
+             " '!' is the expression negation operator\n"
+             " <sep> can be\n"
+             "  ',' OR expressions\n"
+             "  '+' AND expressions\n"
+             " <expr> can be\n"
+             "   a glob on service names\n"
+             "   <param><op><value>\n "
+             "   Where\n"
+             "     <param> can be\n"
+             "       <rid>:\n"
+             "       <group>:\n"
+             "       <rid>.<key>\n"
+             "       <group>.<key>\n"
+             "     <op> can be\n"
+             "       <  >  <=  >=  =\n"
+             "       ~ with regexp value\n"
+             "Examples:\n"
+             " '*dns,ha*+app.timeout>1'\n"
+             " 'ip:+task:'\n"
+             " '!*excluded'\n"
+             "Note:\n"
+             " '!' usage mandates single quoting the expression to prevent "
+             "shell history expansion"),
     "show_disabled": Option(
         "--show-disabled", default=None,
         action="store_true", dest="show_disabled",
