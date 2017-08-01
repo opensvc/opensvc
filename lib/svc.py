@@ -1332,57 +1332,24 @@ class Svc(Crypt):
         if self.options.format is not None:
             return data
 
-        from textwrap import wrap
-        from rcUtilities import term_width
-        from rcColor import color, colorize
-        import re
+        from rcColor import color, colorize, STATUS_COLOR
+        from forest import Forest
 
-        width = term_width()
-
-        def print_log(log, subpfx, width):
-            lines = []
-            for msg in log.split("\n"):
-                if len(msg) == 0:
-                    continue
-                if subpfx and not subpfx.startswith(color.END):
-                    subpfx = color.END + subpfx
-                lines += wrap(
-                    msg,
-                    initial_indent=subpfx,
-                    subsequent_indent=subpfx,
-                    width=width
-                )
-            _color = None
-            for line in lines:
-                if " info: " in line:
-                    _color = color.LIGHTBLUE
-                elif " warn: " in line:
-                    _color = color.BROWN
-                elif " error: " in line:
-                    _color = color.RED
-                print(re.sub(r'([\s\|\`\-]+)(.*)', r'\1'+colorize(r'\2', _color), line))
-
-        def print_res(squad, fmt, pfx, subpfx=None):
+        def fmt_flags(resource):
             """
-            Print a resource line, with forest markers, rid, flags, label and
-            resource log.
+            Format resource flags as a vector of character.
+
+            M  Monitored
+            D  Disabled
+            O  Optional
+            E  Encap
             """
-            if subpfx is None:
-                subpfx = pfx
-            rid, status, label, log, monitor, disabled, optional, encap = squad
             flags = ''
-            flags += 'M' if monitor else '.'
-            flags += 'D' if disabled else '.'
-            flags += 'O' if optional else '.'
-            flags += 'E' if encap else '.'
-            print(fmt % (rid, flags, rcStatus.colorize_status(status), label))
-            print_log(log, subpfx, width)
-
-
-        if self.options.show_disabled is not None:
-            discard_disabled = not self.options.show_disabled
-        else:
-            discard_disabled = not self.show_disabled
+            flags += 'M' if resource["monitor"] else '.'
+            flags += 'D' if resource["disable"] else '.'
+            flags += 'O' if resource["optional"] else '.'
+            flags += 'E' if resource["encap"] else '.'
+            return flags
 
         def dispatch_resources():
             """
@@ -1424,28 +1391,25 @@ class Svc(Crypt):
                 accessory_resources,
             )
 
+        # discard disabled resources ?
+        if self.options.show_disabled is not None:
+            discard_disabled = not self.options.show_disabled
+        else:
+            discard_disabled = not self.show_disabled
+
+        # dispath resources in avail/accessory lists
         avail_resources, accessory_resources = dispatch_resources()
         n_accessory_resources = len(accessory_resources)
 
-        print(colorize(self.svcname, color.BOLD))
+        # service-level notices
         notice = []
         if self.frozen():
             notice.append("frozen")
         if not data.get("constraints", True):
             notice.append("constraints violation")
         notice = ", ".join(notice)
-        fmt = "%-20s %4s %-10s %s"
-        color_status = rcStatus.colorize_status(data['overall'])
-        print(fmt % ("overall", '', color_status, notice))
-        if n_accessory_resources == 0:
-            fmt = "'- %-17s %4s %-10s %s"
-            head_c = " "
-        else:
-            fmt = "|- %-17s %4s %-10s %s"
-            head_c = "|"
-        color_status = rcStatus.colorize_status(data['avail'])
-        print(fmt % ("avail", '', color_status, ''))
 
+        # encap resources
         ers = {}
         for container in self.get_resources('container'):
             if container.type == "container.docker":
@@ -1461,95 +1425,63 @@ class Svc(Crypt):
                 print(exc)
                 ers[container.rid] = {}
 
-        lines = []
-        encap_squad = {}
-        for resource in avail_resources:
-            rid = resource["rid"]
-            lines.append((
-                rid,
-                resource["status"],
-                resource["label"],
-                resource["log"],
-                resource["monitor"],
-                resource["disable"],
-                resource["optional"],
-                resource["encap"]
-            ))
-            if rid.startswith("container") and rid in ers:
-                squad = []
-                for _rid, val in ers[rid].items():
-                    squad.append((
-                        _rid,
-                        val['status'],
-                        val['label'],
-                        val['log'],
-                        val['monitor'],
-                        val['disable'],
-                        val['optional'],
-                        val['encap'],
-                    ))
-                encap_squad[rid] = squad
-
-        last = len(lines) - 1
-        if last >= 0:
-            for idx, line in enumerate(lines):
-                if idx == last:
-                    fmt = head_c+"  '- %-14s %4s %-10s %s"
-                    pfx = head_c+"     %-14s %4s %-10s " % ('', '', '')
-                    subpfx = head_c+"        %-11s %4s %-10s " % ('', '', '')
-                    print_res(line, fmt, pfx, subpfx=subpfx)
-                    subresbar = " "
+        def add_res_node(resource, parent, rid=None):
+            if discard_disabled and resource["disable"]:
+                return
+            if rid is None:
+                rid = resource["rid"]
+            node_res = parent.add_node()
+            node_res.add_column(rid)
+            node_res.add_column(fmt_flags(resource))
+            node_res.add_column(resource["status"],
+                                STATUS_COLOR[resource["status"]])
+            col = node_res.add_column(resource["label"])
+            for line in resource["log"].split("\n"):
+                if line.startswith("warn:"):
+                    color = STATUS_COLOR["warn"]
+                elif line.startswith("err:"):
+                    color = STATUS_COLOR["err"]
                 else:
-                    fmt = head_c+"  |- %-14s %4s %-10s %s"
-                    pfx = head_c+"  |  %-14s %4s %-10s " % ('', '', '')
-                    if line[0] in encap_squad and len(encap_squad[line[0]]) > 0:
-                        subpfx = head_c+"  |  |  %-11s %4s %-10s " % ('', '', '')
-                    else:
-                        subpfx = None
-                    print_res(line, fmt, pfx, subpfx=subpfx)
-                    subresbar = "|"
-                if line[0] in encap_squad:
-                    _last = len(encap_squad[line[0]]) - 1
-                    if _last >= 0:
-                        for _idx, _line in enumerate(encap_squad[line[0]]):
-                            if _idx == _last:
-                                fmt = head_c+"  "+subresbar+"  '- %-11s %4s %-10s %s"
-                                pfx = head_c+"  "+subresbar+"     %-11s %4s %-10s " % ('', '', '')
-                                print_res(_line, fmt, pfx)
-                            else:
-                                fmt = head_c+"  "+subresbar+"  |- %-11s %4s %-10s %s"
-                                pfx = head_c+"  "+subresbar+"  |  %-11s %4s %-10s " % ('', '', '')
-                                print_res(_line, fmt, pfx)
+                    color = None
+                col.add_text(line, color)
+
+            if rid not in ers:
+                return
+
+            for _rid, _resource in ers[rid].items():
+                add_res_node(_resource, node_res, _rid)
+
+        print(colorize(self.svcname, color.BOLD))
+
+        tree = Forest(
+            separator=" ",
+            widths=(
+                (14, None),
+                None,
+                10,
+                None,
+            ),
+        )
+        node_overall = tree.add_node()
+        node_overall.add_column("overall")
+        node_overall.add_column()
+        node_overall.add_column(data['overall'], STATUS_COLOR[data['overall']])
+        node_overall.add_column(notice, color.LIGHTBLUE)
+
+        node_avail = node_overall.add_node()
+        node_avail.add_column("avail")
+        node_avail.add_column()
+        node_avail.add_column(data['avail'], STATUS_COLOR[data['avail']])
+        for resource in avail_resources:
+            add_res_node(resource, node_avail)
 
         if n_accessory_resources > 0:
-            fmt = "'- %-17s %4s %-10s %s"
-            print(fmt%("accessory", '', '', ''))
+            node_accessory = node_overall.add_node()
+            node_accessory.add_column("accessory")
+            for resource in accessory_resources:
+                add_res_node(resource, node_accessory)
 
-        lines = []
-        for resource in accessory_resources:
-            rid = resource["rid"]
-            lines.append((
-                rid,
-                resource["status"],
-                resource["label"],
-                resource["log"],
-                resource["monitor"],
-                resource["disable"],
-                resource["optional"],
-                resource["encap"]
-            ))
-
-        last = len(lines) - 1
-        if last >= 0:
-            for idx, line in enumerate(lines):
-                if idx == last:
-                    fmt = "   '- %-14s %4s %-10s %s"
-                    pfx = "      %-14s %4s %-10s " % ('', '', '')
-                    print_res(line, fmt, pfx)
-                else:
-                    fmt = "   |- %-14s %4s %-10s %s"
-                    pfx = "   |  %-14s %4s %-10s " % ('', '', '')
-                    print_res(line, fmt, pfx)
+        print(tree)
 
     def svcmon_push_lists(self):
         """

@@ -55,6 +55,19 @@ class color:
     E_BGODD = '\033[48;2;240;240;205m'
     E_BGCYAN = '\033[48;2;125;205;205m'
 
+STATUS_COLOR = {
+    "up": color.GREEN,
+    "stdby up": color.GREEN,
+    "ok": color.GREEN,
+    "down": color.RED,
+    "stdby down": color.RED,
+    "err": color.RED,
+    "error": color.RED,
+    "n/a": color.LIGHTBLUE,
+    "undef": color.LIGHTBLUE,
+    "warn": color.BROWN,
+}
+
 def ansi_colorize(s, c=None):
     global use_color
     if c is None:
