@@ -332,11 +332,12 @@ class Forest(object):
     col.add_text("err", color.RED)
 
     """
-    data = {
-        "data": [],
-        "children": []
-    }
-    columns = 1
+    def __init__(self):
+        self.data = {
+            "data": [],
+            "children": []
+        }
+        self.columns = 1
 
     def __str__(self):
         return forest(self.data, self.columns)
