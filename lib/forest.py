@@ -139,7 +139,7 @@ def forest(data, columns=1, separator="  "):
                 buff += NEXT_NODE
         else:
             # node continuation due to wrapping
-            for last in lasts:
+            for last in lasts[:-1]:
                 if last:
                     buff += CONT_LAST_NODE
                 else:
