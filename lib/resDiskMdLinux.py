@@ -285,9 +285,8 @@ class Disk(resDisk.Disk):
         prov.provisioner()
 
     def unprovision(self):
-        if self.uuid == "":
-            return
-        self.stop()
-        self.svc._unset(self.rid, "uuid")
-        self.svc._set(self.rid, "uuid", "")
+        m = __import__("provDiskMdLinux")
+        prov = getattr(m, "ProvisioningDisk")(self)
+        prov.unprovisioner()
+
 

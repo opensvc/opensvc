@@ -77,6 +77,12 @@ class ProvisioningDisk(Provisioning):
                 return line.split(" : ")[-1]
         raise ex.excError("unable to determine md uuid")
 
-
-
+    def unprovisioner(self):
+        if self.r.uuid == "":
+            return
+        self.r.stop()
+        for dev in self.r.sub_devs():
+            self.r.vcall([self.r.mdadm, "--brief", "--zero-superblock", dev])
+        self.r.svc._unset(self.r.rid, "uuid")
+        self.r.svc._set(self.r.rid, "uuid", "")
 
