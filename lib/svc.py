@@ -789,6 +789,11 @@ class Svc(Crypt):
         except ex.OptNotFound as exc:
             kwargs['tags'] = resource.tags
 
+        try:
+            kwargs['subset'] = self.conf_get(pr_rid, "subset")
+        except ex.OptNotFound as exc:
+            kwargs['subset'] = resource.subset
+
         kwargs['rid'] = resource.rid
         kwargs['peer_resource'] = resource
 
