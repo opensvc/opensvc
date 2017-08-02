@@ -98,7 +98,7 @@ class ScsiReserv(Res.Resource):
     def get_devs(self):
         if len(self.devs) > 0:
             return
-        self.devs = self.peer_resource.base_devs()
+        self.devs = self.peer_resource.sub_devs()
 
     def ack_all_unit_attention(self):
         self.get_devs()
