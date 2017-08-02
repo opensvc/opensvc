@@ -114,6 +114,17 @@ class rcEnv:
         'TST',
         'UAT',
     ]
+    fs_pooling = [
+        "zfs",
+    ]
+    fs_non_pooling = [
+        "ext2", "ext3", "ext4", "xfs", "btrfs", "vfat",
+        "reiserfs", "jfs", "jfs2", "bfs", "msdos", "ufs",
+        "ufs2", "minix", "xia", "ext", "umsdos", "hpfs",
+        "ntfs", "reiserfs4", "vxfs", "hfs", "hfsplus",
+        "qnx4", "ocfs", "ocfs2", "nilfs", "jffs", "jffs2",
+        "tux3", "f2fs", "logfs", "gfs", "gfs2", "gpfs",
+    ]
     _platform = sys.platform
     sysname, x, x, x, machine, x = platform.uname()
     nodename = socket.gethostname().lower()
