@@ -966,30 +966,37 @@ class Svc(Crypt):
             return
         return self.resources_by_id[rid]
 
-    def get_resources(self, _type=None, strict=False, discard_disabled=True):
+    def get_resources(self, _type=None, discard_disabled=True):
         """
         Return the list of resources matching criteria.
+
+        <_type> can be:
+          None: all resources are returned
         """
         if _type is None:
-            rsets = self.resourcesets
+            return self.resources_by_id.values()
+        if not isinstance(_type, (list, tuple)):
+            _types = [_type]
         else:
-            rsets = self.get_resourcesets(_type, strict=strict)
+            _types = _type
 
         resources = []
-        for rset in rsets:
-            for resource in rset.resources:
-                if not self.encap and 'encap' in resource.tags:
-                    continue
-                if discard_disabled and resource.is_disabled():
-                    continue
-                resources.append(resource)
+        for resource in self.resources_by_id.values():
+            if not self.encap and 'encap' in resource.tags:
+                continue
+            if discard_disabled and resource.is_disabled():
+                continue
+            for t in _types:
+                if "." in t and resource.type == t or \
+                   "." not in t and t == resource.type.split(".")[0]:
+                    resources.append(resource)
         return resources
 
     def get_resourcesets(self, _type, strict=False):
         """
         Return the list of resourceset matching the specified types.
         """
-        if not isinstance(_type, list):
+        if not isinstance(_type, (list, tuple)):
             _types = [_type]
         else:
             _types = _type
