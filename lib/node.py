@@ -1546,6 +1546,8 @@ class Node(Crypt):
             return hostid
         self.log.info("can't find a prkey forced in node.conf. generate one.")
         hostid = "0x"+self.hostid()
+        if not self.config.has_section("node"):
+            self.config.add_section("node")
         self.config.set('node', 'prkey', hostid)
         self.write_config()
         return hostid
