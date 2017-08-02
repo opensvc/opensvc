@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2017\-07\-21
+.TH NODEMGR 1 2017\-08\-02
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -1132,6 +1132,37 @@ specify a data formatter for output of the print* and collector* commands. possi
 show this help message and exit
 
 .RE
+\fBnodemgr print devs\fP
+.RS
+
+print the node devices tree.
+
+.TP
+.B --dev=DEVICES
+a device path to limit or apply the action to
+.TP
+.B --reverse
+reverse the tree
+.TP
+.B --verbose
+add more information to some print commands: +next in 'print schedule'
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+cron mode
+.TP
+.B --debug
+debug mode
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+.TP
+.B -h, --help
+show this help message and exit
+
+.RE
 \fBnodemgr print schedule\fP
 .RS
 
@@ -1624,6 +1655,15 @@ point a node configuration parameter for the 'get' and 'set' actions
 .TP
 .B --value=VALUE
 set a node configuration parameter value for the 'set --param' action
+.TP
+.B --add=ADD
+a list member to add from the value pointed by --param in a set action. If --index is set, add the new element at that position in the list
+.TP
+.B --remove=REMOVE
+a list member to drop from the value pointed by --param in a set action
+.TP
+.B --index=INDEX
+the position in the list pointed by --param where to add the new element on a set action
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize

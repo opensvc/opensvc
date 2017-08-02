@@ -70,6 +70,9 @@ OPT = Storage({
         "--debug", default=False,
         action="store_true", dest="debug",
         help="debug mode"),
+    "devices": Option(
+        "--dev", default=[], action="append", dest="devices",
+        help="a device path to limit or apply the action to"),
     "duration": Option(
         "--duration", default=None,
         action="store", dest="duration", type="int",
@@ -181,6 +184,10 @@ OPT = Storage({
         action="store",
         help="a list member to drop from the value pointed by "
              "--param in a set action"),
+    "reverse": Option(
+        "--reverse", default=False,
+        action="store_true", dest="reverse",
+        help="reverse the tree"),
     "ruleset": Option(
         "--ruleset", default="",
         action="store", dest="ruleset",
@@ -347,6 +354,14 @@ ACTIONS = {
         },
         'rotate_root_pw': {
             'msg': "set a new root password and store it in the collector",
+        },
+        'print_devs': {
+            'msg': 'print the node devices tree.',
+            'options': [
+                OPT.devices,
+                OPT.reverse,
+                OPT.verbose,
+            ],
         },
         'print_schedule': {
             'msg': 'print the node tasks schedule',

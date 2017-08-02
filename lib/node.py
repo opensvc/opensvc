@@ -2791,6 +2791,14 @@ class Node(Crypt):
             config[section] = tmpsection
         return config
 
+    def print_devs(self):
+        if self.options.reverse:
+            self.devtree.print_tree_bottom_up(devices=self.options.devices,
+                                              verbose=self.options.verbose)
+        else:
+            self.devtree.print_tree(devices=self.options.devices,
+                                    verbose=self.options.verbose)
+
     def print_config(self):
         """
         print_config node action entrypoint

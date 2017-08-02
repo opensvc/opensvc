@@ -11,6 +11,10 @@ A logical volume lv0 with segments on pv1 pv2 has two parent
 relations : lv0-pv1 and lv0-pv2
 
 """
+from forest import Forest
+from rcGlobalEnv import rcEnv
+from rcColor import color
+
 try:
     from hashlib import md5
     def hash(s):
@@ -105,26 +109,6 @@ class Dev(object):
         if devpath not in self.devpath:
             self.devpath.append(devpath)
 
-    def print_dev(self, level=0, relation=None):
-        if relation is None:
-            parent_size = self.size
-        else:
-            parent_size = self.get_dev(relation.parent).get_size()
-        if parent_size == 0:
-            pct = 0
-        else:
-            pct = 100*self.size//parent_size
-        s = "%s %s %d %d%%\n" % (self.alias, self.devtype, self.size, pct)
-        for r in self.children:
-            d = self.get_dev(r.child)
-            for i in range(level+1):
-                s += " "
-            if d is None:
-                s += "unknown (dev %s not added)\n"%r.child
-            else:
-                s += d.print_dev(level=level+1, relation=r)
-        return s
-
     def get_child(self, devname):
         for r in self.children:
             if r.parent == devname:
@@ -186,21 +170,67 @@ class Dev(object):
             d += dev.get_top_devs_chain(chain+[parent])
         return d
 
-    def print_dev_bottom_up(self, level=0, chain=[]):
-        if len(chain) == 0:
-            used = self.size
+    def print_dev(self, relation=None, node=None, highlight=[], verbose=False):
+        if relation is None:
+            parent_size = 0
         else:
-            used = chain[-1].get_size(chain)
-        s = ""
-        for i in range(level+1):
-            s += " "
-        s += "%s %s %d %d"%(self.alias, self.devtype, self.size, used)
-        s += " %s"%self.devpath
-        print(s)
+            parent_size = self.get_dev(relation.parent).get_size()
+        if parent_size == 0:
+            pct = "-"
+        else:
+            pct = str(100*self.size//parent_size)+"%"
+
+        node_dev = node.add_node()
+        node_dev.add_column(self.alias, color.BROWN)
+        node_dev.add_column(self.devtype)
+        node_dev.add_column(str(self.size)+"M")
+        node_dev.add_column(pct)
+        if verbose:
+            col = node_dev.add_column()
+            for devpath in self.devpath:
+                if highlight is not None and devpath in highlight:
+                    textcolor = color.LIGHTBLUE
+                else:
+                    textcolor = None
+                col.add_text(devpath, textcolor)
+
+        for r in self.children:
+            d = self.get_dev(r.child)
+            if d is None:
+                node_unk = node_dev.add_node()
+                node_unk.add_column("%s (unknown)" % r.child)
+            else:
+                d.print_dev(relation=r, node=node_dev, highlight=highlight,
+                            verbose=verbose)
+
+    def print_dev_bottom_up(self, level=0, chain=[], node=None, highlight=[],
+                            verbose=False):
+        if len(chain) == 0:
+            child_size = 0
+        else:
+            child_size = self.tree.get_dev(chain[-1].child).size
+        if child_size == 0:
+            pct = "-"
+        else:
+            pct = str(100*child_size//self.size)+"%"
+
+        node_dev = node.add_node()
+        node_dev.add_column(self.alias, color.BROWN)
+        node_dev.add_column(self.devtype)
+        node_dev.add_column(str(self.size)+"M")
+        node_dev.add_column(pct)
+        if verbose:
+            col = node_dev.add_column()
+            for devpath in self.devpath:
+                if highlight is not None and devpath in highlight:
+                    textcolor = color.LIGHTBLUE
+                else:
+                    textcolor = None
+                col.add_text(devpath, textcolor)
         for parent in self.parents:
             dev = self.get_dev(parent.parent)
-            #print(map(lambda x: (x.parent, x.child, x.used, x.get_size(chain+[parent]), x.used), chain+[parent]))
-            dev.print_dev_bottom_up(level+1, chain+[parent])
+            dev.print_dev_bottom_up(level+1, chain+[parent], node_dev,
+                                    verbose=verbose)
 
     def get_parents_bottom_up(self, l=[]):
         for parent in self.parents:
@@ -247,9 +277,39 @@ class DevTree(object):
             s += self.dev[r.child].print_dev()
         return s
 
-    def print_tree_bottom_up(self):
+    def print_tree(self, devices=None, verbose=False):
+        ftree = Forest()
+        node = ftree.add_node()
+        node.add_column(rcEnv.nodename, color.BOLD)
+
+        filtered = devices is not None and len(devices) > 0
+        if filtered:
+            devs = [self.get_dev_by_devpath(devpath) for devpath in devices]
+        else:
+            devs = [self.dev[r.child] for r in self.root]
+        for dev in devs:
+            if dev is None or (not filtered and dev.parents != []):
+                continue
+            dev.print_dev(node=node, highlight=devices, verbose=verbose)
+
+        print(ftree)
+
+    def print_tree_bottom_up(self, devices=None, verbose=False):
+        ftree = Forest()
+        node = ftree.add_node()
+        node.add_column(rcEnv.nodename, color.BOLD)
+
+        if devices is None:
+            devices = set()
+        else:
+            devices = set(devices)
         for dev in self.get_bottom_devs():
-            dev.print_dev_bottom_up()
+            if len(devices) > 0 and len(set(dev.devpath)&devices) == 0:
+                continue
+            dev.print_dev_bottom_up(node=node, highlight=devices,
+                                    verbose=verbose)
+
+        print(ftree)
 
     def has_relations(self, devname):
         l = []
