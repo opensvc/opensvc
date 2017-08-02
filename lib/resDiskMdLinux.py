@@ -285,6 +285,8 @@ class Disk(resDisk.Disk):
         prov.provisioner()
 
     def unprovision(self):
+        if self.uuid == "":
+            return
         self.stop()
         self.svc._unset(self.rid, "uuid")
         self.svc._set(self.rid, "uuid", "")
