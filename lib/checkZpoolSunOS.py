@@ -26,46 +26,9 @@ class check(checks.check):
     chk_type = "zpool"
 
     def find_svc(self, pool):
-        devs = []
-        cmd = ['zpool', 'status', pool]
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            return ''
-        lines = out.split('\n')
-        getdevs = 0
-        for line in lines:
-            if line.startswith('errors:'):
-                getdevs = 0
-                continue
-            if len(line) < 2:
-                continue
-            if 'NAME' in line and 'STATE' in line and 'CKSUM' in line:
-                getdevs = 1
-                continue
-            if pool in line and getdevs == 1:
-                getdevs = 2
-                continue
-            if getdevs == 2 and ( 'mirror' in line or 'raidz' in line) :
-                continue
-            if getdevs == 2:
-                l = line.split()
-                x = l[0]
-                if 'd0' in x and x.startswith(rcEnv.paths.pathvar):
-                    x = l[0].split('/')[-1]
-                if 'd0' in x and x.startswith('c'):
-                    d = x
-                    if re.match("^.*[sp][0-9]*$", d) is not None:
-                        # partition, substitute s2 to given part
-                        regex = re.compile("[sp][0-9]*$", re.UNICODE)
-                        d = regex.sub("s2", d)
-                    else:
-                        # base device, append s2
-                        d += 's2'
-                    if os.path.exists('/dev/rdsk/'+d):
-                        devs.append(d)
-        for d in devs:
-            for svc in self.svcs:
-                if '/dev/rdsk/'+d in svc.sub_devs():
+        for svc in self.svcs:
+            for res in svc.get_resources("disk.zpool"):
+                if res.name == pool:
                     return svc.svcname
         return ''
 
