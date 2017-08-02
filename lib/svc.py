@@ -2215,12 +2215,24 @@ class Svc(Crypt):
 
     def sub_devs(self):
         """
-        Return the list of sub devices of each resource, aggregated as a single         list. Used by the checkers to parent checks to a service.
+        Return the list of sub devices of each resource, aggregated as a single
+        list. Used by the checkers to parent checks to a service.
         """
         data = self.devs(categories=["sub"])
         devs = set()
         for rid, _data in data.items():
             devs |= set(_data.get("sub", []))
+        return devs
+
+    def exposed_devs(self):
+        """
+        Return the list of exposed devices of each resource, aggregated as a
+        single list. Used by the fs unprovisionner.
+        """
+        data = self.devs(categories=["exposed"])
+        devs = set()
+        for rid, _data in data.items():
+            devs |= set(_data.get("exposed", []))
         return devs
 
     def print_config_mtime(self):

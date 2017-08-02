@@ -513,7 +513,7 @@ class Mount(Res.Mount):
         for holder_dev in holder_devs:
             holders_devpaths |= set(holder_dev.devpath)
         holders_devpaths -= set(dev.devpath)
-        holders_handled_by_resources = self.svc.exposed_devs(filtered=False) & holders_devpaths
+        holders_handled_by_resources = self.svc.exposed_devs() & holders_devpaths
         if len(holders_handled_by_resources) > 0:
             raise ex.excError("resource %s has holders handled by other "
                               "resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
