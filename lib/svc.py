@@ -5141,7 +5141,8 @@ class Svc(Crypt):
                 i = ref.index("[")
                 index = ref[i+1:-1]
                 ref = ref[:i]
-                index = int(self.handle_references(index, scope=scope, impersonate=impersonate))
+                index = int(self.handle_references(index, scope=scope,
+                                                   impersonate=impersonate))
             else:
                 index = None
 
@@ -5166,7 +5167,9 @@ class Svc(Crypt):
             else:
                 return_length = False
 
-            val = self._handle_reference(ref, _section, _v, scope=scope, impersonate=impersonate, config=config)
+            val = self._handle_reference(ref, _section, _v, scope=scope,
+                                         impersonate=impersonate,
+                                         config=config)
 
             if val is None:
                 # deferred
@@ -5178,11 +5181,17 @@ class Svc(Crypt):
                 if return_length:
                     return str(len(val))
                 if index is not None:
-                    return val[index]
+                    try:
+                        return val[index]
+                    except IndexError:
+                        if _v in ("exposed_devs", "sub_devs", "base_devs"):
+                            return
+                        raise
 
             return val
 
-    def _handle_reference(self, ref, _section, _v, scope=False, impersonate=None, config=None):
+    def _handle_reference(self, ref, _section, _v, scope=False,
+                          impersonate=None, config=None):
         if config is None:
             config = self.config
         # give os env precedence over the env cf section
@@ -5197,7 +5206,8 @@ class Svc(Crypt):
             try:
                 return self.node.config.get("node", _v)
             except Exception as exc:
-                raise ex.excError("%s: unresolved reference (%s)" % (ref, str(exc)))
+                raise ex.excError("%s: unresolved reference (%s)"
+                                  "" % (ref, str(exc)))
 
         if _section != "DEFAULT" and not config.has_section(_section):
             raise ex.excError("%s: section %s does not exist" % (ref, _section))
@@ -5211,15 +5221,16 @@ class Svc(Crypt):
                 devs = getattr(res, dref)()
                 return list(devs)
             except Exception as exc:
-                print(exc)
                 return
 
         try:
-            return self.conf_get(_section, _v, "string", scope=scope, impersonate=impersonate, config=config)
+            return self.conf_get(_section, _v, "string", scope=scope,
+                                 impersonate=impersonate, config=config)
         except ex.OptNotFound as exc:
             return exc.default
         except ex.RequiredOptNotFound:
-            raise ex.excError("%s: unresolved reference (%s)" % (ref, str(exc)))
+            raise ex.excError("%s: unresolved reference (%s)"
+                              "" % (ref, str(exc)))
 
         raise ex.excError("%s: unknown reference" % ref)
 
@@ -5231,7 +5242,9 @@ class Svc(Crypt):
             if m is None:
                 return s
             ref = m.group(0).strip("{}")
-            val = self.handle_reference(ref, scope=scope, impersonate=impersonate, config=config)
+            val = self.handle_reference(ref, scope=scope,
+                                        impersonate=impersonate,
+                                        config=config)
             if val is None:
                 # deferred
                 return
@@ -5251,14 +5264,20 @@ class Svc(Crypt):
 
     def handle_references(self, s, scope=False, impersonate=None, config=None):
         key = (s, scope, impersonate)
-        if hasattr(self, "ref_cache") and self.ref_cache is not None and key in self.ref_cache:
+        if hasattr(self, "ref_cache") and self.ref_cache is not None \
+           and key in self.ref_cache:
             return self.ref_cache[key]
         try:
-            val = self._handle_references(s, scope=scope, impersonate=impersonate, config=config)
+            val = self._handle_references(s, scope=scope,
+                                          impersonate=impersonate,
+                                          config=config)
             val = self._handle_expressions(val)
-            val = self._handle_references(val, scope=scope, impersonate=impersonate, config=config)
+            val = self._handle_references(val, scope=scope,
+                                          impersonate=impersonate,
+                                          config=config)
         except Exception as e:
-            raise ex.excError("%s: reference evaluation failed: %s" %(s, str(e)))
+            raise ex.excError("%s: reference evaluation failed: %s"
+                              "" % (s, str(e)))
         if hasattr(self, "ref_cache") and self.ref_cache is not None:
             self.ref_cache[key] = val
         return val
@@ -5284,7 +5303,8 @@ class Svc(Crypt):
 
         # 1st try: supported keyword
         try:
-            return self._conf_get(s, o, t=t, scope=scope, impersonate=impersonate,
+            return self._conf_get(s, o, t=t, scope=scope,
+                                  impersonate=impersonate,
                                   use_default=use_default, config=config,
                                   section=section, rtype=rtype)
         except ex.RequiredOptNotFound:
@@ -5367,13 +5387,16 @@ class Svc(Crypt):
                 return self.__conf_get(s, o, **kwargs)
         raise ex.excError("unknown inheritance value: %s" % str(inheritance))
 
-    def __conf_get(self, s, o, t=None, scope=None, impersonate=None, use_default=None, config=None,
-                   default=None, required=None, deprecated=None):
+    def __conf_get(self, s, o, t=None, scope=None, impersonate=None,
+                   use_default=None, config=None, default=None, required=None,
+                   deprecated=None):
         try:
             if not scope:
-                val = self.conf_get_val_unscoped(s, o, use_default=use_default, config=config)
+                val = self.conf_get_val_unscoped(s, o, use_default=use_default,
+                                                 config=config)
             else:
-                val = self.conf_get_val_scoped(s, o, use_default=use_default, config=config,
+                val = self.conf_get_val_scoped(s, o, use_default=use_default,
+                                               config=config,
                                                impersonate=impersonate)
         except ex.OptNotFound as exc:
             if required:
@@ -5383,9 +5406,11 @@ class Svc(Crypt):
                 raise exc
 
         try:
-            val = self.handle_references(val, scope=scope, impersonate=impersonate)
+            val = self.handle_references(val, scope=scope,
+                                         impersonate=impersonate)
         except ex.excError as exc:
-            if o.startswith("pre_") or o.startswith("post_") or o.startswith("blocking_"):
+            if o.startswith("pre_") or o.startswith("post_") or \
+               o.startswith("blocking_"):
                 pass
             else:
                 raise
