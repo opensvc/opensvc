@@ -33,19 +33,19 @@ class Disk(resDisk.Disk):
     def is_shared(self):
         if self.shared is not None:
             return self.shared
-        if len(svc.nodes|svc.drpnodes) < 2:
+        if len(self.svc.nodes|self.svc.drpnodes) < 2:
             self.log.debug("shared param defaults to 'false' due to single "
-                           "node configuration" % s)
+                           "node configuration")
             return False
-        l = [p for p in self.svc.config.options(s) if \
-             p.startswith("uuid@")]
+        l = [option for option in self.svc.config.options(self.rid) if \
+             option.startswith("uuid@")]
         if len(l) > 0:
             self.log.debug("shared param defaults to 'false' due to scoped "
-                           "configuration" % s)
+                           "configuration")
             return False
         else:
             self.log.debug("shared param defaults to 'true' due to unscoped "
-                           "configuration" % s)
+                           "configuration")
             return True
 
     def info(self):
