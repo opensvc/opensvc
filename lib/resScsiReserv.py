@@ -32,6 +32,13 @@ class ScsiReserv(Res.Resource):
                               type="disk.scsireserv",
                               **kwargs)
 
+    def mangle_devs(self, devs):
+        """
+        Can be overidden by child class to apply a mangling the peer
+        resource devices
+        """
+        return devs
+
     def set_label(self):
         self.get_devs()
         if len(self.devs) == 0:
@@ -99,6 +106,7 @@ class ScsiReserv(Res.Resource):
         if len(self.devs) > 0:
             return
         self.devs = self.peer_resource.sub_devs()
+        self.devs = self.mangle_devs(self.devs)
 
     def ack_all_unit_attention(self):
         self.get_devs()

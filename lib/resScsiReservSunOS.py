@@ -1,1 +1,4 @@
-resScsiReservLinux.py
+import resScsiReservSg
+
+class ScsiReserv(resScsiReservSg.ScsiReserv):
+    pass
