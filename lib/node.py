@@ -28,7 +28,6 @@ else:
 import svcBuilder
 import xmlrpcClient
 from rcGlobalEnv import rcEnv, Storage
-import rcCommandWorker
 import rcLogger
 import rcExceptions as ex
 from freezer import Freezer
@@ -279,6 +278,7 @@ class Node(Crypt):
         Lazy initialization of the node asynchronous command execution queue.
         """
         self.log.debug("initiatize node::cmdworker")
+        import rcCommandWorker
         return rcCommandWorker.CommandWorker()
 
     @lazy
