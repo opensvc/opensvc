@@ -162,18 +162,15 @@ def forest(data, columns=1, separator="  ", widths=None):
                 buff += NEXT_NODE
         else:
             # node continuation due to wrapping
-            for last in lasts[:-1]:
+            for last in lasts:
                 if last:
                     buff += CONT_LAST_NODE
                 else:
                     buff += CONT_NODE
-            if lasts[-1]:
-                if n_children:
-                    buff += CONT_NODE
-                else:
-                    buff += CONT_LAST_NODE
-            else:
+            if n_children > 0:
                 buff += CONT_NODE
+            else:
+                buff += CONT_LAST_NODE
         return buff
 
     def format_cell(text, width, textcolor, separator):
