@@ -169,7 +169,10 @@ class Disk(resDisk.Disk):
         imported else from the output of "zpool import".
         """
         devs = set([])
-        cmd = [ 'zpool', 'status', self.name ]
+        cmd = ['zpool', 'status']
+        if rcEnv.sysname == "Linux":
+            cmd += ["-L", "-P"]
+        cmd += [self.name]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
@@ -196,11 +199,12 @@ class Disk(resDisk.Disk):
             if "emcpower" in d:
                 regex = re.compile('[a-g]$', re.UNICODE)
                 d = regex.sub('c', d)
-            elif re.match('^.*s[0-9]*$', d) is None:
-                d += "s2"
-            else:
-                regex = re.compile('s[0-9]*$', re.UNICODE)
-                d = regex.sub('s2', d)
+            elif rcEnv.sysname == "SunOS":
+                if re.match('^.*s[0-9]*$', d) is None:
+                    d += "s2"
+                else:
+                    regex = re.compile('s[0-9]*$', re.UNICODE)
+                    d = regex.sub('s2', d)
             vdevs.add(d)
 
         return vdevs
