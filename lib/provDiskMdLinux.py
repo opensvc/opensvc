@@ -3,7 +3,6 @@ import os
 import rcExceptions as ex
 from rcUtilities import which
 from converters import convert_size
-from subprocess import *
 
 class ProvisioningDisk(Provisioning):
     def __init__(self, r):
@@ -46,7 +45,8 @@ class ProvisioningDisk(Provisioning):
 
         # long md names cause a buffer overflow in mdadm
         name = "/dev/md/"+self.r.svc.svcname.split(".")[0]+"."+self.r.rid.replace("#", ".")
-        cmd = [self.r.mdadm, '--create', name]
+        cmd = [self.r.mdadm, '--create', name, '--force', '--quiet',
+               '--metadata=default']
         cmd += ['-n', str(len(devs)-spares)]
         if level:
             cmd += ["-l", level]
@@ -57,12 +57,8 @@ class ProvisioningDisk(Provisioning):
         if layout:
             cmd += ["-p", layout]
         cmd += devs
-        _cmd = "yes | " + " ".join(cmd)
-        self.r.log.info(_cmd)
-        p1 = Popen(["yes"], stdout=PIPE)
-        p2 = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=p1.stdout)
-        out, err = p2.communicate()
-        if p2.returncode != 0:
+        ret, out, err = self.r.vcall(cmd)
+        if ret != 0:
             raise ex.excError(err)
         if len(out) > 0:
             self.r.log.info(out)
