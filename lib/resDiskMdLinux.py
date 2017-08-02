@@ -284,3 +284,6 @@ class Disk(resDisk.Disk):
         prov = getattr(m, "ProvisioningDisk")(self)
         prov.provisioner()
 
+    def unprovision(self):
+        self.stop()
+
