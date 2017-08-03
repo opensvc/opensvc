@@ -87,6 +87,9 @@ class ProvisioningDisk(Provisioning):
             self.r.log.error("lvcreate command not found")
             raise ex.excError
 
+        if which('wipefs'):
+            self.r.vcall(["wipefs", "-a", dev])
+
         cmd = ["lvremove", "-f", dev]
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
