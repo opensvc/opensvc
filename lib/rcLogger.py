@@ -70,10 +70,11 @@ def set_namelen(svcs=[], force=None):
     for svc in svcs:
         if svc.disabled:
             continue
-        svcname_len = len(svc.svcname)
-        svcsched_len = svcname_len + 10
-        if svcsched_len > maxlen:
-            maxlen = svcsched_len
+        svc_len = len(svc.svcname)
+
+        # init with the "scheduler" length
+        max_res_len = 10
+
         for r in svc.resources_by_id.values():
             if r is None:
                 continue
@@ -81,11 +82,12 @@ def set_namelen(svcs=[], force=None):
                 continue
             l = len(r.rid)
             if r.subset:
-                l += len(r.subset) + 1
-            if len(svcs) > 1:
-                l += svcname_len + 1
-            if l > maxlen:
-                maxlen = l
+                l += len(r.subset) + 2
+            if l > max_res_len:
+                max_res_len = l
+        svc_len += max_res_len
+        if svc_len > maxlen:
+            maxlen = svc_len
     maxlen += len(rcEnv.nodename) + 1
     if force:
         maxlen = force
