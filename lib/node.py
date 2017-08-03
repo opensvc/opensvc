@@ -3268,7 +3268,20 @@ class Node(Crypt):
             unlock(lockfd)
         return False
 
+    def daemon_restart_systemd(self):
+        os.system("systemctl restart opensvc-agent")
+
+    def daemon_handled_by_systemd(self):
+        if which("systemctl") is None:
+            return False
+        if os.environ.get("OSVC_ROOT_PATH") is not None:
+            return False
+        return True
+
     def daemon_restart(self):
+        if self.daemon_handled_by_systemd():
+            return self.daemon_restart_systemd()
+
         import time
         if self._daemon_running():
             self._daemon_stop()
