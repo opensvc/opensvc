@@ -500,18 +500,18 @@ class Asset(rcAsset.Asset):
         # iscsi
         hba_id = self.get_iscsi_hba_id()
         if hba_id is not None:
-           cmd = ['iscsiadm', '-m', 'session']
-           out, err, ret = justcall(cmd)
-           if ret == 0:
-               """
-               tcp: [1] 192.168.231.141:3260,1 iqn.2000-08.com.datacore:sds1-1
-               tcp: [2] 192.168.231.142:3260,1 iqn.2000-08.com.datacore:sds2-1 (non-flash)
-               """
-               for line in out.split('\n'):
-                   if len(line) == 0:
-                       continue
-                   line = line.replace(" (non-flash)", "")
-                   l.append((hba_id, line.split()[-1]))
+            cmd = ['iscsiadm', '-m', 'session']
+            out, err, ret = justcall(cmd)
+            if ret == 0:
+                """
+                tcp: [1] 192.168.231.141:3260,1 iqn.2000-08.com.datacore:sds1-1
+                tcp: [2] 192.168.231.142:3260,1 iqn.2000-08.com.datacore:sds2-1 (non-flash)
+                """
+                for line in out.splitlines():
+                    if len(line) == 0:
+                        continue
+                    line = line.replace(" (non-flash)", "")
+                    l.append((hba_id, line.split()[-1]))
 
         # gce
         if self._get_model() == "Google":

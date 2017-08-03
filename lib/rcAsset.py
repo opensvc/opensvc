@@ -570,6 +570,7 @@ class Asset(object):
             s = self._get_targets()
         except:
             s = []
+        return s
 
     def get_uids(self):
         return self.get_ids("/etc/passwd", ("username", "uid"))
