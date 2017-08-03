@@ -127,7 +127,7 @@ class Collector(object):
     def call(self, *args, **kwargs):
         fn = args[0]
         self.init(fn)
-        if rcEnv.dbopensvc in ("None", None):
+        if rcEnv.dbopensvc is None:
             return {"ret": 1, "msg": "no collector defined. set 'dbopensvc' in node.conf"}
         if len(self.proxy_methods) == 0:
             return
@@ -140,7 +140,7 @@ class Collector(object):
             print("collector does not support node registration", file=sys.stderr)
             return
         if rcEnv.uuid == "" and \
-           rcEnv.dbopensvc not in ("None", None) and \
+           rcEnv.dbopensvc is not None and \
            not rcEnv.warned and \
            self.auth_node and \
            fn != "register_node":
@@ -183,7 +183,7 @@ class Collector(object):
         self.log = logging.getLogger("xmlrpc%s"%('.worker' if worker else ''))
 
     def get_methods_dbopensvc(self):
-        if rcEnv.dbopensvc in ("None", None):
+        if rcEnv.dbopensvc is None:
             self.proxy_methods = []
             return
         self.log.debug("get dbopensvc method list")
@@ -198,7 +198,7 @@ class Collector(object):
         self.log.debug("%d feed methods"%len(self.proxy_methods))
 
     def get_methods_dbcompliance(self):
-        if rcEnv.dbcompliance in ("None", None):
+        if rcEnv.dbcompliance is None:
             self.comp_proxy_methods = []
             return
         self.log.debug("get dbcompliance method list")
@@ -220,7 +220,7 @@ class Collector(object):
             elif self.proxy is not None:
                 return
 
-        if rcEnv.dbopensvc in ("None", None):
+        if rcEnv.dbopensvc is None:
             return
 
         try:

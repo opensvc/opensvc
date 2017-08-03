@@ -156,9 +156,9 @@ class rcEnv:
     vt_container = ['zone', 'lxc', 'jail', 'vz', 'srp', 'docker']
     vt_supported = vt_vm + vt_container
 
-    dbopensvc = "None"
+    dbopensvc = None
     dbopensvc_host = None
-    dbcompliance = "None"
+    dbcompliance = None
     dbcompliance_host = None
     paths = get_osvc_paths(sysname=sysname, detect=True)
 
