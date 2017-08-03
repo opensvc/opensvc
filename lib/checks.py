@@ -77,6 +77,7 @@ class checks(check):
         import datetime
 
         now = str(datetime.datetime.now())
+        data = {}
         vars = [\
             "chk_nodename",
             "chk_svcname",
@@ -87,42 +88,74 @@ class checks(check):
         vals = []
 
         for chk in self.check_list:
-            # print header
-            s = chk.chk_type
+            idx = chk.chk_type
             if hasattr(chk, "chk_name"):
-                s += ' (' + chk.chk_name + ')'
-            print(s)
+                driver = chk.chk_name.lower()
+            else:
+                driver = "generic"
 
-            d = chk.do_check()
-            if type(d) != list or len(d) == 0:
+            _data = chk.do_check()
+
+            if not isinstance(_data, (list, tuple)) or len(_data) == 0:
                 continue
-            for i in d:
-                if not isinstance(i, dict):
-                    continue
-                if 'chk_instance' not in i:
-                    continue
-                if i['chk_instance'] == 'undef':
-                    continue
-                if 'chk_value' not in i:
-                    continue
-                if 'chk_svcname' in i:
-                    chk_svcname = i['chk_svcname']
-                else:
-                    chk_svcname = ""
 
-                # print instance
-                s = "  " + i['chk_instance']
-                if len(chk_svcname) > 0:
-                    s += '@' + chk_svcname
-                s += ': ' + i['chk_value']
-                print(s)
+            instances = []
+            for instance in _data:
+                if not isinstance(instance, dict):
+                    continue
+                if 'chk_instance' not in instance:
+                    continue
+                if instance['chk_instance'] == 'undef':
+                    continue
+                if 'chk_value' not in instance:
+                    continue
+                _instance = {
+                    "instance": instance.get("chk_instance", ""),
+                    "value": instance.get("chk_value", ""),
+                    "svcname": instance.get("chk_svcname", ""),
+                    "driver": driver,
+                }
 
                 vals.append([\
                     rcEnv.nodename,
-                    chk_svcname,
+                    _instance["svcname"],
                     chk.chk_type,
-                    i['chk_instance'],
-                    i['chk_value'].replace("%",""),
+                    _instance['instance'],
+                    str(_instance['value']).replace("%",""),
                     now]
                 )
+
+                instances.append(_instance)
+
+            if len(instances) > 0:    
+                if idx not in data:
+                    data[idx] = instances
+                else:
+                    data[idx] += instances
+
         self.node.collector.call('push_checks', vars, vals)
+        if self.node.options.format is None:
+            self.print_checks(data)
+            return
+        return data
+
+    def print_checks(self, data):
+        from forest import Forest
+        from rcColor import color
+        tree = Forest()
+        head_node = tree.add_node()
+        head_node.add_column(rcEnv.nodename, color.BOLD)
+        for chk_type, instances in data.items():
+            node = head_node.add_node()
+            node.add_column(chk_type, color.BROWN)
+            for instance in instances:
+                _node = node.add_node()
+                _node.add_column(str(instance["instance"]), color.LIGHTBLUE)
+                _node.add_column(instance["svcname"])
+                _node.add_column(str(instance["value"]))
+                if instance["driver"] == "generic":
+                    _node.add_column()
+                else:
+                    _node.add_column(instance["driver"])
+        print(tree)
+

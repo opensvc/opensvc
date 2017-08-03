@@ -1584,7 +1584,8 @@ class Node(Crypt):
             self.build_services()
         checkers = checks.checks(self.svcs)
         checkers.node = self
-        checkers.do_checks()
+        data = checkers.do_checks()
+        self.print_data(data)
 
     def wol(self):
         """
