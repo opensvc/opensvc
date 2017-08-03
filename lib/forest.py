@@ -361,6 +361,10 @@ class Forest(object):
         self.separator = separator
         self.widths = widths
 
+    def print(self):
+        print(forest(self.data, self.columns, separator=self.separator,
+                     widths=self.widths))
+
     def __str__(self):
         return forest(self.data, self.columns, separator=self.separator,
                       widths=self.widths)

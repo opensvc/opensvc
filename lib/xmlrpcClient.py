@@ -872,30 +872,22 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.send_sysreport(*args)
 
-    def push_asset(self, node, sync=True):
-        try:
-            m = __import__('rcAsset'+rcEnv.sysname)
-        except ImportError:
-            print("pushasset methods not implemented on", rcEnv.sysname)
-            return
+    def push_asset(self, node, data=None, sync=True):
         if "update_asset" not in self.proxy_methods:
             print("'update_asset' method is not exported by the collector")
             return
-        d = m.Asset(node).get_asset_dict()
+        d = dict(data)
 
         gen = {}
         if 'hba' in d:
             vars = ['nodename', 'hba_id', 'hba_type']
-            vals = []
-            for hba_id, hba_type in d['hba']:
-               vals.append([rcEnv.nodename, hba_id, hba_type])
+            vals = [(rcEnv.nodename, _d["hba_id"], _d["tgt_type"]) for _d in d['hba']]
             del(d['hba'])
             gen.update({'hba': [vars, vals]})
 
         if 'targets' in d:
-            import copy
             vars = ['hba_id', 'tgt_id']
-            vals = copy.copy(d['targets'])
+            vals = [(_d["hba_id"], _d["tgt_id"]) for _d in d['targets']]
             del(d['targets'])
             gen.update({'targets': [vars, vals]})
 
@@ -910,13 +902,13 @@ class Collector(object):
 
         if 'uids' in d:
             vars = ['user_name', 'user_id']
-            vals = d['uids']
+            vals = [(_d["username"], _d["uid"]) for _d in d['uids']]
             del(d['uids'])
             gen.update({'uids': [vars, vals]})
 
         if 'gids' in d:
             vars = ['group_name', 'group_id']
-            vals = d['gids']
+            vals = [(_d["groupname"], _d["gid"]) for _d in d['gids']]
             del(d['gids'])
             gen.update({'gids': [vars, vals]})
 
@@ -926,7 +918,14 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.insert_generic(*args)
 
-        args = [list(d.keys()), list(d.values())]
+        _vars = []
+        _vals = []
+        for key, _d in d.items():
+            _vars.append(key)
+            if _d["value"] is None:
+                _d["value"] = ""
+            _vals.append(_d["value"])
+        args = [_vars, _vals]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         if node.options.syncrpc:

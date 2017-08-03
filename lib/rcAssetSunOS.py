@@ -222,14 +222,14 @@ class Asset(rcAsset.Asset):
 
     def _get_hba(self):
         l = self.__get_hba()
-        return map(lambda x: (x[0], x[1]), l)
+        return [{"hba_id": e[0], "hba_type": e[1]} for e in l]
 
     def _get_targets(self):
         l = self.__get_hba()
         m = []
         for hba_id, hba_type, targets in l:
              for target in targets:
-                 m.append((hba_id, target))
+                 m.append({"hba_id": hba_id, "tgt_id": target})
         return m
 
     def _get_bios_version(self):

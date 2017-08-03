@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 """
 This module implements the Node class.
 The node
@@ -1048,12 +1050,86 @@ class Node(Crypt):
             return
         self.task_pushasset()
 
+    @lazy
+    def asset(self):
+        try:
+            m = __import__('rcAsset'+rcEnv.sysname)
+        except ImportError:
+            raise ex.excError("pushasset methods not implemented on %s"
+                              "" % rcEnv.sysname)
+        return m.Asset(self)
+
     @scheduler_fork
     def task_pushasset(self):
         """
         The pushasset scheduler task.
         """
-        self.collector.call('push_asset', self)
+        data = self.asset.get_asset_dict()
+        try:
+            if self.options.format is None:
+                self.print_asset(data)
+                return
+            self.print_data(data)
+        finally:
+            self.collector.call('push_asset', self, data)
+
+    def print_asset(self, data):
+        from forest import Forest
+        from rcColor import color
+        tree = Forest()
+        head_node = tree.add_node()
+        head_node.add_column(rcEnv.nodename)
+        for key, _data in data.items():
+            node = head_node.add_node()
+            if key not in ("targets", "lan", "uids", "gids", "hba"):
+                if _data["value"] is None:
+                    _data["value"] = ""
+                node.add_column(_data["title"], color.LIGHTBLUE)
+                node.add_column(_data["value"] + " " + _data.get("unit", ""))
+                node.add_column(_data["source"])
+
+        if 'uids' in data:
+            node = head_node.add_node()
+            node.add_column("uids", color.LIGHTBLUE)
+            node.add_column(str(len(data['uids'])))
+
+        if 'gids' in data:
+            node = head_node.add_node()
+            node.add_column("gids", color.LIGHTBLUE)
+            node.add_column(str(len(data['gids'])))
+
+        if 'hba' in data:
+            node = head_node.add_node()
+            node.add_column("host bus adapters", color.LIGHTBLUE)
+            for _data in data['hba']:
+                _node = node.add_node()
+                _node.add_column(_data["hba_id"])
+                _node.add_column(_data["hba_type"])
+
+                if 'targets' in data:
+                    hba_targets = [_d for _d in data['targets'] if _d["hba_id"] == _data["hba_id"]]
+                    if len(hba_targets) == 0:
+                        continue
+                    __node = _node.add_node()
+                    __node.add_column("targets")
+                    for _d in hba_targets:
+                        ___node = __node.add_node()
+                        ___node.add_column(_d["tgt_id"])
+
+        if 'lan' in data:
+            node = head_node.add_node()
+            node.add_column("ip addresses", color.LIGHTBLUE)
+            for mac, _data in data['lan'].items():
+                for __data in _data:
+                    _node = node.add_node()
+                    addr = __data["addr"]
+                    if __data["mask"]:
+                        addr += "/" + __data["mask"]
+                    _node.add_column(addr)
+                    _node.add_column(__data["intf"])
+
+        tree.print()
+
 
     def pushnsr(self):
         """

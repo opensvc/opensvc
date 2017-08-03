@@ -270,13 +270,13 @@ class Asset(rcAsset.Asset):
         l = []
         for hba_id, hba_type, targets in hba:
             l.append((hba_id, hba_type))
-        return l
+        return [{"hba_id": e[0], "hba_type": e[1]} for e in l]
 
     def _get_targets(self):
         hba = self.__get_hba()
         l = []
         for hba_id, hba_type, targets in hba:
             for target in targets:
-                l.append((hba_id, target))
+                l.append({"hba_id": hba_id, "tgt_id": target})
         return l
 

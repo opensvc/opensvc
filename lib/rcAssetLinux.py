@@ -433,7 +433,7 @@ class Asset(rcAsset.Asset):
                 hba_id = f.read().split('=')[-1].strip()
         return hba_id
 
-    def __get_hba(self):
+    def _get_hba(self):
         # fc / fcoe
         l = []
         import glob
@@ -479,26 +479,23 @@ class Asset(rcAsset.Asset):
             from rcGlobalEnv import rcEnv
             l.append((rcEnv.nodename, "virtual", ''))
 
-        return l
-
-    def _get_hba(self):
-        return map(lambda x: (x[0], x[1]), self.__get_hba())
+        return [{"hba_id": e[0], "hba_type": e[1], "host": e[2]} for e in l]
 
     def _get_targets(self):
         import glob
         # fc / fcoe
         l = []
-        hbas = self.__get_hba()
-        for hba_id, hba_type, host in hbas:
-            if not hba_type.startswith('fc'):
+        hbas = self._get_hba()
+        for hba in hbas:
+            if not hba["hba_type"].startswith('fc'):
                 continue
-	    targets = glob.glob('/sys/class/fc_transport/target%s:*/port_name'%host)
-	    targets += glob.glob('/sys/class/fc_remote_ports/rport-%s:*/port_name'%host)
+	    targets = glob.glob('/sys/class/fc_transport/target%s:*/port_name'%hba["host"])
+	    targets += glob.glob('/sys/class/fc_remote_ports/rport-%s:*/port_name'%hba["host"])
             for target in targets:
                 with open(target, 'r') as f:
                     tgt_id = f.read().strip('0x').strip('\n')
-                if (hba_id, tgt_id) not in l:
-                    l.append((hba_id, tgt_id))
+                if (hba["hba_id"], tgt_id) not in l:
+                    l.append((hba["hba_id"], tgt_id))
 
         # iscsi
         hba_id = self.get_iscsi_hba_id()
@@ -532,7 +529,7 @@ class Asset(rcAsset.Asset):
             except:
                 pass
 
-        return l
+        return [{"hba_id": e[0], "tgt_id": e[1]} for e in l]
 
 if __name__ == "__main__":
     from rcGlobalEnv import rcEnv

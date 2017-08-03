@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from rcGlobalEnv import rcEnv
 import os
 from subprocess import *
@@ -26,12 +24,12 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_mem_bytes(s, source)
-        return s
-
-    def print_mem_bytes(self, s, source):
-        print("mem (%s)"%source)
-        print("  %s MB"%s)
+        return {
+            "title": "mem",
+            "value": s,
+            "unit": "MB",
+            "source": source
+        }
 
     def get_mem_banks(self):
         s = '0'
@@ -45,12 +43,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_mem_banks(s, source)
-        return s
-
-    def print_mem_banks(self, s, source):
-        print("mem banks (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "mem banks",
+            "value": s,
+            "source": source
+        }
 
     def get_mem_slots(self):
         s = '0'
@@ -64,12 +61,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_mem_slots(s, source)
-        return s
-
-    def print_mem_slots(self, s, source):
-        print("mem slots (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "mem slots",
+            "value": s,
+            "source": source
+        }
 
     def get_os_vendor(self):
         s = 'Unknown'
@@ -83,12 +79,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_os_vendor(s, source)
-        return s
-
-    def print_os_vendor(self, s, source):
-        print("os vendor (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "os vendor",
+            "value": s,
+            "source": source
+        }
 
     def get_os_release(self):
         s = 'Unknown'
@@ -102,12 +97,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_os_release(s, source)
-        return s
-
-    def print_os_release(self, s, source):
-        print("os release (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "os release",
+            "value": s,
+            "source": source
+        }
 
     def get_os_kernel(self):
         s = 'Unknown'
@@ -121,12 +115,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_os_kernel(s, source)
-        return s
-
-    def print_os_kernel(self, s, source):
-        print("os kernel (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "os kernel",
+            "value": s,
+            "source": source
+        }
 
     def get_os_arch(self):
         s = 'Unknown'
@@ -140,12 +133,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_os_arch(s, source)
-        return s
-
-    def print_os_arch(self, s, source):
-        print("os arch (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "os arch",
+            "value": s,
+            "source": source
+        }
 
     def get_cpu_freq(self):
         s = '0'
@@ -159,12 +151,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_cpu_freq(s, source)
-        return s
-
-    def print_cpu_freq(self, s, source):
-        print("cpu freq (%s)"%source)
-        print("  %s Mhz"%s)
+        return {
+            "title": "cpu freq",
+            "value": s,
+            "source": source
+        }
 
     def get_cpu_threads(self):
         s = '0'
@@ -178,12 +169,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_cpu_threads(s, source)
-        return s
-
-    def print_cpu_threads(self, s, source):
-        print("cpu threads (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "cpu threads",
+            "value": s,
+            "source": source
+        }
 
     def get_cpu_cores(self):
         s = '0'
@@ -197,12 +187,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_cpu_cores(s, source)
-        return s
-
-    def print_cpu_cores(self, s, source):
-        print("cpu cores (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "cpu cores",
+            "value": s,
+            "source": source
+        }
 
     def get_cpu_dies(self):
         s = '0'
@@ -216,12 +205,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_cpu_dies(s, source)
-        return s
-
-    def print_cpu_dies(self, s, source):
-        print("cpu dies (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "cpu dies",
+            "value": s,
+            "source": source
+        }
 
     def get_cpu_model(self):
         s = 'Unknown'
@@ -235,12 +223,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_cpu_model(s, source)
-        return s
-
-    def print_cpu_model(self, s, source):
-        print("cpu model (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "cpu model",
+            "value": s,
+            "source": source
+        }
 
     def get_serial(self):
         s = 'Unknown'
@@ -254,13 +241,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_serial(s, source)
-        return s
-
-    def print_serial(self, s, source):
-        print("serial (%s)"%source)
-        print(" ", s)
-
+        return {
+            "title": "serial",
+            "value": s,
+            "source": source
+        }
 
     def get_bios_version(self):
         s = ''
@@ -274,12 +259,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_bios_version(s, source)
-        return s
-
-    def print_bios_version(self, s, source):
-        print("bios version (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "bios version",
+            "value": s,
+            "source": source
+        }
 
     def get_sp_version(self):
         s = ''
@@ -293,12 +277,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_sp_version(s, source)
-        return s
-
-    def print_sp_version(self, s, source):
-        print("sp version (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "sp version",
+            "value": s,
+            "source": source
+        }
 
     def get_enclosure(self):
         s = 'Unknown'
@@ -312,12 +295,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_enclosure(s, source)
-        return s
-
-    def print_enclosure(self, s, source):
-        print("enclosure (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "enclosure",
+            "value": s,
+            "source": source
+        }
 
     def get_tz(self):
         s = None
@@ -330,11 +312,12 @@ class Asset(object):
                 s = self._get_tz()
                 source = self.s_probe
             except Exception as e:
-                print(e)
                 pass
-        if s:
-            self.print_tz(s, source)
-        return s
+        return {
+            "title": "timezone",
+            "value": s,
+            "source": source
+        }
 
     def _get_tz(self):
         cmd = ["date", "+%z"]
@@ -343,10 +326,6 @@ class Asset(object):
         if len(out) != 5:
             return
         return out[:3] + ":" + out[3:]
-
-    def print_tz(self, s, source):
-        print("timezone (%s)"%source)
-        print(" ", s)
 
     def get_connect_to(self):
         s = None
@@ -360,12 +339,14 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        if s:
-            self.print_connect_to(s, source)
-        return s
+        return {
+            "title": "listener address",
+            "value": s,
+            "source": source
+        }
 
     def _get_connect_to(self):
-        if self.data["model"] != "Google":
+        if self.data["model"]["value"] != "Google":
             return
         if not which("gcloud"):
             return
@@ -399,10 +380,6 @@ class Asset(object):
                 return nic["accessConfigs"][0]["natIP"]
         return nics[0]["accessConfigs"][0]["natIP"]
 
-    def print_connect_to(self, s, source):
-        print("connect to address (%s)"%source)
-        print(" ", s)
-
     def get_model(self):
         s = 'Unknown'
         source = self.s_default
@@ -415,12 +392,11 @@ class Asset(object):
                 source = self.s_probe
             except:
                 pass
-        self.print_model(s, source)
-        return s
-
-    def print_model(self, s, source):
-        print("model (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "model",
+            "value": s,
+            "source": source
+        }
 
     def get_node_env(self):
         s = 'TST'
@@ -435,12 +411,11 @@ class Asset(object):
                 source = self.s_config
         except:
             pass
-        self.print_node_env(s, source)
-        return s
-
-    def print_node_env(self, s, source):
-        print("environment (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "environment",
+            "value": s,
+            "source": source
+        }
 
     def get_sec_zone(self):
         s = None
@@ -450,14 +425,11 @@ class Asset(object):
             source = self.s_config
         except:
             pass
-        self.print_sec_zone(s, source)
-        return s
-
-    def print_sec_zone(self, s, source):
-        if s is None:
-            return
-        print("security zone (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "security zone",
+            "value": s,
+            "source": source
+        }
 
     def get_asset_env(self):
         s = None
@@ -468,23 +440,19 @@ class Asset(object):
             source = self.s_config
         except:
             pass
-        self.print_asset_env(s, source)
-        return s
-
-    def print_asset_env(self, s, source):
-        if s is None:
-            return
-        print("asset environment (%s)"%source)
-        print(" ", s)
+        return {
+            "title": "asset environment",
+            "value": s,
+            "source": source
+        }
 
     def get_version(self):
         s = self.node.agent_version()
-        self.print_version(s)
-        return s
-
-    def print_version(self, s):
-        print("agent version")
-        print(" ", s)
+        return {
+            "title": "agent version",
+            "value": s,
+            "source": self.s_probe
+        }
 
     def get_listener_port(self):
         s = str(rcEnv.listener_port)
@@ -494,20 +462,11 @@ class Asset(object):
             source = self.s_config
         except:
             pass
-        self.print_listener_port(s, source)
-        return s
-
-    def print_listener_port(self, s, source):
-        if s is None:
-            return
-        print("listener port (%s)"%source)
-        print(" ", s)
-
-    def print_generic_cf(self, s, source, title):
-        if s is None:
-            return
-        print("%s (%s)"%(title, source))
-        print(" ", s)
+        return {
+            "title": "listener port",
+            "value": s,
+            "source": source
+        }
 
     def get_loc_country(self):
         s = None
@@ -517,8 +476,6 @@ class Asset(object):
             source = self.s_config
         except:
             pass
-        self.print_generic_cf(s, source, "location country")
-        return s
 
     def get_loc_city(self):
         s = None
@@ -528,8 +485,6 @@ class Asset(object):
             source = self.s_config
         except:
             pass
-        self.print_generic_cf(s, source, "location city")
-        return s
 
     def get_loc_addr(self):
         s = None
@@ -539,8 +494,6 @@ class Asset(object):
             source = self.s_config
         except:
             pass
-        self.print_generic_cf(s, source, "location city")
-        return s
 
     def get_loc_building(self):
         s = None
@@ -550,8 +503,6 @@ class Asset(object):
             source = self.s_config
         except:
             pass
-        self.print_generic_cf(s, source, "location building")
-        return s
 
     def get_loc_floor(self):
         s = None
@@ -561,8 +512,6 @@ class Asset(object):
             source = self.s_config
         except:
             pass
-        self.print_generic_cf(s, source, "location floor")
-        return s
 
     def get_loc_room(self):
         s = None
@@ -572,8 +521,6 @@ class Asset(object):
             source = self.s_config
         except:
             pass
-        self.print_generic_cf(s, source, "location room")
-        return s
 
     def get_loc_rack(self):
         s = None
@@ -583,8 +530,6 @@ class Asset(object):
             source = self.s_config
         except:
             pass
-        self.print_generic_cf(s, source, "location rack")
-        return s
 
     def get_loc_zip(self):
         s = None
@@ -594,8 +539,6 @@ class Asset(object):
             source = self.s_config
         except:
             pass
-        self.print_generic_cf(s, source, "location zip")
-        return s
 
     def get_team_integ(self):
         s = None
@@ -605,8 +548,6 @@ class Asset(object):
             source = self.s_config
         except:
             pass
-        self.print_generic_cf(s, source, "team integration")
-        return s
 
     def get_team_support(self):
         s = None
@@ -616,42 +557,27 @@ class Asset(object):
             source = self.s_config
         except:
             pass
-        self.print_generic_cf(s, source, "team support")
-        return s
 
     def get_hba(self):
         try:
             hba = self._get_hba()
         except:
             hba = []
-        self.print_hba(hba)
         return hba
-
-    def print_hba(self, hba):
-        print("hba (probe)")
-        for h in hba:
-            print("  %-5s %s"%(h[1], h[0]))
 
     def get_targets(self):
         try:
             s = self._get_targets()
         except:
             s = []
-        self.print_targets(s)
-        return s
-
-    def print_targets(self, targets):
-        print("paths to targets (probe)")
-        for t in targets:
-            print("  %s - %s"%t)
 
     def get_uids(self):
-        return self.get_ids("/etc/passwd")
+        return self.get_ids("/etc/passwd", ("username", "uid"))
 
     def get_gids(self):
-        return self.get_ids("/etc/group")
+        return self.get_ids("/etc/group", ("groupname", "gid"))
 
-    def get_ids(self, p):
+    def get_ids(self, p, keys):
         if rcEnv.sysname == "Windows":
             return []
         if not os.path.exists(p):
@@ -671,7 +597,10 @@ class Asset(object):
             except:
                 continue
             name = repr(l[0]).strip("'")
-            d.append((name, l[2]))
+            d.append({
+                keys[0]: name,
+                keys[1]: l[2]
+            })
         return d
 
     def get_lan(self):
@@ -726,21 +655,7 @@ class Asset(object):
                         }
                     lan[intf.hwaddr] += [d]
 
-        self.print_lan(lan)
         return lan
-
-    def print_lan(self, lan):
-        print("lan (probe)")
-        for h, l in lan.items():
-            for d in l:
-                if d['mask'] != "":
-                    addr_mask = "%s/%s" % (d['addr'], d['mask'])
-                else:
-                    addr_mask = d['addr']
-                s = "  %s %-8s %-5s %s"%(h, d['intf'], d['type'], addr_mask)
-                if d['flag_deprecated']:
-                    s += " (deprecated)"
-                print(s)
 
     def get_last_boot(self):
         os.environ["LANG"] = "C"
@@ -766,19 +681,30 @@ class Asset(object):
                 return
 
         last = last.strftime("%Y-%m-%d")
-        self.print_last_boot(last)
-        return last
-
-    def print_last_boot(self, last):
-        print("last boot (probe)")
-        print("  %s" % last)
+        return {
+            "title": "last boot",
+            "value": last,
+            "source": self.s_probe
+        }
 
     def get_asset_dict(self):
         self.data = {}
-        self.data['nodename'] = rcEnv.nodename
-        self.data['fqdn'] = rcEnv.fqdn
+        self.data['nodename'] = {
+            "title": "nodename",
+            "value": rcEnv.nodename,
+            "source": self.s_probe
+        }
+        self.data['fqdn'] = {
+            "title": "fqdn",
+            "value": rcEnv.fqdn,
+            "source": self.s_probe
+        }
         self.data['version'] = self.get_version()
-        self.data['os_name'] = rcEnv.sysname
+        self.data['os_name'] = {
+            "title": "os name",
+            "value": rcEnv.sysname,
+            "source": self.s_probe
+        }
         self.data['os_vendor'] = self.get_os_vendor()
         self.data['os_release'] = self.get_os_release()
         self.data['os_kernel'] = self.get_os_kernel()
