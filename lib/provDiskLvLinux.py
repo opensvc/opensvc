@@ -144,9 +144,14 @@ class ProvisioningDisk(Provisioning):
         if p2.returncode != 0:
             raise ex.excError(err)
         if len(out) > 0:
-            self.r.log.info(out)
+            for line in out.splitlines():
+                self.r.log.info(line)
         if len(err) > 0:
-            self.r.log.error(err)
+            for line in err.splitlines():
+                if line.startswith("WARNING:"):
+                    self.r.log.warning(line.replace("WARNING: ", ""))
+                else:
+                    self.r.log.error(err)
 
         # /dev/mapper/$vg-$lv and /dev/$vg/$lv creation is delayed ... refresh
         try:
