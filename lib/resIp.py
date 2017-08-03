@@ -448,6 +448,9 @@ class Ip(Res.Resource):
         """
         Request an ip in the ipdev network from the collector.
         """
+        if rcEnv.dbopensvc is None:
+            return
+
         import ipaddress
 
         try:
@@ -527,6 +530,9 @@ class Ip(Res.Resource):
         """
         Release an allocated ip a collector managed network.
         """
+        if rcEnv.dbopensvc is None:
+            return
+
         if self.ipname is None:
             self.log.info("skip release: no ipname set")
             return
