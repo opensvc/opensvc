@@ -354,6 +354,9 @@ class Ip(Res.Resource):
         """
         Post a dns update request to the collector.
         """
+        if rcEnv.dbopensvc is None:
+            return
+
         if self.ipname is None:
             self.log.debug("skip dns update: ipname is not set")
             return
