@@ -6,7 +6,7 @@ from rcUtilities import try_decode, justcall, which
 from converters import print_size
 
 class Asset(object):
-    s_config = "node configuration file"
+    s_config = "config"
     s_probe = "probe"
     s_default = "default"
 
