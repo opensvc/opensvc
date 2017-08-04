@@ -589,14 +589,7 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.svcmon_update(*args)
 
-    def push_disks(self, node, sync=True):
-        import re
-        di = __import__('rcDiskInfo'+rcEnv.sysname)
-        disks = di.diskInfo()
-        try:
-            m = __import__("rcDevTree"+rcEnv.sysname)
-        except ImportError:
-            return
+    def push_disks(self, data, sync=True):
         vars = ['disk_id',
                 'disk_svcname',
                 'disk_size',
@@ -607,128 +600,33 @@ class Collector(object):
                 'disk_nodename',
                 'disk_region']
         vals = []
-
-        # hash to add up disk usage across all services
-        dh = {}
         served_disks = []
 
-        svcs = node.svcs
-
-        for svc in svcs:
-            # hash to add up disk usage inside a service
-            valsh = {}
-            for r in svc.get_resources():
-                if hasattr(r, "name"):
-                    disk_dg = r.name
-                elif hasattr(r, "dev"):
-                    disk_dg = r.dev
-                else:
-                    disk_dg = r.rid
-
-                if hasattr(r, 'devmap') and hasattr(r, 'vm_hostname'):
-                    if hasattr(svc, "clustername"):
-                        cluster = svc.clustername
-                    else:
-                        cluster = ','.join(sorted(list(svc.nodes)))
-                    served_disks += map(lambda x: (x[0], r.vm_hostname+'.'+x[1], cluster), r.devmap())
-
-                try:
-                    devpaths = r.sub_devs()
-                except Exception as e:
-                    print(e)
-                    devpaths = []
-
-                for devpath in devpaths:
-                    for d, used, region in node.devtree.get_top_devs_usage_for_devpath(devpath):
-                        disk_id = disks.disk_id(d)
-                        if disk_id is None or disk_id == "":
-                            """ no point pushing to db an empty entry
-                            """
-                            continue
-                        if disk_id.startswith(rcEnv.nodename+".loop"):
-                            continue
-                        disk_size = disks.disk_size(d)
-                        if disk_id in dh:
-                            dh[disk_id] += used
-                        else:
-                            dh[disk_id] = used
-                        if dh[disk_id] > disk_size:
-                            dh[disk_id] = disk_size
-
-                        if disk_id not in valsh or used == disk_size:
-                            valsh[disk_id] = [
-                             disk_id,
-                             svc.svcname,
-                             disk_size,
-                             used,
-                             disks.disk_vendor(d),
-                             disks.disk_model(d),
-                             disk_dg,
-                             rcEnv.nodename,
-                             region
-                            ]
-                        elif disk_id in valsh and valsh[disk_id][3] < disk_size:
-                            valsh[disk_id][3] += used
-                            valsh[disk_id][6] = ""
-                            valsh[disk_id][8] = ""
-
-                        if valsh[disk_id][3] > disk_size:
-                            valsh[disk_id][3] = disk_size
-
-            for l in valsh.values():
-                vals += [l]
-                print(l[1], "disk", l[0], "%d/%dM"%(l[3], l[2]), "region", region)
-
-        done = []
-        region = 0
-
-        try:
-            devpaths = node.devlist()
-        except Exception as e:
-            print(e)
-            devpaths = []
-
-        for d in devpaths:
-            disk_id = disks.disk_id(d)
-            if disk_id is None or disk_id == "":
-                """ no point pushing to db an empty entry
-                """
-                continue
-
-            if disk_id.startswith(rcEnv.nodename+".loop"):
-                continue
-
-            if re.match(r"/dev/rdsk/.*s[01345678]", d):
-                # don't report partitions
-                continue
-
-            # Linux Node:devlist() reports paths, so we can have duplicate
-            # disks here.
-            if disk_id in done:
-                continue
-            done.append(disk_id)
-
-            disk_size = disks.disk_size(d)
-
-            if disk_id in dh:
-                left = disk_size - dh[disk_id]
-            else:
-                left = disk_size
-            if left == 0:
-                continue
-            print(rcEnv.nodename, "disk", disk_id, "%d/%dM"%(left, disk_size), "region", region)
-            vals.append([
+        for disk_id, disk in data["disks"].items():
+            for svcname, service in disk["services"].items():
+                vals.append([
+                 disk_id,
+                 svcname,
+                 disk["size"],
+                 service["used"],
+                 disk["vendor"],
+                 disk["model"],
+                 service["dg"],
+                 rcEnv.nodename,
+                 service["region"],
+            ])
+            if disk["used"] < disk["size"]:
+                vals.append([
                  disk_id,
                  "",
-                 disk_size,
-                 left,
-                 disks.disk_vendor(d),
-                 disks.disk_model(d),
+                 disk["size"],
+                 disk["size"] - disk["used"],
+                 disk["vendor"],
+                 disk["model"],
                  "",
                  rcEnv.nodename,
-                 region
+                 0,
             ])
-
 
         args = [vars, vals]
         if self.auth_node:
@@ -746,21 +644,15 @@ class Collector(object):
                 'disk_group']
         vals = []
 
-        for dev_id, vdisk_id, cluster in served_disks:
-            disk_id = disks.disk_id(dev_id)
-            try:
-                disk_size = disks.disk_size(dev_id)
-            except:
-                continue
+        for disk_id, disk in data["served_disks"].items():
             vals.append([
-              vdisk_id,
-              cluster,
+              disk["vdisk_id"],
+              disk["cluster"],
               disk_id,
-              disk_size,
+              disk["size"],
               "virtual",
               "virtual"
             ])
-            print("register served disk", disk_id, "as", vdisk_id, "from varray", cluster)
 
         args = [vars, vals]
         if self.auth_node:

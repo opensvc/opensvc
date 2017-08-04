@@ -1525,11 +1525,188 @@ class Node(Crypt):
     def task_pushdisks(self):
         """
         Send to the collector the list of disks visible on this node, and
-        their attributes.
+        their use by service.
         """
+        try:
+            data = self.push_disks_data()
+            if self.options.format is None:
+                self.print_push_disks(data)
+                return
+            self.print_data(data)
+        finally:
+            self.collector.call('push_disks', data)
+
+    def print_push_disks(self, data):
+        from forest import Forest
+        from rcColor import color
+        from converters import print_size
+
+        tree = Forest()
+        head_node = tree.add_node()
+        head_node.add_column(rcEnv.nodename, color.BOLD)
+
+        if len(data["disks"]) > 0:
+            disks_node = head_node.add_node()
+            disks_node.add_column("disks", color.BROWN)
+
+        if len(data["served_disks"]) > 0:
+            sdisks_node = head_node.add_node()
+            sdisks_node.add_column("served disks", color.BROWN)
+
+        for disk_id, disk in data["disks"].items():
+            disk_node = disks_node.add_node()
+            disk_node.add_column(disk_id, color.LIGHTBLUE)
+            disk_node.add_column(print_size(disk["size"]))
+            disk_node.add_column(disk["vendor"])
+            disk_node.add_column(disk["model"])
+
+            for svcname, service in disk["services"].items():
+                svc_node = disk_node.add_node()
+                svc_node.add_column(svcname, color.LIGHTBLUE)
+                svc_node.add_column(print_size(service["used"]))
+
+            if disk["used"] < disk["size"]:
+                svc_node = disk_node.add_node()
+                svc_node.add_column(rcEnv.nodename, color.LIGHTBLUE)
+                svc_node.add_column(print_size(disk["size"] - disk["used"]))
+
+        for disk_id, disk in data["served_disks"].items():
+            disk_node = disks_node.add_node()
+            disk_node.add_column(disk_id, color.LIGHTBLUE)
+            disk_node.add_column(print_size(disk["size"]))
+            disk_node.add_column(disk["vdisk_id"])
+
+        tree.print()
+
+    def push_stats_fs_u(self, l, sync=True):
+        args = [l[0], l[1]]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        self.proxy.insert_stats_fs_u(*args)
+
+    def push_disks_data(self):
         if self.svcs is None:
             self.build_services()
-        self.collector.call('push_disks', self)
+
+        import re
+        di = __import__('rcDiskInfo'+rcEnv.sysname)
+        data = {
+            "disks": {},
+            "served_disks": {},
+        }
+
+        for svc in self.svcs:
+            # hash to add up disk usage inside a service
+            for r in svc.get_resources():
+                if hasattr(r, "name"):
+                    disk_dg = r.name
+                elif hasattr(r, "dev"):
+                    disk_dg = r.dev
+                else:
+                    disk_dg = r.rid
+
+                if hasattr(r, 'devmap') and hasattr(r, 'vm_hostname'):
+                    if hasattr(svc, "clustername"):
+                        cluster = svc.clustername
+                    else:
+                        cluster = ','.join(sorted(list(svc.nodes)))
+                    for dev_id, vdev_id in r.devmap():
+                        try:
+                            disk_id = self.diskinfo.disk_id(dev_id)
+                        except:
+                            continue
+                        try:
+                            disk_size = self.diskinfo.disk_size(dev_id)
+                        except:
+                            continue
+                        data["served_disks"][disk_id] = {
+                            "dev_id": dev_id,
+                            "vdev_id": vdev_id,
+                            "vdisk_id": r.vm_hostname+'.'+vdev_id,
+                            "size": disk_size,
+                            "cluster": cluster,
+                        }
+
+                try:
+                    devpaths = r.sub_devs()
+                except Exception as e:
+                    print(e)
+                    devpaths = []
+
+                for devpath in devpaths:
+                    for d, used, region in self.devtree.get_top_devs_usage_for_devpath(devpath):
+                        disk_id = self.diskinfo.disk_id(d)
+                        if disk_id is None or disk_id == "":
+                            continue
+                        if disk_id.startswith(rcEnv.nodename+".loop"):
+                            continue
+                        disk_size = self.devtree.get_dev_by_devpath(d).size
+
+                        if disk_id not in data["disks"]:
+                            data["disks"][disk_id] = {
+                                "size": disk_size,
+                                "vendor": self.diskinfo.disk_vendor(d),
+                                "model": self.diskinfo.disk_model(d),
+                                "used": 0,
+                                "services": {},
+                            }
+
+                        if svc.svcname not in data["disks"][disk_id]["services"]:
+                            data["disks"][disk_id]["services"][svc.svcname] = {
+                                "svcname": svc.svcname,
+                                "used": used,
+                                "dg": disk_dg,
+                                "region": region
+                            }
+                        else:
+                            # consume space at service level
+                            data["disks"][disk_id]["services"][svc.svcname]["dg"] = "multi"
+                            data["disks"][disk_id]["services"][svc.svcname]["used"] += used
+                            if data["disks"][disk_id]["services"][svc.svcname]["used"] > disk_size:
+                                data["disks"][disk_id]["services"][svc.svcname]["used"] = disk_size
+
+                        # consume space at disk level
+                        data["disks"][disk_id]["used"] += used
+                        if data["disks"][disk_id]["used"] > disk_size:
+                            data["disks"][disk_id]["used"] = disk_size
+
+        done = []
+
+        try:
+            devpaths = self.devlist()
+        except Exception as e:
+            print(e)
+            devpaths = []
+
+        for devpath in devpaths:
+            disk_id = self.diskinfo.disk_id(devpath)
+            if disk_id is None or disk_id == "":
+                continue
+            if disk_id.startswith(rcEnv.nodename+".loop"):
+                continue
+            if re.match(r"/dev/rdsk/.*s[01345678]", d):
+                # don't report partitions
+                continue
+
+            # Linux Node:devlist() reports paths, so we can have duplicate
+            # disks here.
+            if disk_id in done:
+                continue
+            done.append(disk_id)
+            if disk_id in data["disks"]:
+                continue
+
+            disk_size = self.devtree.get_dev_by_devpath(devpath).size
+
+            data["disks"][disk_id] = {
+                "size": disk_size,
+                "vendor": self.diskinfo.disk_vendor(d),
+                "model": self.diskinfo.disk_model(d),
+                "used": 0,
+                "services": {},
+            }
+
+        return data
 
     def shutdown(self):
         """
@@ -1924,6 +2101,11 @@ class Node(Crypt):
             sys.exit(1)
         self.close()
         sys.exit(ret)
+
+    @lazy
+    def diskinfo(self):
+        di = __import__('rcDiskInfo'+rcEnv.sysname)
+        return di.diskInfo()
 
     @lazy
     def devtree(self):
