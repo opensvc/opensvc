@@ -1096,16 +1096,27 @@ class Scheduler(object):
         """
         Print the scheduling table in normal or detailled mode.
         """
+        from forest import Forest
+        from rcColor import color
+        tree = Forest()
+        head_node = tree.add_node()
+        head_node.add_column("Action", color.BOLD)
+        head_node.add_column("Last Run", color.BOLD)
         if self.options.verbose:
-            print_sched_fmt = "%(action)-21s  %(last_run)-21s  %(next_run)-19s  %(config_parameter)-24s  %(schedule_definition)s"
-            print("action                 last run               next run             config parameter          schedule definition")
-            print("------                 --------               --------             ----------------          -------------------")
-        else:
-            print_sched_fmt = "%(action)-21s  %(last_run)-21s  %(config_parameter)-24s  %(schedule_definition)s"
-            print("action                 last run               config parameter          schedule definition")
-            print("------                 --------               ----------------          -------------------")
+            head_node.add_column("Next Run", color.BOLD)
+        head_node.add_column("Config Parameter", color.BOLD)
+        head_node.add_column("Schedule Definition", color.BOLD)
+
         for data in self._print_schedule_data():
-            print(print_sched_fmt % data)
+            node = head_node.add_node()
+            node.add_column(data["action"], color.LIGHTBLUE)
+            node.add_column(data["last_run"])
+            if self.options.verbose:
+                node.add_column(data["next_run"])
+            node.add_column(data["config_parameter"])
+            node.add_column(data["schedule_definition"])
+
+        tree.print()
 
     def _print_schedule_data(self):
         """
