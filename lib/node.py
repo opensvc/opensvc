@@ -1095,15 +1095,19 @@ class Node(Crypt):
             node = head_node.add_node()
             node.add_column("uids", color.LIGHTBLUE)
             node.add_column(str(len(data['uids'])))
+            node.add_column(self.asset.s_probe)
 
         if 'gids' in data:
             node = head_node.add_node()
             node.add_column("gids", color.LIGHTBLUE)
             node.add_column(str(len(data['gids'])))
+            node.add_column(self.asset.s_probe)
 
         if 'hba' in data:
             node = head_node.add_node()
             node.add_column("host bus adapters", color.LIGHTBLUE)
+            node.add_column(str(len(data['hba'])))
+            node.add_column(self.asset.s_probe)
             for _data in data['hba']:
                 _node = node.add_node()
                 _node.add_column(_data["hba_id"])
@@ -1122,6 +1126,7 @@ class Node(Crypt):
         if 'lan' in data:
             node = head_node.add_node()
             node.add_column("ip addresses", color.LIGHTBLUE)
+            n = 0
             for mac, _data in data['lan'].items():
                 for __data in _data:
                     _node = node.add_node()
@@ -1130,6 +1135,9 @@ class Node(Crypt):
                         addr += "/" + __data["mask"]
                     _node.add_column(addr)
                     _node.add_column(__data["intf"])
+                    n += 1
+            node.add_column(str(n))
+            node.add_column(self.asset.s_probe)
 
         tree.print()
 
