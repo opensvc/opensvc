@@ -209,6 +209,19 @@ def convert_size(s, _to='', _round=1):
         size = (size // _round) * _round
     return size
 
+def print_size(size, unit="MB"):
+    mult = 1024
+    units = ['B', 'KB', 'MB', 'GB', 'TB', 'EB']
+    units_index = {'B':0, 'KB':1, 'MB':2, 'GB':3, 'TB':4, 'EB':5}
+    size = float(size)
+    for u in units[units_index[unit]:]:
+        if size == 0:
+            return "0"
+        if size < mult:
+            return '%d%s' % (size, u.lower().rstrip("b"))
+        size = size/mult
+    return '%d%s' % (size, u.lower().rstrip("b"))
+
 if __name__ == "__main__":
     #print(convert_size("10000 KiB", _to='MiB', _round=3))
     #print(convert_size("10M", _to='', _round=4096))

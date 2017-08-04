@@ -12,6 +12,7 @@ relations : lv0-pv1 and lv0-pv2
 
 """
 from forest import Forest
+from converters import print_size
 from rcGlobalEnv import rcEnv
 from rcColor import color
 
@@ -183,7 +184,7 @@ class Dev(object):
         node_dev = node.add_node()
         node_dev.add_column(self.alias, color.BROWN)
         node_dev.add_column(self.devtype)
-        node_dev.add_column(str(self.size)+"M")
+        node_dev.add_column(print_size(self.size))
         node_dev.add_column(pct)
         if verbose:
             col = node_dev.add_column()
@@ -203,21 +204,25 @@ class Dev(object):
                 d.print_dev(relation=r, node=node_dev, highlight=highlight,
                             verbose=verbose)
 
-    def print_dev_bottom_up(self, level=0, chain=[], node=None, highlight=[],
+    def print_dev_bottom_up(self, chain=[], node=None, highlight=[],
                             verbose=False):
         if len(chain) == 0:
-            child_size = 0
+            prev_size = 0
+            used_s = "-"
         else:
-            child_size = self.tree.get_dev(chain[-1].child).size
-        if child_size == 0:
+            prev_size = self.tree.get_dev(chain[-1].child).size
+            used = chain[-1].get_used(prev_size)
+            used_s = print_size(used)
+        if prev_size == 0:
             pct = "-"
         else:
-            pct = str(100*child_size//self.size)+"%"
+            pct = str(100*used/self.size)+"%"
 
         node_dev = node.add_node()
         node_dev.add_column(self.alias, color.BROWN)
         node_dev.add_column(self.devtype)
-        node_dev.add_column(str(self.size)+"M")
+        node_dev.add_column(used_s)
+        node_dev.add_column(print_size(self.size))
         node_dev.add_column(pct)
         if verbose:
             col = node_dev.add_column()
@@ -227,10 +232,9 @@ class Dev(object):
                 else:
                     textcolor = None
                 col.add_text(devpath, textcolor)
-        for parent in self.parents:
-            dev = self.get_dev(parent.parent)
-            dev.print_dev_bottom_up(level+1, chain+[parent], node_dev,
-                                    verbose=verbose)
+        for r in self.parents:
+            dev = self.get_dev(r.parent)
+            dev.print_dev_bottom_up(chain+[r], node_dev, verbose=verbose)
 
     def get_parents_bottom_up(self, l=[]):
         for parent in self.parents:
@@ -281,6 +285,9 @@ class DevTree(object):
         ftree = Forest()
         node = ftree.add_node()
         node.add_column(rcEnv.nodename, color.BOLD)
+        node.add_column("Type")
+        node.add_column("Size")
+        node.add_column("Pct of Parent")
 
         filtered = devices is not None and len(devices) > 0
         if filtered:
@@ -298,6 +305,10 @@ class DevTree(object):
         ftree = Forest()
         node = ftree.add_node()
         node.add_column(rcEnv.nodename, color.BOLD)
+        node.add_column("Type")
+        node.add_column("Parent Use")
+        node.add_column("Size")
+        node.add_column("Ratio")
 
         if devices is None:
             devices = set()
