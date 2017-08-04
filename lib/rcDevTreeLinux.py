@@ -343,7 +343,10 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             if len(l) < 2:
                 continue
             loop = l[0].replace("/dev/", "")
-            fpath = l[-1]
+            for idx in range(1, len(l)):
+                fpath = l[-idx]
+                if fpath.startswith("/"):
+                    break
             self.loop[loop] = fpath
 
     def dev_type(self, devname):
