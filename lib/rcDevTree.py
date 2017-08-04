@@ -43,8 +43,6 @@ class DevRelation(object):
         # logical volumes and concatset need to set explicitly
         # the 'used' size the child consumes on the parent.
         #
-        if self.used_set:
-            return self.used
         child = self.tree.get_dev(self.child)
         if used == 0:
             used = child.size
@@ -140,6 +138,8 @@ class Dev(object):
             if r is None:
                 r = DevRelation(parent=devname, child=self.devname, used=size)
                 r.tree = self.tree
+            else:
+                r.used = size
             self.parents.append(r)
         self.tree.add_dev(devname, size, devtype)
         return r

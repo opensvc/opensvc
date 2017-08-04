@@ -374,7 +374,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                 continue
             d.add_child(devname)
             c = self.get_dev(devname)
-            c.add_parent(d.devname)
+            r = c.add_parent(d.devname, size=c.size)
 
     def add_drbd_relations(self):
         if not which("drbdadm") or not os.path.exists('/proc/drbd'):
