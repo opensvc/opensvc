@@ -3,6 +3,7 @@ import os
 from subprocess import *
 import datetime
 from rcUtilities import try_decode, justcall, which
+from converters import print_size
 
 class Asset(object):
     s_config = "node configuration file"
@@ -27,8 +28,8 @@ class Asset(object):
         return {
             "title": "mem",
             "value": s,
-            "unit": "MB",
-            "source": source
+            "source": source,
+            "formatted_value": print_size(s)
         }
 
     def get_mem_banks(self):

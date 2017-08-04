@@ -1085,7 +1085,10 @@ class Node(Crypt):
                 if _data["value"] is None:
                     _data["value"] = ""
                 node.add_column(_data["title"], color.LIGHTBLUE)
-                node.add_column(_data["value"] + " " + _data.get("unit", ""))
+                if "formatted_value" in _data:
+                    node.add_column(_data["formatted_value"])
+                else:
+                    node.add_column(_data["value"])
                 node.add_column(_data["source"])
 
         if 'uids' in data:
