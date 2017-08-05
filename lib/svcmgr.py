@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 import sys
 import os
+import errno
 
 import svcBuilder
 import rcStatus
@@ -302,7 +303,7 @@ def main(argv=None):
         print(exc, file=sys.stderr)
         return 1
     except IOError as exc:
-        if exc.errno == errno.EACCESS:
+        if exc.errno == errno.EACCES:
             print(exc, file=sys.stderr)
             return 1
         else:
