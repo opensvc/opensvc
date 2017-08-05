@@ -620,7 +620,10 @@ class Node(Crypt):
         if 'svcnames' in kwargs:
             self.check_build_errors(kwargs['svcnames'], svcs, errors)
 
+        opt_status = kwargs.get("status")
         for svc in svcs:
+            if opt_status is not None and not svc.status() in opt_status:
+                continue
             self += svc
 
         if autopush:

@@ -2555,8 +2555,6 @@ def build_services(status=None, svcnames=None, create_instance=False,
             import traceback
             traceback.print_exc()
             continue
-        if status is not None and not svc.status() in status:
-            continue
         services[svc.svcname] = svc
     return [s for _, s in sorted(services.items())], errors
 
