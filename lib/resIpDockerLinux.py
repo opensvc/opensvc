@@ -146,7 +146,8 @@ class Ip(Res.Ip):
         return ret
 
     def startip_cmd(self):
-        if self._status() != rcStatus.STDBY_DOWN:
+        if self.container.docker_service and \
+           self._status() != rcStatus.STDBY_DOWN:
             return 0, "", ""
         if self.container_running_elsewhere():
             return 0, "", ""
