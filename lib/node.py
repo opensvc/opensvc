@@ -1081,7 +1081,9 @@ class Node(Crypt):
         from rcColor import color
         tree = Forest()
         head_node = tree.add_node()
-        head_node.add_column(rcEnv.nodename)
+        head_node.add_column(rcEnv.nodename, color.BOLD)
+        head_node.add_column("Value", color.BOLD)
+        head_node.add_column("Source", color.BOLD)
         for key, _data in data.items():
             node = head_node.add_node()
             if key not in ("targets", "lan", "uids", "gids", "hba"):
@@ -1547,6 +1549,9 @@ class Node(Crypt):
         tree = Forest()
         head_node = tree.add_node()
         head_node.add_column(rcEnv.nodename, color.BOLD)
+        head_node.add_column("Size.Used", color.BOLD)
+        head_node.add_column("Vendor", color.BOLD)
+        head_node.add_column("Model", color.BOLD)
 
         if len(data["disks"]) > 0:
             disks_node = head_node.add_node()

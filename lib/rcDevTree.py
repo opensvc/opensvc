@@ -285,9 +285,9 @@ class DevTree(object):
         ftree = Forest()
         node = ftree.add_node()
         node.add_column(rcEnv.nodename, color.BOLD)
-        node.add_column("Type")
-        node.add_column("Size")
-        node.add_column("Pct of Parent")
+        node.add_column("Type", color.BOLD)
+        node.add_column("Size", color.BOLD)
+        node.add_column("Pct of Parent", color.BOLD)
 
         filtered = devices is not None and len(devices) > 0
         if filtered:
@@ -305,10 +305,10 @@ class DevTree(object):
         ftree = Forest()
         node = ftree.add_node()
         node.add_column(rcEnv.nodename, color.BOLD)
-        node.add_column("Type")
-        node.add_column("Parent Use")
-        node.add_column("Size")
-        node.add_column("Ratio")
+        node.add_column("Type", color.BOLD)
+        node.add_column("Parent Use", color.BOLD)
+        node.add_column("Size", color.BOLD)
+        node.add_column("Ratio", color.BOLD)
 
         if devices is None:
             devices = set()
