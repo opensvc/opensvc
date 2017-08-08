@@ -33,6 +33,10 @@ class ProvisioningDisk(Provisioning):
         except ex.OptNotFound:
             raise ex.excError("the 'pvs' parameter is mandatory for provisioning")
 
+        if self.pvs is None:
+            # lazy reference not resolvable
+            raise ex.excError("%s.pvs value is not valid" % self.r.rid)
+
         self.pvs = self.pvs.split()
         l = []
         for pv in self.pvs:
