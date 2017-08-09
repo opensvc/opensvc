@@ -4752,6 +4752,9 @@ class Svc(Crypt):
                 return err
             try:
                 value = get_val(key, section, option)
+            except ValueError as exc:
+                self.log.warning(str(exc))
+                return 0
             except ex.OptNotFound:
                 return 0
             err += check_candidates(key, section, option, value)
