@@ -37,7 +37,7 @@ from rcScheduler import scheduler_fork, Scheduler, SchedOpts
 from rcConfigParser import RawConfigParser
 from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
-                        call, which, purge_cache, read_cf
+                        call, which, purge_cache, read_cf, unset_lazy
 from converters import convert_duration
 from comm import Crypt
 
@@ -616,6 +616,7 @@ class Node(Crypt):
                 autopush = False
             del kwargs['autopush']
 
+        kwargs["node"] = self
         svcs, errors = svcBuilder.build_services(*args, **kwargs)
         if 'svcnames' in kwargs:
             self.check_build_errors(kwargs['svcnames'], svcs, errors)
@@ -667,7 +668,8 @@ class Node(Crypt):
         """
         del self.services
         self.services = None
-        self.build_services(svcnames=svcnames, autopush=False, minimal=minimal)
+        self.build_services(svcnames=svcnames, autopush=False, minimal=minimal,
+                            node=self)
 
     def close(self):
         """
@@ -827,7 +829,6 @@ class Node(Crypt):
             return self
         if self.services is None:
             self.services = {}
-        svc.node = self
         self.get_clusters()
         if not hasattr(svc, "clustername") and len(self.clusters) == 1:
             svc.clustername = self.clusters[0]
@@ -3569,16 +3570,20 @@ class Node(Crypt):
             time.sleep(0.1)
         self.daemon_start()
 
-    def daemon_leave(self):
+    @lazy
+    def cluster_nodes(self):
         try:
             cluster_nodes = self._get("cluster.nodes")
         except ex.excError:
-            self.log.info("local node is not member of a cluster")
-            return
+            return [rcEnv.nodename]
         cluster_nodes = sorted(cluster_nodes.split(" "))
+        return cluster_nodes
+
+    def daemon_leave(self):
+        cluster_nodes = list(self.cluster_nodes)
         if rcEnv.nodename in cluster_nodes:
             cluster_nodes.remove(rcEnv.nodename)
-        if len(cluster_nodes) == 0:
+        if len(self.cluster_nodes) == 0:
             self.log.info("local node is not member of a cluster")
             return
 
@@ -3599,8 +3604,6 @@ class Node(Crypt):
 
         errors = 0
         for nodename in cluster_nodes:
-            if nodename == rcEnv.nodename:
-                continue
             data = self.daemon_send(
                 {"action": "leave"},
                 nodename=nodename,
@@ -3619,6 +3622,7 @@ class Node(Crypt):
             self.config.remove_section("cluster")
 
         self.write_config()
+        unset_lazy(self, "cluster_nodes")
 
         # leave node frozen if initially frozen or we failed joining all nodes
         if initially_frozen:

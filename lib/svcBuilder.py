@@ -2281,7 +2281,7 @@ def setup_logging(svcnames):
     rcLogger.max_svcname_len = max_svcname_len
     rcLogger.initLogger(rcEnv.nodename)
 
-def build(name, minimal=False, svcconf=None):
+def build(name, minimal=False, svcconf=None, node=None):
     """build(name) is in charge of Svc creation
     it return None if service Name is not managed by local node
     else it return new Svc instance
@@ -2293,7 +2293,7 @@ def build(name, minimal=False, svcconf=None):
     # keep it separate from the framework stuff
     #
     discover_node()
-    svc = svc.Svc(svcname=name)
+    svc = svc.Svc(svcname=name, node=node)
 
     try:
         encapnodes = svc.conf_get('DEFAULT', "encapnodes")
@@ -2508,7 +2508,7 @@ def list_services():
     return l
 
 def build_services(status=None, svcnames=None, create_instance=False,
-                   minimal=False):
+                   minimal=False, node=None):
     """
     Returns a list of all services of status matching the specified status.
     If no status is specified, returns all services.
@@ -2534,7 +2534,7 @@ def build_services(status=None, svcnames=None, create_instance=False,
         missing_svcnames = sorted(list(set(svcnames) - set(all_svcnames)))
         for m in missing_svcnames:
             if create_instance:
-                services[m] = svc.Svc(m)
+                services[m] = svc.Svc(m, node=node)
             else:
                 errors.append("%s: service does not exist" % m)
         svcnames = list(set(svcnames) & set(all_svcnames))
@@ -2543,7 +2543,7 @@ def build_services(status=None, svcnames=None, create_instance=False,
 
     for name in svcnames:
         try:
-            svc = build(name, minimal=minimal)
+            svc = build(name, minimal=minimal, node=node)
         except (ex.excError, ex.excInitError, ValueError) as e:
             errors.append("%s: %s" % (name, str(e)))
             svclog = rcLogger.initLogger(rcEnv.nodename+"."+name, handlers=["file", "syslog"])

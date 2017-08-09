@@ -130,7 +130,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 fix_exe_link(rcEnv.paths.svcmgr, svcname)
                 fix_app_link(svcname)
                 with shared.SERVICES_LOCK:
-                    shared.SERVICES[svcname] = build(svcname)
+                    shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
 
     def fetch_service_config(self, svcname, nodename):
         """
@@ -173,7 +173,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 return
         finally:
             os.unlink(tmpfpath)
-        shared.SERVICES[svcname] = build(svcname)
+        shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
         self.log.info("the service %s config fetched from node %s is now "
                       "installed", svcname, nodename)
 
@@ -886,7 +886,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 cksum = self.fsum(cfg)
                 try:
                     with shared.SERVICES_LOCK:
-                        shared.SERVICES[svcname] = build(svcname)
+                        shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
                 except Exception as exc:
                     self.log.error("%s build error: %s", svcname, str(exc))
             else:

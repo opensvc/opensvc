@@ -347,9 +347,10 @@ class Svc(Crypt):
     and sync.
     """
 
-    def __init__(self, svcname=None):
+    def __init__(self, svcname=None, node=None):
         self.type = "hosted"
         self.svcname = svcname
+        self.node = node
         self.hostid = rcEnv.nodename
         self.paths = Storage(
             exe=os.path.join(rcEnv.paths.pathetc, self.svcname),
@@ -383,7 +384,6 @@ class Svc(Crypt):
 
         # set by the builder
         self.conf = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
-        self.node = None
         self.comment = ""
         self.clustertype = "failover"
         self.placement = "nodes order"
@@ -4830,7 +4830,7 @@ class Svc(Crypt):
             Try a service build to catch errors missed in other tests.
             """
             try:
-                build(self.svcname, svcconf=path)
+                build(self.svcname, svcconf=path, node=self.node)
             except Exception as exc:
                 self.log.error("the new configuration causes the following "
                                "build error: %s", str(exc))
@@ -5159,6 +5159,8 @@ class Svc(Crypt):
                 return self.svcname
             if ref == "short_svcname":
                 return self.svcname.split(".")[0]
+            if ref == "clusternodes":
+                return " ".join(self.node.cluster_nodes)
             if ref == "svcmgr":
                 return rcEnv.paths.svcmgr
             if ref == "nodemgr":
@@ -5303,6 +5305,7 @@ class Svc(Crypt):
                                           impersonate=impersonate,
                                           config=config)
         except Exception as e:
+            raise
             raise ex.excError("%s: reference evaluation failed: %s"
                               "" % (s, str(e)))
         if hasattr(self, "ref_cache") and self.ref_cache is not None:
