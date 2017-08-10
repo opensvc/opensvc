@@ -1000,7 +1000,6 @@ class KeywordJailRoot(Keyword):
                   rtype="jail",
                   text="Sets the root fs directory of the container",
                   required=True,
-                  provisioning=False
                 )
 
 class KeywordLxcCf(Keyword):
@@ -2367,7 +2366,6 @@ class KeywordDiskGceNames(Keyword):
                   rtype="gce",
                   keyword="names",
                   convert="list",
-                  provisioning=False,
                   order=1,
                   at=True,
                   required=True,
@@ -2382,7 +2380,6 @@ class KeywordDiskGceZone(Keyword):
                   section="disk",
                   rtype="gce",
                   keyword="gce_zone",
-                  provisioning=False,
                   order=2,
                   at=True,
                   required=True,
@@ -2483,7 +2480,6 @@ class KeywordIpGceRoutename(Keyword):
                   section="ip",
                   rtype="gce",
                   keyword="routename",
-                  provisioning=False,
                   order=13,
                   at=True,
                   text="Set the gce route name",
@@ -2497,7 +2493,6 @@ class KeywordIpGceZone(Keyword):
                   section="ip",
                   rtype="gce",
                   keyword="gce_zone",
-                  provisioning=False,
                   order=13,
                   at=True,
                   text="Set the gce ip route next hop zone",
