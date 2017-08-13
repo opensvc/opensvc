@@ -2,6 +2,8 @@ from __future__ import print_function
 import os
 import time
 import json
+import contextlib
+
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
@@ -27,6 +29,15 @@ LOCK_EXCEPTIONS = (
     lockCreateError,
     lockAcquire,
 )
+
+@contextlib.contextmanager
+def cmlock(*args, **kwargs):
+    lockfd = None
+    try:
+        lockfd = lock(*args, **kwargs)
+        yield
+    finally:
+        unlock(lockfd)
 
 def lock(timeout=30, delay=1, lockfile=None, intent=None):
     if timeout == 0 or delay == 0:
@@ -130,30 +141,31 @@ def unlock(lockfd):
         """
         pass
 
-
 if __name__ == "__main__":
     import optparse
     import time
     import sys
 
     parser = optparse.OptionParser()
-    parser.add_option("-f", "--file", default="/tmp/test.lock", action="store", dest="file",
-                  help="The file to lock")
-    parser.add_option("-i", "--intent", default="test", action="store", dest="intent",
-                  help="The lock intent")
-    parser.add_option("-t", "--time", default=60, action="store", type="int", dest="time",
-                  help="The time we will hold the lock")
-    parser.add_option("--timeout", default=1, action="store", type="int", dest="timeout",
-                  help="The time before failing to acquire the lock")
+    parser.add_option("-f", "--file", default="/tmp/test.lock", action="store",
+                      dest="file", help="The file to lock")
+    parser.add_option("-i", "--intent", default="test", action="store",
+                      dest="intent", help="The lock intent")
+    parser.add_option("-t", "--time", default=60, action="store", type="int",
+                      dest="time", help="The time we will hold the lock")
+    parser.add_option("--timeout", default=1, action="store", type="int",
+                      dest="timeout",
+                      help="The time before failing to acquire the lock")
     (options, args) = parser.parse_args()
     try:
-        lockfd = lock(timeout=options.timeout, delay=1, lockfile=options.file, intent=options.intent)
+        with cmlock(timeout=options.timeout, delay=1, lockfile=options.file,
+                    intent=options.intent):
+            print("lock acquired")
+            try:
+                time.sleep(options.time)
+            except KeyboardInterrupt:
+                pass
     except Exception as e:
         print(e, file=sys.stderr)
         sys.exit(1)
-    print("lock acquired")
-    try:
-        time.sleep(options.time)
-    except KeyboardInterrupt:
-        pass
 
