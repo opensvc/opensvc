@@ -882,3 +882,11 @@ class Resource(object):
         Placeholder for resource specific implementation of the dns update.
         """
         pass
+
+    def conf_get(self, o, **kwargs):
+        """
+        Relay for the Svc::conf_get() method, setting the resource rid as the
+        config section.
+        """
+        return self.svc.conf_get(self.rid, o, **kwargs)
+
