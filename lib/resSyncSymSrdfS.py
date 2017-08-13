@@ -180,7 +180,7 @@ class syncSymSrdfS(resSync.Sync):
     def is_dgimport_needed(self):
         self.do_local_dgexport(fpath=self.dgfile_tmp_local_name)
         import filecmp
-        if filecmp.cmp(self.dgfile_local_name, self.dgfile_rdf_name, shallow=False):
+        if filecmp.cmp(self.dgfile_tmp_local_name, self.dgfile_rdf_name, shallow=False):
             return False
         return True
 
