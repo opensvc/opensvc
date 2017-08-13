@@ -28,30 +28,6 @@ LOCK_EXCEPTIONS = (
     lockAcquire,
 )
 
-def monlock(timeout=0, delay=0, fname='svcmon.lock'):
-    lockfile = os.path.join(rcEnv.paths.pathlock, fname)
-    try:
-        lockfd = lock(timeout=timeout, delay=delay, lockfile=lockfile)
-    except lockTimeout:
-        print("timed out waiting for lock (%s)"%lockfile)
-        raise ex.excError
-    except lockNoLockFile:
-        print("lock_nowait: set the 'lockfile' param")
-        raise ex.excError
-    except lockCreateError:
-        print("can not create lock file (%s)"%lockfile)
-        raise ex.excError
-    except lockAcquire as e:
-        print("another svcmon is currently running (pid=%s)"%e.pid)
-        raise ex.excError
-    except:
-        print("unexpected locking error (%s)"%lockfile)
-        raise ex.excError
-    return lockfd
-
-def monunlock(lockfd):
-    unlock(lockfd)
-
 def lock(timeout=30, delay=1, lockfile=None, intent=None):
     if timeout == 0 or delay == 0:
         l = [0]
