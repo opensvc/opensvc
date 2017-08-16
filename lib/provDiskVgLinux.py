@@ -83,4 +83,5 @@ class ProvisioningDisk(Provisioning):
         self.r.clear_cache("vg.lvs.attr")
         self.r.clear_cache("vg.tags")
         self.r.log.info("provisioned")
+        self.r.start()
         return True
