@@ -7,7 +7,7 @@ changes."
 umask 022
 
 function changelog {
-	git log -n 100 --pretty=format:"* %ad %an <%ae>%n- %s" | \
+	git log -n 100 --pretty=format:"* %cd %an <%ae>%n- %s" | \
 	# strip tz
 	sed -e "s/ [+\-][0-1][0-9][0-5][0-9] / /g" | \
 	# strip time
