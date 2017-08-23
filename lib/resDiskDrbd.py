@@ -150,7 +150,9 @@ class Drbd(Res.Resource):
         if ret != 0:
             raise ex.excError(err)
         out = out.strip().split('/')
-        if len(out) != 2:
+        if len(out) not in (1, 2):
+            # drbd8 => 2 elements
+            # drbd9 => 1 elements
             raise ex.excError(out)
         return out
 
