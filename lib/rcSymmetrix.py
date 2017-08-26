@@ -902,8 +902,8 @@ class Vmax(Sym):
             self.del_tdev_from_sg(dev, sg)
 
     def free_tdev(self, dev):
-        out, err, ret = self.symdev(["free", "-devs", dev, "-all", "-noprompt"], xml=False, log=True)
         while True:
+            out, err, ret = self.symdev(["free", "-devs", dev, "-all", "-noprompt"], xml=False, log=True)
             if self.tdev_freed(dev) and not self.tdev_deallocating(dev) and not self.tdev_freeingall(dev):
                 break
             time.sleep(5)
