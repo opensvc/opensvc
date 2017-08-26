@@ -11,7 +11,10 @@ import rcStatus
 import time
 import datetime
 import resSync
+
 os.environ['PATH'] += ":/usr/symcli/bin"
+os.environ['SYMCLI_WAIT_ON_DB'] = 1
+os.environ['SYMCLI_WAIT_ON_GK'] = 1
 
 class syncSymSrdfS(resSync.Sync):
 
@@ -66,7 +69,8 @@ class syncSymSrdfS(resSync.Sync):
           </DG>
         </SymCLI_ML>
         """
-        cmd = ['symdg', '-g', self.symdg, 'list', 'ld', '-output', 'xml_e']
+        cmd = ['symdg', '-g', self.symdg, 'list', 'ld', '-output', 'xml_e',
+               '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
@@ -152,7 +156,8 @@ class syncSymSrdfS(resSync.Sync):
             os.unlink(fpath)
         except:
             pass
-        cmd = ['/usr/symcli/bin/symdg', 'export', self.symdg, '-f', fpath]
+        cmd = ['/usr/symcli/bin/symdg', 'export', self.symdg, '-f', fpath,
+               '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
@@ -164,14 +169,16 @@ class syncSymSrdfS(resSync.Sync):
             os.unlink(fpath)
         except:
             pass
-        cmd = ['/usr/symcli/bin/symdg', 'export', self.symdg, '-f', fpath, '-rdf']
+        cmd = ['/usr/symcli/bin/symdg', 'export', self.symdg, '-f', fpath,
+               '-rdf', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         return out
 
     def do_dgremove(self):
-        cmd = ['/usr/symcli/bin/symdg', 'delete', self.symdg, '-force']
+        cmd = ['/usr/symcli/bin/symdg', 'delete', self.symdg, '-force',
+               '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
@@ -192,7 +199,7 @@ class syncSymSrdfS(resSync.Sync):
             else:
                 self.do_dgremove()
         self.log.info("symrdf dg %s will be imported from file"%self.symdg)
-        cmd = ['symdg', 'import', self.symdg, '-f', ef]
+        cmd = ['symdg', 'import', self.symdg, '-f', ef, '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
@@ -223,14 +230,17 @@ class syncSymSrdfS(resSync.Sync):
 
     @lazy
     def rdf_query(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'query', '-output', 'xml_e']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), 'query', '-output', 'xml_e',
+               '-i', '15', '-c', '4']
         ret, out, err = self.call(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd))
         return out
 
     def dg_query(self):
-        cmd = ['/usr/symcli/bin/symdg', 'list', '-output', 'xml_e']
+        cmd = ['/usr/symcli/bin/symdg', 'list', '-output', 'xml_e',
+               '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
@@ -285,7 +295,8 @@ class syncSymSrdfS(resSync.Sync):
         return retmsg
 
     def get_rdfpairs_from_dg(self):
-        cmd = ['symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'query', '-output', 'xml_e']
+        cmd = ['symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'query',
+               '-output', 'xml_e', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
@@ -300,70 +311,81 @@ class syncSymSrdfS(resSync.Sync):
         print self.rdfpairs
 
     def is_synchronous_mode(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'verify', '-synchronous']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), 'verify', '-synchronous', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
     def is_asynchronous_mode(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'verify', '-asynchronous']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), 'verify', '-asynchronous', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
     def is_acp_disk_mode(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'verify', '-acp_disk']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), 'verify', '-acp_disk', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
     def is_synchronized_state(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'verify', '-synchronized']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), 'verify', '-synchronized', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
     def is_synchronous_and_synchronized_state(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'verify', '-synchronous', '-synchronized']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), 'verify', '-synchronous', '-synchronized',
+               '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
     def is_syncinprog_state(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'verify', '-syncinprog']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), 'verify', '-syncinprog', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
     def is_suspend_state(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'verify', '-suspended']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), 'verify', '-suspended', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
     def is_split_state(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'verify', '-split']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), 'verify', '-split', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
     def is_failedover_state(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'verify', '-failedover']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), 'verify', '-failedover', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
     def is_partitioned_state(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'verify', '-partitioned']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), 'verify', '-partitioned', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
@@ -371,14 +393,16 @@ class syncSymSrdfS(resSync.Sync):
 
     # SRDF/A expected state is consistent AND enabled
     def is_consistent_state(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'verify', '-consistent']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), 'verify', '-consistent', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
         return False
 
     def is_enabled_state(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'verify', '-enabled']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), 'verify', '-enabled', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret == 0:
             return True
@@ -388,49 +412,57 @@ class syncSymSrdfS(resSync.Sync):
         return True
 
     def resume(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg' , str(self.rdfg), '-noprompt', 'resume']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), '-noprompt', 'resume', '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         self.flush_cache()
 
     def suspend(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg' , str(self.rdfg), '-noprompt', 'suspend']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg' ,
+               str(self.rdfg), '-noprompt', 'suspend', '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         self.flush_cache()
 
     def establish(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg' , str(self.rdfg), '-noprompt', 'establish']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), '-noprompt', 'establish', '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         self.flush_cache()
 
     def failover(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg' , str(self.rdfg), '-noprompt', 'failover']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), '-noprompt', 'failover', '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         self.flush_cache()
 
     def failoverestablish(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg' , str(self.rdfg), '-noprompt', 'failover', '-establish']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), '-noprompt', 'failover', '-establish',
+               '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
         self.flush_cache()
 
     def split(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg' , str(self.rdfg), '-noprompt', 'split']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), '-noprompt', 'split', '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
         self.flush_cache()
 
     def swap(self):
-        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg' , str(self.rdfg), '-noprompt', 'swap']
+        cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
+               str(self.rdfg), '-noprompt', 'swap', '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
