@@ -1508,10 +1508,10 @@ class KeywordBwlimit(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="bwlimit",
-                  convert="integer",
+                  convert="speed_kps",
                   order=25,
                   text="Bandwidth limit in KB applied to all rsync transfers. Leave empty to enforce no limit.",
-                  example="3000"
+                  example="3 mb/s"
                 )
 
 class KeywordSyncInterval(Keyword):
@@ -1606,7 +1606,6 @@ class KeywordPgCpus(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="pg_cpus",
-                  convert="integer",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Allow service process to bind only the specified cpus. Cpus are specified as list or range : 0,1,2 or 0-2",
@@ -1619,7 +1618,6 @@ class KeywordPgMems(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="pg_mems",
-                  convert="integer",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Allow service process to bind only the specified memory nodes. Memory nodes are specified as list or range : 0,1,2 or 0-2",
@@ -1645,7 +1643,6 @@ class KeywordPgCpuQuota(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="pg_cpu_quota",
-                  convert="integer",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="The percent ratio of one core to allocate to the process group if % is specified, else the absolute value to set in the process group parameter. For example, on Linux cgroups, -1 means unlimited, and a positive absolute value means the number of microseconds to allocate each period. 50%@all means 50% of all cores, and 50%@2 means 50% of two cores.",
@@ -1671,7 +1668,7 @@ class KeywordPgMemLimit(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="pg_mem_limit",
-                  convert="integer",
+                  convert="size",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Ensures the service does not use more than specified memory (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing.",
@@ -1684,7 +1681,7 @@ class KeywordPgVmemLimit(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="pg_vmem_limit",
-                  convert="integer",
+                  convert="size",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than pg_mem_limit.",
