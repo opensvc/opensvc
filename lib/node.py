@@ -2985,6 +2985,8 @@ class Node(Crypt):
             _vs, _vg = resource.getrlimit(resource.RLIMIT_NOFILE)
             if _vs < nofile:
                 self.log.debug("raise nofile resource from %d limit to %d", _vs, nofile)
+                if nofile > _vg:
+                    _vg = nofile
                 resource.setrlimit(resource.RLIMIT_NOFILE, (nofile, _vg))
             else:
                 self.log.debug("current nofile %d already over minimum %d", _vs, nofile)
