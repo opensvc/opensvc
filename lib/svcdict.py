@@ -3413,7 +3413,7 @@ class KeywordFsType(Keyword):
                   at=True,
                   required=True,
                   strict_candidates=False,
-                  candidates=["directory"],
+                  candidates=["directory", "zfs"]+rcEnv.fs_non_pooling,
                   text="The filesystem type or 'directory'. Used to determine the fsck command to use."
                 )
 
