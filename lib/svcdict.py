@@ -1782,6 +1782,128 @@ class KeywordAppInfo(Keyword):
                   text="Info up sequencing number."
                 )
 
+class KeywordAppLimitAs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_as",
+                  convert="size",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitCpu(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_cpu",
+                  convert="duration",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitCore(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_core",
+                  convert="size",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitData(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_data",
+                  convert="size",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitFsize(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_fsize",
+                  convert="size",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitMemlock(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_memlock",
+                  convert="size",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitNofile(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_nofile",
+                  convert="size",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitNproc(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_nproc",
+                  convert="size",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitRss(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_rss",
+                  convert="size",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitStack(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_stack",
+                  convert="size",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitVmem(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_vmem",
+                  convert="size",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+
 class KeywordSyncType(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4616,6 +4738,17 @@ class KeyDict(KeywordStore):
         self += KeywordLoopFile()
         self += KeywordLoopSize()
         self += KeywordAppScript()
+        self += KeywordAppLimitAs()
+        self += KeywordAppLimitCore()
+        self += KeywordAppLimitCpu()
+        self += KeywordAppLimitData()
+        self += KeywordAppLimitFsize()
+        self += KeywordAppLimitMemlock()
+        self += KeywordAppLimitNofile()
+        self += KeywordAppLimitNproc()
+        self += KeywordAppLimitRss()
+        self += KeywordAppLimitStack()
+        self += KeywordAppLimitVmem()
         self += KeywordAppTimeout()
         self += KeywordAppStart()
         self += KeywordAppStop()
