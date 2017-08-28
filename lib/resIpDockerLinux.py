@@ -47,7 +47,7 @@ class Ip(Res.Ip):
         used eth netdevs.
         """
         nspid = self.get_nspid()
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip" , "link"]
+        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip" , "link"]
         out, err, ret = justcall(cmd)
         used = []
         for line in out.splitlines():
@@ -87,7 +87,7 @@ class Ip(Res.Ip):
             return
         self.create_netns_link(nspid=nspid, verbose=False)
 
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip", "addr"]
+        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "addr"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
@@ -177,27 +177,27 @@ class Ip(Res.Ip):
             return ret, out, err
 
         # plumb the ip
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
+        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # activate
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip", "link", "set", self.guest_dev, "up"]
+        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "link", "set", self.guest_dev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # add default route
         if self.gateway:
-            cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip", "route", "add", "default", "via", self.gateway, "dev", self.guest_dev]
+            cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "route", "add", "default", "via", self.gateway, "dev", self.guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
 
         # announce
         if which("arping") is not None:
-            cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
+            cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
             self.log.info(" ".join(cmd))
             out, err, ret = justcall(cmd)
 
@@ -234,13 +234,13 @@ class Ip(Res.Ip):
             return ret, out, err
 
         # rename the tmp guest dev
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
+        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # plumb ip
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.guest_dev]
+        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -277,13 +277,13 @@ class Ip(Res.Ip):
             return ret, out, err
 
         # rename the tmp guest dev
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
+        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # plumb the ip
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
+        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -305,29 +305,29 @@ class Ip(Res.Ip):
         return mtu
 
     def ip_setup_route(self, nspid):
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip", "route", "del", "default"]
+        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "route", "del", "default"]
         ret, out, err = self.call(cmd, errlog=False)
 
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip", "link", "set", self.guest_dev, "up"]
+        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "link", "set", self.guest_dev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         if self.gateway:
-            cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip", "route", "replace", "default", "via", self.gateway]
+            cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "route", "replace", "default", "via", self.gateway]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
 
         if self.del_net_route and self.network:
-            cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip", "route", "del", self.network+"/"+to_cidr(self.mask), "dev", self.guest_dev]
+            cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "route", "del", self.network+"/"+to_cidr(self.mask), "dev", self.guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
 
         # announce
         if which("arping") is not None:
-            cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
+            cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
             self.log.info(" ".join(cmd))
             out, err, ret = justcall(cmd)
 
@@ -354,13 +354,19 @@ class Ip(Res.Ip):
             raise ex.excError("nspid is 0")
         return nspid
 
+    @staticmethod
+    def nsname(nspid):
+        return "osvc.%s" % nspid
+
     def delete_netns_link(self, nspid=None, verbose=True):
         if nspid is None:
             nspid = self.get_nspid()
+        if nspid is None:
+            raise ex.excError("can not determine nspid")
         run_d = "/var/run/netns"
         if not os.path.exists(run_d):
             return
-        run_netns = os.path.join(run_d, nspid)
+        run_netns = os.path.join(run_d, self.nsname(nspid))
         try:
             os.unlink(run_netns)
             if verbose:
@@ -376,17 +382,12 @@ class Ip(Res.Ip):
         run_d = "/var/run/netns"
         if not os.path.exists(run_d):
             os.makedirs(run_d)
-        run_netns = os.path.join(run_d, nspid)
+        run_netns = os.path.join(run_d, self.nsname(nspid))
         proc_netns = "/proc/%s/ns/net" % nspid
         if os.path.exists(proc_netns) and not os.path.exists(run_netns):
             if verbose:
                 self.log.info("create symlink %s -> %s" % (run_netns, proc_netns))
             os.symlink(proc_netns, run_netns)
-        # keep a reference on the run_netns file to prevent its removal during our run
-        try:
-            self.ns_fd = open(run_netns, "r")
-        except:
-            self.ns_fd = None
 
     def stopip_cmd(self):
         intf = self.get_docker_interface()
@@ -396,7 +397,7 @@ class Ip(Res.Ip):
             raise ex.excContinueAction("can't find on which interface %s is plumbed in container %s" % (self.addr, self.container_id()))
         if self.mask is None:
             raise ex.excContinueAction("netmask is not set")
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", nspid, "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]
+        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]
         ret, out, err = self.vcall(cmd)
         self.delete_netns_link(nspid=nspid)
         return ret, out, err
