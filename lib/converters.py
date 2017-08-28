@@ -144,7 +144,7 @@ def convert_duration(s, _to="s"):
 
     return duration // units[_to]
 
-def convert_size(s, _to='', _round=1):
+def convert_size(s, _to='', _round=1, default_unit=''):
     """
     Return an integer from the <s> expression, converting to a pivot unit,
     then to the target unit specified by <_to>, and finally round to a
@@ -173,6 +173,8 @@ def convert_size(s, _to='', _round=1):
         factor = 1024
     if len(unit) > 0:
         unit = unit[0].upper()
+    else:
+        unit = default_unit
     size = float(size)
 
     try:
@@ -222,12 +224,28 @@ def print_size(size, unit="MB"):
         size = size/mult
     return '%d%s' % (size, u.lower().rstrip("b"))
 
+def convert_speed(s, _to='', _round=1, default_unit=''):
+    try:
+        s = s.rstrip(" /s")
+    except AttributeError:
+        pass
+    size = convert_size(s, _to=_to, _round=_round, default_unit=default_unit)
+    return size
+
+def convert_speed_kps(s, _round=1):
+    return convert_speed(s, _to="KB", _round=_round, default_unit='K')
+
 if __name__ == "__main__":
     #print(convert_size("10000 KiB", _to='MiB', _round=3))
     #print(convert_size("10M", _to='', _round=4096))
     for s in (1, "1", "1w1d1h1m1s", "1d", "1d1w", "2m2s", "Ad", "1dd", "-1", "-1s"):
         try:
             print(s, "=>", convert_duration(s, _to="d"))
+        except ValueError as exc:
+            print(exc)
+    for s in (3000, "3000 kb/s", "3000 k/s", "3000k"):
+        try:
+            print(s, "=>", convert_speed_kps(s))
         except ValueError as exc:
             print(exc)
 
