@@ -53,7 +53,6 @@ class Keyword(object):
                  scope_order="specific > generic",
                  default=None,
                  default_text=None,
-                 validator=None,
                  candidates=None,
                  strict_candidates=True,
                  convert=None,
@@ -541,15 +540,6 @@ class KeywordStore(dict):
             sections[rid] = self.purge_keywords_from_dict(sections[rid], section)
 
         return defaults, sections
-
-class KeywordInteger(Keyword):
-    def validator(self, val, d=None):
-        try:
-             val = int(val)
-        except:
-             return False
-        return True
-
 
 class KeywordProvision(Keyword):
     def __init__(self):
@@ -1512,20 +1502,21 @@ class KeywordDefaultScsireserv(Keyword):
                   text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
                 )
 
-class KeywordBwlimit(KeywordInteger):
+class KeywordBwlimit(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="DEFAULT",
                   keyword="bwlimit",
+                  convert="integer",
                   order=25,
                   text="Bandwidth limit in KB applied to all rsync transfers. Leave empty to enforce no limit.",
                   example="3000"
                 )
 
-class KeywordSyncInterval(KeywordInteger):
+class KeywordSyncInterval(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="DEFAULT",
                   keyword="sync_interval",
@@ -1535,9 +1526,9 @@ class KeywordSyncInterval(KeywordInteger):
                   text="Set the minimum delay between syncs in minutes. If a sync is triggered through crond or manually, it is skipped if last sync occurred less than 'sync_min_delay' ago. The mecanism is enforced by a timestamp created upon each sync completion in <pathvar>/sync/[service]![dst]"
                 )
 
-class KeywordSyncMaxDelay(KeywordInteger):
+class KeywordSyncMaxDelay(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="DEFAULT",
                   keyword="sync_max_delay",
@@ -1609,108 +1600,117 @@ class KeywordCreatePg(Keyword):
                   text="Use process containers when possible. Containers allow capping memory, swap and cpu usage per service. Lxc containers are naturally containerized, so skip containerization of their startapp."
                 )
 
-class KeywordPgCpus(KeywordInteger):
+class KeywordPgCpus(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="DEFAULT",
                   keyword="pg_cpus",
+                  convert="integer",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Allow service process to bind only the specified cpus. Cpus are specified as list or range : 0,1,2 or 0-2",
                   example="0-2"
                 )
 
-class KeywordPgMems(KeywordInteger):
+class KeywordPgMems(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="DEFAULT",
                   keyword="pg_mems",
+                  convert="integer",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Allow service process to bind only the specified memory nodes. Memory nodes are specified as list or range : 0,1,2 or 0-2",
                   example="0-2"
                 )
 
-class KeywordPgCpuShare(KeywordInteger):
+class KeywordPgCpuShare(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="DEFAULT",
                   keyword="pg_cpu_shares",
+                  convert="integer",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Kernel default value is used, which usually is 1024 shares. In a cpu-bound situation, ensure the service does not use more than its share of cpu ressource. The actual percentile depends on shares allowed to other services.",
                   example="512"
                 )
 
-class KeywordPgCpuQuota(KeywordInteger):
+class KeywordPgCpuQuota(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="DEFAULT",
                   keyword="pg_cpu_quota",
+                  convert="integer",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="The percent ratio of one core to allocate to the process group if % is specified, else the absolute value to set in the process group parameter. For example, on Linux cgroups, -1 means unlimited, and a positive absolute value means the number of microseconds to allocate each period. 50%@all means 50% of all cores, and 50%@2 means 50% of two cores.",
                   example="50%@all"
                 )
 
-class KeywordPgMemOomControl(KeywordInteger):
+class KeywordPgMemOomControl(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="DEFAULT",
                   keyword="pg_mem_oom_control",
+                  convert="integer",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="A flag (0 or 1) that enables or disables the Out of Memory killer for a cgroup. If enabled (0), tasks that attempt to consume more memory than they are allowed are immediately killed by the OOM killer. The OOM killer is enabled by default in every cgroup using the memory subsystem; to disable it, write 1.",
                   example="1"
                 )
 
-class KeywordPgMemLimit(KeywordInteger):
+class KeywordPgMemLimit(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="DEFAULT",
                   keyword="pg_mem_limit",
+                  convert="integer",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Ensures the service does not use more than specified memory (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing.",
                   example="512000000"
                 )
 
-class KeywordPgVmemLimit(KeywordInteger):
+class KeywordPgVmemLimit(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="DEFAULT",
                   keyword="pg_vmem_limit",
+                  convert="integer",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than pg_mem_limit.",
                   example="1024000000"
                 )
 
-class KeywordPgMemSwappiness(KeywordInteger):
+class KeywordPgMemSwappiness(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="DEFAULT",
                   keyword="pg_mem_swappiness",
+                  convert="integer",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Set a swappiness value for the process group.",
                   example="40"
                 )
 
-class KeywordPgBlkioWeight(KeywordInteger):
+class KeywordPgBlkioWeight(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="DEFAULT",
                   keyword="pg_blkio_weight",
+                  convert="integer",
                   order=31,
                   depends=[('create_pg', [True])],
                   text="Block IO relative weight. Value: between 10 and 1000. Kernel default: 1000.",
@@ -2198,12 +2198,13 @@ class KeywordSyncRsyncDstfs(Keyword):
                   text="If set to a remote mount point, OpenSVC will verify that the specified mount point is really hosting a mounted FS. This can be used as a safety net to not overflow the parent FS (may be root)."
                 )
 
-class KeywordSyncRsyncBwlimit(KeywordInteger):
+class KeywordSyncRsyncBwlimit(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="sync",
                   keyword="bwlimit",
+                  convert="integer",
                   rtype="rsync",
                   text="Bandwidth limit in KB applied to this rsync transfer. Leave empty to enforce no limit. Takes precedence over 'bwlimit' set in [DEFAULT]."
                 )
@@ -2219,9 +2220,9 @@ class KeywordSyncSchedule(Keyword):
                   example='["00:00-01:00@61 mon", "02:00-03:00@61 tue-sun"]'
                 )
 
-class KeywordSyncSyncMaxDelay(KeywordInteger):
+class KeywordSyncSyncMaxDelay(Keyword):
     def __init__(self):
-        KeywordInteger.__init__(
+        Keyword.__init__(
                   self,
                   section="sync",
                   keyword="sync_max_delay",
