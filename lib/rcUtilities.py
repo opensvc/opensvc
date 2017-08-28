@@ -320,6 +320,7 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
     killed = False
 
     def check_io():
+        logged = 0
         ready_to_read = select.select([proc.stdout, proc.stderr], [], [], 1000)[0]
         for io in ready_to_read:
             line = io.readline()
@@ -330,6 +331,8 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
             if line in ('', b''):
                 continue
             logger.log(log_level[io], line[:-1])
+            logged += 1
+        return logged
 
     # keep checking stdout/stderr until the proc exits
     while proc.poll() is None:
@@ -345,9 +348,13 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
                 proc.kill()
                 killed = True
 
-    check_io()  # check again to catch anything after the process exits
-
+    while True:
+        # check again to catch anything after the process exits
+        logged = check_io()
+        if logged == 0:
+            break
     return proc.wait()
+
 
 def call(argv,
          cache=False,      # serve/don't serve cmd output from cache
