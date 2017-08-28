@@ -1726,6 +1726,117 @@ class KeywordAppInfo(Keyword):
                   text="Info up sequencing number."
                 )
 
+class KeywordAppLimitAs(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_as",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitCpu(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_cpu",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitCore(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_core",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitData(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_data",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitFsize(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_fsize",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitMemlock(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_memlock",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitNofile(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_nofile",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitNproc(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_nproc",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitRss(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_rss",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitStack(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_stack",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+class KeywordAppLimitVmem(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="limit_vmem",
+                  at=True,
+                  order=12,
+                  text=""
+                )
+
 class KeywordSyncType(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4257,7 +4368,7 @@ class KeyDict(KeywordStore):
                   at=True,
                   example="ip#0 fs#0(down,stdby down)",
                   default="",
-                  text="A whitespace-separated list of conditions to meet to accept running a '%s' action. A condition is expressed as <rid>(<state>,...). If states are omitted, 'up,stdby up' is used as the default expected states." % action
+                  text="A whitespace-separated list of conditions to meet to accept running a '%s' action. A condition is expressed as <rid>(<state>,...). If states are omitted, 'up,stdby up' is used as the default expected states. The 'impossible' value always disables the action." % action
                 )
 
 
@@ -4490,6 +4601,17 @@ class KeyDict(KeywordStore):
         self += KeywordLoopFile()
         self += KeywordLoopSize()
         self += KeywordAppScript()
+        self += KeywordAppLimitAs()
+        self += KeywordAppLimitCore()
+        self += KeywordAppLimitCpu()
+        self += KeywordAppLimitData()
+        self += KeywordAppLimitFsize()
+        self += KeywordAppLimitMemlock()
+        self += KeywordAppLimitNofile()
+        self += KeywordAppLimitNproc()
+        self += KeywordAppLimitRss()
+        self += KeywordAppLimitStack()
+        self += KeywordAppLimitVmem()
         self += KeywordAppTimeout()
         self += KeywordAppStart()
         self += KeywordAppStop()

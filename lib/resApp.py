@@ -8,6 +8,7 @@ import pwd
 import time
 import stat
 
+from svcBuilder import conf_get_int_scope
 from rcUtilities import justcall, which, lazy, is_string
 from rcGlobalEnv import rcEnv
 from resources import Resource
@@ -16,7 +17,7 @@ import rcStatus
 import rcExceptions as ex
 import lock
 
-def run_as_popen_kwargs(fpath):
+def run_as_popen_kwargs(fpath, limits):
     """
     Setup the Popen keyword args to execute <fpath> with the
     privileges demoted to those of the owner of <fpath>.
@@ -45,7 +46,24 @@ def run_as_popen_kwargs(fpath):
     env['LOGNAME'] = user_name
     env['PWD'] = cwd
     env['USER'] = user_name
-    return {'preexec_fn': demote(user_uid, user_gid), 'cwd': cwd, 'env': env}
+    return {'preexec_fn': preexec(user_uid, user_gid, limits), 'cwd': cwd, 'env': env}
+
+def preexec(user_uid, user_gid, limits):
+    set_rlimits(limits)
+    demote(user_uid, user_gid)
+
+def set_rlimits(limits):
+    """
+    Set the resource limits for the executed command.
+    """
+    try:
+        import resource
+    except ImportError:
+        return
+    for res, val in limits.items():
+        rlim = getattr(resource, "RLIMIT_"+res.upper())
+        _vs, _vg = resource.getrlimit(rlim)
+        resource.setrlimit(rlim, (val, val))
 
 def demote(user_uid, user_gid):
     """
@@ -471,6 +489,28 @@ class App(Resource):
             self.log.debug("%s returned out=[%s], err=[%s], ret=[%d]", cmd, out, err, ret)
             return ret
 
+    @lazy
+    def limits(self):
+        data = {}
+        try:
+            import resource
+        except ImportError:
+            return data
+        for key in ("as", "cpu", "core", "data", "fsize", "memlock", "nofile", "nproc", "rss", "stack", "vmem"):
+            try:
+                data[key] = conf_get_int_scope(self.svc, self.svc.config, self.rid, "limit_"+key)
+            except ex.OptNotFound:
+                continue
+            rlim = getattr(resource, "RLIMIT_"+key.upper())
+            _vs, _vg = resource.getrlimit(rlim)
+            if data[key] > _vs:
+                if data[key] > _vg:
+                    _vg = data[key]
+                resource.setrlimit(rlim, (data[key], _vg))
+                _vs, _vg = resource.getrlimit(rlim)
+            self.log.info("limit %s = %s", key, data[key])
+        return data
+
     def _run_cmd_dedicated_log(self, action, cmd):
         """
         Poll stdout and stderr to log as soon as new lines are available.
@@ -485,7 +525,11 @@ class App(Resource):
             'stdout': ofile.fileno(),
             'stderr': ofile.fileno(),
         }
-        kwargs.update(run_as_popen_kwargs(self.script))
+        try:
+            kwargs.update(run_as_popen_kwargs(self.script, self.limits))
+        except ValueError as exc:
+            self.log.error("%s", exc)
+            return 1
         user = kwargs.get("env").get("LOGNAME")
         self.log.info('exec %s as user %s', ' '.join(cmd), user)
         now = datetime.now()
