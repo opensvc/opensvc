@@ -115,3 +115,30 @@ class Ip(Res.Ip):
             self.log.error("%s is already up on another host" % (self.addr))
             raise ex.IpConflict(self.addr)
 
+    def is_up(self):
+        cmd = ["ipadm", "show-addr", "-p", "-o", "STATE,ADDR", self.ipdev+'/'+self.ipdevExt]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            # normal down state
+            return False
+        try:
+            state, addr = out.strip("\n").split(":")
+        except ValueError:
+            self.status_log(out)
+            return False
+        if state != "ok":
+            self.status_log("state: %s" % state)
+            return False
+        try:
+            _addr, _mask = addr.split("/")
+        except ValueError:
+            self.status_log(out)
+            return False
+        if _addr != self.addr:
+            self.status_log("wrong addr: %s" % addr)
+            return False
+        if self.mask is not None and _mask != to_cidr(self.mask):
+            self.status_log("wrong mask: %s" % addr)
+            return True
+        return True
+
