@@ -3494,6 +3494,8 @@ class Node(Crypt):
             {"action": "daemon_shutdown"},
             nodename=self.options.node,
         )
+        if data is None:
+            raise ex.excError
         print(json.dumps(data, indent=4, sort_keys=True))
 
     def _daemon_stop(self):

@@ -372,7 +372,7 @@ class Crypt(object):
         Send a request to the daemon running on nodename and return the result
         fetched if with_result is set.
         """
-        if nodename is None:
+        if nodename is None or nodename == "":
             nodename = rcEnv.nodename
         addr, port = self.get_listener_info(nodename)
         try:
