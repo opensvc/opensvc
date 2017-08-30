@@ -98,70 +98,60 @@ class Rsync(resSync.Sync):
         return True
 
     def nodes_to_sync(self, target=None, state="syncable", status=False):
-        """ Checks are ordered by cost
-        """
-
+        # Checks are ordered by cost
         if self.is_disabled():
-            return set([])
+            return set()
 
-        """ DRP nodes are not allowed to sync nodes nor drpnodes
-        """
+        # DRP nodes are not allowed to sync nodes nor drpnodes
         if rcEnv.nodename in self.svc.drpnodes:
-            return set([])
+            return set()
 
         self.pre_sync_check_flex_primary()
 
-        """Discard the local node from the set
-        """
         if target in self.target:
             targets = self.target_nodes(target)
         else:
-            return set([])
+            return set()
 
+        # Discard the local node from the set
         targets -= set([rcEnv.nodename])
+
         if len(targets) == 0:
-            return set([])
+            return set()
 
         for node in targets.copy():
             if state == "syncable" and not self.node_can_sync(node):
-                targets -= set([node])
+                targets.remove(node)
                 continue
             elif state == "late" and not self.node_need_sync(node):
-                targets -= set([node])
+                targets.remove(node)
                 continue
 
         if len(targets) == 0:
-            return set([])
+            return set()
 
-        """Accept to sync from here only if the service is up
-           Also accept n/a status, because it's what the avail status
-           ends up to be when only sync#* are specified using --rid
-
-           sync#i1 is an exception, because we want all prd nodes to
-           sync their system files to all drpnodes regardless of the service
-           state
-        """
+        #
+        # Accept to sync from here only if the service is up
+        # Also accept n/a status, because it's what the avail status
+        # ends up to be when only sync#* are specified using --rid
+        #
         s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
         if not self.svc.options.force and \
-           s['avail'].status not in [rcStatus.UP, rcStatus.NA] and \
-           self.rid != "sync#i1":
+           s['avail'].status not in [rcStatus.UP, rcStatus.NA]:
             if s['avail'].status == rcStatus.WARN:
                 if not self.svc.options.cron:
                     self.log.info("won't sync this resource service in warn status")
             elif not self.svc.options.cron:
                 self.log.info("won't sync this resource for a service not up")
-            return set([])
+            return set()
 
         for node in targets.copy():
             if not status and not self.remote_node_env(node, target):
-                targets -= set([node])
+                targets.remove(node)
                 continue
             if not status and not self.remote_fs_mounted(node):
-                targets -= set([node])
+                targets.remove(node)
                 continue
-
-        if len(targets) == 0:
-            return set([])
 
         return targets
 
