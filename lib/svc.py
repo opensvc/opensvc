@@ -4114,9 +4114,15 @@ class Svc(Crypt):
         """
         Delete an option in the service configuration file specified section.
         """
-        section = "[%s]" % section
         lines = self._read_cf().splitlines()
+        lines = self.__unset(lines, section, option)
+        try:
+            self._write_cf(lines)
+        except (IOError, OSError) as exc:
+            raise ex.excError(str(exc))
 
+    def __unset(self, lines, section, option):
+        section = "[%s]" % section
         need_write = False
         in_section = False
         for i, line in enumerate(lines):
@@ -4144,12 +4150,7 @@ class Svc(Crypt):
         if not need_write:
             raise ex.excError("option '%s' not found in section %s" % (option, section))
 
-        buff = "\n".join(lines) + "\n"
-
-        try:
-            self._write_cf(buff)
-        except (IOError, OSError) as exc:
-            raise ex.excError(str(exc))
+        return lines
 
     def get(self):
         """
@@ -4289,11 +4290,18 @@ class Svc(Crypt):
                 self._set("env", key, newval)
 
     def _set(self, section, option, value):
+        lines = self._read_cf().splitlines()
+        lines = self.__set(lines, section, option, value)
+        try:
+            self._write_cf(lines)
+        except (IOError, OSError) as exc:
+            raise ex.excError(str(exc))
+
+    def __set(self, lines, section, option, value):
         """
         Set <option> to <value> in <section> of the configuration file.
         """
         section = "[%s]" % section
-        lines = self._read_cf().splitlines()
         done = False
         in_section = False
         value = try_decode(value)
@@ -4339,7 +4347,7 @@ class Svc(Crypt):
                         _value += " %s" % lines[section_idx].strip()
 
                     if value.replace("\n", " ") == _value:
-                        return
+                        return lines
 
                     lines[idx] = "%s = %s" % (option, value)
                     section_idx = idx
@@ -4361,12 +4369,7 @@ class Svc(Crypt):
                 lines.append(section)
             lines.append("%s = %s" % (option, value))
 
-        buff = "\n".join(lines) + "\n"
-
-        try:
-            self._write_cf(buff)
-        except (IOError, OSError) as exc:
-            raise ex.excError(str(exc))
+        return lines
 
     def set_disable(self, rids=None, disable=True):
         """
@@ -4374,6 +4377,8 @@ class Svc(Crypt):
         * at DEFAULT level if no resources were specified
         * in each resource section if resources were specified
         """
+        lines = self._read_cf().splitlines()
+
         if rids is None:
             rids = []
 
@@ -4388,10 +4393,10 @@ class Svc(Crypt):
 
             if disable:
                 self.log.info("set %s.disable = true", rid)
-                self.config.set(rid, "disable", "true")
+                lines = self.__set(lines, rid, "disable", "true")
             elif self.config.has_option(rid, "disable"):
                 self.log.info("remove %s.disable", rid)
-                self.config.remove_option(rid, "disable")
+                lines = self.__unset(lines, rid, "disable")
 
             #
             # if we set <section>.disable = <bool>,
@@ -4407,7 +4412,7 @@ class Svc(Crypt):
                 if value == True:
                     continue
                 self.log.info("remove %s.%s = false", rid, option)
-                self.config.remove_option(rid, option)
+                lines = self.__unset(lines, rid, option)
 
 
         unset_lazy(self, "disabled")
@@ -4425,12 +4430,10 @@ class Svc(Crypt):
                 resource.enable()
 
         try:
-            self.write_config()
+            self._write_cf(lines)
         except (IOError, OSError) as exc:
-            self.log.error(str(exc))
-            return 1
-
-        return 0
+            raise ex.excError(str(exc))
+        unset_lazy(self, "config")
 
     def enable(self):
         """
@@ -4883,6 +4886,8 @@ class Svc(Crypt):
         import codecs
         import tempfile
         import shutil
+        if isinstance(buff, list):
+            buff = "\n".join(buff) + "\n"
         ofile = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.paths.pathtmp, prefix=self.svcname)
         fpath = ofile.name
         os.chmod(fpath, 0o0644)
