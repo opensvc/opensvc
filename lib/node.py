@@ -1693,7 +1693,7 @@ class Node(Crypt):
                 continue
             if disk_id.startswith(rcEnv.nodename+".loop"):
                 continue
-            if re.match(r"/dev/rdsk/.*s[01345678]", d):
+            if re.match(r"/dev/rdsk/.*s[01345678]", devpath):
                 # don't report partitions
                 continue
 
@@ -1709,8 +1709,8 @@ class Node(Crypt):
 
             data["disks"][disk_id] = {
                 "size": disk_size,
-                "vendor": self.diskinfo.disk_vendor(d),
-                "model": self.diskinfo.disk_model(d),
+                "vendor": self.diskinfo.disk_vendor(devpath),
+                "model": self.diskinfo.disk_model(devpath),
                 "used": 0,
                 "services": {},
             }
