@@ -53,8 +53,12 @@ class HbUcast(Hb, Crypt):
 
         for nodename in self.cluster_nodes:
             if nodename not in self.peer_config:
+                if nodename == rcEnv.nodename:
+                    default_addr = "0.0.0.0"
+                else:
+                    default_addr = nodename
                 self.peer_config[nodename] = Storage({
-                    "addr": nodename,
+                    "addr": default_addr,
                     "port": default_port,
                 })
             if config.has_option(self.name, "addr@"+nodename):
@@ -99,7 +103,6 @@ class HbUcastTx(HbUcast):
         return data
 
     def do(self):
-        #self.log.info("sending to %s:%s", self.addr, self.port)
         self.reload_config()
         message, message_bytes = self.get_message()
         if message is None:
@@ -112,6 +115,7 @@ class HbUcastTx(HbUcast):
 
     def _do(self, message, message_bytes, nodename, config):
         try:
+            #self.log.info("sending to %s:%s", config.addr, config.port)
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(2)
             sock.bind((self.peer_config[rcEnv.nodename].addr, 0))
