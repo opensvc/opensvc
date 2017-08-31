@@ -889,6 +889,7 @@ class Monitor(shared.OsvcThread, Crypt):
                         shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
                 except Exception as exc:
                     self.log.error("%s build error: %s", svcname, str(exc))
+                    continue
             else:
                 cksum = last_config["cksum"]
             with shared.SERVICES_LOCK:
