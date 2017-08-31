@@ -3531,6 +3531,10 @@ class Node(Crypt):
             {"action": "daemon_stop", "options": options},
             nodename=self.options.node,
         )
+        while True:
+            if not self._daemon_running():
+                break
+            time.sleep(0.1)
         return data
 
     def daemon_stop(self):
@@ -3599,10 +3603,6 @@ class Node(Crypt):
         import time
         if self._daemon_running():
             self._daemon_stop()
-        while True:
-            if not self._daemon_running():
-                break
-            time.sleep(0.1)
         self.daemon_start()
 
     @lazy
