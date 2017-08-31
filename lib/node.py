@@ -3486,7 +3486,29 @@ class Node(Crypt):
         )
         print(json.dumps(data, indent=4, sort_keys=True))
 
+    def systemd_restart(self):
+        if not which("systemctl"):
+            return False
+        out, err, ret = justcall(["runlevel"])
+        if ret != 0:
+            return False
+        last, current = out.split()
+        if current in ("0", "1", "6"):
+            return False
+        return True
+
     def daemon_shutdown(self):
+        if self.systemd_restart():
+            # called by "systemd restart opensvc-agent", which can be triggered
+            # * directly
+            # * via "nodemgr daemon restart"
+            # detect these case and don't stop the services
+            self.log.info("requalify shutdown as stop")
+            return self._daemon_stop()
+        self.log.info("really shutdown")
+        return self._daemon_shutdown()
+
+    def _daemon_shutdown(self):
         """
         Tell the daemon to shutdown all local service instances then die.
         """
@@ -3552,12 +3574,21 @@ class Node(Crypt):
         return False
 
     def daemon_restart_systemd(self):
+        """
+        Do daemon restart through the systemd, so that the daemon pid is updated
+        in systemd, and the systemd service status is correctly reported.
+        """
         os.system("systemctl restart opensvc-agent")
 
     def daemon_handled_by_systemd(self):
+        """
+        Return True if the system has systemd.
+        """
         if which("systemctl") is None:
             return False
-        if os.environ.get("OSVC_ROOT_PATH") is not None:
+        if os.environ.get("LOGNAME") is None:
+            # do as if we're not handled by systemd if we're already run by
+            # systemd
             return False
         return True
 
