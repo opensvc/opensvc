@@ -80,7 +80,7 @@ class HbDisk(Hb, Crypt):
         if rcEnv.sysname == "Linux":
             if stat.S_ISBLK(statinfo.st_mode):
                 self.log.info("using directio")
-                self.flags |= os.O_DIRECT | os.O_SYNC
+                self.flags |= os.O_DIRECT | os.O_SYNC | os.O_DSYNC
             else:
                 raise ex.excAbortAction("%s must be a block device" % self.dev)
         else:
@@ -125,6 +125,7 @@ class HbDisk(Hb, Crypt):
         if len(data) > mmap.PAGESIZE:
             self.log.error("attempt to write too long data in meta slot %d", slot)
             raise ex.excAbortAction()
+        self.meta_slot_buff.seek(0)
         self.meta_slot_buff.write(data)
         offset = self.meta_slot_offset(slot)
         fo.seek(offset, os.SEEK_SET)
@@ -145,6 +146,7 @@ class HbDisk(Hb, Crypt):
         if len(data) > self.SLOTSIZE:
             self.log.error("attempt to write too long data in slot %d", slot)
             raise ex.excAbortAction()
+        self.slot_buff.seek(0)
         self.slot_buff.write(data)
         offset = self.slot_offset(slot)
         fo.seek(offset, os.SEEK_SET)
@@ -290,6 +292,8 @@ class HbDiskRx(HbDisk):
                 _nodename, _data = self.decrypt(slot_data)
                 if _nodename is None:
                     # invalid crypt
+                    #self.log.warning("can't decrypt data in node %s slot",
+                    #                 nodename)
                     continue
                 if _nodename != nodename:
                     self.log.warning("node %s has written its data in node %s "
@@ -298,6 +302,7 @@ class HbDiskRx(HbDisk):
                 updated = _data["updated"]
                 if self.last_updated is not None and self.last_updated == updated:
                     # remote tx has not rewritten its slot
+                    #self.log.info("node %s has not updated its slot", nodename)
                     continue
                 self.last_updated = updated
                 with shared.CLUSTER_DATA_LOCK:
