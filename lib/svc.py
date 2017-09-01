@@ -1097,6 +1097,7 @@ class Svc(Crypt):
             * any other exception, save the traceback in the debug log
               and stop looping over the resources and raise an excError
             """
+            aborted = []
             for rset in rsets:
                 if action in ACTIONS_NO_TRIGGER or rset.all_skip(action):
                     break
@@ -1106,10 +1107,12 @@ class Svc(Crypt):
                 except ex.excError:
                     raise
                 except ex.excAbortAction:
+                    aborted.append(rset)
                     continue
                 except:
                     self.save_exc()
                     raise ex.excError
+            return aborted
 
         def do_snap_trigger(when):
             """
@@ -1144,10 +1147,13 @@ class Svc(Crypt):
         # snapshots are created in pre_action and destroyed in post_action
         # place presnap and postsnap triggers around pre_action
         do_snap_trigger("pre")
-        do_trigger("pre")
+        aborted = do_trigger("pre")
         do_snap_trigger("post")
 
         for rset in rsets:
+            if rset in aborted:
+                rset.log.debug("skip action: aborted by pre action")
+                continue
             self.log.debug('set_action: action=%s rset=%s', action, rset.type)
             rset.action(action, tags=tags, xtags=xtags)
 
