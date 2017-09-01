@@ -42,9 +42,9 @@ def signal_handler(*args):
 
 DEFAULT_WAITLOCK = 60
 
-ACTION_NO_ASYNC = {
+ACTION_NO_ASYNC = [
     "logs",
-}
+]
 
 ACTION_TGT_STATE = {
     "start": "started",
