@@ -212,8 +212,6 @@ class Rsync(resSync.Sync):
         targets = self.nodes_to_sync(target)
 
         if len(targets) == 0:
-            if not self.svc.options.cron:
-                self.log.info("no nodes to sync")
             raise ex.syncNoNodesToSync
 
         if "delay_snap" in self.tags:
@@ -288,17 +286,17 @@ class Rsync(resSync.Sync):
 
         if len(targets) == 0:
             if not self.svc.options.cron:
-                self.log.info("no node to sync")
+                self.rset.log.info("no nodes to sync")
             raise ex.excAbortAction
 
         if not need_snap:
-            self.log.debug("snap not needed")
+            self.rset.log.debug("snap not needed")
             return
 
         Snap = lookup_snap_mod()
         try:
             self.rset.snaps = Snap.Snap(self.rid)
-            self.rset.snaps.set_logger(self.log)
+            self.rset.snaps.set_logger(self.rset.log)
             self.rset.snaps.try_snap(self.rset, action)
         except ex.syncNotSnapable:
             raise ex.excError
@@ -320,11 +318,11 @@ class Rsync(resSync.Sync):
             self.sync("nodes")
         except ex.syncNoFilesToSync:
             if not self.svc.options.cron:
-                self.log.info("no file to sync")
+                self.log.info("no files to sync")
             pass
         except ex.syncNoNodesToSync:
             if not self.svc.options.cron:
-                self.log.info("no node to sync")
+                self.log.info("no nodes to sync")
             pass
 
     def sync_drp(self):
@@ -332,11 +330,11 @@ class Rsync(resSync.Sync):
             self.sync("drpnodes")
         except ex.syncNoFilesToSync:
             if not self.svc.options.cron:
-                self.log.info("no file to sync")
+                self.log.info("no files to sync")
             pass
         except ex.syncNoNodesToSync:
             if not self.svc.options.cron:
-                self.log.info("no node to sync")
+                self.log.info("no nodes to sync")
             pass
 
     def _status(self, verbose=False):
