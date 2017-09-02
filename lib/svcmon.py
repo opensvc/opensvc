@@ -47,6 +47,9 @@ def main(argv=None):
     except ex.excError as e:
         print(e, file=sys.stderr)
         return 1
+    except KeyboardInterrupt:
+        sys.stderr.write("Keybord Interrupt\n")
+        return 1
     finally:
         node.close()
 
