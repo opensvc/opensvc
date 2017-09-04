@@ -83,8 +83,10 @@ def eval_expr(expr):
                         return False
                 left = right
                 return True
+        elif isinstance(node, ast.Attribute):
+            raise TypeError("strings with dots need quoting")
         else:
-            raise TypeError(node)
+            raise TypeError("unsupported node type %s" % type(node))
     return eval_(ast.parse(expr, mode='eval').body)
 
 

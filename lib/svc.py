@@ -1432,7 +1432,7 @@ class Svc(Crypt):
         notice = []
         if self.frozen():
             notice.append("frozen")
-        if not data.get("constraints", True):
+        if not convert_boolean(data.get("constraints", True)):
             notice.append("constraints violation")
         notice = ", ".join(notice)
 
@@ -5308,7 +5308,10 @@ class Svc(Crypt):
             if m is None:
                 return s
             expr = m.group(1)
-            val = eval_expr(expr)
+            try:
+                val = eval_expr(expr)
+            except TypeError as exc:
+                raise ex.excError("invalid expression: %s: %s" % (expr, str(exc)))
             s = s[:m.start()] + str(val) + s[m.end():]
 
     def handle_references(self, s, scope=False, impersonate=None, config=None):
