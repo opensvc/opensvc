@@ -3425,6 +3425,17 @@ class Node(Crypt):
                     line.append(str(data["monitor"]["nodes"].get(nodename, {}).get("load", {}).get(metric, "")))
                 out.append(line)
 
+        def load_nmon_status():
+            line = [
+                colorize(" mon", color.BOLD),
+                "",
+                "",
+                "|",
+            ]
+            for nodename in nodenames:
+                line.append(str(data["monitor"]["nodes"].get(nodename, {}).get("monitor", {}).get("status", "")))
+            out.append(line)
+
         # init the services hash
         for node in nodenames:
             if node not in data["monitor"]["nodes"]:
@@ -3456,8 +3467,9 @@ class Node(Crypt):
         load_header("Threads")
         load_threads()
         out.append([])
-        load_header("Metrics")
+        load_header("Cluster")
         load_metrics()
+        load_nmon_status()
         out.append([])
         load_header("Services")
         for svcname in sorted(list(services.keys())):

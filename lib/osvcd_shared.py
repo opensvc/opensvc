@@ -10,9 +10,10 @@ from subprocess import Popen, PIPE
 
 import rcExceptions as ex
 from rcConfigParser import RawConfigParser
-from rcUtilities import lazy, unset_lazy
+from rcUtilities import lazy, unset_lazy, is_string
 from rcGlobalEnv import rcEnv, Storage
 from freezer import Freezer
+from converters import convert_duration
 
 DATEFMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 MAX_MSG_SIZE = 1024 * 1024
@@ -233,6 +234,7 @@ class OsvcThread(threading.Thread):
         unset_lazy(self, "cluster_name")
         unset_lazy(self, "cluster_key")
         unset_lazy(self, "cluster_nodes")
+        unset_lazy(self, "maintenance_grace_period")
         if hasattr(self, "reconfigure"):
             getattr(self, "reconfigure")()
 
@@ -338,16 +340,24 @@ class OsvcThread(threading.Thread):
                 del SMON_DATA[svcname]["restart"]
         wake_monitor()
 
-    def get_node_monitor(self, datestr=False):
+    def get_node_monitor(self, datestr=False, nodename=None):
         """
         Return the Monitor data of the node.
         If datestr is set, convert datetimes to a json compatible string.
         """
-        with NMON_DATA_LOCK:
-            data = Storage(NMON_DATA)
-            if datestr:
-                data.status_updated = data.status_updated.strftime(DATEFMT)
-            return data
+        if nodename is None:
+            with NMON_DATA_LOCK:
+                data = Storage(NMON_DATA)
+        else:
+            with CLUSTER_DATA_LOCK:
+                if nodename not in CLUSTER_DATA:
+                    return
+                data = Storage(CLUSTER_DATA[nodename].get("monitor", {}))
+        if datestr and isinstance(data.status_updated, datetime.datetime):
+            data.status_updated = data.status_updated.strftime(DATEFMT)
+        elif not datestr and is_string(data.status_updated):
+            data.status_updated = datetime.datetime.strptime(data.status_updated, DATEFMT)
+        return data
 
     def get_service_monitor(self, svcname, datestr=False):
         """
@@ -391,15 +401,38 @@ class OsvcThread(threading.Thread):
         proc = self.node_command(cmd)
         return proc.wait()
 
-    def forget_peer_data(self, nodename):
+    @lazy
+    def maintenance_grace_period(self):
+        if self.config.has_option("node", "maintenance_grace_period"):
+            return convert_duration(self.config.get("node", "maintenance_grace_period"))
+        else:
+            return 60
+
+    def in_maintenance_grace_period(self, nmon):
+        if nmon.status == "maintenance" and \
+           nmon.status_updated > datetime.datetime.utcnow() - datetime.timedelta(seconds=self.maintenance_grace_period):
+            return True
+        return False
+
+    def forget_peer_data(self, nodename, change=False):
         """
         Purge a stale peer data if all rx threads are down.
         """
-        if not self.peer_down(nodename):
-            self.log.info("other rx threads still receive from node %s",
-                          nodename)
+        nmon = self.get_node_monitor(nodename=nodename)
+        if nmon is None:
             return
-        self.log.info("no rx thread still receive from node %s. flush its data",
+        if not self.peer_down(nodename):
+            if change:
+                self.log.info("other rx threads still receive from node %s",
+                              nodename)
+            return
+        if self.in_maintenance_grace_period(nmon):
+            if change:
+                self.log.info("preserve node %s data in maintenance since %s (grace %s)",
+                              nodename, nmon.status_updated, self.maintenance_grace_period)
+            return
+        self.log.info("no rx thread still receive from node %s and maintenance "
+                      "grace period expired. flush its data",
                       nodename)
         with CLUSTER_DATA_LOCK:
             try:
