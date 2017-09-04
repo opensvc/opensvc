@@ -549,7 +549,7 @@ class Monitor(shared.OsvcThread, Crypt):
             for nodename, data in shared.CLUSTER_DATA.items():
                 if data == "unknown":
                     continue
-                instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
+                instance = self.get_service_instance(svc.svcname, nodename)
                 if instance is None:
                     continue
                 constraints = instance.get("constraints", True)
@@ -568,18 +568,20 @@ class Monitor(shared.OsvcThread, Crypt):
                           "service %s (alone)", svc.svcname)
             return True
         if svc.placement == "load avg":
-            return self.failover_placement_leader_load_avg(svc)
+            return self.failover_placement_leader_load_avg(svc, nodenames)
         elif svc.placement == "nodes order":
-            return self.failover_placement_leader_nodes_order(svc)
+            return self.failover_placement_leader_nodes_order(svc, nodenames)
         else:
             # unkown, random ?
             return True
 
-    def failover_placement_leader_load_avg(self, svc):
+    def failover_placement_leader_load_avg(self, svc, nodenames):
         top_load = None
         top_node = None
         with shared.CLUSTER_DATA_LOCK:
             for nodename in shared.CLUSTER_DATA:
+                if nodename not in nodenames:
+                    continue
                 instance = self.get_service_instance(svc.svcname, nodename)
                 if instance is None:
                     continue
@@ -603,9 +605,11 @@ class Monitor(shared.OsvcThread, Crypt):
                       str(top_load))
         return False
 
-    def failover_placement_leader_nodes_order(self, svc):
+    def failover_placement_leader_nodes_order(self, svc, nodenames):
         with shared.CLUSTER_DATA_LOCK:
             for nodename in svc.ordered_nodes:
+                if nodename not in nodenames:
+                    continue
                 if nodename == rcEnv.nodename:
                     self.log.info("we have the highest 'nodes order' placement"
                                   " priority for service %s", svc.svcname)
