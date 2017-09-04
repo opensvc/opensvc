@@ -472,6 +472,15 @@ class Svc(Crypt):
         )
 
     @lazy
+    def peers(self):
+        if rcEnv.nodename in self.nodes:
+            return self.nodes
+        elif rcEnv.nodename in self.drpnodes:
+            return self.drpnodes
+        else:
+            return []
+
+    @lazy
     def dockerlib(self):
         """
         Lazy allocator for the dockerlib object.

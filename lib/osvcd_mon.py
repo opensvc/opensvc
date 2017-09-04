@@ -475,6 +475,11 @@ class Monitor(shared.OsvcThread, Crypt):
             elif smon.status == "idle":
                 if status not in ("down", "stdby down", "stdby up"):
                     return
+                if len(svc.peers) == 1:
+                    self.log.info("failover service %s status %s/idle and "
+                                  "single node", svc.svcname, status)
+                    self.service_start(svc.svcname)
+                    return
                 if not self.failover_placement_leader(svc):
                     return
                 self.log.info("failover service %s status %s", svc.svcname,
