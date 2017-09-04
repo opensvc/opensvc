@@ -515,7 +515,7 @@ class Svc(Crypt):
         met. Otherwise return False.
         """
         try:
-            return self.conf_get("DEFAULT", "constraints")
+            return convert_boolean(self.conf_get("DEFAULT", "constraints"))
         except ex.OptNotFound:
             return True
         except ex.excError:
@@ -1432,7 +1432,7 @@ class Svc(Crypt):
         notice = []
         if self.frozen():
             notice.append("frozen")
-        if not convert_boolean(data.get("constraints", True)):
+        if not data.get("constraints", True):
             notice.append("constraints violation")
         notice = ", ".join(notice)
 
