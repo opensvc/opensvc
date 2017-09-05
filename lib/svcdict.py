@@ -1345,8 +1345,8 @@ class KeywordConstraints(Keyword):
                   section="DEFAULT",
                   keyword="constraints",
                   order=16,
-                  example="nodename==n2",
-                  text="an expression constraining the service instance placement to matching nodes.",
+                  example="$(\"{nodename}\"==\"n2.opensvc.com\")",
+                  text="An expression evaluating as a boolean, constraining the service instance placement by the daemon monitor to nodes with the constraints evaluated as True. The constraints are not honored by manual start operations. The constraints value is embedded in the json status. Supported comparison operators are '==', '!=', '>', '>=', '<=', 'in (e1, e2)', 'in [e1, e2]'. Supported arithmetic operators are '*', '+', '-', '/', '**', '//', '%'. Supported binary operators are '&', '|', '^'. The negation operator is 'not'. Supported boolean operators are 'and', 'or'. References are allowed. Strings, and references evaluating as strings, containing dots must be quoted.",
                 )
 
 class KeywordFlexMinNodes(Keyword):
