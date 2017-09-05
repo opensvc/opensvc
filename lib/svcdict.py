@@ -1523,7 +1523,7 @@ class KeywordSyncInterval(Keyword):
                   order=26,
                   default=121,
                   convert="duration",
-                  text="Set the minimum delay between syncs in minutes. If a sync is triggered through crond or manually, it is skipped if last sync occurred less than 'sync_min_delay' ago. The mecanism is enforced by a timestamp created upon each sync completion in <pathvar>/sync/[service]![dst]"
+                  text="Set the minimum delay between syncs in minutes. If a sync is triggered through a scheduler or manually, it is skipped if last sync occurred less than 'sync_min_delay' ago. The mecanism is enforced by a timestamp created upon each sync completion in <pathvar>/sync/[service]![dst]"
                 )
 
 class KeywordSyncMaxDelay(Keyword):
@@ -1535,7 +1535,7 @@ class KeywordSyncMaxDelay(Keyword):
                   order=27,
                   default=1440,
                   convert="duration",
-                  text="Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The cron job frequency should be set between 'sync_min_delay' and 'sync_max_delay'"
+                  text="Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The scheduler task frequency should be set between 'sync_min_delay' and 'sync_max_delay'"
                 )
 
 class KeywordPresnapTrigger(Keyword):
@@ -2347,7 +2347,7 @@ class KeywordSyncSyncMaxDelay(Keyword):
                   keyword="sync_max_delay",
                   default=1440,
                   convert="duration",
-                  text="Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The cron job frequency should be set between 'sync_min_delay' and 'sync_max_delay'."
+                  text="Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The scheduler task frequency should be set between 'sync_min_delay' and 'sync_max_delay'."
                 )
 
 class KeywordIpIpname(Keyword):
