@@ -2637,8 +2637,11 @@ class Node(Crypt):
                     else:
                         if ret is None:
                             ret = 0
-                        elif isinstance(ret, dict) and "error" in ret:
-                            print(ret["error"], file=sys.stderr)
+                        elif isinstance(ret, dict):
+                            if "error" in ret:
+                                print(ret["error"], file=sys.stderr)
+                            else:
+                                print("unsupported format for this action", file=sys.stderr)
                             ret = 1
                         err += ret
                 except ex.excError as exc:
