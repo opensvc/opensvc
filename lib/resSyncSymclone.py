@@ -2,7 +2,7 @@ import os
 import logging
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall
+from rcUtilities import which, justcall, lazy, unset_lazy
 import rcExceptions as ex
 import rcStatus
 import time
@@ -106,6 +106,7 @@ class syncSymclone(resSync.Sync):
             self.log.info("symclone target devices are already active")
             return
         self.wait_for_activable()
+        unset_lazy(self, "last")
         cmd = self.symclone_cmd() + ['-noprompt', 'activate', '-i', '20', '-c', '30']
         if self.consistent:
             cmd.append("-consistent")
@@ -122,13 +123,11 @@ class syncSymclone(resSync.Sync):
             self.log.debug(e)
             return False
 
-        self.get_last()
         if self.skip_sync(self.last):
             return False
         return True
 
     def recreate(self):
-        self.get_last()
         if self.skip_sync(self.last):
             return
         if self.is_activable():
@@ -142,12 +141,14 @@ class syncSymclone(resSync.Sync):
             raise ex.excError
 
     def restore(self):
+        unset_lazy(self, "last")
         cmd = self.symclone_cmd() + ['-noprompt', 'restore']
         (ret, out, err) = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
             raise ex.excError(err)
 
     def terminate_restore(self):
+        unset_lazy(self, "last")
         cmd = self.symclone_cmd() + ['-noprompt', 'terminate', '-restored']
         (ret, out, err) = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
@@ -175,32 +176,32 @@ class syncSymclone(resSync.Sync):
         etree = ElementTree.fromstring(out)
         return etree
 
-    def showdevs(self):
-        if len(self.showdevs_etree) > 0:
-            return
+    @lazy
+    def showdevs_etree(self):
+        data = {}
         etree = self._showdevs()
         for e in etree.findall("Symmetrix/Device"):
             dev_name = e.find("Dev_Info/dev_name").text
-            self.showdevs_etree[dev_name] = e
+            data[dev_name] = e
+        return data
 
     def last_action_dev(self, dev):
         # format: Thu Feb 25 10:20:56 2010
-        self.showdevs()
         s = self.showdevs_etree[dev].find("CLONE_Device/last_action").text
         return datetime.datetime.strptime(s, "%a %b %d %H:%M:%S %Y")
 
-    def get_last(self):
-        if self.last is not None:
-            return
-        self.showdevs()
+    @lazy
+    def last(self):
+        unset_lazy(self, "showdevs_etree")
+        _last = None
         for pair in self.pairs:
             src, dst = self.split_pair(pair)
-            last = self.last_action_dev(dst)
-            if self.last is None or last > self.last:
-                self.last = last
+            dev_last = self.last_action_dev(dst)
+            if _last is None or dev_last > _last:
+                _last = dev_last
+        return _last
 
     def _status(self, verbose=False):
-        self.get_last()
         if self.last is None:
             return rcStatus.DOWN
         elif self.last < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
@@ -269,8 +270,6 @@ class syncSymclone(resSync.Sync):
         self.consistent = consistent
         self.svcstatus = {}
         self.active_pairs = []
-        self.last = None
-        self.showdevs_etree = {}
         self.default_schedule = "@0"
         if restore_timeout is None:
             self.restore_timeout = 300

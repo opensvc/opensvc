@@ -46,7 +46,6 @@ class syncSymclone(symclone.syncSymclone):
         raise ex.excError
 
     def wait_for_devs_ready(self):
-        self.showdevs()
         for pair in self.pairs:
             src, dst = self.split_pair(pair)
             dev = self.showdevs_etree[dst].find('Dev_Info/pd_name').text
