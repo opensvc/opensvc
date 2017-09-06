@@ -1986,6 +1986,17 @@ class Svc(Crypt):
             group_status = None
         return group_status
 
+    @lazy
+    def encap_groups(self):
+        from svcDict import deprecated_sections
+        egroups = set()
+        for rid in self.encap_resources:
+            egroup = rid.split('#')[0]
+            if egroup in deprecated_sections:
+                egroup = deprecated_sections[egroup][0]
+            egroups.add(egroup)
+        return egroups
+
     def encap_json_status(self, container, refresh=False):
         """
         Return the status data from the agent runnning the encapsulated part
@@ -2009,7 +2020,10 @@ class Svc(Crypt):
             }
             groups = set(["container", "ip", "disk", "fs", "share"])
             for group in groups:
-                group_status[group] = 'down'
+                if group in self.encap_groups:
+                    group_status[group] = 'down'
+                else:
+                    group_status[group] = 'n/a'
             for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
                 group = rset.type.split('.')[0]
                 if group not in groups:
