@@ -2261,7 +2261,7 @@ class Svc(Crypt):
     def exposed_devs(self):
         """
         Return the list of exposed devices of each resource, aggregated as a
-        single list. Used by the fs unprovisionner.
+        single list. Used by the fs unprovisioner.
         """
         data = self.devs(categories=["exposed"])
         devs = set()
