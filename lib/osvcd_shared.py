@@ -391,7 +391,8 @@ class OsvcThread(threading.Thread):
         return proc
 
     def add_cluster_node(self, nodename):
-        cmd = ["set", "--param", "cluster.nodes", "--add", nodename]
+        nodes = " ".join(sorted(list(set(self.cluster_nodes + [nodename]))))
+        cmd = ["set", "--param", "cluster.nodes", "--value", nodes]
         proc = self.node_command(cmd)
         ret = proc.wait()
         return ret

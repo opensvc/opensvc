@@ -11,6 +11,7 @@ import threading
 import zlib
 
 import pyaes
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, bdecode
 
@@ -100,21 +101,30 @@ class Crypt(object):
         configuration. If not set, return a list with the local node as the
         only element.
         """
+        nodes = None
         if hasattr(self, "get_node"):
             config = self.get_node().config
         else:
             config = self.config
         try:
-            return config.get("cluster", "nodes").split()
+            nodes = config.get("cluster", "nodes").split()
         except Exception as exc:
             pass
+
+        if nodes is not None:
+            if rcEnv.nodename in nodes:
+                return nodes
+            else:
+                nodes.append(rcEnv.nodename)
+        else:
+            nodes = [rcEnv.nodename]
+
         if hasattr(self, "node"):
             node = self.get_node()
         elif hasattr(self, "write_config"):
             node = self
         else:
             node = None
-        nodes = [rcEnv.nodename]
         if node is not None:
             if not node.config.has_section("cluster"):
                 node.config.add_section("cluster")
@@ -374,6 +384,8 @@ class Crypt(object):
         """
         if nodename is None or nodename == "":
             nodename = rcEnv.nodename
+        if nodename not in self.cluster_nodes:
+            raise ex.excError("node %s is not in cluster" % nodename)
         addr, port = self.get_listener_info(nodename)
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

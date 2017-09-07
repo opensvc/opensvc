@@ -3621,21 +3621,16 @@ class Node(Crypt):
         self.daemon_start()
 
     @lazy
-    def cluster_nodes(self):
-        try:
-            cluster_nodes = self._get("cluster.nodes")
-        except ex.excError:
-            return [rcEnv.nodename]
-        cluster_nodes = sorted(cluster_nodes.split(" "))
-        return cluster_nodes
+    def sorted_cluster_nodes(self):
+        return sorted(self.cluster_nodes)
 
     def daemon_leave(self):
-        cluster_nodes = list(self.cluster_nodes)
-        if rcEnv.nodename in cluster_nodes:
-            cluster_nodes.remove(rcEnv.nodename)
-        if len(self.cluster_nodes) == 0:
+        cluster_nodes = self.sorted_cluster_nodes
+        if len(self.sorted_cluster_nodes) == 0:
             self.log.info("local node is not member of a cluster")
             return
+        if rcEnv.nodename in cluster_nodes:
+            cluster_nodes.remove(rcEnv.nodename)
 
         # freeze and remember the initial frozen state
         initially_frozen = self.frozen()
