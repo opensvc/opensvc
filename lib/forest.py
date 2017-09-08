@@ -245,6 +245,8 @@ def forest(data, columns=1, separator="  ", widths=None):
             for fragment in col:
                 text = fragment.get("text", "")
                 textcolor = fragment.get("color")
+                if text is None:
+                    text = ""
                 lines += [(line, textcolor) for line in wrapped_lines(text, pads[idx])]
             n_lines += len(lines)
             tmp.append(lines)
