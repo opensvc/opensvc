@@ -1908,8 +1908,18 @@ class Node(Crypt):
             print("no parameter. set --param", file=sys.stderr)
             return 1
         elements = self.options.param.split('.')
+
+        if len(elements) == 1:
+            section = self.options.param
+            if not self.config.has_section(section):
+                print("section '%s' not found" % section, file=sys.stderr)
+                return 1
+            self.config.remove_section(section)
+            self.write_config()
+            return 0
+
         if len(elements) != 2:
-            print("malformed parameter. format as 'section.key'",
+            print("malformed parameter. format as '<section>.<key>' or '<section>'",
                   file=sys.stderr)
             return 1
         section, option = elements
