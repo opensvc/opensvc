@@ -240,6 +240,7 @@ class Crypt(object):
             self.log.error("decrypt message from %s: %s", nodename, str(exc))
             self.blacklist(sender_id)
             return None, None
+        self.blacklist_clear(sender_id)
         try:
             return nodename, json.loads(data)
         except ValueError as exc:
@@ -302,14 +303,20 @@ class Crypt(object):
             else:
                 BLACKLIST[sender_id] = 1
 
-    def blacklist_clear(self):
+    def blacklist_clear(self, sender_id=None):
         """
         Clear the senders blacklist.
         """
         global BLACKLIST
+        if sender_id is None and BLACKLIST == {}:
+            return
         with BLACKLIST_LOCK:
-            BLACKLIST = {}
-        self.log.info("blacklist cleared")
+            if sender_id is None:
+                BLACKLIST = {}
+                self.log.info("blacklist cleared")
+            elif sender_id in BLACKLIST:
+                del BLACKLIST[sender_id]
+                self.log.info("sender %s removed from blacklist")
 
     @staticmethod
     def get_blacklist():
