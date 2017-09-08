@@ -3578,12 +3578,13 @@ class Node(Crypt):
         raise ex.excError(json.dumps(data, indent=4, sort_keys=True))
 
     def daemon_start(self):
-        options = {}
         if self.options.thr_id:
-            options["thr_id"] = self.options.thr_id
-        else:
-            os.system(sys.executable+" "+os.path.join(rcEnv.paths.pathlib, "osvcd.py"))
-            return
+            return self.daemon_start_thread()
+        return os.system(sys.executable+" "+os.path.join(rcEnv.paths.pathlib, "osvcd.py"))
+
+    def daemon_start_thread(self):
+        options = {}
+        options["thr_id"] = self.options.thr_id
         data = self.daemon_send(
             {"action": "daemon_start", "options": options},
             nodename=self.options.node,

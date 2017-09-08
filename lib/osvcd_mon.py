@@ -39,6 +39,7 @@ class Monitor(shared.OsvcThread, Crypt):
     def __init__(self):
         shared.OsvcThread.__init__(self)
         self._shutdown = False
+        self.first_run = True
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
@@ -315,8 +316,13 @@ class Monitor(shared.OsvcThread, Crypt):
         with shared.SERVICES_LOCK:
             svcs = shared.SERVICES.values()
         for svc in svcs:
-            self.service_orchestrator(svc)
-            self.resources_orchestrator(svc)
+            try:
+                if self.first_run:
+                    svc.purge_status_caches()
+                self.service_orchestrator(svc)
+                self.resources_orchestrator(svc)
+            finally:
+                self.first_run = False
 
     def resources_orchestrator(self, svc):
         if svc.frozen():
