@@ -24,11 +24,13 @@ class Freezer(object):
         """
         pass
 
-    def _frozen(self):
+    def _frozen(self, strict=False):
         """
         Return True if the service frozen file flag is present.
         """
-        if os.path.exists(self.flag) or os.path.exists(self.base_flag):
+        if os.path.exists(self.flag):
+            return True
+        if not strict and os.path.exists(self.base_flag):
             return True
         return False
 

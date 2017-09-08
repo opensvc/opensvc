@@ -1432,6 +1432,8 @@ class Svc(Crypt):
         notice = []
         if self.frozen():
             notice.append("frozen")
+        if self.node.frozen():
+            notice.append("node frozen")
         if not data.get("constraints", True):
             notice.append("constraints violation")
         notice = ", ".join(notice)
@@ -4659,7 +4661,7 @@ class Svc(Crypt):
         """
         Return True if the service is frozen.
         """
-        return self.freezer.frozen()
+        return self.freezer.frozen(strict=True)
 
     def pull(self):
         """
