@@ -237,7 +237,10 @@ def _main(node, argv=None):
     except AttributeError:
         pass
     if action != "create":
-        options.svcs = node.svcs_selector(options.svcs)
+        expanded_svcs = node.svcs_selector(options.svcs)
+        if options.svcs is None and expanded_svcs == []:
+            return
+        options.svcs = expanded_svcs
     else:
         options.svcs = options.svcs.split(",")
     node.options.single_service = options.svcs is not None and \
