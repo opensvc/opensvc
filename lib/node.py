@@ -3438,15 +3438,22 @@ class Node(Crypt):
                     line.append(str(data["monitor"]["nodes"].get(nodename, {}).get("load", {}).get(metric, "")))
                 out.append(line)
 
-        def load_nmon_status():
+        def load_node_state():
             line = [
-                colorize(" mon", color.BOLD),
+                colorize(" state", color.BOLD),
                 "",
                 "",
                 "|",
             ]
             for nodename in nodenames:
-                line.append(str(data["monitor"]["nodes"].get(nodename, {}).get("monitor", {}).get("status", "")))
+                nmon_state = data["monitor"]["nodes"].get(nodename, {}).get("monitor", {}).get("status", "")
+                if nmon_state == "idle":
+                    nmon_state = ""
+                if data["monitor"]["nodes"].get(nodename, {}).get("frozen", ""):
+                    frozen = frozen_icon = colorize(unicons["frozen"], color.BLUE)
+                else:
+                    frozen = ""
+                line.append(str(nmon_state)+frozen)
             out.append(line)
 
         # init the services hash
@@ -3480,9 +3487,9 @@ class Node(Crypt):
         load_header("Threads")
         load_threads()
         out.append([])
-        load_header("Cluster")
+        load_header("Nodes")
         load_metrics()
-        load_nmon_status()
+        load_node_state()
         out.append([])
         load_header("Services")
         for svcname in sorted(list(services.keys())):
