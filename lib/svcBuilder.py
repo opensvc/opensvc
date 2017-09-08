@@ -2689,12 +2689,15 @@ def fix_app_link(svcname):
 def fix_exe_link(dst, src):
     if os.name != 'posix':
         return
+    from freezer import Freezer
     os.chdir(rcEnv.paths.pathetc)
     try:
         p = os.readlink(src)
     except:
+        Freezer(src)._freeze()
         os.symlink(dst, src)
         p = dst
     if p != dst:
         os.unlink(src)
+        Freezer(src)._freeze()
         os.symlink(dst, src)

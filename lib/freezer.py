@@ -70,12 +70,12 @@ class Freezer(object):
         os.unlink(self.base_flag)
 
     def __init__(self, name):
+        self.flag = self.flag + "." + name
         if not os.path.exists(os.path.join(rcEnv.paths.pathetc, name)):
             self.freeze = self._dummy
             self.thaw = self._dummy
             self.frozen = self._dummy
         else:
-            self.flag = self.flag + "." + name
             self.freeze = self._freeze
             self.thaw = self._thaw
             self.frozen = self._frozen
