@@ -391,8 +391,6 @@ class Crypt(object):
         """
         if nodename is None or nodename == "":
             nodename = rcEnv.nodename
-        if nodename not in self.cluster_nodes:
-            raise ex.excError("node %s is not in cluster" % nodename)
         addr, port = self.get_listener_info(nodename)
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
