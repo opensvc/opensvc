@@ -477,6 +477,9 @@ class Node(Crypt):
                 for svcname in self.__svcs_selector(_selector):
                     if svcname not in result:
                         result.append(svcname)
+        import re
+        if len(result) == 0 and re.findall(r"[,\+\*=\^:~><]", selector) == []:
+            raise ex.excError("service not found")
         return result
 
     def __svcs_selector(self, selector):
