@@ -405,8 +405,6 @@ class Svc(Crypt):
         self.postsnap_trigger = None
         self.monitor_action = None
         self.pre_monitor_action = None
-        self.anti_affinity = None
-        self.affinity = None
         self.lock_timeout = DEFAULT_WAITLOCK
 
         # merged by the cmdline parser
@@ -520,6 +518,34 @@ class Svc(Crypt):
             return True
         except ex.excError:
             return True
+
+    @lazy
+    def hard_affinity(self):
+        try:
+            return self.conf_get("DEFAULT", "hard_affinity")
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    @lazy
+    def hard_anti_affinity(self):
+        try:
+            return self.conf_get("DEFAULT", "hard_anti_affinity")
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    @lazy
+    def soft_affinity(self):
+        try:
+            return self.conf_get("DEFAULT", "soft_affinity")
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    @lazy
+    def soft_anti_affinity(self):
+        try:
+            return self.conf_get("DEFAULT", "soft_anti_affinity")
+        except ex.OptNotFound as exc:
+            return exc.default
 
     @lazy
     def flex_min_nodes(self):

@@ -2398,16 +2398,6 @@ def build(name, minimal=False, svcconf=None, node=None):
         pass
 
     try:
-        svc.affinity = svc.conf_get('DEFAULT', 'affinity')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        svc.anti_affinity = svc.conf_get('DEFAULT', 'anti_affinity')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
         svc.clustertype = svc.conf_get('DEFAULT', 'cluster_type')
     except ex.OptNotFound as exc:
         pass

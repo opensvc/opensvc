@@ -7,6 +7,8 @@ from rcNode import node_get_node_env
 # deprecated => supported
 deprecated_keywords = {
   "DEFAULT.service_type": "env",
+  "DEFAULT.affinity": "hard_affinity",
+  "DEFAULT.anti_affinity": "hard_anti_affinity",
   "disk.lvm.vgname": "name",
   "disk.pool.poolname": "name",
   "disk.vg.vgname": "name",
@@ -18,6 +20,8 @@ deprecated_keywords = {
 # supported => deprecated
 reverse_deprecated_keywords = {
   "DEFAULT.env": "service_type",
+  "DEFAULT.hard_affinity": "affinity",
+  "DEFAULT.hard_anti_affinity": "anti_affinity",
   "disk.lvm.name": "vgname",
   "disk.pool.name": "poolname",
   "disk.vg.name": "vgname",
@@ -1237,29 +1241,59 @@ class KeywordVmUuid(Keyword):
                   text="The virtual machine unique identifier used to pass commands on the VM."
                 )
 
-class KeywordAffinity(Keyword):
+class KeywordHardAffinity(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="affinity",
+                  keyword="hard_affinity",
                   convert="set",
+                  default=set(),
                   at=True,
                   order=15,
-                  text="A whitespace separated list of services that should be started on the node to allow the monitor to start this service.",
+                  text="A whitespace separated list of services that must be started on the node to allow the monitor to start this service.",
                   example="svc1 svc2"
                 )
 
-class KeywordAntiAffinity(Keyword):
+class KeywordHardAntiAffinity(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="anti_affinity",
+                  keyword="hard_anti_affinity",
                   convert="set",
+                  default=set(),
                   at=True,
                   order=15,
-                  text="A whitespace separated list of services that should not be started on the node to allow the monitor to start this service.",
+                  text="A whitespace separated list of services that must not be started on the node to allow the monitor to start this service.",
+                  example="svc1 svc2"
+                )
+
+class KeywordSoftAffinity(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="soft_affinity",
+                  convert="set",
+                  default=set(),
+                  at=True,
+                  order=15,
+                  text="A whitespace separated list of services that must be started on the node to allow the monitor to start this service. If the local node is the only candidate ignore this constraint and allow start.",
+                  example="svc1 svc2"
+                )
+
+class KeywordSoftAntiAffinity(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="soft_anti_affinity",
+                  convert="set",
+                  default=set(),
+                  at=True,
+                  order=15,
+                  text="A whitespace separated list of services that must not be started on the node to allow the monitor to start this service. If the local node is the only candidate ignore this constraint and allow start.",
                   example="svc1 svc2"
                 )
 
@@ -4572,8 +4606,10 @@ class KeyDict(KeywordStore):
         self += KeywordDockerDaemonArgs()
         self += KeywordDockerSwarmArgs()
         self += KeywordDockerSwarmManagers()
-        self += KeywordAffinity()
-        self += KeywordAntiAffinity()
+        self += KeywordHardAffinity()
+        self += KeywordHardAntiAffinity()
+        self += KeywordSoftAffinity()
+        self += KeywordSoftAntiAffinity()
         self += KeywordShowDisabled()
         self += KeywordCluster()
         self += KeywordClusterType()

@@ -423,6 +423,11 @@ class Monitor(shared.OsvcThread, Crypt):
             self.service_orchestrator_auto(svc, smon, status)
 
     def service_orchestrator_auto(self, svc, smon, status):
+        """
+        Automatic instance start decision.
+        Verifies hard and soft affinity and anti-affinity, then routes to
+        failover and flex specific policies.
+        """
         if svc.frozen() or self.freezer.node_frozen():
             #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
             return
@@ -430,97 +435,125 @@ class Monitor(shared.OsvcThread, Crypt):
             #self.log.info("service %s orchestrator out (agg avail status %s)",
             #              svc.svcname, status)
             return
-        if svc.anti_affinity:
-            intersection = set(self.get_local_svcnames()) & set(svc.anti_affinity)
+        if svc.hard_anti_affinity:
+            intersection = set(self.get_local_svcnames()) & set(svc.hard_anti_affinity)
             if len(intersection) > 0:
-                #self.log.info("service %s orchestrator out (anti-affinity with %s)",
+                #self.log.info("service %s orchestrator out (hard anti-affinity with %s)",
                 #              svc.svcname, ','.join(intersection))
                 return
-        if svc.affinity:
-            intersection = set(self.get_local_svcnames()) & set(svc.affinity)
-            if len(intersection) < len(set(svc.affinity)):
-                #self.log.info("service %s orchestrator out (affinity with %s)",
+        if svc.hard_affinity:
+            intersection = set(self.get_local_svcnames()) & set(svc.hard_affinity)
+            if len(intersection) < len(set(svc.hard_affinity)):
+                #self.log.info("service %s orchestrator out (hard affinity with %s)",
                 #              svc.svcname, ','.join(intersection))
                 return
+        candidates = self.placement_candidates(svc)
+        if candidates != [rcEnv.nodename]:
+            # the local node is not the only candidate, we can apply soft
+            # affinity filtering
+            if svc.soft_anti_affinity:
+                intersection = set(self.get_local_svcnames()) & set(svc.soft_anti_affinity)
+                if len(intersection) > 0:
+                    #self.log.info("service %s orchestrator out (soft anti-affinity with %s)",
+                    #              svc.svcname, ','.join(intersection))
+                    return
+            if svc.soft_affinity:
+                intersection = set(self.get_local_svcnames()) & set(svc.soft_affinity)
+                if len(intersection) < len(set(svc.soft_affinity)):
+                    #self.log.info("service %s orchestrator out (soft affinity with %s)",
+                    #              svc.svcname, ','.join(intersection))
+                    return
 
-        now = datetime.datetime.utcnow()
-        instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
         if svc.clustertype == "failover":
-            if smon.status == "ready":
-                if instance.avail is "up":
-                    self.log.info("abort 'ready' because the local instance "
-                                  "has started")
-                    self.set_smon(svc.svcname, "idle")
-                    return
-                if status == "up":
-                    self.log.info("abort 'ready' because an instance has started")
-                    self.set_smon(svc.svcname, "idle")
-                    return
-                peer = self.better_peer_ready(svc)
-                if peer:
-                    self.log.info("abort 'ready' because node %s has a better "
-                                  "placement score for service %s and is also "
-                                  "ready", peer, svc.svcname)
-                    self.set_smon(svc.svcname, "idle")
-                    return
-                peer = self.peer_transitioning(svc)
-                if peer:
-                    self.log.info("abort 'ready' because node %s is already "
-                                  "acting on service %s", peer, svc.svcname)
-                    self.set_smon(svc.svcname, "idle")
-                    return
-                if smon.status_updated < (now - MON_WAIT_READY):
-                    self.log.info("failover service %s status %s/ready for "
-                                  "%s", svc.svcname, status,
-                                  now-smon.status_updated)
-                    self.service_start(svc.svcname)
-                    return
-                self.log.info("service %s will start in %s",
-                              svc.svcname,
-                              str(smon.status_updated+MON_WAIT_READY-now))
-            elif smon.status == "idle":
-                if status not in ("down", "stdby down", "stdby up"):
-                    return
-                if len(svc.peers) == 1:
-                    self.log.info("failover service %s status %s/idle and "
-                                  "single node", svc.svcname, status)
-                    self.service_start(svc.svcname)
-                    return
-                if not self.failover_placement_leader(svc):
-                    return
-                self.log.info("failover service %s status %s", svc.svcname,
-                              status)
-                self.set_smon(svc.svcname, "ready")
+            self.service_orchestrator_auto_failover(svc, smon, status, candidates)
         elif svc.clustertype == "flex":
-            n_up = self.count_up_service_instances(svc.svcname)
-            if smon.status == "ready":
-                if (n_up - 1) >= svc.flex_min_nodes:
-                    self.log.info("flex service %s instance count reached "
-                                  "required minimum while we were ready",
-                                  svc.svcname)
-                    self.set_smon(svc.svcname, "idle")
-                    return
-                if smon.status_updated < (now - MON_WAIT_READY):
-                    self.log.info("flex service %s status %s/ready for %s",
-                                  svc.svcname, status, now-smon.status_updated)
-                    self.service_start(svc.svcname)
-                else:
-                    self.log.info("service %s will start in %s", svc.svcname,
-                                  str(smon.status_updated+MON_WAIT_READY-now))
-            elif smon.status == "idle":
-                if n_up >= svc.flex_min_nodes:
-                    return
-                if instance.avail not in STOPPED_STATES:
-                    return
-                if not self.failover_placement_leader(svc):
-                    return
-                self.log.info("flex service %s started, starting or ready to "
-                              "start instances: %d/%d. local status %s",
-                              svc.svcname, n_up, svc.flex_min_nodes,
-                              instance.avail)
-                self.set_smon(svc.svcname, "ready")
+            self.service_orchestrator_auto_flex(svc, smon, status, candidates)
+
+    def service_orchestrator_auto_failover(self, svc, smon, status, candidates):
+        instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
+        if smon.status == "ready":
+            if instance.avail is "up":
+                self.log.info("abort 'ready' because the local instance "
+                              "has started")
+                self.set_smon(svc.svcname, "idle")
+                return
+            if status == "up":
+                self.log.info("abort 'ready' because an instance has started")
+                self.set_smon(svc.svcname, "idle")
+                return
+            peer = self.better_peer_ready(svc, candidates)
+            if peer:
+                self.log.info("abort 'ready' because node %s has a better "
+                              "placement score for service %s and is also "
+                              "ready", peer, svc.svcname)
+                self.set_smon(svc.svcname, "idle")
+                return
+            peer = self.peer_transitioning(svc)
+            if peer:
+                self.log.info("abort 'ready' because node %s is already "
+                              "acting on service %s", peer, svc.svcname)
+                self.set_smon(svc.svcname, "idle")
+                return
+            now = datetime.datetime.utcnow()
+            if smon.status_updated < (now - MON_WAIT_READY):
+                self.log.info("failover service %s status %s/ready for "
+                              "%s", svc.svcname, status,
+                              now-smon.status_updated)
+                self.service_start(svc.svcname)
+                return
+            self.log.info("service %s will start in %s",
+                          svc.svcname,
+                          str(smon.status_updated+MON_WAIT_READY-now))
+        elif smon.status == "idle":
+            if status not in ("down", "stdby down", "stdby up"):
+                return
+            if len(svc.peers) == 1:
+                self.log.info("failover service %s status %s/idle and "
+                              "single node", svc.svcname, status)
+                self.service_start(svc.svcname)
+                return
+            if not self.failover_placement_leader(svc):
+                return
+            self.log.info("failover service %s status %s", svc.svcname,
+                          status)
+            self.set_smon(svc.svcname, "ready")
+
+    def service_orchestrator_auto_flex(self, svc, smon, status, candidates):
+        instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
+        n_up = self.count_up_service_instances(svc.svcname)
+        if smon.status == "ready":
+            if (n_up - 1) >= svc.flex_min_nodes:
+                self.log.info("flex service %s instance count reached "
+                              "required minimum while we were ready",
+                              svc.svcname)
+                self.set_smon(svc.svcname, "idle")
+                return
+            now = datetime.datetime.utcnow()
+            if smon.status_updated < (now - MON_WAIT_READY):
+                self.log.info("flex service %s status %s/ready for %s",
+                              svc.svcname, status, now-smon.status_updated)
+                self.service_start(svc.svcname)
+            else:
+                self.log.info("service %s will start in %s", svc.svcname,
+                              str(smon.status_updated+MON_WAIT_READY-now))
+        elif smon.status == "idle":
+            if n_up >= svc.flex_min_nodes:
+                return
+            if instance.avail not in STOPPED_STATES:
+                return
+            if not self.failover_placement_leader(svc):
+                return
+            self.log.info("flex service %s started, starting or ready to "
+                          "start instances: %d/%d. local status %s",
+                          svc.svcname, n_up, svc.flex_min_nodes,
+                          instance.avail)
+            self.set_smon(svc.svcname, "ready")
 
     def service_orchestrator_manual(self, svc, smon, status):
+        """
+        Take actions to meet global expect target, set by user or by
+        service_orchestrator_auto()
+        """
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
         if smon.global_expect == "frozen":
             if not svc.frozen():
@@ -549,7 +582,14 @@ class Monitor(shared.OsvcThread, Crypt):
             elif status not in STARTED_STATES:
                 self.service_orchestrator_auto(svc, smon, status)
 
-    def failover_placement_leader(self, svc):
+    def placement_candidates(self, svc):
+        """
+        Return the list of service nodes meeting the following criteria:
+        * we have valid service instance data (not unknown)
+        * the node is not frozen
+        * the service is not frozen
+        * the service instance constraints are eval'ed True
+        """
         candidates = []
         with shared.CLUSTER_DATA_LOCK:
             for nodename, data in shared.CLUSTER_DATA.items():
@@ -567,6 +607,9 @@ class Monitor(shared.OsvcThread, Crypt):
                 if not constraints:
                     continue
                 candidates.append(nodename)
+        return candidates
+
+    def failover_placement_leader(self, svc, candidates):
         if len(candidates) == 0:
             self.log.info("placement constraints prevent us from starting "
                           "service %s on any node", svc.svcname)
@@ -647,12 +690,12 @@ class Monitor(shared.OsvcThread, Crypt):
             if instance["monitor"]["status"].endswith("ing"):
                 return nodename
 
-    def better_peer_ready(self, svc):
+    def better_peer_ready(self, svc, candidates):
         """
         Return the nodename of the first peer with the service in ready state, or
         None if we are placement leader or no peer is in ready state.
         """
-        if self.failover_placement_leader(svc):
+        if self.failover_placement_leader(svc, candidates):
             return
         for nodename, instance in self.get_service_instances(svc.svcname).items():
             if nodename == rcEnv.nodename:
