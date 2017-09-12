@@ -3225,10 +3225,11 @@ class Node(Crypt):
     #
     # daemon actions
     #
-    def _daemon_status(self):
+    def _daemon_status(self, silent=False):
         data = self.daemon_send(
             {"action": "daemon_status"},
             nodename=self.options.node,
+            silent=silent,
         )
         if data is None:
             return
