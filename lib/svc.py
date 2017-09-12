@@ -61,6 +61,33 @@ CONFIG_DEFAULTS = {
     'no_schedule': '',
 }
 
+ACTIONS_NO_STATUS_CHANGE = [
+    "autopush",
+    "docker",
+    "frozen",
+    "get",
+    "json_config",
+    "json_status",
+    "json_disklist",
+    "json_devlist",
+    "logs",
+    "print_config",
+    "print_devlist",
+    "print_disklist",
+    "print_config_mtime",
+    "print_resource_status",
+    "print_schedule",
+    "print_status",
+    "push",
+    "push_resinfo",
+    "push_config",
+    "push_service_status",
+    "prstatus",
+    "scheduler",
+    "status",
+    "validate_config",
+]
+
 ACTIONS_ALLOW_ON_FROZEN = [
     "autopush",
     "delete",
@@ -620,6 +647,14 @@ class Svc(object):
             fname=self.svcname+os.sep+"last_push_resinfo",
             schedule_option="resinfo_schedule"
         )
+
+    def purge_status_caches(self):
+        """
+        Purge the json cache and each resource status on-disk cache.
+        """
+        self.purge_status_last()
+        if os.path.exists(self.status_data_dump):
+            os.unlink(self.status_data_dump)
 
     def purge_status_last(self):
         """
@@ -3673,6 +3708,10 @@ class Svc(object):
             except ex.excError as exc:
                 self.log.error(str(exc))
                 return 1
+
+        if action not in ACTIONS_NO_STATUS_CHANGE and \
+           'compliance' not in action and \
+           'collector' not in action:
             #
             # here we know we will run a resource state-changing action
             # purge the resource status file cache, so that we don't take
@@ -3681,7 +3720,7 @@ class Svc(object):
             if not options.dry_run and action != "resource_monitor" and \
                not action.startswith("docker"):
                 self.log.debug("purge all resource status file caches")
-                self.purge_status_last()
+                self.purge_status_caches()
 
         self.setup_environ(action=action)
         self.setup_signal_handlers()
