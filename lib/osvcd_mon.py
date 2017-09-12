@@ -504,7 +504,7 @@ class Monitor(shared.OsvcThread, Crypt):
                               "single node", svc.svcname, status)
                 self.service_start(svc.svcname)
                 return
-            if not self.failover_placement_leader(svc):
+            if not self.failover_placement_leader(svc, candidates):
                 return
             self.log.info("failover service %s status %s", svc.svcname,
                           status)
@@ -533,7 +533,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 return
             if instance.avail not in STOPPED_STATES:
                 return
-            if not self.failover_placement_leader(svc):
+            if not self.failover_placement_leader(svc, candidates):
                 return
             self.log.info("flex service %s started, starting or ready to "
                           "start instances: %d/%d. local status %s",
@@ -970,15 +970,10 @@ class Monitor(shared.OsvcThread, Crypt):
         status.json doesn't exist, we don't have to specify --refresh.
         """
         self.log.info("slow path service status eval: %s", svcname)
-        cmd = [rcEnv.paths.svcmgr, "-s", svcname, "json", "status"]
         try:
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-            out, _ = proc.communicate()
+            with shared.SERVICES_LOCK:
+                return shared.SERVICES[svcname].print_status_data(mon_data=False)
         except KeyboardInterrupt:
-            return
-        try:
-            return json.loads(bdecode(out))
-        except ValueError:
             return
 
     def get_services_status(self, svcnames):
