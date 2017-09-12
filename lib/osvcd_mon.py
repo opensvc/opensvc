@@ -10,6 +10,8 @@ import glob
 import logging
 import hashlib
 import json
+import tempfile
+import shutil
 from subprocess import Popen, PIPE
 
 import osvcd_shared as shared
@@ -39,7 +41,6 @@ class Monitor(shared.OsvcThread, Crypt):
     def __init__(self):
         shared.OsvcThread.__init__(self)
         self._shutdown = False
-        self.first_run = True
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
@@ -130,8 +131,6 @@ class Monitor(shared.OsvcThread, Crypt):
             if new_service:
                 fix_exe_link(rcEnv.paths.svcmgr, svcname)
                 fix_app_link(svcname)
-                with shared.SERVICES_LOCK:
-                    shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
 
     def fetch_service_config(self, svcname, nodename):
         """
@@ -149,7 +148,6 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.error("unable to fetch service %s config from node %s: "
                            "received %s", svcname, nodename, resp)
             return
-        import tempfile
         with tempfile.NamedTemporaryFile(dir=rcEnv.paths.pathtmp, delete=False) as filep:
             tmpfpath = filep.name
         with codecs.open(tmpfpath, "w", "utf-8") as filep:
@@ -165,7 +163,6 @@ class Monitor(shared.OsvcThread, Crypt):
             else:
                 results = {"errors": 0}
             if results["errors"] == 0:
-                import shutil
                 dst = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
                 shutil.copy(filep.name, dst)
             else:
@@ -316,13 +313,8 @@ class Monitor(shared.OsvcThread, Crypt):
         with shared.SERVICES_LOCK:
             svcs = shared.SERVICES.values()
         for svc in svcs:
-            try:
-                if self.first_run:
-                    svc.purge_status_caches()
-                self.service_orchestrator(svc)
-                self.resources_orchestrator(svc)
-            finally:
-                self.first_run = False
+            self.service_orchestrator(svc)
+            self.resources_orchestrator(svc)
 
     def resources_orchestrator(self, svc):
         if svc.frozen() or self.freezer.node_frozen():
@@ -949,6 +941,9 @@ class Monitor(shared.OsvcThread, Crypt):
                     continue
             else:
                 cksum = last_config["cksum"]
+            if last_config is None:
+                self.log.info("purge %s status cache" % svcname)
+                shared.SERVICES[svcname].purge_status_caches()
             with shared.SERVICES_LOCK:
                 scope = sorted(list(shared.SERVICES[svcname].nodes | shared.SERVICES[svcname].drpnodes))
             config[svcname] = {
