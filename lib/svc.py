@@ -1217,20 +1217,41 @@ class Svc(Crypt):
     def status_data_dump(self):
         return os.path.join(rcEnv.paths.pathvar, self.svcname, "status.json")
 
-    def print_status_data(self, from_resource_status_cache=False):
+    def print_status_data(self, from_resource_status_cache=False, mon_data=False):
         """
         Return a structure containing hierarchical status of
-        the service.
+        the service and monitor information. Fetch CRM status from cache if
+        possible and allowed by kwargs.
         """
         if not from_resource_status_cache and \
            not self.options.refresh and \
            os.path.exists(self.status_data_dump):
             try:
                 with open(self.status_data_dump, 'r') as filep:
-                    return json.load(filep)
+                    data = json.load(filep)
             except ValueError:
                 pass
 
+        data = self.print_status_data_eval()
+
+        if mon_data:
+            try:
+                mon_data = self.node._daemon_status(silent=True)["monitor"]
+                data["cluster"] = {
+                    "avail": mon_data["services"][self.svcname]["avail"],
+                    "overall": mon_data["services"][self.svcname]["overall"],
+                }
+                data["monitor"] = mon_data["nodes"][rcEnv.nodename]["services"]["status"][self.svcname]["monitor"]
+            except:
+                pass
+
+        return data
+
+    def print_status_data_eval(self):
+        """
+        Return a structure containing hierarchical status of
+        the service.
+        """
         now = time.time()
 
         data = {
@@ -1381,7 +1402,7 @@ class Svc(Crypt):
         """
         Display in human-readable format the hierarchical service status.
         """
-        data = self.print_status_data()
+        data = self.print_status_data(mon_data=True)
         if self.options.format is not None:
             return data
 
@@ -1457,11 +1478,20 @@ class Svc(Crypt):
         # service-level notices
         notice = []
         if self.frozen():
-            notice.append("frozen")
+            notice.append(colorize("frozen", color.BLUE))
         if self.node.frozen():
-            notice.append("node frozen")
+            notice.append(colorize("node frozen", color.BLUE))
         if not data.get("constraints", True):
             notice.append("constraints violation")
+        if "monitor" in data:
+            if data["monitor"]["status"] == "idle":
+                notice.append(colorize(data["monitor"]["status"], color.LIGHTBLUE))
+            else:
+                notice.append(colorize(data["monitor"]["status"], color.RED))
+            if data["monitor"].get("local_expect") not in ("", None):
+                notice.append(colorize(data["monitor"]["local_expect"], color.LIGHTBLUE))
+        else:
+            notice.append(colorize("daemon down", color.RED))
         notice = ", ".join(notice)
 
         # encap resources
@@ -1506,8 +1536,6 @@ class Svc(Crypt):
             for _rid, _resource in ers[rid].items():
                 add_res_node(_resource, node_res, _rid)
 
-        print(colorize(self.svcname, color.BOLD))
-
         tree = Forest(
             separator=" ",
             widths=(
@@ -1517,11 +1545,28 @@ class Svc(Crypt):
                 None,
             ),
         )
-        node_overall = tree.add_node()
+        node_svcname = tree.add_node()
+        node_svcname.add_column(self.svcname, color.BOLD)
+        if "cluster" in data:
+            if data["cluster"]["overall"] == "":
+                data["cluster"]["overall"] = "undef"
+            node_clu = node_svcname.add_node()
+            node_clu.add_column("overall")
+            node_clu.add_column()
+            node_clu.add_column(data["cluster"]["overall"], STATUS_COLOR[data["cluster"]["overall"]])
+            node_clu = node_svcname.add_node()
+            node_clu.add_column("avail")
+            node_clu.add_column()
+            node_clu.add_column(data["cluster"]["avail"], STATUS_COLOR[data["cluster"]["avail"]])
+        node_nodename = node_svcname.add_node()
+        node_nodename.add_column(rcEnv.nodename, color.BOLD)
+        node_nodename.add_column()
+        node_nodename.add_column()
+        node_nodename.add_column(notice, color.LIGHTBLUE)
+        node_overall = node_nodename.add_node()
         node_overall.add_column("overall")
         node_overall.add_column()
         node_overall.add_column(data['overall'], STATUS_COLOR[data['overall']])
-        node_overall.add_column(notice, color.LIGHTBLUE)
 
         node_avail = node_overall.add_node()
         node_avail.add_column("avail")
