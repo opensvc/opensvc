@@ -151,6 +151,13 @@ OPT = Storage({
         action="store_true", dest="interactive",
         help="prompt user for a choice instead of going for "
              "defaults or failing"),
+    "kw": Option(
+        "--kw", action="append", dest="kw",
+        help="combined with the set action, an expression like "
+             "<keyword>[@<scope>][[<index>]]<op><value>, where <op> "
+             "can be '=', '+=', '-='. Multiple --kw can be set to "
+             "apply multiple configuration change in a file with a "
+             "single write."),
     "like": Option(
         "--like", default="%",
         action="store", dest="like",
@@ -850,6 +857,7 @@ ACTIONS = {
         'set': {
             'msg': 'set a service configuration parameter',
             'options': [
+                OPT.kw,
                 OPT.add,
                 OPT.index,
                 OPT.param,

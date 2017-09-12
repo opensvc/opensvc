@@ -4300,100 +4300,106 @@ class Svc(Crypt):
         if no section was specified, and set the value using the internal
         _set() method.
         """
+        if self.options.kw is not None:
+            return self.set_multi()
+        else:
+            return self.set_mono()
+
+    def set_multi(self):
+        changes = []
+        self.set_multi_cache = {}
+        for kw in self.options.kw:
+            if "=" not in kw:
+                raise ex.excError("malformed kw expression: %s: no '='" % kw)
+            keyword, value = kw.split("=", 1)
+            if keyword[-1] == "-":
+                op = "remove"
+                keyword = keyword[:-1]
+            elif keyword[-1] == "+":
+                op = "add"
+                keyword = keyword[:-1]
+            else:
+                op = "set"
+            index = None
+            if "[" in keyword:
+                keyword, right = keyword.split("[", 1)
+                if not right.endswith("]"):
+                    raise ex.excError("malformed kw expression: %s: no trailing"
+                                      " ']' at the end of keyword" % kw)
+                try:
+                    index = int(right[:-1])
+                except ValueError:
+                    raise ex.excError("malformed kw expression: %s: index is "
+                                      "not integer" % kw)
+            changes.append(self.set_mangle(keyword, op, value, index))
+        self._set_multi(changes)
+
+    def set_mono(self):
+        self.set_multi_cache = {}
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
-        if self.options.value is not None:
-            value = self.options.value
-        elif self.options.remove is not None:
-            try:
-                value = self._get(self.options.param, self.options.eval).split()
-            except ex.excError as exc:
-                value = []
-            if self.options.remove not in value:
-                return 0
-            value.remove(self.options.remove)
-            value = " ".join(value)
-        elif self.options.add is not None:
-            try:
-                value = self._get(self.options.param, self.options.eval).split()
-            except ex.excError as exc:
-                value = []
-            if self.options.add in value:
-                return 0
-            index = self.options.index if self.options.index is not None else len(value)
-            value.insert(index, self.options.add)
-            value = " ".join(value)
-        else:
-            print("no value. set --value or --remove", file=sys.stderr)
+        if self.options.value is None and \
+           self.options.add is None and \
+           self.options.remove is None:
+            print("no value. set --value, --add or --remove", file=sys.stderr)
             return 1
-        elements = self.options.param.split('.')
+        if self.options.add:
+            op = "add"
+            value = self.options.add
+        elif self.options.remove:
+            op = "remove"
+            value = self.options.remove
+        else:
+            op = "set"
+            value = self.options.value
+        changes = [self.set_mangle(self.options.param, op, value, self.options.index)]
+        self._set_multi(changes)
+
+    def set_mangle(self, keyword, op, value, index):
+        def list_value(keyword):
+            if keyword in self.set_multi_cache:
+                return self.set_multi_cache[keyword].split()
+            try:
+                _value = self._get(keyword, self.options.eval).split()
+            except ex.excError as exc:
+                _value = []
+            return _value
+
+        if op == "remove":
+            _value = list_value(keyword)
+            if value not in _value:
+                return
+            _value.remove(value)
+            _value = " ".join(_value)
+            self.set_multi_cache[keyword] = _value
+        elif op == "add":
+            _value = list_value(keyword)
+            if value in _value:
+                return
+            index = index if index is not None else len(_value)
+            _value.insert(index, value)
+            _value = " ".join(_value)
+            self.set_multi_cache[keyword] = _value
+        else:
+            _value = value
+        elements = keyword.split('.')
         if len(elements) == 1:
             elements.insert(0, "DEFAULT")
         elif len(elements) != 2:
-            print("malformed parameter. format as 'section.key'", file=sys.stderr)
-            return 1
-        try:
-            self._set(elements[0], elements[1], value)
-        except ex.excError as exc:
-            print(exc, file=sys.stderr)
-            return 1
-        return 0
-
-    def setenv(self, args, interactive=False):
-        """
-        For each option in the 'env' section of the configuration file,
-        * rewrite the value using the value specified in a corresponding
-          --env <option>=<value> commandline arg
-        * or prompt for the value if --interactive is set, and rewrite
-        * or leave the value as is, considering the default is accepted
-        """
-        explicit_options = []
-
-        for arg in args:
-            idx = arg.index("=")
-            option = arg[:idx]
-            value = arg[idx+1:]
-            self._set("env", option, value)
-            explicit_options.append(option)
-
-        if not interactive:
-            return
-
-        if not os.isatty(0):
-            raise ex.excError("--interactive is set but input fd is not a tty")
-
-        def get_href(ref):
-            ref = ref.strip("[]")
-            try:
-                response = node.urlopen(ref)
-                return response.read()
-            except:
-                return ""
-
-        def print_comment(comment):
-            """
-            Print a env keyword comment. For use in the interactive service
-            create codepath.
-            """
-            import re
-            comment = re.sub("(\[.+://.+])", lambda m: get_href(m.group(1)), comment)
-            print(comment)
-
-        for key, default_val in self.env_section_keys().items():
-            if key.endswith(".comment"):
-                continue
-            if key in explicit_options:
-                continue
-            if self.config.has_option("env", key+".comment"):
-                print_comment(self.config.get("env", key+".comment"))
-            newval = raw_input("%s [%s] > " % (key, str(default_val)))
-            if newval != "":
-                self._set("env", key, newval)
+            raise ex.excError("malformed kw: format as 'section.key'")
+        return elements[0], elements[1], _value
 
     def _set(self, section, option, value):
+        self._multi_set([[section, option, value]])
+
+    def _set_multi(self, changes):
         lines = self._read_cf().splitlines()
-        lines = self.__set(lines, section, option, value)
+        for change in changes:
+            if change is None:
+                continue
+            section, option, value = change
+            lines = self.__set(lines, section, option, value)
         try:
             self._write_cf(lines)
         except (IOError, OSError) as exc:
@@ -4472,6 +4478,57 @@ class Svc(Crypt):
             lines.append("%s = %s" % (option, value))
 
         return lines
+
+    def setenv(self, args, interactive=False):
+        """
+        For each option in the 'env' section of the configuration file,
+        * rewrite the value using the value specified in a corresponding
+          --env <option>=<value> commandline arg
+        * or prompt for the value if --interactive is set, and rewrite
+        * or leave the value as is, considering the default is accepted
+        """
+        explicit_options = []
+
+        for arg in args:
+            idx = arg.index("=")
+            option = arg[:idx]
+            value = arg[idx+1:]
+            self._set("env", option, value)
+            explicit_options.append(option)
+
+        if not interactive:
+            return
+
+        if not os.isatty(0):
+            raise ex.excError("--interactive is set but input fd is not a tty")
+
+        def get_href(ref):
+            ref = ref.strip("[]")
+            try:
+                response = node.urlopen(ref)
+                return response.read()
+            except:
+                return ""
+
+        def print_comment(comment):
+            """
+            Print a env keyword comment. For use in the interactive service
+            create codepath.
+            """
+            import re
+            comment = re.sub("(\[.+://.+])", lambda m: get_href(m.group(1)), comment)
+            print(comment)
+
+        for key, default_val in self.env_section_keys().items():
+            if key.endswith(".comment"):
+                continue
+            if key in explicit_options:
+                continue
+            if self.config.has_option("env", key+".comment"):
+                print_comment(self.config.get("env", key+".comment"))
+            newval = raw_input("%s [%s] > " % (key, str(default_val)))
+            if newval != "":
+                self._set("env", key, newval)
 
     def set_disable(self, rids=None, disable=True):
         """
