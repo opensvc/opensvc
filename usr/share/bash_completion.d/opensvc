@@ -26,7 +26,7 @@ svcmgr_push_service="status"
 svcmgr_resource="monitor"
 svcmgr_sync="all break drp establish full nodes quiesce restore resume resync revert split update verify"
 svcmgr_validate="config"
-svcmgr_set="--add --color --cron --daemon --debug --env --index --param --remove --status --value --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_set="--add --color --cron --daemon --debug --env --index --kw --param --remove --status --value --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_unset="--color --cron --daemon --debug --env --param --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_get="--color --cron --daemon --debug --env --eval --param --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_edit_config="--color --cron --daemon --debug --discard --env --recover --status --waitlock -c --cluster -h --help -p --parallel -s --service"
@@ -268,7 +268,7 @@ nodemgr_collector_ack_action="--author --color --comment --cron --debug --format
 nodemgr_collector_alerts="--color --cron --debug --format -h --help"
 nodemgr_collector_asset="--color --cron --debug --format -h --help"
 
-opts_with_arg=( "--add" "--api" "--app" "--author" "--backlog" "--begin" "--broadcast" "--color" "--comment" "--config" "--dev" "--duration" "--end" "--env" "--format" "--hba" "--id" "--index" "--like" "--lun" "--mac" "--message" "--module" "--moduleset" "--node" "--object" "--param" "--password" "--remove" "--resource" "--rid" "--ruleset" "--ruleset-date" "--secret" "--service" "--slave" "--stats-dir" "--status" "--subsets" "--symcli-db-file" "--tag" "--tags" "--target" "--template" "--thread-id" "--time" "--to" "--user" "--value" "--waitlock" "-s" )
+opts_with_arg=( "--add" "--api" "--app" "--author" "--backlog" "--begin" "--broadcast" "--color" "--comment" "--config" "--dev" "--duration" "--end" "--env" "--format" "--hba" "--id" "--index" "--kw" "--like" "--lun" "--mac" "--message" "--module" "--moduleset" "--node" "--object" "--param" "--password" "--remove" "--resource" "--rid" "--ruleset" "--ruleset-date" "--secret" "--service" "--slave" "--stats-dir" "--status" "--subsets" "--symcli-db-file" "--tag" "--tags" "--target" "--template" "--thread-id" "--time" "--to" "--user" "--value" "--waitlock" "-s" )
 
 
 

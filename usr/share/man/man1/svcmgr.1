@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2017\-08\-02
+.TH SVCMGR 1 2017\-09\-12
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -9160,6 +9160,9 @@ show this help message and exit
 
 set a service configuration parameter
 
+.TP
+.B --kw=KW
+combined with the set action, an expression like <keyword>[@<scope>][[<index>]]<op><value>, where <op> can be '=', '+=', '-='. Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 .TP
 .B --add=ADD
 a list member to add from the value pointed by --param in a set action. If --index is set, add the new element at that position in the list
