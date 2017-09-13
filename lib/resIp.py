@@ -233,9 +233,8 @@ class Ip(Res.Resource):
         ipdev stacked device to multiple resources or multiple services.
         """
         import lock
-        if self.svc.options.waitlock >= 0:
-            timeout = convert_duration(self.svc.options.waitlock)
-        else:
+        timeout = convert_duration(self.svc.options.waitlock)
+        if timeout < 0:
             timeout = 120
         delay = 1
         lockfd = None
