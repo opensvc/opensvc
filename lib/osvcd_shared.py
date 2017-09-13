@@ -549,7 +549,7 @@ class OsvcThread(threading.Thread):
                 if not silent:
                     self.log.info("node %s is alive and has a higher '%s' placement "
                                   "priority for failover service %s",
-                                  rank[0], svc.placement, svc.svcname)
+                                  ranks[0], svc.placement, svc.svcname)
                 return False
         elif svc.clustertype == "flex":
             index = ranks.index(rcEnv.nodename) + 1
