@@ -368,9 +368,18 @@ class OsvcThread(threading.Thread):
             if svcname not in SMON_DATA:
                 self.set_smon(svcname, "idle")
             data = Storage(SMON_DATA[svcname])
+            data["placement"] = self.get_service_placement(svcname)
             if datestr:
                 data.status_updated = data.status_updated.strftime(DATEFMT)
             return data
+
+    def get_service_placement(self, svcname):
+        with SERVICES_LOCK:
+            svc = SERVICES[svcname]
+            if svc.clustertype == "failover":
+                if self.failover_placement_leader(svc):
+                    return "leader"
+        return ""
 
     def node_command(self, cmd):
         """
@@ -458,4 +467,111 @@ class OsvcThread(threading.Thread):
                 if peer_status:
                     return False
         return True
+
+    @staticmethod
+    def get_service_instance(svcname, nodename):
+        """
+        Return the specified service status structure on the specified node.
+        """
+        try:
+            with CLUSTER_DATA_LOCK:
+                return Storage(CLUSTER_DATA[nodename]["services"]["status"][svcname])
+        except KeyError:
+            return
+
+    #########################################################################
+    #
+    # Placement policies
+    #
+    #########################################################################
+    def placement_candidates(self, svc):
+        """
+        Return the list of service nodes meeting the following criteria:
+        * we have valid service instance data (not unknown)
+        * the node is not frozen
+        * the service is not frozen
+        * the service instance constraints are eval'ed True
+        """
+        candidates = []
+        with CLUSTER_DATA_LOCK:
+            for nodename, data in CLUSTER_DATA.items():
+                if data == "unknown":
+                    continue
+                if data.get("frozen", False):
+                    # node frozen
+                    continue
+                instance = self.get_service_instance(svc.svcname, nodename)
+                if instance is None:
+                    continue
+                if instance.frozen:
+                    continue
+                constraints = instance.get("constraints", True)
+                if not constraints:
+                    continue
+                candidates.append(nodename)
+        return candidates
+
+    def failover_placement_leader(self, svc, candidates=None):
+        if candidates is None:
+            candidates = self.placement_candidates(svc)
+        if len(candidates) == 0:
+            self.log.info("placement constraints prevent us from starting "
+                          "service %s on any node", svc.svcname)
+            return False
+        if rcEnv.nodename not in candidates:
+            self.log.info("placement constraints prevent us from starting "
+                          "service %s on this node", svc.svcname)
+            return False
+        if len(candidates) == 1:
+            self.log.info("we have the greatest placement priority for "
+                          "service %s (alone)", svc.svcname)
+            return True
+        if svc.placement == "load avg":
+            return self.failover_placement_leader_load_avg(svc, candidates)
+        elif svc.placement == "nodes order":
+            return self.failover_placement_leader_nodes_order(svc, candidates)
+        else:
+            # unkown, random ?
+            return True
+
+    def failover_placement_leader_load_avg(self, svc, candidates):
+        top_load = None
+        top_node = None
+        with CLUSTER_DATA_LOCK:
+            for nodename in CLUSTER_DATA:
+                if nodename not in candidates:
+                    continue
+                try:
+                    load = CLUSTER_DATA[nodename]["load"]["15m"]
+                except KeyError:
+                    continue
+                if top_load is None or load < top_load:
+                    top_load = load
+                    top_node = nodename
+        if top_node is None:
+            return False
+        if top_node == rcEnv.nodename:
+            self.log.info("we have the highest 'load avg' placement priority "
+                          "for service %s", svc.svcname)
+            return True
+        self.log.info("node %s is alive and has a higher 'load avg' placement "
+                      "priority for service %s (%s)", top_node, svc.svcname,
+                      str(top_load))
+        return False
+
+    def failover_placement_leader_nodes_order(self, svc, candidates):
+        with CLUSTER_DATA_LOCK:
+            for nodename in svc.ordered_nodes:
+                if nodename not in candidates:
+                    continue
+                if nodename == rcEnv.nodename:
+                    self.log.info("we have the highest 'nodes order' placement"
+                                  " priority for service %s", svc.svcname)
+                    return True
+                else:
+                    self.log.info("node %s is alive and has a higher 'nodes "
+                                  "order' placement priority for service %s",
+                                  nodename, svc.svcname)
+                    return False
+
 

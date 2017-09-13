@@ -3315,9 +3315,15 @@ class Node(Crypt):
                         smon = ""
                     else:
                         smon = " " + smon
+                    # leader
+                    if services[svcname]["nodes"][nodename]["placement"] == "leader":
+                        leader = colorize("^", color.LIGHTBLUE)
+                    else:
+                        leader = ""
 
                     val.append(avail_icon)
                     val.append(overall_icon)
+                    val.append(leader)
                     val.append(frozen_icon)
                     val.append(smon)
                     line.append("".join(val))
@@ -3477,6 +3483,7 @@ class Node(Crypt):
                     "overall": _data["overall"],
                     "frozen": _data["frozen"],
                     "mon": _data["monitor"]["status"],
+                    "placement": _data["monitor"].get("placement", ""),
                 }
         for svcname, _data in data["monitor"]["services"].items():
             if svcname not in services:

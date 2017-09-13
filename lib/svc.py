@@ -1240,6 +1240,7 @@ class Svc(Crypt):
                 data["cluster"] = {
                     "avail": mon_data["services"][self.svcname]["avail"],
                     "overall": mon_data["services"][self.svcname]["overall"],
+                    "placement": mon_data["services"][self.svcname]["placement"],
                 }
                 data["monitor"] = mon_data["nodes"][rcEnv.nodename]["services"]["status"][self.svcname]["monitor"]
             except:
@@ -1476,6 +1477,12 @@ class Svc(Crypt):
         n_accessory_resources = len(accessory_resources)
 
         # service-level notices
+        svc_notice = []
+        if data["cluster"]["placement"] not in ("optimal", "n/a"):
+            svc_notice.append(colorize(data["cluster"]["placement"] + " placement", color.RED))
+        svc_notice = ", ".join(svc_notice)
+
+        # instance-level notices
         notice = []
         if self.frozen():
             notice.append(colorize("frozen", color.BLUE))
@@ -1547,6 +1554,9 @@ class Svc(Crypt):
         )
         node_svcname = tree.add_node()
         node_svcname.add_column(self.svcname, color.BOLD)
+        node_svcname.add_column()
+        node_svcname.add_column()
+        node_svcname.add_column(svc_notice)
         if "cluster" in data:
             if data["cluster"]["overall"] == "":
                 data["cluster"]["overall"] = "undef"
@@ -1558,6 +1568,7 @@ class Svc(Crypt):
             node_clu.add_column("avail")
             node_clu.add_column()
             node_clu.add_column(data["cluster"]["avail"], STATUS_COLOR[data["cluster"]["avail"]])
+            node_clu = node_svcname.add_node()
         node_nodename = node_svcname.add_node()
         node_nodename.add_column(rcEnv.nodename, color.BOLD)
         node_nodename.add_column()
@@ -2401,9 +2412,9 @@ class Svc(Crypt):
                     global_expect_set.append(nodename)
             if prev_global_expect_set != global_expect_set:
                 for nodename in set(global_expect_set) - prev_global_expect_set:
-                    self.log.info("work starting on %s", nodename)
+                    self.log.info(" work starting on %s", nodename)
                 for nodename in prev_global_expect_set - set(global_expect_set):
-                    self.log.info("work over on %s", nodename)
+                    self.log.info(" work over on %s", nodename)
             if not global_expect_set:
                 self.log.info("final status: avail=%s overall=%s frozen=%s",
                               data["monitor"]["services"][self.svcname]["avail"],
@@ -4088,6 +4099,9 @@ class Svc(Crypt):
         """
         Service move to best node.
         """
+        if self.placement_optimal():
+            self.log.info("placement is already optimal")
+            return
         self.svcunlock()
         self.clear(nodename=rcEnv.nodename)
         self.clear(nodename=self.options.destination_node)
@@ -5204,6 +5218,13 @@ class Svc(Crypt):
             line = colorize_log_line(line)
             if line:
                 print(line)
+
+    def placement_optimal(self):
+        data = self.node._daemon_status()
+        placement = data.get("monitor").get("services").get(self.svcname).get("placement")
+        if placement == "optimal":
+            return True
+        return False
 
     #########################################################################
     #
