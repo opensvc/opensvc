@@ -1,5 +1,6 @@
 import os
 import logging
+import glob
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, lazy, cache
@@ -195,10 +196,11 @@ class Rsync(resSync.Sync):
         import shutil
         shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
         shutil.copy2(sync_timestamp_f, sched_timestamp_f)
+        tsfiles = glob.glob(os.path.join(rcEnv.paths.pathvar, 'sync', '*', self.svc.svcname+"!"+self.rid))
         ruser = self.svc.node.get_ruser(node)
         options = self.mangle_options(ruser)
         cmd = ['rsync'] + options
-        cmd += ['-R', sync_timestamp_f, sync_timestamp_f_src, ruser+'@'+node+':/']
+        cmd += ['-R'] + tsfiles + [ruser+'@'+node+':/']
         self.call(cmd)
 
     def sync(self, target):
