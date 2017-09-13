@@ -3282,6 +3282,8 @@ class Node(Crypt):
             status = colorize_status(data["avail"], lpad=0)
             if data["overall"] == "warn":
                 status += colorize("!", color.BROWN)
+            if data["placement"] != "optimal":
+                status += colorize("^", color.RED)
             line = [
                 " "+colorize(svcname, color.BOLD),
                 status,
@@ -3494,6 +3496,7 @@ class Node(Crypt):
                 })
             services[svcname].avail = _data["avail"]
             services[svcname].overall = _data["overall"]
+            services[svcname].placement = _data["placement"]
 
         # load data in lists
         load_header("Threads")
