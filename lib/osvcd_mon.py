@@ -504,7 +504,7 @@ class Monitor(shared.OsvcThread, Crypt):
                               "single node", svc.svcname, status)
                 self.service_start(svc.svcname)
                 return
-            if not self.failover_placement_leader(svc, candidates):
+            if not self.placement_leader(svc, candidates):
                 return
             self.log.info("failover service %s status %s", svc.svcname,
                           status)
@@ -533,7 +533,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 return
             if instance.avail not in STOPPED_STATES:
                 return
-            if not self.failover_placement_leader(svc, candidates):
+            if not self.placement_leader(svc, candidates):
                 return
             self.log.info("flex service %s started, starting or ready to "
                           "start instances: %d/%d. local status %s",
@@ -599,7 +599,7 @@ class Monitor(shared.OsvcThread, Crypt):
         Return the nodename of the first peer with the service in ready state, or
         None if we are placement leader or no peer is in ready state.
         """
-        if self.failover_placement_leader(svc, candidates):
+        if self.placement_leader(svc, candidates):
             return
         for nodename, instance in self.get_service_instances(svc.svcname).items():
             if nodename == rcEnv.nodename:
@@ -756,12 +756,9 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def get_agg_placement(self, svcname):
         svc = self.get_service(svcname)
-        if svc.clustertype == "failover":
-            for instance in self.get_service_instances(svc.svcname).values():
-                if instance["avail"] == "up" and instance["monitor"].get("placement") != "leader":
-                    return "non-optimal"
-        elif svc.clustertype == "flex":
-            return "n/a"
+        for instance in self.get_service_instances(svc.svcname).values():
+            if instance["avail"] != "up" and instance["monitor"].get("placement") == "leader":
+                return "non-optimal"
         return "optimal"
 
     #

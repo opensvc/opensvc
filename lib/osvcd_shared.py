@@ -376,9 +376,8 @@ class OsvcThread(threading.Thread):
     def get_service_placement(self, svcname):
         with SERVICES_LOCK:
             svc = SERVICES[svcname]
-            if svc.clustertype == "failover":
-                if self.failover_placement_leader(svc, silent=True):
-                    return "leader"
+            if self.placement_leader(svc, silent=True):
+                return "leader"
         return ""
 
     def node_command(self, cmd):
@@ -511,7 +510,7 @@ class OsvcThread(threading.Thread):
                 candidates.append(nodename)
         return candidates
 
-    def failover_placement_leader(self, svc, candidates=None, silent=False):
+    def placement_leader(self, svc, candidates=None, silent=False):
         if candidates is None:
             candidates = self.placement_candidates(svc)
         if len(candidates) == 0:
@@ -530,16 +529,41 @@ class OsvcThread(threading.Thread):
                               "service %s (alone)", svc.svcname)
             return True
         if svc.placement == "load avg":
-            return self.failover_placement_leader_load_avg(svc, candidates, silent=silent)
+            ranks = self.placement_ranks_load_avg(svc, candidates)
         elif svc.placement == "nodes order":
-            return self.failover_placement_leader_nodes_order(svc, candidates, silent=silent)
+            ranks = self.placement_ranks_nodes_order(svc, candidates)
         else:
             # unkown, random ?
             return True
 
-    def failover_placement_leader_load_avg(self, svc, candidates, silent=False):
-        top_load = None
-        top_node = None
+        if ranks == []:
+            return False
+        elif svc.clustertype == "failover":
+            if rcEnv.nodename == ranks[0]:
+                if not silent:
+                    self.log.info("we have the highest '%s' placement priority "
+                                  "for failover service %s",
+                                  svc.placement, svc.svcname)
+                return True
+            else:
+                if not silent:
+                    self.log.info("node %s is alive and has a higher '%s' placement "
+                                  "priority for failover service %s",
+                                  rank[0], svc.placement, svc.svcname)
+                return False
+        elif svc.clustertype == "flex":
+            index = ranks.index(rcEnv.nodename) + 1
+            if not silent:
+                self.log.info("we have the %d/%d '%s' placement priority "
+                              "for flex service %s", index, svc.flex_min_nodes,
+                              svc.placement, svc.svcname)
+            if index <= svc.flex_min_nodes:
+                return True
+            else:
+                return False
+
+    def placement_ranks_load_avg(self, svc, candidates, silent=False):
+        data = []
         with CLUSTER_DATA_LOCK:
             for nodename in CLUSTER_DATA:
                 if nodename not in candidates:
@@ -548,37 +572,9 @@ class OsvcThread(threading.Thread):
                     load = CLUSTER_DATA[nodename]["load"]["15m"]
                 except KeyError:
                     continue
-                if top_load is None or load < top_load:
-                    top_load = load
-                    top_node = nodename
-        if top_node is None:
-            return False
-        if top_node == rcEnv.nodename:
-            if not silent:
-                self.log.info("we have the highest 'load avg' placement priority "
-                              "for service %s", svc.svcname)
-            return True
-        if not silent:
-            self.log.info("node %s is alive and has a higher 'load avg' placement "
-                          "priority for service %s (%s)", top_node, svc.svcname,
-                          str(top_load))
-        return False
+                data.append((nodename, load))
+        return [nodename for nodename, _ in sorted(data, key=lambda x: x[1])]
 
-    def failover_placement_leader_nodes_order(self, svc, candidates, silent=False):
-        with CLUSTER_DATA_LOCK:
-            for nodename in svc.ordered_nodes:
-                if nodename not in candidates:
-                    continue
-                if nodename == rcEnv.nodename:
-                    if not silent:
-                        self.log.info("we have the highest 'nodes order' placement"
-                                      " priority for service %s", svc.svcname)
-                    return True
-                else:
-                    if not silent:
-                        self.log.info("node %s is alive and has a higher 'nodes "
-                                      "order' placement priority for service %s",
-                                      nodename, svc.svcname)
-                    return False
-
+    def placement_ranks_nodes_order(self, svc, candidates, silent=False):
+        return [nodename for nodename in svc.ordered_nodes if nodename in candidates]
 
