@@ -660,10 +660,31 @@ class Monitor(shared.OsvcThread, Crypt):
             return "unknown"
 
     def get_agg_overall(self, svcname):
+        ostatus = 'undef'
+        ostatus_l = []
+        n_instances = 0
         for instance in self.get_service_instances(svcname).values():
-            if instance["overall"] == "warn":
-                return "warn"
-        return ""
+            ostatus_l.append(instance["overall"])
+            n_instances += 1
+        ostatus_s = set(ostatus_l)
+
+        if n_instances == 0:
+            ostatus = 'n/a'
+        elif ostatus_s == set(['n/a']):
+            ostatus = 'n/a'
+        elif 'warn' in ostatus_s or 'stdby down' in ostatus_s:
+            ostatus = 'warn'
+        elif set(['up']) == ostatus_s or \
+             set(['up', 'down']) == ostatus_s or \
+             set(['up', 'stdby up']) == ostatus_s or \
+             set(['up', 'down', 'stdby up']) == ostatus_s or \
+             set(['up', 'down', 'stdby up', 'n/a']) == ostatus_s:
+            ostatus = 'up'
+        elif set(['down']) == ostatus_l or \
+             set(['down', 'stdby up']) == ostatus_s or \
+             set(['down', 'stdby up', 'n/a']) == ostatus_s:
+            ostatus = 'down'
+        return ostatus
 
     def get_agg_frozen(self, svcname):
         fstatus = "undef"
