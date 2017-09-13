@@ -3280,8 +3280,8 @@ class Node(Crypt):
                 # svc deleted and monitor not yet aware
                 return
             status = colorize_status(data["avail"], lpad=0)
-            if data["overall"] != "":
-                status += " "+colorize_status(data["overall"], lpad=0)
+            if data["overall"] == "warn":
+                status += colorize("!", color.BROWN)
             line = [
                 " "+colorize(svcname, color.BOLD),
                 status,
