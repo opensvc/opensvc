@@ -6,11 +6,19 @@ PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 prepare_chroot || exit 1
 
 SPEC_D=$OSVC/tmp/SPECS
+SOURCES_D=$OSVC/tmp/SOURCES
+BUILDROOT_D=$OSVC/tmp/BUILDROOT
 SPEC=$SPEC_D/opensvc.spec
 
 [ ! -d $SPEC_D ] && {
 	mkdir -p $SPEC_D || exit 1
 }
+
+[ ! -d $SOURCES_D ] && {
+       mkdir -p $SOURCES_D || exit 1
+}
+
+( cd $BUILDROOT_D && tar czf $SOURCES_D/opensvc-${VERSION}-${RELEASE}.tar.gz * )
 
 CHANGELOG=$(changelog)
 
@@ -21,6 +29,9 @@ Packager: OpenSVC
 URL: http://www.opensvc.com
 Version: $VERSION
 Release: $RELEASE%{?custom_dist}
+Source0: %{name}-${VERSION}-${RELEASE}.tar.gz
+BuildArch: noarch
+BuildRoot:  %{_tmppath}/%{name}-%{version}-build
 License: GPLv2
 Group: Administration/Tools
 Provides: /usr/bin/nodemgr
@@ -34,6 +45,15 @@ AutoReqProv: no
 
 %description
 $(echo ${DESCRIPTION}|fold -s)
+
+%prep
+
+%setup -n %{name}-%{version}-${RELEASE}
+
+%install
+rm -rf "%{buildroot}"
+install -m 0755 -d "%{buildroot}"
+tar cpf - . | ( cd %{buildroot} && tar xf - )
 
 %post
 /usr/bin/python %{_datadir}/opensvc/bin/postinstall
@@ -77,8 +97,9 @@ $CHANGELOG
 EOF
 
 cat $SPEC
-sudo rpmbuild --buildroot=$CHROOT --target=noarch --define "_topdir $OSVC/tmp" --clean -bb $SPEC
+sudo rpmbuild --define "_topdir $OSVC/tmp" --clean -ba $SPEC
 #GNUPGHOME=~/.gpg sudo rpmsign --addsign $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
-which rpmlint >/dev/null 2>&1 && rpmlint $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
+RPMFILE=$(ls -1rt $OSVC/tmp/RPMS/noarch | tail -1)
+which rpmlint >/dev/null 2>&1 && rpmlint $OSVC/tmp/RPMS/noarch/$RPMFILE
 
-[ -x $PATH_SCRIPT/release_rpm ] && $PATH_SCRIPT/release_rpm $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
+[ -x $PATH_SCRIPT/release_rpm ] && $PATH_SCRIPT/release_rpm $OSVC/tmp/RPMS/noarch/$RPMFILE

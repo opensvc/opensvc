@@ -34,7 +34,7 @@ git branch | grep "\* master" >/dev/null 2>&1 && MASTER=1
 [ "$RELEASE" == "$VERSION" ] && RELEASE=0
 
 OSVC=$PATH_SCRIPT/../..
-CHROOT_BN=opensvc-$VERSION-$RELEASE.noarch
+CHROOT_BN=opensvc-$VERSION-$RELEASE
 CHROOT=$OSVC/tmp/BUILDROOT/$CHROOT_BN
 
 if [ "$(uname)" == "SunOS" -a -x /usr/xpg4/bin/id ] ; then
