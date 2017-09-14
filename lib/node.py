@@ -1961,6 +1961,8 @@ class Node(Crypt):
             raise ex.excError("malformed parameter. format as 'section.key'")
         section, option = elements
 
+        if section == "DEFAULT":
+            raise ex.excError("the DEFAULT section is not allowed in %s" % rcEnv.paths.nodeconf)
         if not self.config.has_section(section):
             self.config.add_section(section)
 
