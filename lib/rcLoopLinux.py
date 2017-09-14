@@ -2,12 +2,13 @@ import os
 import re
 
 from rcGlobalEnv import *
-from rcUtilities import call, which
+from rcUtilities import justcall, which
 import rcStatus
 import rcExceptions as ex
 
 def file_to_loop(f):
-    """Given a file path, returns the loop device associated. For example,
+    """
+    Given a file path, returns the loop device associated. For example,
     /path/to/file => /dev/loop0
     """
     if which(rcEnv.syspaths.losetup) is None:
@@ -16,11 +17,11 @@ def file_to_loop(f):
         return []
     if rcEnv.sysname != 'Linux':
         return []
-    (ret, out, err) = call([rcEnv.syspaths.losetup, '-j', f])
+    out, err, ret = justcall([rcEnv.syspaths.losetup, '-j', f])
     if len(out) == 0:
         return []
-    """ It's possible multiple loopdev are associated with the same file
-    """
+
+    # It's possible multiple loopdev are associated with the same file
     devs= []
     for line in out.split('\n'):
         l = line.split(':')
