@@ -88,6 +88,7 @@ ACTIONS_NO_STATUS_CHANGE = [
     "docker",
     "frozen",
     "get",
+    "giveback",
     "json_config",
     "json_status",
     "json_devs",
@@ -4099,13 +4100,18 @@ class Svc(Crypt):
         """
         Service move to best node.
         """
-        if self.placement_optimal():
+        data = self.node._daemon_status()
+        if self.placement_optimal(data):
             self.log.info("placement is already optimal")
             return
         self.svcunlock()
         self.clear()
-        self.daemon_mon_action("stop", wait=True)
         self.daemon_mon_action("thaw", wait=True)
+        for nodename, _data in data.get("monitor", {}).get("nodes", {}).items():
+            __data = _data.get("services", {}).get("status", {}).get(self.svcname, {})
+            if __data.get("monitor", {}).get("placement") != "leader" and \
+               __data.get("avail") == "up":
+		self.daemon_service_action(["stop"], nodename=nodename)
 
     def switch(self):
         """
@@ -5218,8 +5224,9 @@ class Svc(Crypt):
             if line:
                 print(line)
 
-    def placement_optimal(self):
-        data = self.node._daemon_status()
+    def placement_optimal(self, data=None):
+        if data is None:
+            data = self.node._daemon_status()
         placement = data.get("monitor").get("services").get(self.svcname).get("placement")
         if placement == "optimal":
             return True
