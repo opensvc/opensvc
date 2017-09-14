@@ -3266,13 +3266,13 @@ class Node(Crypt):
 
         def load_header(title):
             line = [
-                colorize(title, color.GRAY),
+                title,
                 "",
                 "",
                 "",
             ]
             for nodename in nodenames:
-                line.append(colorize(nodename, color.GRAY))
+                line.append(colorize(nodename, color.BOLD))
             out.append(line)
 
         def load_svc(svcname, data):
