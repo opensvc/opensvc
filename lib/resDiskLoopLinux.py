@@ -7,6 +7,7 @@ import rcStatus
 import resDiskLoop as Res
 import rcExceptions as ex
 from rcLoopLinux import file_to_loop
+from lock import cmlock
 
 class Disk(Res.Disk):
     def is_up(self):
@@ -18,14 +19,18 @@ class Disk(Res.Disk):
         return True
 
     def start(self):
+        lockfile = os.path.join(rcEnv.paths.pathlock, "disk.loop")
         if self.is_up():
             self.log.info("%s is already up" % self.label)
             return
-        cmd = [rcEnv.syspaths.losetup, '-f', self.loopFile]
-        (ret, out, err) = self.vcall(cmd)
+        with cmlock(timeout=10, delay=1, lockfile=lockfile):
+            cmd = [rcEnv.syspaths.losetup, '-f', self.loopFile]
+            (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
         self.loop = file_to_loop(self.loopFile)
+        if len(self.loop) == 0:
+            raise ex.excError("loop device did not appear or disappeared")
         self.log.info("%s now loops to %s" % (', '.join(self.loop), self.loopFile))
         self.can_rollback = True
 
