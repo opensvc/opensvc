@@ -24,9 +24,12 @@ class Disk(Res.Disk):
         if self.is_up():
             self.log.info("%s is already up" % self.label)
             return
-        with cmlock(timeout=10, delay=1, lockfile=lockfile):
-            cmd = [rcEnv.syspaths.losetup, '-f', self.loopFile]
-            (ret, out, err) = self.vcall(cmd)
+        try:
+            with cmlock(timeout=30, delay=1, lockfile=lockfile):
+                cmd = [rcEnv.syspaths.losetup, '-f', self.loopFile]
+                (ret, out, err) = self.vcall(cmd)
+        except Exception as exc:
+            raise ex.excError(str(exc))
         if ret != 0:
             raise ex.excError
         self.loop = file_to_loop(self.loopFile)
