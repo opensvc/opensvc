@@ -45,12 +45,12 @@ class ProvisioningDisk(Provisioning):
             l += _l
         self.pvs = l
 
-        err = False
+        pv_err = False
         for i, pv in enumerate(self.pvs):
             pv = os.path.realpath(pv)
             if not os.path.exists(pv):
                 self.r.log.error("pv %s does not exist"%pv)
-                err |= True
+                pv_err |= True
             mode = os.stat(pv)[ST_MODE]
             if S_ISBLK(mode):
                 continue
@@ -58,14 +58,14 @@ class ProvisioningDisk(Provisioning):
                 cmd = [rcEnv.syspaths.losetup, '-j', pv]
                 out, err, ret = justcall(cmd)
                 if ret != 0 or not out.startswith('/dev/loop'):
-                    self.r.log.error("pv %s a regular file but not a loop"%pv)
-                    err |= True
+                    self.r.log.error("pv %s is a regular file but not a loop"%pv)
+                    pv_err |= True
                     continue
                 self.pvs[i] = out.split(':')[0]
             else:
                 self.r.log.error("pv %s is not a block device nor a loop file"%pv)
-                err |= True
-        if err:
+                pv_err |= True
+        if pv_err:
             raise ex.excError
 
         for pv in self.pvs:
