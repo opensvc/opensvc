@@ -2633,9 +2633,22 @@ class Node(Crypt):
                 set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
             data.procs = {}
             data.svcs = {}
+            try:
+                max_parallel = int(self._get("node.max_parallel"))
+            except:
+                max_parallel = 10
+
+        def running():
+            count = 0
+            for proc in data.procs.values():
+                if proc.is_alive():
+                    count += 1
+            return count
 
         for svc in self.svcs:
             if self.can_parallel(action, options):
+                while running() >= max_parallel:
+                    time.sleep(1)
                 data.svcs[svc.svcname] = svc
                 data.procs[svc.svcname] = Process(
                     target=self.service_action_worker,
