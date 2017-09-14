@@ -1,5 +1,6 @@
 import os
 import re
+import time
 
 from rcGlobalEnv import *
 from rcUtilities import call, which
@@ -31,6 +32,7 @@ class Disk(Res.Disk):
         self.loop = file_to_loop(self.loopFile)
         if len(self.loop) == 0:
             raise ex.excError("loop device did not appear or disappeared")
+        time.sleep(2)
         self.log.info("%s now loops to %s" % (', '.join(self.loop), self.loopFile))
         self.can_rollback = True
 
