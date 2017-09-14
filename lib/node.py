@@ -3440,16 +3440,15 @@ class Node(Crypt):
                     load_thread(key, data[key])
 
         def load_metrics():
-            for metric in ("1m", "5m", "15m"):
-                line = [
-                    colorize(" "+metric, color.BOLD),
-                    "",
-                    "",
-                    "|",
-                ]
-                for nodename in nodenames:
-                    line.append(str(data["monitor"]["nodes"].get(nodename, {}).get("load", {}).get(metric, "")))
-                out.append(line)
+            line = [
+                colorize(" 15m", color.BOLD),
+                "",
+                "",
+                "|",
+            ]
+            for nodename in nodenames:
+                line.append(str(data["monitor"]["nodes"].get(nodename, {}).get("load", {}).get("15m", "")))
+            out.append(line)
 
         def load_node_state():
             line = [
