@@ -4065,8 +4065,8 @@ class Svc(Crypt):
         """
         self.destination_node_sanity_checks()
         self.svcunlock()
-        self.clear(nodename=rcEnv.nodename)
-        self.clear(nodename=self.options.destination_node)
+        self._clear(nodename=rcEnv.nodename)
+        self._clear(nodename=self.options.destination_node)
         self.daemon_mon_action("freeze", wait=True)
         src_node = self.current_node()
         self.daemon_service_action(["prstop"], nodename=src_node)
@@ -4089,8 +4089,8 @@ class Svc(Crypt):
         """
         self.destination_node_sanity_checks(rcEnv.nodename)
         self.svcunlock()
-        self.clear(nodename=rcEnv.nodename)
-        self.clear(nodename=self.options.destination_node)
+        self._clear(nodename=rcEnv.nodename)
+        self._clear(nodename=self.options.destination_node)
         self.daemon_mon_action("stop", wait=True)
         self.daemon_service_action(["start"], nodename=rcEnv.nodename)
         self.daemon_mon_action("thaw", wait=True)
@@ -4103,8 +4103,7 @@ class Svc(Crypt):
             self.log.info("placement is already optimal")
             return
         self.svcunlock()
-        self.clear(nodename=rcEnv.nodename)
-        self.clear(nodename=self.options.destination_node)
+        self.clear()
         self.daemon_mon_action("stop", wait=True)
         self.daemon_mon_action("thaw", wait=True)
 
@@ -4114,8 +4113,8 @@ class Svc(Crypt):
         """
         self.destination_node_sanity_checks()
         self.svcunlock()
-        self.clear(nodename=rcEnv.nodename)
-        self.clear(nodename=self.options.destination_node)
+        self._clear(nodename=rcEnv.nodename)
+        self._clear(nodename=self.options.destination_node)
         self.daemon_mon_action("stop", wait=True)
         self.daemon_service_action(["start"], nodename=self.options.destination_node)
         self.daemon_mon_action("thaw", wait=True)
@@ -5259,9 +5258,24 @@ class Svc(Crypt):
             for line in lines:
                 yield line
 
-    def clear(self, nodename=None):
-        if nodename is None:
-            nodename = self.options.node
+    def clear(self):
+        if self.options.local:
+           self._clear()
+        elif self.options.node:
+           self._clear(self.options.node)
+        else:
+           cleared = 0
+           for nodename in self.peers:
+               try:
+                   self._clear(nodename)
+               except ex.excError as exc:
+                   self.log.warning(exc)
+                   continue
+               cleared += 1
+           if cleared < len(self.peers):
+               raise ex.excError("cleared on %d/%d nodes" % (cleared, len(self.peers)))
+
+    def _clear(self, nodename=None):
         options = {
             "svcname": self.svcname,
         }
