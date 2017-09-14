@@ -69,10 +69,10 @@ rm -f $CHROOT/*.deb
 dpkg-deb -Zgzip -b $CHROOT || exit 1
 dpkg-name -o $CHROOT/../$DEB
 
-lintian $CHROOT/../*.deb
+DEB=$(ls -1 $CHROOT/../*.deb)
+lintian $DEB
 
 echo
-echo -n "=> Debian file located here : "
-ls -1 $CHROOT/../*.deb
+echo "=> Debian file located here : $DEB"
 
-[ -x $PATH_SCRIPT/release_deb ] && $PATH_SCRIPT/release_deb $CHROOT/../$DEB
+[ -x $PATH_SCRIPT/release_deb ] && $PATH_SCRIPT/release_deb $DEB
