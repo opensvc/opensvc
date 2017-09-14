@@ -2,7 +2,14 @@
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 . $PATH_SCRIPT/make.lib
 
-DEB=opensvc-$VERSION-$RELEASE.noarch.deb
+DEB=opensvc-$VERSION-$RELEASE.deb
+
+[[ ! -z $CHROOT ]] && {
+  MCWD=$(pwd)
+  cd $CHROOT/.. && rm -rf opensvc*
+  cd $MCWD
+}
+
 
 function changelog {
 	git log -n 100 --pretty=format:"opensvc (__V__) unstable; urgency=medium%n%n  * %s%n%n -- %an <%ae>  %ad%n" | \
@@ -40,7 +47,7 @@ Depends: python
 Pre-Depends: 
 Recommends: sg3-utils
 Suggests: 
-Installed-Size: 50
+Installed-Size: 5000
 Maintainer: OpenSVC <support@opensvc.com>
 Conflicts: 
 Replaces: 
@@ -52,8 +59,14 @@ echo "$DESCRIPTION" | sed -e "s/^/ /" >>$CHROOT/DEBIAN/control
 
 $SUDO chown -R root:root $CHROOT/DEBIAN
 
+rm -f $CHROOT/*.deb
 dpkg-deb -Zgzip -b $CHROOT || exit 1
+dpkg-name -o $CHROOT/../$DEB
 
-lintian $CHROOT/../$DEB
+lintian $CHROOT/../*.deb
+
+echo
+echo -n "=> Debian file located here : "
+ls -1 $CHROOT/../*.deb
 
 [ -x $PATH_SCRIPT/release_deb ] && $PATH_SCRIPT/release_deb $CHROOT/../$DEB
