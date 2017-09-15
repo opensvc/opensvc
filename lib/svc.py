@@ -931,6 +931,22 @@ class Svc(Crypt):
         except:
             pass
 
+    def validate_mon_action(self):
+        if self.options.local:
+            return
+        data = self.get_smon_data()
+        if data is None:
+            return
+        for nodename, _data in data["instances"].items():
+            status = _data.get("status", "unknown")
+            if status != "idle":
+                raise ex.excError("instance on node %s in %s state"
+                                  "" % (nodename, status))
+        global_expect = data.get("service", {}).get("global_expect")
+        if global_expect is not None:
+            raise ex.excError("service has already been asked to reach the "
+                              "%s global state" % global_expect)
+
     def svclock(self, action=None, timeout=30, delay=1):
         """
         Acquire the service action lock.
@@ -1213,6 +1229,21 @@ class Svc(Crypt):
         group_status = self.group_status()
         return group_status["overall"].status
 
+    def get_smon_data(self):
+        data = {}
+        try:
+            mon_data = self.node._daemon_status(silent=True)["monitor"]
+            data["service"] = mon_data["services"][self.svcname]
+            data["instances"] = {}
+            for nodename in mon_data["nodes"]:
+                 try:
+                     data["instances"][nodename] = mon_data["nodes"][nodename]["services"]["status"][self.svcname]["monitor"]
+                 except KeyError:
+                     pass
+            return data
+        except Exception:
+            return
+
     @lazy
     def status_data_dump(self):
         return os.path.join(rcEnv.paths.pathvar, self.svcname, "status.json")
@@ -1235,14 +1266,14 @@ class Svc(Crypt):
         data = self.print_status_data_eval()
 
         if mon_data:
+            mon_data = self.get_smon_data()
             try:
-                mon_data = self.node._daemon_status(silent=True)["monitor"]
                 data["cluster"] = {
-                    "avail": mon_data["services"][self.svcname]["avail"],
-                    "overall": mon_data["services"][self.svcname]["overall"],
-                    "placement": mon_data["services"][self.svcname]["placement"],
+                    "avail": mon_data["service"]["avail"],
+                    "overall": mon_data["service"]["overall"],
+                    "placement": mon_data["service"]["placement"],
                 }
-                data["monitor"] = mon_data["nodes"][rcEnv.nodename]["services"]["status"][self.svcname]["monitor"]
+                data["monitor"] = mon_data["instances"][rcEnv.nodename]
             except:
                 pass
 
@@ -2339,6 +2370,7 @@ class Svc(Crypt):
         raise ex.excAbortAction()
 
     def daemon_mon_action(self, action, wait=None, timeout=None):
+        self.validate_mon_action()
         self.set_service_monitor(global_expect=ACTION_TGT_STATE[action])
         self.log.info("%s action requested", action)
         if wait is None:
@@ -3588,8 +3620,11 @@ class Svc(Crypt):
         options = self.prepare_options(options)
         try:
             self.async_action(action)
+        except ex.excError as exc:
+            self.log.error(exc)
+            return 1
         except ex.excAbortAction:
-            return
+            return 0
         return self._action(action, options=options)
 
     def _action(self, action, options=None):
