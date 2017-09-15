@@ -1,4 +1,6 @@
 import os
+import subprocess
+import time
 
 import resources as Res
 import rcExceptions as ex
@@ -106,28 +108,26 @@ class Mount(Res.Resource):
         """
         return True
 
-    @staticmethod
-    def alarm_handler(signum, frame):
-        raise ex.excSignal
-
     def check_stat(self):
         if which("stat") is None:
             return True
 
-        import signal, subprocess
-        signal.signal(signal.SIGALRM, self.alarm_handler)
-        signal.alarm(5)
+        if self.device is None:
+            return True
 
+        proc = subprocess.Popen(['stat', self.device],
+                                stderr=subprocess.PIPE,
+                                stdout=subprocess.PIPE)
+        for retry in range(50, 0, -1):
+            if proc.poll() is None:
+                time.sleep(0.1)
+            else:
+                return True
         try:
-            proc = subprocess.Popen('stat '+self.device, shell=True,
-                                    stderr=subprocess.PIPE,
-                                    stdout=subprocess.PIPE)
-            out, err = proc.communicate()
-            signal.alarm(0)
-        except ex.excSignal:
-            return False
-
-        return True
+            proc.kill()
+        except OSError:
+            pass
+        return False
 
     def check_writable(self):
         if not self.can_check_writable():
