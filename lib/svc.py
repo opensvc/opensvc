@@ -4399,7 +4399,7 @@ class Svc(Crypt):
         return elements[0], elements[1], _value
 
     def _set(self, section, option, value):
-        self._multi_set([[section, option, value]])
+        self._set_multi([[section, option, value]])
 
     def _set_multi(self, changes):
         lines = self._read_cf().splitlines()
