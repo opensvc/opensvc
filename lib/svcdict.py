@@ -2808,7 +2808,7 @@ class KeywordDiskDiskSlo(Keyword):
                   order=11,
                   at=True,
                   provisioning=True,
-                  text="The provisionned disk service level objective. This keyword is honored on arrays supporting this (ex: EMC VMAX)",
+                  text="The provisioned disk service level objective. This keyword is honored on arrays supporting this (ex: EMC VMAX)",
                   example="Optimized"
                 )
 
@@ -3398,7 +3398,7 @@ class KeywordFsZfsSize(Keyword):
                   required=False,
                   convert="size",
                   at=True,
-                  text="The quota in MB of the provisionned dataset.",
+                  text="The quota in MB of the provisioned dataset.",
                   provisioning=True
                 )
 

@@ -18,7 +18,7 @@ class Disk(Res.Resource):
 
     def set_label(self):
         if self.disk_id is None:
-            self.label = "unprovisionned disk"
+            self.label = "unprovisioned disk"
         else:
             self.label = "disk "+str(self.disk_id)
 
@@ -158,7 +158,7 @@ class Disk(Res.Resource):
         self.set_label()
         self.svc.config.set(self.rid, "disk_id", self.disk_id)
         self.svc.write_config()
-        self.log.info("disk %s provisionned" % self.disk_id)
+        self.log.info("disk %s provisioned" % self.disk_id)
 
     def unprovision(self):
         handler = "/services/self/disks"
@@ -174,5 +174,5 @@ class Disk(Res.Resource):
         results = self.wait_results(results)
         self.svc.config.set(self.rid, "disk_id", "")
         self.svc.write_config()
-        self.log.info("unprovisionned")
+        self.log.info("unprovisioned")
 

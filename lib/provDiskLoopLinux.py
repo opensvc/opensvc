@@ -15,11 +15,11 @@ class ProvisioningDisk(Provisioning):
             raise ex.excError(str(e))
 
         if not os.path.exists(self.path):
-            self.r.log.info("already unprovisionned")
+            self.r.log.info("already unprovisioned")
             return
 
         self.r.log.info("unlink %s" % self.path)
-        self.r.log.info("unprovisionned")
+        self.r.log.info("unprovisioned")
         os.unlink(self.path)
 
     def provisioner(self):
@@ -29,7 +29,7 @@ class ProvisioningDisk(Provisioning):
         except Exception as e:
             raise ex.excError(str(e))
         if os.path.exists(self.path):
-            self.r.log.info("already provisionned")
+            self.r.log.info("already provisioned")
             self.r.start()
             return
         d = os.path.dirname(self.path)

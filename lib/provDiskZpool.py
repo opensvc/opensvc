@@ -9,13 +9,13 @@ class ProvisioningDisk(Provisioning):
         self.r.stop()
 
         if not self.r.has_it():
-            self.r.log.info("already unprovisionned")
+            self.r.log.info("already unprovisioned")
             return
 
         cmd = ["zpool", "destroy", "-f", self.r.name]
         self.r.vcall(cmd)
 
-        self.r.log.info("unprovisionned")
+        self.r.log.info("unprovisioned")
 
     def provisioner(self):
         try:
@@ -25,7 +25,7 @@ class ProvisioningDisk(Provisioning):
             raise ex.excError(str(e))
 
         if self.r.has_it():
-            self.r.log.info("already provisionned")
+            self.r.log.info("already provisioned")
             self.r.start()
             return
 
