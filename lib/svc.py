@@ -2362,14 +2362,18 @@ class Svc(Crypt):
         mtime = os.stat(self.paths.cf).st_mtime
         print(mtime)
 
+    def prepare_async_cmd(self):
+        cmd = sys.argv[1:]
+        cmd = drop_option("--node", cmd, drop_value=True)
+        cmd = drop_option("-s", cmd, drop_value=True)
+        cmd = drop_option("--service", cmd, drop_value=True)
+        return cmd
+
     def async_action(self, action, wait=None, timeout=None):
         if action in ACTION_NO_ASYNC:
             return
         if self.options.node is not None and self.options.node != "":
-            cmd = sys.argv[1:]
-            cmd = drop_option("--node", cmd, drop_value=True)
-            cmd = drop_option("-s", cmd, drop_value=True)
-            cmd = drop_option("--service", cmd, drop_value=True)
+            cmd = self.prepare_async_cmd()
             ret = self.daemon_service_action(cmd)
             if ret == 0:
                 raise ex.excAbortAction()
@@ -2409,7 +2413,7 @@ class Svc(Crypt):
                     _data = data["monitor"]["nodes"][nodename]["services"]["status"][self.svcname]
                 except (KeyError, TypeError) as exc:
                     continue
-                if _data["monitor"].get("global_expect") == ACTION_TGT_STATE[action]:
+                if _data["monitor"].get("global_expect") in (ACTION_TGT_STATE[action], "n/a"):
                     global_expect_set.append(nodename)
             if prev_global_expect_set != global_expect_set:
                 for nodename in set(global_expect_set) - prev_global_expect_set:
@@ -4320,14 +4324,14 @@ class Svc(Crypt):
         _set() method.
         """
         if self.options.kw is not None:
-            return self.set_multi()
+            return self.set_multi(self.options.kw)
         else:
             return self.set_mono()
 
-    def set_multi(self):
+    def set_multi(self, kws):
         changes = []
         self.set_multi_cache = {}
-        for kw in self.options.kw:
+        for kw in kws:
             if "=" not in kw:
                 raise ex.excError("malformed kw expression: %s: no '='" % kw)
             keyword, value = kw.split("=", 1)
@@ -4700,6 +4704,29 @@ class Svc(Crypt):
             raise ex.excError("failed to rewrite %s" % self.paths.cf)
 
     def delete(self):
+        if self.options.local or self.options.node == rcEnv.nodename or \
+           self.command_is_scoped():
+            self.delete_local()
+        elif self.options.node:
+            self.delete_instance(self.option.node)
+        else:
+            self.delete_service()
+
+    def delete_instance(self, nodename):
+        cmd = self.prepare_async_cmd()
+        return self.daemon_service_action(cmd, nodename=nodename)
+
+    def delete_service(self):
+        if len(self.nodes) + len(self.drpnodes) > 1 and self.options.unprovision:
+            self.daemon_mon_action("freeze", wait=True)
+            self.daemon_mon_action("stop", wait=True)
+        self.delete_local()
+        for nodename in self.peers:
+            if nodename == rcEnv.nodename:
+                continue
+            self.delete_instance(nodename)
+
+    def delete_local(self):
         """
         The 'delete' action entrypoint.
         If --unprovision is set, call the unprovision method.
@@ -4713,6 +4740,18 @@ class Svc(Crypt):
 
         if not self.command_is_scoped() or \
            len(self.action_rid) == len(self.resources_by_id.keys()):
+            for peer in self.peers:
+                if peer == rcEnv.nodename:
+                    continue
+                self.daemon_service_action([
+                    "set",
+                    "--kw", "nodes-=" + rcEnv.nodename,
+                    "--kw", "drpnodes-=" + rcEnv.nodename,
+                ], nodename=peer)
+            self.set_multi([
+                "nodes-=" + rcEnv.nodename,
+                "drpnodes-=" + rcEnv.nodename,
+            ])
             self.delete_service_conf()
             self.delete_service_logs()
         else:

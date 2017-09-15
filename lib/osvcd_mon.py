@@ -23,9 +23,11 @@ from svcBuilder import build, fix_app_link, fix_exe_link
 MON_WAIT_READY = datetime.timedelta(seconds=16)
 
 STARTED_STATES = (
+    "n/a",
     "up",
 )
 STOPPED_STATES = (
+    "n/a",
     "down",
     "stdby up",
     "stdby down",

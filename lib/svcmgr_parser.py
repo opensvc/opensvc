@@ -856,7 +856,7 @@ ACTIONS = {
         },
         'set': {
             'msg': 'set a service configuration parameter',
-            'options': [
+            'options': ACTION_OPTS + [
                 OPT.kw,
                 OPT.add,
                 OPT.index,
@@ -868,14 +868,14 @@ ACTIONS = {
         'get': {
             'msg': 'get the raw or dereferenced value of a service '
                    'configuration parameter',
-            'options': [
+            'options': ACTION_OPTS + [
                 OPT.eval,
                 OPT.param,
             ],
         },
         'unset': {
             'msg': 'unset a node configuration parameter pointed by --param',
-            'options': [
+            'options': ACTION_OPTS + [
                 OPT.param,
             ],
         },
