@@ -23,6 +23,7 @@ class Resource(object):
     """
     Resource drivers parent class
     """
+    default_optional = False
     def __init__(self,
                  rid=None,
                  type=None,
@@ -43,7 +44,7 @@ class Resource(object):
         self.tags = tags
         self.type = type
         self.subset = subset
-        self.optional = optional
+        self.optional = optional if optional is not None else self.default_optional
         self.disabled = disabled
         self.skip = False
         self.monitor = monitor

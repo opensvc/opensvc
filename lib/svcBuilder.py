@@ -27,8 +27,8 @@ def get_tags(svc, section):
 def get_optional(svc, section):
     try:
         return svc.conf_get(section, "optional")
-    except ex.OptNotFound as exc:
-        return exc.default
+    except ex.OptNotFound:
+        return None
 
 def get_monitor(svc, section):
     try:

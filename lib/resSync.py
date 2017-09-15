@@ -12,6 +12,7 @@ from rcScheduler import *
 cache_remote_node_env = {}
 
 class Sync(Res.Resource, Scheduler):
+    default_optional = True
     def __init__(self,
                  rid=None,
                  sync_max_delay=None,

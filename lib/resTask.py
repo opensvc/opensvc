@@ -38,6 +38,7 @@ def demote(user_uid, user_gid):
     return result
 
 class Task(Res.Resource):
+    default_optional = True
     def __init__(self,
                  rid=None,
                  command=None,

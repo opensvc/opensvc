@@ -370,7 +370,6 @@ class Svc(Crypt):
         self.encap_json_status_cache = {}
         self.rset_status_cache = None
         self.lockfd = None
-        self.group_status_cache = None
         self.abort_start_done = False
         self.action_start_date = datetime.datetime.now()
         self.ha = False
@@ -1431,19 +1430,12 @@ class Svc(Crypt):
             """
             Dispatch resources in avail/accesory sets, and sort.
             """
-            rbg = {
-                    "ip": [],
-                    "disk": [],
-                    "fs": [],
-                    "container": [],
-                    "share": [],
-                    "app": [],
-                    "sync": [],
-                    "stonith": [],
-                    "task": [],
-            }
+            rbg = {}
+            for group in DEFAULT_STATUS_GROUPS:
+                rbg[group] = []
+
             avail_resources = []
-            accessory_resources = []
+            optional_resources = []
 
             for rid, resource in data["resources"].items():
                 if discard_disabled and resource["disable"]:
@@ -1451,20 +1443,18 @@ class Svc(Crypt):
                 group = resource["type"].split(".", 1)[0]
                 rbg[group].append(rid)
 
-            for group in ("ip", "disk", "fs", "container", "share", "app"):
+            for group in DEFAULT_STATUS_GROUPS:
                 for rid in sorted(rbg[group]):
                     resource = data["resources"][rid]
                     resource["rid"] = rid
-                    avail_resources.append(resource)
-            for group in ("sync", "stonith", "task"):
-                for rid in sorted(rbg[group]):
-                    resource = data["resources"][rid]
-                    resource["rid"] = rid
-                    accessory_resources.append(resource)
+                    if resource["optional"]:
+                        optional_resources.append(resource)
+                    else:
+                        avail_resources.append(resource)
 
             return (
                 avail_resources,
-                accessory_resources,
+                optional_resources,
             )
 
         # discard disabled resources ?
@@ -1473,9 +1463,9 @@ class Svc(Crypt):
         else:
             discard_disabled = not self.show_disabled
 
-        # dispath resources in avail/accessory lists
-        avail_resources, accessory_resources = dispatch_resources()
-        n_accessory_resources = len(accessory_resources)
+        # dispath resources in avail/optional lists
+        avail_resources, optional_resources = dispatch_resources()
+        n_optional_resources = len(optional_resources)
 
         # service-level notices
         svc_notice = []
@@ -1587,11 +1577,13 @@ class Svc(Crypt):
         for resource in avail_resources:
             add_res_node(resource, node_avail)
 
-        if n_accessory_resources > 0:
-            node_accessory = node_overall.add_node()
-            node_accessory.add_column("accessory")
-            for resource in accessory_resources:
-                add_res_node(resource, node_accessory)
+        if n_optional_resources > 0:
+            node_optional = node_overall.add_node()
+            node_optional.add_column("optional")
+            node_optional.add_column()
+            node_optional.add_column(data['optional'], STATUS_COLOR[data['optional']])
+            for resource in optional_resources:
+                add_res_node(resource, node_optional)
 
         print(tree)
 
@@ -2187,7 +2179,7 @@ class Svc(Crypt):
             groups = set(DEFAULT_STATUS_GROUPS)
 
         status = {}
-        moregroups = groups | set(["overall", "avail"])
+        moregroups = groups | set(["overall", "avail", "optional"])
         groups = groups - excluded_groups
         self.get_rset_status(groups)
 
@@ -2195,10 +2187,7 @@ class Svc(Crypt):
         for group in moregroups:
             status[group] = rcStatus.Status(rcStatus.NA)
 
-        for driver in [_driver for _driver in STATUS_TYPES if \
-                  not _driver.startswith('sync') and \
-                  not _driver.startswith('task') and \
-                  not _driver.startswith('stonith')]:
+        for driver in STATUS_TYPES:
             if driver in excluded_groups:
                 continue
             group = driver.split('.')[0]
@@ -2207,70 +2196,31 @@ class Svc(Crypt):
             for resource in self.get_resources(driver):
                 rstatus = resource.status()
                 status[group] += rstatus
-                status["avail"] += rstatus
+                if resource.is_optional():
+                    status["optional"] += rstatus
+                else:
+                    status["avail"] += rstatus
+                if resource.status_logs_count(levels=["warn", "error"]) > 0:
+                    status["overall"] += rcStatus.WARN
 
         if status["avail"].status == rcStatus.STDBY_UP_WITH_UP:
-            status["avail"].status = rcStatus.UP
-            # now that we now the avail status we can promote
+            # now we know the avail status we can promote
             # stdbyup to up
+            status["avail"].status = rcStatus.UP
             for group in status:
                 if status[group] == rcStatus.STDBY_UP:
                     status[group] = rcStatus.UP
         elif status["avail"].status == rcStatus.STDBY_UP_WITH_DOWN:
             status["avail"].status = rcStatus.STDBY_UP
 
-        # overall status is avail + accessory resources status
-        # seed overall with avail
-        status["overall"] = rcStatus.Status(status["avail"])
+        if status["optional"].status == rcStatus.STDBY_UP_WITH_UP:
+            status["optional"].status = rcStatus.UP
+        elif status["optional"].status == rcStatus.STDBY_UP_WITH_DOWN:
+            status["optional"].status = rcStatus.STDBY_UP
 
-        for resource in self.get_resources():
-            group = resource.type.split(".")[0]
-            if group not in groups:
-                continue
-            if resource.status_logs_count(levels=["warn", "error"]) > 0:
-                status["overall"] += rcStatus.WARN
-                break
+        status["overall"] += rcStatus.Status(status["avail"])
+        status["overall"] += rcStatus.Status(status["optional"])
 
-        for driver in [_driver for _driver in STATUS_TYPES if \
-                       _driver.startswith('stonith')]:
-            if 'stonith' not in groups:
-                continue
-            if driver in excluded_groups:
-                continue
-            for resource in self.get_resources(driver):
-                rstatus = resource.status()
-                status['stonith'] += rstatus
-                status["overall"] += rstatus
-
-        for driver in [_driver for _driver in STATUS_TYPES if \
-                       _driver.startswith('sync')]:
-            if 'sync' not in groups:
-                continue
-            if driver in excluded_groups:
-                continue
-            for resource in self.get_resources(driver):
-                #" sync are expected to be up
-                rstatus = resource.status()
-                status['sync'] += rstatus
-                if rstatus == rcStatus.UP:
-                    status["overall"] += rcStatus.UNDEF
-                elif rstatus in [rcStatus.NA, rcStatus.UNDEF]:
-                    status["overall"] += rstatus
-                else:
-                    status["overall"] += rcStatus.WARN
-
-        for driver in [_driver for _driver in STATUS_TYPES if \
-                       _driver.startswith('task')]:
-            if 'task' not in groups:
-                continue
-            if driver in excluded_groups:
-                continue
-            for resource in self.get_resources(driver):
-                rstatus = resource.status()
-                status['task'] += rstatus
-                status["overall"] += rstatus
-
-        self.group_status_cache = status
         return status
 
     def print_exposed_devs(self):

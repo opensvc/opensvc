@@ -6,6 +6,8 @@ from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 
 class Stonith(Res.Resource):
+    default_optional = True
+
     def __init__(self, **kwargs):
         Res.Resource.__init__(self, **kwargs)
         self.name = None

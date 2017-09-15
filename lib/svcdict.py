@@ -4177,7 +4177,7 @@ class KeyDict(KeywordStore):
                   generic=True,
                   at=True,
                   candidates=(True, False),
-                  default=False,
+                  default_text="True for task, sync and stonith, else False",
                   convert="boolean",
                   text="Possible values are 'true' or 'false'. Actions on resource will be tried upon service startup and shutdown, but action failures will be logged and passed over. Useful for resources like dump filesystems for example."
                 )
