@@ -356,9 +356,4 @@ class Disk(resDisk.Disk):
         import lock
         lock.unlock(self.lockfd)
 
-    def provision(self):
-        m = __import__("provDiskVgHP-UX")
-        prov = getattr(m, "ProvisioningDisk")(self)
-        prov.provisioner()
-
 

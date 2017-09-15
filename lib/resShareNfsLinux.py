@@ -7,6 +7,7 @@ import rcExceptions as ex
 from resources import Resource
 
 class Share(Resource):
+
     def get_exports(self):
         self.data = {}
         cmd = [ 'exportfs', '-v' ]

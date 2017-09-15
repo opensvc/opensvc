@@ -437,7 +437,3 @@ class Lxc(resContainer.Container):
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
-    def provision(self):
-        m = __import__("provLxc")
-        prov = m.ProvisioningLxc(self)
-        prov.provisioner()

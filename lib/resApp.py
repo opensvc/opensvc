@@ -144,6 +144,7 @@ class App(Resource):
     """
     The App resource driver class.
     """
+
     def __init__(self, rid=None,
                  script=None,
                  start=None,

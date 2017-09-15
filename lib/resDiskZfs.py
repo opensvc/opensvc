@@ -209,16 +209,6 @@ class Disk(resDisk.Disk):
 
         return vdevs
 
-    def unprovision(self):
-        m = __import__("provDiskZpool")
-        prov = getattr(m, "ProvisioningDisk")(self)
-        prov.unprovisioner()
-
-    def provision(self):
-        m = __import__("provDiskZpool")
-        prov = getattr(m, "ProvisioningDisk")(self)
-        prov.provisioner()
-
 if __name__ == "__main__":
     help(Disk)
 

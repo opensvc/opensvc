@@ -200,8 +200,3 @@ class Ip(resIp.Ip, rcGce.Gce):
         self.stop_local_route()
         # don't unconfigure the gce route: too long. let the start replace it if necessary.
 
-    #def provision(self):
-        #m = __import__("provIpGce")
-        #prov = getattr(m, "ProvisioningIp")(self)
-        #prov.provisioner()
-

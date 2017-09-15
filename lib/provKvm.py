@@ -4,7 +4,7 @@ from rcUtilities import which
 import os
 import rcExceptions as ex
 
-class ProvisioningKvm(Provisioning):
+class Prov(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
 

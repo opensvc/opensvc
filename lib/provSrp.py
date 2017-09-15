@@ -4,7 +4,7 @@ import os
 import socket
 import rcExceptions as ex
 
-class ProvisioningSrp(Provisioning):
+class Prov(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
 

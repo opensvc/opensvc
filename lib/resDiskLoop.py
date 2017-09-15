@@ -2,8 +2,10 @@ import resources as Res
 from rcGlobalEnv import rcEnv
 
 class Disk(Res.Resource):
-    """ basic loopback device resource
     """
+    Base loopback device resource
+    """
+
     def __init__(self, rid=None, loopFile=None, **kwargs):
         Res.Resource.__init__(self, rid, "disk.loop", **kwargs)
         self.loopFile = loopFile

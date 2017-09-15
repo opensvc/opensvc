@@ -271,13 +271,3 @@ class Disk(resDisk.Disk):
                     devs.add(lvp)
         return devs
 
-    def unprovision(self):
-        m = __import__("provDiskVgLinux")
-        prov = getattr(m, "ProvisioningDisk")(self)
-        prov.unprovisioner()
-
-    def provision(self):
-        m = __import__("provDiskVgLinux")
-        prov = getattr(m, "ProvisioningDisk")(self)
-        prov.provisioner()
-

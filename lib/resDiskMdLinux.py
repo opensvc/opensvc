@@ -279,14 +279,4 @@ class Disk(resDisk.Disk):
         self.log.debug("found devs %s held by md %s" % (devs, self.uuid))
         return devs
 
-    def provision(self):
-        m = __import__("provDiskMdLinux")
-        prov = getattr(m, "ProvisioningDisk")(self)
-        prov.provisioner()
-
-    def unprovision(self):
-        m = __import__("provDiskMdLinux")
-        prov = getattr(m, "ProvisioningDisk")(self)
-        prov.unprovisioner()
-
 

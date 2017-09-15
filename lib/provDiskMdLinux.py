@@ -4,7 +4,7 @@ import rcExceptions as ex
 from rcUtilities import which
 from converters import convert_size
 
-class ProvisioningDisk(Provisioning):
+class Prov(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
 

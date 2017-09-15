@@ -140,8 +140,3 @@ class Ip(resIp.Ip, Amazon):
     def shutdown(self):
         pass
 
-    def provision(self):
-        m = __import__("provIpAmazon")
-        prov = getattr(m, "ProvisioningIp")(self)
-        prov.provisioner()
-

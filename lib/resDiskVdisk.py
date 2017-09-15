@@ -7,6 +7,7 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
 class Disk(Res.Resource):
+
     def __init__(self,
                  rid=None,
                  name=None,

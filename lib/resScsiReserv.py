@@ -14,6 +14,7 @@ class ScsiReserv(Res.Resource):
     """Define method to acquire and release scsi SPC-3 persistent reservations
     on devs held by a service
     """
+
     def __init__(self,
                  rid=None,
                  peer_resource=None,
@@ -277,6 +278,9 @@ class ScsiReserv(Res.Resource):
             return
         if self.scsirelease() != 0:
             raise ex.excError
+
+    def is_provisioned(self):
+        return
 
     def provision(self):
         self.start()

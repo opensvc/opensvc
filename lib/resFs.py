@@ -6,11 +6,12 @@ import resources as Res
 import rcExceptions as ex
 import rcStatus
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, mimport
+from rcUtilities import which, mimport, lazy
 
 class Mount(Res.Resource):
     """Define a mount resource
     """
+
     def __init__(self,
                  rid=None,
                  mount_point=None,
@@ -184,20 +185,16 @@ class Mount(Res.Resource):
         """
         return self.mount_point < other.mount_point
 
-    def provision(self):
-        m = mimport("prov", "fs", self.fs_type, fallback=True)
-        if not hasattr(m, "ProvisioningFs"):
-            raise ex.excError("missing ProvisioningFs class in module %s" % str(m))
-        prov = getattr(m, "ProvisioningFs")(self)
-        prov.provisioner()
+    @lazy
+    def prov(self):
+        try:
+            mod = mimport("prov", "fs", self.fs_type, fallback=True)
+        except ImportError:
+            return
+        if not hasattr(mod, "Prov"):
+            raise ex.excError("missing Prov class in module %s" % str(mod))
+        return getattr(mod, "Prov")(self)
 
-    def unprovision(self):
-        m = mimport("prov", "fs", self.fs_type, fallback=True)
-        if not hasattr(m, "ProvisioningFs"):
-            raise ex.excError("missing ProvisioningFs class in module %s" % str(m))
-        prov = getattr(m, "ProvisioningFs")(self)
-        if hasattr(prov, "unprovisioner"):
-            prov.unprovisioner()
 
 if __name__ == "__main__":
     for c in (Mount,) :

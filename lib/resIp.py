@@ -18,6 +18,7 @@ class Ip(Res.Resource):
     """
     Base ip resource driver.
     """
+
     def __init__(self,
                  rid=None,
                  ipdev=None,
@@ -570,21 +571,5 @@ class Ip(Res.Resource):
         self.svc._unset(self.rid, "ipname")
         self.log.info("ip %s released", self.ipname)
 
-
-    def provision(self):
-        """
-        Provision the ip resource, allocate an ip collector's side, and
-        start it.
-        """
-        self.allocate()
-        self.start()
-
-    def unprovision(self):
-        """
-        Unprovision the ip resource, meaning unplumb and release collector's
-        side.
-        """
-        self.stop()
-        self.release()
 
 

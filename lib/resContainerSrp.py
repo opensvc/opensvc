@@ -242,11 +242,6 @@ class Srp(resContainer.Container):
         self.export_file = os.path.join(rcEnv.paths.pathvar, name + '.xml')
         self.runmethod = ['srp_su', name, 'root', '-c']
 
-    def provision(self):
-        m = __import__("provSrp")
-        prov = m.ProvisioningSrp(self)
-        prov.provisioner()
-
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 

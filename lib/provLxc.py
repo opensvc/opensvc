@@ -3,7 +3,7 @@ from rcGlobalEnv import rcEnv
 import os
 import rcExceptions as ex
 
-class ProvisioningLxc(Provisioning):
+class Prov(Provisioning):
     config_template = """\
 lxc.utsname = %(vm_name)s
 lxc.tty = 4

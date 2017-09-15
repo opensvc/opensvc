@@ -12,6 +12,7 @@ class Disk(Res.Resource):
     """
     Base disk resource driver, derived for LVM, Veritas, ZFS, ...
     """
+
     def __init__(self, rid=None, name=None, **kwargs):
         Res.Resource.__init__(self, rid, **kwargs)
         self.name = name

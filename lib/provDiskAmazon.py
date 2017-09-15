@@ -1,7 +1,7 @@
 from provisioning import Provisioning
 import rcExceptions as ex
 
-class ProvisioningDisk(Provisioning):
+class Prov(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
         self.volumes_done = []

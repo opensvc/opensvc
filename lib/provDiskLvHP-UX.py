@@ -6,7 +6,7 @@ import os
 import rcExceptions as ex
 import time
 
-class ProvisioningDisk(Provisioning):
+class Prov(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
 

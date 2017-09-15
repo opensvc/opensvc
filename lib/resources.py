@@ -11,7 +11,8 @@ import time
 
 import rcExceptions as ex
 import rcStatus
-from rcUtilities import lazy, clear_cache, call, vcall, lcall, set_lazy, action_triggers
+from rcUtilities import lazy, clear_cache, call, vcall, lcall, set_lazy, \
+                        action_triggers, mimport
 from rcGlobalEnv import rcEnv
 import rcColor
 
@@ -723,18 +724,6 @@ class Resource(object):
         """
         pass
 
-    def provision(self):
-        """
-        The resource provision action entrypoint.
-        """
-        pass
-
-    def unprovision(self):
-        """
-        The resource unprovision action entrypoint.
-        """
-        pass
-
     @staticmethod
     def default_files_to_sync():
         """
@@ -891,3 +880,53 @@ class Resource(object):
         """
         return self.svc.conf_get(self.rid, o, **kwargs)
 
+    @lazy
+    def prov(self):
+        """
+        Find the provisioning module, import it and instanciate a Prov object.
+        """
+        try:
+            driver_group, driver = self.type.split(".", 1)
+        except ValueError:
+            driver_group = self.type
+            driver = ""
+        try:
+            mod = mimport("prov", driver_group, driver, fallback=True)
+        except ImportError as exc:
+            self.log.info("no provisioner for %s %s",
+                          self.type, self.label)
+            return
+        if not hasattr(mod, "Prov"):
+            raise ex.excError("missing Prov class in module %s" % str(mod))
+        return getattr(mod, "Prov")(self)
+
+    def provision(self):
+        """
+        Unimplemented is_provisioned() trusts provisioner() to do the right
+        thing.
+        """
+        if self.prov is None:
+            return
+        if self.prov.is_provisioned() is True:
+            self.log.info("%s already provisioned", self.label)
+            return
+        self.prov.provisioner()
+
+    def unprovision(self):
+        """
+        Unimplemented is_provisioned() trusts unprovisioner() to do the right
+        thing.
+        """
+        if self.prov is None:
+            return
+        if self.prov.is_provisioned() is False:
+            self.log.info("%s already unprovisioned", self.label)
+            return
+        self.prov.unprovisioner()
+
+    def is_provisioned(self):
+        if self.prov is None:
+            return
+        if not hasattr(self.prov, "is_provisionned"):
+            return
+        return self.prov.is_provisioned()

@@ -13,7 +13,7 @@ import shutil
 
 SYSIDCFG="/etc/sysidcfg"
 
-class ProvisioningZone(Provisioning):
+class Prov(Provisioning):
     def __init__(self, r):
         """
         """

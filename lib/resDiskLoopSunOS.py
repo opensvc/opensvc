@@ -3,6 +3,7 @@ from rcGlobalEnv import *
 import rcStatus
 
 class Loop(resources.Resource):
+
     def is_up(self):
         """
         Returns True if the volume group is present and activated

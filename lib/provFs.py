@@ -5,7 +5,7 @@ import os
 import rcExceptions as ex
 import shutil
 
-class ProvisioningFs(Provisioning):
+class Prov(Provisioning):
     # required from child classes:
     #   mkfs = ['mkfs.ext4', '-F']
     #   info = ['tune2fs', '-l']
@@ -30,14 +30,14 @@ class ProvisioningFs(Provisioning):
             p = __import__("provDiskLvHP-UX")
         else:
             return
-        p.ProvisioningDisk(self.r).provisioner()
+        p.Prov(self.r).provisioner()
 
     def unprovision_dev(self):
         if rcEnv.sysname == 'Linux':
             p = __import__("provDiskLvLinux")
         else:
             return
-        p.ProvisioningDisk(self.r).unprovisioner()
+        p.Prov(self.r).unprovisioner()
 
     def provisioner_fs(self):
         if self.r.fs_type in self.r.netfs:

@@ -6,7 +6,7 @@ from stat import *
 from rcUtilities import justcall
 import glob
 
-class ProvisioningDisk(Provisioning):
+class Prov(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
         self.pvs = r.svc.config.get(self.r.rid, 'pvs')

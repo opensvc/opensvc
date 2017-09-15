@@ -7,6 +7,7 @@ import rcExceptions as ex
 from resources import Resource
 
 class Share(Resource):
+
     def get_opts(self):
         if not os.path.exists(self.sharetab):
             return self.data

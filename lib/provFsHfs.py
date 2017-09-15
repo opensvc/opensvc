@@ -2,7 +2,7 @@ import provFs
 import rcExceptions as ex
 from rcUtilities import justcall
 
-class ProvisioningFs(provFs.ProvisioningFs):
+class Prov(provFs.Prov):
    mkfs = ['newfs_hfs']
    info = ['diskutil', 'info']
 

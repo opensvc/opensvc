@@ -5,12 +5,14 @@ class Provisioning(object):
     def validate(self):
         return True
 
+    def is_provisioned(self):
+        return
+
     def unprovisioner(self):
         self.r.stop()
-        return True
 
     def provisioner(self):
-        return True
+        self.r.start()
 
     def remove_keywords(self, keywords=[]):
         for kw in keywords:

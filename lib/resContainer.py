@@ -6,7 +6,8 @@ from rcUtilities import justcall, getaddr, lazy
 from rcGlobalEnv import rcEnv
 
 class Container(Res.Resource):
-    """ in seconds
+    """
+    The container base class.
     """
     startup_timeout = 600
     shutdown_timeout = 60

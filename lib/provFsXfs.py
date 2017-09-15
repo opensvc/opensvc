@@ -1,6 +1,6 @@
 import provFs
 
-class ProvisioningFs(provFs.ProvisioningFs):
+class Prov(provFs.Prov):
     info = ['xfs_admin', '-l']
     mkfs = ['mkfs.xfs', '-f', '-q']
 

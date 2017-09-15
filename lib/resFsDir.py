@@ -11,6 +11,7 @@ import stat
 class FsDir(Res.Resource):
     """Define a mount resource
     """
+
     def __init__(self,
                  rid=None,
                  path=None,
@@ -22,6 +23,7 @@ class FsDir(Res.Resource):
                               rid=rid,
                               type="fs",
                               **kwargs)
+        self.type = "fs.dir"
         self.path = path
         self.mount_point = path # for fs ordering
         self.user = user
@@ -118,8 +120,6 @@ class FsDir(Res.Resource):
         """
         return self.mount_point < other.mount_point
 
-    def provision(self):
-        self.create()
 
 
 

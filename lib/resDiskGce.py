@@ -176,13 +176,3 @@ class Disk(resDisk.Disk, rcGce.Gce):
         attached = self.get_attached_disks()
         return set([d["deviceName"] for d in attached if d["name"] in self.names])
 
-    def provision(self):
-        m = __import__("provDiskGce")
-        prov = getattr(m, "ProvisioningDisk")(self)
-        prov.provisioner()
-
-    def unprovision(self):
-        m = __import__("provDiskGce")
-        prov = getattr(m, "ProvisioningDisk")(self)
-        prov.unprovisioner()
-

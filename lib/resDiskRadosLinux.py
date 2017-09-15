@@ -172,11 +172,6 @@ class Disk(resDisk.Disk):
             l.add(s)
         return l
 
-    def provision(self):
-        m = __import__("provDiskRadosLinux")
-        prov = getattr(m, "ProvisioningDisk")(self)
-        prov.provisioner()
-
 class DiskLock(Disk):
     def __init__(self,
                  rid=None,

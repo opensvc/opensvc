@@ -430,7 +430,7 @@ class Zone(resContainer.Container):
 
     def provision(self):
         if not 'noaction' in self.tags:
-            self._provision()
+            resContainer.Container.provision(self)
         self.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.name]))
         self.svc.sub_set_action("disk.zpool", "provision", tags=set([self.name]))
         self.svc.sub_set_action("disk.raw", "provision", tags=set([self.name]))
@@ -444,10 +444,6 @@ class Zone(resContainer.Container):
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
-
-    def _provision(self):
-        m = __import__("provZone")
-        m.ProvisioningZone(self).provisioner()
 
     def get_container_info(self):
         vcpus = "0"

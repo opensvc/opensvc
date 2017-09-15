@@ -143,11 +143,6 @@ class Kvm(resContainer.Container):
         SubElement(e, "target", {'bus': 'virtio', 'dev': 'vdosvc'})
         tree.write(self.cf)
 
-    def provision(self):
-        m = __import__("provKvm")
-        prov = m.ProvisioningKvm(self)
-        prov.provisioner()
-
     def sub_devs(self):
         devmapping = self.devmap()
         devs = set(map(lambda x: x[0], devmapping))

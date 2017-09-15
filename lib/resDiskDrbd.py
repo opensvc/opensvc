@@ -15,6 +15,7 @@ class Drbd(Res.Resource):
         Start 'ups' and promotes the drbd devices to primary.
         Stop 'downs' the drbd devices.
     """
+
     def __init__(self,
                  rid=None,
                  res=None,

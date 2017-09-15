@@ -9,8 +9,10 @@ from rcUtilities import lazy
 import rcExceptions as ex
 
 class Disk(Res.Resource):
-    """ SAN Disk resource
     """
+    SAN Disk resource
+    """
+
     def __init__(self, rid=None, disk_id=None, **kwargs):
         Res.Resource.__init__(self, rid, "disk.disk", **kwargs)
         self.disk_id = disk_id if disk_id != "" else None

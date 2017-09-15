@@ -76,13 +76,3 @@ class Disk(Res.Disk):
         self.loop = file_to_loop(self.loopFile)
         return set(self.loop)
 
-    def provision(self):
-        m = __import__("provDiskLoopLinux")
-        prov = m.ProvisioningDisk(self)
-        prov.provisioner()
-
-    def unprovision(self):
-        m = __import__("provDiskLoopLinux")
-        prov = m.ProvisioningDisk(self)
-        prov.unprovisioner()
-

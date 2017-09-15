@@ -5,7 +5,7 @@ import time
 import rcExceptions as ex
 from rcUtilities import which, justcall, lazy
 
-class ProvisioningFs(provFs.ProvisioningFs):
+class Prov(provFs.Prov):
     info = ['btrfs', 'device', 'ready']
 
     @lazy
@@ -101,7 +101,7 @@ class ProvisioningFs(provFs.ProvisioningFs):
         if self.r.device.startswith("LABEL=") or self.r.device.startswith("UUID="):
             self.r.log.info("skip formatting because dev is specified by LABEL or UUID")
         else:
-            provFs.ProvisioningFs.provisioner_fs(self)
+            provFs.Prov.provisioner_fs(self)
         self.create_subvol()
 
 

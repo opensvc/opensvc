@@ -6,7 +6,7 @@ from rcGlobalEnv import rcEnv
 from rcZfs import Dataset
 import rcExceptions as ex
 
-class ProvisioningFs(provFs.ProvisioningFs):
+class Prov(provFs.Prov):
     def unprovision_dev(self):
         if not which(rcEnv.syspaths.zfs):
             self.r.log.error("zfs command not found")

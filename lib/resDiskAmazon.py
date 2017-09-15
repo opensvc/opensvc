@@ -236,8 +236,3 @@ class Disk(resDisk.Disk, Amazon):
         disks = set([ r.rstrip("1234567890") for r in self.sub_devs() ])
         return disks
 
-    def provision(self):
-        m = __import__("provDiskAmazon")
-        prov = getattr(m, "ProvisioningDisk")(self)
-        prov.provisioner()
-

@@ -8,7 +8,7 @@ from provisioning import Provisioning
 import rcExceptions as ex
 from rcUtilities import justcall
 
-class ProvisioningDisk(Provisioning):
+class Prov(Provisioning):
     def __init__(self, r):
         Provisioning.__init__(self, r)
 

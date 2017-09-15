@@ -45,16 +45,6 @@ class Disk(Res.Disk):
         else:
             return self.status_stdby(rcStatus.DOWN)
 
-    def provision(self):
-        m = __import__("provDiskLoopLinux")
-        prov = m.ProvisioningDisk(self)
-        prov.provisioner()
-
-    def unprovision(self):
-        m = __import__("provDiskLoopLinux")
-        prov = m.ProvisioningDisk(self)
-        prov.unprovisioner()
-
     def __init__(self, rid, loopFile, **kwargs):
         Res.Disk.__init__(self, rid, loopFile, **kwargs)
 
