@@ -13,8 +13,8 @@ import datetime
 import resSync
 
 os.environ['PATH'] += ":/usr/symcli/bin"
-os.environ['SYMCLI_WAIT_ON_DB'] = 1
-os.environ['SYMCLI_WAIT_ON_GK'] = 1
+os.environ['SYMCLI_WAIT_ON_DB'] = "1"
+os.environ['SYMCLI_WAIT_ON_GK'] = "1"
 
 class syncSymSrdfS(resSync.Sync):
 
