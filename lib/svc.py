@@ -2402,10 +2402,7 @@ class Svc(Crypt):
     def shutdown(self):
         self.options.force = True
         self.slave_shutdown()
-        try:
-            self.master_shutdownapp()
-        except ex.excError:
-            pass
+        self.master_shutdownapp()
         self.shutdowncontainer()
         self.master_shutdownshare()
         self.master_shutdownfs()

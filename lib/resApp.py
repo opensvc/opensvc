@@ -111,20 +111,6 @@ class RsetApps(ResourceSet):
                              parallel=parallel,
                              tags=tags)
 
-    def action(self, action, **kwargs):
-        """
-        Wrap the standard resourceset action method to ignore launcher errors
-        on stop.
-        """
-        try:
-            ResourceSet.action(self, action, **kwargs)
-        except ex.excError:
-            if action in ("stop", "shutdown", "rollback", "delete", "unprovision"):
-                self.log.info("there were errors during app stop. please check "
-                              "the quality of the scripts. continuing anyway.")
-                return
-            raise
-
     def sort_resources(self, resources, action):
         """
         A resource sort method honoring the start, stop, check and info
@@ -307,9 +293,10 @@ class App(Resource):
         if self.status() == rcStatus.DOWN:
             self.log.info("%s is already stopped", self.label)
             return
-        ret = self.run('stop')
-        if ret != 0:
-            raise ex.excError()
+        try:
+            self.run('stop')
+        except Exception as exc:
+            self.log.warning(exc)
 
     def unlock(self):
         """
