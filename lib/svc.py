@@ -4089,13 +4089,14 @@ class Svc(Crypt):
         """
         Service move to best node.
         """
+        self.svcunlock()
+        self.clear()
+        self.node.async_action("thaw", wait=True, timeout=self.options.time)
+        self.daemon_mon_action("thaw", wait=True)
         data = self.node._daemon_status()
         if self.placement_optimal(data):
             self.log.info("placement is already optimal")
             return
-        self.svcunlock()
-        self.clear()
-        self.daemon_mon_action("thaw", wait=True)
         for nodename, _data in data.get("monitor", {}).get("nodes", {}).items():
             __data = _data.get("services", {}).get("status", {}).get(self.svcname, {})
             if __data.get("monitor", {}).get("placement") != "leader" and \

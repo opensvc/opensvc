@@ -3184,11 +3184,16 @@ class Node(Crypt):
         """
         self.freezer.node_thaw()
 
-    def async_action(self, action):
+    def async_action(self, action, timeout=None, wait=None):
         """
         Set the daemon global expected state if the action can be handled
         by the daemons.
         """
+        if wait is None:
+            wait = self.options.wait
+        if timeout is None:
+            timeout = self.options.time
+        timeout = convert_duration(timeout)
         states = {
             "freeze": "frozen",
             "thaw": "thawed",
@@ -3199,18 +3204,15 @@ class Node(Crypt):
             return
         self.set_node_monitor(global_expect=states[action])
         self.log.info("%s action requested", action)
-        if not self.options.wait:
+        if not wait:
             raise ex.excAbortAction()
-        self.poll_async_action(states[action])
+        self.poll_async_action(states[action], timeout=timeout)
 
     def poll_async_action(self, state, timeout=None):
         """
         Display an asynchronous action progress until its end or timeout
         """
         prev_global_expect_set = set()
-        if timeout is None:
-            timeout = self.options.time
-        timeout = convert_duration(timeout)
 
         for _ in range(timeout):
             data = self._daemon_status()
@@ -3226,13 +3228,13 @@ class Node(Crypt):
                     global_expect_set.append(nodename)
             if prev_global_expect_set != global_expect_set:
                 for nodename in set(global_expect_set) - prev_global_expect_set:
-                    self.log.info("work starting on %s", nodename)
+                    self.log.info(" work starting on %s", nodename)
                 for nodename in prev_global_expect_set - set(global_expect_set):
-                    self.log.info("work over on %s", nodename)
+                    self.log.info(" work over on %s", nodename)
             if not global_expect_set:
                 self.log.info("final status: frozen=%s",
                               data["monitor"]["frozen"])
-                raise ex.excAbortAction()
+                return
             prev_global_expect_set = set(global_expect_set)
             time.sleep(1)
         raise ex.excError("wait timeout exceeded")
