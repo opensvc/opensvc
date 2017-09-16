@@ -54,13 +54,13 @@ ACTION_TGT_STATE = {
 }
 
 DEFAULT_STATUS_GROUPS = [
-    "container",
     "ip",
     "disk",
     "fs",
     "share",
-    "sync",
+    "container",
     "app",
+    "sync",
     "stonith",
     "task",
 ]
@@ -1459,14 +1459,14 @@ class Svc(Crypt):
 
         def dispatch_resources():
             """
-            Dispatch resources in avail/accesory sets, and sort.
+            Sorted resources.
+            Honor the --discard-disabled arg.
             """
             rbg = {}
             for group in DEFAULT_STATUS_GROUPS:
                 rbg[group] = []
 
-            avail_resources = []
-            optional_resources = []
+            resources = []
 
             for rid, resource in data["resources"].items():
                 if discard_disabled and resource["disable"]:
@@ -1478,15 +1478,9 @@ class Svc(Crypt):
                 for rid in sorted(rbg[group]):
                     resource = data["resources"][rid]
                     resource["rid"] = rid
-                    if resource["optional"]:
-                        optional_resources.append(resource)
-                    else:
-                        avail_resources.append(resource)
+                    resources.append(resource)
 
-            return (
-                avail_resources,
-                optional_resources,
-            )
+            return resources
 
         # discard disabled resources ?
         if self.options.show_disabled is not None:
@@ -1494,14 +1488,15 @@ class Svc(Crypt):
         else:
             discard_disabled = not self.show_disabled
 
-        # dispath resources in avail/optional lists
-        avail_resources, optional_resources = dispatch_resources()
-        n_optional_resources = len(optional_resources)
+        resources = dispatch_resources()
 
         # service-level notices
         svc_notice = []
-        if data["cluster"]["placement"] not in ("optimal", "n/a"):
-            svc_notice.append(colorize(data["cluster"]["placement"] + " placement", color.RED))
+        if "cluster" in data:
+            if data["cluster"]["overall"] == "warn":
+                svc_notice.append(colorize(data["cluster"]["overall"], STATUS_COLOR[data["cluster"]["overall"]]))
+            if data["cluster"]["placement"] not in ("optimal", "n/a"):
+                svc_notice.append(colorize(data["cluster"]["placement"] + " placement", color.RED))
         svc_notice = ", ".join(svc_notice)
 
         # instance-level notices
@@ -1577,44 +1572,19 @@ class Svc(Crypt):
         node_svcname = tree.add_node()
         node_svcname.add_column(self.svcname, color.BOLD)
         node_svcname.add_column()
-        node_svcname.add_column()
-        node_svcname.add_column(svc_notice)
         if "cluster" in data:
-            if data["cluster"]["overall"] == "":
-                data["cluster"]["overall"] = "undef"
-            node_clu = node_svcname.add_node()
-            node_clu.add_column("overall")
-            node_clu.add_column()
-            node_clu.add_column(data["cluster"]["overall"], STATUS_COLOR[data["cluster"]["overall"]])
-            node_clu = node_svcname.add_node()
-            node_clu.add_column("avail")
-            node_clu.add_column()
-            node_clu.add_column(data["cluster"]["avail"], STATUS_COLOR[data["cluster"]["avail"]])
-            node_clu = node_svcname.add_node()
+            node_svcname.add_column(data["cluster"]["avail"], STATUS_COLOR[data["cluster"]["avail"]])
+        else:
+            node_svcname.add_column()
+        node_svcname.add_column(svc_notice)
         node_nodename = node_svcname.add_node()
         node_nodename.add_column(rcEnv.nodename, color.BOLD)
         node_nodename.add_column()
-        node_nodename.add_column()
+        node_nodename.add_column(data['avail'], STATUS_COLOR[data['avail']])
         node_nodename.add_column(notice, color.LIGHTBLUE)
-        node_overall = node_nodename.add_node()
-        node_overall.add_column("overall")
-        node_overall.add_column()
-        node_overall.add_column(data['overall'], STATUS_COLOR[data['overall']])
 
-        node_avail = node_overall.add_node()
-        node_avail.add_column("avail")
-        node_avail.add_column()
-        node_avail.add_column(data['avail'], STATUS_COLOR[data['avail']])
-        for resource in avail_resources:
-            add_res_node(resource, node_avail)
-
-        if n_optional_resources > 0:
-            node_optional = node_overall.add_node()
-            node_optional.add_column("optional")
-            node_optional.add_column()
-            node_optional.add_column(data['optional'], STATUS_COLOR[data['optional']])
-            for resource in optional_resources:
-                add_res_node(resource, node_optional)
+        for resource in resources:
+            add_res_node(resource, node_nodename)
 
         print(tree)
 
