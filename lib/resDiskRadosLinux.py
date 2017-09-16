@@ -280,6 +280,4 @@ class DiskLock(Disk):
         if ret != 0:
             raise ex.excError("failed to lock %s"%self.devname(image))
 
-    def provision(self):
-        return
 

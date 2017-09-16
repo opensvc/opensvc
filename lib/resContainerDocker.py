@@ -567,14 +567,4 @@ class Docker(resContainer.Container):
     def check_capabilities(self):
         return True
 
-    def provision(self):
-        # docker resources are naturally provisioned
-        self._start()
-        self.status(refresh=True)
-        self.svc.sub_set_action("ip", "provision", tags=set([self.rid]))
-
-    def unprovision(self):
-        self.svc.sub_set_action("ip", "unprovision", tags=set([self.rid]))
-        self._stop()
-        self.status(refresh=True)
 

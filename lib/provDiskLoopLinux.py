@@ -1,11 +1,11 @@
-from provisioning import Provisioning
+import provisioning
 import os
 import rcExceptions as ex
 from converters import convert_size
 
-class Prov(Provisioning):
+class Prov(provisioning.Prov):
     def __init__(self, r):
-        Provisioning.__init__(self, r)
+        provisioning.Prov.__init__(self, r)
 
     def unprovisioner(self):
         self.r.stop()

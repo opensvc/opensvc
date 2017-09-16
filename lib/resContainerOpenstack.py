@@ -338,12 +338,4 @@ class CloudVm(resContainer.Container):
     def install_drp_flag(self):
         pass
 
-    def provision(self):
-        c = self.get_cloud()
-        image = self.get_template()
-        size = self.get_size()
-        self.log.info("create instance %s, size %s, image %s, key %s"%(self.name, size.name, image.name, self.key_name))
-        c.driver.create_node(name=self.name, size=size, image=image, ex_keyname=self.key_name, ex_shared_ip_group_id=self.shared_ip_group)
-        #self.wait_for_startup()
-        self.wait_for_fn(self.is_up, self.startup_timeout, 5)
 

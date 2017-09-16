@@ -543,9 +543,3 @@ class App(Resource):
             self.log.error(msg)
         return ret
 
-    def provision(self):
-        self.start()
-
-    def unprovision(self):
-        self.stop()
-

@@ -1,7 +1,7 @@
 import os
 import resContainerZone
 import lock
-from provisioning import Provisioning
+import provisioning
 from rcZfs import Dataset
 import rcZone
 from rcExceptions import excError
@@ -13,11 +13,11 @@ import shutil
 
 SYSIDCFG="/etc/sysidcfg"
 
-class Prov(Provisioning):
+class Prov(provisioning.Prov):
     def __init__(self, r):
         """
         """
-        Provisioning.__init__(self, r)
+        provisioning.Prov.__init__(self, r)
         self.log = self.r.log
         self.section = r.svc.config.defaults()
 
@@ -340,7 +340,15 @@ class Prov(Provisioning):
         snapshot = source_ds.snapshot(zonename)
         snapshot.clone(self.clone, ['-o', 'mountpoint=' + self.r.zonepath])
 
-    def provisioner(self, need_boot=True):
+    def provisioner(self):
+        if not 'noaction' in self.tags:
+            self._provisioner()
+        self.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.name]))
+        self.svc.sub_set_action("disk.zpool", "provision", tags=set([self.name]))
+        self.svc.sub_set_action("disk.raw", "provision", tags=set([self.name]))
+        self.svc.sub_set_action("fs", "provision", tags=set([self.name]))
+
+    def _provisioner(self, need_boot=True):
         """provision zone
         - configure zone
         - if snapof and zone brand is native

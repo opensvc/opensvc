@@ -428,14 +428,6 @@ class Zone(resContainer.Container):
             self.detach()
             self.delete()
 
-    def provision(self):
-        if not 'noaction' in self.tags:
-            resContainer.Container.provision(self)
-        self.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.name]))
-        self.svc.sub_set_action("disk.zpool", "provision", tags=set([self.name]))
-        self.svc.sub_set_action("disk.raw", "provision", tags=set([self.name]))
-        self.svc.sub_set_action("fs", "provision", tags=set([self.name]))
-
     def presync(self):
         self.export_zone_cfg()
 

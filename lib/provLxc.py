@@ -1,9 +1,9 @@
-from provisioning import Provisioning
+import provisioning
 from rcGlobalEnv import rcEnv
 import os
 import rcExceptions as ex
 
-class Prov(Provisioning):
+class Prov(provisioning.Prov):
     config_template = """\
 lxc.utsname = %(vm_name)s
 lxc.tty = 4
@@ -40,7 +40,7 @@ lxc.mount.entry=devpts %(rootfs)s/dev/pts devpts defaults 0 0
 lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
 """
     def __init__(self, r):
-        Provisioning.__init__(self, r)
+        provisioning.Prov.__init__(self, r)
 
         self.section = r.svc.config.defaults()
         try:

@@ -1,4 +1,4 @@
-from provisioning import Provisioning
+import provisioning
 import os
 import json
 import rcExceptions as ex
@@ -6,9 +6,9 @@ from stat import *
 from rcUtilities import justcall
 import glob
 
-class Prov(Provisioning):
+class Prov(provisioning.Prov):
     def __init__(self, r):
-        Provisioning.__init__(self, r)
+        provisioning.Prov.__init__(self, r)
         self.pvs = r.svc.config.get(self.r.rid, 'pvs')
         self.pvs = self.pvs.split()
         try:

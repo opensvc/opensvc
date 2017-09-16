@@ -1,8 +1,8 @@
-from provisioning import Provisioning
+import provisioning
 
-class Prov(Provisioning):
+class Prov(provisioning.Prov):
     def __init__(self, r):
-        Provisioning.__init__(self, r)
+        provisioning.Prov.__init__(self, r)
     
     def provisioner(self):
         """

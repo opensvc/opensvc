@@ -308,29 +308,4 @@ class CloudVm(resContainer.Container):
     def install_drp_flag(self):
         pass
 
-    def provision(self):
-        prereq = True
-        if self.image_id is None:
-            self.log.error("the image keyword is mandatory for the provision action")
-            prereq &= False
-        if self.size_id is None:
-            self.log.error("the size keyword is mandatory for the provision action")
-            prereq &= False
-        if self.subnet_name is None:
-            self.log.error("the subnet keyword is mandatory for the provision action")
-            prereq &= False
-        if self.key_name is None:
-            self.log.error("the key_name keyword is mandatory for the provision action")
-            prereq &= False
-        if not prereq:
-            raise ex.excError()
-
-        c = self.get_cloud()
-        image = self.get_image(self.image_id)
-        size = self.get_size()
-        subnet = self.get_subnet()
-        self.log.info("create instance %s, size %s, image %s, key %s, subnet %s"%(self.name, size.name, image.name, self.key_name, subnet.name))
-        c.driver.create_node(name=self.name, size=size, image=image, ex_keyname=self.key_name, ex_subnet=subnet)
-        self.log.info("wait for container up status")
-        self.wait_for_fn(self.is_up, self.startup_timeout, 5)
 

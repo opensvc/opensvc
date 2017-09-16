@@ -4,13 +4,13 @@ import glob
 from stat import *
 
 from rcGlobalEnv import rcEnv
-from provisioning import Provisioning
+import provisioning
 import rcExceptions as ex
 from rcUtilities import justcall
 
-class Prov(Provisioning):
+class Prov(provisioning.Prov):
     def __init__(self, r):
-        Provisioning.__init__(self, r)
+        provisioning.Prov.__init__(self, r)
 
     def unprovisioner(self):
         if not self.r.has_it():

@@ -1,4 +1,4 @@
-class Provisioning(object):
+class Prov(object):
     def __init__(self, r):
         self.r = r
 

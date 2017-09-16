@@ -1,17 +1,17 @@
-from provisioning import Provisioning
+import provisioning
 from rcUtilities import justcall, which, protected_dir
 from rcGlobalEnv import rcEnv
 import os
 import rcExceptions as ex
 import shutil
 
-class Prov(Provisioning):
+class Prov(provisioning.Prov):
     # required from child classes:
     #   mkfs = ['mkfs.ext4', '-F']
     #   info = ['tune2fs', '-l']
 
     def __init__(self, r):
-        Provisioning.__init__(self, r)
+        provisioning.Prov.__init__(self, r)
 
     def check_fs(self):
         if not hasattr(self, "info"):

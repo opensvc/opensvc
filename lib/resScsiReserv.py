@@ -279,12 +279,3 @@ class ScsiReserv(Res.Resource):
         if self.scsirelease() != 0:
             raise ex.excError
 
-    def is_provisioned(self):
-        return
-
-    def provision(self):
-        self.start()
-
-    def unprovision(self):
-        self.stop()
-

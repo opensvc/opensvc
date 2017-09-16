@@ -893,9 +893,7 @@ class Resource(object):
         try:
             mod = mimport("prov", driver_group, driver, fallback=True)
         except ImportError as exc:
-            self.log.info("no provisioner for %s %s",
-                          self.type, self.label)
-            return
+            mod = __import__("provisioning")
         if not hasattr(mod, "Prov"):
             raise ex.excError("missing Prov class in module %s" % str(mod))
         return getattr(mod, "Prov")(self)

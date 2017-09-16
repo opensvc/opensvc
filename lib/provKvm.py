@@ -1,12 +1,12 @@
-from provisioning import Provisioning
+import provisioning
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
 import os
 import rcExceptions as ex
 
-class Prov(Provisioning):
+class Prov(provisioning.Prov):
     def __init__(self, r):
-        Provisioning.__init__(self, r)
+        provisioning.Prov.__init__(self, r)
 
         self.section = r.svc.config.defaults()
 

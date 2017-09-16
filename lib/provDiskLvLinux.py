@@ -1,4 +1,4 @@
-from provisioning import Provisioning
+import provisioning
 from rcUtilities import justcall, which
 from converters import convert_size
 from rcUtilitiesLinux import label_to_dev
@@ -16,9 +16,9 @@ def restore_signals():
         if hasattr(signal, sig):
            signal.signal(getattr(signal, sig), signal.SIG_DFL)
 
-class Prov(Provisioning):
+class Prov(provisioning.Prov):
     def __init__(self, r):
-        Provisioning.__init__(self, r)
+        provisioning.Prov.__init__(self, r)
 
     def get_dev(self):
         """

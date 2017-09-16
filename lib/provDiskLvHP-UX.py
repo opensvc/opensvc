@@ -1,4 +1,4 @@
-from provisioning import Provisioning
+import provisioning
 from rcUtilities import justcall, which
 from converters import convert_size
 from rcGlobalEnv import rcEnv
@@ -6,9 +6,9 @@ import os
 import rcExceptions as ex
 import time
 
-class Prov(Provisioning):
+class Prov(provisioning.Prov):
     def __init__(self, r):
-        Provisioning.__init__(self, r)
+        provisioning.Prov.__init__(self, r)
 
     def provisioner(self):
         if not which('vgdisplay'):

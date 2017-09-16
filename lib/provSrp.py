@@ -1,12 +1,12 @@
-from provisioning import Provisioning
+import provisioning
 from rcGlobalEnv import rcEnv
 import os
 import socket
 import rcExceptions as ex
 
-class Prov(Provisioning):
+class Prov(provisioning.Prov):
     def __init__(self, r):
-        Provisioning.__init__(self, r)
+        provisioning.Prov.__init__(self, r)
 
         self.name = r.name
         self.rootpath = os.path.join(os.sep, 'var', 'hpsrp', self.name)
