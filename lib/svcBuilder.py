@@ -2214,39 +2214,30 @@ def add_app(svc, s):
     resApp = ximport('resApp')
     kwargs = {}
 
-    kwargs['script'] = svc.conf_get(s, 'script')
+    try:
+        kwargs['script'] = svc.conf_get(s, 'script')
+    except ex.OptNotFound:
+        pass
 
     try:
         kwargs['start'] = svc.conf_get(s, 'start')
     except ex.OptNotFound as exc:
-        pass
-    except:
-        svc.log.error("config file section %s param %s must be an integer" % (s, 'start'))
-        return
+        kwargs['start'] = exc.default
 
     try:
         kwargs['stop'] = svc.conf_get(s, 'stop')
     except ex.OptNotFound as exc:
-        pass
-    except:
-        svc.log.error("config file section %s param %s must be an integer" % (s, 'stop'))
-        return
+        kwargs['stop'] = exc.default
 
     try:
         kwargs['check'] = svc.conf_get(s, 'check')
     except ex.OptNotFound as exc:
-        pass
-    except:
-        svc.log.error("config file section %s param %s must be an integer" % (s, 'check'))
-        return
+        kwargs['check'] = exc.default
 
     try:
         kwargs['info'] = svc.conf_get(s, 'info')
     except ex.OptNotFound as exc:
-        pass
-    except:
-        svc.log.error("config file section %s param %s must be an integer" % (s, 'info'))
-        return
+        kwargs['info'] = exc.default
 
     try:
         kwargs['timeout'] = svc.conf_get(s, 'timeout')

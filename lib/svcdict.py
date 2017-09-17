@@ -1756,8 +1756,8 @@ class KeywordAppScript(Keyword):
                   keyword="script",
                   at=True,
                   order=9,
-                  required=True,
-                  text="Full path to the app launcher script. Or its basename if the file is hosted in the <svcname>.d path."
+                  required=False,
+                  text="Full path to the app launcher script. Or its basename if the file is hosted in the <svcname>.d path. This script must accept as arg0 the activated actions word: start for start, stop for stop, status for check, info for info."
                 )
 
 class KeywordAppTimeout(Keyword):
@@ -1780,7 +1780,8 @@ class KeywordAppStart(Keyword):
                   keyword="start",
                   at=True,
                   order=10,
-                  text="Start up sequencing number."
+                  default=False,
+                  text="true: execute '<script> start' on start action. false: do nothing on start action. <shlex expression>: execute the command on start.",
                 )
 
 class KeywordAppStop(Keyword):
@@ -1791,7 +1792,8 @@ class KeywordAppStop(Keyword):
                   keyword="stop",
                   at=True,
                   order=11,
-                  text="Stop sequencing number."
+                  default=False,
+                  text="true: execute '<script> stop' on stop action. false: do nothing on stop action. <shlex expression>: execute the command on stop action.",
                 )
 
 class KeywordAppCheck(Keyword):
@@ -1802,7 +1804,8 @@ class KeywordAppCheck(Keyword):
                   keyword="check",
                   at=True,
                   order=11,
-                  text="Check up sequencing number."
+                  default=False,
+                  text="true: execute '<script> status' on status evaluation. false: do nothing on status evaluation. <shlex expression>: execute the command on status evaluation.",
                 )
 
 class KeywordAppInfo(Keyword):
@@ -1813,7 +1816,8 @@ class KeywordAppInfo(Keyword):
                   keyword="info",
                   at=True,
                   order=12,
-                  text="Info up sequencing number."
+                  default=False,
+                  text="true: execute '<script> info' on info action. false: do nothing on info action. <shlex expression>: execute the command on info action.",
                 )
 
 class KeywordAppLimitAs(Keyword):

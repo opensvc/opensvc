@@ -7,8 +7,10 @@ import os
 import pwd
 import time
 import stat
+import shlex
 
 from rcUtilities import justcall, which, lazy, is_string, lcall
+from converters import convert_boolean
 from rcGlobalEnv import rcEnv
 from resources import Resource
 from resourceset import ResourceSet
@@ -90,27 +92,6 @@ class StatusNA(Exception):
     """
     pass
 
-class RsetApps(ResourceSet):
-    """
-    The app resource specific resourceset class.
-    Mainly defines a specific resource sort method honoring the start,
-    stop, check and info sequencing numbers.
-    """
-    def sort_resources(self, resources, action):
-        """
-        A resource sort method honoring the start, stop, check and info
-        sequencing numbers.
-        """
-        if action in ("shutdown", "rollback", "unprovision", "delete"):
-            action = "stop"
-        attr = action + '_seq'
-        retained_resources = [res for res in resources if hasattr(res, attr)]
-        if len(retained_resources) != len(resources):
-            attr = 'rid'
-        resources.sort(key=lambda x: getattr(x, attr))
-        return resources
-
-
 class App(Resource):
     """
     The App resource driver class.
@@ -125,21 +106,21 @@ class App(Resource):
                  timeout=None,
                  **kwargs):
 
-        if script is None:
-            raise ex.excInitError("script parameter must be defined in resource %s"%rid)
-
         Resource.__init__(self, rid, "app", **kwargs)
-        self.rset_class = RsetApps
         self.script = script
         self.start_seq = start
         self.stop_seq = stop
         self.check_seq = check
         self.info_seq = info
         self.timeout = timeout
-        self.label = os.path.basename(script)
+        if script:
+            self.label = os.path.basename(script)
         self.lockfd = None
-
-        self.script_exec = True
+        try:
+            # compat
+            self.sort_key = "app#%d" % int(self.start_seq)
+        except (TypeError, ValueError):
+            pass
 
     @lazy
     def lockfile(self):
@@ -150,46 +131,39 @@ class App(Resource):
         lockfile = ".".join((lockfile, self.rid))
         return lockfile
 
-    def __lt__(self, other):
-        if other.start_seq is None:
-            return 1
-        if self.start_seq is None:
-            return 0
-        return self.start_seq < other.start_seq
-
-    def validate_on_action(self):
+    def validate_on_action(self, cmd):
         """
         Do sanity checks on the resource parameters before running an action.
         """
-        self.validate_script_path()
-        self.validate_script_exec()
+        cmd = self.validate_script_path(cmd)
+        self.validate_script_exec(cmd)
+        return cmd
 
-    def validate_script_exec(self):
+    def validate_script_exec(self, cmd):
         """
         Invalidate the script if the file is not executable or not found.
         """
-        if self.script is None:
-            self.script_exec = False
+        if cmd is None:
             return
-        if which(self.script) is None:
-            self.status_log("script %s is not executable" % self.script)
-            self.script_exec = False
+        if which(cmd[0]) is None:
+            self.status_log("%s is not executable" % cmd[0])
+            self.set_executable(cmd)
 
-    def validate_script_path(self):
+    def validate_script_path(self, cmd):
         """
         Converts the script path to a realpath.
         Invalidate the script if not found.
         If the script is specified as a basename, consider it is to be found
         in the <pathetc>/<svcname>.d directory.
         """
-        if self.script is None:
+        if cmd is None:
             return
-        if not self.script.startswith('/'):
-            self.script = os.path.join(self.svc.paths.initd, self.script)
-        if os.path.exists(self.script):
-            self.script = os.path.realpath(self.script)
-            return
-        self.script = None
+        if not cmd[0].startswith('/'):
+            cmd[0] = os.path.join(self.svc.paths.initd, cmd[0])
+        if os.path.exists(cmd[0]):
+            cmd[0] = os.path.realpath(cmd[0])
+            return cmd
+        raise ex.excError("%s does not exist" % cmd[0])
 
     def is_up(self):
         """
@@ -197,16 +171,17 @@ class App(Resource):
         """
         if self.pg_frozen():
             raise StatusNA()
-        if self.script is None:
-            self.status_log("script does not exist", "warn")
-            raise StatusNA()
-        if not os.path.exists(self.script):
-            self.status_log("script %s does not exist" % self.script, "warn")
-            raise StatusNA()
-        if self.check_seq is None:
+        if self.check_seq is False:
             self.status_log("check is not set", "info")
             raise StatusNA()
-        ret = self.run('status', dedicated_log=False)
+        try:
+            cmd = self.get_cmd("check", "status")
+        except ex.excAbortAction:
+            raise StatusNA()
+        except ex.excError as exc:
+            self.status_log(str(exc), "warn")
+            raise StatusNA()
+        ret = self.run("status", cmd, dedicated_log=False)
         return ret
 
     def info(self):
@@ -215,17 +190,19 @@ class App(Resource):
         to the service's resinfo.
         """
         keyvals = [
-            ["script", self.script],
+            ["script", self.script if self.script else ""],
             ["start", str(self.start_seq) if self.start_seq else ""],
             ["stop", str(self.stop_seq) if self.stop_seq else ""],
             ["check", str(self.check_seq) if self.check_seq else ""],
             ["info", str(self.info_seq) if self.info_seq else ""],
             ["timeout", str(self.timeout) if self.timeout else ""],
         ]
-        if self.info_seq is None:
+        try:
+            cmd = self.get_cmd("info")
+        except ex.excAbortAction:
             return self.fmt_info(keyvals)
-        self.validate_on_action()
-        buff = self.run('info', dedicated_log=False, return_out=True)
+
+        buff = self.run('info', cmd, dedicated_log=False, return_out=True)
         if not is_string(buff) or len(buff) == 0:
             keyvals.append(["Error", "info not implemented in launcher"])
             return keyvals
@@ -239,17 +216,35 @@ class App(Resource):
             keyvals.append([elements[0].strip(), ":".join(elements[1:]).strip()])
         return self.fmt_info(keyvals)
 
+    def get_cmd(self, action, script_arg=None):
+        key = action + "_seq"
+        val = getattr(self, key)
+        if val is False:
+            raise ex.excAbortAction()
+        try:
+            int(val)
+            cmd = [self.script, script_arg if script_arg else action]
+        except (TypeError, ValueError):
+            try:
+                val = convert_boolean(val)
+                if val is False:
+                    raise ex.excAbortAction()
+                cmd = [self.script, script_arg if script_arg else action]
+            except:
+                cmd = shlex.split(val)
+        cmd = self.validate_on_action(cmd)
+        return cmd
+
     def start(self):
         """
         Start the resource.
         """
         self.create_pg()
-        self.validate_on_action()
 
-        if self.start_seq is None:
+        try:
+            cmd = self.get_cmd("start")
+        except ex.excAbortAction:
             return
-        if self.script is None:
-            raise ex.excError("script does not exist")
 
         try:
             status = self.is_up()
@@ -260,7 +255,7 @@ class App(Resource):
             self.log.info("%s is already started", self.label)
             return
 
-        ret = self.run('start')
+        ret = self.run("start", cmd)
         if ret != 0:
             raise ex.excError()
         self.can_rollback = True
@@ -269,17 +264,16 @@ class App(Resource):
         """
         Stop the resource.
         """
-        self.validate_on_action()
+        try:
+            cmd = self.get_cmd("stop")
+        except ex.excAbortAction:
+            return
 
-        if self.stop_seq is None:
-            return
-        if self.script is None:
-            return
         if self.status() == rcStatus.DOWN:
             self.log.info("%s is already stopped", self.label)
             return
         try:
-            self.run('stop')
+            self.run("stop", cmd)
         except Exception as exc:
             self.log.warning(exc)
 
@@ -333,8 +327,6 @@ class App(Resource):
         """
         Return the resource status.
         """
-        self.validate_on_action()
-
         n_ref_res = len(self.svc.get_resources(['fs', 'ip', 'container', 'share', 'disk']))
         status = self.svc.group_status(excluded_groups=set([
             "sync",
@@ -345,8 +337,6 @@ class App(Resource):
         ]))
         if n_ref_res > 0 and str(status["avail"]) not in ("up", "n/a"):
             self.log.debug("abort resApp status because needed resources avail status is %s", status["avail"])
-            if verbose:
-                self.status_log("needed resources avail status is %s, skip check"%status["avail"], "info")
             self.status_log("not evaluated (instance not up)", "info")
             return rcStatus.NA
 
@@ -372,17 +362,15 @@ class App(Resource):
         self.status_log("check reports errors (%d)" % ret)
         return rcStatus.WARN
 
-    def set_executable(self):
+    def set_executable(self, cmd):
         """
         Switch the script file execution bit to on.
         """
-        if self.script_exec:
+        if not os.path.exists(cmd[0]):
             return
-        if not os.path.exists(self.script):
-            return
-        self.vcall(['chmod', '+x', self.script])
+        self.vcall(['chmod', '+x', cmd[0]])
 
-    def run(self, action, dedicated_log=True, return_out=False):
+    def run(self, action, cmd, dedicated_log=True, return_out=False):
         """
         Acquire the app resource lock, run the action and release for info, start
         and stop actions.
@@ -392,50 +380,30 @@ class App(Resource):
         if action == "status":
             self.unlock()
         try:
-            return self._run(action, dedicated_log=dedicated_log, return_out=return_out)
+            return self._run(action, cmd, dedicated_log=dedicated_log, return_out=return_out)
         finally:
             self.unlock()
 
-    def _run(self, action, dedicated_log=True, return_out=False):
+    def _run(self, action, cmd, dedicated_log=True, return_out=False):
         """
         Do script validations, run the command associated with the action and
         catch errors.
         """
-        if self.script is None:
-            return 1
-
-        if not os.path.exists(self.script):
-            if action == "start":
-                self.log.error("script %s does not exist. can't run %s "
-                               "action", self.script, action)
-                return 1
-            elif action == "stop":
-                self.log.info("script %s does not exist. hosting fs might "
-                              "already be down", self.script)
-                return 0
-            elif return_out:
-                return 0
-            else:
-                self.status_log("script %s does not exist" % self.script)
-                raise StatusWARN()
-
-        self.set_executable()
-
         try:
-            return self._run_cmd(action, dedicated_log=dedicated_log, return_out=return_out)
+            return self._run_cmd(action, cmd, dedicated_log=dedicated_log, return_out=return_out)
         except OSError as exc:
             if exc.errno == 8:
                 if not return_out and not dedicated_log:
                     self.status_log("exec format error")
                     raise StatusWARN()
                 else:
-                    self.log.error("%s execution error (Exec format error)", self.script)
+                    self.log.error("execution error (Exec format error)")
             elif exc.errno == 13:
                 if not return_out and not dedicated_log:
                     self.status_log("permission denied")
                     raise StatusWARN()
                 else:
-                    self.log.error("%s execution error (Permission Denied)", self.script)
+                    self.log.error("execution error (Permission Denied)")
             else:
                 self.svc.save_exc()
             return 1
@@ -443,12 +411,11 @@ class App(Resource):
             self.svc.save_exc()
             return 1
 
-    def _run_cmd(self, action, dedicated_log=True, return_out=False):
+    def _run_cmd(self, action, cmd, dedicated_log=True, return_out=False):
         """
         Switch between buffered outputs or polled execution.
         Return stdout if <return_out>, else return the returncode.
         """
-        cmd = [self.script, action]
         if dedicated_log:
             return self._run_cmd_dedicated_log(action, cmd)
         elif return_out:
@@ -493,7 +460,7 @@ class App(Resource):
             'logger': self.log,
         }
         try:
-            kwargs.update(run_as_popen_kwargs(self.script, self.limits))
+            kwargs.update(run_as_popen_kwargs(cmd[0], self.limits))
         except ValueError as exc:
             self.log.error("%s", exc)
             return 1
