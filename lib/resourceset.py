@@ -202,7 +202,7 @@ class ResourceSet(object):
                        ','.join(tags),
                        ','.join([res.rid for res in resources]))
 
-        disabled_rids = [res.rid for res in resources if res.is_disabled()]
+        disabled_rids = [res.rid for res in resources if res.is_disabled() and not res.skip]
         if len(disabled_rids) > 0:
             self.log.info("%s disabled", ",".join(disabled_rids))
 
