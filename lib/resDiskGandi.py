@@ -220,4 +220,4 @@ class Disk(resDisk.Disk):
         pass
 
     def disklist(self):
-        return []
+        return set([])
