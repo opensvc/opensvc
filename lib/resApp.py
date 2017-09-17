@@ -96,21 +96,6 @@ class RsetApps(ResourceSet):
     Mainly defines a specific resource sort method honoring the start,
     stop, check and info sequencing numbers.
     """
-    def __init__(self,
-                 type=None,
-                 resources=[],
-                 parallel=False,
-                 optional=False,
-                 disabled=False,
-                 tags=set([])):
-        ResourceSet.__init__(self,
-                             type=type,
-                             resources=resources,
-                             optional=optional,
-                             disabled=disabled,
-                             parallel=parallel,
-                             tags=tags)
-
     def sort_resources(self, resources, action):
         """
         A resource sort method honoring the start, stop, check and info
