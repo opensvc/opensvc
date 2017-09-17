@@ -31,11 +31,7 @@ cat - <<-EOF >$CHROOT/DEBIAN/conffiles
 /etc/bash_completion.d/opensvc
 EOF
 
-cat - <<-EOF >$CHROOT/DEBIAN/preinst
-#!/bin/sh -e
-/usr/share/opensvc/bin/preinstall
-EOF
-chmod 755 $CHROOT/DEBIAN/preinst
+cp $PATH_SCRIPT/../preinstall $CHROOT/DEBIAN/postinst
 
 cat - <<-EOF >$CHROOT/DEBIAN/postinst
 #!/bin/sh -e
