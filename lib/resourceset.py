@@ -172,7 +172,8 @@ class ResourceSet(object):
         Return resources after a resourceset-specific sort.
         To be implemented by child classes if desired.
         """
-        if action in ["fs", "start", "startstandby", "provision"] or self.type.startswith("sync"):
+        if action in ["start", "startstandby", "provision"] or \
+           self.type.startswith("sync"):
             resources.sort()
         else:
             resources.sort(reverse=True)
