@@ -52,6 +52,7 @@ class Resource(object):
         self.nb_restart = restart
         self.rstatus = None
         self.always_on = always_on
+        self.sort_key = rid
         try:
             self.label = type
         except AttributeError:
@@ -139,7 +140,7 @@ class Resource(object):
         Resources needing to be started or stopped in a specific order
         should redefine that.
         """
-        return self.rid < other.rid
+        return self.sort_key < other.sort_key
 
     def save_exc(self):
         """
