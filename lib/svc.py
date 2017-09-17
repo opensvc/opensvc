@@ -1332,6 +1332,8 @@ class Svc(Crypt):
                     'optional': optional,
                     'encap': encap,
                 }
+                if resource.subset:
+                    data['resources'][rid]["subset"] = resource.subset
         group_status = self.group_status()
         for group in group_status:
             data[group] = str(group_status[group])
@@ -1462,25 +1464,24 @@ class Svc(Crypt):
             Sorted resources.
             Honor the --discard-disabled arg.
             """
-            rbg = {}
+            subsets = {}
             for group in DEFAULT_STATUS_GROUPS:
-                rbg[group] = []
-
-            resources = []
+                subsets[group] = {}
 
             for rid, resource in data["resources"].items():
                 if discard_disabled and resource["disable"]:
                     continue
                 group = resource["type"].split(".", 1)[0]
-                rbg[group].append(rid)
+                if "subset" in resource:
+                    subset = group + ":" + resource["subset"]
+                else:
+                    subset = group
+                if subset not in subsets[group]:
+                    subsets[group][subset] = []
+                resource["rid"] = rid
+                subsets[group][subset].append(resource)
 
-            for group in DEFAULT_STATUS_GROUPS:
-                for rid in sorted(rbg[group]):
-                    resource = data["resources"][rid]
-                    resource["rid"] = rid
-                    resources.append(resource)
-
-            return resources
+            return subsets
 
         # discard disabled resources ?
         if self.options.show_disabled is not None:
@@ -1488,7 +1489,7 @@ class Svc(Crypt):
         else:
             discard_disabled = not self.show_disabled
 
-        resources = dispatch_resources()
+        subsets = dispatch_resources()
 
         # service-level notices
         svc_notice = []
@@ -1583,8 +1584,24 @@ class Svc(Crypt):
         node_nodename.add_column(data['avail'], STATUS_COLOR[data['avail']])
         node_nodename.add_column(notice, color.LIGHTBLUE)
 
-        for resource in resources:
-            add_res_node(resource, node_nodename)
+        for group in DEFAULT_STATUS_GROUPS:
+            subset_names = sorted(subsets[group])
+            for subset in subset_names:
+                if subset != group:
+                    node_subset = node_nodename.add_node()
+                    node_subset.add_column(subset)
+                    try:
+                        parallel = self.conf_get("subset#"+subset, "parallel")
+                    except ex.OptNotFound as exc:
+                        parallel = exc.default
+                    if parallel:
+                        node_subset.add_column()
+                        node_subset.add_column()
+                        node_subset.add_column("//")
+                else:
+                    node_subset = node_nodename
+                for resource in sorted(subsets[group][subset], key=lambda x: x["rid"]):
+                    add_res_node(resource, node_subset)
 
         print(tree)
 
