@@ -1502,6 +1502,8 @@ class Svc(Crypt):
 
         # instance-level notices
         notice = []
+        if data["overall"] == "warn":
+            notice.append(colorize(data["overall"], STATUS_COLOR[data["overall"]]))
         if self.frozen():
             notice.append(colorize("frozen", color.BLUE))
         if self.node.frozen():
@@ -2213,6 +2215,11 @@ class Svc(Crypt):
                 continue
             for resource in self.get_resources(driver):
                 rstatus = resource.status()
+                if resource.type.startswith("sync"):
+                    if rstatus == rcStatus.UP:
+                        rstatus = rcStatus.NA
+                    elif rstatus == rcStatus.DOWN:
+                        rstatus = rcStatus.WARN
                 status[group] += rstatus
                 if resource.is_optional():
                     status["optional"] += rstatus
