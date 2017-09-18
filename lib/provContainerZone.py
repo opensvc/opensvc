@@ -4,7 +4,7 @@ import lock
 import provisioning
 from rcZfs import Dataset
 import rcZone
-from rcExceptions import excError
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilitiesSunOS import get_solaris_version
 from rcUtilities import justcall
@@ -21,10 +21,10 @@ class Prov(provisioning.Prov):
         self.log = self.r.log
         self.section = r.svc.config.defaults()
 
-        if 'container_origin' in self.section:
-            self.container_origin = self.section['container_origin']
-        else:
-            self.container_origin = "skelzone"
+        try:
+            self.container_origin = r.conf_get("container_origin")
+        except ex.OptNotFound as exc:
+            self.container_origin = exc.default
 
         if 'snapof' in self.section:
             self.snapof = self.section['snapof']
@@ -62,16 +62,16 @@ class Prov(provisioning.Prov):
             r.tags.remove("postboot")
 
             # Add nonrouted tag if no gateway provisioning keyword is passed
-            if not r.svc.config.has_option(r.rid, "gateway"):
-                r.tags.add("nonrouted")
+            if not self.r.svc.config.has_option(r.rid, "gateway"):
+                self.r.tags.add("nonrouted")
 
-            if not r.svc.config.has_option(r.rid, "gateway"):
+            if not self.r.svc.config.has_option(r.rid, "gateway"):
                 continue
-            default_route = r.svc.config.get(r.rid, "gateway")
+            default_route = self.r.svc.config.get(r.rid, "gateway")
 
-            if not r.svc.config.has_option(r.rid, "netmask"):
+            if not self.r.svc.config.has_option(r.rid, "netmask"):
                 continue
-            netmask = r.svc.config.get(r.rid, "netmask")
+            netmask = self.r.svc.config.get(r.rid, "netmask")
 
             if s == "":
                 s += "network_interface=%s {primary\n"%r.ipdev
@@ -81,10 +81,8 @@ class Prov(provisioning.Prov):
                 s += " protocol_ipv6=no\n"
                 s += " default_route=%s}\n"%default_route
 
-        # save new service env file
-        self.r.svc.config.set(r.rid, "tags", ' '.join(r.tags))
-        with open(cf, 'w') as f:
-            self.r.svc.config.write(f)
+            # save new service env file
+            self.r.svc._set_multi(r.rid, "tags", ' '.join(r.tags))
 
         return s
 
@@ -173,15 +171,16 @@ class Prov(provisioning.Prov):
             cmd = ['/usr/sbin/js2ai', '-s']
             out, err, ret = justcall(cmd)
             if not os.path.exists(self.zonecfg_xml):
-                raise excError("js2ai conversion error")
-        except Exception,e:
-            raise excError("exception from %s: %s during create_sysidcfg file" % (e.__class__.__name__, e.__str__()))
+                raise ex.excError("js2ai conversion error")
+        except Exception as e:
+            self.r.svc.save_exc()
+            raise ex.excError("exception from %s: %s during create_sysidcfg file" % (e.__class__.__name__, e.__str__()))
 
     def _create_sysidcfg_10(self, zone=None):
         try:
             name_service = "name_service=NONE\n"
 
-            sysidcfg_filename = zone.zonepath + "/root" + SYSIDCFG
+            sysidcfg_filename = zone.get_zonepath() + "/root" + SYSIDCFG
             sysidcfg_file = open(sysidcfg_filename, "w" )
             contents = ""
             contents += "system_locale=C\n"
@@ -197,7 +196,7 @@ class Prov(provisioning.Prov):
             sysidcfg_file.write(contents)
             sysidcfg_file.close()
         except Exception,e:
-            raise(excError("exception from %s: %s during create_sysidcfg file" % (e.__class__.__name__, e.__str__())))
+            raise(ex.excError("exception from %s: %s during create_sysidcfg file" % (e.__class__.__name__, e.__str__())))
 
     def test_net_interface(self, intf):
         cmd = ['dladm', 'show-link', intf]
@@ -212,7 +211,7 @@ class Prov(provisioning.Prov):
         cmds = []
         for r in self.r.svc.get_resources(["ip"]):
             if not self.test_net_interface(r.ipdev):
-                raise excError("Missing interface: %s" % r.ipdev)
+                raise ex.excError("Missing interface: %s" % r.ipdev)
             cmds.append("add net ; set physical=%s ; end" % r.ipdev)
         for cmd in cmds:
             zone.zonecfg([cmd])
@@ -224,15 +223,17 @@ class Prov(provisioning.Prov):
         if zone is None:
             zone = self.r
 
-        if self.osver >= 11.0:
-            cmd = "create -t " + self.container_origin + "; set zonepath=" + zone.zonepath
+        if self.osver >= 11.0 and self.container_origin:
+            cmd = "create -t " + self.container_origin
         else:
-            cmd = "create; set zonepath=" + zone.zonepath
+            cmd = "create"
+
+        cmd += "; set zonepath=" + zone.get_zonepath()
 
         if zone.state is None:
             zone.zonecfg([cmd])
             if zone.state != "configured":
-                raise(excError("zone %s is not configured" % (zone.name)))
+                raise ex.excError("zone %s is not configured" % zone.name)
 
         if self.osver >= 11.0:
             try:
@@ -260,24 +261,24 @@ class Prov(provisioning.Prov):
             return
         self.zone_configure(zone=zone2clone)
         if zone2clone.state != "configured":
-            raise(excError("zone %s is not configured" % (zonename)))
+            raise(ex.excError("zone %s is not configured" % (zonename)))
         self.create_sysidcfg(zone2clone)
         #zone2clone.zoneadm("clone", ['-c', self.zonecfg_xml, self.container_origin])
         zone2clone.zoneadm("install")
         if zone2clone.state != "installed":
-            raise(excError("zone %s is not installed" % (zonename)))
+            raise(ex.excError("zone %s is not installed" % (zonename)))
         brand = zone2clone.brand
         if brand == "native":
             zone2clone.boot_and_wait_reboot()
         elif brand == "ipkg":
             zone2clone.boot()
         else:
-            raise(excError("zone brand: %s not yet implemented" % (brand)))
+            raise(ex.excError("zone brand: %s not yet implemented" % (brand)))
         zone2clone.wait_multi_user()
         zone2clone.stop()
         zone2clone.zone_refresh()
         if zone2clone.state != "installed":
-            raise(excError("zone %s is not installed" % (zonename)))
+            raise(ex.excError("zone %s is not installed" % (zonename)))
 
     def _create_zone2clone_10(self):
         """verify if self.container_origin zone is installed
@@ -291,10 +292,10 @@ class Prov(provisioning.Prov):
             return
         self.zone_configure(zone=zone2clone)
         if zone2clone.state != "configured":
-            raise(excError("zone %s is not configured" % (zonename)))
+            raise(ex.excError("zone %s is not configured" % (zonename)))
         zone2clone.zoneadm("install")
         if zone2clone.state != "installed":
-            raise(excError("zone %s is not installed" % (zonename)))
+            raise(ex.excError("zone %s is not installed" % (zonename)))
         self.create_sysidcfg(zone2clone)
         brand = zone2clone.brand
         if brand == "native":
@@ -302,12 +303,12 @@ class Prov(provisioning.Prov):
         elif brand == "ipkg":
             zone2clone.boot()
         else:
-            raise(excError("zone brand: %s not yet implemented" % (brand)))
+            raise(ex.excError("zone brand: %s not yet implemented" % (brand)))
         zone2clone.wait_multi_user()
         zone2clone.stop()
         zone2clone.zone_refresh()
         if zone2clone.state != "installed":
-            raise(excError("zone %s is not installed" % (zonename)))
+            raise(ex.excError("zone %s is not installed" % (zonename)))
 
     def create_cloned_zone(self):
         zone = self.r
@@ -320,7 +321,7 @@ class Prov(provisioning.Prov):
             else:
                 self._create_cloned_zone_10(zone)
         if zone.state != "installed":
-            raise(excError("zone %s is not installed" % (zone.name)))
+            raise(ex.excError("zone %s is not installed" % (zone.name)))
 
     def _create_cloned_zone_11(self, zone):
         zone.zoneadm("clone", ['-c', self.zonecfg_xml, self.container_origin])
@@ -336,17 +337,17 @@ class Prov(provisioning.Prov):
         zonename = self.r.name
         source_ds = Dataset(self.snapof)
         if source_ds.exists(type="filesystem") is False:
-            raise(excError("source dataset doesn't exist " + self.snapof))
+            raise(ex.excError("source dataset doesn't exist " + self.snapof))
         snapshot = source_ds.snapshot(zonename)
         snapshot.clone(self.clone, ['-o', 'mountpoint=' + self.r.zonepath])
 
     def provisioner(self):
-        if not 'noaction' in self.tags:
+        if not 'noaction' in self.r.tags:
             self._provisioner()
-        self.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.name]))
-        self.svc.sub_set_action("disk.zpool", "provision", tags=set([self.name]))
-        self.svc.sub_set_action("disk.raw", "provision", tags=set([self.name]))
-        self.svc.sub_set_action("fs", "provision", tags=set([self.name]))
+        self.r.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.r.name]))
+        self.r.svc.sub_set_action("disk.zpool", "provision", tags=set([self.r.name]))
+        self.r.svc.sub_set_action("disk.raw", "provision", tags=set([self.r.name]))
+        self.r.svc.sub_set_action("fs", "provision", tags=set([self.r.name]))
 
     def _provisioner(self, need_boot=True):
         """provision zone
@@ -385,7 +386,7 @@ class Prov(provisioning.Prov):
             try:
                 lockfd = lock.lock(timeout=1200, delay=5, lockfile=lockfile)
             except:
-                raise(excError("failure in get lock %s"%(lockname)))
+                raise(ex.excError("failure in get lock %s"%(lockname)))
             try:
                 self.create_zone2clone()
             except:

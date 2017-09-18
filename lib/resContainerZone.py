@@ -85,8 +85,11 @@ class Zone(resContainer.Container):
             return self.zonepath
         try:
             zp = self.get_zonepath_from_zonecfg_cmd()
-        except:
-            zp = self.get_zonepath_from_zonecfg_export()
+        except ex.excError:
+            try:
+                zp = self.get_zonepath_from_zonecfg_export()
+            except ex.excError:
+                zp = "/etc/system/%s" % self.name
         self.zonepath = zp
         return zp
 

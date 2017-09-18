@@ -981,7 +981,6 @@ class KeywordContainerOrigin(Keyword):
                   keyword="container_origin",
                   rtype="zone",
                   text="The origin container having the reference container disk files.",
-                  required=True,
                   provisioning=True
                 )
 
