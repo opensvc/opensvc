@@ -1091,7 +1091,6 @@ class KeywordOsvcRootPath(Keyword):
                   self,
                   section="container",
                   keyword="osvc_root_path",
-                  inheritance="head",
                   at=True,
                   order=2,
                   rtype=rcEnv.vt_supported,

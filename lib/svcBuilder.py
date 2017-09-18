@@ -53,7 +53,6 @@ def get_osvc_root_path(svc, section):
         return svc.conf_get(section, 'osvc_root_path')
     except ex.OptNotFound as exc:
         return exc.default
-    return
 
 def get_restart(svc, section):
     try:
