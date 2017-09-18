@@ -1459,7 +1459,7 @@ class Svc(Crypt):
             flags += 'E' if resource["encap"] else '.'
             return flags
 
-        def dispatch_resources():
+        def dispatch_resources(data):
             """
             Sorted resources.
             Honor the --discard-disabled arg.
@@ -1483,13 +1483,33 @@ class Svc(Crypt):
 
             return subsets
 
+        def add_subsets(subsets, node_nodename):
+            for group in DEFAULT_STATUS_GROUPS:
+                subset_names = sorted(subsets[group])
+                for subset in subset_names:
+                    if subset != group:
+                        node_subset = node_nodename.add_node()
+                        node_subset.add_column(subset)
+                        try:
+                            parallel = self.conf_get("subset#"+subset, "parallel")
+                        except ex.OptNotFound as exc:
+                            parallel = exc.default
+                        if parallel:
+                            node_subset.add_column()
+                            node_subset.add_column()
+                            node_subset.add_column("//")
+                    else:
+                        node_subset = node_nodename
+                    for resource in sorted(subsets[group][subset], key=lambda x: x["rid"]):
+                        add_res_node(resource, node_subset)
+
         # discard disabled resources ?
         if self.options.show_disabled is not None:
             discard_disabled = not self.options.show_disabled
         else:
             discard_disabled = not self.show_disabled
 
-        subsets = dispatch_resources()
+        subsets = dispatch_resources(data)
 
         # service-level notices
         svc_notice = []
@@ -1528,7 +1548,7 @@ class Svc(Crypt):
                 continue
             try:
                 ejs = data["encap"][container.rid]
-                ers[container.rid] = ejs["resources"]
+                ers[container.rid] = dispatch_resources(ejs)
                 if ejs.get("frozen", False):
                     container.status_log("frozen", "info")
             except ex.excNotAvailable:
@@ -1560,8 +1580,7 @@ class Svc(Crypt):
             if rid not in ers:
                 return
 
-            for _rid, _resource in ers[rid].items():
-                add_res_node(_resource, node_res, _rid)
+            add_subsets(ers[rid], node_res)
 
         tree = Forest(
             separator=" ",
@@ -1586,25 +1605,7 @@ class Svc(Crypt):
         node_nodename.add_column(data['avail'], STATUS_COLOR[data['avail']])
         node_nodename.add_column(notice, color.LIGHTBLUE)
 
-        for group in DEFAULT_STATUS_GROUPS:
-            subset_names = sorted(subsets[group])
-            for subset in subset_names:
-                if subset != group:
-                    node_subset = node_nodename.add_node()
-                    node_subset.add_column(subset)
-                    try:
-                        parallel = self.conf_get("subset#"+subset, "parallel")
-                    except ex.OptNotFound as exc:
-                        parallel = exc.default
-                    if parallel:
-                        node_subset.add_column()
-                        node_subset.add_column()
-                        node_subset.add_column("//")
-                else:
-                    node_subset = node_nodename
-                for resource in sorted(subsets[group][subset], key=lambda x: x["rid"]):
-                    add_res_node(resource, node_subset)
-
+        add_subsets(subsets, node_nodename)
         print(tree)
 
     def svcmon_push_lists(self):

@@ -107,9 +107,9 @@ class NodeConf(CompObject):
         if p.returncode != 0:
             #perror('\n'.join((' '.join(cmd), out, err)))
             return
-        if "deprecated" in bdecode(err):
+        if "deprecated" in err:
             return
-        out = bdecode(out).strip()
+        out = out.strip()
         try:
             out = int(out)
         except:
