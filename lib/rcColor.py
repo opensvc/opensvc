@@ -36,7 +36,7 @@ class color:
     LIGHTRED = '\033[091m'
     LIGHTGREEN = '\033[092m'
     YELLOW = '\033[093m'
-    LIGHTBLUE = '\033[094m'
+    LIGHTBLUE = '\033[038;5;243m'
     LIGHTPURPLE = '\033[095m'
     LIGHTCYAN = '\033[096m'
     WHITE = '\033[097m'
