@@ -545,17 +545,6 @@ class KeywordStore(dict):
 
         return defaults, sections
 
-class KeywordProvision(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="provision",
-                  keyword="provision",
-                  default="no",
-                  candidates=('yes', 'no'),
-                  text="Say yes to provision this resource. Warning, provisioning implies destructive operations like formating."
-                )
-
 class KeywordLockTimeout(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4149,6 +4138,17 @@ class KeyDict(KeywordStore):
                   convert="integer",
                   text="The agent will try to restart a resource n times before falling back to the monitor action."
                 )
+        def kw_provision(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="provision",
+                  generic=True,
+                  at=True,
+                  candidates=(True, False),
+                  default=True,
+                  convert="boolean",
+                  text="Set to false to skip the resource on provision and unprovision actions. Warning: provisioning implies destructive operations like formating."
+                )
         def kw_monitor(resource):
             return Keyword(
                   section=resource,
@@ -4538,6 +4538,7 @@ class KeyDict(KeywordStore):
             self += kw_disable(r)
             self += kw_optional(r)
             self += kw_always_on(r)
+            self += kw_provision(r)
 
             self += kw_pre_unprovision(r)
             self += kw_post_unprovision(r)

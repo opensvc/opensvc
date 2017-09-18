@@ -34,7 +34,8 @@ class Resource(object):
                  monitor=False,
                  restart=0,
                  tags=None,
-                 always_on=None):
+                 always_on=None,
+                 skip_provision=False):
         if tags is None:
             tags = set()
         if always_on is None:
@@ -52,6 +53,7 @@ class Resource(object):
         self.nb_restart = restart
         self.rstatus = None
         self.always_on = always_on
+        self.skip_provision = skip_provision
         self.sort_key = rid
         try:
             self.label = type
@@ -904,6 +906,9 @@ class Resource(object):
         Unimplemented is_provisioned() trusts provisioner() to do the right
         thing.
         """
+        if self.skip_provision:
+            self.log.info("provision skipped (configuration directive)")
+            return
         if self.prov is None:
             return
         if self.prov.is_provisioned() is True:
@@ -916,6 +921,9 @@ class Resource(object):
         Unimplemented is_provisioned() trusts unprovisioner() to do the right
         thing.
         """
+        if self.skip_provision:
+            self.log.info("unprovision skipped (configuration directive)")
+            return
         if self.prov is None:
             return
         if self.prov.is_provisioned() is False:

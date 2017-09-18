@@ -36,6 +36,12 @@ def get_monitor(svc, section):
     except ex.OptNotFound as exc:
         return exc.default
 
+def get_provision(svc, section):
+    try:
+        return svc.conf_get(section, "provision")
+    except ex.OptNotFound as exc:
+        return exc.default
+
 def get_rcmd(svc, section):
     try:
         return svc.conf_get(section, 'rcmd')
@@ -65,6 +71,19 @@ def get_disabled(svc, section):
         return svc.conf_get(section, 'disable')
     except ex.OptNotFound as exc:
         return exc.default
+
+def init_kwargs(svc, s):
+    return {
+        "rid": s,
+        "subset": get_subset(svc, s),
+        "tags": get_tags(svc, s),
+        "always_on": always_on_nodes_set(svc, s),
+        "disabled": get_disabled(svc, s),
+        "optional": get_optional(svc, s),
+        "monitor": get_monitor(svc, s),
+        "skip_provision": not get_provision(svc, s),
+        "restart": get_restart(svc, s),
+    }
 
 def always_on_nodes_set(svc, section):
     try:
@@ -149,7 +168,7 @@ def add_resource(svc, restype, s):
     globals()['add_'+restype](svc, s)
 
 def add_ip_gce(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
 
     try:
         rtype = svc.conf_get(s, 'type')
@@ -173,20 +192,11 @@ def add_ip_gce(svc, s):
         kwargs['gce_zone'] = exc.default
 
     ip = __import__('resIpGce')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
     r = ip.Ip(**kwargs)
     svc += r
 
 def add_ip_amazon(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
 
     try:
         rtype = svc.conf_get(s, 'type')
@@ -205,15 +215,6 @@ def add_ip_amazon(svc, s):
         kwargs['eip'] = None
 
     ip = __import__('resIpAmazon')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
     r = ip.Ip(**kwargs)
     svc += r
 
@@ -231,7 +232,7 @@ def add_ip(svc, s):
     elif rtype == "gce":
         return add_ip_gce(svc, s)
 
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
 
     try:
         kwargs['ipname'] = svc.conf_get(s, 'ipname')
@@ -286,34 +287,18 @@ def add_ip(svc, s):
     else:
         ip = __import__('resIp'+rcEnv.sysname)
 
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
     r = ip.Ip(**kwargs)
     svc += r
 
 def add_md(svc, s):
-    kwargs = {}
-
+    kwargs = init_kwargs(svc, s)
     kwargs['uuid'] = svc.conf_get(s, 'uuid')
 
     try:
         kwargs['shared'] = svc.conf_get(s, 'shared')
     except ex.OptNotFound as exc:
         kwargs['shared'] = exc.default
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
+
     m = __import__('resDiskMdLinux')
     r = m.Disk(**kwargs)
     svc += r
@@ -322,24 +307,14 @@ def add_drbd(svc, s):
     """Parse the configuration file and add a drbd object for each [drbd#n]
     section. Drbd objects are stored in a list in the service object.
     """
-    kwargs = {}
-
+    kwargs = init_kwargs(svc, s)
     kwargs['res'] = svc.conf_get(s, 'res')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
     mod = __import__('resDiskDrbd')
     r = mod.Drbd(**kwargs)
     svc += r
 
 def add_vdisk(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
     devpath = {}
 
     for attr, val in svc.config.items(s):
@@ -351,14 +326,6 @@ def add_vdisk(svc, s):
         return
 
     kwargs['devpath'] = devpath
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
     m = __import__('resDiskVdisk')
     r = m.Disk(**kwargs)
     svc += r
@@ -368,7 +335,7 @@ def add_stonith(svc, s):
         # no stonith on DRP nodes
         return
 
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
 
     _type = svc.conf_get(s, 'type')
     if len(_type) > 1:
@@ -378,13 +345,6 @@ def add_stonith(svc, s):
         kwargs['name'] = svc.conf_get(s, 'target')
     elif _type == 'Callout':
         kwargs['cmd'] = svc.conf_get(s, 'cmd')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
 
     st = __import__('resStonith'+_type)
     try:
@@ -400,18 +360,8 @@ def add_loop(svc, s):
     """Parse the configuration file and add a loop object for each [loop#n]
     section. Loop objects are stored in a list in the service object.
     """
-    kwargs = {}
-
+    kwargs = init_kwargs(svc, s)
     kwargs['loopFile'] = svc.conf_get(s, 'file')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
 
     try:
         m = __import__('resDiskLoop'+rcEnv.sysname)
@@ -424,65 +374,34 @@ def add_loop(svc, s):
 
 
 def add_disk_disk(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+
     try:
         kwargs['disk_id'] = svc.conf_get(s, 'disk_id')
     except ex.OptNotFound:
         pass
 
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-
     m = __import__('resDiskDisk'+rcEnv.sysname)
-
     r = m.Disk(**kwargs)
     svc += r
 
 def add_disk_gce(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
     kwargs['names'] = svc.conf_get(s, 'names')
     kwargs['gce_zone'] = svc.conf_get(s, 'gce_zone')
-
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-
     m = __import__('resDiskGce')
-
     r = m.Disk(**kwargs)
     svc += r
 
 def add_disk_amazon(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
     kwargs['volumes'] = svc.conf_get(s, 'volumes')
-
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-
     m = __import__('resDiskAmazon')
-
     r = m.Disk(**kwargs)
     svc += r
 
 def add_disk_rados(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
     kwargs['images'] = svc.conf_get(s, 'images')
     try:
         kwargs['keyring'] = svc.conf_get(s, 'keyring')
@@ -500,15 +419,6 @@ def add_disk_rados(svc, s):
         lock = svc.conf_get(s, 'lock')
     except ex.OptNotFound as exc:
         lock = exc.default
-
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
 
     try:
         m = __import__('resDiskRados'+rcEnv.sysname)
@@ -531,7 +441,7 @@ def add_disk_rados(svc, s):
 
 
 def add_raw(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
     disk_type = "Raw"+rcEnv.sysname
     try:
         zone = svc.conf_get(s, 'zone')
@@ -560,15 +470,6 @@ def add_raw(svc, s):
     except ex.OptNotFound as exc:
         kwargs['create_char_devices'] = exc.default
 
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-
     try:
         m = __import__('resDisk'+disk_type)
     except ImportError:
@@ -583,7 +484,7 @@ def add_raw(svc, s):
 
 def add_gandi(svc, s):
     disk_type = "Gandi"
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
     kwargs['cloud_id'] = svc.conf_get(s, 'cloud_id')
     kwargs['name'] = svc.conf_get(s, 'name')
 
@@ -603,15 +504,6 @@ def add_gandi(svc, s):
         kwargs['perm'] = svc.conf_get(s, 'perm')
     except ex.OptNotFound as exc:
         pass
-
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
 
     try:
         m = __import__('resDisk'+disk_type)
@@ -676,17 +568,8 @@ def add_disk_compat(svc, s):
     raise ex.OptNotFound
 
 def add_veritas(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
     kwargs['name'] = svc.conf_get(s, 'name')
-
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
 
     try:
         m = __import__('resDiskVgVeritas')
@@ -705,21 +588,13 @@ def add_vg(svc, s):
         pass
 
     disk_type = rcEnv.sysname
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
     kwargs['name'] = svc.conf_get(s, 'name')
 
     try:
         kwargs['dsf'] = svc.conf_get(s, 'dsf')
     except ex.OptNotFound as exc:
         pass
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
 
     try:
         m = __import__('resDiskVg'+disk_type)
@@ -800,8 +675,7 @@ def add_disk(svc, s):
         return
 
 def add_vmdg(svc, s):
-    kwargs = {}
-
+    kwargs = init_kwargs(svc, s)
     kwargs['container_id'] = svc.conf_get(s, 'container_id')
 
     if not svc.config.has_section(kwargs['container_id']):
@@ -819,15 +693,6 @@ def add_vmdg(svc, s):
     else:
         return
 
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['name'] = s
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-
     r = m.Disk(**kwargs)
     svc += r
 
@@ -835,8 +700,7 @@ def add_zpool(svc, s):
     """Parse the configuration file and add a zpool object for each disk.zpool
     section. Pools objects are stored in a list in the service object.
     """
-    kwargs = {}
-
+    kwargs = init_kwargs(svc, s)
     kwargs['name'] = svc.conf_get(s, 'name')
 
     try:
@@ -845,16 +709,6 @@ def add_zpool(svc, s):
         zone = None
 
     m = __import__('resDiskZfs')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-
     r = m.Disk(**kwargs)
 
     if zone is not None:
@@ -872,8 +726,7 @@ def add_share(svc, s):
     globals()[fname](svc, s)
 
 def add_share_nfs(svc, s):
-    kwargs = {}
-
+    kwargs = init_kwargs(svc, s)
     kwargs['path'] = svc.conf_get(s, 'path')
     kwargs['opts'] = svc.conf_get(s, 'opts')
 
@@ -883,22 +736,11 @@ def add_share_nfs(svc, s):
         svc.log.error("resShareNfs%s is not implemented"%rcEnv.sysname)
         return
 
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-
     r = m.Share(**kwargs)
-
     svc += r
 
 def add_fs_directory(svc, s):
-    kwargs = {}
-
+    kwargs = init_kwargs(svc, s)
     kwargs['path'] = svc.conf_get(s, 'path')
 
     try:
@@ -938,16 +780,6 @@ def add_fs_directory(svc, s):
             kwargs['path'] = os.path.realpath(kwargs['path'])
 
     mod = __import__('resFsDir')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-
     r = mod.FsDir(**kwargs)
 
     if zone is not None:
@@ -960,7 +792,7 @@ def add_fs(svc, s):
     """Parse the configuration file and add a fs object for each [fs#n]
     section. Fs objects are stored in a list in the service object.
     """
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
 
     try:
         kwargs['fs_type'] = svc.conf_get(s, 'type')
@@ -1016,15 +848,6 @@ def add_fs(svc, s):
         svc.log.error("resFs%s is not implemented"%rcEnv.sysname)
         return
 
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-
     r = mount.Mount(**kwargs)
 
     if zone is not None:
@@ -1034,7 +857,8 @@ def add_fs(svc, s):
     svc += r
 
 def add_container_esx(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
@@ -1047,22 +871,12 @@ def add_container_esx(svc, s):
         pass
 
     m = __import__('resContainerEsx')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.Esx(**kwargs)
     svc += r
 
 def add_container_hpvm(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
@@ -1075,22 +889,12 @@ def add_container_hpvm(svc, s):
         pass
 
     m = __import__('resContainerHpVm')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.HpVm(**kwargs)
     svc += r
 
 def add_container_ldom(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
@@ -1103,22 +907,12 @@ def add_container_ldom(svc, s):
         pass
 
     m = __import__('resContainerLdom')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.Ldom(**kwargs)
     svc += r
 
 def add_container_vbox(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
@@ -1131,22 +925,12 @@ def add_container_vbox(svc, s):
         pass
 
     m = __import__('resContainerVbox')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.Vbox(**kwargs)
     svc += r
 
 def add_container_xen(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
@@ -1159,22 +943,12 @@ def add_container_xen(svc, s):
         pass
 
     m = __import__('resContainerXen')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.Xen(**kwargs)
     svc += r
 
 def add_container_zone(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
@@ -1192,24 +966,12 @@ def add_container_zone(svc, s):
         pass
 
     m = __import__('resContainerZone')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.Zone(**kwargs)
     svc += r
 
-
-
 def add_container_vcloud(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
@@ -1226,22 +988,12 @@ def add_container_vcloud(svc, s):
     kwargs['key_name'] = svc.conf_get(s, 'key_name')
 
     m = __import__('resContainerVcloud')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.CloudVm(**kwargs)
     svc += r
 
 def add_container_amazon(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     # mandatory keywords
     try:
@@ -1276,22 +1028,12 @@ def add_container_amazon(svc, s):
         pass
 
     m = __import__('resContainerAmazon')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.CloudVm(**kwargs)
     svc += r
 
 def add_container_openstack(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
@@ -1317,22 +1059,12 @@ def add_container_openstack(svc, s):
         pass
 
     m = __import__('resContainerOpenstack')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.CloudVm(**kwargs)
     svc += r
 
 def add_container_vz(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
@@ -1345,22 +1077,12 @@ def add_container_vz(svc, s):
         pass
 
     m = __import__('resContainerVz')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.Vz(**kwargs)
     svc += r
 
 def add_container_kvm(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
@@ -1373,22 +1095,12 @@ def add_container_kvm(svc, s):
         pass
 
     m = __import__('resContainerKvm')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.Kvm(**kwargs)
     svc += r
 
 def add_container_srp(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
@@ -1401,22 +1113,13 @@ def add_container_srp(svc, s):
         pass
 
     m = __import__('resContainerSrp')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.Srp(**kwargs)
     svc += r
 
 def add_container_lxc(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
+    kwargs['rcmd'] = get_rcmd(svc, s)
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
@@ -1434,24 +1137,12 @@ def add_container_lxc(svc, s):
         pass
 
     m = __import__('resContainerLxc')
-
-    kwargs['rid'] = s
-    kwargs['rcmd'] = get_rcmd(svc, s)
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.Lxc(**kwargs)
     svc += r
 
 def add_container_docker(svc, s):
-    kwargs = {}
-
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
     kwargs['run_image'] = svc.conf_get(s, 'run_image')
 
     try:
@@ -1470,23 +1161,12 @@ def add_container_docker(svc, s):
         kwargs['docker_service'] = exc.default
 
     m = __import__('resContainerDocker')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.Docker(**kwargs)
     svc += r
 
 def add_container_ovm(svc, s):
-    kwargs = {}
-
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
     kwargs['uuid'] = svc.conf_get(s, 'uuid')
 
     try:
@@ -1500,22 +1180,12 @@ def add_container_ovm(svc, s):
         pass
 
     m = __import__('resContainerOvm')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.Ovm(**kwargs)
     svc += r
 
 def add_container_jail(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
     kwargs['jailroot'] = svc.conf_get(s, 'jailroot')
 
     try:
@@ -1534,17 +1204,6 @@ def add_container_jail(svc, s):
         kwargs['ip6s'] = exc.default
 
     m = __import__('resContainerJail')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
     r = m.Jail(**kwargs)
     svc += r
 
@@ -2177,7 +1836,7 @@ def add_sync_rsync(svc, s):
     svc += r
 
 def add_task(svc, s):
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
 
     kwargs['command'] = svc.conf_get(s, 'command')
 
@@ -2196,22 +1855,13 @@ def add_task(svc, s):
     except ex.OptNotFound as exc:
         kwargs['confirmation'] = exc.default
 
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
-
     import resTask
     r = resTask.Task(**kwargs)
     svc += r
 
 def add_app(svc, s):
     resApp = ximport('resApp')
-    kwargs = {}
+    kwargs = init_kwargs(svc, s)
 
     try:
         kwargs['script'] = svc.conf_get(s, 'script')
@@ -2242,15 +1892,6 @@ def add_app(svc, s):
         kwargs['timeout'] = svc.conf_get(s, 'timeout')
     except ex.OptNotFound as exc:
         pass
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['always_on'] = always_on_nodes_set(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
-    kwargs['monitor'] = get_monitor(svc, s)
-    kwargs['restart'] = get_restart(svc, s)
 
     r = resApp.App(**kwargs)
     svc += r
