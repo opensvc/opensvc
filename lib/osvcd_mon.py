@@ -1045,13 +1045,20 @@ class Monitor(shared.OsvcThread, Crypt):
                               shared.SMON_DATA[svcname].local_expect, "started")
                 shared.SMON_DATA[svcname].local_expect = "started"
 
+    def getloadavg(self):
+        try:
+            return round(os.getloadavg()[2], 1)
+        except:
+            # None < 0 == True
+            return
+
     def update_hb_data(self):
         """
         Update the heartbeat payload we send to other nodes.
         Crypt it so the tx threads don't have to do it on their own.
         """
         #self.log.info("update heartbeat data to send")
-        load_avg = os.getloadavg()
+        load_avg = self.getloadavg()
         config = self.get_services_config()
         status = self.get_services_status(config.keys())
 
@@ -1068,9 +1075,7 @@ class Monitor(shared.OsvcThread, Crypt):
                         "status": status,
                     },
                     "load": {
-                        "1m": load_avg[0],
-                        "5m": load_avg[1],
-                        "15m": load_avg[2],
+                        "15m": load_avg,
                     },
                 }
             with shared.HB_MSG_LOCK:
