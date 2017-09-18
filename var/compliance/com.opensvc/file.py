@@ -243,7 +243,7 @@ class CompFiles(CompObject):
         return ret
 
     def check_file_diff(self, f, refpath, verbose=False):
-        if "OSVC_COMP_NODES_OS_NAME" in os.environ and os.environ['OSVC_COMP_NODES_OS_NAME'] in ("Linux"):
+        if "OSVC_COMP_NODES_OS_NAME" in os.environ and os.environ['OSVC_COMP_NODES_OS_NAME'] in ("Linux", "Darwin", "FreeBSD"):
             cmd = ['diff', '-u', f['path'], refpath]
         else:
             cmd = ['diff', f['path'], refpath]
