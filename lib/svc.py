@@ -2355,7 +2355,8 @@ class Svc(Crypt):
                 raise ex.excAbortAction()
             else:
                 raise ex.excError()
-        if self.options.local:
+        if self.options.local or self.options.slave or self.options.slaves or \
+           self.options.master:
             return
         if action not in ACTION_TGT_STATE:
             return
