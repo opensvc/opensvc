@@ -53,12 +53,12 @@ else:
 
 def make_sure_path_exists(path):
     try:
-        os.makedirs(path, 0755)
-    except OSError, exception:
+        os.makedirs(path, 0o0755)
+    except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
 
-def logit(msg,stdout=False,stderr=False):
+def logit(msg, stdout=False, stderr=False):
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
     try:
@@ -73,9 +73,9 @@ def logit(msg,stdout=False,stderr=False):
     f.write(content+'\n')
     f.close()
     if stdout:
-        print msg
+        sys.stdout.write(msg+"\n")
     if stderr:
-        print >>sys.stderr, "error ==> " + msg
+        sys.stderr.write("error ==> %s\n" % (msg))
 
 make_sure_path_exists(pathlog)
 logit("\nStarting OpenSVC postinstall\n",stdout=True)
@@ -104,7 +104,7 @@ def install_cron():
     logit("begin")
     if sysname == 'Windows':
         logit("windows not applicable")
-        return 
+        return
     else:
         return install_cron_unix()
 
@@ -153,7 +153,7 @@ def schedcmd(_cmd):
     import subprocess
     subprocess.call([fname])
     os.unlink(fname)
- 
+
 def save_file(infile):
     logit("begin")
     logit("infile <%s>"%infile)
@@ -172,7 +172,7 @@ def save_file(infile):
     logit("nfname <%s>"%nfname)
     outfile = os.path.join(os.sep, pathtmp, nfname)
     logit("outfile <%s>"%outfile)
-    
+
     logit("saving file <%s> to <%s>"%(infile,outfile),stdout=True)
     try:
         shutil.copyfile(infile, outfile)
@@ -214,13 +214,11 @@ def install_cron_unix():
     """ order of preference
     """
     if sysname == 'SunOS' :
-	    if SolarisRootRelocate is True:
-	        suncron = os.environ["PKG_INSTALL_ROOT"] + '/var/spool/cron/crontabs/root'
-                root_crontab_locs = [
-                   suncron
-                ]
-	    else:
-	        root_crontab_locs = [ '/var/spool/cron/crontabs/root' ]
+        if SolarisRootRelocate is True:
+            suncron = os.environ["PKG_INSTALL_ROOT"] + '/var/spool/cron/crontabs/root'
+            root_crontab_locs = suncron
+        else:
+            root_crontab_locs = [ '/var/spool/cron/crontabs/root' ]
     else:
         root_crontab_locs = [
             '/etc/cron.d/opensvc',
@@ -292,7 +290,7 @@ def install_cron_unix():
     if not new:
         logit("problem preparing the new crontab",stderr=True)
         return False
- 
+
     i = -1
     for line in new:
         i += 1
@@ -301,7 +299,7 @@ def install_cron_unix():
             if line.find(re) != -1:
                 logit("delete line <%s> from <%s>"%(re,root_crontab))
                 del new[i]
-    
+
     logit("saving crontab <%s>"%root_crontab)
     try:
         save_file(root_crontab)
@@ -358,17 +356,17 @@ def activate_chkconfig(svc):
 def activate_systemd(launcher):
     logit("begin")
     systemdsvc = 'opensvc-agent.service'
-    
+
     # populate systemd tree with opensvc unit file
     src = os.path.join(pathini, 'systemd.opensvc-agent.service')
     dst = os.path.join('/etc/systemd/system/', systemdsvc)
     logit("installing systemd unit file",stdout=True)
     try:
         shutil.copyfile(src, dst)
-        os.chmod(dst, 0644)
+        os.chmod(dst, 0o0644)
     except:
         logit("issue met while trying to install systemd unit file",stderr=True)
-    
+
     # add symlink to resolve systemd service call
     systemd_call = os.path.join(pathini, "opensvc.init")
     if not os.path.islink(systemd_call):
@@ -391,7 +389,7 @@ def activate_systemd(launcher):
     ret = os.system(' '.join(cmd))
     if ret > 0:
         logit("issue met during systemctl reload",stderr=True)
-    
+
     # enable opensvc agent startup through systemd
     logit("enabling systemd configuration")
     cmd = ['systemctl', '-q', 'enable', systemdsvc]
@@ -469,35 +467,19 @@ def activate_AIX(launcher):
     return True
 
 def activate_OSF1(launcher):
-    logit("begin")
     rc = "/sbin/init.d/opensvc"
     links = ["/sbin/rc0.d/K010opensvc", "/sbin/rc2.d/K010opensvc", "/sbin/rc3.d/S990opensvc"]
     for l in links:
-	if not os.path.islink(l):
-	    if os.path.exists(l):
-                logit("removing %s"%l)
-	        os.unlink(l)
-            logit("symlinking %s and %s"%(rc,l))
-	    os.symlink(rc, l)
-    return True
-
-def activate_SunOS(launcher):
-    logit("begin")
-    if SolarisRootRelocate is True:
-        rc = "/etc/init.d/opensvc"
-        links = [os.environ["PKG_INSTALL_ROOT"] + "/etc/rc0.d/K00opensvc", os.environ["PKG_INSTALL_ROOT"] + "/etc/rc3.d/S99opensvc"]
-    else:
-	rc = "/etc/init.d/opensvc"
-	links = ["/etc/rc0.d/K00opensvc", "/etc/rc3.d/S99opensvc"]
-    logit("rc <%s>"%rc)
-    for l in links:
-        logit("link <%s>"%l)
         if not os.path.islink(l):
             if os.path.exists(l):
                 logit("removing %s"%l)
                 os.unlink(l)
             logit("symlinking %s and %s"%(rc,l))
             os.symlink(rc, l)
+            return True
+
+def activate_SunOS(launcher):
+    logit("begin")
     return True
 
 def activate_FreeBSD(launcher):
@@ -551,7 +533,7 @@ def install_params(path2file):
         f.write("#LD_PRELOAD=\n")
         f.write("\n")
         f.close()
- 
+
 def install_rc():
     logit("begin")
     """install startup script
@@ -570,6 +552,14 @@ def install_rc():
         else:
             logit("debian with update-rc.d (rely on insserv)")
             activate = activate_debian
+    elif os.path.exists('/etc/arch-release'):
+        rc = '/etc/init.d/opensvc'
+        params = '/etc/default/opensvc'
+        src = os.path.join(pathini, 'opensvc.init.debian')
+        if systemd_mgmt():
+            logit("arch with systemd")
+            copyrc = False
+            activate = activate_systemd
     elif os.path.exists('/etc/SuSE-release'):
         rc = '/etc/init.d/opensvc'
         params = '/etc/sysconfig/opensvc'
@@ -580,7 +570,7 @@ def install_rc():
             activate = activate_systemd
         else:
             logit("SuSE with chkconfig (rely on insserv)")
-            activate = activate_redhat       
+            activate = activate_redhat
     elif os.path.exists('/etc/redhat-release'):
         params = '/etc/sysconfig/opensvc'
         src = os.path.join(pathini, 'opensvc.init.redhat')
@@ -601,14 +591,13 @@ def install_rc():
                 activate = activate_systemd
             else:
                 logit("Red Hat with chkconfig (rely on insserv)")
-                activate = activate_redhat    
-
+                activate = activate_redhat
     elif sysname == "HP-UX":
         rc = '/sbin/init.d/opensvc'
         src = os.path.join(pathini, 'opensvc.init.hpux')
         activate = activate_hpux
     elif sysname == "SunOS":
-	if SolarisRootRelocate is True:
+        if SolarisRootRelocate is True:
             rc = os.environ["PKG_INSTALL_ROOT"] + '/etc/init.d/opensvc'
             params = os.environ["PKG_INSTALL_ROOT"] + '/etc/default/opensvc'
             src = os.environ["PKG_INSTALL_ROOT"] + os.path.join(pathini, 'opensvc.init.SunOS')
@@ -648,12 +637,12 @@ def install_rc():
     if copyrc:
         logit("copying src launcher script to rc")
         shutil.copyfile(src, rc)
-        os.chmod(rc, 0755)
+        os.chmod(rc, 0o0755)
 
     if params is not None and not os.path.exists(params):
         logit("installing default parameters file")
         install_params(params)
-        
+
     activate(src)
 
 def gen_keys():
@@ -663,13 +652,13 @@ def gen_keys():
     home = os.path.expanduser("~root")
     logit("home <%s>"%home)
     if SolarisRootRelocate is True:
-	home = os.environ['PKG_INSTALL_ROOT'] + os.path.expanduser("~root")
+        home = os.environ['PKG_INSTALL_ROOT'] + os.path.expanduser("~root")
         logit("SunOS and relocatable install home is now <%s>"%home)
     sshhome = os.path.join(home, ".ssh")
     logit("sshhome <%s>"%sshhome)
     if not os.path.exists(sshhome):
         logit("create dir %s"%sshhome,stdout=True)
-	os.makedirs(sshhome, 0700)
+        os.makedirs(sshhome, 0o0700)
     priv = os.path.join(sshhome, "id_rsa")
     pub = os.path.join(sshhome, "id_rsa.pub")
     if os.path.exists(pub) or os.path.exists(priv):
@@ -684,8 +673,8 @@ def gen_keys():
 def missing_dir(pathd):
     logit("begin")
     if not os.path.exists(pathd):
-            logit("create dir %s"%pathd,stdout=True)
-	    os.makedirs(pathd, 0755)
+        logit("create dir %s"%pathd,stdout=True)
+        os.makedirs(pathd, 0o0755)
 
 def missing_dirs():
     logit("begin")
@@ -700,11 +689,11 @@ def convert_svclinks():
     missing_dir(pathetc)
     svcmgr = os.path.join(pathsbin, 'svcmgr')
     if not os.path.exists(svcmgr):
-	logit("%s does not exist"%svcmgr)
+        logit("%s does not exist"%svcmgr)
         return 1
     rcService = os.path.realpath(os.path.join(pathbin, 'rcService'))
     if not os.path.exists(rcService):
-	logit("%s does not exist"%rcService)
+        logit("%s does not exist"%rcService)
         return 1
     for fname in os.listdir(pathetc):
         fpath = os.path.join(pathetc, fname)
@@ -857,7 +846,7 @@ def install_profile():
         logit("no profile directory found")
         return
     try:
-        logit("installing profile in file %s"%(prof))        
+        logit("installing profile in file %s"%(prof))
         f = open(prof, 'w')
         f.write(buff)
         f.close()
@@ -887,9 +876,9 @@ def install_bash_completion():
     try:
         logit("installing bash completion file src %s to tgt %s"%(src,dst))
         shutil.copyfile(src, dst)
-        os.chmod(dst, 0644)
+        os.chmod(dst, 0o0644)
     except:
-        logit("issue met while trying to install bash completion file src %s to tgt %s"%(src,dst))        
+        logit("issue met while trying to install bash completion file src %s to tgt %s"%(src,dst))
 
 def install_link(source, target):
     logit("begin")
@@ -931,7 +920,7 @@ def install_pythonlink_windows():
         logit("issue met while trying to read path into registry HKCU/Software/OpenSVC/path",stderr=True)
         sys.exit(1)
 
-    installfolder = installfolder.rstrip('\\')   
+    installfolder = installfolder.rstrip('\\')
     logit("installfolder = <"+installfolder+">")
     osvcenv = os.path.join(installfolder, 'osvcenv.cmd')
     content = '@echo off\nset OSVCROOT='+installfolder+'\nset OSVCPYTHONROOT=%OSVCROOT%\python\nset PYTHONPATH=%OSVCROOT%\lib\nset OSVCPYTHONEXEC=%OSVCPYTHONROOT%\python.exe\ncall inpath.cmd OSVCPYTHONROOT'
@@ -939,7 +928,7 @@ def install_pythonlink_windows():
     f = open(osvcenv, 'w')
     f.write(content)
     f.close()
-		
+
 def move_host_mode():
     logit("begin")
     hm = os.path.join(pathvar, 'host_mode')
@@ -962,7 +951,7 @@ def move_host_mode():
         logit("failed to set host_mode in node.conf",stdout=True)
         return
     shutil.move(hm, hm+'.old')
- 
+
 def nodeconf_params():
     logit("begin")
     nodeconf = os.path.join(pathetc, 'node.conf')
@@ -977,7 +966,10 @@ def nodeconf_params():
         logit("file %s does not exist"%nodeconf)
         return
 
-    import ConfigParser
+    try:
+        import ConfigParser
+    except ImportError:
+        import configparser as ConfigParser
     import copy
     try:
         config = ConfigParser.RawConfigParser()
@@ -1067,7 +1059,7 @@ def chmod_directories():
         logit("os.walk not available")
         return
     if sysname == 'Windows':
-	logit("skip : unsupported on Windows")
+        logit("skip : unsupported on Windows")
         return
     for d in (pathbin, pathlib, pathusr):
         if d is None:
@@ -1076,7 +1068,7 @@ def chmod_directories():
             for subdirname in dirnames:
                 dirpath = os.path.join(dirname, subdirname)
                 try:
-                    os.chmod(dirpath, 0755)
+                    os.chmod(dirpath, 0o0755)
                     msg = "setting %s permissions to 0755" % dirpath
                 except:
                     msg = "issue met while trying to set %s permissions to 0755" % dirpath
@@ -1086,10 +1078,10 @@ def log_file_info(path):
     try:
         info = os.lstat(path)
     except:
-	msg = "issue met while trying to get [%s] os.lstat information" % path
+        msg = "issue met while trying to get [%s] os.lstat information" % path
         logit(msg)
-	return
-    string = "uid[%d] gid[%d] perms[%s] file[%s]" % (info.st_uid, info.st_gid, oct(info.st_mode & 0777), path)
+    return
+    string = "uid[%d] gid[%d] perms[%s] file[%s]" % (info.st_uid, info.st_gid, oct(info.st_mode & 777), path)
     logit(string)
 
 def dump_install_content():
