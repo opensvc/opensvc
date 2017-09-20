@@ -3339,12 +3339,18 @@ class Node(Crypt):
                         leader = colorize("^", color.LIGHTBLUE)
                     else:
                         leader = ""
+                    # provisioned
+                    if services[svcname]["nodes"][nodename]["provisioned"] is False:
+                        provisioned = colorize("P", color.RED)
+                    else:
+                        provisioned = ""
 
                     val.append(avail_icon)
                     val.append(overall_icon)
                     val.append(leader)
                     val.append(frozen_icon)
                     val.append(smon)
+                    val.append(provisioned)
                     line.append("".join(val))
                 elif nodename not in self.services[svcname].nodes | self.services[svcname].drpnodes:
                     line.append("")
@@ -3502,6 +3508,7 @@ class Node(Crypt):
                     "frozen": _data["frozen"],
                     "mon": _data["monitor"]["status"],
                     "placement": _data["monitor"].get("placement", ""),
+                    "provisioned": _data.get("provisioned"),
                 }
         for svcname, _data in data["monitor"]["services"].items():
             if svcname not in services:

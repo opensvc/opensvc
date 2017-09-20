@@ -42,6 +42,12 @@ def get_provision(svc, section):
     except ex.OptNotFound as exc:
         return exc.default
 
+def get_shared(svc, section):
+    try:
+        return svc.conf_get(section, "shared")
+    except ex.OptNotFound as exc:
+        return exc.default
+
 def get_rcmd(svc, section):
     try:
         return svc.conf_get(section, 'rcmd')
@@ -83,6 +89,7 @@ def init_kwargs(svc, s):
         "monitor": get_monitor(svc, s),
         "skip_provision": not get_provision(svc, s),
         "restart": get_restart(svc, s),
+        "shared": get_shared(svc, s),
     }
 
 def always_on_nodes_set(svc, section):
@@ -1924,7 +1931,7 @@ def build(name, minimal=False, svcconf=None, node=None):
     # keep it separate from the framework stuff
     #
     discover_node()
-    svc = svc.Svc(svcname=name, node=node)
+    svc = svc.Svc(svcname=name, node=node, cf=svcconf)
 
     try:
         encapnodes = svc.conf_get('DEFAULT', "encapnodes")

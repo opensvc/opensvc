@@ -8,6 +8,7 @@ import os
 import logging
 import sys
 import time
+import json
 
 import rcExceptions as ex
 import rcStatus
@@ -35,7 +36,8 @@ class Resource(object):
                  restart=0,
                  tags=None,
                  always_on=None,
-                 skip_provision=False):
+                 skip_provision=False,
+                 shared=False):
         if tags is None:
             tags = set()
         if always_on is None:
@@ -54,6 +56,7 @@ class Resource(object):
         self.rstatus = None
         self.always_on = always_on
         self.skip_provision = skip_provision
+        self.shared = shared
         self.sort_key = rid
         try:
             self.label = type
@@ -441,6 +444,10 @@ class Resource(object):
                            rcStatus.Status(last_status),
                            rcStatus.Status(self.rstatus))
             self.write_status()
+
+        if self.rstatus in (rcStatus.UP, rcStatus.STDBY_UP) and \
+           self.is_provisioned_flag() is False:
+            self.write_is_provisioned_flag(True)
 
         return self.rstatus
 
@@ -883,6 +890,50 @@ class Resource(object):
         """
         return self.svc.conf_get(self.rid, o, **kwargs)
 
+    ##########################################################################
+    #
+    # provisioning
+    #
+    ##########################################################################
+    @lazy
+    def provisioned_flag(self):
+        flag_d = os.path.join(rcEnv.paths.pathvar, self.svc.svcname)
+        if not os.path.exists(flag_d):
+            os.makedirs(flag_d)
+        flag_f = os.path.join(flag_d, "provisioned."+self.rid)
+        return flag_f
+
+    def provisioned_flag_mtime(self):
+        try:
+            return os.path.getmtime(self.provisioned_flag)
+        except Exception:
+            return
+
+    def provisioned_data(self):
+        return {
+            "state": self.is_provisioned(),
+            "mtime": self.provisioned_flag_mtime(),
+        }
+
+    def is_provisioned_flag(self):
+        try:
+            with open(self.provisioned_flag, 'r') as filep:
+                return json.load(filep)
+        except Exception:
+            return
+
+    def write_is_provisioned_flag(self, value, mtime=None):
+        if value is None:
+            return
+        with open(self.provisioned_flag, 'w') as filep:
+            try:
+                data = json.dump(value, filep)
+            except ValueError:
+                return
+        if mtime:
+            os.utime(self.provisioned_flag, (mtime, mtime))
+        return data
+
     @lazy
     def prov(self):
         """
@@ -902,6 +953,10 @@ class Resource(object):
         return getattr(mod, "Prov")(self)
 
     def provision(self):
+        self._provision()
+        self.prov.start()
+
+    def _provision(self):
         """
         Unimplemented is_provisioned() trusts provisioner() to do the right
         thing.
@@ -913,10 +968,15 @@ class Resource(object):
             return
         if self.prov.is_provisioned() is True:
             self.log.info("%s already provisioned", self.label)
-            return
-        self.prov.provisioner()
+        else:
+            self.prov.provisioner()
+            self.write_is_provisioned_flag(True)
 
     def unprovision(self):
+        self.prov.stop()
+        self._unprovision()
+
+    def _unprovision(self):
         """
         Unimplemented is_provisioned() trusts unprovisioner() to do the right
         thing.
@@ -928,12 +988,19 @@ class Resource(object):
             return
         if self.prov.is_provisioned() is False:
             self.log.info("%s already unprovisioned", self.label)
-            return
-        self.prov.unprovisioner()
+        else:
+            self.prov.unprovisioner()
+            self.write_is_provisioned_flag(False)
 
     def is_provisioned(self):
         if self.prov is None:
+            return True
+        flag = self.is_provisioned_flag()
+        if flag is not None:
+            return flag
+        if not hasattr(self.prov, "is_provisioned"):
             return
-        if not hasattr(self.prov, "is_provisionned"):
-            return
-        return self.prov.is_provisioned()
+        value = self.prov.is_provisioned()
+        self.write_is_provisioned_flag(value)
+        return value
+

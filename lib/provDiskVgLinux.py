@@ -12,22 +12,16 @@ class Prov(provisioning.Prov):
     def __init__(self, r):
         provisioning.Prov.__init__(self, r)
 
+    def is_provisioned(self):
+        return self.r.has_it()
+
     def unprovisioner(self):
-        if not self.r.has_it():
-            self.r.log.info("already unprovisioned")
-            return
         cmd = ['vgremove', '-ff', self.r.name]
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
-
-
     def provisioner(self):
-        if self.r.has_it():
-            self.r.log.info("already provisioned")
-            return
-
         try:
             self.pvs = self.r.svc.conf_get(self.r.rid, "pvs")
         except ex.OptNotFound:

@@ -39,6 +39,40 @@ class Prov(provisioning.Prov):
             return
         p.Prov(self.r).unprovisioner()
 
+    def is_provisioned(self):
+        if "bind" in self.r.mount_options:
+            return True
+        try:
+            self.dev = self.r.svc.conf_get(self.r.rid, "dev")
+            self.mnt = self.r.svc.conf_get(self.r.rid, "mnt")
+        except ex.OptNotFound:
+            return
+        if not os.path.exists(self.mnt):
+            return False
+        if self.r.fs_type in self.r.netfs:
+            return True
+        self.get_mkfs_dev()
+        if not os.path.exists(self.dev) and not os.path.exists(self.mkfs_dev):
+            return False
+        return self.check_fs()
+
+    def get_mkfs_dev(self):
+        self.mkfs_dev = self.dev
+        if rcEnv.sysname == 'HP-UX':
+            l = self.dev.split('/')
+            l[-1] = 'r'+l[-1]
+            self.mkfs_dev = '/'.join(l)
+            if not os.path.exists(self.mkfs_dev):
+                raise ex.excError("%s raw device does not exists"%self.mkfs_dev)
+        elif rcEnv.sysname == 'Darwin':
+            if os.path.isfile(self.mkfs_dev):
+                from rcLoopDarwin import file_to_loop
+                devs = file_to_loop(self.mkfs_dev)
+                if len(devs) == 1:
+                    self.mkfs_dev = devs[0]
+                else:
+                    raise ex.excError("unable to find a device associated to %s" % self.mkfs_dev)
+
     def provisioner_fs(self):
         if self.r.fs_type in self.r.netfs:
             return
@@ -53,22 +87,7 @@ class Prov(provisioning.Prov):
         if not os.path.exists(self.dev) and self.r.fs_type not in self.r.netfs:
             self.provision_dev()
 
-        self.mkfs_dev = self.dev
-        if rcEnv.sysname == 'HP-UX':
-            l = self.dev.split('/')
-            l[-1] = 'r'+l[-1]
-            self.mkfs_dev = '/'.join(l)
-            if not os.path.exists(self.mkfs_dev):
-                self.r.log.error("%s raw device does not exists"%self.mkfs_dev)
-                return
-        elif rcEnv.sysname == 'Darwin':
-            if os.path.isfile(self.mkfs_dev):
-                from rcLoopDarwin import file_to_loop
-                devs = file_to_loop(self.mkfs_dev)
-                if len(devs) == 1:
-                    self.mkfs_dev = devs[0]
-                else:
-                    raise ex.excError("unable to find a device associated to %s" % self.mkfs_dev)
+        self.get_mkfs_dev()
 
         if not os.path.exists(self.mkfs_dev):
             raise ex.excError("abort fs provisioning: %s does not exist" % self.mkfs_dev)
@@ -92,13 +111,10 @@ class Prov(provisioning.Prov):
         else:
             raise ex.excError("no mkfs method implemented")
 
-        self.r.log.info("provisioned")
-
-
     def provisioner(self):
-        if "bind" not in self.r.mount_options:
-            self.provisioner_fs()
-        self.r.start()
+        if "bind" in self.r.mount_options:
+            return
+        self.provisioner_fs()
 
     def purge_mountpoint(self):
         if os.path.exists(self.r.mount_point) and not protected_dir(self.r.mount_point):
@@ -112,7 +128,6 @@ class Prov(provisioning.Prov):
         pass
 
     def unprovisioner(self):
-        self.r.stop()
         if self.r.fs_type in self.r.netfs:
             return
         self.unprovisioner_fs()

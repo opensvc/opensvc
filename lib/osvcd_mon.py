@@ -1089,6 +1089,10 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.error("failed to refresh local cluster data: invalid json")
 
     def merge_hb_data(self):
+        self.merge_hb_data_monitor()
+        self.merge_hb_data_provision()
+
+    def merge_hb_data_monitor(self):
         """
         Set the global expect received through heartbeats as local expect, if
         the service instance is not already in the expected status.
@@ -1137,6 +1141,35 @@ class Monitor(shared.OsvcThread, Crypt):
                         self.set_smon(svcname, global_expect=global_expect)
                     else:
                         self.log.info("node %s wants service %s %s, already is", nodename, svcname, global_expect)
+
+    def merge_hb_data_provision(self):
+        """
+        Merge the resource provisioned state from the peer with the most
+        up-to-date change time.
+        """
+        with shared.SERVICES_LOCK, shared.CLUSTER_DATA_LOCK:
+            for svc in shared.SERVICES.values():
+                changed = False
+                for resource in svc.shared_resources:
+                    try:
+                        local = Storage(shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"])
+                    except KeyError:
+                        local = Storage()
+                    for nodename in svc.peers:
+                        try:
+                            remote = Storage(shared.CLUSTER_DATA[nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"])
+                        except KeyError:
+                            continue
+                        if remote.state is None:
+                            continue
+                        elif remote.mtime > local.mtime + 0.00001:
+                            self.log.info("switch %s.%s provisioned flag to %s (merged from %s)",
+                                          svc.svcname, resource.rid, str(remote.state), 
+                                          nodename)
+                            resource.write_is_provisioned_flag(remote.state, remote.mtime)
+                            changed = True
+                if changed:
+                    svc.purge_status_data_dump()
 
     def status(self):
         self.update_hb_data()

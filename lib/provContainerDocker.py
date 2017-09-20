@@ -1,14 +1,14 @@
 import provisioning
 
 class Prov(provisioning.Prov):
-    def provisioner(self):
-        # docker resources are naturally provisioned
-        self.r._start()
-        self.r.status(refresh=True)
-        self.r.svc.sub_set_action("ip", "provision", tags=set([self.r.rid]))
+    def is_provisioned(self):
+        return True
 
-    def unprovisioner(self):
-        self.r.svc.sub_set_action("ip", "unprovision", tags=set([self.r.rid]))
+    def start(self):
+        self.r._start()
+        self.r.status(resfresh=True)
+
+    def stop(self):
         self.r._stop()
-        self.r.status(refresh=True)
+        self.r.status(resfresh=True)
 

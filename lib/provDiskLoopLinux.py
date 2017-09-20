@@ -7,6 +7,12 @@ class Prov(provisioning.Prov):
     def __init__(self, r):
         provisioning.Prov.__init__(self, r)
 
+    def is_provisioned(self):
+        try:
+            return os.path.exists(self.r.loopFile)
+        except Exception:
+            return
+
     def unprovisioner(self):
         self.r.stop()
         try:
@@ -14,12 +20,7 @@ class Prov(provisioning.Prov):
         except Exception as e:
             raise ex.excError(str(e))
 
-        if not os.path.exists(self.path):
-            self.r.log.info("already unprovisioned")
-            return
-
         self.r.log.info("unlink %s" % self.path)
-        self.r.log.info("unprovisioned")
         os.unlink(self.path)
 
     def provisioner(self):
@@ -28,10 +29,7 @@ class Prov(provisioning.Prov):
             self.size = self.r.svc.conf_get(self.r.rid, "size")
         except Exception as e:
             raise ex.excError(str(e))
-        if os.path.exists(self.path):
-            self.r.log.info("already provisioned")
-            self.r.start()
-            return
+
         d = os.path.dirname(self.path)
         try:
             if not os.path.exists(d):
@@ -42,8 +40,4 @@ class Prov(provisioning.Prov):
                 f.seek(convert_size(self.size, _to='b', _round=512)-1)
                 f.write('\0')
         except Exception as e:
-            self.r.log.error("Failed to create %s: %s"% (self.path, str(e)))
-            raise ex.excError
-
-        self.r.log.info("provisioned")
-        self.r.start()
+            raise ex.excError("failed to create %s: %s"% (self.path, str(e)))

@@ -122,3 +122,6 @@ class Task(Res.Resource):
     def _status(self, verbose=False):
         return rcStatus.NA
 
+    def is_provisioned(self):
+        return True
+

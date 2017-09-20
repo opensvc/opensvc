@@ -5,17 +5,12 @@ class Prov(provisioning.Prov):
     def __init__(self, r):
         provisioning.Prov.__init__(self, r)
 
+    def is_provisioned(self):
+        return self.r.has_it()
+
     def unprovisioner(self):
-        self.r.stop()
-
-        if not self.r.has_it():
-            self.r.log.info("already unprovisioned")
-            return
-
         cmd = ["zpool", "destroy", "-f", self.r.name]
         self.r.vcall(cmd)
-
-        self.r.log.info("unprovisioned")
 
     def provisioner(self):
         try:
@@ -24,13 +19,6 @@ class Prov(provisioning.Prov):
         except Exception as e:
             raise ex.excError(str(e))
 
-        if self.r.has_it():
-            self.r.log.info("already provisioned")
-            self.r.start()
-            return
-
         cmd = ["zpool", "create", "-m", "legacy", self.name] + self.vdev
         self.r.vcall(cmd)
 
-        self.r.log.info("provisioned")
-        self.r.start()

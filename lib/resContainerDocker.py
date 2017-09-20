@@ -317,6 +317,14 @@ class Docker(resContainer.Container):
                 return
         resContainer.Container.start(self)
 
+    def provision(self):
+        resContainer.Container.provision(self)
+        self.svc.sub_set_action("ip", "provision", tags=set([self.rid]))
+
+    def unprovision(self):
+        resContainer.Container.unprovision(self)
+        self.svc.sub_set_action("ip", "unprovision", tags=set([self.rid]))
+
     def start(self):
         self._start()
         self.svc.sub_set_action("ip", "start", tags=set([self.rid]))

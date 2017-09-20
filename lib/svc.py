@@ -229,6 +229,7 @@ STATUS_TYPES = [
     "disk.vg",
     "disk.zpool",
     "fs",
+    "fs.dir",
     "ip",
     "ip.docker",
     "share.nfs",
@@ -348,7 +349,7 @@ class Svc(Crypt):
     and sync.
     """
 
-    def __init__(self, svcname=None, node=None):
+    def __init__(self, svcname=None, node=None, cf=None):
         self.type = "hosted"
         self.svcname = svcname
         self.node = node
@@ -361,6 +362,8 @@ class Svc(Crypt):
             push_flag=os.path.join(rcEnv.paths.pathvar, self.svcname, 'last_pushed_config'),
             tmp_cf=os.path.join(rcEnv.paths.pathtmp, self.svcname+".conf.tmp")
         )
+        if cf:
+            self.paths.cf = cf
         self.resources_by_id = {}
         self.encap_resources = {}
         self.resourcesets = []
@@ -625,6 +628,10 @@ class Svc(Crypt):
             self.dependencies[action][_from] = set()
         self.dependencies[action][_from].add(_to)
 
+    @lazy
+    def shared_resources(self):
+        return [res for res in self.get_resources() if res.shared]
+            
     def action_rid_dependencies(self, action, rid):
         if action in ("boot", "provision", "start"):
             action = "start"
@@ -736,6 +743,12 @@ class Svc(Crypt):
         Purge the json cache and each resource status on-disk cache.
         """
         self.purge_status_last()
+        self.purge_status_data_dump()
+
+    def purge_status_data_dump(self):
+        """
+        Purge the json status dump
+        """
         if os.path.exists(self.status_data_dump):
             os.unlink(self.status_data_dump)
 
@@ -1292,6 +1305,7 @@ class Svc(Crypt):
             "resources": {},
             "frozen": self.frozen(),
             "constraints": self.constraints,
+            "provisioned": True,
         }
 
         containers = self.get_resources('container')
@@ -1332,6 +1346,9 @@ class Svc(Crypt):
                     'optional': optional,
                     'encap': encap,
                 }
+                data['resources'][rid]["provisioned"] = resource.provisioned_data()
+                if data['resources'][rid]["provisioned"]["state"] is False:
+                    data["provisioned"] = False
                 if resource.subset:
                     data['resources'][rid]["subset"] = resource.subset
         group_status = self.group_status()
@@ -1451,12 +1468,20 @@ class Svc(Crypt):
             D  Disabled
             O  Optional
             E  Encap
+            P  Provisioned
             """
             flags = ''
             flags += 'M' if resource["monitor"] else '.'
             flags += 'D' if resource["disable"] else '.'
             flags += 'O' if resource["optional"] else '.'
             flags += 'E' if resource["encap"] else '.'
+            provisioned = resource.get("provisioned", {}).get("state")
+            if provisioned is True:
+                flags += '.'
+            elif provisioned is False:
+                flags += 'P'
+            else:
+                flags += '/'
             return flags
 
         def dispatch_resources(data):
@@ -1530,6 +1555,8 @@ class Svc(Crypt):
             notice.append(colorize("node frozen", color.BLUE))
         if not data.get("constraints", True):
             notice.append("constraints violation")
+        if data.get("provisioned") is False:
+            notice.append(colorize("not provisioned", color.RED))
         if "monitor" in data:
             if data["monitor"]["status"] == "idle":
                 notice.append(colorize(data["monitor"]["status"], color.LIGHTBLUE))
@@ -4421,14 +4448,18 @@ class Svc(Crypt):
             if sline == section:
                 in_section = True
             elif in_section:
-                if sline.startswith("[") and not done:
-                    # section found and parsed and no option => add option
-                    section_idx = idx
-                    while section_idx > 0 and lines[section_idx-1].strip() == "":
-                        section_idx -= 1
-                    lines.insert(section_idx, "%s = %s" % (option, value))
-                    done = True
-                    break
+                if sline.startswith("["):
+                    if done:
+                        # matching section done and new section begins
+                        break
+                    else:
+                        # section found and parsed and no option => add option
+                        section_idx = idx
+                        while section_idx > 0 and lines[section_idx-1].strip() == "":
+                            section_idx -= 1
+                        lines.insert(section_idx, "%s = %s" % (option, value))
+                        done = True
+                        break
                 elif "=" in sline:
                     elements = sline.split("=")
                     _option = elements[0].strip()

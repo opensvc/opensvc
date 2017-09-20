@@ -38,6 +38,9 @@ class Disk(resDisk.Disk):
         self.major_minor_errs = set()
         self.devs_map = {}
 
+    def clear_caches(self):
+        pass
+
     def verify_dev(self, path):
         # os specific plug
         return True

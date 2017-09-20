@@ -8,18 +8,14 @@ class Prov(provisioning.Prov):
     def __init__(self, r):
         provisioning.Prov.__init__(self, r)
 
+    def is_provisioned(self):
+        if which("mdadm") is None:
+            return
+        return self.r.has_it()
+
     def provisioner(self):
         if which("mdadm") is None:
             raise ex.excError("mdadm is not installed")
-        self.provisioner_md()
-        self.r.log.info("provisioned")
-        self.r.start()
-        return True
-
-    def provisioner_md(self):
-        if self.r.has_it():
-            self.r.log.info("already provisioned")
-            return
         try:
             level = self.r.svc.conf_get(self.r.rid, "level")
         except:
@@ -67,6 +63,7 @@ class Prov(provisioning.Prov):
         self.r.uuid = os.path.basename(name)
         uuid = self.get_real_uuid(name)
         self.r.uuid = uuid
+        self.r.log.info("set %s.uuid = %s", self.r.rid, uuid)
         self.r.svc._set(self.r.rid, "uuid", uuid)
 
     def get_real_uuid(self, name):
@@ -80,9 +77,8 @@ class Prov(provisioning.Prov):
     def unprovisioner(self):
         if self.r.uuid == "":
             return
-        self.r.stop()
         for dev in self.r.sub_devs():
             self.r.vcall([self.r.mdadm, "--brief", "--zero-superblock", dev])
-        self.r.svc._unset(self.r.rid, "uuid")
+        self.r.log.info("reset %s.uuid", self.r.rid)
         self.r.svc._set(self.r.rid, "uuid", "")
 

@@ -41,6 +41,12 @@ class Prov(provisioning.Prov):
         else:
             self.zonepath = None
 
+    def stop(self):
+        self.r._stop()
+
+    def start(self):
+        pass
+
     def sysid_network(self):
         """
          network_interface=l226z1 {primary
@@ -341,15 +347,7 @@ class Prov(provisioning.Prov):
         snapshot = source_ds.snapshot(zonename)
         snapshot.clone(self.clone, ['-o', 'mountpoint=' + self.r.zonepath])
 
-    def provisioner(self):
-        if not 'noaction' in self.r.tags:
-            self._provisioner()
-        self.r.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.r.name]))
-        self.r.svc.sub_set_action("disk.zpool", "provision", tags=set([self.r.name]))
-        self.r.svc.sub_set_action("disk.raw", "provision", tags=set([self.r.name]))
-        self.r.svc.sub_set_action("fs", "provision", tags=set([self.r.name]))
-
-    def _provisioner(self, need_boot=True):
+    def provisioner(self, need_boot=True):
         """provision zone
         - configure zone
         - if snapof and zone brand is native

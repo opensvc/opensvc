@@ -2,17 +2,20 @@ class Prov(object):
     def __init__(self, r):
         self.r = r
 
-    def validate(self):
-        return True
+    def start(self):
+        self.r.start()
+
+    def stop(self):
+        self.r.stop()
 
     def is_provisioned(self):
         return
 
     def unprovisioner(self):
-        self.r.stop()
+        pass
 
     def provisioner(self):
-        self.r.start()
+        pass
 
     def remove_keywords(self, keywords=[]):
         for kw in keywords:

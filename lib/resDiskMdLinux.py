@@ -171,15 +171,7 @@ class Disk(resDisk.Disk):
     def has_it(self):
         if self.uuid == "":
             return False
-        state = self.detail_status().split(", ")[0]
-        states = (
-          "clean",
-          "active",
-          "inactive",
-        )
-        if state in states:
-            return True
-        return False
+        return self.uuid in self.mdadm_scan_v()[0]
 
     def is_up(self):
         if not self.has_it():
@@ -190,9 +182,9 @@ class Disk(resDisk.Disk):
         if state in ("inactive"):
             self.status_log(state, "warn")
             return True
-        if state != "devpath does not exist":
+        if state not in ("devpath does not exist", "unable to find a devpath for md"):
             self.status_log(state)
-        return True
+        return False
 
     def _status(self, verbose=False):
         s = resDisk.Disk._status(self, verbose=verbose)
@@ -201,7 +193,7 @@ class Disk(resDisk.Disk):
         return s
 
     def do_start(self):
-        if self.has_it():
+        if self.is_up():
             self.log.info("md %s is already assembled" % self.uuid)
             return 0
         self.can_rollback = True
@@ -209,7 +201,7 @@ class Disk(resDisk.Disk):
         self._create_static_name()
 
     def do_stop(self):
-        if not self.has_it():
+        if not self.is_up():
             self.log.info("md %s is already down" % self.uuid)
             return
         self.manage_stop()
