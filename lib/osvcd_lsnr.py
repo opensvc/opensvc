@@ -319,6 +319,45 @@ class Listener(shared.OsvcThread, Crypt):
                     result["data"][section][key] = val
         return result
 
+    def action_node_action(self, nodename, **kwargs):
+        """
+        Execute a nodemgr command on behalf of a peer node.
+        kwargs:
+        * cmd: list
+        * sync: boolean
+        """
+        sync = kwargs.get("sync", True)
+        cmd = kwargs.get("cmd")
+        if cmd is None or len(cmd) == 0:
+            self.log.error("node %s requested a peer node action without "
+                           "specifying the command", nodename)
+            return {
+                "status": 1,
+            }
+
+        cmd = drop_option("--node", cmd, drop_value=True)
+        cmd = drop_option("--daemon", cmd)
+        cmd = [rcEnv.paths.nodemgr] + cmd + ["--local"]
+        self.log.info("execute node action requested by node %s: %s",
+                      nodename, " ".join(cmd))
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
+        if sync:
+            out, err = proc.communicate()
+            result = {
+                "status": 0,
+                "data": {
+                    "out": bdecode(out),
+                    "err": bdecode(err),
+                    "ret": proc.returncode,
+                },
+            }
+        else:
+            self.push_proc(proc)
+            result = {
+                "status": 0,
+            }
+        return result
+
     def action_service_action(self, nodename, **kwargs):
         """
         Execute a CRM command on behalf of a peer node.

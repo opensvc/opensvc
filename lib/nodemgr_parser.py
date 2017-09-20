@@ -289,13 +289,13 @@ ACTIONS = {
             'msg': 'freeze services node-wide, preventing the daemon to '
                    'orchestrate them. this freeze method preserves the '
                    'frozen state at service-level (with svcmgr).',
-            'options': ASYNC_OPTS,
+            'options': ASYNC_OPTS + DAEMON_OPTS,
         },
         'thaw': {
             'msg': 'thaw services node-wide, allowing the daemon to '
                    'orchestrate them. this thaw method does not actually '
                    'thaw services frozen at service-level (with svcmgr).',
-            'options': ASYNC_OPTS,
+            'options': ASYNC_OPTS + DAEMON_OPTS,
         },
         'logs': {
             'msg': 'fancy display of the node logs',

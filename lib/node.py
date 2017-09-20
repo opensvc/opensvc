@@ -37,7 +37,8 @@ from rcScheduler import scheduler_fork, Scheduler, SchedOpts
 from rcConfigParser import RawConfigParser
 from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
-                        call, which, purge_cache, read_cf, unset_lazy
+                        call, which, purge_cache, read_cf, unset_lazy, \
+                        drop_option
 from converters import convert_duration
 from comm import Crypt
 
@@ -56,6 +57,11 @@ REVERSE_DEPRECATED_KEYWORDS = {
     "node.asset_env": ["environnement", "environment"],
     "node.env": ["host_mode"],
 }
+
+REMOTE_ACTIONS = [
+    "freeze",
+    "thaw",
+]
 
 ACTIONS_NO_PARALLEL = [
     "edit_config",
@@ -3184,6 +3190,11 @@ class Node(Crypt):
         """
         self.freezer.node_thaw()
 
+    def prepare_async_cmd(self):
+        cmd = sys.argv[1:]
+        cmd = drop_option("--node", cmd, drop_value=True)
+        return cmd
+
     def async_action(self, action, timeout=None, wait=None):
         """
         Set the daemon global expected state if the action can be handled
@@ -3194,6 +3205,14 @@ class Node(Crypt):
         if timeout is None:
             timeout = self.options.time
         timeout = convert_duration(timeout)
+        if self.options.node is not None and self.options.node != "" and \
+           action in REMOTE_ACTIONS:
+            cmd = self.prepare_async_cmd()
+            ret = self.daemon_node_action(cmd)
+            if ret == 0:
+                raise ex.excAbortAction()
+            else:
+                raise ex.excError()
         states = {
             "freeze": "frozen",
             "thaw": "thawed",
@@ -3839,6 +3858,43 @@ class Node(Crypt):
                 raise ex.excError("set monitor status failed")
         except Exception as exc:
             raise ex.excError("set monitor status failed: %s" % str(exc))
+
+    def daemon_node_action(self, cmd, nodename=None, sync=True):
+        """
+        Execute a node action on a peer node.
+        If sync is set, wait for the action result.
+        """
+        if nodename is None:
+            nodename = self.options.node
+        options = {
+            "cmd": cmd,
+            "sync": sync,
+        }
+        self.log.info("request node action '%s' on node %s", " ".join(cmd), nodename)
+        try:
+            data = self.daemon_send(
+                {"action": "node_action", "options": options},
+                nodename=nodename,
+                silent=True,
+            )
+        except Exception as exc:
+            self.log.error("node action on node %s failed: %s",
+                           nodename, exc)
+            return 1
+        if data is None or data["status"] != 0:
+            self.log.error("node action on node %s failed",
+                           nodename)
+            return 1
+        if "data" not in data:
+            return 0
+        data = data["data"]
+        if data.get("out") and len(data["out"]) > 0:
+            for line in data["out"].splitlines():
+               print(line)
+        if data.get("err") and len(data["err"]) > 0:
+            for line in data["err"].splitlines():
+               print(line, file=sys.stderr)
+        return data["ret"]
 
 
 

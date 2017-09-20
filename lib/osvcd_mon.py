@@ -995,16 +995,29 @@ class Monitor(shared.OsvcThread, Crypt):
             else:
                 shared.SMON_DATA[svcname].restart[rid] += 1
 
+    def all_nodes_frozen(self):
+        with shared.CLUSTER_DATA_LOCK:
+             for data in shared.CLUSTER_DATA.values():
+                 if not data["frozen"]:
+                     return False
+        return True
+
+    def all_nodes_thawed(self):
+        with shared.CLUSTER_DATA_LOCK:
+             for data in shared.CLUSTER_DATA.values():
+                 if data["frozen"]:
+                     return False
+        return True
+
     def set_nmon_g_expect_from_status(self):
         nmon = self.get_node_monitor()
         if nmon.global_expect is None:
             return
-        local_frozen = self.freezer.node_frozen()
-        if nmon.global_expect == "frozen" and local_frozen:
+        if nmon.global_expect == "frozen" and self.all_nodes_frozen():
             self.log.info("node global expect is %s and is frozen",
                           nmon.global_expect)
             self.set_nmon(global_expect="unset")
-        elif nmon.global_expect == "thawed" and not local_frozen:
+        elif nmon.global_expect == "thawed" and self.all_nodes_thawed():
             self.log.info("node global expect is %s and is thawed",
                           nmon.global_expect)
             self.set_nmon(global_expect="unset")
