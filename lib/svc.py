@@ -2806,6 +2806,8 @@ class Svc(Crypt):
         self.sub_set_action("fs", "provision", xtags=set(['zone']))
         self.sub_set_action("container", "provision")
         self.sub_set_action("app", "provision")
+        # return the service to stbdy
+        self.stop()
         self.push()
 
     def startapp(self):
