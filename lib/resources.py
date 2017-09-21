@@ -971,7 +971,7 @@ class Resource(object):
             self.log.info("%s already provisioned", self.label)
         else:
             self.prov.provisioner()
-            self.write_is_provisioned_flag(True)
+        self.write_is_provisioned_flag(True)
 
     def unprovision(self):
         self.prov.stop()
@@ -991,7 +991,7 @@ class Resource(object):
             self.log.info("%s already unprovisioned", self.label)
         else:
             self.prov.unprovisioner()
-            self.write_is_provisioned_flag(False)
+        self.write_is_provisioned_flag(False)
 
     def is_provisioned(self):
         if self.prov is None:
