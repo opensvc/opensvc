@@ -440,6 +440,7 @@ class Resource(object):
         if self.rstatus is None or self.svc.options.refresh or refresh:
             self.status_logs = []
             self.rstatus = self.try_status(verbose)
+            self.rstatus = self.status_stdby(self.rstatus)
             self.log.debug("refresh status: %s => %s",
                            rcStatus.Status(last_status),
                            rcStatus.Status(self.rstatus))

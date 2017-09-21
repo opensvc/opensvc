@@ -226,9 +226,9 @@ class Container(Res.Resource):
             self.status_log("insufficient node capabilities")
             return rcStatus.WARN
         if self.is_up():
-            return self.status_stdby(rcStatus.UP)
+            return rcStatus.UP
         if self.is_down():
-            return self.status_stdby(rcStatus.DOWN)
+            return rcStatus.DOWN
         else:
             self.status_log("container status is neither up nor down")
             return rcStatus.WARN

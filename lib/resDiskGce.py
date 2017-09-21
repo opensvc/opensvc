@@ -92,16 +92,12 @@ class Disk(resDisk.Disk, rcGce.Gce):
         n = len(l)
         unattached = sorted(list(set(self.names) - set(l)))
         if n == len(self.names):
-            if rcEnv.nodename in self.always_on:
-                return rcStatus.STDBY_UP
             return rcStatus.UP
         elif n == 0:
-            if rcEnv.nodename in self.always_on:
-                return rcStatus.STDBY_DOWN
             return rcStatus.DOWN
         else:
             self.status_log("unattached: "+", ".join(unattached))
-            return rcStatus.WARN
+            return rcStatus.DOWN
 
     def detach_other(self, name):
         existing = self.get_disks()

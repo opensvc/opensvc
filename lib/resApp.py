@@ -355,9 +355,9 @@ class App(Resource):
             return rcStatus.NA
 
         if ret == 0:
-            return self.status_stdby(rcStatus.UP)
+            return rcStatus.UP
         elif ret == 1:
-            return self.status_stdby(rcStatus.DOWN)
+            return rcStatus.DOWN
 
         self.status_log("check reports errors (%d)" % ret)
         return rcStatus.WARN

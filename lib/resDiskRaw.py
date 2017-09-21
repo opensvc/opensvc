@@ -304,9 +304,9 @@ class Disk(resDisk.Disk):
         if not self.create_char_devices and len(self.devs_map) == 0:
             return rcStatus.NA
         if r:
-            return self.status_stdby(rcStatus.UP)
+            return rcStatus.UP
         else:
-            return self.status_stdby(rcStatus.DOWN)
+            return rcStatus.DOWN
 
     def do_start(self):
         self.validate_devs()

@@ -156,9 +156,9 @@ class Mount(Res.Resource):
             if self.need_check_writable() and not self.check_writable():
                 self.status_log("fs is not writable")
                 return rcStatus.WARN
-            return self.status_stdby(rcStatus.UP)
+            return rcStatus.UP
         else:
-            return self.status_stdby(rcStatus.DOWN)
+            return rcStatus.DOWN
 
     def sub_devs(self):
         pseudofs = [

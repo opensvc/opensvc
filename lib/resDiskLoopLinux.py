@@ -66,8 +66,10 @@ class Disk(Res.Disk):
         if not os.path.exists(self.loopFile):
             if r is None or (r and r.status() in (rcStatus.UP, rcStatus.STDBY_UP)):
                 self.status_log("%s does not exist" % self.loopFile)
-        if self.is_up(): return self.status_stdby(rcStatus.UP)
-        else: return self.status_stdby(rcStatus.DOWN)
+        if self.is_up():
+            return rcStatus.UP
+        else:
+            return rcStatus.DOWN
 
     def __init__(self, rid, loopFile, **kwargs):
         Res.Disk.__init__(self, rid, loopFile, **kwargs)

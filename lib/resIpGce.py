@@ -176,16 +176,10 @@ class Ip(resIp.Ip, rcGce.Gce):
             gce_status = False
 
         s = local_status & gce_status
-        if rcEnv.nodename in self.always_on:
-            if s:
-                return rcStatus.STDBY_UP
-            else:
-                return rcStatus.STDBY_DOWN
+        if s:
+            return rcStatus.UP
         else:
-            if s:
-                return rcStatus.UP
-            else:
-                return rcStatus.DOWN
+            return rcStatus.DOWN
 
     def check_ping(self, count=1, timeout=5):
         pass

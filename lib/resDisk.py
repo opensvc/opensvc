@@ -33,10 +33,9 @@ class Disk(Res.Resource):
 
     def _status(self, verbose=False):
         if self.is_up():
-            state = rcStatus.UP
+            return rcStatus.UP
         else:
-            state = rcStatus.DOWN
-        return self.status_stdby(state)
+            return rcStatus.DOWN
 
     def create_static_name(self, dev, suffix="0"):
         d = self.create_dev_dir()

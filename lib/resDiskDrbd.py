@@ -192,9 +192,9 @@ class Drbd(Res.Resource):
             return rcStatus.WARN
         out = out.strip()
         if out == "UpToDate/UpToDate":
-            return self.status_stdby(rcStatus.UP)
+            return rcStatus.UP
         elif out == "Unconfigured":
-            return self.status_stdby(rcStatus.DOWN)
+            return rcStatus.DOWN
         self.status_log("unexpected drbd resource %s state: %s"%(self.res, out))
         return rcStatus.WARN
 

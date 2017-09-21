@@ -159,16 +159,12 @@ class Disk(resDisk.Disk, Amazon):
         n = len(l)
         unmapped = sorted(list(set(self.volumes) - set(l)))
         if n == len(self.volumes):
-            if rcEnv.nodename in self.always_on:
-                return rcStatus.STDBY_UP
             return rcStatus.UP
         elif n == 0:
-            if rcEnv.nodename in self.always_on:
-                return rcStatus.STDBY_DOWN
             return rcStatus.DOWN
         else:
             self.status_log("unattached: "+", ".join(unmapped))
-            return rcStatus.WARN
+            return rcStatus.DOWN
 
     def get_dev_prefix(self):
         if self.dev_prefix is not None:

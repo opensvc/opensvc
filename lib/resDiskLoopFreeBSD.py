@@ -66,9 +66,9 @@ class Disk(Res.Disk):
 
     def _status(self, verbose=False):
         if self.is_up():
-            return self.status_stdby(rcStatus.UP)
+            return rcStatus.UP
         else:
-            return self.status_stdby(rcStatus.DOWN)
+            return rcStatus.DOWN
 
     def __init__(self, rid, loopFile, **kwargs):
         Res.Disk.__init__(self, rid, loopFile, **kwargs)

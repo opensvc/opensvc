@@ -109,16 +109,12 @@ class Disk(resDisk.Disk):
         n = len(l)
         unmapped = sorted(list(set(self.images) - set(l)))
         if n == len(self.images):
-            if rcEnv.nodename in self.always_on:
-                return rcStatus.STDBY_UP
             return rcStatus.UP
         elif n == 0:
-            if rcEnv.nodename in self.always_on:
-                return rcStatus.STDBY_DOWN
             return rcStatus.DOWN
         else:
             self.status_log("unmapped: "+", ".join(unmapped))
-            return rcStatus.WARN
+            return rcStatus.DOWN
 
     def devname(self, image):
         return os.path.join(os.sep, "dev", "rbd", image)
@@ -243,16 +239,12 @@ class DiskLock(Disk):
     def _status(self, verbose=False):
         n = self.up_count()
         if n == len(self.images):
-            if rcEnv.nodename in self.always_on:
-                return rcStatus.STDBY_UP
             return rcStatus.UP
         elif n == 0:
-            if rcEnv.nodename in self.always_on:
-                return rcStatus.STDBY_DOWN
             return rcStatus.DOWN
         else:
             self.status_log("unlocked: "+", ".join(self.unlocked))
-            return rcStatus.WARN
+            return rcStatus.DOWN
 
     def do_stop_one(self, image):
         data = self.locklist(image)

@@ -188,7 +188,7 @@ class Disk(resDisk.Disk):
 
     def _status(self, verbose=False):
         s = resDisk.Disk._status(self, verbose=verbose)
-        if s in (rcStatus.STDBY_DOWN, rcStatus.DOWN):
+        if s == rcStatus.DOWN:
              self.down_state_alerts()
         return s
 

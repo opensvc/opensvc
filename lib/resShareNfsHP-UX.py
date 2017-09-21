@@ -81,12 +81,10 @@ class Share(Resource):
         if len(self.issues) > 0:
             self.status_log(self.issues)
             return rcStatus.WARN
-        if rcEnv.nodename in self.always_on:
-            if up: return rcStatus.STDBY_UP
-            else: return rcStatus.STDBY_DOWN
+        if up:
+            return rcStatus.UP
         else:
-            if up: return rcStatus.UP
-            else: return rcStatus.DOWN
+            return rcStatus.DOWN
 
     def parse_opts(self, opts):
         o = sorted(opts.split(','))

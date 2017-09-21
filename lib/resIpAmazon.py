@@ -73,16 +73,10 @@ class Ip(resIp.Ip, Amazon):
         except ex.excError as e:
             self.status_log(str(e))
             return rcStatus.WARN
-        if rcEnv.nodename in self.always_on:
-            if s:
-                return rcStatus.STDBY_UP
-            else:
-                return rcStatus.STDBY_DOWN
+        if s:
+            return rcStatus.UP
         else:
-            if s:
-                return rcStatus.UP
-            else:
-                return rcStatus.DOWN
+            return rcStatus.DOWN
 
     def check_ping(self, count=1, timeout=5):
         pass

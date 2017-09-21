@@ -126,9 +126,9 @@ class Ip(Res.Resource):
             return rcStatus.DOWN
         try:
             if self.is_up():
-                return self.status_stdby(rcStatus.UP)
+                return rcStatus.UP
             else:
-                return self.status_stdby(rcStatus.DOWN)
+                return rcStatus.DOWN
         except ex.excNotSupported:
             self.status_log("not supported")
             return rcStatus.UNDEF
