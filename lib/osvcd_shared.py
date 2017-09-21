@@ -489,6 +489,7 @@ class OsvcThread(threading.Thread):
         * we have valid service instance data (not unknown)
         * the node is not frozen
         * the service is not frozen
+        * the service instance is provisioned
         * the service instance constraints are eval'ed True
         """
         candidates = []
@@ -503,6 +504,8 @@ class OsvcThread(threading.Thread):
                 if instance is None:
                     continue
                 if instance.frozen:
+                    continue
+                if instance.provisioned is False:
                     continue
                 constraints = instance.get("constraints", True)
                 if not constraints:
