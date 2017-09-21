@@ -20,6 +20,9 @@ class Prov(provisioning.Prov):
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
+        self.r.clear_cache("vg.lvs")
+        self.r.clear_cache("vg.lvs.attr")
+        self.r.clear_cache("vg.tags")
 
     def provisioner(self):
         try:
