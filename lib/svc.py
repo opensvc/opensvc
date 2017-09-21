@@ -2807,7 +2807,7 @@ class Svc(Crypt):
         self.sub_set_action("container", "provision")
         self.sub_set_action("app", "provision")
         # return the service to stbdy
-        self.stop()
+        self.rollback()
         self.push()
 
     def startapp(self):

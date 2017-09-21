@@ -754,7 +754,7 @@ class Resource(object):
         Executes a resource stop if the resource start has marked the resource
         as rollbackable.
         """
-        if self.can_rollback:
+        if self.can_rollback and rcEnv.nodename not in self.always_on:
             self.stop()
 
     def stop(self):
