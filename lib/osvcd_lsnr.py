@@ -375,6 +375,13 @@ class Listener(shared.OsvcThread, Crypt):
                 "status": 1,
             }
         cmd = kwargs.get("cmd")
+        if self.get_service(svcname) is None and "create" not in cmd:
+            self.log.warning("discard service action '%s' on a service "
+                             "not installed: %s", " ".join(cmd), svcname)
+            return {
+                "err": "service not found",
+                "status": 1,
+            }
         if cmd is None or len(cmd) == 0:
             self.log.error("node %s requested a service action without "
                            "specifying the command", nodename)
@@ -384,7 +391,9 @@ class Listener(shared.OsvcThread, Crypt):
 
         cmd = drop_option("--node", cmd, drop_value=True)
         cmd = drop_option("--daemon", cmd)
-        cmd = [rcEnv.paths.svcmgr, "-s", svcname] + cmd + ["--local"]
+        if "--local" not in cmd:
+            cmd.append("--local")
+        cmd = [rcEnv.paths.svcmgr, "-s", svcname] + cmd
         self.log.info("execute service action requested by node %s: %s",
                       nodename, " ".join(cmd))
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)

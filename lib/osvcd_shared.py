@@ -239,6 +239,13 @@ class OsvcThread(threading.Thread):
             getattr(self, "reconfigure")()
 
     @staticmethod
+    def get_service(svcname):
+        with SERVICES_LOCK:
+            if svcname not in SERVICES:
+                return
+        return SERVICES[svcname]
+
+    @staticmethod
     def get_services_nodenames():
         """
         Return the services nodes and drpnodes name, fetching the information

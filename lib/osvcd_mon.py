@@ -611,13 +611,6 @@ class Monitor(shared.OsvcThread, Crypt):
             if instance["monitor"]["status"] == "ready":
                 return nodename
 
-    @staticmethod
-    def get_service(svcname):
-        with shared.SERVICES_LOCK:
-            if svcname not in shared.SERVICES:
-                return
-        return shared.SERVICES[svcname]
-
     #########################################################################
     #
     # Cluster nodes aggregations
@@ -885,6 +878,13 @@ class Monitor(shared.OsvcThread, Crypt):
                 "cksum": cksum,
                 "scope": scope,
             }
+
+        # purge deleted services
+        with shared.SERVICES_LOCK:
+            for svcname in list(shared.SERVICES.keys()):
+                if svcname not in config:
+                    self.log.info("purge deleted service %s", svcname)
+                    del shared.SERVICES[svcname]
         return config
 
     def get_last_svc_status_mtime(self, svcname):
