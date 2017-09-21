@@ -381,6 +381,8 @@ class Monitor(shared.OsvcThread, Crypt):
         for rid, resource in resources.items():
             if resource["status"] not in ("down", "stdby down"):
                 continue
+            if resource.get("provisioned", {}).get("state") is False:
+                continue
             rids += monitored_resource(svc, rid, resource)
             rids += stdby_resource(svc, rid)
 
