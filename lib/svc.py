@@ -944,7 +944,9 @@ class Svc(Crypt):
         except:
             pass
 
-    def validate_mon_action(self):
+    def validate_mon_action(self, action):
+        if action in ("freeze"):
+            return
         if self.options.local:
             return
         data = self.get_smon_data()
@@ -2393,7 +2395,7 @@ class Svc(Crypt):
         raise ex.excAbortAction()
 
     def daemon_mon_action(self, action, wait=None, timeout=None):
-        self.validate_mon_action()
+        self.validate_mon_action(action)
         self.set_service_monitor(global_expect=ACTION_TGT_STATE[action])
         self.log.info("%s action requested", action)
         if wait is None:
