@@ -660,6 +660,17 @@ class Svc(Crypt):
                 dependency_of.add(_rid)
         return dependency_of
 
+    def resource_handling_dir(self, path):
+        mntpts = {}
+        for res in self.get_resources(["fs"]):
+            mntpts[res.mount_point] = res
+        while True:
+            if path in mntpts.keys():
+                return mntpts[path]
+            path = os.path.dirname(path)
+            if path == os.sep:
+                return
+
     def print_schedule(self):
         """
         The 'print schedule' node and service action entrypoint.

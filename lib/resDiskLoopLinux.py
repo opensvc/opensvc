@@ -49,20 +49,12 @@ class Disk(Res.Disk):
             if ret != 0:
                 raise ex.excError
 
-    def parent_dir_handled_by_service(self):
-        d = os.path.dirname(self.loopFile)
-        mntpts = {}
-        for r in self.svc.get_resources(["fs"]):
-            mntpts[r.mount_point] = r
-        while True:
-            if d in mntpts.keys():
-                return mntpts[d]
-            d = os.path.dirname(d)
-            if d == os.sep:
-                return
+    def resource_handling_file(self):
+        path = os.path.dirname(self.loopFile)
+        return self.svc.resource_handling_dir(path)
 
     def _status(self, verbose=False):
-        r = self.parent_dir_handled_by_service()
+        r = self.resource_handling_file()
         if not os.path.exists(self.loopFile):
             if r is None or (r and r.status() in (rcStatus.UP, rcStatus.STDBY_UP)):
                 self.status_log("%s does not exist" % self.loopFile)

@@ -3,7 +3,7 @@ import os
 import rcExceptions as ex
 import rcStatus
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_string
+from rcUtilities import is_string, lazy
 import pwd
 import grp
 import stat
@@ -98,6 +98,10 @@ class FsDir(Res.Resource):
             return False
         return True
 
+    @lazy
+    def parent_dir(self):
+        return os.path.realpath(os.path.join(self.path, ".."))
+
     def _status(self, verbose=False):
         if not os.path.exists(self.path):
             self.log.debug("dir %s does not exist" % self.path)
@@ -105,10 +109,15 @@ class FsDir(Res.Resource):
         self.check_uid()
         self.check_gid()
         self.check_perm()
+        parent = self.svc.resource_handling_dir(self.parent_dir)
         if self.status_logs_count(["warn", "error"]) > 0:
             return rcStatus.WARN
-        else:
+        elif parent is None:
             return rcStatus.NA
+        elif parent.status() in (rcStatus.UP, rcStatus.STDBY_UP):
+            return rcStatus.UP
+        else:
+            return rcStatus.DOWN
 
     def __str__(self):
         return "%s path=%s user=%s group=%s perm=%s" % (Res.Resource.__str__(self),\
