@@ -140,6 +140,7 @@ def forest(data, columns=1, separator="  ", widths=None):
         #print("n_oversize:", n_oversize)
         #print("remaining_width:", remaining_width)
         #print("pads:", pads)
+        pads[-1] = 0
         return pads
 
     def format_prefix(lasts, n_children, subnode_idx):
