@@ -944,6 +944,13 @@ def clear_cache(sig, o=None):
     lock.unlock(lfd)
 
 def purge_cache():
+    cache_d = get_cache_d()
+    try:
+        shutil.rmtree(d)
+    except:
+        pass
+
+def purge_cache_expired():
     import time
     import shutil
     cache_d = os.path.join(rcEnv.paths.pathvar, "cache")

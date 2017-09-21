@@ -37,7 +37,7 @@ from rcScheduler import scheduler_fork, Scheduler, SchedOpts
 from rcConfigParser import RawConfigParser
 from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
-                        call, which, purge_cache, read_cf, unset_lazy, \
+                        call, which, purge_cache_expired, read_cf, unset_lazy, \
                         drop_option
 from converters import convert_duration
 from comm import Crypt
@@ -926,7 +926,7 @@ class Node(Crypt):
         schedulers node action entrypoint.
         Run the node scheduler and each configured service scheduler.
         """
-        purge_cache()
+        purge_cache_expired()
         self.scheduler()
 
         self.build_services()
@@ -2625,7 +2625,7 @@ class Node(Crypt):
         need_aggregate = self.action_need_aggregate(action, options)
 
         # generic cache janitoring
-        purge_cache()
+        purge_cache_expired()
         self.log.debug("session uuid: %s", rcEnv.session_uuid)
 
         if action in ACTIONS_NO_MULTIPLE_SERVICES and len(self.svcs) > 1:

@@ -17,7 +17,7 @@ from subprocess import Popen, PIPE
 import osvcd_shared as shared
 from comm import Crypt
 from rcGlobalEnv import rcEnv, Storage
-from rcUtilities import bdecode
+from rcUtilities import bdecode, purge_cache
 from svcBuilder import build, fix_app_link, fix_exe_link
 
 MON_WAIT_READY = datetime.timedelta(seconds=16)
@@ -916,6 +916,7 @@ class Monitor(shared.OsvcThread, Crypt):
 
         Also update the monitor 'local_expect' field for each service.
         """
+        purge_cache()
         with shared.CLUSTER_DATA_LOCK:
             try:
                 data = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"]
