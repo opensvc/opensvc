@@ -268,10 +268,16 @@ class App(Resource):
             cmd = self.get_cmd("stop")
         except ex.excAbortAction:
             return
+        except ex.excError as exc:
+            if "does not exist" in str(exc):
+                return
+            raise
 
-        if self.status() == rcStatus.DOWN:
+        status = self.status()
+        if status == rcStatus.DOWN:
             self.log.info("%s is already stopped", self.label)
             return
+
         try:
             self.run("stop", cmd)
         except Exception as exc:
