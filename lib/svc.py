@@ -51,6 +51,8 @@ ACTION_TGT_STATE = {
     "stop": "stopped",
     "freeze": "frozen",
     "thaw": "thawed",
+    "provision": "provisioned",
+    "unprovision": "unprovisioned",
 }
 
 DEFAULT_STATUS_GROUPS = [
