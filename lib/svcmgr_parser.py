@@ -477,12 +477,12 @@ ACTIONS = {
         },
         'provision': {
             'msg': 'provision and start the service',
-            'options': ACTION_OPTS + START_ACTION_OPTS,
+            'options': ASYNC_ACTION_OPTS + ACTION_OPTS + START_ACTION_OPTS,
         },
         'unprovision': {
             'msg': 'stop and unprovision the service. beware: data will be '
                    'lost upon fs and disk unprovisioning.',
-            'options': ACTION_OPTS,
+            'options': ASYNC_ACTION_OPTS + ACTION_OPTS,
         },
         'disable': {
             'msg': 'disable resources passed through --rid in services passed'
