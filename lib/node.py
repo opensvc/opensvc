@@ -3376,8 +3376,8 @@ class Node(Crypt):
                     val.append(overall_icon)
                     val.append(leader)
                     val.append(frozen_icon)
-                    val.append(smon)
                     val.append(provisioned)
+                    val.append(smon)
                     line.append("".join(val))
                 elif nodename not in nodes | drpnodes:
                     line.append("")
