@@ -182,6 +182,10 @@ class Monitor(shared.OsvcThread, Crypt):
     # Node and Service Commands
     #
     #########################################################################
+    def generic_callback(self, svcname, status, local_expect):
+        self.set_smon(svcname, status, local_expect)
+        self.update_hb_data()
+
     def service_start_resources(self, svcname, rids):
         self.set_smon(svcname, "restarting")
         proc = self.service_command(svcname, ["start", "--rid", ",".join(rids)])
@@ -189,13 +193,8 @@ class Monitor(shared.OsvcThread, Crypt):
             proc=proc,
             on_success="service_start_resources_on_success",
             on_success_args=[svcname, rids],
-            on_error="service_start_resources_on_error",
-            on_error_args=[svcname, rids],
+            on_error="generic_callback", on_error_args=[svcname, "idle", None],
         )
-
-    def service_start_resources_on_error(self, svcname, rids):
-        self.set_smon(svcname, status="idle", local_expect="started")
-        self.update_hb_data()
 
     def service_start_resources_on_success(self, svcname, rids):
         self.set_smon(svcname, status="idle", local_expect="started")
@@ -203,148 +202,76 @@ class Monitor(shared.OsvcThread, Crypt):
             self.reset_smon_retries(svcname, rid)
         self.update_hb_data()
 
-    #
     def service_toc(self, svcname):
         proc = self.service_command(svcname, ["toc"])
         self.push_proc(
             proc=proc,
-            on_success="service_toc_on_success", on_success_args=[svcname],
-            on_error="service_toc_on_error", on_error_args=[svcname],
+            on_success="generic_callback", on_success_args=[svcname, "idle", None],
+            on_error="generic_callback", on_error_args=[svcname, "idle", None],
         )
 
-    def service_toc_on_error(self, svcname):
-        self.set_smon(svcname, "idle")
-        self.update_hb_data()
-
-    def service_toc_on_success(self, svcname):
-        self.set_smon(svcname, status="idle")
-        self.update_hb_data()
-
-    #
     def service_start(self, svcname):
         self.set_smon(svcname, "starting")
         proc = self.service_command(svcname, ["start"])
         self.push_proc(
             proc=proc,
-            on_success="service_start_on_success", on_success_args=[svcname],
-            on_error="service_start_on_error", on_error_args=[svcname],
+            on_success="generic_callback", on_success_args=[svcname, "idle", "started"],
+            on_error="generic_callback", on_error_args=[svcname, "start failed", None],
         )
 
-    def service_start_on_error(self, svcname):
-        self.set_smon(svcname, "start failed")
-        self.update_hb_data()
-
-    def service_start_on_success(self, svcname):
-        self.set_smon(svcname, status="idle", local_expect="started")
-        self.update_hb_data()
-
-    #
     def service_stop(self, svcname):
         self.set_smon(svcname, "stopping")
         proc = self.service_command(svcname, ["stop"])
         self.push_proc(
             proc=proc,
-            on_success="service_stop_on_success", on_success_args=[svcname],
-            on_error="service_stop_on_error", on_error_args=[svcname],
+            on_success="generic_callback", on_success_args=[svcname, "idle", "unset"],
+            on_error="generic_callback", on_error_args=[svcname, "stop failed", None],
         )
 
-    def service_stop_on_error(self, svcname):
-        self.set_smon(svcname, "stop failed")
-        self.update_hb_data()
-
-    def service_stop_on_success(self, svcname):
-        self.set_smon(svcname, status="idle", local_expect="unset")
-        self.update_hb_data()
-
-    #
     def service_shutdown(self, svcname):
         self.set_smon(svcname, "shutdown")
         proc = self.service_command(svcname, ["shutdown"])
         self.push_proc(
             proc=proc,
-            on_success="service_shutdown_on_success", on_success_args=[svcname],
-            on_error="service_shutdown_on_error", on_error_args=[svcname],
+            on_success="generic_callback", on_success_args=[svcname, "idle", "unset"],
+            on_error="generic_callback", on_error_args=[svcname, "idle", None],
         )
 
-    def service_shutdown_on_error(self, svcname):
-        self.set_smon(svcname, "idle")
-        self.update_hb_data()
-
-    def service_shutdown_on_success(self, svcname):
-        self.set_smon(svcname, status="idle", local_expect="unset")
-        self.update_hb_data()
-
-    #
     def service_provision(self, svcname):
         self.set_smon(svcname, "provisioning")
         proc = self.service_command(svcname, ["provision"])
         self.push_proc(
             proc=proc,
-            on_success="service_provision_on_success", on_success_args=[svcname],
-            on_error="service_provision_on_error", on_error_args=[svcname],
+            on_success="generic_callback", on_success_args=[svcname, "idle", None],
+            on_error="generic_callback", on_error_args=[svcname, "idle", None],
         )
 
-    def service_provision_on_error(self, svcname):
-        self.set_smon(svcname, "idle")
-        self.update_hb_data()
-
-    def service_provision_on_success(self, svcname):
-        self.set_smon(svcname, status="idle", local_expect="unset")
-        self.update_hb_data()
-
-    #
     def service_unprovision(self, svcname):
         self.set_smon(svcname, "unprovisioning", local_expect="unset")
         proc = self.service_command(svcname, ["unprovision"])
         self.push_proc(
             proc=proc,
-            on_success="service_unprovision_on_success", on_success_args=[svcname],
-            on_error="service_unprovision_on_error", on_error_args=[svcname],
+            on_success="generic_callback", on_success_args=[svcname, "idle", "unset"],
+            on_error="generic_callback", on_error_args=[svcname, "idle", None],
         )
 
-    def service_unprovision_on_error(self, svcname):
-        self.set_smon(svcname, "idle")
-        self.update_hb_data()
-
-    def service_unprovision_on_success(self, svcname):
-        self.set_smon(svcname, status="idle", local_expect="unset")
-        self.update_hb_data()
-
-    #
     def service_freeze(self, svcname):
         self.set_smon(svcname, "freezing")
         proc = self.service_command(svcname, ["freeze"])
         self.push_proc(
             proc=proc,
-            on_success="service_freeze_on_success", on_success_args=[svcname],
-            on_error="service_freeze_on_error", on_error_args=[svcname],
+            on_success="generic_callback", on_success_args=[svcname, "idle", None],
+            on_error="generic_callback", on_error_args=[svcname, "idle", None],
         )
 
-    def service_freeze_on_error(self, svcname):
-        self.set_smon(svcname, "idle")
-        self.update_hb_data()
-
-    def service_freeze_on_success(self, svcname):
-        self.set_smon(svcname, status="idle", local_expect="unset")
-        self.update_hb_data()
-
-    #
     def service_thaw(self, svcname):
         self.set_smon(svcname, "thawing")
         proc = self.service_command(svcname, ["thaw"])
         self.push_proc(
             proc=proc,
-            on_success="service_thaw_on_success", on_success_args=[svcname],
-            on_error="service_thaw_on_error", on_error_args=[svcname],
+            on_success="generic_callback", on_success_args=[svcname, "idle", None],
+            on_error="generic_callback", on_error_args=[svcname, "idle", None],
         )
-
-    def service_thaw_on_error(self, svcname):
-        self.set_smon(svcname, "idle")
-        self.update_hb_data()
-
-    def service_thaw_on_success(self, svcname):
-        self.set_smon(svcname, status="idle", local_expect="unset")
-        self.update_hb_data()
 
 
     #########################################################################
