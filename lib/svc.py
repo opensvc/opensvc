@@ -2414,7 +2414,8 @@ class Svc(Crypt):
         global_expect = ACTION_TGT_STATE[action]
         if action == "delete" and self.options.unprovision:
             global_expect = "purged"
-        self.set_service_monitor(global_expect=ACTION_TGT_STATE[action])
+            action = "purge"
+        self.set_service_monitor(global_expect=global_expect)
         self.log.info("%s action requested", action)
         if wait is None:
             wait = self.options.wait
@@ -2438,7 +2439,7 @@ class Svc(Crypt):
                     _data = data["monitor"]["nodes"][nodename]["services"]["status"][self.svcname]
                 except (KeyError, TypeError) as exc:
                     continue
-                if _data["monitor"].get("global_expect") in (ACTION_TGT_STATE[action], "n/a"):
+                if _data["monitor"].get("global_expect") in (global_expect, "n/a"):
                     global_expect_set.append(nodename)
             if prev_global_expect_set != global_expect_set:
                 for nodename in set(global_expect_set) - prev_global_expect_set:

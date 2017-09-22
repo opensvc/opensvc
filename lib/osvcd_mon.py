@@ -1327,6 +1327,8 @@ class Monitor(shared.OsvcThread, Crypt):
             else:
                 return False
         if global_expect == "purged":
+            deleted = self.get_agg_deleted(svcname)
+            provisioned = self.get_agg_provisioned(svcname)
             purged = self.get_agg_purged(provisioned, deleted)
             if purged is False:
                 return True
