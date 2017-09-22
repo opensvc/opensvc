@@ -814,9 +814,9 @@ class Monitor(shared.OsvcThread, Crypt):
             total += 1
             if instance["provisioned"]:
                 provisioned += 1
-        if provisioned == 0:
-            return False
-        elif provisioned == total:
+        if provisioned == total:
+            return True
+        elif provisioned == 0:
             return False
         return "mixed"
 
@@ -1217,6 +1217,10 @@ class Monitor(shared.OsvcThread, Crypt):
                     if global_expect is None:
                         continue
                     current_global_expect = instance["monitor"].get("global_expect")
+                    if global_expect == current_global_expect:
+                        self.log.info("node %s wants service %s %s, already targeting that",
+                                      nodename, svcname, global_expect)
+                        continue
                     local_avail = instance["avail"]
                     local_frozen = instance["frozen"]
                     status = self.get_agg_avail(svcname)
