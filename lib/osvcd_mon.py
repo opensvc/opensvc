@@ -732,22 +732,20 @@ class Monitor(shared.OsvcThread, Crypt):
         return ostatus
 
     def get_agg_frozen(self, svcname):
-        fstatus = "undef"
-        fstatus_l = []
-        n_instances = 0
+        frozen = 0
+        total = 0
         for instance in self.get_service_instances(svcname).values():
-            fstatus_l.append(instance["frozen"])
-            n_instances += 1
-        n_frozen = fstatus_l.count(True)
-        if n_instances == 0:
-            fstatus = 'n/a'
-        elif n_frozen == n_instances:
-            fstatus = 'frozen'
-        elif n_frozen == 0:
-            fstatus = 'thawed'
+            if instance["frozen"]:
+                frozen += 1
+            total += 1
+        if total == 0:
+            return "n/a"
+        elif frozen == total:
+            return "frozen"
+        elif frozen == 0:
+            return "thawed"
         else:
-            fstatus = 'mixed'
-        return fstatus
+            return "mixed"
 
     def get_agg_avail_failover(self, svc):
         astatus = 'undef'
@@ -1095,6 +1093,7 @@ class Monitor(shared.OsvcThread, Crypt):
             return
         instance = self.get_service_instance(svcname, rcEnv.nodename)
         local_frozen = instance["frozen"]
+        frozen = self.get_agg_frozen(svcname)
         provisioned = self.get_agg_provisioned(svcname)
         if smon.global_expect == "stopped" and status in STOPPED_STATES and \
            local_frozen:
@@ -1106,17 +1105,21 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.info("service %s global expect is %s and its global "
                           "status is %s", svcname, smon.global_expect, status)
             self.set_smon(svcname, global_expect="unset")
-        elif smon.global_expect == "frozen" and local_frozen:
+        elif smon.global_expect == "frozen" and frozen == "frozen":
             self.log.info("service %s global expect is %s and is frozen",
                           svcname, smon.global_expect)
             self.set_smon(svcname, global_expect="unset")
-        elif smon.global_expect == "thawed" and not local_frozen:
+        elif smon.global_expect == "thawed" and frozen == "thawed":
             self.log.info("service %s global expect is %s and is thawed",
                           svcname, smon.global_expect)
             self.set_smon(svcname, global_expect="unset")
         elif smon.global_expect == "unprovisioned" and provisioned is False:
+            self.log.info("service %s global expect is %s and is unprovisioned",
+                          svcname, smon.global_expect)
             self.set_smon(svcname, global_expect="unset")
         elif smon.global_expect == "provisioned" and provisioned is True:
+            self.log.info("service %s global expect is %s and is provisioned",
+                          svcname, smon.global_expect)
             self.set_smon(svcname, global_expect="unset")
 
     def set_smon_l_expect_from_status(self, data, svcname):
@@ -1223,12 +1226,13 @@ class Monitor(shared.OsvcThread, Crypt):
                         continue
                     local_avail = instance["avail"]
                     local_frozen = instance["frozen"]
+                    frozen = self.get_agg_frozen(svcname)
                     status = self.get_agg_avail(svcname)
                     provisioned = self.get_agg_provisioned(svcname)
                     if (global_expect == "stopped" and (local_avail not in STOPPED_STATES or not local_frozen)) or \
                        (global_expect == "started" and (status not in STARTED_STATES or local_frozen)) or \
-                       (global_expect == "frozen" and not local_frozen) or \
-                       (global_expect == "thawed" and local_frozen) or \
+                       (global_expect == "frozen" and frozen != "frozen") or \
+                       (global_expect == "thawed" and frozen != "thawed") or \
                        (global_expect == "provisioned" and provisioned is not True) or \
                        (global_expect == "unprovisioned" and provisioned is not False):
                         self.log.info("node %s wants service %s %s", nodename, svcname, global_expect)
