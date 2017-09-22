@@ -158,10 +158,10 @@ class OsvcThread(threading.Thread):
             "proc": proc,
             "on_success": on_success,
             "on_success_args": on_success_args if on_success_args else [],
-            "on_success_kwargs": on_success_args if on_success_kwargs else {},
+            "on_success_kwargs": on_success_kwargs if on_success_kwargs else {},
             "on_error": on_error,
             "on_error_args": on_error_args if on_error_args else [],
-            "on_error_kwargs": on_error_args if on_error_kwargs else {},
+            "on_error_kwargs": on_error_kwargs if on_error_kwargs else {},
         }))
 
     def terminate_procs(self):
@@ -382,6 +382,8 @@ class OsvcThread(threading.Thread):
 
     def get_service_placement(self, svcname):
         with SERVICES_LOCK:
+            if svcname not in SERVICES:
+                return ""
             svc = SERVICES[svcname]
             if self.placement_leader(svc, silent=True):
                 return "leader"

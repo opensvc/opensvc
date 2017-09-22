@@ -3312,10 +3312,18 @@ class Node(Crypt):
             out.append(line)
 
         def load_svc(svcname, data):
-            if svcname not in self.services:
+            #if svcname not in self.services:
                 # svc deleted and monitor not yet aware
-                return
+            #    return
             status = colorize_status(data["avail"], lpad=0)
+            try:
+                clustertype = self.services[svcname].clustertype
+                nodes = self.services[svcname].nodes
+                drpnodes = self.services[svcname].drpnodes
+            except KeyError:
+                clustertype = ""
+                nodes = set()
+                drpnodes = set()
             if data["overall"] == "warn":
                 status += colorize("!", color.BROWN)
             if data["placement"] != "optimal":
@@ -3323,7 +3331,7 @@ class Node(Crypt):
             line = [
                 " "+colorize(svcname, color.BOLD),
                 status,
-                self.services[svcname].clustertype,
+                clustertype,
                 "|",
             ]
             for nodename in nodenames:
@@ -3371,7 +3379,7 @@ class Node(Crypt):
                     val.append(smon)
                     val.append(provisioned)
                     line.append("".join(val))
-                elif nodename not in self.services[svcname].nodes | self.services[svcname].drpnodes:
+                elif nodename not in nodes | drpnodes:
                     line.append("")
                 else:
                     line.append(colorize("?", color.RED))
@@ -3515,6 +3523,9 @@ class Node(Crypt):
             if node not in data["monitor"]["nodes"]:
                 continue
             for svcname, _data in data["monitor"]["nodes"][node]["services"]["status"].items():
+                if svcname not in data["monitor"]["nodes"][rcEnv.nodename]["services"]["status"]:
+                    # no local instance
+                    continue
                 if svcname not in services:
                     services[svcname] = Storage({
                         "avail": Status(),
@@ -3522,9 +3533,9 @@ class Node(Crypt):
                         "nodes": {}
                     })
                 services[svcname].nodes[node] = {
-                    "avail": _data["avail"],
-                    "overall": _data["overall"],
-                    "frozen": _data["frozen"],
+                    "avail": _data.get("avail", "undef"),
+                    "overall": _data.get("overall", "undef"),
+                    "frozen": _data.get("frozen", False),
                     "mon": _data["monitor"]["status"],
                     "placement": _data["monitor"].get("placement", ""),
                     "provisioned": _data.get("provisioned"),

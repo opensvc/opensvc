@@ -850,7 +850,7 @@ ACTIONS = {
             'msg': 'delete the service instance on the local node if no '
                    '--rid is specified, or delete the resources pointed by '
                    '--rid in services passed through --service',
-            'options': ACTION_OPTS + [
+            'options': ASYNC_ACTION_OPTS + ACTION_OPTS + [
                 OPT.unprovision,
             ],
         },

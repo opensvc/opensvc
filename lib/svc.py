@@ -53,6 +53,8 @@ ACTION_TGT_STATE = {
     "thaw": "thawed",
     "provision": "provisioned",
     "unprovision": "unprovisioned",
+    "delete": "deleted",
+    "purge": "purged",
 }
 
 DEFAULT_STATUS_GROUPS = [
@@ -2409,6 +2411,9 @@ class Svc(Crypt):
 
     def daemon_mon_action(self, action, wait=None, timeout=None):
         self.validate_mon_action(action)
+        global_expect = ACTION_TGT_STATE[action]
+        if action == "delete" and self.options.unprovision:
+            global_expect = "purged"
         self.set_service_monitor(global_expect=ACTION_TGT_STATE[action])
         self.log.info("%s action requested", action)
         if wait is None:
@@ -2441,6 +2446,8 @@ class Svc(Crypt):
                 for nodename in prev_global_expect_set - set(global_expect_set):
                     self.log.info(" work over on %s", nodename)
             if not global_expect_set:
+                if self.svcname not in data["monitor"]["services"]:
+                    return
                 self.log.info("final status: avail=%s overall=%s frozen=%s",
                               data["monitor"]["services"][self.svcname]["avail"],
                               data["monitor"]["services"][self.svcname]["overall"],
@@ -4731,29 +4738,6 @@ class Svc(Crypt):
             raise ex.excError("failed to rewrite %s" % self.paths.cf)
 
     def delete(self):
-        if self.options.local or self.options.node == rcEnv.nodename or \
-           self.command_is_scoped():
-            self.delete_local()
-        elif self.options.node:
-            self.delete_instance(self.option.node)
-        else:
-            self.delete_service()
-
-    def delete_instance(self, nodename):
-        cmd = self.prepare_async_cmd()
-        return self.daemon_service_action(cmd, nodename=nodename)
-
-    def delete_service(self):
-        if len(self.nodes) + len(self.drpnodes) > 1 and self.options.unprovision:
-            self.daemon_mon_action("freeze", wait=True)
-            self.daemon_mon_action("stop", wait=True)
-        self.delete_local()
-        for nodename in self.peers:
-            if nodename == rcEnv.nodename:
-                continue
-            self.delete_instance(nodename)
-
-    def delete_local(self):
         """
         The 'delete' action entrypoint.
         If --unprovision is set, call the unprovision method.

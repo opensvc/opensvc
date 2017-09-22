@@ -182,8 +182,8 @@ class Monitor(shared.OsvcThread, Crypt):
     # Node and Service Commands
     #
     #########################################################################
-    def generic_callback(self, svcname, status, local_expect):
-        self.set_smon(svcname, status, local_expect)
+    def generic_callback(self, svcname, **kwargs):
+        self.set_smon(svcname, **kwargs)
         self.update_hb_data()
 
     def service_start_resources(self, svcname, rids):
@@ -193,7 +193,9 @@ class Monitor(shared.OsvcThread, Crypt):
             proc=proc,
             on_success="service_start_resources_on_success",
             on_success_args=[svcname, rids],
-            on_error="generic_callback", on_error_args=[svcname, "idle", None],
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "idle"},
         )
 
     def service_start_resources_on_success(self, svcname, rids):
@@ -206,8 +208,12 @@ class Monitor(shared.OsvcThread, Crypt):
         proc = self.service_command(svcname, ["toc"])
         self.push_proc(
             proc=proc,
-            on_success="generic_callback", on_success_args=[svcname, "idle", None],
-            on_error="generic_callback", on_error_args=[svcname, "idle", None],
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "idle"},
         )
 
     def service_start(self, svcname):
@@ -215,8 +221,12 @@ class Monitor(shared.OsvcThread, Crypt):
         proc = self.service_command(svcname, ["start"])
         self.push_proc(
             proc=proc,
-            on_success="generic_callback", on_success_args=[svcname, "idle", "started"],
-            on_error="generic_callback", on_error_args=[svcname, "start failed", None],
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle", "local_expect": "started"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "start failed"},
         )
 
     def service_stop(self, svcname):
@@ -224,8 +234,12 @@ class Monitor(shared.OsvcThread, Crypt):
         proc = self.service_command(svcname, ["stop"])
         self.push_proc(
             proc=proc,
-            on_success="generic_callback", on_success_args=[svcname, "idle", "unset"],
-            on_error="generic_callback", on_error_args=[svcname, "stop failed", None],
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle", "local_expect": "unset"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "stop failed"},
         )
 
     def service_shutdown(self, svcname):
@@ -233,8 +247,50 @@ class Monitor(shared.OsvcThread, Crypt):
         proc = self.service_command(svcname, ["shutdown"])
         self.push_proc(
             proc=proc,
-            on_success="generic_callback", on_success_args=[svcname, "idle", "unset"],
-            on_error="generic_callback", on_error_args=[svcname, "idle", None],
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle", "local_expect": "unset"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "idle"},
+        )
+
+    def service_delete(self, svcname):
+        self.set_smon(svcname, "deleting", local_expect="unset")
+        proc = self.service_command(svcname, ["delete"])
+        self.push_proc(
+            proc=proc,
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "idle"},
+        )
+
+    def service_purge(self, svcname):
+        self.set_smon(svcname, "unprovisioning")
+        proc = self.service_command(svcname, ["unprovision"])
+        self.push_proc(
+            proc=proc,
+            on_success="service_purge_on_success",
+            on_success_args=[svcname],
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "idle"},
+        )
+
+    def service_purge_on_success(self, svcname):
+        self.set_smon(svcname, "deleting", local_expect="unset")
+        proc = self.service_command(svcname, ["delete"])
+        self.push_proc(
+            proc=proc,
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "idle"},
         )
 
     def service_provision(self, svcname):
@@ -242,8 +298,12 @@ class Monitor(shared.OsvcThread, Crypt):
         proc = self.service_command(svcname, ["provision"])
         self.push_proc(
             proc=proc,
-            on_success="generic_callback", on_success_args=[svcname, "idle", None],
-            on_error="generic_callback", on_error_args=[svcname, "idle", None],
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "idle"},
         )
 
     def service_unprovision(self, svcname):
@@ -251,8 +311,12 @@ class Monitor(shared.OsvcThread, Crypt):
         proc = self.service_command(svcname, ["unprovision"])
         self.push_proc(
             proc=proc,
-            on_success="generic_callback", on_success_args=[svcname, "idle", "unset"],
-            on_error="generic_callback", on_error_args=[svcname, "idle", None],
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle", "local_expect": "unset"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "idle"},
         )
 
     def service_freeze(self, svcname):
@@ -260,8 +324,12 @@ class Monitor(shared.OsvcThread, Crypt):
         proc = self.service_command(svcname, ["freeze"])
         self.push_proc(
             proc=proc,
-            on_success="generic_callback", on_success_args=[svcname, "idle", None],
-            on_error="generic_callback", on_error_args=[svcname, "idle", None],
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "idle"},
         )
 
     def service_thaw(self, svcname):
@@ -269,8 +337,12 @@ class Monitor(shared.OsvcThread, Crypt):
         proc = self.service_command(svcname, ["thaw"])
         self.push_proc(
             proc=proc,
-            on_success="generic_callback", on_success_args=[svcname, "idle", None],
-            on_error="generic_callback", on_error_args=[svcname, "idle", None],
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "idle"},
         )
 
 
@@ -280,14 +352,18 @@ class Monitor(shared.OsvcThread, Crypt):
     #
     #########################################################################
     def orchestrator(self):
+        # node
         self.node_orchestrator()
-        with shared.SERVICES_LOCK:
-            svcs = shared.SERVICES.values()
-        for svc in svcs:
-            self.service_orchestrator(svc)
-            self.resources_orchestrator(svc)
 
-    def resources_orchestrator(self, svc):
+        # services (iterate over deleting services too)
+        for svcname in [svcname for svcname in shared.SMON_DATA]:
+            svc = self.get_service(svcname)
+            self.service_orchestrator(svcname, svc)
+            self.resources_orchestrator(svcname, svc)
+
+    def resources_orchestrator(self, svcname, svc):
+        if svc is None:
+            return
         if svc.frozen() or self.freezer.node_frozen():
             #self.log.info("resource %s orchestrator out (frozen)", svc.svcname)
             return
@@ -372,11 +448,17 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.log.info("thaw node")
                 self.freezer.node_thaw()
 
-    def service_orchestrator(self, svc):
+    def service_orchestrator(self, svcname, svc):
+        smon = self.get_service_monitor(svcname)
+        if svc is None:
+            if smon:
+                # deleting service: unset global expect if done cluster-wide
+                status = self.get_agg_avail(svcname)
+                self.set_smon_g_expect_from_status(svcname, smon, status)
+            return
         if svc.disabled:
             #self.log.info("service %s orchestrator out (disabled)", svc.svcname)
             return
-        smon = self.get_service_monitor(svc.svcname)
         if smon.status not in ("ready", "idle"):
             #self.log.info("service %s orchestrator out (mon status %s)", svc.svcname, smon.status)
             return
@@ -552,6 +634,12 @@ class Monitor(shared.OsvcThread, Crypt):
         elif smon.global_expect == "provisioned":
             if not self.service_provisioned(instance):
                 self.service_provision(svc.svcname)
+        elif smon.global_expect == "deleted":
+            if svc.svcname in shared.SERVICES:
+                self.service_delete(svc.svcname)
+        elif smon.global_expect == "purged":
+            if svc.svcname in shared.SERVICES and not self.service_unprovisioned(instance):
+                self.service_purge(svc.svcname)
 
     def count_up_service_instances(self, svcname):
         n_up = 0
@@ -636,6 +724,8 @@ class Monitor(shared.OsvcThread, Crypt):
         ostatus_l = []
         n_instances = 0
         for instance in self.get_service_instances(svcname).values():
+            if "overall" not in instance:
+                continue
             ostatus_l.append(instance["overall"])
             n_instances += 1
         ostatus_s = set(ostatus_l)
@@ -662,6 +752,9 @@ class Monitor(shared.OsvcThread, Crypt):
         frozen = 0
         total = 0
         for instance in self.get_service_instances(svcname).values():
+            if "frozen" not in instance:
+                # deleting instance
+                continue
             if instance["frozen"]:
                 frozen += 1
             total += 1
@@ -679,6 +772,8 @@ class Monitor(shared.OsvcThread, Crypt):
         astatus_l = []
         n_instances = 0
         for instance in self.get_service_instances(svc.svcname).values():
+            if "avail" not in instance:
+                continue
             astatus_l.append(instance["avail"])
             n_instances += 1
         astatus_s = set(astatus_l)
@@ -703,6 +798,8 @@ class Monitor(shared.OsvcThread, Crypt):
         astatus_l = []
         n_instances = 0
         for instance in self.get_service_instances(svc.svcname).values():
+            if "avail" not in instance:
+                continue
             astatus_l.append(instance["avail"])
             n_instances += 1
         astatus_s = set(astatus_l)
@@ -725,25 +822,41 @@ class Monitor(shared.OsvcThread, Crypt):
         return astatus
 
     def get_agg_placement(self, svcname):
-        svc = self.get_service(svcname)
-        for instance in self.get_service_instances(svc.svcname).values():
+        for instance in self.get_service_instances(svcname).values():
+            if "avail" not in instance:
+                continue
             if instance["avail"] != "up" and instance["monitor"].get("placement") == "leader":
                 return "non-optimal"
         return "optimal"
 
     def get_agg_provisioned(self, svcname):
-        svc = self.get_service(svcname)
         provisioned = 0
         total = 0
-        for instance in self.get_service_instances(svc.svcname).values():
+        for instance in self.get_service_instances(svcname).values():
+            if "provisioned" not in instance:
+                continue
             total += 1
             if instance["provisioned"]:
                 provisioned += 1
-        if provisioned == total:
+        if total == 0:
+            return "n/a"
+        elif provisioned == total:
             return True
         elif provisioned == 0:
             return False
         return "mixed"
+
+    def get_agg_deleted(self, svcname):
+        if len([True for inst in self.get_service_instances(svcname).values() if "avail" in inst]) > 0:
+            return False
+        return True
+
+    def get_agg_purged(self, provisioned, deleted):
+        if deleted is False:
+            return False
+        if provisioned in (False, "mixed"):
+            return False
+        return True
 
     #
     def service_instances_frozen(self, svcname):
@@ -788,6 +901,9 @@ class Monitor(shared.OsvcThread, Crypt):
             for nodename in shared.CLUSTER_DATA:
                 try:
                     for svcname in shared.CLUSTER_DATA[nodename]["services"]["config"]:
+                        if svcname in shared.SMON_DATA and "avail" not in shared.SMON_DATA[svcname]:
+                            # deleting
+                            continue
                         if svcname not in data:
                             data[svcname] = {}
                         data[svcname][nodename] = Storage(shared.CLUSTER_DATA[nodename]["services"]["config"][svcname])
@@ -905,12 +1021,13 @@ class Monitor(shared.OsvcThread, Crypt):
 
         Also update the monitor 'local_expect' field for each service.
         """
+
+        # purge data cached by the @cache decorator
         purge_cache()
-        with shared.CLUSTER_DATA_LOCK:
-            try:
-                data = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"]
-            except KeyError:
-                data = {}
+
+        # this data ends up in CLUSTER_DATA[rcEnv.nodename]["services"]["status"]
+        data = {}
+
         for svcname in svcnames:
             fpath = os.path.join(rcEnv.paths.pathvar, svcname, "status.json")
             try:
@@ -932,15 +1049,23 @@ class Monitor(shared.OsvcThread, Crypt):
             if not data[svcname]:
                 del data[svcname]
                 continue
+
+            # update the frozen instance attribute
             with shared.SERVICES_LOCK:
                 data[svcname]["frozen"] = shared.SERVICES[svcname].frozen()
+
+            # embed the updated smon data
             self.set_smon_l_expect_from_status(data, svcname)
             data[svcname]["monitor"] = self.get_service_monitor(svcname,
                                                                 datestr=True)
 
-        # purge deleted services
-        for svcname in set(data.keys()) - set(svcnames):
-            del data[svcname]
+        # deleting services (still in SMON_DATA, no longer has cf).
+        # emulate a status
+        for svcname in set(shared.SMON_DATA.keys()) - set(svcnames):
+            data[svcname] = {
+                "monitor": self.get_service_monitor(svcname, datestr=True),
+                "resources": {},
+            }
 
         return data
 
@@ -1022,6 +1147,8 @@ class Monitor(shared.OsvcThread, Crypt):
         local_frozen = instance["frozen"]
         frozen = self.get_agg_frozen(svcname)
         provisioned = self.get_agg_provisioned(svcname)
+        deleted = self.get_agg_deleted(svcname)
+        purged = self.get_agg_purged(provisioned, deleted)
         if smon.global_expect == "stopped" and status in STOPPED_STATES and \
            local_frozen:
             self.log.info("service %s global expect is %s and its global "
@@ -1032,22 +1159,19 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.info("service %s global expect is %s and its global "
                           "status is %s", svcname, smon.global_expect, status)
             self.set_smon(svcname, global_expect="unset")
-        elif smon.global_expect == "frozen" and frozen == "frozen":
-            self.log.info("service %s global expect is %s and is frozen",
+        elif (smon.global_expect == "frozen" and frozen == "frozen") or \
+             (smon.global_expect == "thawed" and frozen == "thawed") or \
+             (smon.global_expect == "unprovisioned" and provisioned is False) or \
+             (smon.global_expect == "provisioned" and provisioned is True):
+            self.log.info("service %s global expect is %s, already is",
                           svcname, smon.global_expect)
             self.set_smon(svcname, global_expect="unset")
-        elif smon.global_expect == "thawed" and frozen == "thawed":
-            self.log.info("service %s global expect is %s and is thawed",
+        elif (smon.global_expect == "purged" and purged is True) or \
+             (smon.global_expect == "deleted" and deleted is True):
+            self.log.info("service %s global expect is %s, already is",
                           svcname, smon.global_expect)
-            self.set_smon(svcname, global_expect="unset")
-        elif smon.global_expect == "unprovisioned" and provisioned is False:
-            self.log.info("service %s global expect is %s and is unprovisioned",
-                          svcname, smon.global_expect)
-            self.set_smon(svcname, global_expect="unset")
-        elif smon.global_expect == "provisioned" and provisioned is True:
-            self.log.info("service %s global expect is %s and is provisioned",
-                          svcname, smon.global_expect)
-            self.set_smon(svcname, global_expect="unset")
+            with shared.SMON_DATA_LOCK:
+                del shared.SMON_DATA[svcname]
 
     def set_smon_l_expect_from_status(self, data, svcname):
         if svcname not in data:
@@ -1151,21 +1275,64 @@ class Monitor(shared.OsvcThread, Crypt):
                         self.log.info("node %s wants service %s %s, already targeting that",
                                       nodename, svcname, global_expect)
                         continue
-                    local_avail = instance["avail"]
-                    local_frozen = instance["frozen"]
-                    frozen = self.get_agg_frozen(svcname)
-                    status = self.get_agg_avail(svcname)
-                    provisioned = self.get_agg_provisioned(svcname)
-                    if (global_expect == "stopped" and (local_avail not in STOPPED_STATES or not local_frozen)) or \
-                       (global_expect == "started" and (status not in STARTED_STATES or local_frozen)) or \
-                       (global_expect == "frozen" and frozen != "frozen") or \
-                       (global_expect == "thawed" and frozen != "thawed") or \
-                       (global_expect == "provisioned" and provisioned is not True) or \
-                       (global_expect == "unprovisioned" and provisioned is not False):
+                    if self.accept_g_expect(svcname, instance, global_expect):
                         self.log.info("node %s wants service %s %s", nodename, svcname, global_expect)
                         self.set_smon(svcname, global_expect=global_expect)
                     else:
                         self.log.info("node %s wants service %s %s, already is", nodename, svcname, global_expect)
+
+    def accept_g_expect(self, svcname, instance, global_expect):
+        if global_expect == "stopped":
+            local_avail = instance["avail"]
+            local_frozen = instance["frozen"]
+            if local_avail not in STOPPED_STATES or not local_frozen:
+                return True
+            else:
+                return False
+        if global_expect == "started":
+            status = self.get_agg_avail(svcname)
+            local_frozen = instance["frozen"]
+            if status not in STARTED_STATES or local_frozen:
+                return True
+            else:
+                return False
+        if global_expect == "frozen":
+            frozen = self.get_agg_frozen(svcname)
+            if frozen != "frozen":
+                return True
+            else:
+                return False
+        if global_expect == "thawed":
+            frozen = self.get_agg_frozen(svcname)
+            if frozen != "thawed":
+                 return True
+            else:
+                return False
+        if global_expect == "provisioned":
+            provisioned = self.get_agg_provisioned(svcname)
+            if provisioned is not True:
+                return True
+            else:
+                return False
+        if global_expect == "unprovisioned":
+            provisioned = self.get_agg_provisioned(svcname)
+            if provisioned is not False:
+                return True
+            else:
+                return False
+        if global_expect == "deleted":
+            deleted = self.get_agg_deleted(svcname)
+            if deleted is False:
+                return True
+            else:
+                return False
+        if global_expect == "purged":
+            purged = self.get_agg_purged(provisioned, deleted)
+            if purged is False:
+                return True
+            else:
+                return False
+        return False
 
     def merge_hb_data_provision(self):
         """
