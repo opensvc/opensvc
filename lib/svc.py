@@ -2279,7 +2279,7 @@ class Svc(Crypt):
             status["avail"].status = rcStatus.UP
             for group in status:
                 if status[group] == rcStatus.STDBY_UP:
-                    status[group] = rcStatus.UP
+                    status[group].status = rcStatus.UP
         elif status["avail"].status == rcStatus.STDBY_UP_WITH_DOWN:
             status["avail"].status = rcStatus.STDBY_UP
 
