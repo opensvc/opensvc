@@ -5700,7 +5700,8 @@ class Svc(Crypt):
 
         try:
             val = self.handle_references(val, scope=scope,
-                                         impersonate=impersonate)
+                                         impersonate=impersonate,
+                                         config=config)
         except ex.excError as exc:
             if o.startswith("pre_") or o.startswith("post_") or \
                o.startswith("blocking_"):
