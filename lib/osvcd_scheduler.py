@@ -23,6 +23,7 @@ class Scheduler(shared.OsvcThread):
         else:
             devnull = "/dev/null"
         self.devnull = os.open(devnull, os.O_RDWR)
+        self.cmd = [rcEnv.paths.nodemgr, 'schedulers']
 
         while True:
             self.do()
@@ -46,10 +47,9 @@ class Scheduler(shared.OsvcThread):
         self.run_scheduler()
 
     def run_scheduler(self):
-        self.log.info("run schedulers")
-        cmd = [rcEnv.paths.nodemgr, 'schedulers']
+        #self.log.info("run schedulers")
         try:
-            proc = Popen(cmd, stdout=self.devnull, stderr=self.devnull,
+            proc = Popen(self.cmd, stdout=self.devnull, stderr=self.devnull,
                          stdin=self.devnull, close_fds=True)
         except KeyboardInterrupt:
             return
