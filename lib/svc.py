@@ -1284,16 +1284,18 @@ class Svc(Crypt):
         the service and monitor information. Fetch CRM status from cache if
         possible and allowed by kwargs.
         """
-        if not from_resource_status_cache and \
-           not self.options.refresh and \
-           os.path.exists(self.status_data_dump):
-            try:
-                with open(self.status_data_dump, 'r') as filep:
-                    data = json.load(filep)
-            except ValueError:
-                pass
-
-        data = self.print_status_data_eval()
+        lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname + ".status")
+        with lock.cmlock(timeout=30, delay=1, lockfile=lockfile):
+            if not from_resource_status_cache and \
+               not self.options.refresh and \
+               os.path.exists(self.status_data_dump):
+                try:
+                    with open(self.status_data_dump, 'r') as filep:
+                        data = json.load(filep)
+                except ValueError:
+                    pass
+            else:
+                data = self.print_status_data_eval()
 
         if mon_data:
             mon_data = self.get_smon_data()
