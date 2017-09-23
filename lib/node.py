@@ -3204,7 +3204,8 @@ class Node(Crypt):
             wait = self.options.wait
         if timeout is None:
             timeout = self.options.time
-        timeout = convert_duration(timeout)
+        if timeout is not None:
+            timeout = convert_duration(timeout)
         if self.options.node is not None and self.options.node != "" and \
            action in REMOTE_ACTIONS:
             cmd = self.prepare_async_cmd()

@@ -2421,7 +2421,8 @@ class Svc(Crypt):
             wait = self.options.wait
         if timeout is None:
             timeout = self.options.time
-        timeout = convert_duration(timeout)
+        if timeout is not None:
+            timeout = convert_duration(timeout)
         if not wait:
             return
 
