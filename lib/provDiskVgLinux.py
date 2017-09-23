@@ -79,6 +79,7 @@ class Prov(provisioning.Prov):
         if ret != 0:
             raise ex.excError
 
+        self.r.can_rollback = True
         self.r.clear_cache("vg.lvs")
         self.r.clear_cache("vg.lvs.attr")
         self.r.clear_cache("vg.tags")
