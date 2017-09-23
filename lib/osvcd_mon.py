@@ -15,6 +15,7 @@ import shutil
 from subprocess import Popen, PIPE
 
 import osvcd_shared as shared
+import rcExceptions as ex
 from comm import Crypt
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode, purge_cache
@@ -161,7 +162,12 @@ class Monitor(shared.OsvcThread, Crypt):
                 else:
                     svc = None
             if svc:
-                results = svc._validate_config(path=filep.name)
+                try:
+                    results = svc._validate_config(path=filep.name)
+                except ex.excError as exc:
+                    self.log.error("service %s fetched config validation "
+                                   "error: %s", svcname, exc)
+                    return
             else:
                 results = {"errors": 0}
             if results["errors"] == 0:
@@ -901,7 +907,9 @@ class Monitor(shared.OsvcThread, Crypt):
             for nodename in shared.CLUSTER_DATA:
                 try:
                     for svcname in shared.CLUSTER_DATA[nodename]["services"]["config"]:
-                        if svcname in shared.SMON_DATA and "avail" not in shared.SMON_DATA[svcname]:
+                        if svcname not in shared.SMON_DATA or \
+                           svcname not in shared.CLUSTER_DATA[nodename]["services"]["status"] or \
+                           "avail" not in shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]:
                             # deleting
                             continue
                         if svcname not in data:
@@ -1042,9 +1050,9 @@ class Monitor(shared.OsvcThread, Crypt):
                     with open(fpath, 'r') as filep:
                         try:
                             data[svcname] = json.load(filep)
-                        except ValueError:
+                        except ValueError as exc:
                             data[svcname] = self.service_status_fallback(svcname)
-                except Exception:
+                except Exception as exc:
                     data[svcname] = self.service_status_fallback(svcname)
             if not data[svcname]:
                 del data[svcname]
@@ -1354,7 +1362,7 @@ class Monitor(shared.OsvcThread, Crypt):
                             remote = Storage(shared.CLUSTER_DATA[nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"])
                         except KeyError:
                             continue
-                        if remote.state is None:
+                        if remote is None or remote.state is None:
                             continue
                         elif remote.mtime > local.mtime + 0.00001:
                             self.log.info("switch %s.%s provisioned flag to %s (merged from %s)",
