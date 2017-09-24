@@ -952,8 +952,7 @@ class Monitor(shared.OsvcThread, Crypt):
             for nodename in shared.CLUSTER_DATA:
                 try:
                     for svcname in shared.CLUSTER_DATA[nodename]["services"]["config"]:
-                        if svcname not in shared.SMON_DATA or \
-                           svcname not in shared.CLUSTER_DATA[nodename]["services"]["status"] or \
+                        if svcname not in shared.CLUSTER_DATA[nodename]["services"]["status"] or \
                            "avail" not in shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]:
                             # deleting
                             continue
