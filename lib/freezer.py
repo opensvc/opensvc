@@ -17,7 +17,7 @@ class Freezer(object):
     flag = base_flag
 
     @staticmethod
-    def _dummy():
+    def _dummy(strict=False):
         """
         A no-op method to replace freeze/thaw/frozen when the service
         configuration file does not exist.
