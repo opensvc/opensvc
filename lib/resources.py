@@ -967,7 +967,7 @@ class Resource(object):
             return
         if self.prov is None:
             return
-        if self.prov.is_provisioned() is True:
+        if self.is_provisioned() is True:
             self.log.info("%s already provisioned", self.label)
         else:
             self.prov.provisioner()
@@ -987,7 +987,7 @@ class Resource(object):
             return
         if self.prov is None:
             return
-        if self.prov.is_provisioned() is False:
+        if self.is_provisioned() is False:
             self.log.info("%s already unprovisioned", self.label)
         else:
             self.prov.unprovisioner()
