@@ -16,6 +16,8 @@ class Prov(provisioning.Prov):
         return self.r.has_it()
 
     def unprovisioner(self):
+        if not self.r.has_it():
+            return
         cmd = ['vgremove', '-ff', self.r.name]
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
