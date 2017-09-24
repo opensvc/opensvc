@@ -926,14 +926,17 @@ class Resource(object):
     def write_is_provisioned_flag(self, value, mtime=None):
         if value is None:
             return
-        with open(self.provisioned_flag, 'w') as filep:
-            try:
-                data = json.dump(value, filep)
-            except ValueError:
-                return
+        try:
+            with open(self.provisioned_flag, 'w') as filep:
+                try:
+                    json.dump(value, filep)
+                except ValueError:
+                    return
+        except Exception:
+            # can happen in instance delete codepath
+            return
         if mtime:
             os.utime(self.provisioned_flag, (mtime, mtime))
-        return data
 
     @lazy
     def prov(self):
