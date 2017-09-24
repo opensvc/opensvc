@@ -497,7 +497,7 @@ class OsvcThread(threading.Thread):
                              discard_constraints_violation=True):
         """
         Return the list of service nodes meeting the following criteria:
-        * we have valid service instance data (not unknown)
+        * we have valid service instance data (not unknown, has avail)
         * the node is not in maintenance
         * the node is not frozen (default)
         * the service is not frozen (default)
@@ -516,6 +516,9 @@ class OsvcThread(threading.Thread):
                     continue
                 instance = self.get_service_instance(svc.svcname, nodename)
                 if instance is None:
+                    continue
+                if "avail" not in instance:
+                    # deleting
                     continue
                 if discard_frozen and instance.frozen:
                     continue

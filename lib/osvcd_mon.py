@@ -97,6 +97,11 @@ class Monitor(shared.OsvcThread, Crypt):
             with shared.SERVICES_LOCK:
                 if svcname not in shared.SERVICES:
                     new_service = True
+            instance = self.get_service_instance(svcname, rcEnv.nodename)
+            if instance:
+                global_expect = instance.get("monitor", {}).get("global_expect")
+                if global_expect in ("purged", "deleted"):
+                    continue
             if rcEnv.nodename not in data:
                 # need to check if we should have this config ?
                 new_service = True
@@ -219,7 +224,7 @@ class Monitor(shared.OsvcThread, Crypt):
             on_success_kwargs={"status": "idle"},
             on_error="generic_callback",
             on_error_args=[svcname],
-            on_error_kwargs={"status": "idle"},
+            on_error_kwargs={"status": "toc failed"},
         )
 
     def service_start(self, svcname):
@@ -258,7 +263,7 @@ class Monitor(shared.OsvcThread, Crypt):
             on_success_kwargs={"status": "idle", "local_expect": "unset"},
             on_error="generic_callback",
             on_error_args=[svcname],
-            on_error_kwargs={"status": "idle"},
+            on_error_kwargs={"status": "shutdown failed"},
         )
 
     def service_delete(self, svcname):
@@ -271,7 +276,7 @@ class Monitor(shared.OsvcThread, Crypt):
             on_success_kwargs={"status": "idle"},
             on_error="generic_callback",
             on_error_args=[svcname],
-            on_error_kwargs={"status": "idle"},
+            on_error_kwargs={"status": "delete failed"},
         )
 
     def service_purge(self, svcname):
@@ -283,7 +288,7 @@ class Monitor(shared.OsvcThread, Crypt):
             on_success_args=[svcname],
             on_error="generic_callback",
             on_error_args=[svcname],
-            on_error_kwargs={"status": "idle"},
+            on_error_kwargs={"status": "purge failed"},
         )
 
     def service_purge_on_success(self, svcname):
@@ -296,7 +301,7 @@ class Monitor(shared.OsvcThread, Crypt):
             on_success_kwargs={"status": "idle"},
             on_error="generic_callback",
             on_error_args=[svcname],
-            on_error_kwargs={"status": "idle"},
+            on_error_kwargs={"status": "purge failed"},
         )
 
     def service_provision(self, svcname):
@@ -309,7 +314,7 @@ class Monitor(shared.OsvcThread, Crypt):
             on_success_kwargs={"status": "idle"},
             on_error="generic_callback",
             on_error_args=[svcname],
-            on_error_kwargs={"status": "idle"},
+            on_error_kwargs={"status": "provision failed"},
         )
 
     def service_unprovision(self, svcname):
@@ -322,7 +327,7 @@ class Monitor(shared.OsvcThread, Crypt):
             on_success_kwargs={"status": "idle", "local_expect": "unset"},
             on_error="generic_callback",
             on_error_args=[svcname],
-            on_error_kwargs={"status": "idle"},
+            on_error_kwargs={"status": "unprovision failed"},
         )
 
     def service_freeze(self, svcname):
@@ -643,11 +648,12 @@ class Monitor(shared.OsvcThread, Crypt):
         elif smon.global_expect == "deleted":
             if svc.svcname in shared.SERVICES:
                 self.service_delete(svc.svcname)
-        elif smon.global_expect == "purged" and self.leader_first(svc, provisioned=False):
-            if svc.svcname in shared.SERVICES and not self.service_unprovisioned(instance):
+        elif smon.global_expect == "purged" and self.leader_first(svc, provisioned=False, deleted=False):
+            if svc.svcname in shared.SERVICES and \
+               (not self.service_unprovisioned(instance) or instance is not None):
                 self.service_purge(svc.svcname)
 
-    def leader_first(self, svc, provisioned=False):
+    def leader_first(self, svc, provisioned=False, deleted=None):
         """
         Return True if the peer selected for anteriority is found to have
         reached the target status, or if the local node is the one with
@@ -660,7 +666,7 @@ class Monitor(shared.OsvcThread, Crypt):
           whatever their frozen, constraints, and current provisioning
           state.
         """
-        instances = self.get_service_instances(svc.svcname)
+        instances = self.get_service_instances(svc.svcname, discard_empty=True)
         candidates = [nodename for (nodename, data) in instances.items() \
                       if data.get("avail") in ("up", "warn")]
         if len(candidates) == 0:
@@ -959,7 +965,7 @@ class Monitor(shared.OsvcThread, Crypt):
         return data
 
     @staticmethod
-    def get_service_instances(svcname):
+    def get_service_instances(svcname, discard_empty=False):
         """
         Return the specified service status structures on all nodes.
         """
@@ -968,6 +974,8 @@ class Monitor(shared.OsvcThread, Crypt):
             for nodename in shared.CLUSTER_DATA:
                 try:
                     if svcname in shared.CLUSTER_DATA[nodename]["services"]["status"]:
+                        if discard_empty and shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]:
+                            continue
                         instances[nodename] = shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]
                 except KeyError:
                     continue
