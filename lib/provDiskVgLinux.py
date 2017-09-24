@@ -24,6 +24,17 @@ class Prov(provisioning.Prov):
         self.r.clear_cache("vg.lvs.attr")
         self.r.clear_cache("vg.tags")
 
+    def has_pv(self, pv):
+        cmd = [rcEnv.syspaths.pvscan, "--cache", pv]
+        justcall(cmd)
+        cmd = [rcEnv.syspaths.pvs, "-o", "vg_name", "--no-headings", pv]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return False
+        if out != "":
+            raise ex.excError("pv %s in use by vg %s" % (pv, out))
+        return True
+
     def provisioner(self):
         try:
             self.pvs = self.r.svc.conf_get(self.r.rid, "pvs")
@@ -66,6 +77,8 @@ class Prov(provisioning.Prov):
             raise ex.excError
 
         for pv in self.pvs:
+            if self.has_pv(pv):
+                continue
             cmd = ['pvcreate', '-f', pv]
             ret, out, err = self.r.vcall(cmd)
             if ret != 0:
@@ -73,6 +86,10 @@ class Prov(provisioning.Prov):
 
         if len(self.pvs) == 0:
             raise ex.excError("no pvs specified")
+
+        if self.r.has_it():
+            self.r.log.info("vg %s already exists")
+            return
 
         cmd = ['vgcreate', self.r.name] + self.pvs
         ret, out, err = self.r.vcall(cmd)
