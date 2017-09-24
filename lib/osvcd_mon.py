@@ -635,17 +635,56 @@ class Monitor(shared.OsvcThread, Crypt):
             elif status not in STARTED_STATES:
                 self.service_orchestrator_auto(svc, smon, status)
         elif smon.global_expect == "unprovisioned":
-            if not self.service_unprovisioned(instance):
+            if not self.service_unprovisioned(instance) and self.leader_first(svc, provisioned=False):
                 self.service_unprovision(svc.svcname)
         elif smon.global_expect == "provisioned":
-            if not self.service_provisioned(instance):
+            if not self.service_provisioned(instance) and self.leader_first(svc, provisioned=True):
                 self.service_provision(svc.svcname)
         elif smon.global_expect == "deleted":
             if svc.svcname in shared.SERVICES:
                 self.service_delete(svc.svcname)
-        elif smon.global_expect == "purged":
+        elif smon.global_expect == "purged" and self.leader_first(svc, provisioned=False):
             if svc.svcname in shared.SERVICES and not self.service_unprovisioned(instance):
                 self.service_purge(svc.svcname)
+
+    def leader_first(self, svc, provisioned=False):
+        """
+        Return True if the peer selected for anteriority is found to have
+        reached the target status, or if the local node is the one with
+        anteriority.
+
+        Anteriority selection is done with these criteria:
+
+        * choose the placement top node amongst node with a up instance
+        * if none, choose the placement top node amongst all nodes,
+          whatever their frozen, constraints, and current provisioning
+          state.
+        """
+        instances = self.get_service_instances(svc.svcname)
+        candidates = [nodename for (nodename, data) in instances.items() \
+                      if data.get("avail") in ("up", "warn")]
+        if len(candidates) == 0:
+            self.log.info("service %s has no up instance, relax candidates "
+                          "constraints", svc.svcname)
+            candidates = self.placement_candidates(svc, discard_frozen=False,
+                                                   discard_unprovisioned=False,
+                                                   discard_constraints_violation=False)
+        try:
+            top = self.placement_ranks(svc, candidates=candidates)[0]
+            self.log.info("elected %s as the first node to take action on "
+                          "service %s", top, svc.svcname)
+        except IndexError:
+            self.log.error("service %s placement ranks list is empty", svc.svcname)
+            return False
+        if top == rcEnv.nodename:
+            return True
+        instance = self.get_service_instance(svc.svcname, top)
+        if instance is None:
+            return True
+        if instance["provisioned"] is provisioned:
+            return True
+        self.log.info("delay leader-first action")
+        return False
 
     def count_up_service_instances(self, svcname):
         n_up = 0
@@ -1188,6 +1227,8 @@ class Monitor(shared.OsvcThread, Crypt):
             if svcname not in shared.SMON_DATA:
                 return
             if data[svcname]["avail"] == "up" and \
+               shared.SMON_DATA[svcname].global_expect is None and \
+               shared.SMON_DATA[svcname].status == "idle" and \
                shared.SMON_DATA[svcname].local_expect != "started":
                 self.log.info("service %s monitor local_expect change "
                               "%s => %s", svcname,

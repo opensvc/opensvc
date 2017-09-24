@@ -492,35 +492,49 @@ class OsvcThread(threading.Thread):
     # Placement policies
     #
     #########################################################################
-    def placement_candidates(self, svc):
+    def placement_candidates(self, svc, discard_frozen=True,
+                             discard_unprovisioned=True,
+                             discard_constraints_violation=True):
         """
         Return the list of service nodes meeting the following criteria:
         * we have valid service instance data (not unknown)
-        * the node is not frozen
-        * the service is not frozen
-        * the service instance is provisioned
-        * the service instance constraints are eval'ed True
+        * the node is not in maintenance
+        * the node is not frozen (default)
+        * the service is not frozen (default)
+        * the service instance is provisioned (default)
+        * the service instance constraints are eval'ed True (default)
         """
         candidates = []
         with CLUSTER_DATA_LOCK:
             for nodename, data in CLUSTER_DATA.items():
                 if data == "unknown":
                     continue
-                if data.get("frozen", False):
+                if data.get("monitor", {}).get("status") == "maintenance":
+                    continue
+                if discard_frozen and data.get("frozen", False):
                     # node frozen
                     continue
                 instance = self.get_service_instance(svc.svcname, nodename)
                 if instance is None:
                     continue
-                if instance.frozen:
+                if discard_frozen and instance.frozen:
                     continue
-                if instance.provisioned is False:
+                if discard_unprovisioned and instance.provisioned is False:
                     continue
-                constraints = instance.get("constraints", True)
-                if not constraints:
+                if discard_constraints_violation and not instance.get("constraints", True):
                     continue
                 candidates.append(nodename)
         return candidates
+
+    def placement_ranks(self, svc, candidates=None):
+        if candidates is None:
+            candidates = self.placement_candidates(svc)
+        if svc.placement == "load avg":
+            return self.placement_ranks_load_avg(svc, candidates)
+        elif svc.placement == "nodes order":
+            return self.placement_ranks_nodes_order(svc, candidates)
+        else:
+            return [rcEnv.nodename]
 
     def placement_leader(self, svc, candidates=None, silent=False):
         if candidates is None:
@@ -540,14 +554,8 @@ class OsvcThread(threading.Thread):
                 self.log.info("we have the greatest placement priority for "
                               "service %s (alone)", svc.svcname)
             return True
-        if svc.placement == "load avg":
-            ranks = self.placement_ranks_load_avg(svc, candidates)
-        elif svc.placement == "nodes order":
-            ranks = self.placement_ranks_nodes_order(svc, candidates)
-        else:
-            # unkown, random ?
-            return True
 
+        ranks = self.placement_ranks(svc, candidates=candidates)
         if ranks == []:
             return False
         elif svc.clustertype == "failover":
