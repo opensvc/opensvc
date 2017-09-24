@@ -87,7 +87,7 @@ class Prov(provisioning.Prov):
             self.r.log.error("lvcreate command not found")
             raise ex.excError
 
-        if which('wipefs'):
+        if which('wipefs') and os.path.exists(dev):
             self.r.vcall(["wipefs", "-a", dev])
 
         cmd = ["lvremove", "-f", dev]
