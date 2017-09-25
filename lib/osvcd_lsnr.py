@@ -56,7 +56,10 @@ class Listener(shared.OsvcThread, Crypt):
         })
 
         while True:
-            self.do()
+            try:
+                self.do()
+            except Exception as exc:
+                self.log.exception(exc)
             if self.stopped():
                 self.join_threads()
                 self.sock.close()

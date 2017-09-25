@@ -102,13 +102,16 @@ class HbMcastTx(HbMcast):
             self.log.error("init error: %s", str(exc))
             return
 
-        while True:
-            self.do()
-            if self.stopped():
-                self.sock.close()
-                sys.exit(0)
-            with shared.HB_TX_TICKER:
-                shared.HB_TX_TICKER.wait(self.default_hb_period)
+        try:
+            while True:
+                self.do()
+                if self.stopped():
+                    self.sock.close()
+                    sys.exit(0)
+                with shared.HB_TX_TICKER:
+                    shared.HB_TX_TICKER.wait(self.default_hb_period)
+        except Exception as exc:
+            self.log.exception(exc)
 
     def do(self):
         self.reload_config()

@@ -90,12 +90,15 @@ class HbUcastTx(HbUcast):
         except ex.excAbortAction:
             return
 
-        while True:
-            self.do()
-            if self.stopped():
-                sys.exit(0)
-            with shared.HB_TX_TICKER:
-                shared.HB_TX_TICKER.wait(self.default_hb_period)
+        try:
+            while True:
+                self.do()
+                if self.stopped():
+                    sys.exit(0)
+                with shared.HB_TX_TICKER:
+                    shared.HB_TX_TICKER.wait(self.default_hb_period)
+        except Exception as exc:
+            self.log.exception(exc)
 
     def status(self):
         data = HbUcast.status(self)

@@ -50,12 +50,15 @@ class Monitor(shared.OsvcThread, Crypt):
         self.last_run = 0
         self.log.info("monitor started")
 
-        while True:
-            self.do()
-            if self.stopped():
-                self.join_threads()
-                self.terminate_procs()
-                sys.exit(0)
+        try:
+            while True:
+                self.do()
+                if self.stopped():
+                    self.join_threads()
+                    self.terminate_procs()
+                    sys.exit(0)
+        except Exception as exc:
+            self.log.exception(exc)
 
     def do(self):
         self.janitor_threads()

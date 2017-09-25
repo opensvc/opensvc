@@ -26,7 +26,10 @@ class Scheduler(shared.OsvcThread):
         self.cmd = [rcEnv.paths.nodemgr, 'schedulers']
 
         while True:
-            self.do()
+            try:
+                self.do()
+            except Exception as exc:
+                self.log.exception(exc)
             if self.stopped():
                 self.terminate_procs()
                 sys.exit(0)
