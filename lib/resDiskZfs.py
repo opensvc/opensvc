@@ -1,6 +1,7 @@
 from rcGlobalEnv import rcEnv
 import resDisk
 from rcUtilities import qcall, which, lazy
+from rcUtilitiesLinux import devs_to_disks
 import os
 import rcExceptions as ex
 import glob
@@ -174,7 +175,10 @@ class Disk(resDisk.Disk):
             return self.disks
 
         disks = set([])
-        cmd = [ 'zpool', 'status', self.name ]
+        cmd = ['zpool', 'status']
+        if rcEnv.sysname == "Linux":
+            cmd += ["-P"]
+        cmd += [self.name]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
@@ -201,13 +205,16 @@ class Disk(resDisk.Disk):
             if "emcpower" in d:
                 regex = re.compile('[a-g]$', re.UNICODE)
                 d = regex.sub('c', d)
-            elif re.match('^.*s[0-9]*$', d) is None:
-                d += "s2"
-            else:
-                regex = re.compile('s[0-9]*$', re.UNICODE)
-                d = regex.sub('s2', d)
+            elif rcEnv.sysname == "SunOS":
+                if re.match('^.*s[0-9]*$', d) is None:
+                    d += "s2"
+                else:
+                    regex = re.compile('s[0-9]*$', re.UNICODE)
+                    d = regex.sub('s2', d)
             self.disks.add(d)
 
+        if rcEnv.sysname == "Linux":
+            self.disks = devs_to_disks(self, self.disks)
         return self.disks
 
     def unprovision(self):
