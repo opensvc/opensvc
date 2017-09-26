@@ -36,7 +36,7 @@ class color:
     LIGHTRED = '\033[091m'
     LIGHTGREEN = '\033[092m'
     YELLOW = '\033[093m'
-    LIGHTBLUE = '\033[038;5;243m'
+    LIGHTBLUE = '\033[094m'
     LIGHTPURPLE = '\033[095m'
     LIGHTCYAN = '\033[096m'
     WHITE = '\033[097m'
@@ -54,6 +54,9 @@ class color:
 
     E_BGODD = '\033[48;2;240;240;205m'
     E_BGCYAN = '\033[48;2;125;205;205m'
+
+if os.environ.get("TERM") in ("screen-256color", "xterm-256color", "screen-256color-bce"):
+    color.LIGHTBLUE = '\033[038;5;243m'
 
 STATUS_COLOR = {
     "up": color.GREEN,
