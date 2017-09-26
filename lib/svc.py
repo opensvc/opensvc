@@ -704,6 +704,12 @@ class Svc(Crypt):
             except:
                 self.save_exc()
 
+    def has_monitored_resources(self):
+        for res in self.get_resources():
+            if res.monitor and not res.is_disabled():
+                return True
+        return False
+
     def post_build(self):
         """
         A method run after the service is done building.
@@ -721,7 +727,7 @@ class Svc(Crypt):
         except ex.OptNotFound:
             monitor_schedule = None
 
-        if (self.ha and "flex" not in self.clustertype) or monitor_schedule is not None:
+        if self.has_monitored_resources() or monitor_schedule is not None:
             self.sched.scheduler_actions["resource_monitor"] = SchedOpts(
                 "DEFAULT",
                 fname=self.svcname+os.sep+"last_resource_monitor",
