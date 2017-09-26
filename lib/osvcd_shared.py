@@ -101,6 +101,9 @@ class OsvcThread(threading.Thread):
         self.threads = []
         self.procs = []
 
+        # hash for log dups avoiding
+        self.duplog_data = {}
+
     def notify_config_change(self):
         """
         Notify thread the node configuration file changed.
@@ -539,23 +542,40 @@ class OsvcThread(threading.Thread):
         else:
             return [rcEnv.nodename]
 
+    def duplog(self, lvl, msg, **kwargs):
+        svcname = kwargs.get("svcname")
+        if svcname is None:
+            return
+        if svcname in self.duplog_data and msg == self.duplog_data[svcname]:
+            return
+        self.duplog_data[svcname] = msg
+        if lvl == "info":
+            fn = self.log.info
+        elif lvl == "warning":
+            fn = self.log.warning
+        elif lvl == "error":
+            fn = self.log.error
+        else:
+            return
+        fn(msg, kwargs)
+
     def placement_leader(self, svc, candidates=None, silent=False):
         if candidates is None:
             candidates = self.placement_candidates(svc)
         if len(candidates) == 0:
             if not silent:
-                self.log.info("placement constraints prevent us from starting "
-                              "service %s on any node", svc.svcname)
+                self.duplog("info", "placement constraints prevent us from starting "
+                            "service %(svcname)s on any node", svcname=svc.svcname)
             return False
         if rcEnv.nodename not in candidates:
             if not silent:
-                self.log.info("placement constraints prevent us from starting "
-                              "service %s on this node", svc.svcname)
+                self.duplog("info", "placement constraints prevent us from starting "
+                            "service %(svcname)s on this node", svcname=svc.svcname)
             return False
         if len(candidates) == 1:
             if not silent:
-                self.log.info("we have the greatest placement priority for "
-                              "service %s (alone)", svc.svcname)
+                self.duplog("info", "we have the greatest placement priority for "
+                            "service %(svcname)s (alone)", svcname=svc.svcname)
             return True
 
         ranks = self.placement_ranks(svc, candidates=candidates)
@@ -564,22 +584,25 @@ class OsvcThread(threading.Thread):
         elif svc.clustertype == "failover":
             if rcEnv.nodename == ranks[0]:
                 if not silent:
-                    self.log.info("we have the highest '%s' placement priority "
-                                  "for failover service %s",
-                                  svc.placement, svc.svcname)
+                    self.duplog("info", "we have the highest '%(placement)s' "
+                                "placement priority for failover service %(svcname)s",
+                                placement=svc.placement, svcname=svc.svcname)
                 return True
             else:
                 if not silent:
-                    self.log.info("node %s is alive and has a higher '%s' placement "
-                                  "priority for failover service %s",
-                                  ranks[0], svc.placement, svc.svcname)
+                    self.duplog("info", "node %(nodename)s is alive and has a higher "
+                                  "'%(placement)s' placement priority for "
+                                  "failover service %(svcname)s",
+                                  nodename=ranks[0], placement=svc.placement,
+                                  svcname=svc.svcname)
                 return False
         elif svc.clustertype == "flex":
             index = ranks.index(rcEnv.nodename) + 1
             if not silent:
-                self.log.info("we have the %d/%d '%s' placement priority "
-                              "for flex service %s", index, svc.flex_min_nodes,
-                              svc.placement, svc.svcname)
+                self.duplog("info", "we have the %(idx)d/%(mini)d '%(placement)s'"
+                            " placement priority for flex service %(svcname)s",
+                            idx=index, mini=svc.flex_min_nodes,
+                            placement=svc.placement, svcname=svc.svcname)
             if index <= svc.flex_min_nodes:
                 return True
             else:
