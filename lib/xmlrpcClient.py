@@ -530,6 +530,7 @@ class Collector(object):
             return
 
         vars = ['svc_name',
+                'svc_cluster_type',
                 'svc_flex_min_nodes',
                 'svc_flex_max_nodes',
                 'svc_flex_cpu_low_threshold',
@@ -540,7 +541,6 @@ class Collector(object):
                 'svc_drpnodes',
                 'svc_comment',
                 'svc_app',
-                'svc_containertype',
                 'svc_config',
                 'svc_ha']
 
