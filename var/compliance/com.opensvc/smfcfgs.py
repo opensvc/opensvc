@@ -1,40 +1,126 @@
 #!/usr/bin/env python
 
-"""
-The ENV variable format is json-serialized [list of dict]:
+data = {
+  "default_prefix": "OSVC_COMP_SMF_CFGS_",
+  "example_value": """ 
 [
- {
-  "fmri": "svc:/network/ntp"
-  "prop": "config/slew_always"
-  "type": "boolean"
-  "value": "true"
-  "inorder": 0
-  "create": 1
-  "reload": 0
-  "sleep": 0
- }
- {
-  "fmri": "svc:/network/dns/client"
-  "prop": "config/nameserver"
-  "type": "net_address"
-  "value": "172.30.65.165 172.30.65.164"
-  "inorder": 0
-  "create": 1
-  "reload": 0
-  "sleep": 6
- }
- {
-  "fmri": "svc:/network/dns/client"
-  "prop": "config/search"
-  "type": "astring"
-  "value": "cpdev.local cpprod.root.local cpgrp.root.local"
-  "inorder": 1
-  "create": 1
-  "reload": 0
-  "sleep": 9
- }
+    {
+        "fmri": "svc:/network/ntp",
+        "prop": "config/slew_always",
+        "type": "boolean",
+        "value": "true",
+        "inorder": 0,
+        "create": 1,
+        "reload": 0,
+        "sleep": 0
+    },
+    {
+        "fmri": "svc:/network/dns/client",
+        "prop": "config/nameserver",
+        "type": "net_address",
+        "value": "172.30.65.165 172.30.65.164",
+        "inorder": 0,
+        "create": 1,
+        "reload": 0,
+        "sleep": 6
+    },
+    {
+        "fmri": "svc:/network/dns/client",
+        "prop": "config/search",
+        "type": "astring",
+        "value": "cpdev.local cpprod.root.local cpgrp.root.local",
+        "inorder": 1,
+        "create": 1,
+        "reload": 0,
+        "sleep": 9
+    }
 ]
+  """,
+  "description": """Define a list of FMRI with properties to check / set on the target system. Properties can contain substitution variables. List values can be ordered or not. The fix action can be inhibited.""",
+  "form_definition": """
+Desc: |
+  Define a list of FMRI with properties to check / set on the target system. Properties can contain substitution variables.
+Css: action48
+ 
+Outputs:
+  -
+    Dest: compliance variable
+    Type: json
+    Format: list of dict
+    Class: smfcfgs
+ 
+Inputs:
+  -
+    Id: fmri
+    Label: FMRI
+    DisplayModeLabel: fmri
+    LabelCss: action16
+    Mandatory: Yes
+    Type: string
+    Help: "The name of the FMRI."
+ 
+  -
+    Id: prop
+    Label: Prop
+    DisplayModeLabel: prop
+    LabelCss: comp16
+    Type: string
+    Help: "The FMRI property name."
+ 
+  -
+    Id: type
+    Label: Type
+    DisplayModeLabel: type
+    LabelCss: hd16
+    Type: string
+    Help: "The property type."
+ 
+  -
+    Id: value
+    Label: Value
+    DisplayModeLabel: value
+    LabelCss: hd16
+    Type: string
+    Help: "The target value of the property."
+ 
+  -
+    Id: inorder
+    Label: InOrder
+    DisplayModeLabel: inorder
+    LabelCss: right16
+    Type: integer
+    Default: 0
+    Help: "If set to 1 and value is a list, report an error if the current list members are not in the same order than the target list members."
+ 
+  -
+    Id: create
+    Label: Create
+    DisplayModeLabel: create
+    LabelCss: check16
+    Type: integer
+    Default: 0
+    Help: "If set to 0, the fix action does not create the missing SMF configuration, the check action reports an error in any case."
+ 
+  -
+    Id: reload
+    Label: Reload
+    DisplayModeLabel: reload
+    LabelCss: check16
+    Type: integer
+    Default: 1
+    Help: "Reload if modified."
+ 
+  -
+    Id: sleep
+    Label: Sleep
+    DisplayModeLabel: sleep
+    LabelCss: time16
+    Type: integer
+    Default: 0
+    Help: "Sleep for <n> seconds after each 'svcadm refresh' command."
+    
 """
+}
 
 import os
 import sys
@@ -56,23 +142,33 @@ class AutoInst(dict):
             value = self[item] = type(self)()
             return value
 
-class SmfCfgS(object):
-    def __init__(self, prefix='OSVC_COMP_SMF_CFGS_'):
-        self.prefix = prefix.upper()
+class SmfCfgS(CompObject):
+    def __init__(self, prefix=None):
+        CompObject.__init__(self, prefix=prefix, data=data)
+
+    def init(self):
         self.sysname, self.nodename, self.osn, self.solv, self.machine = os.uname()
         self.data = []
         self.smfs = AutoInst()
-        self.osver = float(self.osn)
 
+        if self.sysname != "SunOS":
+            raise NotApplicable()
+
+        self.osver = float(self.osn)
         if self.osver < 5.11:
             pinfo('Only used on Solaris 11 and behond')
             return
 
-        for k in [ key for key in os.environ if key.startswith(self.prefix)]:
+        for rule in self.get_rules():
             try:
-                self.data += self.add_fmri(os.environ[k])
+                self.data += self.add_fmri(rule)
+            except InitError:
+                continue
             except ValueError:
-                perror('failed to parse variable', os.environ[k])
+                perror('smfcfgs: failed to parse variable', rule)
+
+        if len(self.files) == 0:
+            raise NotApplicable()
 
         for f in self.data:
             s,p,t,v = self.get_fmri(f['fmri'], f['prop'])
@@ -344,27 +440,5 @@ class SmfCfgS(object):
         return r
 
 if __name__ == "__main__":
-    syntax = """syntax:
-      %s check|fixable|fix]"""%sys.argv[0]
-    try:
-        action = sys.argv[1]
-        o = SmfCfgS()
-        if action == 'check':
-            RET = o.check()
-        elif action == 'fix':
-            RET = o.fix()
-        elif action == 'fixable':
-            RET = o.fixable()
-        else:
-            perror("unsupported argument '%s'"%sys.argv[2])
-            perror(syntax)
-            RET = RET_ERR
-    except NotApplicable:
-        sys.exit(RET_NA)
-    except:
-        import traceback
-        traceback.print_exc()
-        sys.exit(RET_ERR)
-
-    sys.exit(RET)
+    main(SmfCfgS)
 
