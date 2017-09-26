@@ -1278,6 +1278,16 @@ class Svc(Crypt):
     def status_data_dump(self):
         return os.path.join(rcEnv.paths.pathvar, self.svcname, "status.json")
 
+    def status_data_dump_outdated(self):
+        """
+        Return True if the status data dump is older than the last config file
+        modification time.
+        """
+        try:
+            return os.stat(self.paths.cf).st_mtime > os.stat(self.status_data_dump).st_mtime
+        except OSError as exc:
+            return True
+
     def print_status_data(self, from_resource_status_cache=False, mon_data=False):
         """
         Return a structure containing hierarchical status of
@@ -1288,12 +1298,13 @@ class Svc(Crypt):
         with lock.cmlock(timeout=30, delay=1, lockfile=lockfile):
             if not from_resource_status_cache and \
                not self.options.refresh and \
-               os.path.exists(self.status_data_dump):
+               os.path.exists(self.status_data_dump) and \
+               not self.status_data_dump_outdated():
                 try:
                     with open(self.status_data_dump, 'r') as filep:
                         data = json.load(filep)
                 except ValueError:
-                    pass
+                    data = self.print_status_data_eval()
             else:
                 data = self.print_status_data_eval()
 
