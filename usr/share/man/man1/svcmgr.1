@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2017\-09\-12
+.TH SVCMGR 1 2017\-09\-27
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -4283,6 +4283,12 @@ show this help message and exit
 
 provision and start the service
 
+.TP
+.B --time=TIME
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination
 .TP
 .B --dry-run
 Show the action execution plan
@@ -8595,6 +8601,36 @@ show this help message and exit
 Trigger the service pre_monitor_action script and monitor_action method. Beware, this might crash or reboot the node.
 
 .TP
+.B --dry-run
+Show the action execution plan
+.TP
+.B -f, --force
+force action, ignore sanity check warnings
+.TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --master
+option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
+.TP
+.B --rid=PARM_RID
+comma-separated list of resource to limit action to
+.TP
+.B --slave=SLAVE
+option to set to limit the action scope to the service resources in the specified, comma-separated, slaves
+.TP
+.B --slaves
+option to set to limit the action scope to all slave service resources
+.TP
+.B --subsets=PARM_SUBSETS
+comma-separated list of resource subsets to limit action to
+.TP
+.B --tags=PARM_TAGS
+comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression [!]<expr>[<sep>[!]<expr>].
 Where
@@ -8657,6 +8693,12 @@ show this help message and exit
 
 stop and unprovision the service. beware: data will be lost upon fs and disk unprovisioning.
 
+.TP
+.B --time=TIME
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination
 .TP
 .B --dry-run
 Show the action execution plan
@@ -8861,6 +8903,12 @@ show this help message and exit
 delete the service instance on the local node if no --rid is specified, or delete the resources pointed by --rid in services passed through --service
 
 .TP
+.B --time=TIME
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination
+.TP
 .B --dry-run
 Show the action execution plan
 .TP
@@ -9026,6 +9074,36 @@ show this help message and exit
 get the raw or dereferenced value of a service configuration parameter
 
 .TP
+.B --dry-run
+Show the action execution plan
+.TP
+.B -f, --force
+force action, ignore sanity check warnings
+.TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --master
+option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
+.TP
+.B --rid=PARM_RID
+comma-separated list of resource to limit action to
+.TP
+.B --slave=SLAVE
+option to set to limit the action scope to the service resources in the specified, comma-separated, slaves
+.TP
+.B --slaves
+option to set to limit the action scope to all slave service resources
+.TP
+.B --subsets=PARM_SUBSETS
+comma-separated list of resource subsets to limit action to
+.TP
+.B --tags=PARM_TAGS
+comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
 .B --eval
 If set with the 'get' action, the printed value of --param is scoped and dereferenced.
 .TP
@@ -9161,6 +9239,36 @@ show this help message and exit
 set a service configuration parameter
 
 .TP
+.B --dry-run
+Show the action execution plan
+.TP
+.B -f, --force
+force action, ignore sanity check warnings
+.TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --master
+option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
+.TP
+.B --rid=PARM_RID
+comma-separated list of resource to limit action to
+.TP
+.B --slave=SLAVE
+option to set to limit the action scope to the service resources in the specified, comma-separated, slaves
+.TP
+.B --slaves
+option to set to limit the action scope to all slave service resources
+.TP
+.B --subsets=PARM_SUBSETS
+comma-separated list of resource subsets to limit action to
+.TP
+.B --tags=PARM_TAGS
+comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
+.TP
 .B --kw=KW
 combined with the set action, an expression like <keyword>[@<scope>][[<index>]]<op><value>, where <op> can be '=', '+=', '-='. Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 .TP
@@ -9241,6 +9349,36 @@ show this help message and exit
 
 unset a node configuration parameter pointed by --param
 
+.TP
+.B --dry-run
+Show the action execution plan
+.TP
+.B -f, --force
+force action, ignore sanity check warnings
+.TP
+.B --local
+execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --master
+option to set to limit the action scope to the master service resources
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
+.TP
+.B --rid=PARM_RID
+comma-separated list of resource to limit action to
+.TP
+.B --slave=SLAVE
+option to set to limit the action scope to the service resources in the specified, comma-separated, slaves
+.TP
+.B --slaves
+option to set to limit the action scope to all slave service resources
+.TP
+.B --subsets=PARM_SUBSETS
+comma-separated list of resource subsets to limit action to
+.TP
+.B --tags=PARM_TAGS
+comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --param=PARAM
 point a service configuration parameter for the 'get' and 'set' actions

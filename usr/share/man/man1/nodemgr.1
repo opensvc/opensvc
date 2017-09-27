@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2017\-09\-12
+.TH NODEMGR 1 2017\-09\-27
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -1069,6 +1069,9 @@ Number of seconds to wait for an async action to finish. Default is 300 seconds.
 .B --wait
 Wait for asynchronous action termination
 .TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
+.TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
 .TP
@@ -1387,6 +1390,9 @@ Number of seconds to wait for an async action to finish. Default is 300 seconds.
 .TP
 .B --wait
 Wait for asynchronous action termination
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize

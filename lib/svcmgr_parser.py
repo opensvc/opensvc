@@ -550,6 +550,7 @@ ACTIONS = {
         },
         'toc': {
             'msg': 'Trigger the service pre_monitor_action script and monitor_action method. Beware, this might crash or reboot the node.',
+            'options': ACTION_OPTS,
         },
         'frozen': {
             'msg': 'report on the current blocking of actions on this service',
