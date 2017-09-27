@@ -102,6 +102,3 @@ class Prov(provisioning.Prov):
         self.r.clear_cache("vg.lvs")
         self.r.clear_cache("vg.lvs.attr")
         self.r.clear_cache("vg.tags")
-        self.r.log.info("provisioned")
-        self.r.start()
-        return True

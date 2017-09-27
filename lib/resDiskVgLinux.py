@@ -61,7 +61,7 @@ class Disk(resDisk.Disk):
         if self.name not in data:
             # no lv ... happens in provisioning, where lv are not created yet
             self.log.debug("no logical volumes. consider up")
-            return True
+            return self.tag in self.get_tags()[self.name]
         for attr in data[self.name].values():
             if re.search('....a.', attr) is not None:
                 # at least one lv is active
@@ -110,7 +110,7 @@ class Disk(resDisk.Disk):
         return True
 
     def remove_tag(self, tag):
-        cmd = [ 'vgchange', '--deltag', '@'+tag, self.name ]
+        cmd = ['vgchange', '--deltag', '@'+tag, self.name]
         (ret, out, err) = self.vcall(cmd)
         self.clear_cache("vg.tags")
 
@@ -135,14 +135,14 @@ class Disk(resDisk.Disk):
             self.remove_tag(tag)
 
     def add_tags(self):
-        cmd = [ 'vgchange', '--addtag', '@'+self.tag, self.name ]
+        cmd = ['vgchange', '--addtag', '@'+self.tag, self.name]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
         self.clear_cache("vg.tags")
 
     def activate_vg(self):
-        cmd = [ 'vgchange', '-a', 'y', self.name ]
+        cmd = ['vgchange', '-a', 'y', self.name]
         ret, out, err = self.vcall(cmd)
         self.clear_cache("vg.lvs")
         self.clear_cache("vg.lvs.attr")
@@ -151,7 +151,7 @@ class Disk(resDisk.Disk):
             raise ex.excError
 
     def _deactivate_vg(self):
-        cmd = [ 'vgchange', '-a', 'n', self.name ]
+        cmd = ['vgchange', '-a', 'n', self.name]
         ret, out, err = self.vcall(cmd, err_to_info=True)
         self.clear_cache("vg.lvs")
         self.clear_cache("vg.lvs.attr")

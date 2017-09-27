@@ -56,6 +56,7 @@ class Prov(provisioning.Prov):
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError(err)
+        self.r.can_rollback = True
         if len(out) > 0:
             self.r.log.info(out)
         if len(err) > 0:
