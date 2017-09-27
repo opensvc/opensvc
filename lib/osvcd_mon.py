@@ -172,7 +172,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if svc:
                 try:
                     results = svc._validate_config(path=filep.name)
-                except ex.excError as exc:
+                except Exception as exc:
                     self.log.error("service %s fetched config validation "
                                    "error: %s", svcname, exc)
                     return
