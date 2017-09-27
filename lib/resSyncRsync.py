@@ -147,9 +147,6 @@ class Rsync(resSync.Sync):
             return set()
 
         for node in targets.copy():
-            if not status and not self.remote_node_env(node, target):
-                targets.remove(node)
-                continue
             if not status and not self.remote_fs_mounted(node):
                 targets.remove(node)
                 continue

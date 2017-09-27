@@ -77,9 +77,6 @@ class SyncDocker(resSync.Sync):
                 target = 'drpnodes'
             else:
                 continue
-            if not self.remote_node_env(node, target):
-                self.targets -= set([node])
-                continue
             try:
                 mounted = self.remote_fs_mounted(node)
             except ex.excError:

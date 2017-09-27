@@ -9,8 +9,6 @@ import rcStatus
 from rcGlobalEnv import rcEnv
 from rcScheduler import *
 
-cache_remote_node_env = {}
-
 class Sync(Res.Resource, Scheduler):
     default_optional = True
 
@@ -103,54 +101,6 @@ class Sync(Res.Resource, Scheduler):
             self.log.error("The destination fs %s is not mounted on node %s. refuse to sync %s to protect parent fs"%(self.dstfs, node, self.dst))
             return False
         return True
-
-    def peer_env_from_daemon(self, node):
-        data = self.svc.node._daemon_status()
-        return data["monitor"]["nodes"][node]["env"]
-
-    def _remote_node_env(self, node):
-        try:
-            return self.peer_env_from_daemon(node)
-        except Exception as exc:
-            self.log.debug("can't get %s env from daemon: %s", node, exc)
-            pass
-        ruser = self.svc.node.get_ruser(node)
-        rcmd = [rcEnv.paths.nodemgr, 'get', '--param', 'node.env']
-        if ruser != "root":
-            rcmd = ['sudo'] + rcmd
-        cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--'] + rcmd
-        (ret, out, err) = self.call(cmd, cache=True)
-        if ret != 0:
-            return
-        words = out.split()
-        if len(words) == 1:
-            return words[0]
-        else:
-            return out
-
-    def remote_node_env(self, node, target):
-        if target == 'drpnodes':
-            expected_type = list(set(rcEnv.allowed_svc_envs) - set(['PRD']))
-        elif target == 'nodes':
-            if self.svc.svc_env == "PRD":
-                expected_type = ["PRD"]
-            else:
-                expected_type = list(set(rcEnv.allowed_svc_envs) - set(["PRD"]))
-        else:
-            self.log.error('unknown sync target: %s'%target)
-            raise ex.excError
-
-        if node not in cache_remote_node_env:
-            peer_env = self._remote_node_env(node)
-            if peer_env is None:
-                return False
-            cache_remote_node_env[node] = peer_env
-
-        if cache_remote_node_env[node] in expected_type:
-            return True
-        self.log.error("incompatible remote node '%s' env: '%s' (expected in %s)"%\
-                       (node, cache_remote_node_env[node], ', '.join(expected_type)))
-        return False
 
     def pre_sync_check_svc_not_up(self):
         if self.svc.options.force:
