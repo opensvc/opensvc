@@ -2945,7 +2945,7 @@ class KeywordDiskMdUuid(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  required=True,
+                  required=False,
                   at=True,
                   keyword="uuid",
                   rtype="md",

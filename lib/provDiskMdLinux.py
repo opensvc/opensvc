@@ -1,6 +1,8 @@
 import provisioning
 import os
 import rcExceptions as ex
+
+from rcGlobalEnv import rcEnv
 from rcUtilities import which
 from converters import convert_size
 
@@ -64,8 +66,12 @@ class Prov(provisioning.Prov):
         self.r.uuid = os.path.basename(name)
         uuid = self.get_real_uuid(name)
         self.r.uuid = uuid
-        self.r.log.info("set %s.uuid = %s", self.r.rid, uuid)
-        self.r.svc._set(self.r.rid, "uuid", uuid)
+        if self.r.shared:
+            self.r.log.info("set %s.uuid = %s", self.r.rid, uuid)
+            self.r.svc._set(self.r.rid, "uuid", uuid)
+        else:
+            self.r.log.info("set %s.uuid@%s = %s", self.r.rid, rcEnv.nodename, uuid)
+            self.r.svc._set(self.r.rid, "uuid@"+rcEnv.nodename, uuid)
 
     def get_real_uuid(self, name):
         buff = self.r.detail()
@@ -80,6 +86,10 @@ class Prov(provisioning.Prov):
             return
         for dev in self.r.sub_devs():
             self.r.vcall([self.r.mdadm, "--brief", "--zero-superblock", dev])
-        self.r.log.info("reset %s.uuid", self.r.rid)
-        self.r.svc._set(self.r.rid, "uuid", "")
+        if self.r.shared:
+            self.r.log.info("reset %s.uuid", self.r.rid)
+            self.r.svc._set(self.r.rid, "uuid", "")
+        else:
+            self.r.log.info("reset %s.uuid@%s", self.r.rid, rcEnv.nodename)
+            self.r.svc._set(self.r.rid, "uuid@"+rcEnv.nodename, "")
 

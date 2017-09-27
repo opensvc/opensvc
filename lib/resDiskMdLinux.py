@@ -95,6 +95,8 @@ class Disk(resDisk.Disk):
             self.status_log("md member missing: %s" % ", ".join(sorted(list(not_found))))
 
     def presync(self):
+        if self.uuid is None:
+            return
         if not self.is_shared:
             return
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "hb"]))
@@ -102,6 +104,8 @@ class Disk(resDisk.Disk):
             self.md_config_export()
 
     def files_to_sync(self):
+        if self.uuid is None:
+            return
         if not self.is_shared:
             return []
         return [self.md_config_file_name()]
@@ -187,12 +191,16 @@ class Disk(resDisk.Disk):
         return False
 
     def _status(self, verbose=False):
+        if self.uuid is None:
+            return rcStatus.NA
         s = resDisk.Disk._status(self, verbose=verbose)
         if s == rcStatus.DOWN:
              self.down_state_alerts()
         return s
 
     def do_start(self):
+        if self.uuid is None:
+            raise ex.excError("uuid is not set")
         if self.is_up():
             self.log.info("md %s is already assembled" % self.uuid)
             return 0
@@ -201,6 +209,8 @@ class Disk(resDisk.Disk):
         self._create_static_name()
 
     def do_stop(self):
+        if self.uuid is None:
+            raise ex.excError("uuid is not set")
         if not self.is_up():
             self.log.info("md %s is already down" % self.uuid)
             return
