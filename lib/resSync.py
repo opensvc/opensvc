@@ -9,8 +9,6 @@ import rcStatus
 from rcGlobalEnv import rcEnv
 from rcScheduler import *
 
-cache_remote_node_env = {}
-
 class Sync(Res.Resource, Scheduler):
     def __init__(self,
                  rid=None,
@@ -91,40 +89,6 @@ class Sync(Res.Resource, Scheduler):
             self.log.error("The destination fs %s is not mounted on node %s. refuse to sync %s to protect parent fs"%(self.dstfs, node, self.dst))
             return False
         return True
-
-    def remote_node_env(self, node, target):
-        if target == 'drpnodes':
-            expected_type = list(set(rcEnv.allowed_svc_envs) - set(['PRD']))
-        elif target == 'nodes':
-            if self.svc.svc_env == "PRD":
-                expected_type = ["PRD"]
-            else:
-                expected_type = list(set(rcEnv.allowed_svc_envs) - set(["PRD"]))
-        else:
-            self.log.error('unknown sync target: %s'%target)
-            raise ex.excError
-
-        ruser = self.svc.node.get_ruser(node)
-        rcmd = [rcEnv.paths.nodemgr, 'get', '--param', 'node.env']
-        if ruser != "root":
-            rcmd = ['sudo'] + rcmd
-
-        if node not in cache_remote_node_env:
-            cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--'] + rcmd
-            (ret, out, err) = self.call(cmd, cache=True)
-            if ret != 0:
-                return False
-            words = out.split()
-            if len(words) == 1:
-                cache_remote_node_env[node] = words[0]
-            else:
-                cache_remote_node_env[node] = out
-
-        if cache_remote_node_env[node] in expected_type:
-            return True
-        self.log.error("incompatible remote node '%s' env: '%s' (expected in %s)"%\
-                       (node, cache_remote_node_env[node], ', '.join(expected_type)))
-        return False
 
     def pre_sync_check_svc_not_up(self):
         if self.svc.options.force:
