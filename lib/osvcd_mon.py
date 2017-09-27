@@ -532,12 +532,15 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def service_orchestrator_auto_failover(self, svc, smon, status, candidates):
         if not svc.orchestrate:
-            ranks = self.placement_ranks(svc, candidates=self.peers)
+            ranks = self.placement_ranks(svc, candidates=svc.peers)
             if ranks == []:
                 return
             nodename = ranks[0]
-            instances = self.get_thawed_instance(svc.svcname)
-            if nodename != rcEnv.nodename and len(instances) == 1:
+            instances = self.service_instances_thawed(svc.svcname)
+            if nodename == rcEnv.nodename:
+                # natural leader
+                pass
+            elif len(instances) == 1:
                 # switch situation only one candidate is thawed
                 pass
             else:
