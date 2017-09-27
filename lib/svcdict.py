@@ -1347,6 +1347,19 @@ class KeywordClusterType(Keyword):
                   text="failover: the service is allowed to be up on one node at a time. allactive: the service must be up on all nodes. flex: the service can be up on n out of m nodes (n <= m), n/m must be in the [flex_min_nodes, flex_max_nodes] range."
                 )
 
+class KeywordOrchestrate(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="orchestrate",
+                  order=16,
+                  default=True,
+                  convert="boolean",
+                  candidates=(True, False),
+                  text="If set to false, disable service orchestration by the OpenSVC daemon monitor. Failover services won't failover automatically. Flex services won't start missing instances to meet the flex_min_nodes target. Resource restart is still active though. Constraints are not honored on unorchestrated services.",
+                )
+
 class KeywordPlacement(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4628,6 +4641,7 @@ class KeyDict(KeywordStore):
         self += KeywordShowDisabled()
         self += KeywordCluster()
         self += KeywordClusterType()
+        self += KeywordOrchestrate()
         self += KeywordPlacement()
         self += KeywordConstraints()
         self += KeywordFlexPrimary()

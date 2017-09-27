@@ -1981,7 +1981,12 @@ def build(name, minimal=False, svcconf=None, node=None):
     try:
         svc.placement = svc.conf_get('DEFAULT', "placement")
     except ex.OptNotFound as exc:
-        pass
+        svc.placement = exc.default
+
+    try:
+        svc.orchestrate = svc.conf_get("DEFAULT", "orchestrate")
+    except ex.OptNotFound as exc:
+        svc.orchestrate = exc.default
 
 
     #
@@ -2039,9 +2044,6 @@ def build(name, minimal=False, svcconf=None, node=None):
         svc.clustertype = svc.conf_get('DEFAULT', 'cluster_type')
     except ex.OptNotFound as exc:
         pass
-
-    if 'flex' in svc.clustertype:
-        svc.ha = True
 
     try:
         svc.show_disabled = svc.conf_get('DEFAULT', 'show_disabled')

@@ -379,7 +379,6 @@ class Svc(Crypt):
         self.lockfd = None
         self.abort_start_done = False
         self.action_start_date = datetime.datetime.now()
-        self.ha = False
         self.has_encap_resources = False
         self.encap = False
         self.action_rid = []
@@ -392,6 +391,7 @@ class Svc(Crypt):
         # set by the builder
         self.conf = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
         self.comment = ""
+        self.orchestrate = True
         self.clustertype = "failover"
         self.placement = "nodes order"
         self.show_disabled = False
@@ -475,6 +475,16 @@ class Svc(Crypt):
                 ),
             },
         )
+
+    @lazy
+    def ha(self):
+        if self.clustertype == "flex":
+            return True
+        if self.has_monitored_resources():
+            return True
+        if self.orchestrate:
+            return True
+        return False
 
     @lazy
     def peers(self):
@@ -4362,7 +4372,7 @@ class Svc(Crypt):
             raise ex.excError("section [%s] not found" % section)
         if not self.config.has_option(section, option):
             raise ex.excError("option '%s' not found in section [%s]" % (option, section))
-        if self.options.eval:
+        if evaluate:
             return self.conf_get(section, option, "string", scope=True)
         else:
             return self.config.get(section, option)
