@@ -594,6 +594,17 @@ class Monitor(shared.OsvcThread, Crypt):
             self.set_smon(svc.svcname, "ready")
 
     def service_orchestrator_auto_flex(self, svc, smon, status, candidates):
+        if not svc.orchestrate:
+            ranks = self.placement_ranks(svc, candidates=svc.peers)
+            if ranks == []:
+                return
+            try:
+                idx = ranks.index(rcEnv.nodename)
+            except ValueError:
+                return
+            if rcEnv.nodename not in ranks[:svc.flex_min_nodes]:
+                # not a natural leader, skip orchestration
+                return
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
         n_up = self.count_up_service_instances(svc.svcname)
         if smon.status == "ready":
