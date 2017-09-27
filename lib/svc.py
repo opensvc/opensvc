@@ -1866,7 +1866,7 @@ class Svc(Crypt):
         """
         A method wrapper the node reboot method.
         """
-        self.node.system._reboot()
+        self.node.system.reboot()
 
     def crash(self):
         """
