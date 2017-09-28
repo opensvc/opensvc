@@ -1353,6 +1353,7 @@ class KeywordOrchestrate(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="orchestrate",
+                  at=True,
                   order=16,
                   default="ha",
                   convert="string",
