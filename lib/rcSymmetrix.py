@@ -29,6 +29,9 @@ OPT = Storage({
     "dev": Option(
         "--dev", action="store", dest="dev",
         help="The device id (ex: 00A04)"),
+    "force": Option(
+        "--force", action="store_true", dest="force",
+        help="bypass the downsize sanity check."),
     "pair": Option(
         "--pair", action="store", dest="pair",
         help="The device id pair (ex: 00A04:00A04)"),
@@ -117,6 +120,7 @@ ACTIONS = {
             "msg": "Resize a thin device.",
             "options": [
                 OPT.dev,
+                OPT.force,
                 OPT.size,
             ],
         },
@@ -818,7 +822,7 @@ class Vmax(Sym):
         if ret != 0:
             raise ex.excError(err)
 
-    def resize_disk(self, dev=None, size=None, **kwargs):
+    def resize_disk(self, dev=None, size=None, force=False, **kwargs):
         if dev is None:
             raise ex.excError("The '--dev' parameter is mandatory")
         if size is None:
@@ -827,12 +831,16 @@ class Vmax(Sym):
         if len(dev_data) != 1:
             raise ex.excError("device %s does not exist" % dev)
         dev_data = dev_data[0]
+        current_size = int(dev_data["Capacity"]["megabytes"])
         if size.startswith("+"):
             incr = convert_size(size.lstrip("+"), _to="MB")
-            current_size = int(dev_data["Capacity"]["megabytes"])
             size = str(current_size + incr)
         else:
             size = str(convert_size(size, _to="MB"))
+        if not force and int(size) < current_size:
+            raise ex.excError("the target size is smaller than the current "
+                              "size. refuse to process. use --force if you "
+                              "accept the data loss risk.")
         if "RDF" in dev_data:
             rdf_data = dev_data["RDF"]
         else:
