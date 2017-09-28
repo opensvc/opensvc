@@ -49,6 +49,8 @@ class Monitor(shared.OsvcThread, Crypt):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
         self.last_run = 0
         self.log.info("monitor started")
+        self.startup = datetime.datetime.utcnow()
+        self.rejoin_grace_period_expired = False
 
         try:
             while True:
@@ -492,6 +494,8 @@ class Monitor(shared.OsvcThread, Crypt):
         if svc.frozen() or self.freezer.node_frozen():
             #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
             return
+        if self.service_orchestrator_auto_grace(svc):
+            return
         if status in (None, "undef", "n/a"):
             #self.log.info("service %s orchestrator out (agg avail status %s)",
             #              svc.svcname, status)
@@ -680,6 +684,31 @@ class Monitor(shared.OsvcThread, Crypt):
             if svc.svcname in shared.SERVICES and \
                (not self.service_unprovisioned(instance) or instance is not None):
                 self.service_purge(svc.svcname)
+
+    def service_orchestrator_auto_grace(self, svc):
+        """
+        After daemon startup, wait for <rejoin_grace_period_expired> seconds
+        before allowing service_orchestrator_auto() to proceed.
+        """
+        if self.rejoin_grace_period_expired:
+            return False
+        if len(self.cluster_nodes) == 1:
+            self.rejoin_grace_period_expired = True
+            self.duplog("info", "disable rejoin grace period: single node cluster", svcname="")
+            return False
+        if len(shared.CLUSTER_DATA.keys()) > 1:
+            self.rejoin_grace_period_expired = True
+            self.duplog("info", "disable rejoin grace period: now rejoined", svcname="")
+            return False
+        now = datetime.datetime.utcnow()
+        if now > self.startup + datetime.timedelta(seconds=self.rejoin_grace_period):
+            self.rejoin_grace_period_expired = True
+            self.duplog("info", "rejoin grace period expired", svcname="")
+            return False
+        if len(svc.peers) == 1:
+            return False
+        self.duplog("info", "in rejoin grace period", svcname="")
+        return True
 
     def leader_first(self, svc, provisioned=False, deleted=None):
         """
