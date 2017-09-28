@@ -33,7 +33,7 @@ or
 """,
   "form_definition": """
 Desc: |
-  A rule to set a list of parameters in simple keyword/value configuration file format. Current values can be checked as set or unset, strictly equal, or superior/inferior to their target value.
+  A rule to set a list of parameters in simple keyword/value configuration file format. Current values can be checked as set or unset, strictly equal, or superior/inferior to their target value. By default, this object appends keyword/values not found, potentially creating duplicates. The 'reset' operator can be used to avoid such duplicates.
 Outputs:
   -
     Dest: compliance variable
@@ -66,7 +66,7 @@ Inputs:
       - ">="
       - "<"
       - "<="
-    Help: The comparison operator to use to check the parameter current value.
+    Help: The comparison operator to use to check the parameter current value. The 'reset' operator can be used to avoid duplicate occurence of the same keyword.
   -
     Id: value
     Label: Value
