@@ -6,16 +6,6 @@ data = {
     "path": "/etc/ssh/sshd_config",
   },
   "example_value": """
-[
-  {
-    "key": "PermitRootLogin",
-    "op": "=",
-    "value": "yes"
-  }
-]
-
-or
-
 {
   "path": "/etc/ssh/sshd_config",
   "keys": [
