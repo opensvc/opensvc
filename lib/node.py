@@ -3326,7 +3326,7 @@ class Node(Crypt):
             status = colorize_status(data["avail"], lpad=0)
             if data["overall"] == "warn":
                 status += colorize("!", color.BROWN)
-            if data["placement"] != "optimal":
+            if data["placement"] == "non-optimal":
                 status += colorize("^", color.RED)
             line = [
                 " "+colorize(svcname, color.BOLD),

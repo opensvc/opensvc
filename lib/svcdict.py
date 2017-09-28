@@ -1354,10 +1354,10 @@ class KeywordOrchestrate(Keyword):
                   section="DEFAULT",
                   keyword="orchestrate",
                   order=16,
-                  default=True,
-                  convert="boolean",
-                  candidates=(True, False),
-                  text="If set to false, disable service orchestration by the OpenSVC daemon monitor. Failover services won't failover automatically. Flex services won't start missing instances to meet the flex_min_nodes target. Resource restart is still active though. Constraints are not honored on unorchestrated services.",
+                  default="ha",
+                  convert="string",
+                  candidates=("ha", "start", "no"),
+                  text="If set to 'no', disable service orchestration by the OpenSVC daemon monitor, including service start on boot. If set to 'start' failover services won't failover automatically, though the service instance on the natural placement leader is started if another instance is not already up. Flex services won't start missing instances to meet the flex_min_nodes target, though the <flex_min_nodes>th instances on best placement leaders are started if the instances minimum quota is not already reached. Resource restart is still active whatever the orchestrate value.",
                 )
 
 class KeywordPlacement(Keyword):
@@ -1378,6 +1378,7 @@ class KeywordConstraints(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="constraints",
+                  depends=[("orchestrate", "ha")],
                   order=16,
                   example="$(\"{nodename}\"==\"n2.opensvc.com\")",
                   text="An expression evaluating as a boolean, constraining the service instance placement by the daemon monitor to nodes with the constraints evaluated as True. The constraints are not honored by manual start operations. The constraints value is embedded in the json status. Supported comparison operators are '==', '!=', '>', '>=', '<=', 'in (e1, e2)', 'in [e1, e2]'. Supported arithmetic operators are '*', '+', '-', '/', '**', '//', '%'. Supported binary operators are '&', '|', '^'. The negation operator is 'not'. Supported boolean operators are 'and', 'or'. References are allowed. Strings, and references evaluating as strings, containing dots must be quoted.",

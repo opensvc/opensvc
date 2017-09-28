@@ -531,7 +531,9 @@ class Monitor(shared.OsvcThread, Crypt):
             self.service_orchestrator_auto_flex(svc, smon, status, candidates)
 
     def service_orchestrator_auto_failover(self, svc, smon, status, candidates):
-        if not svc.orchestrate:
+        if svc.orchestrate == "no":
+            return
+        if svc.orchestrate == "start":
             ranks = self.placement_ranks(svc, candidates=svc.peers)
             if ranks == []:
                 return
@@ -594,7 +596,9 @@ class Monitor(shared.OsvcThread, Crypt):
             self.set_smon(svc.svcname, "ready")
 
     def service_orchestrator_auto_flex(self, svc, smon, status, candidates):
-        if not svc.orchestrate:
+        if svc.orchestrate == "no":
+            return
+        if svc.orchestrate == "start":
             ranks = self.placement_ranks(svc, candidates=svc.peers)
             if ranks == []:
                 return
@@ -901,6 +905,9 @@ class Monitor(shared.OsvcThread, Crypt):
         return astatus
 
     def get_agg_placement(self, svcname):
+        svc = self.get_service(svcname)
+        if svc and svc.orchestrate == "no":
+            return "n/a"
         for instance in self.get_service_instances(svcname).values():
             if "avail" not in instance:
                 continue

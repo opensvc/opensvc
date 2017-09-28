@@ -391,7 +391,7 @@ class Svc(Crypt):
         # set by the builder
         self.conf = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
         self.comment = ""
-        self.orchestrate = True
+        self.orchestrate = "ha"
         self.clustertype = "failover"
         self.placement = "nodes order"
         self.show_disabled = False
@@ -482,7 +482,7 @@ class Svc(Crypt):
             return True
         if self.has_monitored_resources():
             return True
-        if self.orchestrate:
+        if self.orchestrate == "ha":
             return True
         return False
 
@@ -4164,6 +4164,8 @@ class Svc(Crypt):
         """
         Service move to best node.
         """
+        if self.orchestrate == "no":
+            raise ex.excError("giveback is not supported with orchestrate=no")
         self.svcunlock()
         self.clear()
         self.node.async_action("thaw", wait=True, timeout=self.options.time)
