@@ -3313,10 +3313,6 @@ class Node(Crypt):
             out.append(line)
 
         def load_svc(svcname, data):
-            #if svcname not in self.services:
-                # svc deleted and monitor not yet aware
-            #    return
-            status = colorize_status(data["avail"], lpad=0)
             try:
                 clustertype = self.services[svcname].clustertype
                 nodes = self.services[svcname].nodes
@@ -3325,6 +3321,9 @@ class Node(Crypt):
                 clustertype = ""
                 nodes = set()
                 drpnodes = set()
+            if rcEnv.nodename in drpnodes:
+                clustertype = "drp " + clustertype
+            status = colorize_status(data["avail"], lpad=0)
             if data["overall"] == "warn":
                 status += colorize("!", color.BROWN)
             if data["placement"] != "optimal":
