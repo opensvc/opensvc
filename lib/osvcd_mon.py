@@ -538,12 +538,8 @@ class Monitor(shared.OsvcThread, Crypt):
             if ranks == []:
                 return
             nodename = ranks[0]
-            instances = self.service_instances_thawed(svc.svcname)
             if nodename == rcEnv.nodename:
                 # natural leader
-                pass
-            elif len(instances) == 1:
-                # switch situation only one candidate is thawed
                 pass
             else:
                 return
