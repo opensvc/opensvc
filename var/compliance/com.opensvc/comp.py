@@ -376,24 +376,24 @@ class CompObject(object):
         if not os.path.exists(path):
             return
         session_uuid = os.environ.get("OSVC_SESSION_UUID")
-        if session_uuid is None:
+        pathvar = os.environ.get("OSVC_PATH_VAR")
+        if session_uuid is None or pathvar is None:
             return
-        backup_base_d = os.path.join(rcEnv.paths.pathvar, "compliance_backup", session_uuid)
-        backup_f = os.path.join(backup_base_d, path)
+        backup_base_d = os.path.join(pathvar, "compliance_backup", session_uuid)
+        backup_f = os.path.join(backup_base_d, path.lstrip(os.sep))
         if os.path.exists(backup_f):
             return
         backup_d = os.path.dirname(backup_f)
-        if not backup_d:
+        if not os.path.exists(backup_d):
             try:
                 os.makedirs(backup_d)
             except OSError as exc:
-                perror("failed to backup %s" % path)
+                perror("failed to backup %s: create dir %s" % (path, backup_d))
                 raise ComplianceError()
         try:
-            shutil.copy(path, backup)
-            pinfo("%s backup up as %s" % (path, backup))
+            shutil.copy(path, backup_f)
         except Exception:
-            perror("failed to backup %s" % path)
+            perror("failed to backup %s: copy to %s" % (path, backup_f))
             raise ComplianceError()
         self.remove_old_backups()
 
@@ -404,7 +404,7 @@ class CompObject(object):
         session_uuid = os.environ.get("OSVC_SESSION_UUID")
         if session_uuid is None:
             return
-        backup_base_d = os.path.join(rcEnv.paths.pathvar, "compliance_backup", session_uuid)
+        backup_base_d = os.path.join(pathvar, "compliance_backup", session_uuid)
         backup_f = os.path.join(backup_base_d, path)
         if not backup_f:
             perror("failed to restore %s: no backup" % path)
@@ -421,7 +421,8 @@ class CompObject(object):
         import time
         import shutil
         threshold = time.time() - 7 * 24 * 60 * 60
-        for path in glob.glob(os.path.join(rcEnv.paths.pathvar, "compliance_backup", "*-*-*-*")):
+        pathvar = os.environ.get("OSVC_PATH_VAR")
+        for path in glob.glob(os.path.join(pathvar, "compliance_backup", "*-*-*-*-*")):
             mtime = os.stat(path).st_mtime
             if mtime < threshold:
                 shutil.rmtree(path)

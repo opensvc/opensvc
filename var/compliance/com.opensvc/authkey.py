@@ -464,7 +464,9 @@ class CompAuthKeys(CompObject):
                 os.chmod(p, 0o0600)
                 pinfo(p, "mode set to 0600")
                 os.chown(p, userinfo.pw_uid, userinfo.pw_gid)
-                pinfo(p, "ownetship set to %d:%d"%(userinfo.pw_uid, userinfo.pw_gid))
+                pinfo(p, "ownership set to %d:%d"%(userinfo.pw_uid, userinfo.pw_gid))
+        else:
+            self.backup(p)
 
         with open(p, 'a') as f:
             f.write(ak['key'])
