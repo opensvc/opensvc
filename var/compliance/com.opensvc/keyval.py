@@ -11,7 +11,7 @@ data = {
   "keys": [
     {
       "key": "PermitRootLogin",
-      "op": "reset
+      "op": "reset",
       "value": ""
     },
     {
