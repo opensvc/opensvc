@@ -400,6 +400,10 @@ class Monitor(shared.OsvcThread, Crypt):
             if smon.local_expect != "started":
                 return []
             nb_restart = svc.get_resource(rid).nb_restart
+            if nb_restart == 0:
+                resource = svc.get_resource(rid)
+                if resource and rcEnv.nodename in resource.always_on:
+                    nb_restart = 1
             retries = self.get_smon_retries(svc.svcname, rid)
             if retries > nb_restart:
                 return []
