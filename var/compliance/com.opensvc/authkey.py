@@ -314,8 +314,7 @@ class CompAuthKeys(CompObject):
             if l[0].strip() == "AllowUsers":
                 lines[i] = s
         buff = "\n".join(lines)
-        backup = cf+'.'+str(datetime.datetime.now())
-        shutil.copy(cf, backup)
+        self.backup(cf)
         with open(cf, 'w') as f:
             f.write(buff)
         self.reload_sshd()
@@ -351,8 +350,7 @@ class CompAuthKeys(CompObject):
             if l[0].strip() == "AllowGroups":
                 lines[i] = s
         buff = "\n".join(lines)
-        backup = cf+'.'+str(datetime.datetime.now())
-        shutil.copy(cf, backup)
+        self.backup(cf)
         with open(cf, 'w') as f:
             f.write(buff)
         self.reload_sshd()

@@ -214,14 +214,7 @@ class EtcSystem(CompObject):
             if self.check_key(key, verbose=False) == RET_ERR:
                 self.fix_key(key)
         if len(self.keys) > 0:
-            import datetime
-            backup = self.cf+str(datetime.datetime.now())
-            try:
-                import shutil
-                shutil.copy(self.cf, backup)
-            except:
-                perror("failed to backup %s"%self.cf)
-                return RET_ERR
+            self.backup(self.cf)
             try:
                 with open(self.cf, 'w') as f:
                     f.write('\n'.join(self.lines))

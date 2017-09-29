@@ -388,6 +388,7 @@ class CompFiles(CompObject):
            except Exception as e:
                perror("file:", e)
                pass
+        self.backup(f['path'])
         try:
             with open(f['path'], 'w') as fi:
                 fi.write(f['fmt'])

@@ -371,6 +371,62 @@ class CompObject(object):
                 hash.update(chunk)
         return hash.hexdigest()
 
+    def backup(self, path):
+        import shutil
+        if not os.path.exists(path):
+            return
+        session_uuid = os.environ.get("OSVC_SESSION_UUID")
+        if session_uuid is None:
+            return
+        backup_base_d = os.path.join(rcEnv.paths.pathvar, "compliance_backup", session_uuid)
+        backup_f = os.path.join(backup_base_d, path)
+        if os.path.exists(backup_f):
+            return
+        backup_d = os.path.dirname(backup_f)
+        if not backup_d:
+            try:
+                os.makedirs(backup_d)
+            except OSError as exc:
+                perror("failed to backup %s" % path)
+                raise ComplianceError()
+        try:
+            shutil.copy(path, backup)
+            pinfo("%s backup up as %s" % (path, backup))
+        except Exception:
+            perror("failed to backup %s" % path)
+            raise ComplianceError()
+        self.remove_old_backups()
+
+    def restore(self, path):
+        import shutil
+        if not os.path.exists(path):
+            return
+        session_uuid = os.environ.get("OSVC_SESSION_UUID")
+        if session_uuid is None:
+            return
+        backup_base_d = os.path.join(rcEnv.paths.pathvar, "compliance_backup", session_uuid)
+        backup_f = os.path.join(backup_base_d, path)
+        if not backup_f:
+            perror("failed to restore %s: no backup" % path)
+            raise ComplianceError()
+        try:
+            shutil.copy(backup, path)
+            pinfo("%s restored" % path)
+        except Exception:
+            perror("failed to restore %s" % path)
+            raise ComplianceError()
+
+    def remove_old_backups(self):
+        import glob
+        import time
+        import shutil
+        threshold = time.time() - 7 * 24 * 60 * 60
+        for path in glob.glob(os.path.join(rcEnv.paths.pathvar, "compliance_backup", "*-*-*-*")):
+            mtime = os.stat(path).st_mtime
+            if mtime < threshold:
+                shutil.rmtree(path)
+            
+
     #
     # Placeholders, to override in child class
     #

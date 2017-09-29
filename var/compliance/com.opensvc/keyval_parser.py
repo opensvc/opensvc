@@ -127,6 +127,10 @@ class Parser(object):
             perror(e)
             self.restore()
             raise ParserError()
+        try:
+            os.unlink(self.bkp)
+        except OSError:
+            pass
 
     def parse(self, buff):
         section = None

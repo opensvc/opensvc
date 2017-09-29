@@ -494,15 +494,7 @@ class LinuxMpath(CompObject):
             return
 
         if not self.nocf:
-            import datetime
-            backup = self.cf+'.'+str(datetime.datetime.now())
-            try:
-                import shutil
-                shutil.copy(self.cf, backup)
-            except:
-                perror("failed to backup %s"%self.cf)
-                return RET_ERR
-            pinfo(self.cf, "backed up as %s"%backup)
+            self.backup(self.cf)
         try:
             with open(self.cf, 'w') as f:
                 f.write(str(self.conf))
@@ -510,9 +502,6 @@ class LinuxMpath(CompObject):
             self.need_restart = True
         except:
             perror("failed to write %s"%self.cf)
-            if not self.nocf:
-                shutil.copy(backup, self.cf)
-                pinfo("backup restored")
             return RET_ERR
 
         self.restart_daemon()

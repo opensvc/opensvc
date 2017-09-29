@@ -234,6 +234,7 @@ class CompFileInc(CompObject):
                 continue
             if not os.path.exists(path):
                 perror("'%s' will be created, please check owner and permissions" %path)
+            self.backup(path)
             try:
                 f = codecs.open(path, 'w', encoding="utf8")
                 f.write(self.files[path])
