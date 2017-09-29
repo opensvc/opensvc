@@ -147,7 +147,7 @@ class KeyVal(CompObject):
                 return RET_OK
         elif op == "unset":
             if value is not None:
-                if target.strip() == "":
+                if is_string(target) and target.strip() == "":
                     if verbose:
                         perror("%s is set, should not be"%keyname)
                     return RET_ERR
@@ -166,7 +166,7 @@ class KeyVal(CompObject):
                         pinfo("%s is not set to value %s, on target"%(keyname, target))
                     return RET_OK
             else:
-                if target.strip() != "":
+                if is_string(target) and target.strip() != "":
                     if verbose:
                         pinfo("%s=%s is not set, on target"%(keyname, target))
                 else:
