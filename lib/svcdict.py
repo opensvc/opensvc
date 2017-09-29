@@ -1355,7 +1355,7 @@ class KeywordOrchestrate(Keyword):
                   keyword="orchestrate",
                   at=True,
                   order=16,
-                  default="ha",
+                  default="no",
                   convert="string",
                   candidates=("ha", "start", "no"),
                   text="If set to 'no', disable service orchestration by the OpenSVC daemon monitor, including service start on boot. If set to 'start' failover services won't failover automatically, though the service instance on the natural placement leader is started if another instance is not already up. Flex services won't start missing instances to meet the flex_min_nodes target, though the <flex_min_nodes>th instances on best placement leaders are started if the instances minimum quota is not already reached. Resource restart is still active whatever the orchestrate value.",
