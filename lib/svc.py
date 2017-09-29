@@ -2428,7 +2428,7 @@ class Svc(Crypt):
                 raise ex.excAbortAction()
             else:
                 raise ex.excError()
-        if action == "start" and self.orchestrate == "no":
+        if action == "start" and self.orchestrate == "no" and not self.command_is_scoped():
             self.log.info("start the local instance (unorchestrated)")
             self.options.local = True
         if self.options.local or self.options.slave or self.options.slaves or \
