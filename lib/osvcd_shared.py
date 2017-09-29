@@ -515,8 +515,6 @@ class OsvcThread(threading.Thread):
         * the service instance is provisioned (default)
         * the service instance constraints are eval'ed True (default)
         """
-        if svc.orchestrate == "no":
-            return []
         candidates = []
         with CLUSTER_DATA_LOCK:
             for nodename, data in CLUSTER_DATA.items():
@@ -543,8 +541,6 @@ class OsvcThread(threading.Thread):
         return candidates
 
     def placement_ranks(self, svc, candidates=None):
-        if svc.orchestrate == "no":
-            return []
         if candidates is None:
             candidates = self.placement_candidates(svc)
         if svc.placement == "load avg":
@@ -572,8 +568,6 @@ class OsvcThread(threading.Thread):
         fn(msg, kwargs)
 
     def placement_leader(self, svc, candidates=None, silent=False):
-        if svc.orchestrate == "no":
-            return
         if candidates is None:
             candidates = self.placement_candidates(svc)
         if len(candidates) == 0:
