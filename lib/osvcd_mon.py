@@ -726,7 +726,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 continue
             missing.append(parent)
         if missing == []:
-            self.duplog("info", "service %(svcname)s parents all available"
+            self.duplog("info", "service %(svcname)s parents all available",
                         svcname=svc.svcname)
             return True
         self.duplog("info", "service %(svcname)s parents not available:"
