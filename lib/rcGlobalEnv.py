@@ -92,6 +92,7 @@ class rcEnv:
     """Class to store globals
     """
     session_uuid = str(uuid.uuid4())
+    os.environ["OSVC_SESSION_UUID"] = session_uuid
     node_env = "TST"
 
     allowed_svc_envs = [
