@@ -1450,6 +1450,19 @@ class KeywordServiceEnv(Keyword):
                   text="A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node env."
                 )
 
+class KeywordParents(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="parents",
+                  order=20,
+                  at=True,
+                  default=[],
+                  convert="list_lower",
+                  text="List of services that must be 'avail up' before allowing this service to be started by the daemon monitor. Whitespace separated."
+                )
+
 class KeywordNodes(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4646,6 +4659,7 @@ class KeyDict(KeywordStore):
         self += KeywordOrchestrate()
         self += KeywordPlacement()
         self += KeywordConstraints()
+        self += KeywordParents()
         self += KeywordFlexPrimary()
         self += KeywordDrpFlexPrimary()
         self += KeywordRollback()

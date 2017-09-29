@@ -1979,6 +1979,11 @@ def build(name, minimal=False, svcconf=None, node=None):
     svc.drp_flex_primary = drp_flex_primary
 
     try:
+        svc.parents = svc.conf_get('DEFAULT', "parents")
+    except ex.OptNotFound as exc:
+        svc.parents = exc.default
+
+    try:
         svc.placement = svc.conf_get('DEFAULT', "placement")
     except ex.OptNotFound as exc:
         svc.placement = exc.default

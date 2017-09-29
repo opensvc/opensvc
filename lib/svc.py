@@ -394,6 +394,7 @@ class Svc(Crypt):
         self.orchestrate = "ha"
         self.clustertype = "failover"
         self.placement = "nodes order"
+        self.parents = []
         self.show_disabled = False
         self.svc_env = rcEnv.node_env
         self.nodes = set([rcEnv.nodename])

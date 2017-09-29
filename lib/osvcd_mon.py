@@ -498,11 +498,13 @@ class Monitor(shared.OsvcThread, Crypt):
         if svc.frozen() or self.freezer.node_frozen():
             #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
             return
-        if self.service_orchestrator_auto_grace(svc):
-            return
         if status in (None, "undef", "n/a"):
             #self.log.info("service %s orchestrator out (agg avail status %s)",
             #              svc.svcname, status)
+            return
+        if self.service_orchestrator_auto_grace(svc):
+            return
+        if status == "down" and not self.parents_available(svc):
             return
         if svc.hard_anti_affinity:
             intersection = set(self.get_local_svcnames()) & set(svc.hard_anti_affinity)
@@ -713,6 +715,24 @@ class Monitor(shared.OsvcThread, Crypt):
             return False
         self.duplog("info", "in rejoin grace period", svcname="")
         return True
+
+    def parents_available(self, svc):
+        missing = []
+        for parent in svc.parents:
+            if parent == svc.svcname:
+                continue
+            avail = self.get_agg_avail(svc.svcname)
+            if avail in ("unknown", "up"):
+                continue
+            missing.append(parent)
+        if missing == []:
+            self.duplog("info", "service %(svcname)s parents all available"
+                        svcname=svc.svcname)
+            return True
+        self.duplog("info", "service %(svcname)s parents not available:"
+                    " %(missing)s", svcname=svc.svcname,
+                    missing=" ".join(missing))
+        return False
 
     def leader_first(self, svc, provisioned=False, deleted=None):
         """
