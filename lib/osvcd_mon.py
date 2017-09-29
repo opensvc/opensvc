@@ -718,14 +718,16 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def parents_available(self, svc):
         missing = []
+        if len(svc.parents) == 0:
+            return True
         for parent in svc.parents:
             if parent == svc.svcname:
                 continue
-            avail = self.get_agg_avail(svc.svcname)
+            avail = self.get_agg_avail(parent)
             if avail in ("unknown", "up"):
                 continue
             missing.append(parent)
-        if missing == []:
+        if len(missing) == 0:
             self.duplog("info", "service %(svcname)s parents all available",
                         svcname=svc.svcname)
             return True
