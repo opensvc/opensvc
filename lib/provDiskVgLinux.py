@@ -29,10 +29,14 @@ class Prov(provisioning.Prov):
     def has_pv(self, pv):
         cmd = [rcEnv.syspaths.pvscan, "--cache", pv]
         justcall(cmd)
-        cmd = [rcEnv.syspaths.pvs, "-o", "vg_name", "--no-headings", pv]
+        cmd = [rcEnv.syspaths.pvs, "-o", "vg_name", "--noheadings", pv]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return False
+        out = out.strip()
+        if out == self.r.name:
+            self.r.log.info("pv %s is already a member of vg %s", pv, self.r.name)
+            return True
         if out != "":
             raise ex.excError("pv %s in use by vg %s" % (pv, out))
         return True

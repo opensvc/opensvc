@@ -179,6 +179,8 @@ class rcEnv:
         syspaths.lvs = "/sbin/lvs"
         syspaths.multipath = "/sbin/multipath"
         syspaths.multipathd = "/sbin/multipathd"
+        syspaths.pvs = "/sbin/pvs"
+        syspaths.pvscan = "/sbin/pvscan"
         syspaths.vgs = "/sbin/vgs"
     elif sysname == "SunOS":
         syspaths.df = "/usr/sbin/df"
