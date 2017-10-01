@@ -40,8 +40,8 @@ class Prov(provisioning.Prov):
     def provisioner(self):
         try:
             self.pvs = self.r.svc.conf_get(self.r.rid, "pvs")
-        except ex.OptNotFound:
-            raise ex.excError("the 'pvs' parameter is mandatory for provisioning")
+        except ex.RequiredOptNotFound:
+            raise ex.excError
 
         if self.pvs is None:
             # lazy reference not resolvable
