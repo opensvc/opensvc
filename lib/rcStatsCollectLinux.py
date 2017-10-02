@@ -24,8 +24,12 @@ def collect(node):
             if len(l) != 6:
                 continue
             vals.append([now, node.nodename, l[5], l[1], l[4].replace('%','')])
-    
-        stats_fs_u_p = os.path.join(rcEnv.paths.pathvar, 'stats_fs_u.%d' % datetime.datetime.now().day)
+
+        stats_fs_u_d = os.path.join(rcEnv.paths.pathvar, "stats")
+        stats_fs_u_p = os.path.join(stats_fs_u_d, 'fs_u.%d' % datetime.datetime.now().day)
+
+        if not os.path.exists(stats_fs_u_d):
+            os.makedirs(stats_fs_u_d)
         if not os.path.exists(stats_fs_u_p):
             # create the stats file
             mode = 'w+'

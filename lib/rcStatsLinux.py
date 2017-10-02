@@ -204,13 +204,16 @@ class StatsProvider(rcStats.StatsProvider):
         _start = _start.hour * 3600 + _start.minute * 60 + _start.second
         _end = datetime.datetime.strptime(end, "%H:%M:%S")
         _end = _end.hour * 3600 + _end.minute * 60 + _end.second
-        f = os.path.join(rcEnv.paths.pathvar, 'stats_fs_u.%s' % day.lstrip("0"))
+        d = os.path.join(rcEnv.paths.pathvar, 'stats')
+        f = os.path.join(d, 'fs_u.%s' % day.lstrip("0"))
         cols = ['date',
                 'nodename',
                 'mntpt',
                 'size',
                 'used']
 
+        if not os.path.exists(d):
+            return [], []
         if not os.path.exists(f):
             return [], []
 
