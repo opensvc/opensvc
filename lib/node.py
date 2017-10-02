@@ -134,6 +134,13 @@ class Node(Crypt):
         self.set_collector_env()
         self.log = rcLogger.initLogger(rcEnv.nodename)
 
+    @lazy
+    def var_d(self):
+        var_d = os.path.join(rcEnv.paths.pathvar, "node")
+        if not os.path.exists(var_d):
+            os.makedirs(var_d, 0o755)
+        return var_d
+
     @property
     def svcs(self):
         if self.services is None:
@@ -801,7 +808,7 @@ class Node(Crypt):
         else return False
         """
         import glob
-        setup_sync_flag = os.path.join(rcEnv.paths.pathvar, 'last_setup_sync')
+        setup_sync_flag = os.path.join(self.var_d, 'last_setup_sync')
         fpaths = glob.glob(os.path.join(rcEnv.paths.pathetc, '*.conf'))
         if not os.path.exists(setup_sync_flag):
             return True

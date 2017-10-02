@@ -73,6 +73,13 @@ class Resource(object):
         """
         return logging.getLogger(self.log_label())
 
+    @lazy
+    def var_d(self):
+        var_d = os.path.join(self.svc.var_d, self.rid)
+        if not os.path.exists(var_d):
+            os.makedirs(var_d)
+        return var_d
+
     def set_logger(self, log):
         """
         Set the <log> logger as the resource logger, in place of the default
@@ -459,34 +466,26 @@ class Resource(object):
         self.write_status_last()
         self.write_status_history()
 
+    @lazy
     def fpath_status_last(self):
         """
         Return the file path for the resource status cache.
         """
-        dirname = os.path.join(rcEnv.paths.pathvar, self.svc.svcname)
-        fname = "resource.status.last." + self.rid
-        fpath = os.path.join(dirname, fname)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-        return fpath
+        return os.path.join(self.var_d, "status.last")
 
+    @lazy
     def fpath_status_history(self):
         """
         Return the file path for the resource status history.
         """
-        dirname = os.path.join(rcEnv.paths.pathvar, self.svc.svcname)
-        fname = "resource.status.history." + self.rid
-        fpath = os.path.join(dirname, fname)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-        return fpath
+        return os.path.join(self.var_d, "status.history")
 
     def purge_status_last(self):
         """
         Purge the on-disk resource status cache.
         """
         try:
-            os.unlink(self.fpath_status_last())
+            os.unlink(self.fpath_status_last)
         except:
             pass
 
@@ -495,7 +494,7 @@ class Resource(object):
         Fetch the resource status from the on-disk cache.
         """
         try:
-            with open(self.fpath_status_last(), 'r') as ofile:
+            with open(self.fpath_status_last, 'r') as ofile:
                 lines = ofile.read().splitlines()
         except (OSError, IOError) as exc:
             if exc.errno != 2:
@@ -529,14 +528,14 @@ class Resource(object):
         status_str = "%s\n" % rcStatus.Status(self.rstatus)
         if len(self.status_logs) > 0:
             status_str += '\n'.join([entry[0]+": "+entry[1] for entry in self.status_logs])+'\n'
-        with open(self.fpath_status_last(), 'w') as ofile:
+        with open(self.fpath_status_last, 'w') as ofile:
             ofile.write(status_str)
 
     def write_status_history(self):
         """
         Log a change to the resource status history file.
         """
-        fpath = self.fpath_status_history()
+        fpath = self.fpath_status_history
         try:
             with open(fpath, 'r') as ofile:
                 lines = ofile.readlines()
@@ -898,11 +897,7 @@ class Resource(object):
     ##########################################################################
     @lazy
     def provisioned_flag(self):
-        flag_d = os.path.join(rcEnv.paths.pathvar, self.svc.svcname)
-        if not os.path.exists(flag_d):
-            os.makedirs(flag_d)
-        flag_f = os.path.join(flag_d, "provisioned."+self.rid)
-        return flag_f
+        return os.path.join(self.var_d, "provisioned")
 
     def provisioned_flag_mtime(self):
         try:

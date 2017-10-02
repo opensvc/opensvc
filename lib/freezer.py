@@ -12,10 +12,6 @@ class Freezer(object):
     Provides methods to freeze, thaw a service and to test if
     the service is frozen.
     """
-    flag_dir = rcEnv.paths.pathvar
-    base_flag = os.path.join(flag_dir, 'FROZEN')
-    flag = base_flag
-
     @staticmethod
     def _dummy(strict=False):
         """
@@ -30,7 +26,7 @@ class Freezer(object):
         """
         if os.path.exists(self.flag):
             return True
-        if not strict and os.path.exists(self.base_flag):
+        if not strict and os.path.exists(self.node_flag):
             return True
         return False
 
@@ -44,14 +40,14 @@ class Freezer(object):
         """
         Remove the service frozen file flag.
         """
-        if self.flag != self.base_flag and os.path.exists(self.flag):
+        if self.flag != self.node_flag and os.path.exists(self.flag):
             os.unlink(self.flag)
 
     def node_frozen(self):
         """
         Return True if the node frozen file flag is present.
         """
-        if os.path.exists(self.base_flag):
+        if os.path.exists(self.node_flag):
             return True
         return False
 
@@ -59,25 +55,27 @@ class Freezer(object):
         """
         Create the node frozen file flag.
         """
-        if os.path.exists(self.base_flag):
+        if os.path.exists(self.node_flag):
             return
-        open(self.base_flag, 'w').close()
+        open(self.node_flag, 'w').close()
 
     def node_thaw(self):
         """
         Remove the node frozen file flag.
         """
-        if not os.path.exists(self.base_flag):
+        if not os.path.exists(self.node_flag):
             return
-        os.unlink(self.base_flag)
+        os.unlink(self.node_flag)
 
     def __init__(self, name):
-        self.flag = self.flag + "." + name
+        self.node_flag = os.path.join(rcEnv.paths.pathvar, "node", "frozen")
         if not os.path.exists(os.path.join(rcEnv.paths.pathetc, name)):
+            self.flag = self.node_flag
             self.freeze = self._dummy
             self.thaw = self._dummy
             self.frozen = self._dummy
         else:
+            self.flag = os.path.join(rcEnv.paths.pathvar, "services", name, "frozen")
             self.freeze = self._freeze
             self.thaw = self._thaw
             self.frozen = self._frozen

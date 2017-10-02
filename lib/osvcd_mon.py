@@ -1169,7 +1169,7 @@ class Monitor(shared.OsvcThread, Crypt):
         data = {}
 
         for svcname in svcnames:
-            fpath = os.path.join(rcEnv.paths.pathvar, svcname, "status.json")
+            fpath = os.path.join(rcEnv.paths.pathvar, "services", svcname, "status.json")
             try:
                 mtime = os.path.getmtime(fpath)
             except Exception:

@@ -122,7 +122,7 @@ class syncSymSrdfS(resSync.Sync):
 
     @lazy
     def wwn_map_fpath(self):
-        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, "wwn_map."+self.rid)
+        return os.path.join(self.var_d, "wwn_map")
 
     def do_dg_wwn_map(self):
         devs = []

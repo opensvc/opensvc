@@ -31,7 +31,7 @@ class Disk(resDisk.Disk):
 
     @lazy
     def sub_devs_name(self):
-        return os.path.join(rcEnv.paths.pathvar, 'vg_' + self.svc.svcname + '_' + self.name + '.sub_devs')
+        return os.path.join(self.var_d, 'sub_devs')
 
     def files_to_sync(self):
         return [self.sub_devs_name]
@@ -74,7 +74,7 @@ class Disk(resDisk.Disk):
         if self.is_up():
             self.log.info("%s is already up" % self.name)
             return 0
-        devzp = os.path.join(rcEnv.paths.pathvar, self.svc.svcname, 'dev', 'dsk')
+        devzp = os.path.join(self.var_d, 'dev', 'dsk')
         if os.path.isdir(devzp):
             cmd = [ 'zpool', 'import', '-f', '-o', 'cachefile='+os.path.join(rcEnv.paths.pathvar, 'zpool.cache'), '-d', devzp, self.name ]
             (ret, out, err) = self.vcall(cmd)
@@ -148,8 +148,7 @@ class Disk(resDisk.Disk):
 
     def get_wwn_map(self):
         mapping = {}
-        wwn_maps = glob.glob(os.path.join(rcEnv.paths.pathvar,
-                                          self.svc.svcname, "wwn_map.*"))
+        wwn_maps = glob.glob(os.path.join(self.svc.var_d, "*", "wwn_map"))
         for fpath in wwn_maps:
             try:
                 with open(fpath, "r") as filep:

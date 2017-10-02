@@ -363,7 +363,7 @@ class Svc(Crypt):
             cf=os.path.join(rcEnv.paths.pathetc, self.svcname+'.conf'),
             initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.d'),
             alt_initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.dir'),
-            push_flag=os.path.join(rcEnv.paths.pathvar, self.svcname, 'last_pushed_config'),
+            push_flag=os.path.join(self.var_d, 'scheduler', 'last_pushed_config'),
             tmp_cf=os.path.join(rcEnv.paths.pathtmp, self.svcname+".conf.tmp")
         )
         if cf:
@@ -466,12 +466,12 @@ class Svc(Crypt):
             scheduler_actions={
                 "compliance_auto": SchedOpts(
                     "DEFAULT",
-                    fname=self.svcname+os.sep+"last_comp_check",
+                    fname="last_comp_check",
                     schedule_option="comp_schedule"
                 ),
                 "push_service_status": SchedOpts(
                     "DEFAULT",
-                    fname=self.svcname+os.sep+"last_push_service_status",
+                    fname="last_push_service_status",
                     schedule_option="status_schedule"
                 ),
             },
@@ -729,7 +729,7 @@ class Svc(Crypt):
         if not self.encap:
             self.sched.scheduler_actions["push_config"] = SchedOpts(
                 "DEFAULT",
-                fname=self.svcname+os.sep+"last_push_config",
+                fname="last_push_config",
                 schedule_option="push_schedule"
             )
 
@@ -741,7 +741,7 @@ class Svc(Crypt):
         if self.has_monitored_resources() or monitor_schedule is not None:
             self.sched.scheduler_actions["resource_monitor"] = SchedOpts(
                 "DEFAULT",
-                fname=self.svcname+os.sep+"last_resource_monitor",
+                fname="last_resource_monitor",
                 schedule_option="monitor_schedule"
             )
 
@@ -750,7 +750,7 @@ class Svc(Crypt):
         for resource in self.get_resources("sync"):
             syncs += [SchedOpts(
                 resource.rid,
-                fname=self.svcname+os.sep+"last_syncall_"+resource.rid,
+                fname="last_syncall_"+resource.rid,
                 schedule_option="sync_schedule"
             )]
 
@@ -760,13 +760,13 @@ class Svc(Crypt):
         for resource in self.get_resources("task"):
             self.sched.scheduler_actions[resource.rid] = SchedOpts(
                 resource.rid,
-                fname=self.svcname+os.sep+"last_"+resource.rid,
+                fname="last_"+resource.rid,
                 schedule_option="no_schedule"
             )
 
         self.sched.scheduler_actions["push_resinfo"] = SchedOpts(
             "DEFAULT",
-            fname=self.svcname+os.sep+"last_push_resinfo",
+            fname="last_push_resinfo",
             schedule_option="resinfo_schedule"
         )
 
@@ -1293,7 +1293,7 @@ class Svc(Crypt):
 
     @lazy
     def status_data_dump(self):
-        return os.path.join(rcEnv.paths.pathvar, self.svcname, "status.json")
+        return os.path.join(self.var_d, "status.json")
 
     def status_data_dump_outdated(self):
         """
@@ -2114,7 +2114,7 @@ class Svc(Crypt):
         encapsulated in the container identified by <rid> will be written
         for caching.
         """
-        return os.path.join(rcEnv.paths.pathvar, self.svcname, "encap.status."+rid)
+        return os.path.join(self.var_d, rid, "encap.status.json")
 
     def purge_cache_encap_json_status(self, rid):
         """
@@ -3327,13 +3327,12 @@ class Svc(Crypt):
             return
         self.push()
 
-    def create_var_subdir(self):
-        """
-        Create the service-dedicated subdir in <pathvar>.
-        """
-        var_d = os.path.join(rcEnv.paths.pathvar, self.svcname)
+    @lazy
+    def var_d(self):
+        var_d = os.path.join(rcEnv.paths.pathvar, "services", self.svcname)
         if not os.path.exists(var_d):
-            os.makedirs(var_d)
+            os.makedirs(var_d, 0o755)
+        return var_d
 
     def autopush(self):
         """
@@ -3367,7 +3366,6 @@ class Svc(Crypt):
         self.node.collector.call('push_all', [self])
         self.log.info("send %s to collector", self.paths.cf)
         try:
-            self.create_var_subdir()
             import time
             with open(self.paths.push_flag, 'w') as ofile:
                 ofile.write(str(time.time()))
@@ -4708,7 +4706,7 @@ class Svc(Crypt):
         patterns = [
             os.path.join(rcEnv.paths.pathlog, self.svcname+".log*"),
             os.path.join(rcEnv.paths.pathlog, self.svcname+".debug.log*"),
-            os.path.join(rcEnv.paths.pathvar, "FROZEN."+self.svcname),
+            os.path.join(self.var_d, "frozen"),
         ]
         for pattern in patterns:
             for fpath in glob.glob(pattern):
@@ -4723,7 +4721,7 @@ class Svc(Crypt):
         dpaths = [
             os.path.join(rcEnv.paths.pathetc, self.svcname+".dir"),
             os.path.join(rcEnv.paths.pathetc, self.svcname+".d"),
-            os.path.join(rcEnv.paths.pathvar, self.svcname),
+            os.path.join(self.var_d),
         ]
         fpaths = [
             self.paths.cf,

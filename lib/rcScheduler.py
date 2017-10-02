@@ -183,7 +183,7 @@ class SchedOpts(object):
         self.section = section
         self.fname = fname
         if self.fname is None:
-            self.fname = "node"+os.sep+"last_"+section+"_push"
+            self.fname = "last_"+section+"_push"
         self.schedule_option = schedule_option
 
 class Scheduler(object):
@@ -302,7 +302,7 @@ class Scheduler(object):
         Create missing parent directories if needed.
         """
         if not timestamp_f.startswith(os.sep):
-            timestamp_f = os.path.join(rcEnv.paths.pathvar, timestamp_f)
+            timestamp_f = self.get_timestamp_f(timestamp_f)
         timestamp_d = os.path.dirname(timestamp_f)
         if not os.path.isdir(timestamp_d):
             os.makedirs(timestamp_d, 0o755)
@@ -980,14 +980,18 @@ class Scheduler(object):
             return True
         return True
 
-    @staticmethod
-    def get_timestamp_f(fname):
+    def get_timestamp_f(self, fname):
         """
         Return the full path of the last run timestamp file with the <fname>
         basename.
         """
-        timestamp_f = os.path.realpath(os.path.join(rcEnv.paths.pathvar, fname))
-        return timestamp_f
+        if self.name == "node":
+            timestamp_d = os.path.join(rcEnv.paths.pathvar, "node", "scheduler")
+        else:
+            timestamp_d = os.path.join(rcEnv.paths.pathvar, "services", self.name, "scheduler")
+        if not os.path.exists(timestamp_d):
+            os.makedirs(timestamp_d)
+        return os.path.join(timestamp_d, fname)
 
     def _is_croned(self):
         """
