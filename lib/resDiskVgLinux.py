@@ -72,8 +72,6 @@ class Disk(resDisk.Disk):
     def get_lvs_attr(self):
         cmd = [rcEnv.syspaths.lvs, '-o', 'vg_name,lv_name,lv_attr', '--noheadings', '--separator=;']
         out, err, ret = justcall(cmd)
-        if ret != 0:
-            raise ex.excError
         data = {}
         for line in out.splitlines():
             l = line.split(";")
@@ -91,8 +89,6 @@ class Disk(resDisk.Disk):
     def get_tags(self):
         cmd = [rcEnv.syspaths.vgs, '-o', 'vg_name,tags', '--noheadings', '--separator=;']
         out, err, ret = justcall(cmd)
-        if ret != 0:
-            raise ex.excError
         data = {}
         for line in out.splitlines():
             l = line.split(";")
@@ -217,8 +213,6 @@ class Disk(resDisk.Disk):
     def vg_lvs(self):
         cmd = [rcEnv.syspaths.vgs, '--noheadings', '-o', 'vg_name,lv_name', '--separator', ';']
         out, err, ret = justcall(cmd)
-        if ret != 0:
-            raise ex.excError
         data = {}
         for line in out.splitlines():
             try:
@@ -236,8 +230,6 @@ class Disk(resDisk.Disk):
     def vg_pvs(self):
         cmd = [rcEnv.syspaths.vgs, '--noheadings', '-o', 'vg_name,pv_name', '--separator', ';']
         out, err, ret = justcall(cmd)
-        if ret != 0:
-            raise ex.excError
         data = {}
         for line in out.splitlines():
             try:
