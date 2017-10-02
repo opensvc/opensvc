@@ -11,13 +11,13 @@ data = {
   "keys": [
     {
       "key": "PermitRootLogin",
-      "op": "reset",
-      "value": ""
+      "op": "=",
+      "value": "yes"
     },
     {
       "key": "PermitRootLogin",
-      "op": "=",
-      "value": "yes"
+      "op": "reset",
+      "value": ""
     }
   ]
 }
@@ -62,7 +62,7 @@ Inputs:
       - "<"
       - "<="
       - "IN"
-    Help: The comparison operator to use to check the parameter current value. The 'reset' operator can be used to avoid duplicate occurence of the same keyword (prepend a key reset before the key sets). The IN operator verifies the current value is one of the target list member. On fix, if the check is in error, it sets the first target list member. A "IN" operator value must be a JSON formatted list.
+    Help: The comparison operator to use to check the parameter current value. The 'reset' operator can be used to avoid duplicate occurence of the same keyword (insert a key reset after the last key set to mark any additional key found in the original file to be removed). The IN operator verifies the current value is one of the target list member. On fix, if the check is in error, it sets the first target list member. A "IN" operator value must be a JSON formatted list.
   -
     Id: value
     Label: Value
