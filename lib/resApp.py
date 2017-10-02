@@ -49,8 +49,10 @@ def run_as_popen_kwargs(fpath, limits):
     return {'preexec_fn': preexec(user_uid, user_gid, limits), 'cwd': cwd, 'env': env}
 
 def preexec(user_uid, user_gid, limits):
-    set_rlimits(limits)
-    demote(user_uid, user_gid)
+    def result():
+        set_rlimits(limits)
+        demote(user_uid, user_gid)
+    return result
 
 def set_rlimits(limits):
     """
@@ -67,17 +69,11 @@ def set_rlimits(limits):
 
 def demote(user_uid, user_gid):
     """
-    Return a privilege demotion function to plug as Popen() prefex_fn keyword
+    Return a privilege demotion function to plug as Popen() preexec_fn keyword
     argument, customized for <user_uid> and <user_gid>.
     """
-    def result():
-        """
-        A privilege demotion function to plug as Popen() prefex_fn keyword
-        argument.
-        """
-        os.setgid(user_gid)
-        os.setuid(user_uid)
-    return result
+    os.setgid(user_gid)
+    os.setuid(user_uid)
 
 class StatusWARN(Exception):
     """
