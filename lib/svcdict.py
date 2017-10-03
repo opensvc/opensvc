@@ -1463,6 +1463,19 @@ class KeywordParents(Keyword):
                   text="List of services that must be 'avail up' before allowing this service to be started by the daemon monitor. Whitespace separated."
                 )
 
+class KeywordChildren(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="children",
+                  order=20,
+                  at=True,
+                  default=[],
+                  convert="list_lower",
+                  text="List of services that must be 'avail down' before allowing this service to be stopped by the daemon monitor. Whitespace separated."
+                )
+
 class KeywordNodes(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4660,6 +4673,7 @@ class KeyDict(KeywordStore):
         self += KeywordPlacement()
         self += KeywordConstraints()
         self += KeywordParents()
+        self += KeywordChildren()
         self += KeywordFlexPrimary()
         self += KeywordDrpFlexPrimary()
         self += KeywordRollback()

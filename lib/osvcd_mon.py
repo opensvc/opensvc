@@ -661,15 +661,20 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.log.info("thaw service %s", svc.svcname)
                 self.service_thaw(svc.svcname)
         elif smon.global_expect == "stopped":
+            if instance.avail in STOPPED_STATES:
+                return
+            if not self.children_down(svc):
+                return
             if not svc.frozen():
                 self.log.info("freeze service %s", svc.svcname)
                 self.service_freeze(svc.svcname)
             if instance.avail not in STOPPED_STATES:
                 thawed_on = self.service_instances_thawed(svc.svcname)
                 if thawed_on:
-                    self.log.info("service %s still has thawed instances on "
-                                  "nodes %s, delay stop", svc.svcname,
-                                  ", ".join(thawed_on))
+                    self.duplog("info", "service %(svcname)s still has thawed instances "
+                                "on nodes %(thawed_on)s, delay stop",
+                                svcname=svc.svcname,
+                                thawed_on=", ".join(thawed_on))
                 else:
                     self.service_stop(svc.svcname)
         elif smon.global_expect == "started":
@@ -679,15 +684,18 @@ class Monitor(shared.OsvcThread, Crypt):
             elif status not in STARTED_STATES:
                 self.service_orchestrator_auto(svc, smon, status)
         elif smon.global_expect == "unprovisioned":
-            if not self.service_unprovisioned(instance) and self.leader_first(svc, provisioned=False):
+            if not self.service_unprovisioned(instance) and \
+               self.leader_first(svc, provisioned=False):
                 self.service_unprovision(svc.svcname)
         elif smon.global_expect == "provisioned":
-            if not self.service_provisioned(instance) and self.leader_first(svc, provisioned=True):
+            if not self.service_provisioned(instance) and \
+               self.leader_first(svc, provisioned=True):
                 self.service_provision(svc.svcname)
         elif smon.global_expect == "deleted":
             if svc.svcname in shared.SERVICES:
                 self.service_delete(svc.svcname)
-        elif smon.global_expect == "purged" and self.leader_first(svc, provisioned=False, deleted=False):
+        elif smon.global_expect == "purged" and \
+             self.leader_first(svc, provisioned=False, deleted=False):
             if svc.svcname in shared.SERVICES and \
                (not self.service_unprovisioned(instance) or instance is not None):
                 self.service_purge(svc.svcname)
@@ -717,6 +725,26 @@ class Monitor(shared.OsvcThread, Crypt):
         self.duplog("info", "in rejoin grace period", svcname="")
         return True
 
+    def children_down(self, svc):
+        missing = []
+        if len(svc.children) == 0:
+            return True
+        for child in svc.children:
+            if child == svc.svcname:
+                continue
+            avail = self.get_agg_avail(child)
+            if avail in ("unknown", "down"):
+                continue
+            missing.append(child)
+        if len(missing) == 0:
+            self.duplog("info", "service %(svcname)s children all avail down",
+                        svcname=svc.svcname)
+            return True
+        self.duplog("info", "service %(svcname)s children still available:"
+                    " %(missing)s", svcname=svc.svcname,
+                    missing=" ".join(missing))
+        return False
+
     def parents_available(self, svc):
         missing = []
         if len(svc.parents) == 0:
@@ -729,7 +757,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 continue
             missing.append(parent)
         if len(missing) == 0:
-            self.duplog("info", "service %(svcname)s parents all available",
+            self.duplog("info", "service %(svcname)s parents all avail up",
                         svcname=svc.svcname)
             return True
         self.duplog("info", "service %(svcname)s parents not available:"

@@ -1984,6 +1984,11 @@ def build(name, minimal=False, svcconf=None, node=None):
         svc.parents = exc.default
 
     try:
+        svc.children = svc.conf_get('DEFAULT', "children")
+    except ex.OptNotFound as exc:
+        svc.children = exc.default
+
+    try:
         svc.placement = svc.conf_get('DEFAULT', "placement")
     except ex.OptNotFound as exc:
         svc.placement = exc.default
