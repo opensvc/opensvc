@@ -480,7 +480,7 @@ class Monitor(shared.OsvcThread, Crypt):
         if svc.disabled:
             #self.log.info("service %s orchestrator out (disabled)", svc.svcname)
             return
-        if smon.status not in ("ready", "idle"):
+        if smon.status not in ("ready", "idle", "wait children", "wait parents"):
             #self.log.info("service %s orchestrator out (mon status %s)", svc.svcname, smon.status)
             return
         status = self.get_agg_avail(svc.svcname)
@@ -505,8 +505,12 @@ class Monitor(shared.OsvcThread, Crypt):
             return
         if self.service_orchestrator_auto_grace(svc):
             return
-        if status == "down" and not self.parents_available(svc):
-            return
+        if status == "down":
+            if not self.parents_available(svc):
+                self.set_smon(svc.svcname, status="wait parents")
+                return
+            elif smon.status == "wait parents":
+                self.set_smon(svc.svcname, status="idle")
         if svc.hard_anti_affinity:
             intersection = set(self.get_local_svcnames()) & set(svc.hard_anti_affinity)
             if len(intersection) > 0:
@@ -555,7 +559,7 @@ class Monitor(shared.OsvcThread, Crypt):
             else:
                 return
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
-        if smon.status == "ready":
+        if smon.status in "ready":
             if instance.avail is "up":
                 self.log.info("abort 'ready' because the local instance "
                               "has started")
@@ -663,8 +667,13 @@ class Monitor(shared.OsvcThread, Crypt):
         elif smon.global_expect == "stopped":
             if instance.avail in STOPPED_STATES:
                 return
+
             if not self.children_down(svc):
+                self.set_smon(svc.svcname, status="wait children")
                 return
+            elif smon.status == "wait children":
+                self.set_smon(svc.svcname, status="idle")
+
             if not svc.frozen():
                 self.log.info("freeze service %s", svc.svcname)
                 self.service_freeze(svc.svcname)
@@ -809,7 +818,7 @@ class Monitor(shared.OsvcThread, Crypt):
         for instance in self.get_service_instances(svcname).values():
             if instance["avail"] == "up":
                 n_up += 1
-            elif instance["monitor"]["status"] in ("restarting", "starting", "ready"):
+            elif instance["monitor"]["status"] in ("restarting", "starting", "wait children", "ready"):
                 n_up += 1
         return n_up
 
