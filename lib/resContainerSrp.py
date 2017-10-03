@@ -3,7 +3,7 @@ import os
 from rcGlobalEnv import rcEnv
 import rcStatus
 import resources as Res
-from rcUtilities import which, qcall, justcall
+from rcUtilities import which, qcall, justcall, lazy
 import resContainer
 import rcExceptions as ex
 
@@ -239,8 +239,11 @@ class Srp(resContainer.Container):
                                         guestos=guestos,
                                         osvc_root_path=osvc_root_path,
                                         **kwargs)
-        self.export_file = os.path.join(rcEnv.paths.pathvar, name + '.xml')
         self.runmethod = ['srp_su', name, 'root', '-c']
+
+    @lazy
+    def export_file(self):
+        return os.path.join(self.var_d, name + '.xml')
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

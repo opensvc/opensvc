@@ -47,7 +47,7 @@ def collect(node):
     
     def run_glance():
         glance = '/opt/perf/bin/glance'
-        syn = '/opt/opensvc/tmp/glance.syntax'
+        syn = os.path.join(rcEnv.paths.pathtmp, 'glance.syntax')
         now = datetime.datetime.now()
         iterations = (23-now.hour)*6+(60-now.minute)//10
         cmd = ['/opt/perf/bin/glance', '-aos', syn, '-j', '600', '-iterations']
@@ -111,7 +111,7 @@ def collect(node):
             print('error writing %s'%syn)
             return
     
-        collect_d = '/opt/opensvc/var/'
+        collect_d = os.path.join(rcEnv.paths.pathvar, "stats")
         collect_f = 'glance%0.2d'%now.day
         collect_p = os.path.join(collect_d, collect_f)
     

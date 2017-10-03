@@ -38,7 +38,7 @@ class Disk(resVg.Disk):
         pass
 
     def files_to_sync(self):
-        return [self.sharefile_name(), self.mkfsfile_name()]
+        return [self.sharefile_name(), self.mksffile_name()]
 
     def postsync(self):
         s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
@@ -53,7 +53,7 @@ class Disk(resVg.Disk):
             self.write_share()
 
     def sharefile_name(self):
-        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, self.rid + '.share')
+        return os.path.join(self.var_d, 'share')
 
     def get_devs(self):
         cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-l', 'all']

@@ -40,12 +40,10 @@ class HpVm(resContainer.Container):
         a = self.vg.files_to_sync()
         guest = os.path.join(os.sep, 'var', 'opt', 'hpvm', 'guests', self.name)
         uuid = os.path.realpath(guest)
-        share = os.path.join(rcEnv.paths.pathvar, 'vg_'+self.name+'_*.share')
         if os.path.exists(guest):
             a.append(guest)
         if os.path.exists(uuid):
             a.append(uuid)
-        files = glob.glob(share)
         if len(files) > 0:
             a += files
         return a

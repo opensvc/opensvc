@@ -24,8 +24,7 @@ def lookup_snap_mod():
         raise ex.excError
 
 def get_timestamp_filename(self, node):
-    sync_timestamp_d = os.path.join(rcEnv.paths.pathvar, 'sync', node)
-    sync_timestamp_f = os.path.join(sync_timestamp_d, self.svc.svcname+'!'+self.rid)
+    sync_timestamp_f = os.path.join(self.var_d, "last_sync_"+node)
     return sync_timestamp_f
 
 def add_sudo_rsync_path(options):
@@ -180,20 +179,14 @@ class Rsync(resSync.Sync):
 
     def sync_timestamp(self, node):
         sync_timestamp_f = get_timestamp_filename(self, node)
-        sync_timestamp_d = os.path.dirname(sync_timestamp_f)
-        sync_timestamp_d_src = os.path.join(rcEnv.paths.pathvar, 'sync', rcEnv.nodename)
-        sync_timestamp_f_src = os.path.join(sync_timestamp_d_src, self.svc.svcname+'!'+self.rid)
-        sched_timestamp_f = os.path.join(rcEnv.paths.pathvar, '_'.join(('last_sync', self.svc.svcname, self.rid)))
-        if not os.path.isdir(sync_timestamp_d):
-            os.makedirs(sync_timestamp_d, 0o755)
-        if not os.path.isdir(sync_timestamp_d_src):
-            os.makedirs(sync_timestamp_d_src, 0o755)
+        sync_timestamp_f_src = get_timestamp_filename(self, rcEnv.nodename)
+        sched_timestamp_f = os.path.join(self.svc.var_d, "scheduler", "last_syncall_"+self.rid)
         with open(sync_timestamp_f, 'w') as f:
             f.write(str(self.svc.action_start_date)+'\n')
         import shutil
-        shutil.copy2(sync_timestamp_f, sync_timestamp_d_src)
+        shutil.copy2(sync_timestamp_f, sync_timestamp_f_src)
         shutil.copy2(sync_timestamp_f, sched_timestamp_f)
-        tsfiles = glob.glob(os.path.join(rcEnv.paths.pathvar, 'sync', '*', self.svc.svcname+"!"+self.rid))
+        tsfiles = glob.glob(os.path.join(self.var_d, "last_sync_*"))
         ruser = self.svc.node.get_ruser(node)
         options = self.mangle_options(ruser)
         cmd = ['rsync'] + options

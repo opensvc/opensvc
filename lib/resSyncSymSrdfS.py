@@ -207,15 +207,15 @@ class syncSymSrdfS(resSync.Sync):
 
     @lazy
     def dgfile_tmp_local_name(self):
-        return os.path.join(rcEnv.paths.pathvar, 'symrdf_' + self.symdg + '.dg.tmp.local')
+        return os.path.join(self.var_d, 'symrdf_' + self.symdg + '.dg.tmp.local')
 
     @lazy
     def dgfile_local_name(self):
-        return os.path.join(rcEnv.paths.pathvar, 'symrdf_' + self.symdg + '.dg.local')
+        return os.path.join(self.var_d, 'symrdf_' + self.symdg + '.dg.local')
 
     @lazy
     def dgfile_rdf_name(self):
-        return os.path.join(rcEnv.paths.pathvar, 'symrdf_' + self.symdg + '.dg.rdf')
+        return os.path.join(self.var_d, 'symrdf_' + self.symdg + '.dg.rdf')
 
     def flush_cache(self):
 	unset_lazy(self, "rdf_query")

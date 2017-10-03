@@ -30,13 +30,13 @@ class Disk(resDisk.Disk):
         return False
 
     def files_to_sync(self):
-        return [self.mapfile_name(), self.mkfsfile_name()]
+        return [self.mapfile_name(), self.mksffile_name()]
 
     def mapfile_name(self):
-        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, self.rid + '.map')
+        return os.path.join(self.var_d, 'map')
 
-    def mkfsfile_name(self):
-        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, self.rid + '.mksf')
+    def mksffile_name(self):
+        return os.path.join(self.var_d, 'mksf')
 
     def has_it(self):
         """ returns True if the volume is present
@@ -71,7 +71,7 @@ class Disk(resDisk.Disk):
         mksf = {}
         devs = self.sub_devs()
         dsf_names = map(self.dsf_name, devs)
-        with open(self.mkfsfile_name(), 'w') as f:
+        with open(self.mksffile_name(), 'w') as f:
             for line in buff.split('\n'):
                 if len(line) == 0:
                     return
@@ -84,7 +84,7 @@ class Disk(resDisk.Disk):
                     f.write(":".join([a, out.split()[0].replace('0x', '')])+'\n')
 
     def do_mksf(self):
-        if not os.path.exists(self.mkfsfile_name()):
+        if not os.path.exists(self.mksffile_name()):
             return
 
         instance = {}
@@ -97,7 +97,7 @@ class Disk(resDisk.Disk):
             instance[l[0].replace('0x', '')] = l[1]
 
         r = 0
-        with open(self.mkfsfile_name(), 'r') as f:
+        with open(self.mksffile_name(), 'r') as f:
             for line in f.readlines():
                 a = line.replace('\n', '').split(':')
                 if len(a) == 0:

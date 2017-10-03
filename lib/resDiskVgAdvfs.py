@@ -20,7 +20,7 @@ class Disk(resDisk.Disk):
         self.label = 'fdmn ' + name
 
     def sub_devs_name(self):
-        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, self.rid + '.sub_devs')
+        return os.path.join(self.var_d, 'sub_devs')
 
     def files_to_sync(self):
         return [self.sub_devs_name()]

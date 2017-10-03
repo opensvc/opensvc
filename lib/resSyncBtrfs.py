@@ -19,7 +19,6 @@ class SyncBtrfs(resSync.Sync):
                  target=None,
                  src=None,
                  dst=None,
-                 delta_store=None,
                  sender=None,
                  recursive=False,
                  snap_size=0,
@@ -49,10 +48,6 @@ class SyncBtrfs(resSync.Sync):
             self.dst_label = dst[:dst.index(":")]
             self.dst_subvol = dst[dst.index(":")+1:]
 
-        if delta_store is None:
-            self.delta_store = rcEnv.paths.pathvar
-        else:
-            self.delta_store = delta_store
         self.dst_btrfs = {}
         self.src_btrfs = None
 
@@ -418,8 +413,7 @@ class SyncBtrfs(resSync.Sync):
         self.snap_uuid = self.src_btrfs.get_transid(snap)
 
     def set_statefile(self):
-        self.statefile = os.path.join(rcEnv.paths.pathvar,
-                                      self.svc.svcname+'_'+self.rid+'_btrfs_state')
+        self.statefile = os.path.join(self.var_d, 'btrfs_state')
 
     def write_statefile(self):
         self.set_statefile()

@@ -78,11 +78,9 @@ class DockerLib(object):
         if "--token" in self.docker_swarm_args:
             raise ex.excError("--token must not be specified in DEFAULT.docker_swarm_args")
 
-        self.docker_var_d = os.path.join(rcEnv.paths.pathvar, self.svc.svcname)
+        self.docker_var_d = self.svc.var_d
 
-        if not os.path.exists(self.docker_var_d):
-            os.makedirs(self.docker_var_d)
-        elif self.docker_daemon_private:
+        if self.docker_daemon_private:
             self.docker_socket = "unix://"+os.path.join(self.docker_var_d, 'docker.sock')
         else:
             self.docker_socket = None
@@ -820,7 +818,7 @@ class DockerLib(object):
         return True
 
     def join_token_dump_file(self, ttype):
-        return os.path.join(rcEnv.paths.pathvar, self.svc.svcname, "swarm_" + ttype + "_join_token")
+        return os.path.join(self.svc.var_d, "swarm_" + ttype + "_join_token")
 
     def dump_join_tokens(self):
         for ttype in ("manager", "worker"):

@@ -149,7 +149,7 @@ class Prov(provisioning.Prov):
                   ",".join(search)
                 )
 
-            sysidcfg_dir = os.path.join(rcEnv.paths.pathvar, self.r.svc.svcname)
+            sysidcfg_dir = os.path.join(self.r.var_d)
             sysidcfg_filename = os.path.join(sysidcfg_dir, 'sysidcfg')
             contents = ""
             contents += "keyboard=US-English\n"

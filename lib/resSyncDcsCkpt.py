@@ -166,7 +166,7 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
         self._info = {}
 
     def tsfile(self):
-        return os.path.join(rcEnv.paths.pathvar, '.'.join((self.svc.svcname, self.rid, 'ts')))
+        return os.path.join(self.var_d, 'ts')
 
     def update_tsfile(self):
         import datetime

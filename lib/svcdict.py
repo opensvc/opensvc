@@ -746,7 +746,7 @@ class KeywordDockerDataDir(Keyword):
                   keyword="docker_data_dir",
                   at=True,
                   order=12,
-                  text="If the service has docker-type container resources and docker_daemon_private is set to True, the service handles the startup of a private docker daemon. Its socket is <pathvar>/<svcname>/docker.sock, and its data directory must be specified using this parameter. This organization is necessary to enable service relocalization.",
+                  text="If the service has docker-type container resources and docker_daemon_private is set to True, the service handles the startup of a private docker daemon. Its socket is <pathvar>/services/<svcname>/docker.sock, and its data directory must be specified using this parameter. This organization is necessary to enable service relocalization.",
                   example="/srv/svc1/data/docker"
                 )
 
@@ -1585,7 +1585,7 @@ class KeywordSyncInterval(Keyword):
                   order=26,
                   default=121,
                   convert="duration",
-                  text="Set the minimum delay between syncs in minutes. If a sync is triggered through a scheduler or manually, it is skipped if last sync occurred less than 'sync_min_delay' ago. The mecanism is enforced by a timestamp created upon each sync completion in <pathvar>/sync/[service]![dst]"
+                  text="Set the minimum delay between syncs in minutes. If a sync is triggered through a scheduler or manually, it is skipped if last sync occurred less than 'sync_min_delay' ago. The mecanism is enforced by a timestamp created upon each sync completion in <pathvar>/services/<svcname>/<rid>/last_sync_<node>"
                 )
 
 class KeywordSyncMaxDelay(Keyword):

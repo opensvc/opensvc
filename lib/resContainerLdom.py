@@ -27,15 +27,6 @@ class Ldom(resContainer.Container):
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
-    def files_to_sync(self):
-        import glob
-        a = []
-        ldomf = os.path.join(rcEnv.paths.pathvar, 'ldom_'+self.name+'.*')
-        files = glob.glob(ldomf)
-        if len(files) > 0:
-            a += files
-        return a
-
     def check_capabilities(self):
         cmd = ['/usr/sbin/ldm', 'list' ]
         (ret, out, err) = self.call(cmd)
