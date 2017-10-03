@@ -798,6 +798,32 @@ def move_usr_to_opt():
         logit("removing linksvc %s"%linksvc)
         os.unlink(linksvc)
 
+def move_var_files_19():
+    # node frozen flag
+    old_node_frozen = os.path.join(pathvar, "FROZEN")
+    pathvar_node = os.path.join(pathvar, "node")
+    if not os.path.exists(pathvar_node):
+        os.makedirs(pathvar_node, 0o755)
+    if os.path.exists(old_node_frozen):
+        node_frozen = os.path.join(pathvar_node, "frozen")
+        shutil.move(old_node_frozen, node_frozen)
+
+    # service frozen flag
+    for fpath in glob.glob(os.path.join(pathvar, "FROZEN.*")):
+        svcname = os.path.basename(fpath).replace("FROZEN.", "")
+        pathvar_svc = os.path.join(pathvar, "services", svcname)
+        if not os.path.exists(pathvar_svc):
+            os.makedirs(pathvar_svc, 0o755)
+        svc_frozen = os.path.join(pathvar_svc, "frozen")
+        shutil.move(fpath, svc_frozen)
+
+    # stats
+    for fpath in glob.glob(os.path.join(pathvar, "stats_*")):
+        fname = os.path.basename(fpath).replace("stats_", "")
+        dst = os.path.join(pathvar, "stats", fname)
+        shutil.move(fpath, dst)
+
+
 def install_etc_path():
     logit("begin")
     p = os.path.join(os.sep, 'etc', 'PATH')
@@ -1180,6 +1206,7 @@ try:
     chmod_directories()
     convert_to_lsb()
     move_env_to_conf()
+    move_var_files_19()
     dump_install_content()
     restart_daemon()
     logit("\nOpenSVC postinstall terminated\n",stdout=True)
