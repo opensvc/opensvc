@@ -551,12 +551,12 @@ class OsvcThread(threading.Thread):
             return [rcEnv.nodename]
 
     def duplog(self, lvl, msg, **kwargs):
-        svcname = kwargs.get("svcname")
-        if svcname is None:
+        sig = str(kwargs.items())
+        if sig is None:
             return
-        if svcname in self.duplog_data and msg == self.duplog_data[svcname]:
+        if sig in self.duplog_data and msg == self.duplog_data[sig]:
             return
-        self.duplog_data[svcname] = msg
+        self.duplog_data[sig] = msg
         if lvl == "info":
             fn = self.log.info
         elif lvl == "warning":
