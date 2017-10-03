@@ -665,9 +665,6 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.log.info("thaw service %s", svc.svcname)
                 self.service_thaw(svc.svcname)
         elif smon.global_expect == "stopped":
-            if instance.avail in STOPPED_STATES:
-                return
-
             if not self.children_down(svc):
                 self.set_smon(svc.svcname, status="wait children")
                 return
@@ -677,7 +674,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if not svc.frozen():
                 self.log.info("freeze service %s", svc.svcname)
                 self.service_freeze(svc.svcname)
-            if instance.avail not in STOPPED_STATES:
+            elif instance.avail not in STOPPED_STATES:
                 thawed_on = self.service_instances_thawed(svc.svcname)
                 if thawed_on:
                     self.duplog("info", "service %(svcname)s still has thawed instances "
