@@ -28,7 +28,7 @@ def test_mimport():
     mod = mimport("res", "fs", "linux")
     assert hasattr(mod, "Mount") == True
     mod = mimport("prov", "fs", "linux")
-    assert hasattr(mod, "ProvisioningFs") == True
+    assert hasattr(mod, "Prov") == True
 
 def test_ximport():
     mod = ximport("resFs")

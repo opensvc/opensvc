@@ -4483,12 +4483,17 @@ class Svc(Crypt):
         self._set_multi([[section, option, value]])
 
     def _set_multi(self, changes):
+        changed = False
         lines = self._read_cf().splitlines()
         for change in changes:
             if change is None:
                 continue
             section, option, value = change
             lines = self.__set(lines, section, option, value)
+            changed = True
+        if not changed:
+            # all changes were None
+            return
         try:
             self._write_cf(lines)
         except (IOError, OSError) as exc:
@@ -4795,10 +4800,6 @@ class Svc(Crypt):
                     "--kw", "nodes-=" + rcEnv.nodename,
                     "--kw", "drpnodes-=" + rcEnv.nodename,
                 ], nodename=peer)
-            self.set_multi([
-                "nodes-=" + rcEnv.nodename,
-                "drpnodes-=" + rcEnv.nodename,
-            ])
             self.delete_service_conf()
             self.delete_service_logs()
         else:

@@ -151,7 +151,7 @@ def test_node_freeze():
     ret = nodemgr.main(argv=["frozen"])
     assert ret == 1
     ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
-    assert ret == 1
+    assert ret == 0
 
 def test_node_refreeze():
     ret = nodemgr.main(argv=["freeze", "--local"])
