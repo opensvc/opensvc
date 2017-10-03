@@ -731,7 +731,7 @@ class Compliance(object):
                 print("Failed to attach '%s' moduleset. The collector may not be reachable." % moduleset, file=sys.stderr)
                 err = True
                 continue
-            if not d['status']:
+            if not d.get("status", True) or d.get("ret"):
                 err = True
             print(d['msg'])
         if err:
@@ -754,7 +754,7 @@ class Compliance(object):
                 print("Failed to detach '%s' moduleset. The collector may not be reachable." % moduleset, file=sys.stderr)
                 err = True
                 continue
-            if not d['status']:
+            if not d.get("status", True) or d.get("ret"):
                 err = True
             print(d['msg'])
         if err:
@@ -777,7 +777,7 @@ class Compliance(object):
                 print("Failed to attach '%s' ruleset. The collector may not be reachable." % ruleset, file=sys.stderr)
                 err = True
                 continue
-            if not d['status']:
+            if not d.get("status", True) or d.get("ret"):
                 err = True
             print(d['msg'])
         if err:
@@ -800,7 +800,7 @@ class Compliance(object):
                 print("Failed to detach '%s' ruleset. The collector may not be reachable." % ruleset, file=sys.stderr)
                 err = True
                 continue
-            if not d['status']:
+            if not d.get("status", True) or d.get("ret"):
                 err = True
             print(d['msg'])
         if err:
