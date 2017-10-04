@@ -4747,7 +4747,7 @@ class KeyDict(KeywordStore):
             self += kw_blocking_post_sync_update(r)
 
             for action in ["sync_nodes", "sync_drp", "sync_update",
-                           "sync_break", "sync_resync", "sync_restore", "run"]:
+                           "sync_break", "sync_resync", "sync_restore"]:
                 self += kw_requires(r, action)
 
         for r in ["DEFAULT", "task"]:
