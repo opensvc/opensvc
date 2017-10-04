@@ -818,6 +818,9 @@ def move_var_files_19():
         shutil.move(fpath, svc_frozen)
 
     # stats
+    pathstats = os.path.join(pathvar, "stats")
+    if not os.path.exists(pathstats):
+        os.makedirs(pathstats, 0o755)
     for fpath in glob.glob(os.path.join(pathvar, "stats_*")):
         fname = os.path.basename(fpath).replace("stats_", "")
         dst = os.path.join(pathvar, "stats", fname)
