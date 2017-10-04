@@ -1402,7 +1402,7 @@ class Svc(Crypt):
         group_status = self.group_status()
         for group in group_status:
             data[group] = str(group_status[group])
-        if self.stonith self.clustertype == "failover" and data["avail"] == up:
+        if self.stonith and self.clustertype == "failover" and data["avail"] == up:
             data["stonith"] = True
         self.write_status_data(data)
         return data
