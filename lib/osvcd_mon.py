@@ -202,6 +202,10 @@ class Monitor(shared.OsvcThread, Crypt):
         self.set_smon(svcname, **kwargs)
         self.update_hb_data()
 
+    def node_stonith(self, node):
+        proc = self.node_command(["stonith", "--node", node])
+        self.push_proc(proc=proc)
+
     def service_start_resources(self, svcname, rids):
         self.set_smon(svcname, "restarting")
         proc = self.service_command(svcname, ["start", "--rid", ",".join(rids)])
@@ -587,6 +591,9 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.log.info("failover service %s status %s/ready for "
                               "%s", svc.svcname, status,
                               now-smon.status_updated)
+                if smon.stonith and smon.stonith not in shared.CLUSTER_DATA:
+                    # stale peer which previously ran the service
+                    self.node_stonith(smon.stonith)
                 self.service_start(svc.svcname)
                 return
             self.log.info("service %s will start in %s",
@@ -1234,6 +1241,10 @@ class Monitor(shared.OsvcThread, Crypt):
             data[svcname]["monitor"] = self.get_service_monitor(svcname,
                                                                 datestr=True)
 
+            # forget the stonith target node if we run the service
+            if data[svcname]["avail"] == "up" and "stonith" in data[svcname]["monitor"]:
+                del data[svcname]["monitor"]["stonith"]
+
         # deleting services (still in SMON_DATA, no longer has cf).
         # emulate a status
         for svcname in set(shared.SMON_DATA.keys()) - set(svcnames):
@@ -1444,6 +1455,8 @@ class Monitor(shared.OsvcThread, Crypt):
                     rinstance = self.get_service_instance(svcname, nodename)
                     if rinstance is None:
                         continue
+                    if rinstance.get("stonith") is True:
+                        self.set_smon(svcname, stonith=nodename)
                     global_expect = rinstance["monitor"].get("global_expect")
                     if global_expect is None:
                         continue

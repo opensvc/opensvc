@@ -302,7 +302,8 @@ class OsvcThread(threading.Thread):
         wake_monitor()
 
     def set_smon(self, svcname, status=None, local_expect=None,
-                 global_expect=None, reset_retries=False):
+                 global_expect=None, reset_retries=False,
+                 stonith=None):
         global SMON_DATA
         with SMON_DATA_LOCK:
             if svcname not in SMON_DATA:
@@ -349,6 +350,19 @@ class OsvcThread(threading.Thread):
                 self.log.info("service %s monitor resources restart count reset",
                               svcname)
                 del SMON_DATA[svcname]["restart"]
+
+            if stonith:
+                if stonith == "unset":
+                    stonith = None
+                if stonith != SMON_DATA[svcname].stonith:
+                    self.log.info(
+                        "service %s monitor stonith change: %s => %s",
+                        svcname,
+                        SMON_DATA[svcname].stonith if \
+                            SMON_DATA[svcname].stonith else "none",
+                        stonith
+                    )
+                SMON_DATA[svcname].stonith = stonith
         wake_monitor()
 
     def get_node_monitor(self, datestr=False, nodename=None):
