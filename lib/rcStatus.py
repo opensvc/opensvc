@@ -157,6 +157,9 @@ class Status(object):
         """
         self.status = UNDEF
 
+    def __hash__(self):
+        return hash(self.status)
+
     def __add__(self, other):
         self.status = self._merge(self.status, other.status)
         return self

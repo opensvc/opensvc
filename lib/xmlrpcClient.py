@@ -371,7 +371,7 @@ class Collector(object):
             # database overflow protection
             trim_lim = 10000
             trim_tag = ' <trimmed> '
-            trim_head = int(trim_lim/2)
+            trim_head = trim_lim // 2
             trim_tail = trim_head-len(trim_tag)
             if len(msg) > trim_lim:
                 msg = msg[:trim_head]+' <trimmed> '+msg[-trim_tail:]

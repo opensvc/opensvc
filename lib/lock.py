@@ -43,7 +43,7 @@ def lock(timeout=30, delay=1, lockfile=None, intent=None):
     if timeout == 0 or delay == 0:
         l = [0]
     else:
-        l = range(int(timeout/delay))
+        l = range(int(float(timeout)/float(delay)))
     if len(l) == 0:
         l = [0]
     err = ""
