@@ -297,14 +297,21 @@ def add_ip(svc, s):
     r = ip.Ip(**kwargs)
     svc += r
 
+def add_lv(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs['name'] = svc.conf_get(s, 'name')
+    kwargs['vg'] = svc.conf_get(s, 'vg')
+    try:
+        m = __import__('resDiskLv'+rcEnv.sysname)
+    except ImportError:
+        svc.log.error("resDiskLv%s is not implemented"%rcEnv.sysname)
+        return
+    r = m.Disk(**kwargs)
+    svc += r
+
 def add_md(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs['uuid'] = svc.conf_get(s, 'uuid')
-
-    try:
-        kwargs['shared'] = svc.conf_get(s, 'shared')
-    except ex.OptNotFound as exc:
-        kwargs['shared'] = exc.default
 
     m = __import__('resDiskMdLinux')
     r = m.Disk(**kwargs)
@@ -550,6 +557,9 @@ def add_disk_compat(svc, s):
     if disk_type == 'Md':
         add_md(svc, s)
         return
+    if disk_type == 'Lv':
+        add_lv(svc, s)
+        return
     if disk_type == 'Gce':
         add_disk_gce(svc, s)
         return
@@ -652,6 +662,9 @@ def add_disk(svc, s):
         return
     if disk_type == 'Loop':
         add_loop(svc, s)
+        return
+    if disk_type == 'Lv':
+        add_lv(svc, s)
         return
     if disk_type == 'Md':
         add_md(svc, s)

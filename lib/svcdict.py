@@ -2771,8 +2771,63 @@ class KeywordDiskType(Keyword):
                   at=True,
                   order=9,
                   default="vg",
-                  candidates=['disk', 'veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'zpool', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm', 'vg', 'amazon', 'gce'],
+                  candidates=['disk', 'veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'zpool', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm', 'vg', 'lv', 'amazon', 'gce'],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
+                )
+
+class KeywordDiskLvName(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="lv",
+                  keyword="name",
+                  order=10,
+                  at=True,
+                  text="The name of the logical volume.",
+                  example="lv1"
+                )
+
+class KeywordDiskLvVg(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="lv",
+                  keyword="vg",
+                  order=11,
+                  at=True,
+                  text="The name of the volume group hosting the logical volume.",
+                  example="vg1"
+                )
+
+class KeywordDiskLvSize(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="lv",
+                  keyword="size",
+                  order=12,
+                  at=True,
+                  provisioning=True,
+                  text="The size of the logical volume to provision. A size expression or <n>%{FREE|PVS|VG}.",
+                  example="10m"
+                )
+
+class KeywordDiskLvCreateOptions(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="lv",
+                  keyword="create_options",
+                  convert="shlex",
+                  order=13,
+                  at=True,
+                  provisioning=True,
+                  text="Additional options to pass to the logical volume create command. Size and name are alread set.",
+                  example="10m"
                 )
 
 class KeywordDiskDiskDiskId(Keyword):
@@ -3416,7 +3471,7 @@ class KeywordFsSize(Keyword):
                   required=True,
                   convert="size",
                   at=True,
-                  text="The size in MB of the logical volume to provision for this filesystem.",
+                  text="The size in MB of the logical volume to provision for this filesystem. A size expression or <n>%{FREE|PVS|VG}.",
                   provisioning=True
                 )
 
@@ -4797,6 +4852,10 @@ class KeyDict(KeywordStore):
         self += KeywordDiskMdLayout()
         self += KeywordDiskMdSpares()
         self += KeywordDiskMdShared()
+        self += KeywordDiskLvName()
+        self += KeywordDiskLvVg()
+        self += KeywordDiskLvSize()
+        self += KeywordDiskLvCreateOptions()
         self += KeywordSyncRadosPairs()
         self += KeywordSyncRadosImages()
         self += KeywordDiskClientId()

@@ -24,8 +24,13 @@ class Prov(provisioning.Prov):
         """
         Return the device path in the /dev/<vg>/<lv> format
         """
+        if hasattr(self.r, "fullname"):
+            # the resource is a lv
+            return "/dev/" + self.r.fullname
+
+        # the resource is a fs
         try:
-            dev = self.r.svc.conf_get(self.r.rid, "dev")
+            dev = self.r.conf_get("dev")
         except ex.OptNotFound:
             raise ex.excError("the '%s.dev' keyword is mandatory" % self.r.rid)
 
@@ -37,7 +42,7 @@ class Prov(provisioning.Prov):
             dev = _dev
 
         try:
-            vg = self.r.svc.conf_get(self.r.rid, "vg")
+            vg = self.r.conf_get("vg")
         except ex.OptNotFound:
             raise ex.excError("the '%s.vg' keyword is mandatory" % self.r.rid)
 
@@ -65,7 +70,7 @@ class Prov(provisioning.Prov):
 
     def unprovisioner(self):
         try:
-            vg = self.r.svc.conf_get(self.r.rid, "vg")
+            vg = self.r.conf_get("vg")
         except:
             self.r.log.debug("skip lv unprovision: no vg option")
             return
@@ -118,17 +123,21 @@ class Prov(provisioning.Prov):
             return
 
         try:
-            self.size = self.r.svc.conf_get(self.r.rid, "size")
+            self.size = self.r.conf_get("size")
             self.size = str(self.size).upper()
             if "%" not in self.size:
                 size_parm = ["-L", str(convert_size(self.size, _to="m"))+'M']
             else:
                 size_parm = ["-l", self.size]
-            vg = self.r.svc.conf_get(self.r.rid, "vg")
+            vg = self.r.conf_get("vg")
         except Exception as e:
             self.r.log.info("skip lv provisioning: %s" % str(e))
             return
 
+        try:
+            create_options = self.r.conf_get("create_options")
+        except ex.OptNotFound:
+            create_options = []
         cmd = ['vgdisplay', vg]
         out, err, ret = justcall(cmd)
         if ret != 0:
@@ -138,7 +147,7 @@ class Prov(provisioning.Prov):
         lvname = os.path.basename(dev)
 
         # create the logical volume
-        cmd = ['lvcreate', '-n', lvname] + size_parm + [vg]
+        cmd = ['lvcreate', '-n', lvname] + size_parm + create_options + [vg]
         _cmd = "yes | " + " ".join(cmd)
         self.r.log.info(_cmd)
         p1 = Popen(["yes"], stdout=PIPE, preexec_fn=restore_signals)
@@ -146,6 +155,8 @@ class Prov(provisioning.Prov):
         out, err = p2.communicate()
         if p2.returncode != 0:
             raise ex.excError(err)
+        if hasattr(self.r, "fullname"):
+            self.r.can_rollback = True
         if len(out) > 0:
             for line in out.splitlines():
                 self.r.log.info(line)

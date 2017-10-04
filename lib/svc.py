@@ -199,6 +199,7 @@ DISK_TYPES = [
     "disk.rados",
     "disk.raw",
     "disk.vg",
+    "disk.lv",
     "disk.zpool",
 ]
 
@@ -231,6 +232,7 @@ STATUS_TYPES = [
     "disk.rados",
     "disk.scsireserv",
     "disk.vg",
+    "disk.lv",
     "disk.zpool",
     "fs",
     "fs.dir",
