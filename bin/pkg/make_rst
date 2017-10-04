@@ -2,5 +2,5 @@
 
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(whence -- $0 || echo $0));pwd)"
 
-sudo python $PATH_SCRIPT/../../lib/svcdict.py rst
+python $PATH_SCRIPT/../../lib/svcdict.py rst
 
