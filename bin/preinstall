@@ -51,10 +51,10 @@ if [ $? -eq 0 ]
 then
 	echo "daemon flagged for restart"
 	touch $FLAG
+
+        # freeze the cluster
+        nodemgr freeze --wait
+        
+        # stop the daemon
+        nodemgr daemon stop
 fi
-
-# freeze the cluster
-nodemgr freeze --wait
-
-# stop the daemon
-nodemgr daemon stop
