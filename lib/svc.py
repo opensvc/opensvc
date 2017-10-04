@@ -4181,7 +4181,7 @@ class Svc(Crypt):
             __data = _data.get("services", {}).get("status", {}).get(self.svcname, {})
             if __data.get("monitor", {}).get("placement") != "leader" and \
                __data.get("avail") == "up":
-		self.daemon_service_action(["stop"], nodename=nodename)
+                self.daemon_service_action(["stop"], nodename=nodename)
 
     def switch(self):
         """
