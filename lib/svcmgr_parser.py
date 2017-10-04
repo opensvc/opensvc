@@ -751,11 +751,6 @@ ACTIONS = {
                    'scheduleable, usually every minute.',
             'options': ACTION_OPTS,
         },
-        'stonith': {
-            'msg': 'command provided to the heartbeat daemon to fence peer '
-                   'node in case of split brain',
-            'options': ACTION_OPTS,
-        },
         'docker': {
             'msg': 'wrap the docker client command, setting automatically '
                    'the socket parameter to join the service-private docker '

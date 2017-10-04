@@ -344,32 +344,6 @@ def add_vdisk(svc, s):
     r = m.Disk(**kwargs)
     svc += r
 
-def add_stonith(svc, s):
-    if rcEnv.nodename in svc.drpnodes:
-        # no stonith on DRP nodes
-        return
-
-    kwargs = init_kwargs(svc, s)
-
-    _type = svc.conf_get(s, 'type')
-    if len(_type) > 1:
-        _type = _type[0].upper()+_type[1:].lower()
-
-    if _type == 'Ilo':
-        kwargs['name'] = svc.conf_get(s, 'target')
-    elif _type == 'Callout':
-        kwargs['cmd'] = svc.conf_get(s, 'cmd')
-
-    st = __import__('resStonith'+_type)
-    try:
-        st = __import__('resStonith'+_type)
-    except ImportError:
-        svc.log.error("resStonith%s is not implemented"%_type)
-        return
-
-    r = st.Stonith(**kwargs)
-    svc += r
-
 def add_loop(svc, s):
     """Parse the configuration file and add a loop object for each [loop#n]
     section. Loop objects are stored in a list in the service object.
@@ -2011,6 +1985,11 @@ def build(name, minimal=False, svcconf=None, node=None):
     except ex.OptNotFound as exc:
         svc.orchestrate = exc.default
 
+    try:
+        svc.stonith = svc.conf_get("DEFAULT", "stonith")
+    except ex.OptNotFound as exc:
+        svc.stonith = exc.default
+
 
     #
     # Store and validate the service type
@@ -2112,7 +2091,6 @@ def build(name, minimal=False, svcconf=None, node=None):
     # instanciate resources
     #
     add_resources(svc, 'container')
-    add_resources(svc, 'stonith')
     add_resources(svc, 'ip')
     add_resources(svc, 'disk')
     add_resources(svc, 'fs')

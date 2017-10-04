@@ -65,7 +65,6 @@ DEFAULT_STATUS_GROUPS = [
     "container",
     "app",
     "sync",
-    "stonith",
     "task",
 ]
 
@@ -260,8 +259,6 @@ STATUS_TYPES = [
     "sync.symsrdfs",
     "sync.s3",
     "sync.zfs",
-    "stonith.callout",
-    "stonith.ilo",
     "task",
 ]
 
@@ -396,6 +393,7 @@ class Svc(Crypt):
         self.orchestrate = "ha"
         self.clustertype = "failover"
         self.placement = "nodes order"
+        self.stonith = False
         self.parents = []
         self.children = []
         self.show_disabled = False
@@ -1963,14 +1961,6 @@ class Svc(Crypt):
             for resource in self.get_resources(["app", "container"]):
                 resource.status(refresh=True)
 
-    def stonith(self):
-        """
-        The 'stonith' action entrypoint.
-        Call the stonith method of resources implementing it.
-        """
-        self.sub_set_action('stonith.ilo', 'start')
-        self.sub_set_action('stonith.callout', 'start')
-
     def do_pre_monitor_action(self):
         if self.pre_monitor_action is None:
             return
@@ -2238,7 +2228,6 @@ class Svc(Crypt):
             "disk",
             "fs",
             "share",
-            "stonith",
             "task",
             "app",
             "sync"
@@ -4735,8 +4724,6 @@ class Svc(Crypt):
             self.paths.cf,
             os.path.join(rcEnv.paths.pathetc, self.svcname),
             os.path.join(rcEnv.paths.pathetc, self.svcname+".d"),
-            os.path.join(rcEnv.paths.pathetc, self.svcname+".cluster"),
-            os.path.join(rcEnv.paths.pathetc, self.svcname+".stonith"),
         ]
         for fpath in fpaths:
             if os.path.exists(fpath) and \

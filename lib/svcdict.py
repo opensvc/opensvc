@@ -14,7 +14,6 @@ deprecated_keywords = {
   "disk.vg.vgname": "name",
   "sync.rsync.exclude": "options",
   "disk.zpool.poolname": "name",
-  "stonith.ilo.name": "target",
 }
 
 # supported => deprecated
@@ -27,7 +26,6 @@ reverse_deprecated_keywords = {
   "disk.vg.name": "vgname",
   "sync.rsync.options": "exclude",
   "disk.zpool.name": "poolname",
-  "stonith.ilo.target": "name",
 }
 
 deprecated_sections = {
@@ -802,46 +800,6 @@ class KeywordSubsetParallel(Keyword):
                   order=2
                 )
 
-class KeywordStonithType(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="stonith",
-                  keyword="type",
-                  at=True,
-                  candidates=["ilo", "callout"],
-                  text="The type of stonith.",
-                  required=True,
-                  order=1
-                )
-
-class KeywordStonithTarget(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="stonith",
-                  rtype="ilo",
-                  keyword="target",
-                  at=True,
-                  text="The server management console to pass the stonith command to, as defined in the corresponding auth.conf section title.",
-                  required=True,
-                  order=2
-                )
-
-class KeywordStonithCalloutCmd(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="stonith",
-                  rtype="callout",
-                  at=True,
-                  keyword="cmd",
-                  default="/bin/false",
-                  text="The command to execute on target to stonith.",
-                  required=True,
-                  order=3
-                )
-
 class KeywordContainerType(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1359,6 +1317,20 @@ class KeywordOrchestrate(Keyword):
                   convert="string",
                   candidates=("ha", "start", "no"),
                   text="If set to 'no', disable service orchestration by the OpenSVC daemon monitor, including service start on boot. If set to 'start' failover services won't failover automatically, though the service instance on the natural placement leader is started if another instance is not already up. Flex services won't start missing instances to meet the flex_min_nodes target, though the <flex_min_nodes>th instances on best placement leaders are started if the instances minimum quota is not already reached. Resource restart is still active whatever the orchestrate value.",
+                )
+
+class KeywordStonith(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="stonith",
+                  convert="boolean",
+                  order=16,
+                  default=False,
+                  candidates=(True, False),
+                  depends=[("cluster_type", ["failover"])],
+                  text="Stonith the node previously running the service if stale upon start by the daemon monitor.",
                 )
 
 class KeywordPlacement(Keyword):
@@ -4286,7 +4258,7 @@ class KeyDict(KeywordStore):
                   generic=True,
                   at=True,
                   candidates=(True, False),
-                  default_text="True for task, sync and stonith, else False",
+                  default_text="True for task and sync, else False",
                   convert="boolean",
                   text="Possible values are 'true' or 'false'. Actions on resource will be tried upon service startup and shutdown, but action failures will be logged and passed over. Useful for resources like dump filesystems for example."
                 )
@@ -4637,7 +4609,7 @@ class KeyDict(KeywordStore):
 
         self += kw_disable("DEFAULT")
 
-        for r in ["DEFAULT", "sync", "ip", "fs", "disk", "share", "container", "app", "task", "stonith"]:
+        for r in ["DEFAULT", "sync", "ip", "fs", "disk", "share", "container", "app", "task"]:
             self += kw_restart(r)
             self += kw_tags(r)
             self += kw_subset(r)
@@ -4951,9 +4923,7 @@ class KeyDict(KeywordStore):
         self += KeywordSyncDdsSnapSize()
         self += KeywordVdiskPath()
         self += KeywordSubsetParallel()
-        self += KeywordStonithType()
-        self += KeywordStonithTarget()
-        self += KeywordStonithCalloutCmd()
+        self += KeywordStonith()
         self += KeywordContainerType()
         self += KeywordContainerZoneDeleteOnStop()
         self += KeywordContainerScsireserv()

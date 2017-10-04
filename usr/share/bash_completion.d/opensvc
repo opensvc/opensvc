@@ -1,6 +1,6 @@
 
 
-svcmgr="boot clear collector compliance create delete disable dns docker edit enable freeze frozen get giveback logs ls migrate pg postsync presync print provision prstart prstatus prstop pull push resource restart resync run scheduler set shutdown start startapp startcontainer startdisk startfs startip startshare startstandby status stonith stop stopapp stopcontainer stopdisk stopfs stopip stopshare switch sync takeover thaw toc unprovision unset update validate"
+svcmgr="boot clear collector compliance create delete disable dns docker edit enable freeze frozen get giveback logs ls migrate pg postsync presync print provision prstart prstatus prstop pull push resource restart resync run scheduler set shutdown start startapp startcontainer startdisk startfs startip startshare startstandby status stop stopapp stopcontainer stopdisk stopfs stopip stopshare switch sync takeover thaw toc unprovision unset update validate"
 svcmgr_collector="ack alerts asset checks create disks events list log networks show tag untag"
 svcmgr_collector_ack="action unavailability"
 svcmgr_collector_create="tag"
@@ -89,7 +89,6 @@ svcmgr_startfs="--color --cron --daemon --debug --disable-rollback --dry-run --e
 svcmgr_sync_revert="--color --cron --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_push_service_status="--color --cron --daemon --debug --env --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_logs="--backlog --color --cron --daemon --debug --env --follow --no-pager --node --status --waitlock -c --cluster -h --help -p --parallel -s --service"
-svcmgr_stonith="--color --cron --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_push_resinfo="--color --cron --daemon --debug --env --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_stopip="--color --cron --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_sync_drp="--color --cron --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
