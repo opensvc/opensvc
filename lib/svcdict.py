@@ -6,6 +6,7 @@ from rcNode import node_get_node_env
 
 # deprecated => supported
 deprecated_keywords = {
+  "DEFAULT.mode": None,
   "DEFAULT.service_type": "env",
   "DEFAULT.affinity": "hard_affinity",
   "DEFAULT.anti_affinity": "hard_anti_affinity",
@@ -408,12 +409,14 @@ class Section(object):
         if '@' in keyword:
             l = keyword.split('@')
             if len(l) != 2:
-                return None
+                return
             keyword, node = l
         if rtype:
             fkey = ".".join((self.section, rtype, keyword))
             if fkey in deprecated_keywords:
                 keyword = deprecated_keywords[fkey]
+                if keyword is None:
+                    return
             for k in self.keywords:
                 if k.keyword != keyword:
                     continue
@@ -430,7 +433,7 @@ class Section(object):
             for k in self.keywords:
                 if k.keyword == keyword:
                     return k
-        return None
+        return
 
 class KeywordStore(dict):
     def __init__(self, provision=False):
