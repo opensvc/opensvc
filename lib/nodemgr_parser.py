@@ -369,6 +369,14 @@ ACTIONS = {
                 OPT.verbose,
             ],
         },
+        'stonith': {
+            'msg': 'command executed by the daemon monitor to fence peer '
+                   'node upon failover when the node previously running '
+                   'the service is stale.',
+            'options': [
+                OPT.node,
+            ],
+        },
         'wol': {
             'msg': 'forge and send udp wake on lan packet to mac address '
                    'specified by --mac and --broadcast arguments',

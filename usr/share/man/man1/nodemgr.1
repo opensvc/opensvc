@@ -1376,6 +1376,31 @@ specify a data formatter for output of the print* and collector* commands. possi
 show this help message and exit
 
 .RE
+\fBnodemgr stonith\fP
+.RS
+
+command executed by the daemon monitor to fence peer node upon failover when the node previously running the service is stale.
+
+.TP
+.B --node=NODE
+the node to send a request to. if not specified the local node is targeted.
+.TP
+.B --color=COLOR
+colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B --cron
+cron mode
+.TP
+.B --debug
+debug mode
+.TP
+.B --format=FORMAT
+specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+.TP
+.B -h, --help
+show this help message and exit
+
+.RE
 \fBnodemgr thaw\fP
 .RS
 

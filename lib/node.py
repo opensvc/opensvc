@@ -3197,6 +3197,28 @@ class Node(Crypt):
         """
         self.freezer.node_thaw()
 
+    def stonith(self):
+        self._stonith(self.options.node)
+
+    def _stonith(self, node):
+        if node in (None, ""):
+            raise ex.excError("--node is mandatory")
+        if node == rcEnv.nodename:
+            raise ex.excError("refuse to stonith ourself")
+        if node not in self.cluster_nodes:
+            raise ex.excError("refuse to stonith node %s not member of our cluster" % node)
+        try:
+            cmd = self._get("stonith#%s.cmd" % node)
+        except ex.excError as exc:
+            raise ex.excError("the stonith#%s.cmd keyword must be set in "
+                              "node.conf" % node)
+        import shlex
+        cmd = shlex.split(cmd)
+        self.log.info("stonith node %s", node)
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError()
+
     def prepare_async_cmd(self):
         cmd = sys.argv[1:]
         cmd = drop_option("--node", cmd, drop_value=True)
