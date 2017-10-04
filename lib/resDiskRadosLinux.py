@@ -9,7 +9,7 @@ from rcUtilities import justcall
 class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
-                 images=set([]),
+                 images=set(),
                  client_id=None,
                  keyring=None,
                  **kwargs):
@@ -154,14 +154,14 @@ class Disk(resDisk.Disk):
         self.showmapped(refresh=True)
 
     def exposed_disks(self):
-        l = set([])
+        l = set()
         for image in self.images:
             s = ".".join(("rbd", image.replace("/", ".")))
             l.add(s)
         return l
 
     def exposed_devs(self):
-        l = set([])
+        l = set()
         for image in self.images:
             s = self.devname(image)
             s = os.path.realpath(s)
@@ -172,15 +172,15 @@ class DiskLock(Disk):
     def __init__(self,
                  rid=None,
                  type="disk.lock",
-                 images=set([]),
+                 images=set(),
                  client_id=None,
                  keyring=None,
                  lock=None,
                  lock_shared_tag=None,
                  optional=False,
                  disabled=False,
-                 tags=set([]),
-                 always_on=set([]),
+                 tags=set(),
+                 always_on=set(),
                  monitor=False,
                  restart=0,
                  subset=None):

@@ -731,7 +731,7 @@ class Scheduler(object):
         if month == "*":
             return
 
-        allowed_months = set([])
+        allowed_months = set()
         for _month in month.split(","):
             ecount = _month.count("%")
             if ecount == 1:
@@ -791,7 +791,7 @@ class Scheduler(object):
         Top level schedule definition parser.
         Split the definition into sub-schedules, and parse each one.
         """
-        elements = set([])
+        elements = set()
         if spec in ("*", ""):
             return spec
         subspecs = spec.split(",")

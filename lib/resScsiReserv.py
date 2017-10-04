@@ -22,7 +22,7 @@ class ScsiReserv(Res.Resource):
                  prkey=None,
                  **kwargs):
         self.no_preempt_abort = no_preempt_abort
-        self.devs = set([])
+        self.devs = set()
         self.preempt_timeout = 10
         self.prtype = '5'
         self.hostid = None

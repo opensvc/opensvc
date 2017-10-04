@@ -104,7 +104,7 @@ class syncDds(resSync.Sync):
                                      )
 
     def get_peersenders(self):
-        self.peersenders = set([])
+        self.peersenders = set()
         if 'nodes' not in self.target:
             self.peersenders |= self.svc.nodes
             self.peersenders -= set([rcEnv.nodename])

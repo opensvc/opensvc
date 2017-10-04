@@ -259,7 +259,7 @@ class Dcs(object):
             ids[i] = id
         if not hasattr(self, "buff_dcsport"):
             self.buff_dcsport = self.get_dcsport()
-        machines = set([])
+        machines = set()
         for line in self.buff_dcsport.split('\n'):
             if line.startswith('HostId'):
                 hostid = line.split(': ')[-1].strip()

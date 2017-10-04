@@ -152,8 +152,8 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
     def __init__(self,
                  rid=None,
                  pairs=[],
-                 manager=set([]),
-                 dcs=set([]),
+                 manager=set(),
+                 dcs=set(),
                  **kwargs):
         resSyncDcs.SyncDcs.__init__(self,
                                     rid=rid, type="sync.dcsckpt",

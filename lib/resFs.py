@@ -168,11 +168,11 @@ class Mount(Res.Resource):
           'sysfs',
         ]
         if self.fs_type in pseudofs + self.netfs:
-            return set([])
+            return set()
         for res in self.svc.get_resources():
             if hasattr(res, "is_child_dev") and res.is_child_dev(self.device):
                 # don't account fs device if the parent resource is driven by the service
-                return set([])
+                return set()
         return set([self.device])
 
     def __str__(self):

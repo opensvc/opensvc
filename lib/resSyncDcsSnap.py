@@ -154,9 +154,9 @@ Internal                 : False
 
     def __init__(self,
                  rid=None,
-                 snapname=set([]),
-                 manager=set([]),
-                 dcs=set([]),
+                 snapname=set(),
+                 manager=set(),
+                 dcs=set(),
                  **kwargs):
         resSyncDcs.SyncDcs.__init__(self,
                                     rid=rid,

@@ -158,7 +158,7 @@ class Dev(object):
     def get_top_devs(self):
         if len(self.parents) == 0 or self.devtype == "multipath":
             return set([self])
-        d = set([])
+        d = set()
         for parent in self.parents:
             dev = self.get_dev(parent.parent)
             d |= dev.get_top_devs()
@@ -384,7 +384,7 @@ class DevTree(object):
         return [self.dev[devname] for devname in self.dev if len(self.dev[devname].children) == 0]
 
     def get_top_devs(self):
-        d = set([])
+        d = set()
         for dev in self.get_bottom_devs():
             d |= dev.get_top_devs()
         return list(d)

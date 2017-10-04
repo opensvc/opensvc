@@ -139,9 +139,9 @@ class SysReport(object):
                         self.todo.append(t)
 
         # expand
-        inc = set([])
-        exc = set([])
-        self.cmds = set([])
+        inc = set()
+        exc = set()
+        self.cmds = set()
         for mode, s in self.todo:
             if mode == "CMD":
                 self.cmds.add(s)

@@ -73,15 +73,15 @@ class Mount(Res.Mount):
             for r in self.svc.get_resources('disk.vg'):
                 if r.name == dom:
                     # no need to compute device list: the vg resource will do the job
-                    return set([])
+                    return set()
             import rcAdvfs
             try:
                 o = rcAdvfs.Fdmns()
                 d = o.get_fdmn(dom)
             except rcAdvfs.ExInit as e:
-                return set([])
+                return set()
             if d is None:
-                return set([])
+                return set()
             return set(d.list_volnames())
         else:
             return set([self.device])

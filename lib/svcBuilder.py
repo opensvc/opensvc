@@ -97,7 +97,7 @@ def always_on_nodes_set(svc, section):
         always_on_opt = svc.conf_get(section, "always_on")
     except ex.OptNotFound as exc:
         always_on_opt = exc.default
-    always_on = set([])
+    always_on = set()
     if 'nodes' in always_on_opt:
         always_on |= svc.nodes
     if 'drpnodes' in always_on_opt:

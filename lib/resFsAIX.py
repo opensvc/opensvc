@@ -95,19 +95,19 @@ class Mount(Res.Mount):
     def mplist(self):
         dev = self.realdev()
         if dev is None:
-            return set([])
+            return set()
 
         return self._mplist([dev])
 
     def _mplist(self, devs):
-        mps = set([])
+        mps = set()
         return mps
 
     def sub_devs(self):
         dev = self.realdev()
         if dev is None:
-            return set([])
-        return set([])
+            return set()
+        return set()
 
     def can_check_writable(self):
         return True

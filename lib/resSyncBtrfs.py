@@ -126,7 +126,7 @@ class SyncBtrfs(resSync.Sync):
         self.dst = os.path.join(self.dst_btrfs[node].rootdir, self.dst_subvol)
 
     def get_peersenders(self):
-        self.peersenders = set([])
+        self.peersenders = set()
         if 'nodes' == self.sender:
             self.peersenders |= self.svc.nodes
             self.peersenders -= set([rcEnv.nodename])

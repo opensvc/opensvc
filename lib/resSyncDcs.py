@@ -87,7 +87,7 @@ class SyncDcs(resSync.Sync):
             self.log.error("no usable manager")
             raise ex.excError
 
-    def __init__(self, rid=None, manager=set([]), dcs=set([]), **kwargs):
+    def __init__(self, rid=None, manager=set(), dcs=set(), **kwargs):
         resSync.Sync.__init__(self, rid=rid, **kwargs)
         self.ssh = rcEnv.rsh.split()
         self.active_dcs = None

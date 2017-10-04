@@ -102,7 +102,7 @@ class Disk(resDisk.Disk):
                 self.presync()
             else:
                 self.log.debug("no sub devs cache file and service not up ... unable to evaluate sub devs")
-                return set([])
+                return set()
         with open(self.sub_devs_name, 'r') as f:
             buff = f.read()
         try:
@@ -167,7 +167,7 @@ class Disk(resDisk.Disk):
         Search zpool vdevs from the output of "zpool status poolname" if
         imported else from the output of "zpool import".
         """
-        devs = set([])
+        devs = set()
         cmd = ['zpool', 'status']
         if rcEnv.sysname == "Linux":
             cmd += ["-L", "-P"]

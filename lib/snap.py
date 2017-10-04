@@ -30,7 +30,7 @@ def find_mounts(self, mounts_h):
 class Snap(Res.Resource):
     """Defines a snap object
     """
-    def __init__(self, rid, optional=False, disabled=False, tags=set([])):
+    def __init__(self, rid, optional=False, disabled=False, tags=set()):
         self.snaps = {}
         Res.Resource.__init__(self, rid, "sync.snap", optional=optional,\
                             disabled=disabled, tags=tags)

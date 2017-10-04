@@ -223,12 +223,12 @@ class Mount(Res.Mount):
     def mplist(self):
         dev = self.realdev()
         if dev is None:
-            return set([])
+            return set()
 
         try:
             self.dm_major = major('device-mapper')
         except:
-            return set([])
+            return set()
 
         return self._mplist([dev])
 
@@ -239,7 +239,7 @@ class Mount(Res.Mount):
         return '/dev/'+devname
 
     def _mplist(self, devs):
-        mps = set([])
+        mps = set()
         for dev in devs:
             devmap = False
             if 'dm-' in dev:
@@ -303,10 +303,10 @@ class Mount(Res.Mount):
     def sub_devs(self):
         dev = self.realdev()
         if dev is None:
-            return set([])
+            return set()
 
         if dev.startswith("/dev/rbd"):
-            return set([])
+            return set()
 
         try:
             self.dm_major = major('device-mapper')
@@ -328,7 +328,7 @@ class Mount(Res.Mount):
             # if the fs is built on a lv of a shared vg, we
             # don't want to account its disks : don't reserve
             # them, don't account their size multiple times.
-            return set([])
+            return set()
 
         devname = 'dm-' + str(os.minor(statinfo.st_rdev))
         syspath = '/sys/block/' + devname + '/slaves'

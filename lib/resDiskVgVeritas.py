@@ -80,7 +80,7 @@ class Disk(resDisk.Disk):
         if len(self.sub_devs_cache) > 0 :
             return self.sub_devs_cache
 
-        devs = set([])
+        devs = set()
         cmd = [ 'vxdisk', '-g', self.name, '-q', 'list' ]
         (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0 :

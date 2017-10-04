@@ -88,7 +88,7 @@ class syncRadosSnap(resSync.Sync):
         return self.rid+"."
 
     def get_pools(self):
-        l = set([])
+        l = set()
         for image in self.images:
             pool = image.split("/")[0]
             l.add(pool)
@@ -212,7 +212,7 @@ class syncRadosClone(syncRadosSnap):
                  schedule=None,
                  optional=False,
                  disabled=False,
-                 tags=set([]),
+                 tags=set(),
                  internal=False,
                  subset=None):
         images = map(lambda x: x.split(":")[0], pairs)

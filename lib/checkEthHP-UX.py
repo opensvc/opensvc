@@ -14,7 +14,7 @@ class check(checks.check):
         if ret != 0:
             return self.undef
         r = []
-        intf = set([])
+        intf = set()
         for line in out.split("\n"):
             if len(line) == 0:
                 continue

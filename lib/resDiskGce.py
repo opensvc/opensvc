@@ -11,7 +11,7 @@ class Disk(resDisk.Disk, rcGce.Gce):
     def __init__(self,
                  rid=None,
                  type="disk.gce",
-                 names=set([]),
+                 names=set(),
                  gce_zone=None,
                  **kwargs):
 

@@ -7,7 +7,7 @@ from rcUtilities import justcall
 class Disk(resDiskRaw.Disk):
     def __init__(self,
                  rid=None,
-                 devs=set([]),
+                 devs=set(),
                  user=None,
                  group=None,
                  perm=None,

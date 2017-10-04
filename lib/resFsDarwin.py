@@ -140,7 +140,7 @@ class Mount(Res.Mount):
     def sub_devs(self):
         dev = self.realdev()
         if dev is None:
-            return set([])
+            return set()
 
         try:
             statinfo = os.stat(dev)

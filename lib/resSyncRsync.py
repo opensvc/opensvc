@@ -86,7 +86,7 @@ class Rsync(resSync.Sync):
         return self.alert_sync(ts)
 
     def can_sync(self, target=None):
-        targets = set([])
+        targets = set()
         if target is None:
             targets = self.nodes_to_sync('nodes')
             targets |= self.nodes_to_sync('drpnodes')
@@ -257,13 +257,13 @@ class Rsync(resSync.Sync):
 
         """ Is there at least one node to sync ?
         """
-        targets = set([])
-        rtargets = {0: set([])}
+        targets = set()
+        rtargets = {0: set()}
         need_snap = False
         for i, r in enumerate(resources):
             if r.skip or r.is_disabled():
                 continue
-            rtargets[i] = set([])
+            rtargets[i] = set()
             if action == "sync_nodes":
                 rtargets[i] |= r.nodes_to_sync('nodes')
             else:
@@ -332,7 +332,7 @@ class Rsync(resSync.Sync):
     def _status(self, verbose=False):
         """ mono-node service should return n/a as a sync state
         """
-        target = set([])
+        target = set()
         for i in self.target:
             target |= self.target_nodes(i)
         if len(target - set([rcEnv.nodename])) == 0:

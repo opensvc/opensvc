@@ -10,7 +10,7 @@ from rcUtilitiesLinux import devs_to_disks
 class Disk(resDiskRaw.Disk):
     def __init__(self,
                  rid=None,
-                 devs=set([]),
+                 devs=set(),
                  create_char_devices=True,
                  user=None,
                  group=None,
@@ -258,7 +258,7 @@ class Disk(resDiskRaw.Disk):
         self.validate_devs()
         if not self.create_char_devices:
             return self.devs
-        sys_devs = set([])
+        sys_devs = set()
         self.load_sys_devs()
         for dev in self.devs:
             if dev not in self.devs_t:

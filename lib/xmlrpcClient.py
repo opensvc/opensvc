@@ -327,7 +327,7 @@ class Collector(object):
         pid = None
         msg = None
         lines = open(alogfile, 'r').read()
-        pids = set([])
+        pids = set()
 
         """Example logfile line:
         2009-11-11 01:03:25,252;;DISK.VG;;INFO;;unxtstsvc01_data is already up;;10200;;EOL

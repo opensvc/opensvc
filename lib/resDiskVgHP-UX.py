@@ -309,7 +309,7 @@ class Disk(resDisk.Disk):
 
         tab = out.split('\n')
         insection = False
-        devs = set([])
+        devs = set()
         for e in tab:
             """ move to the first disk of the vg
             """

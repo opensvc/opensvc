@@ -139,7 +139,7 @@ class check(checks.check):
             self.l = {}
             for ifn in self.ifs:
                 if ifn not in self.l:
-                    self.l[ifn] = set([])
+                    self.l[ifn] = set()
                     self.topif = ifn
                     ret = self._findphys(ifn)
             cmd = ['/usr/sbin/dladm', 'show-phys', '-p', '-o', 'link,state,speed,duplex,device']

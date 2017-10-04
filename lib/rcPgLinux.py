@@ -260,7 +260,7 @@ def thaw(o):
 
 def kill(o):
     cgp = get_cgroup_path(o, "freezer")
-    pids = set([])
+    pids = set()
     for p in glob.glob(cgp+"/tasks") + glob.glob(cgp+"/*/tasks") + glob.glob(cgp+"/*/*/tasks"):
         with open(p, "r") as f:
             buff = f.read()

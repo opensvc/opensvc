@@ -11,7 +11,7 @@ class Disk(resDisk.Disk, Amazon):
     def __init__(self,
                  rid=None,
                  type="disk.vg",
-                 volumes=set([]),
+                 volumes=set(),
                  client_id=None,
                  keyring=None,
                  **kwargs):

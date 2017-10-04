@@ -5182,7 +5182,7 @@ class Svc(Crypt):
                 rtype = elements[0]
                 ridx = elements[1]
                 if rtype not in rtypes:
-                    rtypes[rtype] = set([])
+                    rtypes[rtype] = set()
                 rtypes[rtype].add(ridx)
             for option, value in self.config.items(section):
                 if option in list(defaults.keys()) + ['rtype']:

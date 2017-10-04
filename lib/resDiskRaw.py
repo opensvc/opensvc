@@ -13,7 +13,7 @@ from rcUtilities import which, is_string, lazy
 class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
-                 devs=set([]),
+                 devs=set(),
                  user=None,
                  group=None,
                  perm=None,

@@ -115,7 +115,7 @@ class Asset(rcAsset.Asset):
         out, err, ret = justcall(cmd)
         if ret != 0:
             return '0'
-        core_ids = set([])
+        core_ids = set()
         if "core_id" in out:
             keyword = "core_id"
         else:

@@ -94,7 +94,7 @@ class Asset(rcAsset.Asset):
         return str(n)
 
     def _get_cpu_dies(self):
-        s = set([])
+        s = set()
         for p in self.cpuinfo:
             s.add(p.SocketDesignation)
         n = len(s)

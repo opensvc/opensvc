@@ -8,7 +8,7 @@ import snap
 
 class Snap(snap.Snap):
     def mntopt_and_ro(self, m):
-        opt_set = set([])
+        opt_set = set()
         if m.fs_type == "xfs":
             opt_set.add("nouuid")
         if m.mount_options is None:

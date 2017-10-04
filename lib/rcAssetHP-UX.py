@@ -175,7 +175,7 @@ class Asset(rcAsset.Asset):
         with open(p, 'r') as f:
             buff = f.read()
         lines = buff.split('\n')
-        serials = set([])
+        serials = set()
         for line in lines:
             if "Cpu Serial Number" in line:
                 serials.add(line.split()[-1])

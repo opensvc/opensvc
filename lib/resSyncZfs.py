@@ -110,7 +110,7 @@ class SyncZfs(resSync.Sync):
         self.dst_snap_tosend = self.dst_ds + '@tosend'
 
     def get_peersenders(self):
-        self.peersenders = set([])
+        self.peersenders = set()
         if 'nodes' == self.sender:
             self.peersenders |= self.svc.nodes
             self.peersenders -= set([rcEnv.nodename])
