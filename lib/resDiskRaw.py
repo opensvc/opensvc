@@ -38,6 +38,22 @@ class Disk(resDisk.Disk):
         self.major_minor_errs = set()
         self.devs_map = {}
 
+    def reload_config(self):
+        """
+        The dev parameter can use exposed_devs reference that were not
+        resolvable at build time, as the ressource exposing can be down.
+        """
+        self.svc.ref_cache = {}
+        self.clear_caches()
+        self.devs = set()
+        self.original_devs = self.conf_get('devs')
+        try:
+            zone = self.conf_get('zone')
+        except ex.OptNotFound as exc:
+            zone = exc.default
+        if zone is not None:
+            self.original_devs = set([dev.replace(":", ":<%s>" % zone) for dev in self.original_devs])
+
     def clear_caches(self):
         pass
 
@@ -309,6 +325,7 @@ class Disk(resDisk.Disk):
             return rcStatus.DOWN
 
     def do_start(self):
+        self.reload_config()
         self.validate_devs()
         self.can_rollback = True
         self.do_start_char_devices()
