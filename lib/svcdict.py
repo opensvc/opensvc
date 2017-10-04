@@ -101,10 +101,18 @@ class Keyword(object):
                 return True
         return False
 
-    def template(self):
+    def template(self, fmt="text", section=None):
         if self.deprecated():
             return ''
 
+        if fmt == "text":
+            return self.template_text()
+        elif fmt == "rst":
+            return self.template_rst(section=section)
+        else:
+            return ""
+
+    def template_text(self):
         wrapper = TextWrapper(subsequent_indent="#%18s"%"", width=78)
 
         depends = " && ".join(map(lambda d: "%s in %s"%(d[0], d[1]), self.depends))
@@ -145,6 +153,45 @@ class Keyword(object):
         else:
             val = self.example
         s += ";" + self.keyword + " = " + str(val) + "\n\n"
+        return s
+
+    def template_rst(self, section=None):
+        depends = " && ".join(map(lambda d: "%s in %s"%(d[0], d[1]), self.depends))
+        if depends == "":
+            depends = None
+
+        if type(self.candidates) in (list, tuple, set):
+            candidates = " | ".join(map(lambda x: str(x), self.candidates))
+        else:
+            candidates = str(self.candidates)
+        if not self.strict_candidates:
+            candidates += " ..."
+
+        s = ""
+        if section:
+            s += ".. _%s.%s:\n\n" % (section, self.keyword)
+
+        s += ':kw:`%s`\n' % self.keyword
+        s += "=" * (len(self.keyword) + 6) + "\n"
+        s += "\n"
+        s += "================= ================================================================\n"
+        s += "**scopable**      %s\n"%str(self.at)
+        s += "**required**      %s\n"%str(self.required)
+        s += "**provisioning**  %s\n"%str(self.provisioning)
+        s += "**default**       %s\n"%str(self.default_text)
+        s += "**inheritance**   %s\n"%str(self.inheritance)
+        s += "**scope order**   %s\n"%str(self.scope_order)
+        if self.candidates:
+            s += "**candidates**    %s\n"%candidates
+        if depends:
+            s += "**depends**       %s\n"%depends
+        if self.convert:
+            s += "**convert**       %s\n"%str(self.convert)
+        s += "================= ================================================================\n"
+        s += '\n'
+        if self.text:
+            s += self.text + "\n"
+        s += '\n'
         return s
 
     def __str__(self):
@@ -265,25 +312,33 @@ class Section(object):
             s += str(keyword)
         return s
 
-    def template(self):
+    def template(self, fmt="text"):
         k = self.getkey("type")
         if k is None:
-            return self._template()
+            return self._template(fmt=fmt)
         if k.candidates is None:
-            return self._template()
+            return self._template(fmt=fmt)
         s = ""
         if not k.strict_candidates:
-            s += self._template()
+            s += self._template(fmt=fmt)
         for t in k.candidates:
-            s += self._template(t)
+            s += self._template(t, fmt=fmt)
         return s
 
-    def _template(self, rtype=None):
+    def _template(self, rtype=None, fmt="text"):
         section = self.section
         if self.section in deprecated_sections:
             return ""
         if rtype and self.section+"."+rtype in deprecated_sections:
             return ""
+        if fmt == "text":
+            return self._template_text(rtype, section)
+        elif fmt == "rst":
+            return self._template_rst(rtype, section)
+        else:
+            return ""
+
+    def _template_text(self, rtype, section):
         dpath = rcEnv.paths.pathdoc
         fpath = os.path.join(dpath, "template."+section+".conf")
         if rtype:
@@ -301,14 +356,38 @@ class Section(object):
         if rtype is not None:
             s += ";type = " + rtype + "\n\n"
         for keyword in sorted(self.getkeys(rtype)):
-            s += keyword.template()
+            s += keyword.template(fmt="text")
         for keyword in sorted(self.getprovkeys(rtype)):
-            s += keyword.template()
+            s += keyword.template(fmt="text")
         if rtype is not None:
             for keyword in sorted(self.getkeys()):
                 if keyword.keyword == "type":
                     continue
-                s += keyword.template()
+                s += keyword.template(fmt="text")
+        with open(fpath, "w") as f:
+            f.write(s)
+        return s
+
+    def _template_rst(self, rtype, section):
+        dpath = os.path.join(rcEnv.paths.pathtmp, "rst")
+        if not os.path.exists(dpath):
+            os.makedirs(dpath)
+        if rtype:
+            section += "."+rtype
+            fpath = os.path.join(dpath, "template."+self.section+"."+rtype+".rst")
+        else:
+            fpath = os.path.join(dpath, "template."+section+".rst")
+        s = section + "\n"
+        s += "*" * len(section) + "\n\n"
+        for keyword in sorted(self.getkeys(rtype)):
+            s += keyword.template(fmt="rst", section=section)
+        for keyword in sorted(self.getprovkeys(rtype)):
+            s += keyword.template(fmt="rst", section=section)
+        if rtype is not None:
+            for keyword in sorted(self.getkeys()):
+                if keyword.keyword == "type":
+                    continue
+                s += keyword.template(fmt="rst", section=section)
         with open(fpath, "w") as f:
             f.write(s)
         return s
@@ -382,9 +461,9 @@ class KeywordStore(dict):
             s += str(self.sections[section])
         return s
 
-    def print_templates(self):
+    def print_templates(self, fmt="text"):
         for section in sorted(self.sections.keys()):
-            print(self.sections[section].template())
+            print(self.sections[section].template(fmt=fmt))
 
     def required_keys(self, section, rtype=None):
         if section not in self.sections:
@@ -4968,6 +5047,11 @@ class KeyDict(KeywordStore):
 SVCKEYS = KeyDict(provision=True)
 
 if __name__ == "__main__":
-    SVCKEYS.print_templates()
+    if len(sys.argv) == 2:
+        fmt = sys.argv[1]
+    else:
+        fmt = "text"
+    
+    SVCKEYS.print_templates(fmt=fmt)
     #print(SVCKEYS.container.getkey("cf"))
     #print(SVCKEYS['DEFAULT'])
