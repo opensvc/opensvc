@@ -50,6 +50,8 @@ else
 fi
 
 function prepare_chroot {
+        # cleanup
+        $SUDO rm -rf $OSVC/tmp/BUILDROOT/*
 	#
 	# prepare skeleton (data.tar.gz)
 	#
