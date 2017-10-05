@@ -31,20 +31,6 @@ then
 	exit 0
 fi
 
-# sanity check
-BUFF=`nodemgr daemon status | grep hb#`
-if [ ! -z "$BUFF" ]
-then
-	# heartbeats configured and 
-	echo "$BUFF" | grep -w X
-	if [ $? -eq 0 ]
-	then
-		echo "heartbeats configured and not all active." >&2
-		echo "set the cluster in optimal state before upgrading." >&2
-		exit 1
-	fi
-fi
-
 # set a flag for postinstall to know if the daemon should be restarted
 nodemgr daemon running >/dev/null 2>&1
 if [ $? -eq 0 ]

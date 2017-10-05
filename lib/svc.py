@@ -1281,6 +1281,7 @@ class Svc(Crypt):
         data = {}
         try:
             mon_data = self.node._daemon_status(silent=True)["monitor"]
+            data["compat"] = mon_data["compat"]
             data["service"] = mon_data["services"][self.svcname]
             data["instances"] = {}
             for nodename in mon_data["nodes"]:
@@ -1330,6 +1331,7 @@ class Svc(Crypt):
             mon_data = self.get_smon_data()
             try:
                 data["cluster"] = {
+                    "compat": mon_data["compat"],
                     "avail": mon_data["service"]["avail"],
                     "overall": mon_data["service"]["overall"],
                     "placement": mon_data["service"]["placement"],
@@ -1597,6 +1599,8 @@ class Svc(Crypt):
                 svc_notice.append(colorize(data["cluster"]["overall"], STATUS_COLOR[data["cluster"]["overall"]]))
             if data["cluster"]["placement"] not in ("optimal", "n/a"):
                 svc_notice.append(colorize(data["cluster"]["placement"] + " placement", color.RED))
+            if self.ha and not data["cluster"]["compat"]:
+                svc_notice.append(colorize("incompatible versions", color.RED))
         svc_notice = ", ".join(svc_notice)
 
         # instance-level notices

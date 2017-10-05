@@ -15,6 +15,9 @@ from rcGlobalEnv import rcEnv, Storage
 from freezer import Freezer
 from converters import convert_duration
 
+# disable orchestration if a peer announces a different compat version than ours
+COMPAT_VERSION = 1
+
 DATEFMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 MAX_MSG_SIZE = 1024 * 1024
 

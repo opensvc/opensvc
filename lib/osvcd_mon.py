@@ -51,6 +51,7 @@ class Monitor(shared.OsvcThread, Crypt):
         self.log.info("monitor started")
         self.startup = datetime.datetime.utcnow()
         self.rejoin_grace_period_expired = False
+        self.compat = False
 
         try:
             while True:
@@ -497,6 +498,8 @@ class Monitor(shared.OsvcThread, Crypt):
         Verifies hard and soft affinity and anti-affinity, then routes to
         failover and flex specific policies.
         """
+        if not self.compat:
+            return
         if svc.frozen() or self.freezer.node_frozen():
             #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
             return
@@ -1402,6 +1405,7 @@ class Monitor(shared.OsvcThread, Crypt):
             with shared.CLUSTER_DATA_LOCK:
                 shared.CLUSTER_DATA[rcEnv.nodename] = {
                     "frozen": self.freezer.node_frozen(),
+                    "compat": shared.COMPAT_VERSION,
                     "env": rcEnv.node_env,
                     "monitor": self.get_node_monitor(datestr=True),
                     "updated": datetime.datetime.utcfromtimestamp(time.time())\
@@ -1425,8 +1429,21 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.error("failed to refresh local cluster data: invalid json")
 
     def merge_hb_data(self):
+        self.merge_hb_data_compat()
         self.merge_hb_data_monitor()
         self.merge_hb_data_provision()
+
+    def merge_hb_data_compat(self):
+        compat = [data.get("compat") for data in shared.CLUSTER_DATA.values()]
+        new_compat = len(set(compat)) <= 1
+        if self.compat != new_compat:
+            if not new_compat:
+                self.log.info("cluster members run compatible versions. "
+                              "enable ha orchestration")
+            else:
+                self.log.warning("cluster members run incompatible versions. "
+                                 "disable ha orchestration")
+            self.compat = new_compat
 
     def merge_hb_data_monitor(self):
         """
@@ -1576,6 +1593,7 @@ class Monitor(shared.OsvcThread, Crypt):
         data = shared.OsvcThread.status(self)
         with shared.CLUSTER_DATA_LOCK:
             data.nodes = dict(shared.CLUSTER_DATA)
+        data["compat"] = self.compat
         data["services"] = {}
         data["frozen"] = self.get_clu_agg_frozen()
         for svcname in data.nodes[rcEnv.nodename]["services"]["config"]:

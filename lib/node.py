@@ -3547,6 +3547,21 @@ class Node(Crypt):
                 line.append(str(nmon_state)+frozen)
             out.append(line)
 
+        def load_node_compat():
+            if data.get("compat") is True:
+                # no need to clutter if the situation is normal
+                return
+            line = [
+                colorize(" compat", color.BOLD),
+                colorize("warn", color.BROWN),
+                "",
+                "|",
+            ]
+            for nodename in nodenames:
+                compat = data["monitor"]["nodes"].get(nodename, {}).get("compat", "")
+                line.append(str(compat))
+            out.append(line)
+
         # init the services hash
         for node in nodenames:
             if node not in data["monitor"]["nodes"]:
@@ -3586,6 +3601,7 @@ class Node(Crypt):
         out.append([])
         load_header("Nodes")
         load_metrics()
+        load_node_compat()
         load_node_state()
         out.append([])
         load_header("Services")
