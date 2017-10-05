@@ -2084,11 +2084,6 @@ def build(name, minimal=False, svcconf=None, node=None):
     except ex.OptNotFound as exc:
         svc.bwlimit = None
 
-    try:
-        svc.clustername = svc.conf_get('DEFAULT', "cluster")
-    except ex.OptNotFound as exc:
-        pass
-
     if minimal:
         svc.options.minimal = True
         return svc

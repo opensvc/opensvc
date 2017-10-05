@@ -77,7 +77,6 @@ ACTIONS_NO_MULTIPLE_SERVICES = [
 ]
 
 CONFIG_DEFAULTS = {
-    "clusters": "",
     "node_env": "TST",
     "push_schedule": "00:00-06:00@361 mon-sun",
     "sync_schedule": "04:00-06:00@121 mon-sun",
@@ -101,7 +100,6 @@ class Node(Crypt):
     def __init__(self):
         self.config = None
         self.auth_config = None
-        self.clusters = None
         self.clouds = None
         self.paths = Storage(
             reboot_flag=os.path.join(rcEnv.paths.pathvar, "REBOOT_FLAG"),
@@ -823,31 +821,15 @@ class Node(Crypt):
                 return True
         return False
 
-    def get_clusters(self):
-        """
-        Set the self.clusters list from the configuration file node.cluster
-        option value.
-        """
-        if self.clusters is not None:
-            return
-        if self.config and self.config.has_option("node", "cluster"):
-            self.clusters = list(set(self.config.get('node', 'clusters').split()))
-        else:
-            self.clusters = []
-
     def __iadd__(self, svc):
         """
         Implement the Node() += Svc() operation, setting the node backpointer
-        in the added service, storing the service in a list and setting a
-        clustername if not already set in the service explicitely.
+        in the added service, storing the service in a list
         """
         if not hasattr(svc, "svcname"):
             return self
         if self.services is None:
             self.services = {}
-        self.get_clusters()
-        if not hasattr(svc, "clustername") and len(self.clusters) == 1:
-            svc.clustername = self.clusters[0]
         self.services[svc.svcname] = svc
         return self
 
@@ -1631,10 +1613,6 @@ class Node(Crypt):
                     disk_dg = r.rid
 
                 if hasattr(r, 'devmap') and hasattr(r, 'vm_hostname'):
-                    if hasattr(svc, "clustername"):
-                        cluster = svc.clustername
-                    else:
-                        cluster = ','.join(sorted(list(svc.nodes)))
                     for dev_id, vdev_id in r.devmap():
                         try:
                             disk_id = self.diskinfo.disk_id(dev_id)
@@ -1649,7 +1627,7 @@ class Node(Crypt):
                             "vdev_id": vdev_id,
                             "vdisk_id": r.vm_hostname+'.'+vdev_id,
                             "size": disk_size,
-                            "cluster": cluster,
+                            "cluster": self.cluster_name.cluster,
                         }
 
                 try:

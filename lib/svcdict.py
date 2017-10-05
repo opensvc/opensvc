@@ -1352,17 +1352,6 @@ class KeywordDefaultNoPreemptAbort(Keyword):
                   text="If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
                 )
 
-class KeywordCluster(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="DEFAULT",
-                  keyword="cluster",
-                  order=15,
-                  text="The symbolic name of the cluster. Used to label shared disks represented to tiers-2 consumers like containers.",
-                  example="cluster1"
-                )
-
 class KeywordShowDisabled(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4773,7 +4762,6 @@ class KeyDict(KeywordStore):
         self += KeywordSoftAffinity()
         self += KeywordSoftAntiAffinity()
         self += KeywordShowDisabled()
-        self += KeywordCluster()
         self += KeywordClusterType()
         self += KeywordOrchestrate()
         self += KeywordPlacement()
