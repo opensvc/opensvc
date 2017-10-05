@@ -4335,7 +4335,7 @@ class KeyDict(KeywordStore):
                   candidates=(True, False),
                   default=False,
                   convert="boolean",
-                  text="A disabled resource will be ignored on service startup and shutdown."
+                  text="A disabled resource will be ignored on service startup and shutdown. Its status is always reported ``n/a``.\n\nSet in DEFAULT, the whole service is disabled. A disabled service does not honor start and stop actions. These actions immediately return success.\n\n:cmd:`sudo svcmgr -s <svcname> disable` only sets :kw:`DEFAULT.disable`. As resources disabled state is not changed, :cmd:`sudo svcmgr -s <svcname> enable` does not enable disabled resources."
                 )
         def kw_optional(resource):
             return Keyword(
@@ -4703,8 +4703,6 @@ class KeyDict(KeywordStore):
                   text="A whitespace-separated list of conditions to meet to accept running a '%s' action. A condition is expressed as <rid>(<state>,...). If states are omitted, 'up,stdby up' is used as the default expected states." % action
                 )
 
-
-        self += kw_disable("DEFAULT")
 
         for r in ["DEFAULT", "sync", "ip", "fs", "disk", "share", "container", "app", "task"]:
             self += kw_restart(r)
