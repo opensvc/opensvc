@@ -149,7 +149,7 @@ def do_nodemgr():
 def do_svcmon():
     prog = "svcmon"
     desc = """OpenSVC agent's services instances status requesting command."""
-    long_desc = """In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \\fBsvcmon\\fP program prints the digested instances status of the services running on the local node."""
+    long_desc = """In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \\fBsvcmon\\fP program prints the digested cluster and services status."""
 
     import svcmon
     parser = svcmon.parser
