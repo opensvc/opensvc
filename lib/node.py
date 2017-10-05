@@ -3548,7 +3548,7 @@ class Node(Crypt):
             out.append(line)
 
         def load_node_compat():
-            if data.get("compat") is True:
+            if data["monitor"].get("compat") is True:
                 # no need to clutter if the situation is normal
                 return
             line = [

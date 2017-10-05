@@ -51,7 +51,7 @@ class Monitor(shared.OsvcThread, Crypt):
         self.log.info("monitor started")
         self.startup = datetime.datetime.utcnow()
         self.rejoin_grace_period_expired = False
-        self.compat = False
+        self.compat = True
 
         try:
             while True:
@@ -1437,7 +1437,7 @@ class Monitor(shared.OsvcThread, Crypt):
         compat = [data.get("compat") for data in shared.CLUSTER_DATA.values()]
         new_compat = len(set(compat)) <= 1
         if self.compat != new_compat:
-            if not new_compat:
+            if new_compat:
                 self.log.info("cluster members run compatible versions. "
                               "enable ha orchestration")
             else:
