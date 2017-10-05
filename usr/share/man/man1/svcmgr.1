@@ -24,30 +24,49 @@ the acker name to log when used with the 'collector ack unavailability' action
 a comment to log when used with the 'collector ack unavailability' action
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -105,30 +124,49 @@ a comment to log when used with the 'collector ack unavailability' action
 a duration expression like '10m'. used with the 'collector ack unavailability' action
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -171,30 +209,49 @@ display service alerts
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -237,30 +294,49 @@ display asset information known to the collector
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -303,30 +379,49 @@ display service checks
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -369,30 +464,49 @@ create a new tag
 a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -435,30 +549,49 @@ display service disks
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -507,30 +640,49 @@ a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavail
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -579,30 +731,49 @@ a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavail
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -648,30 +819,49 @@ specify a data formatter for output of the print* and collector* commands. possi
 a sql like filtering expression. leading and trailing wildcards are automatically set.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -723,30 +913,49 @@ a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavail
 a comment to log when used with the 'collector ack unavailability' action
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -789,30 +998,49 @@ log a message in the collector's service log
 the message to send to the collector for logging
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -855,30 +1083,49 @@ display network information known to the collector for each service ip
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -930,30 +1177,49 @@ a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavail
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -996,30 +1262,49 @@ list all service tags
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1062,30 +1347,49 @@ set a service tag (pointed by --tag)
 a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1128,30 +1432,49 @@ unset a service tag (pointed by --tag)
 a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1199,30 +1522,49 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1265,30 +1607,49 @@ attach moduleset specified by --moduleset to this service
 compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1331,30 +1692,49 @@ attach ruleset specified by --ruleset to this service
 compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1409,30 +1789,49 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 compliance, use rulesets valid on specified date
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1487,30 +1886,49 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 compliance, use rulesets valid on specified date
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1556,30 +1974,49 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1622,30 +2059,49 @@ detach moduleset specified by --moduleset from this service
 compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1688,30 +2144,49 @@ detach ruleset specified by --ruleset from this service
 compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1757,30 +2232,49 @@ compliance, set module list
 compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1835,30 +2329,49 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 compliance, use rulesets valid on specified date
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1913,30 +2426,49 @@ compliance, set moduleset list. The 'all' value can be used in conjonction with 
 compliance, use rulesets valid on specified date
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -1976,30 +2508,49 @@ list available compliance modulesets. --moduleset f% limit the scope to modulese
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -2039,30 +2590,49 @@ list available compliance rulesets. --ruleset f% limit the scope to rulesets mat
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -2102,30 +2672,49 @@ show compliance rules applying to this service
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -2165,30 +2754,49 @@ show compliance rules applying to this node
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -2228,30 +2836,49 @@ show compliance modules status
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -2326,30 +2953,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 Exit without resource activation rollback on start action error
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -2395,30 +3041,49 @@ the node to send a request to. if not specified the local node is targeted.
 execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -2467,30 +3132,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 comma-separated list of resource subsets to limit action to
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -2560,30 +3244,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -2623,30 +3326,49 @@ wrap the docker client command, setting automatically the socket parameter to jo
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -2695,30 +3417,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 comma-separated list of resource subsets to limit action to
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -2770,30 +3511,49 @@ the node to send a request to. if not specified the local node is targeted.
 execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -2833,30 +3593,49 @@ report on the current blocking of actions on this service
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -2935,30 +3714,49 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -3010,30 +3808,49 @@ the node to send a request to. if not specified the local node is targeted.
 do not display the command result in a pager.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -3073,30 +3890,49 @@ display the installed service list
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -3178,30 +4014,49 @@ Wait for asynchronous action termination
 remote node to start or migrate the service to
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -3271,30 +4126,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -3364,30 +4238,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -3457,30 +4350,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -3550,30 +4462,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -3643,30 +4574,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -3718,30 +4668,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 comma-separated list of resource subsets to limit action to
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -3781,30 +4750,49 @@ display service configuration file modification time
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -3856,30 +4844,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 comma-separated list of resource subsets to limit action to
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -3931,30 +4938,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 comma-separated list of resource subsets to limit action to
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -4003,30 +5029,49 @@ drop last resource status cache and re-evaluate before printing with the 'print 
 comma-separated list of resource to limit action to
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -4072,30 +5117,49 @@ specify a data formatter for output of the print* and collector* commands. possi
 add more information to some print commands: +next in 'print schedule'
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -4147,30 +5211,49 @@ drop last resource status cache and re-evaluate before printing with the 'print 
 tell print|json status action to include the disabled resources in the output, irrespective of the show_disabled service configuration setting.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -4222,30 +5305,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 comma-separated list of resource subsets to limit action to
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -4324,30 +5426,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 Exit without resource activation rollback on start action error
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -4420,30 +5541,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 Exit without resource activation rollback on start action error
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -4483,30 +5623,49 @@ report status of reservations on scsi disks held by this service
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -4576,30 +5735,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -4642,30 +5820,49 @@ pull a service configuration from the collector
 with the install or create actions, provision the service resources after config file creation. defaults to False.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -4705,30 +5902,49 @@ push service configuration to the collector
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -4768,30 +5984,49 @@ push service resources and application launchers info key/value pairs the collec
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -4831,30 +6066,49 @@ push service and its resources status to database
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -4924,30 +6178,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -5020,30 +6293,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 Exit without resource activation rollback on start action error
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -5116,30 +6408,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 Exit without resource activation rollback on start action error
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -5209,30 +6520,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -5272,30 +6602,49 @@ run the service task scheduler
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -5365,30 +6714,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -5467,30 +6835,49 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -5563,30 +6950,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 Exit without resource activation rollback on start action error
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -5659,30 +7065,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 Exit without resource activation rollback on start action error
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -5755,30 +7180,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 Exit without resource activation rollback on start action error
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -5851,30 +7295,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 Exit without resource activation rollback on start action error
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -5947,30 +7410,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 Exit without resource activation rollback on start action error
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -6043,30 +7525,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 Exit without resource activation rollback on start action error
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -6139,30 +7640,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 Exit without resource activation rollback on start action error
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -6205,30 +7725,49 @@ return service overall status code
 drop last resource status cache and re-evaluate before printing with the 'print [json] status' commands
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -6304,30 +7843,49 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -6397,30 +7955,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -6490,30 +8067,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -6583,30 +8179,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -6676,30 +8291,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -6769,30 +8403,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -6862,30 +8515,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -6967,30 +8639,49 @@ Wait for asynchronous action termination
 remote node to start or migrate the service to
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -7060,30 +8751,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -7153,30 +8863,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -7246,30 +8975,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -7339,30 +9087,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -7432,30 +9199,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -7525,30 +9311,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -7618,30 +9423,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -7711,30 +9535,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -7804,30 +9647,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -7897,30 +9759,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -7990,30 +9871,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -8083,30 +9983,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -8176,30 +10095,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -8269,30 +10207,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -8371,30 +10328,49 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -8446,30 +10422,49 @@ the node to send a request to. if not specified the local node is targeted.
 execute the service action via the daemon, on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -8539,30 +10534,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -8638,30 +10652,49 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -8748,30 +10781,49 @@ a resource definition in json dictionary format fed to create or update
 the configuration file template name or id, served by the collector, to use when creating or installing a service
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -8850,30 +10902,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 with the delete action, unprovision the service resources before config files file deletion. defaults to False.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -8919,30 +10990,49 @@ Discard the stashed erroneous configuration file in a 'edit config' command
 Recover the stashed erroneous configuration file in a 'edit config' command
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -9018,30 +11108,49 @@ If set with the 'get' action, the printed value of --param is scoped and derefer
 point a service configuration parameter for the 'get' and 'set' actions
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -9084,30 +11193,49 @@ display service current configuration
 specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -9195,30 +11323,49 @@ a list member to drop from the value pointed by --param in a set action
 set a service configuration parameter value for the 'set --param' action
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -9291,30 +11438,49 @@ comma-separated list of resource tags to limit action to. The + separator can be
 point a service configuration parameter for the 'get' and 'set' actions
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -9393,30 +11559,49 @@ with the install or create actions, provision the service resources after config
 a resource definition in json dictionary format fed to create or update
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)
@@ -9456,30 +11641,49 @@ check the sections and parameters are valid.
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression [!]<expr>[<sep>[!]<expr>].
-Where
- '!' is the expression negation operator
- <sep> can be
-  ',' OR expressions
-  '+' AND expressions
- <expr> can be
-   a glob on service names
-   <param><op><value>
-    Where
-     <param> can be
-       <rid>:
-       <group>:
-       <rid>.<key>
-       <group>.<key>
-     <op> can be
-       <  >  <=  >=  =
-       ~ with regexp value
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
 Examples:
- '*dns,ha*+app.timeout>1'
- 'ip:+task:'
- '!*excluded'
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
 Note:
- '!' usage mandates single quoting the expression to prevent shell history expansion
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
 .TP
 .B --status=PARM_STATUS
 operate only on service in the specified status (up/down/warn)

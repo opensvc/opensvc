@@ -40,7 +40,7 @@ class OsvcHelpFormatter(optparse.TitledHelpFormatter):
         elif opts[-1] != "\n":
             result.append("\n")
         result.append("\n")
-        return "".join(result)
+        return "".join(result).replace("``", "`")
 
 class OptionParserNoHelpOptions(optparse.OptionParser):
     def format_help(self, formatter=None):
