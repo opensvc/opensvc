@@ -3850,21 +3850,35 @@ class Node(Crypt):
         self.config.set("cluster", "secret", self.options.secret)
 
         for section, _data in data.items():
-            if not section.startswith("hb#"):
-                continue
-            if self.config.has_section(section):
-                self.log.info("update heartbeat %s", section)
-                self.config.remove_section(section)
-            else:
-                self.log.info("add heartbeat %s", section)
-            self.config.add_section(section)
-            for option, value in _data.items():
-                self.config.set(section, option, value)
+            if section.startswith("hb#"):
+                if self.config.has_section(section):
+                    self.log.info("update heartbeat %s", section)
+                    self.config.remove_section(section)
+                else:
+                    self.log.info("add heartbeat %s", section)
+                self.config.add_section(section)
+                for option, value in _data.items():
+                    self.config.set(section, option, value)
+            elif section.startswith("stonith#"):
+                if self.config.has_section(section):
+                    self.log.info("update stonith %s", section)
+                    self.config.remove_section(section)
+                else:
+                    self.log.info("add stonith %s", section)
+                self.config.add_section(section)
+                for option, value in _data.items():
+                    self.config.set(section, option, value)
 
         # remove obsolete hb configurations
         for section in self.config.sections():
             if section.startswith("hb#") and section not in data:
                 self.log.info("remove heartbeat %s", section)
+                self.config.remove_section(section)
+
+        # remove obsolete stonith configurations
+        for section in self.config.sections():
+            if section.startswith("stonith#") and section not in data:
+                self.log.info("remove stonith %s", section)
                 self.config.remove_section(section)
 
         self.write_config()
