@@ -212,7 +212,7 @@ class ResourceSet(object):
 
         if action == "startstandby":
             # filter out resource not in standby mode
-            resources = [res for res in resources if rcEnv.nodename in res.always_on]
+            resources = [res for res in resources if res.standby]
 
         resources = self.sort_resources(resources, action)
         return resources

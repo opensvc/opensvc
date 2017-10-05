@@ -404,10 +404,8 @@ class Monitor(shared.OsvcThread, Crypt):
             if smon.local_expect != "started":
                 return False
             nb_restart = svc.get_resource(rid).nb_restart
-            if nb_restart == 0:
-                resource = svc.get_resource(rid)
-                if resource and rcEnv.nodename in resource.always_on:
-                    nb_restart = 1
+            if nb_restart == 0 and resource.get("standby"):
+                nb_restart = self.default_stdby_nb_restart
             retries = self.get_smon_retries(svc.svcname, rid)
             if retries > nb_restart:
                 return False
@@ -422,11 +420,10 @@ class Monitor(shared.OsvcThread, Crypt):
                           retries+1, nb_restart)
             return True
 
-        def stdby_resource(svc, rid):
-            resource = svc.get_resource(rid)
-            if resource is None or rcEnv.nodename not in resource.always_on:
+        def stdby_resource(svc, rid, resource):
+            if resource.get("standby") is not True:
                 return False
-            nb_restart = resource.nb_restart
+            nb_restart = svc.get_resource(rid).nb_restart
             if nb_restart < self.default_stdby_nb_restart:
                 nb_restart = self.default_stdby_nb_restart
             retries = self.get_smon_retries(svc.svcname, rid)
@@ -434,11 +431,11 @@ class Monitor(shared.OsvcThread, Crypt):
                 return False
             if retries >= nb_restart:
                 self.inc_smon_retries(svc.svcname, rid)
-                self.log.info("max retries (%d) reached for stdby resource "
+                self.log.info("max retries (%d) reached for standby resource "
                               "%s.%s", nb_restart, svc.svcname, rid)
                 return False
             self.inc_smon_retries(svc.svcname, rid)
-            self.log.info("start stdby resource %s.%s, try %d/%d", svc.svcname, rid,
+            self.log.info("start standby resource %s.%s, try %d/%d", svc.svcname, rid,
                           retries+1, nb_restart)
             return True
 
@@ -452,7 +449,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 continue
             if resource.get("provisioned", {}).get("state") is False:
                 continue
-            if monitored_resource(svc, rid, resource) or stdby_resource(svc, rid):
+            if monitored_resource(svc, rid, resource) or stdby_resource(svc, rid, resource):
                 rids.append(rid)
                 continue
 

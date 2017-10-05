@@ -15,6 +15,7 @@ deprecated_keywords = {
   "disk.vg.vgname": "name",
   "sync.rsync.exclude": "options",
   "disk.zpool.poolname": "name",
+  "always_on": None,
 }
 
 # supported => deprecated
@@ -92,6 +93,8 @@ class Keyword(object):
         return self.order < o.order
 
     def deprecated(self):
+        if self.keyword in deprecated_keywords:
+            return True
         if self.rtype is None:
             if self.section+"."+self.keyword in deprecated_keywords:
                 return True
@@ -4344,6 +4347,17 @@ class KeyDict(KeywordStore):
                   convert="boolean",
                   text="Possible values are 'true' or 'false'. Actions on resource will be tried upon service startup and shutdown, but action failures will be logged and passed over. Useful for resources like dump filesystems for example."
                 )
+        def kw_standby(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="standby",
+                  generic=True,
+                  at=True,
+                  default=False,
+                  candidates=(True, False),
+                  convert="boolean",
+                  text="Always start the resource, even on standby instances. The daemon is responsible for starting standby resources. A resource can be set standby on a subset of nodes using keyword scoping.\n\nA typical use-case is sync'ed fs on non-shared disks: the remote fs must be mounted to not overflow the underlying fs.\n\n.. warning:: Don't set shared resources standby: fs on shared disks for example."
+                )
         def kw_always_on(resource):
             return Keyword(
                   section=resource,
@@ -4699,6 +4713,7 @@ class KeyDict(KeywordStore):
             self += kw_disable(r)
             self += kw_optional(r)
             self += kw_always_on(r)
+            self += kw_standby(r)
             self += kw_provision(r)
             self += kw_shared(r)
 

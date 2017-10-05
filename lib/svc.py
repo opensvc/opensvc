@@ -1381,7 +1381,8 @@ class Svc(Crypt):
                     monitor,
                     disable,
                     optional,
-                    encap
+                    encap,
+                    standby
                 ) = resource.status_quad(color=False)
                 data['resources'][rid] = {
                     'status': str(status),
@@ -1393,6 +1394,7 @@ class Svc(Crypt):
                     'disable': disable,
                     'optional': optional,
                     'encap': encap,
+                    'standby': standby,
                 }
                 data['resources'][rid]["provisioned"] = resource.provisioned_data()
                 if data['resources'][rid]["provisioned"]["state"] is False:
@@ -1519,6 +1521,7 @@ class Svc(Crypt):
             O  Optional
             E  Encap
             P  Provisioned
+            S  Standby
             """
             flags = ''
             flags += 'M' if resource["monitor"] else '.'
@@ -1532,6 +1535,7 @@ class Svc(Crypt):
                 flags += 'P'
             else:
                 flags += '/'
+            flags += 'S' if resource["standby"] else '.'
             return flags
 
         def dispatch_resources(data):
@@ -2926,8 +2930,7 @@ class Svc(Crypt):
     def slave_startstandby(self):
         cmd = ['startstandby']
         for container in self.get_resources('container'):
-            if not container.is_up() and \
-               rcEnv.nodename not in container.always_on:
+            if not container.is_up() and not container.standby:
                 # no need to try to startstandby the encap service on a
                 # container we not activated
                 continue
@@ -3588,12 +3591,12 @@ class Svc(Crypt):
                            ",".join(retained_rids))
         return retained_rids
 
-    def always_on_resources(self):
+    def standby_resources(self):
         """
         Return the list of resources flagged always on on this node
         """
         return [resource for resource in self.resources_by_id.values()
-                if rcEnv.nodename in resource.always_on]
+                if resource.standby]
 
     def prepare_options(self, options):
         """
@@ -4033,7 +4036,7 @@ class Svc(Crypt):
         if self.disable_rollback:
             self.log.info("skip rollback %s: as instructed by DEFAULT.rollback=false", action)
             return
-        rids = [r.rid for r in self.get_resources() if r.can_rollback and not r.always_on]
+        rids = [r.rid for r in self.get_resources() if r.can_rollback and not r.standby]
         if len(rids) == 0:
             self.log.info("skip rollback %s: no resource activated", action)
             return
@@ -5371,12 +5374,13 @@ class Svc(Crypt):
         if data is None or data["status"] != 0:
             raise ex.excError("clear on node %s failed" % nodename)
 
-    def set_service_monitor(self, status=None, local_expect=None, global_expect=None):
+    def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None):
         options = {
             "svcname": self.svcname,
             "status": status,
             "local_expect": local_expect,
             "global_expect": global_expect,
+            "stonith": stonith,
         }
         try:
             data = self.daemon_send(

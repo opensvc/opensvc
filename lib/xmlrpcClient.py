@@ -486,7 +486,7 @@ class Collector(object):
         for r in svc.get_resources():
             l = [
               ["driver", r.type],
-              ["always_on", str(rcEnv.nodename in r.always_on).lower()],
+              ["standby", str(r.standby).lower()],
               ["optional", str(r.optional).lower()],
               ["disabled", str(r.disabled).lower()],
               ["monitor", str(r.monitor).lower()],

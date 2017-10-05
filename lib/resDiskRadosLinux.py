@@ -180,7 +180,7 @@ class DiskLock(Disk):
                  optional=False,
                  disabled=False,
                  tags=set(),
-                 always_on=set(),
+                 standby=False,
                  monitor=False,
                  restart=0,
                  subset=None):
@@ -197,7 +197,7 @@ class DiskLock(Disk):
                     optional=optional,
                     disabled=disabled,
                     tags=tags,
-                    always_on=always_on,
+                    standby=standby,
                     monitor=monitor,
                     restart=restart,
                     subset=subset)

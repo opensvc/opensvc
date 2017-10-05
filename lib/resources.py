@@ -35,13 +35,11 @@ class Resource(object):
                  monitor=False,
                  restart=0,
                  tags=None,
-                 always_on=None,
+                 standby=False,
                  skip_provision=False,
                  shared=False):
         if tags is None:
             tags = set()
-        if always_on is None:
-            always_on = set()
         self.svc = None
         self.rset = None
         self.rid = rid
@@ -49,12 +47,12 @@ class Resource(object):
         self.type = type
         self.subset = subset
         self.optional = optional if optional is not None else self.default_optional
+        self.standby = standby
         self.disabled = disabled
         self.skip = False
         self.monitor = monitor
         self.nb_restart = restart
         self.rstatus = None
-        self.always_on = always_on
         self.skip_provision = skip_provision
         self.shared = shared
         self.sort_key = rid
@@ -251,7 +249,7 @@ class Resource(object):
         Call the resource action method if implemented.
 
         If the action is a stopping action and the resource is flagged
-        always_on on this node, skip.
+        standby on this node, skip.
 
         Call the defined pre and post triggers.
 
@@ -261,7 +259,7 @@ class Resource(object):
 
         self.log.debug('do action %s', action)
 
-        if "stop" in action and rcEnv.nodename in self.always_on and not self.svc.options.force:
+        if "stop" in action and self.standby and not self.svc.options.force:
             standby_action = action+'standby'
             if hasattr(self, standby_action):
                 self.action_main(standby_action)
@@ -379,10 +377,10 @@ class Resource(object):
 
     def status_stdby(self, status):
         """
-        This function modifies the passed status according
-        to this node inclusion in the always_on nodeset.
+        This method modifies the passed status according to the standby
+        property.
         """
-        if rcEnv.nodename not in self.always_on:
+        if not self.standby:
             return status
         if status == rcStatus.UP:
             return rcStatus.STDBY_UP
@@ -623,7 +621,8 @@ class Resource(object):
                 self.monitor,
                 self.is_disabled(),
                 self.optional,
-                encap)
+                encap,
+                self.standby)
 
     def call(self, *args, **kwargs):
         """
@@ -753,7 +752,7 @@ class Resource(object):
         Executes a resource stop if the resource start has marked the resource
         as rollbackable.
         """
-        if self.can_rollback and rcEnv.nodename not in self.always_on:
+        if self.can_rollback and not self.standby:
             self.stop()
 
     def stop(self):
@@ -764,10 +763,9 @@ class Resource(object):
 
     def startstandby(self):
         """
-        Promote the action to start if the resource is flagged always_on on
-        this node.
+        Promote the action to start if the resource is flagged standby
         """
-        if rcEnv.nodename in self.always_on:
+        if self.standby:
             self.start()
 
     def start(self):

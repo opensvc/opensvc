@@ -174,7 +174,7 @@ class Drbd(Res.Resource):
         self.can_rollback = True
 
     def stop(self):
-        if rcEnv.nodename in self.always_on:
+        if self.standby:
             self.stopstandby()
         else:
             self.drbdadm_down()

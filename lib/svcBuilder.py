@@ -78,12 +78,23 @@ def get_disabled(svc, section):
     except ex.OptNotFound as exc:
         return exc.default
 
+def get_standby(svc, section):
+    try:
+        return svc.conf_get(section, 'standby')
+    except ex.OptNotFound as exc:
+        # backward compat with always_on
+        try:
+            return standby_from_always_on(svc, section)
+        except ex.OptNotFound:
+            pass
+        return exc.default
+
 def init_kwargs(svc, s):
     return {
         "rid": s,
         "subset": get_subset(svc, s),
         "tags": get_tags(svc, s),
-        "always_on": always_on_nodes_set(svc, s),
+        "standby": get_standby(svc, s),
         "disabled": get_disabled(svc, s),
         "optional": get_optional(svc, s),
         "monitor": get_monitor(svc, s),
@@ -92,18 +103,15 @@ def init_kwargs(svc, s):
         "shared": get_shared(svc, s),
     }
 
-def always_on_nodes_set(svc, section):
-    try:
-        always_on_opt = svc.conf_get(section, "always_on")
-    except ex.OptNotFound as exc:
-        always_on_opt = exc.default
-    always_on = set()
-    if 'nodes' in always_on_opt:
-        always_on |= svc.nodes
-    if 'drpnodes' in always_on_opt:
-        always_on |= svc.drpnodes
-    always_on |= set(always_on_opt) - set(['nodes', 'drpnodes'])
-    return always_on
+def standby_from_always_on(svc, section):
+    always_on_opt = svc.conf_get(section, "always_on")
+    if rcEnv.nodename in always_on_opt:
+        return True
+    if 'nodes' in always_on_opt and rcEnv.nodename in svc.nodes:
+        return True
+    if 'drpnodes' in always_on_opt and rcEnv.nodename in svc.drpnodes:
+        return True
+    return False
 
 def get_sync_args(svc, s):
     kwargs = {}

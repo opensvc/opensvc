@@ -270,10 +270,12 @@ class Listener(shared.OsvcThread, Crypt):
         local_expect = kwargs.get("local_expect")
         global_expect = kwargs.get("global_expect")
         reset_retries = kwargs.get("reset_retries", False)
+        stonith = kwargs.get("stonith")
         self.set_smon(
             svcname, status=status,
             local_expect=local_expect, global_expect=global_expect,
-            reset_retries=reset_retries
+            reset_retries=reset_retries,
+            stonith=stonith,
         )
         shared.wake_monitor()
         return {"status": 0}
