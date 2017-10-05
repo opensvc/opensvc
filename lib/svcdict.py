@@ -1851,9 +1851,10 @@ class KeywordAppTimeout(Keyword):
                   self,
                   section="app",
                   keyword="timeout",
+                  convert="duration",
                   order=9,
                   at=True,
-                  text="Wait for <n> seconds max before declaring the app launcher action a failure. If no timeout is specified, the agent waits indefinitely for the app launcher to return. The timeout parameter can be coupled with optional=True to not abort a service start when an app launcher did not return.",
+                  text="Wait for <timeout> before declaring the app launcher action a failure. If no timeout is specified, the agent waits indefinitely for the app launcher to return. The timeout parameter can be coupled with optional=True to not abort a service start when an app launcher did not return.",
                   example="180"
                 )
 
