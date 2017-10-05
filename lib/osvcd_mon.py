@@ -506,12 +506,6 @@ class Monitor(shared.OsvcThread, Crypt):
             return
         if self.service_orchestrator_auto_grace(svc):
             return
-        if status == "down":
-            if not self.parents_available(svc):
-                self.set_smon(svc.svcname, status="wait parents")
-                return
-            elif smon.status == "wait parents":
-                self.set_smon(svc.svcname, status="idle")
         if svc.hard_anti_affinity:
             intersection = set(self.get_local_svcnames()) & set(svc.hard_anti_affinity)
             if len(intersection) > 0:
@@ -560,7 +554,7 @@ class Monitor(shared.OsvcThread, Crypt):
             else:
                 return
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
-        if smon.status in "ready":
+        if smon.status in ("ready", "wait parents"):
             if instance.avail is "up":
                 self.log.info("abort 'ready' because the local instance "
                               "has started")
@@ -583,6 +577,11 @@ class Monitor(shared.OsvcThread, Crypt):
                               "acting on service %s", peer, svc.svcname)
                 self.set_smon(svc.svcname, "idle")
                 return
+        if smon.status == "wait parents":
+            if self.parents_available(svc):
+                self.set_smon(svc.svcname, status="idle")
+                return
+        elif smon.status == "ready":
             now = datetime.datetime.utcnow()
             if smon.status_updated < (now - MON_WAIT_READY):
                 self.log.info("failover service %s status %s/ready for "
@@ -598,6 +597,9 @@ class Monitor(shared.OsvcThread, Crypt):
                           str(smon.status_updated+MON_WAIT_READY-now))
         elif smon.status == "idle":
             if status not in ("down", "stdby down", "stdby up"):
+                return
+            if not self.parents_available(svc):
+                self.set_smon(svc.svcname, status="wait parents")
                 return
             if len(svc.peers) == 1:
                 self.log.info("failover service %s status %s/idle and "
@@ -626,13 +628,18 @@ class Monitor(shared.OsvcThread, Crypt):
                 return
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
         n_up = self.count_up_service_instances(svc.svcname)
-        if smon.status == "ready":
+        if smon.status in ("ready", "wait parents"):
             if (n_up - 1) >= svc.flex_min_nodes:
                 self.log.info("flex service %s instance count reached "
                               "required minimum while we were ready",
                               svc.svcname)
                 self.set_smon(svc.svcname, "idle")
                 return
+        if smon.status == "wait parents":
+            if self.parents_available(svc):
+                self.set_smon(svc.svcname, status="idle")
+                return
+        if smon.status == "ready":
             now = datetime.datetime.utcnow()
             if smon.status_updated < (now - MON_WAIT_READY):
                 self.log.info("flex service %s status %s/ready for %s",
@@ -647,6 +654,9 @@ class Monitor(shared.OsvcThread, Crypt):
             if instance.avail not in STOPPED_STATES:
                 return
             if not self.placement_leader(svc, candidates):
+                return
+            if not self.parents_available(svc):
+                self.set_smon(svc.svcname, status="wait parents")
                 return
             self.log.info("flex service %s started, starting or ready to "
                           "start instances: %d/%d. local status %s",
