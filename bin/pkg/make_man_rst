@@ -64,7 +64,7 @@ class ManRstFormatter(optparse.HelpFormatter):
 
         # highlight sections
         commands = re.sub(r'^(\w.+)\n(-+)',
-                          lambda pat: ".. _%s:\n\n" % pat.group(1).lower().replace(" ", ".")+pat.group(1)+"\n"+"-"*len(pat.group(1)), commands, flags=re.MULTILINE)
+                          lambda pat: pat.group(1)+"\n"+"-"*len(pat.group(1)), commands, flags=re.MULTILINE)
 
         # highlight actions
         commands = re.sub(r'^  ((svcmgr|nodemgr|svcmon) .*)$',
