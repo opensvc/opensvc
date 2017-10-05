@@ -17,10 +17,8 @@ class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  uuid=None,
-                 shared=None,
                  **kwargs):
         self.uuid = uuid
-        self.shared = shared
         self.mdadm = "/sbin/mdadm"
         resDisk.Disk.__init__(self,
                           rid=rid,
@@ -51,7 +49,6 @@ class Disk(resDisk.Disk):
     def info(self):
         data = [
           ["uuid", self.uuid],
-          ["shared", str(self.is_shared).lower()],
         ]
         return self.fmt_info(data)
 
