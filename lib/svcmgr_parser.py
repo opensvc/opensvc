@@ -409,7 +409,7 @@ ACTIONS = {
         },
         'shutdown': {
             'msg': 'stop a service, disabling the background database logging',
-            'options': ACTION_OPTS,
+            'options': ACTION_OPTS + ASYNC_ACTION_OPTS,
         },
         'start': {
             'msg': 'start all service resources',

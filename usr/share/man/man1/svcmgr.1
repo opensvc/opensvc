@@ -6598,6 +6598,12 @@ comma-separated list of resource subsets to limit action to
 .B --tags=PARM_TAGS
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --time=TIME
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
