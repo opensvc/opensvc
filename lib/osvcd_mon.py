@@ -1240,7 +1240,7 @@ class Monitor(shared.OsvcThread, Crypt):
                             data[svcname] = self.service_status_fallback(svcname)
                 except Exception as exc:
                     data[svcname] = self.service_status_fallback(svcname)
-            elif:
+            elif last_mtime > 0:
                 data[svcname] = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]
 
             if not data[svcname]:
