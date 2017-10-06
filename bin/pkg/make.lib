@@ -19,6 +19,11 @@ function date_to_release {
 	/opt/opensvc/bin/python -c "import datetime ; print(datetime.datetime.fromtimestamp($1).strftime('%y%m%d.%H%M'))"
 }
 
+cd $PATH_SCRIPT || {
+    echo "Error : Can not change directory to $PATH_SCRIPT. Exiting."
+    exit 1
+}
+
 #OFFSET=10000
 HEAD=$(git log -1 --pretty=format:%at || exit 1)
 VERSION=$(git describe --tags --abbrev=0)
