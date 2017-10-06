@@ -649,7 +649,7 @@ class OsvcThread(threading.Thread):
             h = hashlib.md5()
             h.update(s)
             return h.digest()
-        return sorted(candidates, key=lambda x: fn(svc.svcname+x))
+        return [nodename for nodename in sorted(candidates, key=lambda x: fn(svc.svcname+x))]
 
     def placement_ranks_load_avg(self, svc, candidates, silent=False):
         data = []
