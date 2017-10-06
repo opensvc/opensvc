@@ -2926,7 +2926,22 @@ class KeywordDiskLvCreateOptions(Keyword):
                   at=True,
                   provisioning=True,
                   text="Additional options to pass to the logical volume create command. Size and name are alread set.",
-                  example="10m"
+                  example="--contiguous y"
+                )
+
+class KeywordDiskFsCreateOptions(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  rtype=rcEnv.fs_non_pooling,
+                  keyword="create_options",
+                  convert="shlex",
+                  order=13,
+                  at=True,
+                  provisioning=True,
+                  text="Additional options to pass to the logical volume create command. Size and name are alread set.",
+                  example="--contiguous y"
                 )
 
 class KeywordDiskDiskDiskId(Keyword):
@@ -4946,6 +4961,7 @@ class KeyDict(KeywordStore):
         self += KeywordDiskLvVg()
         self += KeywordDiskLvSize()
         self += KeywordDiskLvCreateOptions()
+        self += KeywordDiskFsCreateOptions()
         self += KeywordSyncRadosPairs()
         self += KeywordSyncRadosImages()
         self += KeywordDiskClientId()
