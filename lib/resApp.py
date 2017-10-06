@@ -100,6 +100,10 @@ class App(Resource):
                  check=None,
                  info=None,
                  timeout=None,
+                 start_timeout=None,
+                 stop_timeout=None,
+                 check_timeout=None,
+                 info_timeout=None,
                  **kwargs):
 
         Resource.__init__(self, rid, "app", **kwargs)
@@ -109,6 +113,10 @@ class App(Resource):
         self.check_seq = check
         self.info_seq = info
         self.timeout = timeout
+        self.start_timeout = start_timeout
+        self.stop_timeout = stop_timeout
+        self.check_timeout = check_timeout
+        self.info_timeout = info_timeout
         if script:
             self.label = os.path.basename(script)
         self.lockfd = None
@@ -192,6 +200,10 @@ class App(Resource):
             ["check", str(self.check_seq) if self.check_seq else ""],
             ["info", str(self.info_seq) if self.info_seq else ""],
             ["timeout", str(self.timeout) if self.timeout else ""],
+            ["start_timeout", str(self.start_timeout) if self.start_timeout else ""],
+            ["stop_timeout", str(self.stop_timeout) if self.stop_timeout else ""],
+            ["check_timeout", str(self.check_timeout) if self.check_timeout else ""],
+            ["info_timeout", str(self.info_timeout) if self.info_timeout else ""],
         ]
         try:
             cmd = self.get_cmd("info")
@@ -452,13 +464,19 @@ class App(Resource):
             self.log.info("limit %s = %s", key, data[key])
         return data
 
+    def get_timeout(self, action):
+        action_timeout = getattr(self, action+"_timeout")
+        if action_timeout is not None:
+            return action_timeout
+        return self.timeout
+
     def _run_cmd_dedicated_log(self, action, cmd):
         """
         Poll stdout and stderr to log as soon as new lines are available.
         """
         kwargs = {
             'stdin': None,
-            'timeout': self.timeout,
+            'timeout': self.get_timeout(action),
             'logger': self.log,
         }
         try:

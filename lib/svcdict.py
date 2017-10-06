@@ -1843,7 +1843,59 @@ class KeywordAppTimeout(Keyword):
                   convert="duration",
                   order=9,
                   at=True,
-                  text="Wait for <timeout> before declaring the app launcher action a failure. If no timeout is specified, the agent waits indefinitely for the app launcher to return. The timeout parameter can be coupled with optional=True to not abort a service start when an app launcher did not return.",
+                  text="Wait for <duration> before declaring the app launcher action a failure. Can be overriden by :kw:`<action>_timeout`. If no timeout is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a servicea instance start when an app launcher did not return.",
+                  example="180"
+                )
+
+class KeywordAppStartTimeout(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="start_timeout",
+                  convert="duration",
+                  order=9,
+                  at=True,
+                  text="Wait for <duration> before declaring the app launcher start action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`start_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a servicea instance start when an app launcher did not return.",
+                  example="180"
+                )
+
+class KeywordAppStopTimeout(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="stop_timeout",
+                  convert="duration",
+                  order=9,
+                  at=True,
+                  text="Wait for <duration> before declaring the app launcher stop action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`stop_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a servicea instance stop when an app launcher did not return.",
+                  example="180"
+                )
+
+class KeywordAppCheckTimeout(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="check_timeout",
+                  convert="duration",
+                  order=9,
+                  at=True,
+                  text="Wait for <duration> before declaring the app launcher check action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`check_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a servicea instance check when an app launcher did not return.",
+                  example="180"
+                )
+
+class KeywordAppInfoTimeout(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="info_timeout",
+                  convert="duration",
+                  order=9,
+                  at=True,
+                  text="Wait for <duration> before declaring the app launcher info action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`info_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a servicea instance info when an app launcher did not return.",
                   example="180"
                 )
 
@@ -4942,6 +4994,10 @@ class KeyDict(KeywordStore):
         self += KeywordAppLimitStack()
         self += KeywordAppLimitVmem()
         self += KeywordAppTimeout()
+        self += KeywordAppStartTimeout()
+        self += KeywordAppStopTimeout()
+        self += KeywordAppCheckTimeout()
+        self += KeywordAppInfoTimeout()
         self += KeywordAppStart()
         self += KeywordAppStop()
         self += KeywordAppCheck()

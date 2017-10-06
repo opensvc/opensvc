@@ -1893,7 +1893,27 @@ def add_app(svc, s):
     try:
         kwargs['timeout'] = svc.conf_get(s, 'timeout')
     except ex.OptNotFound as exc:
-        pass
+        kwargs['timeout'] = exc.default
+
+    try:
+        kwargs['start_timeout'] = svc.conf_get(s, 'start_timeout')
+    except ex.OptNotFound as exc:
+        kwargs['start_timeout'] = exc.default
+
+    try:
+        kwargs['stop_timeout'] = svc.conf_get(s, 'stop_timeout')
+    except ex.OptNotFound as exc:
+        kwargs['stop_timeout'] = exc.default
+
+    try:
+        kwargs['check_timeout'] = svc.conf_get(s, 'check_timeout')
+    except ex.OptNotFound as exc:
+        kwargs['check_timeout'] = exc.default
+
+    try:
+        kwargs['info_timeout'] = svc.conf_get(s, 'info_timeout')
+    except ex.OptNotFound as exc:
+        kwargs['info_timeout'] = exc.default
 
     r = resApp.App(**kwargs)
     svc += r
