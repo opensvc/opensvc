@@ -41,7 +41,7 @@ def write_section(prog, name, data):
     buff += title
 
     buff += ".. toctree::\n"
-    buff += "   :maxdepth: 2\n\n"
+    buff += "   :maxdepth: 1\n\n"
     for action_name, action_data in data.items():
         buff += "   %s\n" % action_pname(prog, name, action_name)
         write_action(prog, name, action_name, action_data)
