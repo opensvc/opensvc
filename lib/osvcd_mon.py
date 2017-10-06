@@ -1345,6 +1345,8 @@ class Monitor(shared.OsvcThread, Crypt):
         if smon.global_expect is None:
             return
         instance = self.get_service_instance(svcname, rcEnv.nodename)
+        if instance is None:
+            return
         local_frozen = instance["frozen"]
         frozen = self.get_agg_frozen(svcname)
         provisioned = self.get_agg_provisioned(svcname)
