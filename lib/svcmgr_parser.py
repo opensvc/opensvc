@@ -397,12 +397,6 @@ DAEMON_OPTS = [
 
 ACTIONS = {
     'Service actions': {
-        'boot': {
-            'msg': 'start a service if executed on the primary node (or one of'
-                   ' the primary nodes in case of a flex service), '
-                   'startstandby if not',
-            'options': ACTION_OPTS + START_ACTION_OPTS,
-        },
         'clear': {
             'msg': 'clear the monitor status of the service on the node pointed '
                    'by --node. If --node is not specified, the local node is '

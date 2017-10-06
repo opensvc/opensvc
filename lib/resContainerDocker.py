@@ -309,10 +309,7 @@ class Docker(resContainer.Container):
         if self.docker_service:
             self.svc.dockerlib.init_swarm()
             self.swarm_node_active()
-            if self.svc.running_action == "boot" and self.swarm_node_role() != "leader":
-                self.log.info("skip: this docker node is not swarm leader")
-                return
-            elif self.svc.running_action != "boot" and self.swarm_node_role() not in ("leader", "reachable"):
+            if self.swarm_node_role() not in ("leader", "reachable"):
                 self.log.info("skip: this docker node is not swarm manager")
                 return
         resContainer.Container.start(self)

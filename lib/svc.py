@@ -263,7 +263,6 @@ STATUS_TYPES = [
 ]
 
 ACTIONS_DO_MASTER_AND_SLAVE = [
-    "boot",
     "migrate",
     "prstart",
     "prstop",
@@ -649,7 +648,7 @@ class Svc(Crypt):
         return [res for res in self.get_resources() if res.shared]
             
     def action_rid_dependencies(self, action, rid):
-        if action in ("boot", "provision", "start"):
+        if action in ("provision", "start"):
             action = "start"
         elif action in ("shutdown", "unprovision", "stop"):
             action = "stop"
@@ -662,7 +661,7 @@ class Svc(Crypt):
         return self.dependencies[action][rid]
 
     def action_rid_dependency_of(self, action, rid):
-        if action in ("boot", "provision", "start"):
+        if action in ("provision", "start"):
             action = "start"
         elif action in ("shutdown", "unprovision", "stop"):
             action = "stop"
@@ -2070,7 +2069,7 @@ class Svc(Crypt):
         self.purge_cache_encap_json_status(container.rid)
 
         # wait for the container multi-user state
-        if cmd[0] in ["start", "boot"] and hasattr(container, "wait_multi_user"):
+        if cmd[0] in ["start"] and hasattr(container, "wait_multi_user"):
             container.wait_multi_user()
 
         options = ['--daemon']
@@ -2503,13 +2502,6 @@ class Svc(Crypt):
                 continue
             if __data["avail"] == "up":
                 return nodename
-
-    def boot(self):
-        """
-        The 'boot' action entrypoint.
-        Start errors cause a fallback to startstandby as a best effort.
-        """
-        self.startstandby()
 
     def shutdown(self):
         self.options.force = True
