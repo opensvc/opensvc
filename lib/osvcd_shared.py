@@ -522,7 +522,8 @@ class OsvcThread(threading.Thread):
     #########################################################################
     def placement_candidates(self, svc, discard_frozen=True,
                              discard_unprovisioned=True,
-                             discard_constraints_violation=True):
+                             discard_constraints_violation=True,
+                             discard_start_failed=True):
         """
         Return the list of service nodes meeting the following criteria:
         * we have valid service instance data (not unknown, has avail)
@@ -530,6 +531,7 @@ class OsvcThread(threading.Thread):
         * the node is not frozen (default)
         * the service is not frozen (default)
         * the service instance is provisioned (default)
+        * the service instance smon status is not "start failed" (default)
         * the service instance constraints are eval'ed True (default)
         """
         candidates = []
@@ -544,6 +546,8 @@ class OsvcThread(threading.Thread):
                     continue
                 instance = self.get_service_instance(svc.svcname, nodename)
                 if instance is None:
+                    continue
+                if discard_start_failed and instance["monitor"]["status"] == "start failed":
                     continue
                 if "avail" not in instance:
                     # deleting
