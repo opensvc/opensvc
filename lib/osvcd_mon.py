@@ -33,6 +33,11 @@ STOPPED_STATES = (
     "stdby up",
     "stdby down",
 )
+SHUTDOWN_STATES = (
+    "n/a",
+    "down",
+    "stdby down",
+)
 
 class Monitor(shared.OsvcThread, Crypt):
     """
@@ -683,6 +688,25 @@ class Monitor(shared.OsvcThread, Crypt):
             if svc.frozen():
                 self.log.info("thaw service %s", svc.svcname)
                 self.service_thaw(svc.svcname)
+        elif smon.global_expect == "shutdown":
+            if not self.children_down(svc):
+                self.set_smon(svc.svcname, status="wait children")
+                return
+            elif smon.status == "wait children":
+                self.set_smon(svc.svcname, status="idle")
+
+            if not svc.frozen():
+                self.log.info("freeze service %s", svc.svcname)
+                self.service_freeze(svc.svcname)
+            elif instance.avail != SHUTDOWN_STATES:
+                thawed_on = self.service_instances_thawed(svc.svcname)
+                if thawed_on:
+                    self.duplog("info", "service %(svcname)s still has thawed instances "
+                                "on nodes %(thawed_on)s, delay shutdown",
+                                svcname=svc.svcname,
+                                thawed_on=", ".join(thawed_on))
+                else:
+                    self.service_shutdown(svc.svcname)
         elif smon.global_expect == "stopped":
             if not self.children_down(svc):
                 self.set_smon(svc.svcname, status="wait children")
@@ -1357,6 +1381,11 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.info("service %s global expect is %s and its global "
                           "status is %s", svcname, smon.global_expect, status)
             self.set_smon(svcname, global_expect="unset")
+        elif smon.global_expect == "shutdown" and status in SHUTDOWN_STATES and \
+           local_frozen:
+            self.log.info("service %s global expect is %s and its global "
+                          "status is %s", svcname, smon.global_expect, status)
+            self.set_smon(svcname, global_expect="unset")
         elif smon.global_expect == "started" and \
              status in STARTED_STATES and not local_frozen:
             self.log.info("service %s global expect is %s and its global "
@@ -1507,6 +1536,13 @@ class Monitor(shared.OsvcThread, Crypt):
             local_avail = instance["avail"]
             local_frozen = instance["frozen"]
             if local_avail not in STOPPED_STATES or not local_frozen:
+                return True
+            else:
+                return False
+        if global_expect == "shutdown":
+            local_avail = instance["avail"]
+            local_frozen = instance["frozen"]
+            if local_avail not in SHUTDOWN_STATES or not local_frozen:
                 return True
             else:
                 return False

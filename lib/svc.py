@@ -55,6 +55,7 @@ ACTION_TGT_STATE = {
     "unprovision": "unprovisioned",
     "delete": "deleted",
     "purge": "purged",
+    "shutdown": "shutdown",
 }
 
 DEFAULT_STATUS_GROUPS = [
