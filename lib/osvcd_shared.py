@@ -6,6 +6,7 @@ import threading
 import datetime
 import time
 import codecs
+import hashlib
 from subprocess import Popen, PIPE
 
 import rcExceptions as ex
@@ -568,6 +569,8 @@ class OsvcThread(threading.Thread):
             return self.placement_ranks_load_avg(svc, candidates)
         elif svc.placement == "nodes order":
             return self.placement_ranks_nodes_order(svc, candidates)
+        elif svc.placement == "spread":
+            return self.placement_ranks_spread(svc, candidates)
         else:
             return [rcEnv.nodename]
 
@@ -636,6 +639,17 @@ class OsvcThread(threading.Thread):
                 return True
             else:
                 return False
+
+    def placement_ranks_spread(self, svc, candidates, silent=False):
+        """
+        hash together each candidate nodename+svcname, and sort the resulting
+        list.
+        """
+        def fn(s):
+            h = hashlib.md5()
+            h.update(s)
+            return h.digest()
+        return sorted(candidates, key=lambda x: fn(svc.svcname+x))
 
     def placement_ranks_load_avg(self, svc, candidates, silent=False):
         data = []
