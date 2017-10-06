@@ -1216,7 +1216,10 @@ class Monitor(shared.OsvcThread, Crypt):
         instance = self.get_service_instance(svcname, rcEnv.nodename)
         if instance is None:
             return 0
-        return instance["mtime"]
+        mtime = instance["mtime"]
+        if mtime is None:
+            return 0
+        return mtime
 
     def service_status_fallback(self, svcname):
         """
