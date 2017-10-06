@@ -33,11 +33,6 @@ STOPPED_STATES = (
     "stdby up",
     "stdby down",
 )
-SHUTDOWN_STATES = (
-    "n/a",
-    "down",
-    "stdby down",
-)
 
 class Monitor(shared.OsvcThread, Crypt):
     """
@@ -698,7 +693,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if not svc.frozen():
                 self.log.info("freeze service %s", svc.svcname)
                 self.service_freeze(svc.svcname)
-            elif instance.avail != SHUTDOWN_STATES:
+            elif not self.is_instance_shutdown(instance):
                 thawed_on = self.service_instances_thawed(svc.svcname)
                 if thawed_on:
                     self.duplog("info", "service %(svcname)s still has thawed instances "
@@ -782,7 +777,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if child == svc.svcname:
                 continue
             avail = self.get_agg_avail(child)
-            if avail in ("unknown", "down"):
+            if avail in ("unknown", "down", "stdby down"):
                 continue
             missing.append(child)
         if len(missing) == 0:
@@ -979,8 +974,25 @@ class Monitor(shared.OsvcThread, Crypt):
         else:
             return "mixed"
 
+    def is_instance_shutdown(self, instance):
+        def has_stdby(instance):
+            for resource in instance["resources"].values():
+                if resource["standby"]:
+                    return True
+            return False
+        _has_stdby = has_stdby(instance)
+        if _has_stdby and instance["avail"] not in ("n/a", "stdby down") or \
+           not _has_stdby and instance["avail"] not in ("n/a", "down"):
+            return False
+        return True
+
+    def get_agg_shutdown(self, svcname):
+        for instance in self.get_service_instances(svcname).values():
+            if not self.is_instance_shutdown(instance):
+                return False
+        return True 
+
     def get_agg_avail_failover(self, svc):
-        astatus = 'undef'
         astatus_l = []
         n_instances = 0
         for instance in self.get_service_instances(svc.svcname).values():
@@ -992,21 +1004,19 @@ class Monitor(shared.OsvcThread, Crypt):
 
         n_up = astatus_l.count("up")
         if n_instances == 0:
-            astatus = 'n/a'
+            return 'n/a'
         elif astatus_s == set(['n/a']):
-            astatus = 'n/a'
+            return 'n/a'
         elif 'warn' in astatus_l:
-            astatus = 'warn'
+            return 'warn'
         elif n_up > 1:
-            astatus = 'warn'
+            return 'warn'
         elif n_up == 1:
-            astatus = 'up'
+            return 'up'
         else:
-            astatus = 'down'
-        return astatus
+            return 'down'
 
     def get_agg_avail_flex(self, svc):
-        astatus = 'undef'
         astatus_l = []
         n_instances = 0
         for instance in self.get_service_instances(svc.svcname).values():
@@ -1018,20 +1028,19 @@ class Monitor(shared.OsvcThread, Crypt):
 
         n_up = astatus_l.count("up")
         if n_instances == 0:
-            astatus = 'n/a'
+            return 'n/a'
         elif astatus_s == set(['n/a']):
-            astatus = 'n/a'
+            return 'n/a'
         elif n_up == 0:
-            astatus = 'down'
+            return 'down'
         elif 'warn' in astatus_l:
-            astatus = 'warn'
+            return 'warn'
         elif n_up > svc.flex_max_nodes:
-            astatus = 'warn'
+            return 'warn'
         elif n_up < svc.flex_min_nodes:
-            astatus = 'warn'
+            return 'warn'
         else:
-            astatus = 'up'
-        return astatus
+            return 'up'
 
     def get_agg_placement(self, svcname):
         svc = self.get_service(svcname)
@@ -1384,7 +1393,7 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.info("service %s global expect is %s and its global "
                           "status is %s", svcname, smon.global_expect, status)
             self.set_smon(svcname, global_expect="unset")
-        elif smon.global_expect == "shutdown" and status in SHUTDOWN_STATES and \
+        elif smon.global_expect == "shutdown" and self.get_agg_shutdown(svcname) and \
            local_frozen:
             self.log.info("service %s global expect is %s and its global "
                           "status is %s", svcname, smon.global_expect, status)
@@ -1514,6 +1523,7 @@ class Monitor(shared.OsvcThread, Crypt):
 
             # merge every service monitors
             for svcname, instance in shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"].items():
+                current_global_expect = instance["monitor"].get("global_expect")
                 for nodename in nodenames:
                     rinstance = self.get_service_instance(svcname, nodename)
                     if rinstance is None:
@@ -1523,7 +1533,6 @@ class Monitor(shared.OsvcThread, Crypt):
                     global_expect = rinstance["monitor"].get("global_expect")
                     if global_expect is None:
                         continue
-                    current_global_expect = instance["monitor"].get("global_expect")
                     if global_expect == current_global_expect:
                         self.log.info("node %s wants service %s %s, already targeting that",
                                       nodename, svcname, global_expect)
@@ -1543,12 +1552,7 @@ class Monitor(shared.OsvcThread, Crypt):
             else:
                 return False
         if global_expect == "shutdown":
-            local_avail = instance["avail"]
-            local_frozen = instance["frozen"]
-            if local_avail not in SHUTDOWN_STATES or not local_frozen:
-                return True
-            else:
-                return False
+            return not self.get_agg_shutdown(svcname)
         if global_expect == "started":
             status = self.get_agg_avail(svcname)
             local_frozen = instance["frozen"]
