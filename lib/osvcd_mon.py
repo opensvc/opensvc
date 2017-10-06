@@ -1230,7 +1230,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 # force service status refresh
                 mtime = time.time() + 1
             last_mtime = self.get_last_svc_status_mtime(svcname)
-            if svcname not in data or mtime > last_mtime and svcname in data:
+            if mtime > last_mtime + 0.0001:
                 #self.log.info("service %s status changed", svcname)
                 try:
                     with open(fpath, 'r') as filep:
@@ -1240,6 +1240,9 @@ class Monitor(shared.OsvcThread, Crypt):
                             data[svcname] = self.service_status_fallback(svcname)
                 except Exception as exc:
                     data[svcname] = self.service_status_fallback(svcname)
+            elif:
+                data[svcname] = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]
+
             if not data[svcname]:
                 del data[svcname]
                 continue
