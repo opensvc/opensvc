@@ -500,7 +500,7 @@ class Monitor(shared.OsvcThread, Crypt):
         """
         if not self.compat:
             return
-        if smon.local_expect != "started":
+        if smon.local_expect == "started":
             return
         if svc.frozen() or self.freezer.node_frozen():
             #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
