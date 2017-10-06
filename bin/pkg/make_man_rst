@@ -21,7 +21,7 @@ def section_pname(prog, name):
     return prog + ".section." + name.lower().replace(" ", "_")
 
 def action_pname(prog, section_name, action_name):
-    return section_pname(prog, section_name) + "." + action_name.lower().replace(" ", "_")
+    return prog + ".action." + section_name.lower().replace(" ", "_") + "." + action_name.lower().replace(" ", "_")
 
 def option_pname(prog, name):
     return prog + ".option." + name
@@ -40,8 +40,10 @@ def write_section(prog, name, data):
 
     buff += title
 
+    buff += ".. toctree::\n"
+    buff += "   :maxdepth: 2\n\n"
     for action_name, action_data in data.items():
-        buff += ".. include:: %s.rst\n" % action_pname(prog, name, action_name)
+        buff += "   %s\n" % action_pname(prog, name, action_name)
         write_action(prog, name, action_name, action_data)
 
     buff += "\n"
@@ -64,7 +66,7 @@ def write_action(prog, section_name, action_name, action_data):
     buff += "\n"
 
     for option in action_data.get("options", []):
-        buff += ".. include:: %s.rst\n" % opthash[str(option._short_opts+option._long_opts)]
+        buff += fmt_option(prog, option)
 
     buff += "\n"
 
@@ -73,11 +75,8 @@ def write_action(prog, section_name, action_name, action_data):
     with open(fpath, "w") as f:
         f.write(buff)
 
-def write_option(prog, name, option):
-    pname = option_pname(prog, name)
-    opthash[str(option._short_opts+option._long_opts)] = pname
-    param = "<%s>" % name
-    buff = ".. _%s:\n\n" % pname 
+def fmt_option(prog, option):
+    buff = ""
 
     opts = []
     for opt in option._short_opts:
@@ -88,7 +87,7 @@ def write_option(prog, name, option):
 
     for opt in option._long_opts:
         if option.action == "store":
-            opts += ["%s=%s" % (opt, param)]
+            opts += ["%s=<%s>" % (opt, option.type)]
         else:
             opts += [opt]
 
@@ -104,17 +103,9 @@ def write_option(prog, name, option):
 
     buff += "\n"
 
-    fpath = os.path.join(pathtmp, pname+".rst")
-    print("write", fpath)
-    with open(fpath, "w") as f:
-        f.write(buff)
-
-def write_options(prog, mod):
-    for option, data in mod.OPT.items():
-        write_option(prog, option, data)
+    return buff
 
 def write(prog, mod):
-    write_options(prog, mod)
     write_sections(prog, mod)
 
     buff = ""
@@ -122,6 +113,11 @@ def write(prog, mod):
     title = "%s\n" % prog
     title += (len(title) - 1) * "*" + "\n\n"
     buff += title
+
+    buff += ".. toctree::\n"
+    buff += "   :maxdepth: 2\n"
+    buff += "   :glob:\n\n"
+    buff += "   %s.section.*\n\n" % prog
 
     fpath = os.path.join(pathtmp, prog+".rst")
     print("write", fpath)
