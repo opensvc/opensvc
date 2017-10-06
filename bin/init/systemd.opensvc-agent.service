@@ -8,6 +8,7 @@ Type=forking
 ExecStart=/usr/share/opensvc/bin/init/opensvc.init start
 ExecStop=/usr/share/opensvc/bin/init/opensvc.init stop
 KillMode=process
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
