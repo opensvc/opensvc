@@ -1010,6 +1010,17 @@ def drop_option(option, cmd, drop_value=False):
         del cmd[idx]
     return cmd
 
+def fsum(fpath):
+    """
+    Return a file content checksum
+    """
+    import hashlib
+    import codecs
+    with codecs.open(fpath, "r", "utf-8") as filep:
+        buff = filep.read()
+    cksum = hashlib.md5(buff.encode("utf-8"))
+    return cksum.hexdigest()
+
 if __name__ == "__main__":
     #print("call(('id','-a'))")
     #(r,output,err)=call(("/usr/bin/id","-a"))

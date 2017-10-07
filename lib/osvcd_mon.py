@@ -18,7 +18,7 @@ import osvcd_shared as shared
 import rcExceptions as ex
 from comm import Crypt
 from rcGlobalEnv import rcEnv, Storage
-from rcUtilities import bdecode, purge_cache
+from rcUtilities import bdecode, purge_cache, fsum
 from svcBuilder import build, fix_app_link, fix_exe_link
 
 MON_WAIT_READY = datetime.timedelta(seconds=16)
@@ -1154,16 +1154,6 @@ class Monitor(shared.OsvcThread, Crypt):
         return instances
 
     @staticmethod
-    def fsum(fpath):
-        """
-        Return a file content checksum
-        """
-        with codecs.open(fpath, "r", "utf-8") as filep:
-            buff = filep.read()
-        cksum = hashlib.md5(buff.encode("utf-8"))
-        return cksum.hexdigest()
-
-    @staticmethod
     def get_last_svc_config(svcname):
         with shared.CLUSTER_DATA_LOCK:
             try:
@@ -1189,7 +1179,11 @@ class Monitor(shared.OsvcThread, Crypt):
             last_config = self.get_last_svc_config(svcname)
             if last_config is None or mtime > datetime.datetime.strptime(last_config["updated"], shared.DATEFMT):
                 self.log.info("compute service %s config checksum", svcname)
-                cksum = self.fsum(cfg)
+                try:
+                    cksum = fsum(cfg)
+                except (OSError, IOError) as exc:
+                    self.log.info("service %s config checksum error: %s", svcname, exc)
+                    continue
                 try:
                     with shared.SERVICES_LOCK:
                         shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
@@ -1260,24 +1254,32 @@ class Monitor(shared.OsvcThread, Crypt):
 
         for svcname in svcnames:
             fpath = os.path.join(rcEnv.paths.pathvar, "services", svcname, "status.json")
+            last_mtime = self.get_last_svc_status_mtime(svcname)
             try:
                 mtime = os.path.getmtime(fpath)
             except Exception:
-                # force service status refresh
-                mtime = time.time() + 1
-            last_mtime = self.get_last_svc_status_mtime(svcname)
+                # preserve previous status data if any (an action might be running)
+                mtime = 0
             if mtime > last_mtime + 0.0001:
-                #self.log.info("service %s status changed", svcname)
                 try:
                     with open(fpath, 'r') as filep:
                         try:
                             data[svcname] = json.load(filep)
+                            #self.log.info("service %s status reloaded", svcname)
                         except ValueError as exc:
-                            data[svcname] = self.service_status_fallback(svcname)
+                            # json corrupted
+                            pass
                 except Exception as exc:
+                    # json not found
+                    pass
+
+
+            if svcname not in data:
+                if last_mtime > 0:
+                    #self.log.info("service %s status preserved", svcname)
+                    data[svcname] = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]
+                else:
                     data[svcname] = self.service_status_fallback(svcname)
-            elif last_mtime > 0:
-                data[svcname] = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]
 
             if not data[svcname]:
                 del data[svcname]
