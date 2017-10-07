@@ -42,7 +42,8 @@ def write_section(prog, name, data):
 
     buff += ".. toctree::\n"
     buff += "   :maxdepth: 1\n\n"
-    for action_name, action_data in data.items():
+    for action_name in sorted(data.keys()):
+        action_data = data[action_name]
         buff += "   %s\n" % action_pname(prog, name, action_name)
         write_action(prog, name, action_name, action_data)
 
@@ -65,7 +66,7 @@ def write_action(prog, section_name, action_name, action_data):
 
     buff += "\n"
 
-    for option in action_data.get("options", []):
+    for option in sorted(action_data.get("options", []), key=lambda x:str(x._short_opts+x._long_opts)):
         buff += fmt_option(prog, option)
 
     buff += "\n"
@@ -136,6 +137,6 @@ def do_svcmgr():
 
 
 if __name__ == "__main__":
-    do_svcmgr()
     do_nodemgr()
+    do_svcmgr()
 
