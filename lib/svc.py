@@ -1930,6 +1930,8 @@ class Svc(object):
         options = ['--daemon']
         if self.options.dry_run:
             options.append('--dry-run')
+        if self.options.force:
+            options.append('--force')
         if self.options.disable_rollback:
             options.append('--disable-rollback')
         if self.options.rid:
