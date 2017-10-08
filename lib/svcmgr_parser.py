@@ -426,7 +426,7 @@ ACTIONS = {
                    "service placement policy, so the local instance may not "
                    "start. A failover service is considered started when one "
                    "instance is started. A flex service is considered started "
-                   "when ``<flex_min_nodes> instances are started.",
+                   "when ``<flex_min_nodes>`` instances are started.",
             "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS,
         },
         "startstandby": {
