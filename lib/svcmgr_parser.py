@@ -11,91 +11,83 @@ OPT = Storage({
     "account": Option(
         "--account", default=False,
         action="store_true", dest="account",
-        help="decides that the unavailabity period should be "
-             "deduced from the service availability anyway. "
-             "used with the 'collector ack unavailability' "
-             "action"),
+        help="If set the unavailabity period is accounted in the service "
+             "availability ratio maintained by the collector."),
     "add": Option(
         "--add", default=None,
         action="store",
-        help="a list member to add from the value pointed by "
-             "--param in a set action. If --index is set, add "
-             "the new element at that position in the list"),
+        help="A list member to add to the value pointed by :opt:``--param``. "
+             "If :opt:``--index`` is set, insert the new element at the "
+             "specified position in the list."),
     "attach": Option(
         "--attach", default=False,
         action="store_true", dest="attach",
-        help="attach the modulesets specified during a "
-             "compliance check/fix/fixable command"),
+        help="Attach the modulesets specified in a compliance run."),
     "author": Option(
         "--author", default=None,
         action="store", dest="author",
-        help="the acker name to log when used with the "
-             "'collector ack unavailability' action"),
+        help="The acker name to log when acknowledging action log errors"),
     "backlog": Option(
         "--backlog", default=None,
         action="store", dest="backlog",
-        help="A size expression telling the logs action to fetch at most "
-             "as much data from the log file tail. Default is 10k."),
+        help="A size expression limiting the volume of data fetched "
+             "from the log file tail. Default is 10k."),
     "begin": Option(
         "--begin", default=None,
         action="store", dest="begin",
-        help="a begin date expressed as 'YYYY-MM-DD hh:mm'. "
-             "used with the 'collector ack unavailability' "
-             "action"),
+        help="A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the "
+             "timerange the action applies to."),
     "cluster": Option(
         "-c", "--cluster", default=False,
         action="store_true", dest="cluster",
-        help="Execute an action on all cluster nodes, aggregate the json "
+        help="Execute the action on all cluster nodes. Aggregate the json "
              "outputs."),
     "color": Option(
         "--color", default="auto",
         action="store", dest="color",
-        help="colorize output. possible values are : auto=guess "
-             "based on tty presence, always|yes=always colorize, "
-             "never|no=never colorize"),
+        help="Colorize output. Possible values are:\n\n"
+             "* auto: guess based on tty presence\n"
+             "* always|yes: always colorize\n"
+             "* never|no: never colorize"),
     "comment": Option(
         "--comment", default=None,
         action="store", dest="comment",
-        help="a comment to log when used with the 'collector "
-             "ack unavailability' action"),
+        help="A comment to log when acknowldging action log error entries."),
     "config": Option(
         "--config", default=None,
         action="store", dest="parm_config",
-        help="the configuration file to use when creating or "
+        help="The configuration file to use as template when creating or "
              "installing a service"),
     "cron": Option(
         "--cron", default=False,
         action="store_true", dest="cron",
-        help="used by cron'ed action to tell the collector to "
-             "treat the log entries as such"),
+        help="Set by the robots to flag log entries as such in the collector."),
     "debug": Option(
         "--debug", default=False,
         action="store_true", dest="debug",
-        help="debug mode"),
+        help="Increase stream log verbosity up to the debug level."),
     "daemon": Option(
         "--daemon", default=False,
         action="store_true", dest="daemon",
-        help="a flag inhibiting the daemonization. set by the "
+        help="A flag inhibiting the daemonization. Set by the "
              "daemonization routine."),
     "disable_rollback": Option(
         "--disable-rollback", default=False,
         action="store_true", dest="disable_rollback",
-        help="Exit without resource activation rollback on start"
-             " action error"),
+        help="If set, don't try to rollback resources activated before a "
+             "start action interrupts on error."),
     "discard": Option(
         "--discard", default=False,
         action="store_true", dest="discard",
-        help="Discard the stashed erroneous configuration file "
-             "in a 'edit config' command"),
+        help="Discard the stashed, invalid, configuration file."),
     "dry_run": Option(
         "--dry-run", default=False,
         action="store_true", dest="dry_run",
-        help="Show the action execution plan"),
+        help="Show the action execution plan."),
     "duration": Option(
         "--duration", default=None,
         action="store", dest="duration",
-        help="a duration expression like '10m'. used with the "
-             "'collector ack unavailability' action"),
+        help="A duration expression like, '1h10m'."),
     "end": Option(
         "--end", default=None,
         action="store", dest="end",
