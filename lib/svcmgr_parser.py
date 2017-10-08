@@ -35,7 +35,7 @@ OPT = Storage({
     "begin": Option(
         "--begin", default=None,
         action="store", dest="begin",
-        help="A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the "
+        help="A begin date expressed as ``YYYY-MM-DD hh:mm`` limiting the "
              "timerange the action applies to."),
     "cluster": Option(
         "-c", "--cluster", default=False,
@@ -87,155 +87,175 @@ OPT = Storage({
     "duration": Option(
         "--duration", default=None,
         action="store", dest="duration",
-        help="A duration expression like, '1h10m'."),
+        help="A duration expression like, ``1h10m``."),
     "end": Option(
         "--end", default=None,
         action="store", dest="end",
-        help="a end date expressed as 'YYYY-MM-DD hh:mm'. used "
-             "with the 'collector ack unavailability' action"),
+        help="A end date expressed as ``YYYY-MM-DD hh:mm`` limiting the "
+             "timerange the action applies to."),
     "env": Option(
         "--env", default=[],
         action="append", dest="env",
-        help="export the uppercased variable in the os environment. "
-             "with the create action only, set a env section parameter in "
-             "the service configuration file. multiple --env <key>=<val> "
+        help="Export the uppercased variable in the os environment.\n\n"
+             "With the create action only, set a env section parameter in "
+             "the service configuration file. Multiple ``--env <key>=<val>`` "
              "can be specified. For all other actions."),
     "eval": Option(
         "--eval", default=False,
         action="store_true", dest="eval",
-        help="If set with the 'get' action, the printed value of "
-             "--param is scoped and dereferenced."),
+        help="If set with the :cmd:`svcmgr get` action, the printed value of "
+             ":opt:`--param` is evaluated, scoped and dereferenced."),
     "follow": Option(
         "--follow", default=False,
         action="store_true", dest="follow",
-        help="with logs action, follow the logs as they come."),
+        help="Follow the logs as they come. Use crtl-c to interrupt."),
     "force": Option(
         "-f", "--force", default=False,
         action="store_true", dest="force",
-        help="force action, ignore sanity check warnings"),
+        help="Force action, ignore sanity checks."),
     "format": Option(
         "--format", default=None,
         action="store", dest="format",
-        help="specify a data formatter for output of the print*"
-             " and collector* commands. possible values are json, csv"
+        help="Specify a data formatter. Possible values are json, csv"
              " or table."),
     "help": Option(
         "-h", "--help", default=None,
         action="store_true", dest="parm_help",
-        help="show this help message and exit"),
+        help="Show this help message and exit."),
     "hide_disabled": Option(
         "--hide-disabled", default=None,
         action="store_false", dest="show_disabled",
-        help="tell print|json status action to not include the "
-             "disabled resources in the output, irrespective of"
-             " the show_disabled service configuration setting."),
+        help="Do not include the disabled resources. This option supersedes "
+             "the :kw:`show_disabled` value in the service configuration."),
     "id": Option(
         "--id", default=0,
         action="store", dest="id", type="int",
-        help="specify an object id to act on"),
+        help="Specify an object id to act on"),
     "index": Option(
         "--index", default=None,
         action="store", type="int",
-        help="the position in the list pointed by --param where to add "
-             "the new element on a set action"),
+        help="The position in the list pointed by --param where to add "
+             "the new list element on a set action"),
     "interactive": Option(
         "-i", "--interactive", default=False,
         action="store_true", dest="interactive",
-        help="prompt user for a choice instead of going for "
-             "defaults or failing"),
+        help="Prompt the user for a choice instead of using defaults, "
+             "or failing if no default is defined."),
     "kw": Option(
         "--kw", action="append", dest="kw",
-        help="combined with the set action, an expression like "
-             "<keyword>[@<scope>][[<index>]]<op><value>, where <op> "
-             "can be '=', '+=', '-='. Multiple --kw can be set to "
-             "apply multiple configuration change in a file with a "
-             "single write."),
+        help="An expression like ``[<section>.]<keyword>[@<scope>][[<index>]]<op><value>`` where\n\n"
+             "* <section> can be:\n\n"
+             "  * a resource id\n"
+             "  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.\n"
+             "* <op> can be:\n\n"
+             "  * ``=``\n"
+             "  * ``+=``\n"
+             "  * ``-=``\n\n"
+             "Multiple --kw can be set to apply multiple configuration change "
+             "in a file with a single write.\n\n"
+             "Examples:\n\n"
+             "* app.start=false\n"
+             "  Turn off app start for all app resources\n"
+             "* app#1.start=true\n"
+             "  Turn on app start for app#1\n"
+             "* nodes+=node3\n"
+             "  Append node3 to nodes\n"
+             "* nodes[0]+=node3\n"
+             "  Preprend node3 to nodes\n"),
     "like": Option(
         "--like", default="%",
         action="store", dest="like",
-        help="a sql like filtering expression. leading and "
-             "trailing wildcards are automatically set."),
+        help="A data filtering expression. ``%`` is the multi-character "
+             "wildcard. ``_`` is the single-character wildcard. Leading and "
+             "trailing ``%`` are automatically set."),
     "local": Option(
         "--local", default=False,
         action="store_true", dest="local",
-        help="execute the service action via the daemon, on the local service "
+        help="Execute the service action on the local service "
              "instances only, ignoring cluster-wide considerations."),
     "master": Option(
         "--master", default=False,
         action="store_true", dest="master",
-        help="option to set to limit the action scope to the "
-             "master service resources"),
+        help="Limit the action scope to the master service resources."),
     "message": Option(
         "--message", default="",
         action="store", dest="message",
-        help="the message to send to the collector for logging"),
+        help="The message to send to the collector for logging."),
     "module": Option(
         "--module", default="",
         action="store", dest="module",
-        help="compliance, set module list"),
+        help="Specify the modules to limit the run to. The modules must be in already attached modulesets."),
     "moduleset": Option(
         "--moduleset", default="",
         action="store", dest="moduleset",
-        help="compliance, set moduleset list. The 'all' value "
+        help="Specify the modulesets to limit the action to. The special value ``all`` "
              "can be used in conjonction with detach."),
     "node": Option(
         "--node", default="",
         action="store", dest="node",
-        help="the node to send a request to. if not specified the local node is targeted."),
+        help="The node to send a request to. If not specified the local node is targeted."),
     "nopager": Option(
         "--no-pager", default=False,
         action="store_true", dest="nopager",
-        help="do not display the command result in a pager."),
+        help="Do not display the command result in a pager."),
     "parallel": Option(
         "-p", "--parallel", default=False,
         action="store_true", dest="parallel",
-        help="start actions on specified services in parallel"),
+        help="Start actions on specified services in parallel. :kw:`max_parallel` "
+             "in node.conf limits the number of parallel running subprocesses."),
     "param": Option(
         "--param", default=None,
         action="store", dest="param",
-        help="point a service configuration parameter for the "
-             "'get' and 'set' actions"),
+        help="An expression like ``[<section>.]<keyword>`` where\n\n"
+             "* <section> can be:\n\n"
+             "  * a resource id\n"
+             "  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources."),
     "provision": Option(
         "--provision", default=False,
         action="store_true", dest="provision",
-        help="with the install or create actions, provision the"
-             " service resources after config file creation. "
-             "defaults to False."),
+        help="Provision the service resources after config file creation. "
+             "Defaults to False."),
     "recover": Option(
         "--recover", default=False,
         action="store_true", dest="recover",
         help="Recover the stashed erroneous configuration file "
-             "in a 'edit config' command"),
+             "in a :cmd:`svcmgr edit config` command"),
     "refresh": Option(
         "--refresh", default=False,
         action="store_true", dest="refresh",
-        help="drop last resource status cache and re-evaluate "
-             "before printing with the 'print [json] status' "
-             "commands"),
+        help="Drop status caches and re-evaluate before printing."),
     "remove": Option(
         "--remove", default=None,
         action="store",
-        help="a list member to drop from the value pointed by "
-             "--param in a set action"),
+        help="A list member to drop from the value pointed by :kw:`--param`."),
     "resource": Option(
         "--resource", default=[],
         action="append",
-        help="a resource definition in json dictionary format "
-             "fed to create or update"),
+        help="A resource definition in json dictionary format fed to create "
+             "or update. The ``type`` key point the driver group name, and "
+             "the ``rtype`` key the driver name (translated to type in the "
+             "configuration file section)."),
     "rid": Option(
         "--rid", default=None,
         action="store", dest="parm_rid",
-        help="comma-separated list of resource to limit action "
-             "to"),
+        help="A resource specifier expression like <spec>[,<spec>], where <spec> can be:\n\n"
+             "* A resource id\n"
+             "* A driver group name (app, fs, disk, ...)\n\n"
+             "Examples:\n\n"
+             "* app\n"
+             "  all app resources\n"
+             "* container#1,ip#1\n"
+             "  only container#1 and ip#1\n"
+        ),
     "ruleset": Option(
         "--ruleset", default="",
         action="store", dest="ruleset",
-        help="compliance, set ruleset list. The 'all' value can"
-             " be used in conjonction with detach."),
+        help="Specify the rulesets to limit the action to. The special value ``all`` "
+             "can be used in conjonction with detach."),
     "ruleset_date": Option(
         "--ruleset-date", default="",
         action="store", dest="ruleset_date",
-        help="compliance, use rulesets valid on specified date"),
+        help="Use an historical ruleset, specified by its date."),
     "service": Option(
         "-s", "--service", default=None,
         action="store", dest="parm_svcs",
@@ -265,82 +285,76 @@ OPT = Storage({
     "show_disabled": Option(
         "--show-disabled", default=None,
         action="store_true", dest="show_disabled",
-        help="tell print|json status action to include the "
-             "disabled resources in the output, irrespective of"
-             " the show_disabled service configuration setting."),
+        help="Include the disabled resources. This option supersedes "
+             "the :kw:`show_disabled` value in the service configuration."),
     "slave": Option(
         "--slave", default=None, action="store", dest="slave",
-        help="option to set to limit the action scope to the "
-             "service resources in the specified, comma-"
-             "separated, slaves"),
+        help="Limit the action to the service resources in the specified, comma-"
+             "separated, slaves."),
     "slaves": Option(
         "--slaves", default=False,
         action="store_true", dest="slaves",
-        help="option to set to limit the action scope to all "
-             "slave service resources"),
+        help="Limit the action scope to service resources in all slaves."),
     "status": Option(
         "--status", default=None,
         action="store", dest="parm_status",
-        help="operate only on service in the specified status "
-             "(up/down/warn)"),
+        help="Operate only on service with a local instance in the specified availability status "
+             "(up, down, warn, ...)."),
     "subsets": Option(
         "--subsets", default=None,
         action="store", dest="parm_subsets",
-        help="comma-separated list of resource subsets to limit"
-             " action to"),
+        help="Limit the action to the resources in the specified, comma-separated, list of subsets."),
     "tag": Option(
         "--tag", default=None,
         action="store", dest="tag",
-        help="a tag specifier used by 'collector create tag', "
-             "'collector add tag', 'collector del tag'"),
+        help="The tag name, as shown by :cmd:`svcmgr collector list tags`."),
     "tags": Option(
         "--tags", default=None,
         action="store", dest="parm_tags",
-        help="comma-separated list of resource tags to limit "
+        help="A comma-separated list of resource tags to limit "
              "action to. The + separator can be used to impose "
-             "multiple tag conditions. Example: tag1+tag2,tag3 "
+             "multiple tag conditions. For example, ``tag1+tag2,tag3`` "
              "limits the action to resources with both tag1 and"
              " tag2, or tag3."),
     "template": Option(
         "--template", default=None,
         action="store", dest="parm_template",
-        help="the configuration file template name or id, "
+        help="The configuration file template name or id, "
              "served by the collector, to use when creating or "
-             "installing a service"),
+             "installing a service."),
     "time": Option(
         "--time", default="300",
         action="store", dest="time",
-        help="A duration expression like '1m5s'. The maximum wait time for an "
+        help="A duration expression like ``1m5s``. The maximum wait time for an "
              "async action to finish. Default is 300 seconds."),
     "to": Option(
         "--to", default=None,
         action="store", dest="parm_destination_node",
-        help="remote node to start or migrate the service to"),
+        help="The remote node to start or migrate the service to."),
     "unprovision": Option(
         "--unprovision", default=False,
         action="store_true", dest="unprovision",
-        help="with the delete action, unprovision the service "
-             "resources before config files file deletion. "
-             "defaults to False."),
+        help="Unprovision the service resources before config files file deletion. "
+             "Defaults to False."),
     "value": Option(
         "--value", default=None,
         action="store", dest="value",
-        help="set a service configuration parameter value for "
-             "the 'set --param' action"),
+        help="The value to set for the keyword pointed by :opt:`--param`"),
     "verbose": Option(
         "--verbose", default=False,
         action="store_true", dest="verbose",
-        help="add more information to some print commands: +next"
-             " in 'print schedule'"),
+        help="Include more information to some print commands output. "
+             "For example, add the ``next run`` column in the output of "
+             ":cmd:`print schedule`."),
     "wait": Option(
         "--wait", default=False,
         action="store_true", dest="wait",
-        help="Wait for asynchronous action termination"),
+        help="Wait for asynchronous action termination."),
     "waitlock": Option(
         "--waitlock", default="-1",
         action="store", dest="parm_waitlock",
-        help="A duration expression like '5s'. The maximum wait time for the "
-             "action lock acquire."),
+        help="A duration expression like ``5s``. The maximum wait time when acquiring "
+             "the service action lock."),
 })
 
 SVCMGR_OPTS = [
