@@ -2986,7 +2986,7 @@ class Node(Crypt):
         # install svcmgr link
         svcmgr_l = os.path.join(rcEnv.paths.pathetc, svcname)
         if not os.path.exists(svcmgr_l):
-            Freezer(svcname)._freeze()
+            Freezer(svcname).freeze()
             os.symlink(rcEnv.paths.svcmgr, svcmgr_l)
         elif os.path.realpath(rcEnv.paths.svcmgr) != os.path.realpath(svcmgr_l):
             os.unlink(svcmgr_l)

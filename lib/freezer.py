@@ -12,15 +12,8 @@ class Freezer(object):
     Provides methods to freeze, thaw a service and to test if
     the service is frozen.
     """
-    @staticmethod
-    def _dummy(strict=False):
-        """
-        A no-op method to replace freeze/thaw/frozen when the service
-        configuration file does not exist.
-        """
-        pass
 
-    def _frozen(self, strict=False):
+    def frozen(self, strict=False):
         """
         Return True if the service frozen file flag is present.
         """
@@ -30,13 +23,18 @@ class Freezer(object):
             return True
         return False
 
-    def _freeze(self):
+    def freeze(self):
         """
         Create the service frozen file flag.
         """
+        if os.path.exists(self.flag):
+            return
+        flag_d = os.path.dirname(self.flag)
+        if not os.path.exists(flag_d):
+            os.makedirs(flag_d, 0o0755)
         open(self.flag, 'w').close()
 
-    def _thaw(self):
+    def thaw(self):
         """
         Remove the service frozen file flag.
         """
@@ -57,6 +55,9 @@ class Freezer(object):
         """
         if os.path.exists(self.node_flag):
             return
+        flag_d = os.path.dirname(self.node_flag)
+        if not os.path.exists(flag_d):
+            os.makedirs(flag_d, 0o0755)
         open(self.node_flag, 'w').close()
 
     def node_thaw(self):
@@ -69,13 +70,7 @@ class Freezer(object):
 
     def __init__(self, name):
         self.node_flag = os.path.join(rcEnv.paths.pathvar, "node", "frozen")
-        if not os.path.exists(os.path.join(rcEnv.paths.pathetc, name)):
+        if name == "node":
             self.flag = self.node_flag
-            self.freeze = self._dummy
-            self.thaw = self._dummy
-            self.frozen = self._dummy
         else:
             self.flag = os.path.join(rcEnv.paths.pathvar, "services", name, "frozen")
-            self.freeze = self._freeze
-            self.thaw = self._thaw
-            self.frozen = self._frozen

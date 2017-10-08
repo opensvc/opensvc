@@ -2348,10 +2348,10 @@ def fix_exe_link(dst, src):
     try:
         p = os.readlink(src)
     except:
-        Freezer(src)._freeze()
+        Freezer(src).freeze()
         os.symlink(dst, src)
         p = dst
     if p != dst:
         os.unlink(src)
-        Freezer(src)._freeze()
+        Freezer(src).freeze()
         os.symlink(dst, src)
