@@ -4292,12 +4292,22 @@ class Svc(Crypt):
                   file=sys.stderr)
             return 1
         section, option = elements
-        try:
-            self._unset(section, option)
-            return 0
-        except ex.excError as exc:
-            print(exc, file=sys.stderr)
-            return 1
+        if section in DEFAULT_STATUS_GROUPS:
+            err = 0
+            for rid in [rid for rid in self.config.sections() if rid.startswith(section+"#")]:
+                try:
+                    self._unset(rid, option)
+                except ex.excError as exc:
+                    print(exc, file=sys.stderr)
+                    err += 1
+            return err
+        else:
+            try:
+                self._unset(section, option)
+                return 0
+            except ex.excError as exc:
+                print(exc, file=sys.stderr)
+                return 1
 
     def _unset(self, section, option):
         """
@@ -4418,7 +4428,16 @@ class Svc(Crypt):
                 except ValueError:
                     raise ex.excError("malformed kw expression: %s: index is "
                                       "not integer" % kw)
-            changes.append(self.set_mangle(keyword, op, value, index))
+            if "." in keyword:
+                # <group>.keyword[@<scope>] format => loop over all rids in group
+                group = keyword.split(".")[0]
+                if group in DEFAULT_STATUS_GROUPS:
+                    for rid in [rid for rid in self.config.sections() if rid.startswith(group+"#")]:
+                        keyword = rid + keyword[keyword.index("."):]
+                        changes.append(self.set_mangle(keyword, op, value, index))
+            else:
+                # <rid>.keyword[@<scope>]
+                changes.append(self.set_mangle(keyword, op, value, index))
         self._set_multi(changes)
 
     def set_mono(self):
