@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2017\-10\-06
+.TH SVCMGR 1 2017\-10\-08
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -18,10 +18,10 @@ acknowledge an action error on the service. an acknowlegment can be completed by
 
 .TP
 .B --author=AUTHOR
-the acker name to log when used with the 'collector ack unavailability' action
+The acker name to log when acknowledging action log errors
 .TP
 .B --comment=COMMENT
-a comment to log when used with the 'collector ack unavailability' action
+A comment to log when acknowldging action log error entries.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -72,19 +72,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -106,22 +110,22 @@ acknowledge an unavailability period. the period is specified by --begin/--end o
 
 .TP
 .B --author=AUTHOR
-the acker name to log when used with the 'collector ack unavailability' action
+The acker name to log when acknowledging action log errors
 .TP
 .B --account
-decides that the unavailabity period should be deduced from the service availability anyway. used with the 'collector ack unavailability' action
+If set the unavailabity period is accounted in the service availability ratio maintained by the collector.
 .TP
 .B --begin=BEGIN
-a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
+A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
 .B --end=END
 a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
 .TP
 .B --comment=COMMENT
-a comment to log when used with the 'collector ack unavailability' action
+A comment to log when acknowldging action log error entries.
 .TP
 .B --duration=DURATION
-a duration expression like '10m'. used with the 'collector ack unavailability' action
+A duration expression like, '1h10m'.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -172,19 +176,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -257,19 +265,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -342,19 +354,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -427,19 +443,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -512,19 +532,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -597,19 +621,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -631,7 +659,7 @@ display service events during the period specified by --begin/--end. --end defau
 
 .TP
 .B --begin=BEGIN
-a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
+A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
 .B --end=END
 a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
@@ -688,19 +716,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -722,7 +754,7 @@ list actions on the service, whatever the node, during the period specified by -
 
 .TP
 .B --begin=BEGIN
-a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
+A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
 .B --end=END
 a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
@@ -779,19 +811,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -867,19 +903,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -901,16 +941,16 @@ list acknowledged periods for the service. the periods can be filtered by --begi
 
 .TP
 .B --author=AUTHOR
-the acker name to log when used with the 'collector ack unavailability' action
+The acker name to log when acknowledging action log errors
 .TP
 .B --begin=BEGIN
-a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
+A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
 .B --end=END
 a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
 .TP
 .B --comment=COMMENT
-a comment to log when used with the 'collector ack unavailability' action
+A comment to log when acknowldging action log error entries.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -961,19 +1001,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -1046,19 +1090,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -1131,19 +1179,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -1165,7 +1217,7 @@ show actions detailed log. a single action is specified by --id. a range is spec
 
 .TP
 .B --begin=BEGIN
-a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack unavailability' action
+A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
 .B --id=ID
 specify an object id to act on
@@ -1225,19 +1277,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -1310,19 +1366,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -1395,19 +1455,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -1480,19 +1544,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -1570,104 +1638,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
-.TP
-.B --env=ENV
-export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
-.TP
-.B -p, --parallel
-start actions on specified services in parallel
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time for the action lock acquire.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBsvcmgr compliance attach moduleset\fP
-.RS
-
-attach moduleset specified by --moduleset to this service
-
-.TP
-.B --moduleset=MODULESET
-compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-operate only on service in the specified status (up/down/warn)
-.TP
-.B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
-.TP
-.B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
-.TP
-.B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -1740,19 +1727,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -1774,7 +1765,7 @@ run compliance checks or fixes depending on the autofixmodule property values.
 
 .TP
 .B --attach
-attach the modulesets specified during a compliance check/fix/fixable command
+Attach the modulesets specified in a compliance run.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -1837,19 +1828,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -1871,7 +1866,7 @@ run compliance checks.
 
 .TP
 .B --attach
-attach the modulesets specified during a compliance check/fix/fixable command
+Attach the modulesets specified in a compliance run.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -1934,19 +1929,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -2022,189 +2021,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
-.TP
-.B --env=ENV
-export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
-.TP
-.B -p, --parallel
-start actions on specified services in parallel
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time for the action lock acquire.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBsvcmgr compliance detach moduleset\fP
-.RS
-
-detach moduleset specified by --moduleset from this service
-
-.TP
-.B --moduleset=MODULESET
-compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-operate only on service in the specified status (up/down/warn)
-.TP
-.B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
-.TP
-.B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
-.TP
-.B --debug
-debug mode
-.TP
-.B --env=ENV
-export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
-.TP
-.B -p, --parallel
-start actions on specified services in parallel
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time for the action lock acquire.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBsvcmgr compliance detach ruleset\fP
-.RS
-
-detach ruleset specified by --ruleset from this service
-
-.TP
-.B --ruleset=RULESET
-compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-operate only on service in the specified status (up/down/warn)
-.TP
-.B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
-.TP
-.B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
-.TP
-.B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -2280,19 +2113,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -2314,7 +2151,7 @@ run compliance fixes.
 
 .TP
 .B --attach
-attach the modulesets specified during a compliance check/fix/fixable command
+Attach the modulesets specified in a compliance run.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -2377,19 +2214,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -2411,7 +2252,7 @@ verify compliance fixes prerequisites.
 
 .TP
 .B --attach
-attach the modulesets specified during a compliance check/fix/fixable command
+Attach the modulesets specified in a compliance run.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -2474,19 +2315,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -2556,19 +2401,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -2638,19 +2487,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -2720,19 +2573,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -2802,19 +2659,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -2884,19 +2745,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -2974,19 +2839,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -3065,19 +2934,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -3099,7 +2972,7 @@ update the collector dns records for the service
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -3177,19 +3050,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -3259,19 +3136,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -3350,19 +3231,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -3444,19 +3329,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -3526,19 +3415,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -3560,7 +3453,7 @@ stop the service on its current node and start on the node chosen by the placeme
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -3590,7 +3483,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B --time=TIME
 A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
@@ -3647,19 +3540,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -3681,7 +3578,7 @@ display the service logs in the pager
 
 .TP
 .B --backlog=BACKLOG
-A size expression telling the logs action to fetch at most as much data from the log file tail. Default is 10k.
+A size expression limiting the volume of data fetched from the log file tail. Default is 10k.
 .TP
 .B --follow
 with logs action, follow the logs as they come.
@@ -3741,19 +3638,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -3823,19 +3724,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -3857,7 +3762,7 @@ live migrate the service to the remote node. --to <node> specify the remote node
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -3887,7 +3792,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B --time=TIME
 A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
@@ -3947,19 +3852,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -3981,7 +3890,7 @@ freeze the tasks of a process group
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -4059,19 +3968,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -4093,7 +4006,7 @@ kill the tasks of a process group
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -4171,19 +4084,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -4205,7 +4122,7 @@ thaw the tasks of a process group
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -4283,19 +4200,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -4317,7 +4238,7 @@ make use of files received from master nodes in var
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -4395,19 +4316,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -4429,7 +4354,7 @@ update var files associated to resources
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -4507,19 +4432,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -4601,19 +4530,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -4683,19 +4616,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -4777,19 +4714,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -4871,19 +4812,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -4962,19 +4907,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -5050,19 +4999,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -5144,19 +5097,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -5238,19 +5195,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -5278,7 +5239,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -5308,7 +5269,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -5359,19 +5320,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -5393,7 +5358,7 @@ reserve scsi disks held by this service
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -5423,7 +5388,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -5474,19 +5439,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -5556,19 +5525,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -5590,7 +5563,7 @@ release scsi disks held by this service
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -5668,19 +5641,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -5753,19 +5730,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -5835,19 +5816,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -5917,19 +5902,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -5999,19 +5988,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -6033,7 +6026,7 @@ refresh only monitored resource status. This action is scheduleable, usually eve
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -6111,19 +6104,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -6145,7 +6142,7 @@ combo action, chaining stop-start
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -6175,7 +6172,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -6226,19 +6223,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -6260,7 +6261,7 @@ combo action, chaining stop-sync_resync-start
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -6290,7 +6291,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -6341,19 +6342,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -6375,7 +6380,7 @@ run all tasks, or tasks specified by --rid --tags and --subset, disregarding the
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -6453,19 +6458,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -6535,19 +6544,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -6569,7 +6582,7 @@ stop a service, disabling the background database logging
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -6653,19 +6666,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -6687,7 +6704,7 @@ start all service resources
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -6717,7 +6734,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B --time=TIME
 A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
@@ -6774,19 +6791,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -6808,7 +6829,7 @@ execute service application startup script
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -6838,7 +6859,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -6889,19 +6910,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -6923,7 +6948,7 @@ start the container resource
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -6953,7 +6978,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -7004,19 +7029,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -7038,7 +7067,7 @@ combo action, activating standby disks, taking reservations, starting loopback d
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -7068,7 +7097,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -7119,19 +7148,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -7153,7 +7186,7 @@ prepare devices, logical volumes, mount service filesystems, bootstrap container
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -7183,7 +7216,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -7234,19 +7267,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -7268,7 +7305,7 @@ configure service ip addresses
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -7298,7 +7335,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -7349,19 +7386,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -7383,7 +7424,7 @@ start network shares
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -7413,7 +7454,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -7464,19 +7505,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -7498,7 +7543,7 @@ start service resources flagged always on
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -7528,7 +7573,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -7579,19 +7624,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -7664,19 +7713,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -7698,7 +7751,7 @@ stop all service resources not flagged always on. With --force, stop all service
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -7782,19 +7835,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -7816,7 +7873,7 @@ execute service application stop script
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -7894,19 +7951,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -7928,7 +7989,7 @@ stop the container resource
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -8006,19 +8067,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -8040,7 +8105,7 @@ combo action, stopping volume groups and loopback devices, droping reservations,
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -8118,19 +8183,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -8152,7 +8221,7 @@ shutdown container, umount service filesystems, deactivate logical volumes
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -8230,19 +8299,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -8264,7 +8337,7 @@ unconfigure service ip addresses
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -8342,19 +8415,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -8376,7 +8453,7 @@ stop network shares
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -8454,19 +8531,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -8488,7 +8569,7 @@ stop the service on the local node and start on the remote node. --to <node> spe
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -8518,7 +8599,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B --time=TIME
 A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
@@ -8578,19 +8659,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -8612,7 +8697,7 @@ combo action, chaining sync_nodes-sync_drp-sync_update.
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -8690,19 +8775,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -8724,7 +8813,7 @@ split a storage hardware-assisted disk synchronization
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -8802,19 +8891,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -8836,7 +8929,7 @@ send to drp nodes the service config files and additional files described in the
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -8914,19 +9007,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -8948,7 +9045,7 @@ establish a EMC SRDF storage hardware-assisted disk synchronization
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -9026,19 +9123,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -9060,7 +9161,7 @@ trigger a full copy of the volume to its target
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -9138,19 +9239,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -9172,7 +9277,7 @@ send to peer nodes the service config files and additional files described in th
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -9250,19 +9355,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -9284,7 +9393,7 @@ trigger a storage hardware-assisted disk synchronization
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -9362,19 +9471,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -9396,7 +9509,7 @@ trigger a restore of the sync resources data to their target path (DANGEROUS: ma
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -9474,19 +9587,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -9508,7 +9625,7 @@ re-establish a broken storage hardware-assisted synchronization
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -9586,19 +9703,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -9620,7 +9741,7 @@ like sync_update, but not triggered by the scheduler (thus adapted for clone/sna
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -9698,19 +9819,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -9732,7 +9857,7 @@ revert to the pre-failover data (looses current data)
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -9810,19 +9935,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -9844,7 +9973,7 @@ split a EMC SRDF storage hardware-assisted disk synchronization
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -9922,19 +10051,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -9956,7 +10089,7 @@ trigger a one-time resync of the volume to its target
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -10034,19 +10167,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -10068,7 +10205,7 @@ trigger a one-time checksum-based verify of the volume and its target
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -10146,19 +10283,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -10180,7 +10321,7 @@ stop the service on its current node and start on the local node.
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -10210,7 +10351,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
-Exit without resource activation rollback on start action error
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B --time=TIME
 A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
@@ -10267,19 +10408,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -10361,19 +10506,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -10395,7 +10544,7 @@ Trigger the service pre_monitor_action script and monitor_action method. Beware,
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -10473,19 +10622,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -10513,7 +10666,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -10591,19 +10744,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -10627,7 +10784,7 @@ create a new service configuration file. --interactive triggers the interactive 
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -10657,7 +10814,7 @@ comma-separated list of resource subsets to limit action to
 comma-separated list of resource tags to limit action to. The + separator can be used to impose multiple tag conditions. Example: tag1+tag2,tag3 limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --config=PARM_CONFIG
-the configuration file to use when creating or installing a service
+The configuration file to use as template when creating or installing a service
 .TP
 .B -i, --interactive
 prompt user for a choice instead of going for defaults or failing
@@ -10720,19 +10877,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -10760,7 +10921,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -10841,19 +11002,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -10875,7 +11040,7 @@ edit service configuration
 
 .TP
 .B --discard
-Discard the stashed erroneous configuration file in a 'edit config' command
+Discard the stashed, invalid, configuration file.
 .TP
 .B --recover
 Recover the stashed erroneous configuration file in a 'edit config' command
@@ -10929,19 +11094,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -10963,7 +11132,7 @@ get the raw or dereferenced value of a service configuration parameter
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -11047,19 +11216,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -11132,19 +11305,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -11166,7 +11343,7 @@ set a service configuration parameter
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -11199,7 +11376,7 @@ comma-separated list of resource tags to limit action to. The + separator can be
 combined with the set action, an expression like <keyword>[@<scope>][[<index>]]<op><value>, where <op> can be '=', '+=', '-='. Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 .TP
 .B --add=ADD
-a list member to add from the value pointed by --param in a set action. If --index is set, add the new element at that position in the list
+A list member to add to the value pointed by :opt:'--param'. If :opt:'--index' is set, insert the new element at the specified position in the list.
 .TP
 .B --index=INDEX
 the position in the list pointed by --param where to add the new element on a set action
@@ -11262,19 +11439,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -11296,7 +11477,7 @@ unset a node configuration parameter pointed by --param
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -11377,19 +11558,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -11411,7 +11596,7 @@ update definitions in an existing service configuration file
 
 .TP
 .B --dry-run
-Show the action execution plan
+Show the action execution plan.
 .TP
 .B -f, --force
 force action, ignore sanity check warnings
@@ -11498,19 +11683,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.
@@ -11580,19 +11769,23 @@ Note:
 operate only on service in the specified status (up/down/warn)
 .TP
 .B -c, --cluster
-Execute an action on all cluster nodes, aggregate the json outputs.
+Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-used by cron'ed action to tell the collector to treat the log entries as such
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --daemon
-a flag inhibiting the daemonization. set by the daemonization routine.
+A flag inhibiting the daemonization. Set by the daemonization routine.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --env=ENV
 export the uppercased variable in the os environment. with the create action only, set a env section parameter in the service configuration file. multiple --env <key>=<val> can be specified. For all other actions.

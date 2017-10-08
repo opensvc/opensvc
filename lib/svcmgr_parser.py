@@ -919,19 +919,6 @@ ACTIONS = {
             'msg': 'list available compliance modulesets. --moduleset f% '
                    'limit the scope to modulesets matching the f% pattern.',
         },
-        'compliance_attach_moduleset': {
-            'msg': 'attach moduleset specified by --moduleset to this service',
-            'options': [
-                OPT.moduleset,
-            ],
-        },
-        'compliance_detach_moduleset': {
-            'msg': 'detach moduleset specified by --moduleset from this '
-                   'service',
-            'options': [
-                OPT.moduleset,
-            ],
-        },
         'compliance_list_ruleset': {
             'msg': 'list available compliance rulesets. --ruleset f% limit '
                    'the scope to rulesets matching the f% pattern.',
@@ -941,12 +928,6 @@ ACTIONS = {
         },
         'compliance_attach_ruleset': {
             'msg': 'attach ruleset specified by --ruleset to this service',
-            'options': [
-                OPT.ruleset,
-            ],
-        },
-        'compliance_detach_ruleset': {
-            'msg': 'detach ruleset specified by --ruleset from this service',
             'options': [
                 OPT.ruleset,
             ],

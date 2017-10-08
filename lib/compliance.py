@@ -714,12 +714,6 @@ class Compliance(object):
         if not did_something:
             raise ex.excError('no moduleset nor ruleset specified. use --moduleset and/or --ruleset')
 
-    def compliance_attach_moduleset(self):
-        if not hasattr(self.options, 'moduleset') or \
-           len(self.options.moduleset) == 0:
-            raise ex.excError('no moduleset specified. use --moduleset')
-        self._compliance_attach_moduleset(self.options.moduleset.split(','))
-
     def _compliance_attach_moduleset(self, modulesets):
         err = False
         for moduleset in modulesets:
@@ -736,12 +730,6 @@ class Compliance(object):
             print(d['msg'])
         if err:
             raise ex.excError()
-
-    def compliance_detach_moduleset(self):
-        if not hasattr(self.options, 'moduleset') or \
-           len(self.options.moduleset) == 0:
-            raise ex.excError('no moduleset specified. use --moduleset')
-        self._compliance_detach_moduleset(self.options.moduleset.split(','))
 
     def _compliance_detach_moduleset(self, modulesets):
         err = False
@@ -760,12 +748,6 @@ class Compliance(object):
         if err:
             raise ex.excError()
 
-    def compliance_attach_ruleset(self):
-        if not hasattr(self.options, 'ruleset') or \
-           len(self.options.ruleset) == 0:
-            raise ex.excError('no ruleset specified. use --ruleset')
-        self._compliance_attach_ruleset(self.options.ruleset.split(','))
-
     def _compliance_attach_ruleset(self, rulesets):
         err = False
         for ruleset in rulesets:
@@ -782,12 +764,6 @@ class Compliance(object):
             print(d['msg'])
         if err:
             raise ex.excError()
-
-    def compliance_detach_ruleset(self):
-        if not hasattr(self.options, 'ruleset') or \
-           len(self.options.ruleset) == 0:
-            raise ex.excError('no ruleset specified. use --ruleset')
-        self._compliance_detach_ruleset(self.options.ruleset.split(','))
 
     def _compliance_detach_ruleset(self, rulesets):
         err = False
