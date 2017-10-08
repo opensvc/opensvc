@@ -402,395 +402,398 @@ DAEMON_OPTS = [
 ]
 
 ACTIONS = {
-    'Service actions': {
-        'clear': {
-            'msg': 'clear the monitor status of the service on the node pointed '
-                   'by --node. If --node is not specified, the local node is '
-                   'targeted.',
-            'options': DAEMON_OPTS,
+    "Service actions": {
+        "clear": {
+            "msg": "Clear the monitor status of the service on the node pointed "
+                   "by --node. If --node is not specified, all nodes are "
+                   "cleared. This command can be used to reactivate service "
+                   "orchestration blocked by a failed status like ``start failed``.",
+            "options": DAEMON_OPTS,
         },
-        'dns_update': {
-            'msg': 'update the collector dns records for the service',
-            'options': ACTION_OPTS,
+        "dns_update": {
+            "msg": "Update the collector dns records for the service. The "
+                   "managed dns record is <svcname>.<app>.<collector "
+                   "domain>``.",
+            "options": ACTION_OPTS,
         },
-        'shutdown': {
-            'msg': 'stop a service, disabling the background database logging',
-            'options': ACTION_OPTS + ASYNC_ACTION_OPTS,
+        "shutdown": {
+            "msg": "Stop a service, including its standby resources. The log "
+                   "shipping to the collector is synchronous.",
+            "options": ACTION_OPTS + ASYNC_ACTION_OPTS,
         },
-        'start': {
-            'msg': 'start all service resources',
-            'options': ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS,
+        "start": {
+            "msg": "Start a service. The started instances depend on the "
+                   "service placement policy, so the local instance may not "
+                   "start. A failover service is considered started when one "
+                   "instance is started. A flex service is considered started "
+                   "when ``<flex_min_nodes> instances are started.",
+            "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS,
         },
-        'startstandby': {
-            'msg': 'start service resources flagged always on',
-            'options': ACTION_OPTS + START_ACTION_OPTS,
+        "startstandby": {
+            "msg": "Start local service instance resources flagged standby.",
+            "options": ACTION_OPTS + START_ACTION_OPTS,
         },
-        'startip': {
-            'msg': 'configure service ip addresses',
-            'options': ACTION_OPTS + START_ACTION_OPTS,
+        "startip": {
+            "msg": "Start local service instance ip resources.",
+            "options": ACTION_OPTS + START_ACTION_OPTS,
         },
-        'startshare': {
-            'msg': 'start network shares',
-            'options': ACTION_OPTS + START_ACTION_OPTS,
+        "startshare": {
+            "msg": "Start local service instance share resources.",
+            "options": ACTION_OPTS + START_ACTION_OPTS,
         },
-        'stopshare': {
-            'msg': 'stop network shares',
-            'options': ACTION_OPTS,
+        "stopshare": {
+            "msg": "Stop local service instance share resources. The standby resources "
+                   "are not stopped, unless :opt:`--force` is specified.",
+            "options": ACTION_OPTS,
         },
-        'startfs': {
-            'msg': 'prepare devices, logical volumes, mount service '
-                   'filesystems, bootstrap containers',
-            'options': ACTION_OPTS + START_ACTION_OPTS,
+        "startfs": {
+            "msg": "Start local service instance disk and fs resources.",
+            "options": ACTION_OPTS + START_ACTION_OPTS,
         },
-        'startapp': {
-            'msg': 'execute service application startup script',
-            'options': ACTION_OPTS + START_ACTION_OPTS,
+        "startapp": {
+            "msg": "Start local service instance app resources.",
+            "options": ACTION_OPTS + START_ACTION_OPTS,
         },
-        'stop': {
-            'msg': 'stop all service resources not flagged always on. With '
-                   '--force, stop all service resources, even those flagged '
-                   'always on.',
-            'options': ACTION_OPTS + ASYNC_ACTION_OPTS,
+        "stop": {
+            "msg": "Stop all service instances. The standby resources "
+                   "are not stopped, unless :opt:`--force` is specified.",
+            "options": ACTION_OPTS + ASYNC_ACTION_OPTS,
         },
-        'stopip': {
-            'msg': 'unconfigure service ip addresses',
-            'options': ACTION_OPTS,
+        "stopip": {
+            "msg": "Stop local service instance ip resources. The standby resources "
+                   "are not stopped, unless :opt:`--force` is specified.",
+            "options": ACTION_OPTS,
         },
-        'stopfs': {
-            'msg': 'shutdown container, umount service filesystems, deactivate'
-                   ' logical volumes',
-            'options': ACTION_OPTS,
+        "stopfs": {
+            "msg": "Stop local service instance disk and fs resources. The standby resources "
+                   "are not stopped, unless :opt:`--force` is specified.",
+            "options": ACTION_OPTS,
         },
-        'stopapp': {
-            'msg': 'execute service application stop script',
-            'options': ACTION_OPTS,
+        "stopapp": {
+            "msg": "Stop local service instance app resources. The standby resources "
+                   "are not stopped, unless :opt:`--force` is specified.",
+            "options": ACTION_OPTS,
         },
-        'startcontainer': {
-            'msg': 'start the container resource',
-            'options': ACTION_OPTS + START_ACTION_OPTS,
+        "startcontainer": {
+            "msg": "Start local service instance app resources.",
+            "options": ACTION_OPTS + START_ACTION_OPTS,
         },
-        'stopcontainer': {
-            'msg': 'stop the container resource',
-            'options': ACTION_OPTS,
+        "stopcontainer": {
+            "msg": "Stop local service instance container resources. The standby resources "
+                   "are not stopped, unless :opt:`--force` is specified.",
+            "options": ACTION_OPTS,
         },
-        'provision': {
-            'msg': 'provision and start the service',
-            'options': ASYNC_ACTION_OPTS + ACTION_OPTS + START_ACTION_OPTS,
+        "provision": {
+            "msg": "Provision the service. Leave the service in frozen, stdby up state.",
+            "options": ASYNC_ACTION_OPTS + ACTION_OPTS + START_ACTION_OPTS,
         },
-        'unprovision': {
-            'msg': 'stop and unprovision the service. beware: data will be '
-                   'lost upon fs and disk unprovisioning.',
-            'options': ASYNC_ACTION_OPTS + ACTION_OPTS,
+        "unprovision": {
+            "msg": "Shutdown and unprovision all service instances. Beware, data will be "
+                   "lost upon fs and disk unprovisioning.",
+            "options": ASYNC_ACTION_OPTS + ACTION_OPTS,
         },
-        'disable': {
-            'msg': 'disable resources passed through --rid in services passed'
-                   ' through --service. Specifying no resource disables the '
-                   'whole service.',
-            'options': [
+        "disable": {
+            "msg": "Disable resources specified by :opt:`--rid` in services specified by "
+                   ":opt:`--service`. Specifying no resource disables the whole service.",
+            "options": [
                 OPT.rid,
                 OPT.tags,
                 OPT.subsets,
             ],
         },
-        'enable': {
-            'msg': 'enable resources passed through --rid in services passed'
-                   ' through --service. Specifying no resource enables the '
-                   'whole service.',
-            'options': [
+        "enable": {
+            "msg": "Enable resources specified by :opt:`--rid` in services specified by "
+                   ":opt:`--service`. Specifying no resource enables the whole service.",
+            "options": [
                 OPT.rid,
                 OPT.tags,
                 OPT.subsets,
             ],
         },
-        'ls': {
-            'msg': 'display the installed service list',
+        "ls": {
+            "msg": "List the service names with a local instance. Most useful to test "
+                   "a service selector expression before running an action.",
         },
-        'status': {
-            'msg': 'return service overall status code',
-            'options': [
+        "status": {
+            "msg": "Return the local service instance overall status code",
+            "options": [
                 OPT.refresh,
             ],
         },
-        'print_status': {
-            'msg': 'display service resource status',
-            'options': [
+        "print_status": {
+            "msg": "Display the service status, with a detailled with of the local "
+                   "instance.",
+            "options": [
                 OPT.format,
                 OPT.hide_disabled,
                 OPT.refresh,
                 OPT.show_disabled,
             ],
         },
-        'print_resource_status': {
-            'msg': 'display a specific service resource status, pointed by'
-                   ' --rid',
-            'options': [
+        "print_resource_status": {
+            "msg": "Display a specific service resource status, pointed by"
+                   " --rid",
+            "options": [
                 OPT.format,
                 OPT.refresh,
                 OPT.rid,
             ],
         },
-        'print_config_mtime': {
-            'msg': 'display service configuration file modification time',
+        "print_config_mtime": {
+            "msg": "Display the service local configuration file modification time",
         },
-        'freeze': {
-            'msg': 'set up a flag to block actions on this service',
-            'options': ASYNC_ACTION_OPTS + [
+        "freeze": {
+            "msg": "Block orchestration on the service.",
+            "options": ASYNC_ACTION_OPTS + [
                 OPT.node,
                 OPT.local,
             ],
         },
-        'thaw': {
-            'msg': 'remove the flag to unblock actions on this service',
-            'options': ASYNC_ACTION_OPTS + [
+        "thaw": {
+            "msg": "Unblock orchestration on the service.",
+            "options": ASYNC_ACTION_OPTS + [
                 OPT.node,
                 OPT.local,
             ],
         },
-        'toc': {
-            'msg': 'Trigger the service pre_monitor_action script and monitor_action method. Beware, this might crash or reboot the node.',
-            'options': ACTION_OPTS,
+        "toc": {
+            "msg": "Trigger the service instance pre_monitor_action script and monitor_action method. Beware, this might crash or reboot the local node.",
+            "options": ACTION_OPTS,
         },
-        'frozen': {
-            'msg': 'report on the current blocking of actions on this service',
+        "frozen": {
+            "msg": "Report on the current blocking of orchestration on the service.",
         },
-        'run': {
-            'msg': 'run all tasks, or tasks specified by --rid --tags and '
-                   '--subset, disregarding their schedule',
-            'options': ACTION_OPTS,
+        "run": {
+            "msg": "Run all tasks, or tasks specified by --rid --tags and "
+                   "--subset, disregarding their schedule.",
+            "options": ACTION_OPTS,
         },
-        'startdisk': {
-            'msg': 'combo action, activating standby disks, taking '
-                   'reservations, starting loopback devices and volume '
-                   'groups',
-            'options': ACTION_OPTS + START_ACTION_OPTS,
+        "startdisk": {
+            "msg": "Start local service instance disk resources.",
+            "options": ACTION_OPTS + START_ACTION_OPTS,
         },
-        'stopdisk': {
-            'msg': 'combo action, stopping volume groups and loopback '
-                   'devices, droping reservations, disabling standby disks',
-            'options': ACTION_OPTS,
+        "stopdisk": {
+            "msg": "Stop local service instance disk resources. The standby resources "
+                   "are not stopped, unless :opt:`--force` is specified.",
+            "options": ACTION_OPTS,
         },
-        'presync': {
-            'msg': 'update var files associated to resources',
-            'options': ACTION_OPTS,
+        "presync": {
+            "msg": "Execute the presync method of the resource driver for each local service instance resource. These methods usually update var files needing replication on other nodes.",
+            "options": ACTION_OPTS,
         },
-        'postsync': {
-            'msg': 'make use of files received from master nodes in var',
-            'options': ACTION_OPTS,
+        "postsync": {
+            "msg": "Execute the postsync method of the resource driver for each local service instance resource. These methods usually take appropriate action based on var files received from the primary node.",
+            "options": ACTION_OPTS,
         },
-        'prstart': {
-            'msg': 'reserve scsi disks held by this service',
-            'options': ACTION_OPTS + START_ACTION_OPTS,
+        "prstart": {
+            "msg": "Acquire scsi3 persistent reservation on the disks help by the local service instance.",
+            "options": ACTION_OPTS + START_ACTION_OPTS,
         },
-        'prstop': {
-            'msg': 'release scsi disks held by this service',
-            'options': ACTION_OPTS,
+        "prstop": {
+            "msg": "Release scsi3 persistent reservation on the disks help by the local service instance.",
+            "options": ACTION_OPTS,
         },
-        'prstatus': {
-            'msg': 'report status of reservations on scsi disks held by this '
-                   'service',
+        "prstatus": {
+            "msg": "Report the status of scsi3 persistent reservations on scsi disks held by the local "
+                   "service instance.",
         },
-        'restart': {
-            'msg': 'combo action, chaining stop-start',
-            'options': ACTION_OPTS + START_ACTION_OPTS,
+        "restart": {
+            "msg": "Chain a local service instance stop and start",
+            "options": ACTION_OPTS + START_ACTION_OPTS,
         },
-        'resync': {
-            'msg': 'combo action, chaining stop-sync_resync-start',
-            'options': ACTION_OPTS + START_ACTION_OPTS,
+        "resync": {
+            "msg": "Chain a local service instance  stop, sync_resync and start",
+            "options": ACTION_OPTS + START_ACTION_OPTS,
         },
-        'sync_nodes': {
-            'msg': 'send to peer nodes the service config files and '
-                   'additional files described in the config file.',
-            'options': ACTION_OPTS,
+        "sync_nodes": {
+            "msg": "Run the synchronization method of each local service instance sync resource, targetting the peer nodes.",
+            "options": ACTION_OPTS,
         },
-        'sync_drp': {
-            'msg': 'send to drp nodes the service config files and '
-                   'additional files described in the config file.',
-            'options': ACTION_OPTS,
+        "sync_drp": {
+            "msg": "Run the synchronization method of each local service instance sync resource, targetting the drp nodes.",
+            "options": ACTION_OPTS,
         },
-        'sync_quiesce': {
-            'msg': 'trigger a storage hardware-assisted disk synchronization',
-            'options': ACTION_OPTS,
+        "sync_quiesce": {
+            "msg": "Pause replication of sync.netapp and sync.symsrdf resources.",
+            "options": ACTION_OPTS,
         },
-        'sync_break': {
-            'msg': 'split a storage hardware-assisted disk synchronization',
-            'options': ACTION_OPTS,
+        "sync_break": {
+            "msg": "Break the disk replication of sync.dcsckpt, sync.hp3par, sync.ibmdssnap, sync.netapp, sync.symclone, sync.symsrdf resources.",
+            "options": ACTION_OPTS,
         },
-        'sync_split': {
-            'msg': 'split a EMC SRDF storage hardware-assisted disk '
-                   'synchronization',
-            'options': ACTION_OPTS,
+        "sync_split": {
+            "msg": "Split the disk replication of sync.symsrdf resources.",
+            "options": ACTION_OPTS,
         },
-        'sync_establish': {
-            'msg': 'establish a EMC SRDF storage hardware-assisted disk '
-                   'synchronization',
-            'options': ACTION_OPTS,
+        "sync_establish": {
+            "msg": "Establish disk replication of sync.symsrdf resources.",
+            "options": ACTION_OPTS,
         },
-        'sync_resync': {
-            'msg': 'like sync_update, but not triggered by the scheduler '
-                   '(thus adapted for clone/snap operations)',
-            'options': ACTION_OPTS,
+        "sync_resync": {
+            "msg": "Like :cmd:`sync update`, but not triggered by the scheduler "
+                   "(thus adapted for clone/snap operations).",
+            "options": ACTION_OPTS,
         },
-        'sync_full': {
-            'msg': 'trigger a full copy of the volume to its target',
-            'options': ACTION_OPTS,
+        "sync_full": {
+            "msg": "Trigger a full copy of the volume to its target.",
+            "options": ACTION_OPTS,
         },
-        'sync_restore': {
-            'msg': 'trigger a restore of the sync resources data to their '
-                   'target path (DANGEROUS: make sure you understand before '
-                   'running this action).',
-            'options': ACTION_OPTS,
+        "sync_restore": {
+            "msg": "Trigger a restore of the sync resources data to their "
+                   "target path (DANGEROUS: make sure you understand before "
+                   "running this action).",
+            "options": ACTION_OPTS,
         },
-        'sync_update': {
-            'msg': 'trigger a one-time resync of the volume to its target',
-            'options': ACTION_OPTS,
+        "sync_update": {
+            "msg": "Trigger a one-time resync of the volume to its target.",
+            "options": ACTION_OPTS,
         },
-        'sync_resume': {
-            'msg': 're-establish a broken storage hardware-assisted '
-                   'synchronization',
-            'options': ACTION_OPTS,
+        "sync_resume": {
+            "msg": "Re-establish a broken storage hardware-assisted "
+                   "synchronization.",
+            "options": ACTION_OPTS,
         },
-        'sync_revert': {
-            'msg': 'revert to the pre-failover data (looses current data)',
-            'options': ACTION_OPTS,
+        "sync_revert": {
+            "msg": "Revert to the pre-failover data (looses current data).",
+            "options": ACTION_OPTS,
         },
-        'sync_verify': {
-            'msg': 'trigger a one-time checksum-based verify of the volume '
-                   'and its target',
-            'options': ACTION_OPTS,
+        "sync_verify": {
+            "msg": "Trigger a one-time checksum-based verify of the volume "
+                   "and its target.",
+            "options": ACTION_OPTS,
         },
-        'sync_all': {
-            'msg': 'combo action, chaining sync_nodes-sync_drp-sync_update.',
-            'options': ACTION_OPTS,
+        "sync_all": {
+            "msg": "Chain sync nodes, sync drp and sync update.",
+            "options": ACTION_OPTS,
         },
-        'push': {
-            'msg': 'push service configuration to the collector',
+        "push": {
+            "msg": "Push service configuration to the collector.",
         },
-        'pull': {
-            'msg': 'pull a service configuration from the collector',
-            'options': [
+        "pull": {
+            "msg": "Pull a service configuration from the collector, overwritting the currently installed one.",
+            "options": [
                 OPT.provision,
             ],
         },
-        'push_resinfo': {
-            'msg': 'push service resources and application launchers info '
-                   'key/value pairs the collector',
+        "push_resinfo": {
+            "msg": "Push the local service instance resources and application launchers info "
+                   "key/value pairs the collector.",
         },
-        'push_service_status': {
-            'msg': 'push service and its resources status to database',
+        "push_service_status": {
+            "msg": "Push the local service instance and its resources status to the collector.",
         },
-        'print_base_devs': {
-            'msg': 'print the list of base devices the service or the '
-                   'specified resources are layered on.',
-            'options': [
+        "print_base_devs": {
+            "msg": "Print the list of base devices the local service instance or the "
+                   "specified resources are layered on.",
+            "options": [
                 OPT.format,
                 OPT.rid,
                 OPT.tags,
                 OPT.subsets,
             ],
         },
-        'print_exposed_devs': {
-            'msg': 'print the list of devices the service or the specified '
-                   'resources expose.',
-            'options': [
+        "print_exposed_devs": {
+            "msg": "Print the list of devices the local service instance or the specified "
+                   "resources expose.",
+            "options": [
                 OPT.format,
                 OPT.rid,
                 OPT.tags,
                 OPT.subsets,
             ],
         },
-        'print_sub_devs': {
-            'msg': 'print the list of devices the service or the specified '
-                   'resources are layered on.',
-            'options': [
+        "print_sub_devs": {
+            "msg": "Print the list of devices the local service instance or the specified "
+                   "resources are layered on.",
+            "options": [
                 OPT.format,
                 OPT.rid,
                 OPT.tags,
                 OPT.subsets,
             ],
         },
-        'print_devs': {
-            'msg': 'aggregate the information of print base, sub and exposed '
-                   'devices',
-            'options': [
+        "print_devs": {
+            "msg": "Aggregate the information of :cmd:`print base devs`, :cmd:`print sub devs` and :cmd:`print exposed devs`.",
+            "options": [
                 OPT.format,
                 OPT.rid,
                 OPT.tags,
                 OPT.subsets,
             ],
         },
-        'switch': {
-            'msg': 'stop the service on the local node and start on the '
-                   'remote node. --to <node> specify the remote node to '
-                   'switch the service to.',
-            'options': ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
+        "switch": {
+            "msg": "Stop the running failover service instance and start the "
+                   "instance on the peer node specified by :opt:`--to "
+                   "<nodename>`.",
+            "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
                 OPT.to,
             ],
         },
-        'takeover': {
-            'msg': 'stop the service on its current node and start on the '
-                   'local node.',
-            'options': ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS
+        "takeover": {
+            "msg": "Stop the service on its current node and start on the "
+                   "local node.",
+            "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS
         },
-        'giveback': {
-            'msg': 'stop the service on its current node and start on the '
-                   'node chosen by the placement policy.',
-            'options': ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS
+        "giveback": {
+            "msg": "Stop the service on its current node and start on the "
+                   "node chosen by the placement policy.",
+            "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS
         },
-        'migrate': {
-            'msg': 'live migrate the service to the remote node. '
-                   '--to <node> specify the remote node to migrate the '
-                   'service to.',
-            'options': ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
+        "migrate": {
+            "msg": "Live migrate the service to the remote node. "
+                   "--to <node> specify the remote node to migrate the "
+                   "service to.",
+            "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
                 OPT.to,
             ],
         },
-        'resource_monitor': {
-            'msg': 'refresh only monitored resource status. This action is '
-                   'scheduleable, usually every minute.',
-            'options': ACTION_OPTS,
+        "resource_monitor": {
+            "msg": "Refresh the monitored resource status. This action is "
+                   "scheduleable, usually every minute.",
+            "options": ACTION_OPTS,
         },
-        'docker': {
-            'msg': 'wrap the docker client command, setting automatically '
-                   'the socket parameter to join the service-private docker '
-                   'daemon. The %as_service%, %images% and %instances% words '
-                   'in the wrapped command are replaced by, respectively, '
-                   'the registry login username/password/email parameters to '
-                   'log as a service using <svcname>@<nodename> as the '
-                   'username and the node uuid as password (which is what '
-                   'is expected when the opensvc collector is used as the '
-                   'JWT manager for the registry), the set of docker '
-                   'instance names and images for container resources '
-                   'passing the --tags, --rid and --subsets filters. This is '
-                   'useful to remove all instances of a service or all '
-                   'instances of resources with a tag like "frontend". Note '
-                   'the opensvc filters must be positioned before the docker '
-                   'command in the arguments list.',
+        "docker": {
+            "msg": "Wrap the docker client command, setting automatically "
+                   "the socket parameter to join the service-private docker "
+                   "daemon. The {as_service}, {images} and {instances} words "
+                   "in the wrapped command are replaced by, respectively, "
+                   "the registry login username/password/email parameters to "
+                   "log as a service using <svcname>@<nodename> as the "
+                   "username and the node uuid as password (which is what "
+                   "is expected when the opensvc collector is used as the "
+                   "JWT manager for the registry), the set of docker "
+                   "instance names and images for container resources "
+                   "passing the --tags, --rid and --subsets filters. This is "
+                   "useful to remove all instances of a service or all "
+                   "instances of resources with a tag like 'frontend'. Note "
+                   "the opensvc filters must be positioned before the docker "
+                   "command in the arguments list.",
         },
-        'print_schedule': {
-            'msg': 'print the service tasks schedule',
-            'options': [
+        "print_schedule": {
+            "msg": "Print the service tasks schedule.",
+            "options": [
                 OPT.format,
                 OPT.verbose,
             ],
         },
-        'scheduler': {
-            'msg': 'run the service task scheduler',
+        "scheduler": {
+            "msg": "Run the service task scheduler.",
         },
-        'pg_freeze': {
-            'msg': 'freeze the tasks of a process group',
-            'options': ACTION_OPTS,
+        "pg_freeze": {
+            "msg": "Freeze the tasks of a process group.",
+            "options": ACTION_OPTS,
         },
-        'pg_thaw': {
-            'msg': 'thaw the tasks of a process group',
-            'options': ACTION_OPTS,
+        "pg_thaw": {
+            "msg": "Thaw the tasks of a process group.",
+            "options": ACTION_OPTS,
         },
-        'pg_kill': {
-            'msg': 'kill the tasks of a process group',
-            'options': ACTION_OPTS,
+        "pg_kill": {
+            "msg": "Kill the tasks of a process group.",
+            "options": ACTION_OPTS,
         },
-        'logs': {
-            'msg': 'display the service logs in the pager',
-            'options': [
+        "logs": {
+            "msg": "Display the service logs. All service instances logs are aggregated.",
+            "options": [
                 OPT.backlog,
                 OPT.follow,
                 OPT.node,
@@ -798,32 +801,26 @@ ACTIONS = {
             ]
         },
     },
-    'Service configuration': {
-        'print_config': {
-            'msg': 'display service current configuration',
-            'options': [
+    "Service configuration": {
+        "print_config": {
+            "msg": "Display service current configuration.",
+            "options": [
                 OPT.format,
             ],
         },
-        'edit_config': {
-            'msg': 'edit service configuration',
-            'options': [
+        "edit_config": {
+            "msg": "Edit service configuration. The new configuration file is actually installed only if it passes validation, so this action is recommended over direct edition.",
+            "options": [
                 OPT.discard,
                 OPT.recover,
             ],
         },
-        'validate_config': {
-            'msg': 'check the sections and parameters are valid.',
+        "validate_config": {
+            "msg": "Check the section names and keywords are valid.",
         },
-        'create': {
-            'msg': 'create a new service configuration file. --interactive '
-                   'triggers the interactive mode. --template <template '
-                   'name>|<template id>|<uri>|<local path> fetchs and '
-                   'installs a service config template. --config <uri>|<local'
-                   ' path> fetchs and installs a service config file. '
-                   '--provision create the system resources defined in the '
-                   'service config.',
-            'options': ACTION_OPTS + [
+        "create": {
+            "msg": "Create a new service.",
+            "options": ACTION_OPTS + [
                 OPT.config,
                 OPT.interactive,
                 OPT.provision,
@@ -831,26 +828,24 @@ ACTIONS = {
                 OPT.template,
             ],
         },
-        'update': {
-            'msg': 'update definitions in an existing service configuration '
-                   'file',
-            'options': ACTION_OPTS + [
+        "update": {
+            "msg": "Update definitions in an existing service configuration "
+                   "file.",
+            "options": ACTION_OPTS + [
                 OPT.interactive,
                 OPT.provision,
                 OPT.resource,
             ],
         },
-        'delete': {
-            'msg': 'delete the service instance on the local node if no '
-                   '--rid is specified, or delete the resources pointed by '
-                   '--rid in services passed through --service',
-            'options': ASYNC_ACTION_OPTS + ACTION_OPTS + [
+        "delete": {
+            "msg": "Delete a service, or only the resources specified by :opt:`--rid` on the local service instance.",
+            "options": ASYNC_ACTION_OPTS + ACTION_OPTS + [
                 OPT.unprovision,
             ],
         },
-        'set': {
-            'msg': 'set a service configuration parameter',
-            'options': ACTION_OPTS + [
+        "set": {
+            "msg": "Set a service configuration parameter",
+            "options": ACTION_OPTS + [
                 OPT.kw,
                 OPT.add,
                 OPT.index,
@@ -859,26 +854,26 @@ ACTIONS = {
                 OPT.value,
             ],
         },
-        'get': {
-            'msg': 'get the raw or dereferenced value of a service '
-                   'configuration parameter',
-            'options': ACTION_OPTS + [
+        "get": {
+            "msg": "Get the raw or evaluated value of a service "
+                   "configuration keyword.",
+            "options": ACTION_OPTS + [
                 OPT.eval,
                 OPT.param,
             ],
         },
-        'unset': {
-            'msg': 'unset a node configuration parameter pointed by --param',
-            'options': ACTION_OPTS + [
+        "unset": {
+            "msg": "Unset a node configuration keyword.",
+            "options": ACTION_OPTS + [
                 OPT.param,
             ],
         },
     },
-    'Compliance': {
-        'compliance_auto': {
-            'msg': 'run compliance checks or fixes depending on the autofix'
-                   'module property values.',
-            'options': [
+    "Compliance": {
+        "compliance_auto": {
+            "msg": "Run compliance checks or fixes, depending on the autofix "
+                   "module property values.",
+            "options": [
                 OPT.attach,
                 OPT.force,
                 OPT.module,
@@ -886,9 +881,9 @@ ACTIONS = {
                 OPT.ruleset_date,
             ],
         },
-        'compliance_check': {
-            'msg': 'run compliance checks.',
-            'options': [
+        "compliance_check": {
+            "msg": "Run compliance checks.",
+            "options": [
                 OPT.attach,
                 OPT.force,
                 OPT.module,
@@ -896,9 +891,9 @@ ACTIONS = {
                 OPT.ruleset_date,
             ],
         },
-        'compliance_fix': {
-            'msg': 'run compliance fixes.',
-            'options': [
+        "compliance_fix": {
+            "msg": "Run compliance fixes.",
+            "options": [
                 OPT.attach,
                 OPT.force,
                 OPT.module,
@@ -906,9 +901,9 @@ ACTIONS = {
                 OPT.ruleset_date,
             ],
         },
-        'compliance_fixable': {
-            'msg': 'verify compliance fixes prerequisites.',
-            'options': [
+        "compliance_fixable": {
+            "msg": "Verify compliance fixes prerequisites.",
+            "options": [
                 OPT.attach,
                 OPT.force,
                 OPT.module,
@@ -916,61 +911,55 @@ ACTIONS = {
                 OPT.ruleset_date,
             ],
         },
-        'compliance_env': {
-            'msg': 'show the compliance modules environment variables.',
-            'options': [
+        "compliance_env": {
+            "msg": "Show the environment variables set during a compliance module run.",
+            "options": [
                 OPT.module,
                 OPT.moduleset,
             ],
         },
-        'compliance_show_status': {
-            'msg': 'show compliance modules status',
+        "compliance_show_status": {
+            "msg": "Show compliance modules status.",
         },
-        'compliance_show_moduleset': {
-            'msg': 'show compliance rules applying to this service',
+        "compliance_show_moduleset": {
+            "msg": "Show compliance rules applying to this service.",
         },
-        'compliance_list_moduleset': {
-            'msg': 'list available compliance modulesets. --moduleset f% '
-                   'limit the scope to modulesets matching the f% pattern.',
+        "compliance_list_moduleset": {
+            "msg": "List available compliance modulesets. Setting :opt:`--moduleset f%` "
+                   "limits the resultset to modulesets matching the ``f%`` pattern.",
         },
-        'compliance_list_ruleset': {
-            'msg': 'list available compliance rulesets. --ruleset f% limit '
-                   'the scope to rulesets matching the f% pattern.',
+        "compliance_list_ruleset": {
+            "msg": "List available compliance rulesets. Setting :opt:`--ruleset f%` limits "
+                   "the scope to rulesets matching the ``f%`` pattern.",
         },
-        'compliance_show_ruleset': {
-            'msg': 'show compliance rules applying to this node',
+        "compliance_show_ruleset": {
+            "msg": "Show compliance rules applying to this node",
         },
-        'compliance_attach_ruleset': {
-            'msg': 'attach ruleset specified by --ruleset to this service',
-            'options': [
-                OPT.ruleset,
-            ],
-        },
-        'compliance_attach': {
-            'msg': 'attach ruleset specified by --ruleset and/or moduleset '
-                   'specified by --moduleset to this service',
-            'options': [
+        "compliance_attach": {
+            "msg": "Attach rulesets specified by :opt:`--ruleset` and modulesets "
+                   "specified by :opt:`--moduleset` to this service. Attached modulesets "
+                   "are scheduled for check or autofix.",
+            "options": [
                 OPT.moduleset,
                 OPT.ruleset,
             ],
         },
-        'compliance_detach': {
-            'msg': 'detach ruleset specified by --ruleset and/or moduleset '
-                   'specified by --moduleset from this service',
-            'options': [
+        "compliance_detach": {
+            "msg": "Detach rulesets specified by :opt:`--ruleset` and modulesets "
+                   "specified by :opt:`--moduleset` from this service. Detached "
+                   "modulesets are no longer scheduled for check and autofix.",
+            "options": [
                 OPT.moduleset,
                 OPT.ruleset,
             ],
         },
     },
-    'Collector management': {
-        'collector_ack_unavailability': {
-            'msg': 'acknowledge an unavailability period. the period is '
-                   'specified by --begin/--end or --begin/--duration. '
-                   'omitting --begin defaults to now. an acknowlegment can '
-                   'be completed by --author (defaults to root@nodename), '
-                   '--account (default to 1) and --comment',
-            'options': [
+    "Collector management": {
+        "collector_ack_unavailability": {
+            "msg": "Acknowledge an unavailability period. The period is "
+                   "specified by :opt:`--begin` :opt:`--end` or :opt:`--begin` :opt:`--duration`. "
+                   ":opt:`--begin` defaults to now.",
+            "options": [
                 OPT.author,
                 OPT.account,
                 OPT.begin,
@@ -979,123 +968,120 @@ ACTIONS = {
                 OPT.duration,
             ],
         },
-        'collector_list_unavailability_ack': {
-            'msg': 'list acknowledged periods for the service. the periods '
-                   'can be filtered by --begin/--end. omitting --end '
-                   'defaults to now. the wildcard for --comment and '
-                   '--author is %',
-            'options': [
+        "collector_list_unavailability_ack": {
+            "msg": "List acknowledged periods for the service.",
+            "options": [
                 OPT.author,
                 OPT.begin,
                 OPT.end,
                 OPT.comment,
             ],
         },
-        'collector_list_actions': {
-            'msg': 'list actions on the service, whatever the node, during '
-                   'the period specified by --begin/--end. --end defaults to '
-                   'now. --begin defaults to 7 days ago',
-            'options': [
+        "collector_list_actions": {
+            "msg": "List actions on the service, Whatever the node, during "
+                   "the period specified by --begin/--end. --end defaults to "
+                   "now. --begin defaults to 7 days ago.",
+            "options": [
                 OPT.begin,
                 OPT.end,
                 OPT.format,
             ],
         },
-        'collector_ack_action': {
-            'msg': 'acknowledge an action error on the service. an '
-                   'acknowlegment can be completed by --author (defaults '
-                   'to root@nodename) and --comment',
-            'options': [
+        "collector_ack_action": {
+            "msg": "Acknowledge an action error on the service. An "
+                   "acknowlegment can be completed by --author (defaults "
+                   "to root@nodename) and --comment.",
+            "options": [
                 OPT.author,
                 OPT.comment,
             ],
         },
-        'collector_show_actions': {
-            'msg': 'show actions detailed log. a single action is specified '
-                   'by --id. a range is specified by --begin/--end dates. '
-                   '--end defaults to now. --begin defaults to 7 days ago',
-            'options': [
+        "collector_show_actions": {
+            "msg": "Show actions detailed log. A single action is specified "
+                   "by --id. A range is specified by --begin/--end dates. "
+                   "--end defaults to now. --begin defaults to 7 days ago.",
+            "options": [
                 OPT.begin,
                 OPT.id,
                 OPT.end,
                 OPT.format,
             ],
         },
-        'collector_checks': {
-            'msg': 'display service checks',
-            'options': [
+        "collector_checks": {
+            "msg": "Display service checks.",
+            "options": [
                 OPT.format,
             ],
         },
-        'collector_disks': {
-            'msg': 'display service disks',
-            'options': [
+        "collector_disks": {
+            "msg": "Display service disks.",
+            "options": [
                 OPT.format,
             ],
         },
-        'collector_log': {
-            'msg': 'log a message in the collector\'s service log',
-            'options': [
+        "collector_log": {
+            "msg": "Log a message in the collector service log.",
+            "options": [
                 OPT.message,
             ],
         },
-        'collector_alerts': {
-            'msg': 'display service alerts',
-            'options': [
+        "collector_alerts": {
+            "msg": "Display service alerts.",
+            "options": [
                 OPT.format,
             ],
         },
-        'collector_events': {
-            'msg': 'display service events during the period specified by '
-                   '--begin/--end. --end defaults to now. --begin defaults '
-                   'to 7 days ago',
-            'options': [
+        "collector_events": {
+            "msg": "Display the service events during the period specified by "
+                   "--begin/--end. --end defaults to now. --begin defaults "
+                   "to 7 days ago.",
+            "options": [
                 OPT.begin,
                 OPT.end,
                 OPT.format,
             ],
         },
-        'collector_asset': {
-            'msg': 'display asset information known to the collector',
-            'options': [
+        "collector_asset": {
+            "msg": "Display asset information known to the collector.",
+            "options": [
                 OPT.format,
             ],
         },
-        'collector_networks': {
-            'msg': 'display network information known to the collector for '
-                   'each service ip',
-            'options': [
+        "collector_networks": {
+            "msg": "Display network information known to the collector for "
+                   "each service ip.",
+            "options": [
                 OPT.format,
             ],
         },
-        'collector_tag': {
-            'msg': 'set a service tag (pointed by --tag)',
-            'options': [
+        "collector_tag": {
+            "msg": "Set a service tag (pointed by --tag).",
+            "options": [
                 OPT.tag,
             ],
         },
-        'collector_untag': {
-            'msg': 'unset a service tag (pointed by --tag)',
-            'options': [
+        "collector_untag": {
+            "msg": "Unset a service tag (pointed by --tag).",
+            "options": [
                 OPT.tag,
             ],
         },
-        'collector_show_tags': {
-            'msg': 'list all service tags',
-            'options': [
+        "collector_show_tags": {
+            "msg": "List all service tags.",
+            "options": [
                 OPT.format,
             ],
         },
-        'collector_list_tags': {
-            'msg': 'list all available tags. use --like to filter the output.',
-            'options': [
+        "collector_list_tags": {
+            "msg": "List all available tags. Use --like to filter the output.",
+            "options": [
                 OPT.format,
                 OPT.like,
             ],
         },
-        'collector_create_tag': {
-            'msg': 'create a new tag',
-            'options': [
+        "collector_create_tag": {
+            "msg": "Create a new tag.",
+            "options": [
                 OPT.tag,
             ],
         },
