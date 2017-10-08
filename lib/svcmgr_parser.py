@@ -238,13 +238,13 @@ OPT = Storage({
     "rid": Option(
         "--rid", default=None,
         action="store", dest="parm_rid",
-        help="A resource specifier expression like <spec>[,<spec>], where <spec> can be:\n\n"
+        help="A resource specifier expression like ``<spec>[,<spec>]``, where ``<spec>`` can be:\n\n"
              "* A resource id\n"
              "* A driver group name (app, fs, disk, ...)\n\n"
              "Examples:\n\n"
-             "* app\n"
+             "* ``app``\n"
              "  all app resources\n"
-             "* container#1,ip#1\n"
+             "* ``container#1,ip#1``\n"
              "  only container#1 and ip#1\n"
         ),
     "ruleset": Option(
@@ -312,7 +312,7 @@ OPT = Storage({
         "--tags", default=None,
         action="store", dest="parm_tags",
         help="A comma-separated list of resource tags to limit "
-             "action to. The + separator can be used to impose "
+             "action to. The ``+`` separator can be used to impose "
              "multiple tag conditions. For example, ``tag1+tag2,tag3`` "
              "limits the action to resources with both tag1 and"
              " tag2, or tag3."),
