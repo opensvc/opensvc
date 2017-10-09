@@ -489,8 +489,8 @@ class Asset(rcAsset.Asset):
         for hba in hbas:
             if not hba["hba_type"].startswith('fc'):
                 continue
-	    targets = glob.glob('/sys/class/fc_transport/target%s:*/port_name'%hba["host"])
-	    targets += glob.glob('/sys/class/fc_remote_ports/rport-%s:*/port_name'%hba["host"])
+            targets = glob.glob('/sys/class/fc_transport/target%s:*/port_name'%hba["host"])
+            targets += glob.glob('/sys/class/fc_remote_ports/rport-%s:*/port_name'%hba["host"])
             for target in targets:
                 with open(target, 'r') as f:
                     tgt_id = f.read().strip('0x').strip('\n')
