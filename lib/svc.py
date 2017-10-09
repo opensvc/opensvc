@@ -4190,7 +4190,7 @@ class Svc(Crypt):
         self._clear(nodename=rcEnv.nodename)
         self._clear(nodename=self.options.destination_node)
         self.daemon_mon_action("stop", wait=True)
-        self.daemon_service_action(["start"], nodename=self.options.destination_node)
+        self.daemon_service_action(["start"], nodename=self.options.destination_node, time=self.options.time)
         self.daemon_mon_action("thaw", wait=True)
 
     def collector_rest_get(self, *args, **kwargs):
@@ -5414,7 +5414,7 @@ class Svc(Crypt):
         except Exception as exc:
             self.log.warning("set monitor status failed: %s", str(exc))
 
-    def daemon_service_action(self, cmd, nodename=None, sync=True):
+    def daemon_service_action(self, cmd, nodename=None, sync=True, time=0):
         """
         Execute a service action on a peer node.
         If sync is set, wait for the action result.
@@ -5432,6 +5432,7 @@ class Svc(Crypt):
                 {"action": "service_action", "options": options},
                 nodename=nodename,
                 silent=True,
+                time=time,
             )
         except Exception as exc:
             self.log.error("service action on node %s failed: %s",

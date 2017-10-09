@@ -384,7 +384,7 @@ class Crypt(object):
         return data
 
     def daemon_send(self, data, nodename=None, with_result=True, silent=False,
-                    cluster_name=None, secret=None):
+                    cluster_name=None, secret=None, time=0):
         """
         Send a request to the daemon running on nodename and return the result
         fetched if with_result is set.
@@ -399,17 +399,26 @@ class Crypt(object):
             message = self.encrypt(data, cluster_name=cluster_name,
                                    secret=secret)
             if message is None:
-                return
+                return {"status": 1, "err": "failed to encrypt message"}
             sock.sendall(message)
             if with_result:
-                data = self.recv_message(sock, cluster_name=cluster_name, secret=secret)
-                return data
+                import time
+                elapsed = 0
+                while True:
+                    try:
+                        return self.recv_message(sock, cluster_name=cluster_name, secret=secret)
+                    except socket.timeout:
+                        if elapsed > time:
+                            return {"status": 1, "err": "timeout"}
+                        time.sleep(0.1)
+                        elapsed += 0.1
         except socket.error as exc:
             if not silent:
                 self.log.error("daemon send to %s:%d error: %s", addr, port, str(exc))
-            return
+            return {"status": 1}
         finally:
             sock.close()
+        return {"status": 0}
 
     def daemon_get_stream(self, data, nodename=None, cluster_name=None,
                           secret=None):
