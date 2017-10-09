@@ -10,228 +10,223 @@ PROG = "nodemgr"
 OPT = Storage({
     "api": Option(
         "--api", default=None, action="store", dest="api",
-        help="specify a collector api url different from the "
-             "one set in node.conf. Honored by the 'collector "
-             "cli' action."),
+        help="Specify a collector api url different from the "
+             "one set in node.conf."),
     "add": Option(
         "--add", default=None,
         action="store",
-        help="a list member to add from the value pointed by "
-             "--param in a set action. If --index is set, add "
-             "the new element at that position in the list"),
+        help="A list member to add to the value pointed by :opt:``--param``. "
+             "If :opt:``--index`` is set, insert the new element at the "
+             "specified position in the list."),
     "app": Option(
         "--app", default=None, action="store", dest="app",
-        help="Optional with the register command, register the "
+        help="Optional with the register command. Register the "
              "node in the specified app. If not specified, the "
              "node is registered in the first registering "
              "user's app found."),
     "attach": Option(
         "--attach", default=False,
         action="store_true", dest="attach",
-        help="attach the modulesets specified during a "
-             "compliance check/fix/fixable command"),
+        help="Attach the modulesets specified in a compliance run."),
     "author": Option(
         "--author", default=None,
         action="store", dest="author",
-        help="the acker name to log when used with the "
-             "'collector ack action' action"),
+        help="The acker name to log when acknowledging action log errors"),
     "begin": Option(
         "--begin", default=None,
         action="store", dest="begin",
-        help="a begin date expressed as 'YYYY-MM-DD hh:mm'. "
-             "used with the 'collector ack action' and pushstats "
-             "action"),
+        help="A begin date expressed as ``YYYY-MM-DD hh:mm`` limiting the "
+             "timerange the action applies to."),
     "broadcast": Option(
         "--broadcast", default=None,
         action="store", dest="broadcast",
-        help="list of broadcast addresses, comma separated, "
-             "used by the 'wol' action"),
+        help="A list of broadcast addresses, comma separated, the send "
+             "the Wake-On-LAN packets to."),
     "color": Option(
         "--color", default="auto",
         action="store", dest="color",
-        help="colorize output. possible values are : auto=guess "
-             "based on tty presence, always|yes=always colorize,"
-             " never|no=never colorize"),
+        help="Colorize output. Possible values are:\n\n"
+             "* auto: guess based on tty presence\n"
+             "* always|yes: always colorize\n"
+             "* never|no: never colorize"),
     "comment": Option(
         "--comment", default=None,
         action="store", dest="comment",
-        help="a comment to log when used with the 'collector ack "
-             "action' action"),
+        help="A comment to log when acknowldging action log error entries."),
     "config": Option(
         "--config", default=None, action="store", dest="config",
-        help="specify a user-specific collector api connection "
-             "configuration file. defaults to '~/.opensvc-cli'. "
-             "Honored by the 'collector cli' action."),
+        help="Specify a user-specific collector api connection "
+             "configuration file. Defaults to '~/.opensvc-cli'."),
     "cron": Option(
         "--cron", default=False,
         action="store_true", dest="cron",
-        help="cron mode"),
+        help="Set by the robots to flag log entries as such in the collector."),
     "debug": Option(
         "--debug", default=False,
         action="store_true", dest="debug",
-        help="debug mode"),
+        help="Increase stream log verbosity up to the debug level."),
     "devices": Option(
         "--dev", default=[], action="append", dest="devices",
-        help="a device path to limit or apply the action to"),
+        help="A device path to limit or apply the action to."),
     "duration": Option(
         "--duration", default=None,
         action="store", dest="duration", type="int",
-        help="a duration expressed in minutes. used with the "
-             "'collector ack action' action"),
+        help="A duration expression like, ``1h10m``."),
     "end": Option(
         "--end", default=None,
         action="store", dest="end",
-        help="a end date expressed as 'YYYY-MM-DD hh:mm'. used "
-             "with the 'collector ack action' and pushstats "
-             "action"),
+        help="A end date expressed as ``YYYY-MM-DD hh:mm`` limiting the "
+             "timerange the action applies to."),
     "filterset": Option(
         "--filterset", default="",
         action="store", dest="filterset",
-        help="set a filterset to limit collector extractions"),
+        help="Specify a filterset to limit collector extractions."),
     "force": Option(
         "--force", default=False,
         action="store_true", dest="force",
-        help="force action"),
+        help="Force action, ignore sanity checks."),
     "format": Option(
         "--format", default=None, action="store", dest="format",
-        help="specify a data formatter for output of the print* "
-             "and collector* commands. possible values are json, csv "
-             "or table."),
+        help="Specify a data formatter. Possible values are json, csv"
+             " or table."),
     "hba": Option(
         "--hba", default=None, action="store", dest="hba",
-        help="specify a hba to scan for new block devices. Example: "
-             "5001438002432430 or iqn.1993-08.org.debian:01:659b4bbd68bd"),
+        help="Specify a hba to scan for new block devices. Example: "
+             "5001438002432430 or iqn.1993-08.org.debian:01:659b4bbd68bd."),
     "help": Option(
         "-h", "--help", default=None,
         action="store_true", dest="parm_help",
-        help="show this help message and exit"),
+        help="Show this help message and exit"),
     "id": Option(
         "--id", default=0,
         action="store", dest="id", type="int",
-        help="specify an id to act on"),
+        help="Specify an id to act on."),
     "index": Option(
         "--index", default=None,
         action="store", type="int",
-        help="the position in the list pointed by --param where to add "
-             "the new element on a set action"),
+        help="The position in the list pointed by --param where to add "
+             "the new list element on a set action"),
     "insecure": Option(
         "--insecure", default=False,
         action="store_true", dest="insecure",
-        help="allow communications with a collector presenting "
-             "unverified SSL certificates."),
+        help="Allow communications with a collector presenting an "
+             "unverified SSL certificate."),
     "like": Option(
         "--like", default="%",
         action="store", dest="like",
-        help="a sql like filtering expression. leading and "
-             "trailing wildcards are automatically set."),
+        help="A data filtering expression. ``%`` is the multi-character "
+             "wildcard. ``_`` is the single-character wildcard. Leading and "
+             "trailing ``%`` are automatically set."),
     "local": Option(
         "--local", default=False,
         action="store_true", dest="local",
         help="Set to disable cluster-wide operations."),
     "lun": Option(
         "--lun", default=None, action="store", dest="lun",
-        help="specify a logical unit number to scan for new block devices. "
-             "Example: 1"),
+        help="Specify a logical unit number to scan for new block devices. "
+             "Example: 1."),
     "mac": Option(
         "--mac", default=None,
         action="store", dest="mac",
-        help="list of mac addresses, comma separated, used by "
-             "the 'wol' action"),
+        help="A list of mac addresses, comma separated, used as target of "
+             "the Wake-On-LAN packets."),
     "message": Option(
         "--message", default="",
         action="store", dest="message",
-        help="the message to send to the collector for logging"),
+        help="The message to send to the collector for logging"),
     "module": Option(
         "--module", default="",
         action="store", dest="module",
-        help="compliance, set module list"),
+        help="Specify the modules to limit the run to. The modules must be in already attached modulesets."),
     "moduleset": Option(
         "--moduleset", default="",
         action="store", dest="moduleset",
-        help="compliance, set moduleset list. The 'all' value "
+        help="Specify the modulesets to limit the action to. The special value ``all`` "
              "can be used in conjonction with detach."),
     "node": Option(
         "--node", default="",
         action="store", dest="node",
-        help="the node to send a request to. if not specified the local node is targeted."),
+        help="The node to send a request to. If not specified the local node is targeted."),
     "nopager": Option(
         "--no-pager", default=False,
         action="store_true", dest="nopager",
-        help="do not display the command result in a pager."),
+        help="Do not display the command result in a pager."),
     "opt_object": Option(
         "--object", default=[], action="append", dest="objects",
-        help="an object to limit a push* action to. multiple "
+        help="An object to limit a push* action to. Multiple "
              "--object <object id> parameters can be set on a "
-             "single command line"),
+             "single command line."),
     "param": Option(
         "--param", default=None,
         action="store", dest="param",
-        help="point a node configuration parameter for the 'get'"
-             " and 'set' actions"),
+        help="An expression like ``[<section>.]<keyword>`` where\n\n"
+             "* <section> can be:\n\n"
+             "  * a resource id\n"
+             "  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources."),
     "password": Option(
         "--password", default=None,
         action="store", dest="password",
-        help="authenticate with the collector using the "
+        help="Authenticate with the collector using the "
              "specified user credentials instead of the node "
              "credentials. Prompted if necessary but not "
              "specified."),
     "refresh_api": Option(
         "--refresh-api", default=False,
         action="store_true", dest="refresh_api",
-        help="The OpenSVC collector api url"),
+        help="Force a reload of the collector's api digest."),
     "remove": Option(
         "--remove", default=None,
         action="store",
-        help="a list member to drop from the value pointed by "
-             "--param in a set action"),
+        help="A list member to drop from the value pointed by :kw:`--param`."),
     "reverse": Option(
         "--reverse", default=False,
         action="store_true", dest="reverse",
-        help="reverse the tree"),
+        help="Print the tree leaf-to-root."),
     "ruleset": Option(
         "--ruleset", default="",
         action="store", dest="ruleset",
-        help="compliance, set ruleset list. The 'all' value can "
-             "be used in conjonction with detach."),
+        help="Specify the rulesets to limit the action to. The special value ``all`` "
+             "can be used in conjonction with detach."),
     "ruleset_date": Option(
         "--ruleset-date", default="",
         action="store", dest="ruleset_date",
-        help="compliance, use rulesets valid on specified date"),
+        help="Use an historical ruleset, specified by its date."),
     "stats_dir": Option(
         "--stats-dir", default=None,
         action="store", dest="stats_dir",
-        help="points the directory where the metrics files are "
+        help="Points the directory where the metrics files are "
              "stored for pushstats."),
     "secret": Option(
         "--secret", default=None,
         action="store", dest="secret",
-        help="the cluster secret used as the AES key in the cluster "
+        help="The cluster secret used as the AES key in the cluster "
              "communications."),
     "symcli_db_file": Option(
         "--symcli-db-file", default=None,
         action="store", dest="symcli_db_file",
-        help="[pushsym option] use symcli offline mode with the "
-             "specified file. aclx files are expected to be "
+        help="Use symcli offline mode with the "
+             "specified file. The aclx files are expected to be "
              "found in the same directory and named either "
-             "<symid>.aclx or <same_prefix_as_bin_file>.aclx"),
+             "<symid>.aclx or <same_prefix_as_bin_file>.aclx."),
     "sync": Option(
         "--sync", default=False,
         action="store_true", dest="syncrpc",
-        help="use synchronous collector rpc. to use when chaining "
-             "a compliance run, to make sure the node ruleset is "
-             "up-to-date."),
+        help="Use synchronous collector communication. For example, "
+             ":cmd:`pushasset --sync` before a compliance run makes sure "
+             "the pushed data has hit the collector database before the "
+             "rulesets are contextualized."),
     "tag": Option(
         "--tag", default=None,
         action="store", dest="tag",
-        help="a tag specifier used by 'collector create tag', "
-             "'collector add tag', 'collector del tag'"),
+        help="The tag name, as shown by :cmd:`nodemgr collector list tags`."),
     "target": Option(
         "--target", default=None, action="store", dest="target",
-        help="specify a target to scan for new block devices. Example: "
-             "5000097358185088 or iqn.clementine.tgt1"),
+        help="Specify a target to scan for new block devices. Example: "
+             "5000097358185088 or iqn.clementine.tgt1."),
     "thr_id": Option(
         "--thread-id", default=None, action="store", dest="thr_id",
-        help="specify a daemon thread, as listed in the daemon status output"),
+        help="Specify a daemon thread, as listed in the :cmd:`nodemgr daemon "
+             "status` output."),
     "time": Option(
         "--time", default=300,
         action="store", dest="time", type="int",
@@ -239,21 +234,21 @@ OPT = Storage({
              "finish. Default is 300 seconds."),
     "user": Option(
         "--user", default=None, action="store", dest="user",
-        help="authenticate with the collector using the "
+        help="Authenticate with the collector using the "
              "specified user credentials instead of the node "
-             "credentials. Required for the 'register' action "
+             "credentials. Required with :cmd:`nodenmgr register` "
              "when the collector is configured to refuse "
              "anonymous register."),
     "value": Option(
         "--value", default=None,
         action="store", dest="value",
-        help="set a node configuration parameter value for the "
-             "'set --param' action"),
+        help="The value to set for the keyword pointed by :opt:`--param`"),
     "verbose": Option(
         "--verbose", default=False,
         action="store_true", dest="verbose",
-        help="add more information to some print commands: +next "
-             "in 'print schedule'"),
+        help="Include more information to some print commands output. "
+             "For example, add the ``next run`` column in the output of "
+             ":cmd:`nodemgr print schedule`."),
     "wait": Option(
         "--wait", default=False,
         action="store_true", dest="wait",
@@ -281,67 +276,67 @@ DAEMON_OPTS = [
 ACTIONS = {
     'Node actions': {
         'frozen': {
-            'msg': 'return 0 if all the services are frozen node-wide, '
-                   'preventing the daemon to orchestrate them. return 1 '
+            'msg': 'Return 0 if the services are frozen node-wide, '
+                   'preventing the daemon to orchestrate them. Return 1 '
                    'otherwise',
         },
         'freeze': {
-            'msg': 'freeze services node-wide, preventing the daemon to '
-                   'orchestrate them. this freeze method preserves the '
+            'msg': 'Freeze services node-wide, preventing the daemon to '
+                   'orchestrate them. This freeze method preserves the '
                    'frozen state at service-level (with svcmgr).',
             'options': ASYNC_OPTS + DAEMON_OPTS,
         },
         'thaw': {
-            'msg': 'thaw services node-wide, allowing the daemon to '
-                   'orchestrate them. this thaw method does not actually '
+            'msg': 'Thaw services node-wide, allowing the daemon to '
+                   'orchestrate them. This thaw method does not actually '
                    'thaw services frozen at service-level (with svcmgr).',
             'options': ASYNC_OPTS + DAEMON_OPTS,
         },
         'logs': {
-            'msg': 'fancy display of the node logs',
+            'msg': 'Display of the nodemgr and daemon logs.',
             'options': [
                 OPT.nopager,
             ]
         },
         'shutdown': {
-            'msg': 'shutdown the node to powered off state',
+            'msg': 'Shutdown the node to powered off state.',
         },
         'reboot': {
-            'msg': 'reboot the node',
+            'msg': 'Reboot the node.',
         },
         'scheduler': {
-            'msg': 'run the node task scheduler',
+            'msg': 'Run the node task scheduler.',
         },
         'schedulers': {
-            'msg': 'execute a run of the node and services schedulers. this '
-                   'action is installed in the system scheduler',
+            'msg': 'Execute a run of the node and services schedulers. This '
+                   'action is installed in the system scheduler.',
         },
         'schedule_reboot_status': {
-            'msg': 'tell if the node is scheduled for reboot',
+            'msg': 'Tell if the node is scheduled for reboot.',
         },
         'schedule_reboot': {
-            'msg': 'mark the node for reboot at the next allowed period. the '
+            'msg': 'Mark the node for reboot at the next allowed period. The '
                    'allowed period is defined by a "reboot" section in '
                    'node.conf.',
         },
         'unschedule_reboot': {
-            'msg': 'unmark the node for reboot at the next allowed period.',
+            'msg': 'Unmark the node for reboot at the next allowed period.',
         },
         'array': {
-            'msg': 'pass a command to a supported array whose access method '
-                   'and credentials are defined in auth.conf',
+            'msg': 'Pass a command to a supported array whose access method '
+                   'and credentials are defined in auth.conf.',
         },
         'updatepkg': {
-            'msg': 'upgrade the opensvc agent version. the packages must be '
+            'msg': 'Upgrade the opensvc agent version. the packages must be '
                    'available behind the node.repo/packages url.',
         },
         'updatecomp': {
-            'msg': 'upgrade the opensvc compliance modules. the modules must '
-                   'be available as a tarball behind the node.repo/compliance '
+            'msg': 'Upgrade the opensvc compliance modules. The modules must '
+                   'be available as a tarball behind the :kw:`node.repocomp` '
                    'url.',
         },
         'scanscsi': {
-            'msg': 'scan the scsi hosts in search of new disks',
+            'msg': 'Scan the scsi hosts in search of new disks.',
             'options': [
                 OPT.hba,
                 OPT.target,
@@ -349,14 +344,14 @@ ACTIONS = {
             ],
         },
         'dequeue_actions': {
-            'msg': "dequeue and execute actions from the collector's action "
+            'msg': "Dequeue and execute actions from the collector's action "
                    "queue for this node and its services.",
         },
         'rotate_root_pw': {
-            'msg': "set a new root password and store it in the collector",
+            'msg': "Set a new root password and store it in the collector.",
         },
         'print_devs': {
-            'msg': 'print the node devices tree.',
+            'msg': 'Print the node devices tree.',
             'options': [
                 OPT.devices,
                 OPT.reverse,
@@ -364,13 +359,13 @@ ACTIONS = {
             ],
         },
         'print_schedule': {
-            'msg': 'print the node tasks schedule',
+            'msg': 'Print the node tasks schedule.',
             'options': [
                 OPT.verbose,
             ],
         },
         'stonith': {
-            'msg': 'command executed by the daemon monitor to fence peer '
+            'msg': 'Command executed by the daemon monitor to fence peer '
                    'node upon failover when the node previously running '
                    'the service is stale.',
             'options': [
@@ -378,39 +373,40 @@ ACTIONS = {
             ],
         },
         'wol': {
-            'msg': 'forge and send udp wake on lan packet to mac address '
-                   'specified by --mac and --broadcast arguments',
+            'msg': 'Forge and send a udp Wake-On-LAN packet to the mac addresses '
+                   'specified by :opt:`--mac` and :opt:`--broadcast` arguments.',
             'options': [
                 OPT.broadcast,
                 OPT.mac,
             ],
         },
         'collect_stats': {
-            'msg': "write in local files metrics not found in the standard "
-                   "metrics collector. these files will be fed to the "
-                   "collector by the 'pushstat' action.",
+            'msg': "Write in local files metrics not found in the standard "
+                   "metrics collector. These files will be fed to the "
+                   "collector by the :cmd:`pushstat` action.",
         },
     },
     'Service actions': {
         'discover': {
-            'msg': 'discover vservices accessible from this host, cloud nodes for example',
+            'msg': 'Discover vservices accessible from this host. Typically executed on cloud nodes.',
         },
     },
     'Node configuration': {
         'print_config': {
-            'msg': 'open the node.conf configuration file with the preferred editor',
+            "msg": "Display the node current configuration.",
         },
         'print_authconfig': {
-            'msg': 'open the node.conf configuration file with the preferred editor',
+            "msg": "Display the node current authentication configuration.",
         },
         'edit_config': {
-            'msg': 'open the node.conf configuration file with the preferred editor',
+            "msg": "Edit the node configuration.",
         },
         'edit_authconfig': {
-            'msg': 'open the auth.conf configuration file with the preferred editor',
+            "msg": "Edit the node authentication configuration.",
         },
         'register': {
-            'msg': 'obtain a registration number from the collector, used to authenticate the node',
+            'msg': "Obtain a registration id from the collector. This is is "
+                   "then used to authenticate the node in collector communications.",
             'options': [
                 OPT.app,
                 OPT.password,
@@ -418,13 +414,14 @@ ACTIONS = {
             ],
         },
         'get': {
-            'msg': 'get the value of the node configuration parameter pointed by --param',
+            "msg": "Get the raw or evaluated value of a node "
+                   "configuration keyword.",
             'options': [
                 OPT.param,
             ],
         },
         'set': {
-            'msg': 'set a node configuration parameter (pointed by --param) value (pointed by --value)',
+            "msg": "Set a service configuration parameter.",
             'options': [
                 OPT.param,
                 OPT.value,
@@ -434,7 +431,7 @@ ACTIONS = {
             ],
         },
         'unset': {
-            'msg': 'unset a node configuration parameter (pointed by --param)',
+            'msg': 'Unset a node configuration parameter.',
             'options': [
                 OPT.param,
             ],
@@ -442,58 +439,58 @@ ACTIONS = {
     },
     'Node daemon management': {
         'daemon_blacklist_status': {
-            'msg': 'show the content of the daemon senders blacklist.',
+            'msg': 'Show the content of the daemon senders blacklist.',
          },
         'daemon_blacklist_clear': {
-            'msg': 'empty the content of the daemon senders blacklist.',
+            'msg': 'Empty the content of the daemon senders blacklist.',
          },
         'daemon_restart': {
-            'msg': 'restart the daemon.',
+            'msg': 'Restart the daemon.',
          },
         'daemon_running': {
-            'msg': 'return with code 0 if the daemon is running, else return '
+            'msg': 'Return with code 0 if the daemon is running, else return '
                    'with code 1',
          },
         'daemon_shutdown': {
-            'msg': 'stop all local services instances then stop the daemon.',
+            'msg': 'Stop all local services instances then stop the daemon.',
          },
         'daemon_status': {
-            'msg': 'display the daemon status.',
+            'msg': 'Display the daemon status.',
             'options': DAEMON_OPTS,
          },
         'daemon_start': {
-            'msg': 'start the daemon or a daemon thread pointed by --thread-id.',
+            'msg': 'Start the daemon or a daemon thread pointed by :opt:`--thread-id`.',
             'options': DAEMON_OPTS + [
                 OPT.thr_id,
             ],
          },
         'daemon_stop': {
-            'msg': 'stop the daemon or a daemon thread pointed by --thread-id.',
+            'msg': 'Stop the daemon or a daemon thread pointed by :opt:`--thread-id`.',
             'options': DAEMON_OPTS + [
                 OPT.thr_id,
             ],
          },
         'daemon_join': {
-            'msg': 'join the node, specified by --node <node>, cluster.',
+            'msg': 'Join the cluster of the node specified by :opt:`--node <node>`, authenticating with :opt:`--secret <secret>`.',
             'options': DAEMON_OPTS + [
                 OPT.secret,
             ],
          },
         'daemon_leave': {
-            'msg': 'inform peer nodes we leave the cluster. make sure the '
-                   'left nodes are no longer in the services nodes list '
-                   'before leaving, so the other nodes won\'t takeover',
+            'msg': "Inform peer nodes we leave the cluster. Make sure the "
+                   "left nodes are no longer in the services nodes list "
+                   "before leaving, so the other nodes won't takeover.",
          },
     },
     'Push data to the collector': {
         'pushasset': {
-            'msg': 'push asset information to collector',
+            'msg': 'Push asset information to collector.',
             'options': [
                 OPT.sync,
             ],
          },
         'pushstats': {
-            'msg': 'push performance metrics to collector. By default pushed '
+            'msg': 'Push performance metrics to collector. By default pushed '
                    'stats interval begins yesterday at the beginning of the '
                    'allowed interval and ends now. This interval can be '
                    'changed using --begin/--end parameters. The location '
@@ -506,145 +503,145 @@ ACTIONS = {
             ],
          },
         'pushdisks': {
-            'msg': 'push disks usage information to collector',
+            'msg': 'Push disks usage information to the collector.',
          },
         'pushpkg': {
-            'msg': 'push package/version list to collector',
+            'msg': 'Push package/version list to the collector.',
          },
         'pushpatch': {
-            'msg': 'push patch/version list to collector',
+            'msg': 'Push patch/version list to the collector.',
          },
         'pushsym': {
-            'msg': 'push symmetrix configuration to collector',
+            'msg': 'Push symmetrix configurations to the collector.',
             'options': [
                 OPT.opt_object,
                 OPT.symcli_db_file,
             ],
          },
         'pushemcvnx': {
-            'msg': 'push EMC CX/VNX configuration to collector',
+            'msg': 'Push EMC CX/VNX configurations to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushcentera': {
-            'msg': 'push EMC Centera configuration to collector',
+        'Pushcentera': {
+            'msg': 'Push EMC Centera configurations to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushnetapp': {
-            'msg': 'push Netapp configuration to collector',
+        'Pushnetapp': {
+            'msg': 'Push Netapp configurations to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pusheva': {
-            'msg': 'push HP EVA configuration to collector',
+        'Pusheva': {
+            'msg': 'Push HP EVA configurations to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushnecism': {
-            'msg': 'push NEC ISM configuration to collector',
+        'Pushnecism': {
+            'msg': 'Push NEC ISM configurations to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushhds': {
-            'msg': 'push HDS configuration to collector',
+        'Pushhds': {
+            'msg': 'Push HDS configurations to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushdcs': {
-            'msg': 'push Datacore configuration to collector',
+        'Pushdcs': {
+            'msg': 'Push Datacore configurations to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushfreenas': {
-            'msg': 'push FreeNAS configuration to collector',
+        'Pushfreenas': {
+            'msg': 'Push FreeNAS configurations to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushxtremio': {
-            'msg': 'push XtremIO configuration to collector',
+        'Pushxtremio': {
+            'msg': 'Push XtremIO configurations to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushibmsvc': {
-            'msg': 'push IBM SVC configuration to collector',
+        'Pushibmsvc': {
+            'msg': 'Push IBM SVC configurations to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushhp3par': {
-            'msg': 'push HP 3par configuration to collector',
+        'Pushhp3par': {
+            'msg': 'Push HP 3par configurations to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushibmds': {
-            'msg': 'push IBM DS configuration to collector',
+        'Pushibmds': {
+            'msg': 'Push IBM DS configurations to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushvioserver': {
-            'msg': 'push IBM VIO server configuration to collector',
+        'Pushvioserver': {
+            'msg': 'Push IBM VIO server configurations to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushgcedisks': {
-            'msg': 'push Google Compute Engine disks configuration to '
-                   'collector',
+        'Pushgcedisks': {
+            'msg': 'Push Google Compute Engine disks configurations to the '
+                   'collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushbrocade': {
-            'msg': 'push Brocade switch configuration to collector',
+        'Pushbrocade': {
+            'msg': 'Push Brocade switch configuration to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
-        'pushnsr': {
-            'msg': 'push EMC Networker index to collector',
+        'Pushnsr': {
+            'msg': 'Push EMC Networker index to the collector.',
             'options': [
                 OPT.opt_object,
             ],
          },
         'sysreport': {
-            'msg': 'push system report to the collector for archiving and '
-                   'diff analysis',
+            'msg': 'Push system report to the collector for archiving and '
+                   'diff analysis.',
          },
         'checks': {
-            'msg': 'run node sanity checks, push results to collector',
+            'msg': 'Run node health checks. Push results to collector.',
          },
     },
     'Misc': {
         'prkey': {
-            'msg': 'show persistent reservation key of this node',
+            'msg': 'Show the scsi3 persistent reservation key of this node.',
          },
     },
     'Compliance': {
         'compliance_auto': {
-            'msg': 'run compliance checks or fix, according to the autofix '
-                   'property of each module.',
+            "msg": "Run compliance checks or fixes, depending on the autofix "
+                   "module property values.",
         },
         'compliance_env': {
-            'msg': 'show the compliance modules environment variables.',
+            "msg": "Show the environment variables set during a compliance module run.",
             'options': [
                 OPT.module,
                 OPT.moduleset,
             ],
         },
         'compliance_check': {
-            'msg': 'run compliance checks.',
+            'msg': 'Run compliance checks.',
             'options': [
                 OPT.attach,
                 OPT.force,
@@ -654,7 +651,7 @@ ACTIONS = {
             ],
         },
         'compliance_fix': {
-            'msg': 'run compliance fixes.',
+            'msg': 'Run compliance fixes.',
             'options': [
                 OPT.attach,
                 OPT.force,
@@ -664,7 +661,7 @@ ACTIONS = {
             ],
         },
         'compliance_fixable': {
-            'msg': 'verify compliance fixes prerequisites.',
+            'msg': 'Verify compliance fixes prerequisites.',
             'options': [
                 OPT.attach,
                 OPT.force,
@@ -674,36 +671,44 @@ ACTIONS = {
             ],
         },
         'compliance_list_module': {
-            'msg': 'list compliance modules available on this node',
+            'msg': 'List the compliance modules installed on this node.',
         },
         'compliance_show_moduleset': {
-            'msg': 'show compliance rules applying to this node',
+            "msg": "Show compliance rules applying to this node.",
         },
         'compliance_list_moduleset': {
-            'msg': 'list available compliance modulesets. --moduleset f% '
-                   'limit the scope to modulesets matching the f% pattern.',
+            "msg": "List available compliance modulesets. Setting :opt:`--moduleset f%` "
+                   "limits the resultset to modulesets matching the ``f%`` pattern.",
+            'options': [
+                OPT.moduleset,
+            ],
         },
         'compliance_list_ruleset': {
-            'msg': 'list available compliance rulesets. --ruleset f% limit '
-                   'the scope to rulesets matching the f% pattern.',
+            "msg": "List available compliance rulesets. Setting :opt:`--ruleset f%` limits "
+                   "the scope to rulesets matching the ``f%`` pattern.",
+            'options': [
+                OPT.ruleset,
+            ],
         },
         'compliance_show_ruleset': {
-            'msg': 'show compliance rules applying to this node',
+            'msg': 'Show compliance rules applying to this node.',
         },
         'compliance_show_status': {
-            'msg': 'show compliance modules status',
+            'msg': 'Show compliance modules status.',
         },
         'compliance_attach': {
-            'msg': 'attach ruleset specified by --ruleset and/or moduleset '
-                   'specified by --moduleset for this node',
+            "msg": "Attach rulesets specified by :opt:`--ruleset` and modulesets "
+                   "specified by :opt:`--moduleset` to this node. Attached modulesets "
+                   "are scheduled for check or autofix.",
             'options': [
                 OPT.moduleset,
                 OPT.ruleset,
             ],
         },
         'compliance_detach': {
-            'msg': 'detach ruleset specified by --ruleset and/or moduleset '
-                   'specified by --moduleset for this node',
+            "msg": "Detach rulesets specified by :opt:`--ruleset` and modulesets "
+                   "specified by :opt:`--moduleset` from this node. Detached "
+                   "modulesets are no longer scheduled for check and autofix.",
             'options': [
                 OPT.moduleset,
                 OPT.ruleset,
@@ -712,11 +717,10 @@ ACTIONS = {
     },
     'Collector management': {
         'collector_cli': {
-            'msg': 'open a Command Line Interface to the collector rest API. '
+            'msg': 'Open a Command Line Interface to the collector rest API. '
                    'The CLI offers autocompletion of paths and arguments, '
-                   'piping JSON data from files. This command accepts the '
-                   '--user, --password, --api, --insecure and --config '
-                   'parameters. If executed as root, the collector is '
+                   'piping JSON data from files. '
+                   'If executed as root and with no :opt:`--user`, the collector is '
                    'logged in with the node credentials.',
             'options': [
                 OPT.user,
@@ -728,7 +732,7 @@ ACTIONS = {
             ],
         },
         'collector_events': {
-            'msg': 'display node events during the period specified by '
+            'msg': 'Display node events during the period specified by '
                    '--begin/--end. --end defaults to now. --begin defaults to '
                    '7 days ago.',
             'options': [
@@ -737,25 +741,25 @@ ACTIONS = {
             ],
         },
         'collector_alerts': {
-            'msg': 'display node alerts',
+            'msg': 'Display the node alerts.',
         },
         'collector_checks': {
-            'msg': 'display node checks',
+            'msg': 'Display the node checks.',
         },
         'collector_disks': {
-            'msg': 'display node disks',
+            'msg': 'Display the node disks list, complete with information issued by array parser.',
         },
         'collector_list_actions': {
-            'msg': 'list actions on the node, whatever the service, during '
+            'msg': 'List actions on the node, whatever the service, during '
                    'the period specified by --begin/--end. --end defaults to '
-                   'now. --begin defaults to 7 days ago',
+                   'now. --begin defaults to 7 days ago.',
             'options': [
                 OPT.begin,
                 OPT.end,
             ],
         },
         'collector_ack_action': {
-            'msg': 'acknowledge an action error on the node. an acknowlegment '
+            'msg': 'Acknowledge an action error on the node. An acknowlegment '
                    'can be completed by --author (defaults to root@nodename) '
                    'and --comment',
             'options': [
@@ -764,9 +768,9 @@ ACTIONS = {
             ],
         },
         'collector_show_actions': {
-            'msg': 'show actions detailed log. a single action is specified '
+            'msg': 'Show actions detailed log. A single action is specified '
                    'by --id. a range is specified by --begin/--end dates. '
-                   '--end defaults to now. --begin defaults to 7 days ago',
+                   '--end defaults to now. --begin defaults to 7 days ago.',
             'options': [
                 OPT.begin,
                 OPT.id,
@@ -774,58 +778,59 @@ ACTIONS = {
             ],
         },
         'collector_list_nodes': {
-            'msg': 'show the list of nodes matching the filterset pointed by '
-                   '--filterset',
+            'msg': 'Show the list of nodes matching the filterset pointed by '
+                   ':opt:`--filterset`.',
         },
         'collector_list_services': {
-            'msg': 'show the list of services matching the filterset pointed '
-                   'by --filterset',
+            'msg': 'Show the list of services matching the filterset pointed '
+                   'by :opt:`--filterset`.',
         },
         'collector_list_filtersets': {
-            'msg': 'show the list of filtersets available on the collector. '
-                   'if specified, --filterset <pattern> limits the resultset '
-                   'to filtersets matching <pattern>',
+            'msg': 'Show the list of filtersets available on the collector. '
+                   'If specified, :opt:`--filterset <pattern>` limits the resultset '
+                   'to filtersets matching the pattern.',
         },
         'collector_log': {
-            'msg': 'log a message in the collector\'s node log',
+            'msg': "Log a message in the collector's node log.",
             'options': [
                 OPT.message,
             ],
         },
         'collector_asset': {
-            'msg': 'display asset information known to the collector',
+            'msg': 'Display the asset information known to the collector.',
         },
         'collector_networks': {
-            'msg': 'display network information known to the collector for '
-                   'each node ip',
+            'msg': 'Display network information known to the collector for '
+                   'each node ip, complete with network information from the '
+                   'IPAM database.',
         },
         'collector_tag': {
-            'msg': 'set a node tag (pointed by --tag)',
+            'msg': 'Set a node tag (pointed by --tag).',
             'options': [
                 OPT.tag,
             ],
         },
         'collector_untag': {
-            'msg': 'unset a node tag (pointed by --tag)',
+            'msg': 'Unset a node tag (pointed by --tag).',
         },
         'collector_show_tags': {
             'msg': 'list all node tags',
         },
         'collector_list_tags': {
-            'msg': 'list all available tags. use --like to filter the output.',
+            'msg': 'List all available tags. Use :opt:`--like` to filter the output.',
             'options': [
                 OPT.like,
             ],
         },
         'collector_create_tag': {
-            'msg': 'create a new tag with name specified by --tag',
+            'msg': 'Create a new tag with name specified by :opt:`--tag`.',
             'options': [
                 OPT.tag,
             ],
         },
         'collector_search': {
-            'msg': 'report the collector objects matching --like '
-                   '[<type>:]<substring>, where <type> is the object type '
+            'msg': 'Report the collector objects matching :opt:`--like '
+                   '[<type>:]<substring>`, where ``<type>`` is the object type '
                    'acronym as shown in the collector search widget.',
             'options': [
                 OPT.like,

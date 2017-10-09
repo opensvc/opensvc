@@ -345,7 +345,7 @@ OPT = Storage({
         action="store_true", dest="verbose",
         help="Include more information to some print commands output. "
              "For example, add the ``next run`` column in the output of "
-             ":cmd:`print schedule`."),
+             ":cmd:`svcmgr print schedule`."),
     "wait": Option(
         "--wait", default=False,
         action="store_true", dest="wait",
@@ -803,13 +803,13 @@ ACTIONS = {
     },
     "Service configuration": {
         "print_config": {
-            "msg": "Display service current configuration.",
+            "msg": "Display the service current configuration.",
             "options": [
                 OPT.format,
             ],
         },
         "edit_config": {
-            "msg": "Edit service configuration. The new configuration file is actually installed only if it passes validation, so this action is recommended over direct edition.",
+            "msg": "Edit the service configuration. The new configuration file is actually installed only if it passes validation, so this action is recommended over direct edition.",
             "options": [
                 OPT.discard,
                 OPT.recover,
@@ -927,13 +927,19 @@ ACTIONS = {
         "compliance_list_moduleset": {
             "msg": "List available compliance modulesets. Setting :opt:`--moduleset f%` "
                    "limits the resultset to modulesets matching the ``f%`` pattern.",
+            'options': [
+                OPT.moduleset,
+            ],
         },
         "compliance_list_ruleset": {
             "msg": "List available compliance rulesets. Setting :opt:`--ruleset f%` limits "
                    "the scope to rulesets matching the ``f%`` pattern.",
+            'options': [
+                OPT.ruleset,
+            ],
         },
         "compliance_show_ruleset": {
-            "msg": "Show compliance rules applying to this node",
+            "msg": "Show compliance rules applying to this service.",
         },
         "compliance_attach": {
             "msg": "Attach rulesets specified by :opt:`--ruleset` and modulesets "
@@ -1073,7 +1079,7 @@ ACTIONS = {
             ],
         },
         "collector_list_tags": {
-            "msg": "List all available tags. Use --like to filter the output.",
+            "msg": "List all available tags. Use :opt:`--like` to filter the output.",
             "options": [
                 OPT.format,
                 OPT.like,
