@@ -203,6 +203,55 @@ DISK_TYPES = [
     "disk.zpool",
 ]
 
+START_GROUPS = [
+    "ip",
+    "sync.netapp",
+    "sync.dcsckpt",
+    "sync.nexenta",
+    "sync.symclone",
+    "sync.symsnap",
+    "sync.symsrdfs",
+    "sync.hp3par",
+    "sync.ibmdssnap",
+    "disk.scsireserv",
+    "disk.drbd",
+    "disk.gandi",
+    "disk.gce",
+    "disk.lock",
+    "disk.loop",
+    "disk.md",
+    "disk.rados",
+    "disk.raw",
+    "disk.vg",
+    "disk.lv",
+    "disk.zpool",
+    "fs",
+    "share",
+    "container",
+    "app",
+]
+
+STOP_GROUPS = [
+    "app",
+    "container",
+    "share",
+    "fs",
+    "sync.btrfssnap",
+    "disk.zpool",
+    "disk.lv",
+    "disk.vg",
+    "disk.raw",
+    "disk.rados",
+    "disk.md",
+    "disk.loop",
+    "disk.lock",
+    "disk.gce",
+    "disk.gandi",
+    "disk.drbd",
+    "disk.scsireserv",
+    "ip",
+]
+
 STATUS_TYPES = [
     "app",
     "container.amazon",
@@ -272,7 +321,6 @@ ACTIONS_DO_MASTER_AND_SLAVE = [
     "start",
     "startstandby",
     "stop",
-    "stopstandby",
     "switch",
 ]
 
@@ -443,10 +491,6 @@ class Svc(Crypt):
             waitlock=DEFAULT_WAITLOCK,
             wait=False,
         )
-
-        self.scsirelease = self.prstop
-        self.scsireserv = self.prstart
-        self.scsicheckreserv = self.prstatus
 
     @lazy
     def log(self):
@@ -1104,28 +1148,19 @@ class Svc(Crypt):
             _types = [_type]
         else:
             _types = _type
-        rsets_by_type = {}
-        for rset in self.resourcesets:
-            if ':' in rset.type and rset.has_resource_with_types(_types, strict=strict):
-                # subset
-                rsets_by_type[rset.type] = rset
-                continue
-            rs_base_type = rset.type.split(".")[0]
-            if rset.type in _types:
-                # exact match
-                if rs_base_type not in rsets_by_type:
-                    rsets_by_type[rs_base_type] = type(rset)(type=rs_base_type)
-                    rsets_by_type[rs_base_type].svc = self
-                rsets_by_type[rs_base_type] += rset
-            elif rs_base_type in _types and not strict:
-                # group match
-                if rs_base_type not in rsets_by_type:
-                    rsets_by_type[rs_base_type] = type(rset)(type=rs_base_type)
-                    rsets_by_type[rs_base_type].svc = self
-                rsets_by_type[rs_base_type] += rset
-        rsets = list(rsets_by_type.values())
-        rsets.sort()
-        return rsets
+        rsets = {}
+        for _type in _types:
+            rsets[_type] = {}
+        for _type in _types:
+            for rset in self.resourcesets:
+                if rset.has_resource_with_types([_type], strict=strict):
+                    rsets[_type][rset.type] = rset
+        _rsets = []
+        for _type in _types:
+            for _t in sorted(rsets[_type].keys()):
+                if rsets[_type][_t] not in _rsets:
+                    _rsets.append(rsets[_type][_t])
+        return _rsets
 
     def has_resourceset(self, _type, strict=False):
         """
@@ -1228,28 +1263,20 @@ class Svc(Crypt):
 
         need_snap = self.need_snap_trigger(rsets, action)
 
-        # Multiple resourcesets of the same type need to be sorted
-        # so that the start and stop action happen in a predictible order.
-        # Sort alphanumerically on reseourceset type.
-        #
-        #  Example, on start:
-        #   app
-        #   app.1
-        #   app.2
-        #  on stop:
-        #   app.2
-        #   app.1
-        #   app
-        reverse = "stop" in action or action in ("rollback", "shutdown", "unprovision")
-        rsets = sorted(rsets, key=lambda x: x.type, reverse=reverse)
-
         # snapshots are created in pre_action and destroyed in post_action
         # place presnap and postsnap triggers around pre_action
         do_snap_trigger("pre")
         aborted = do_trigger("pre")
         do_snap_trigger("post")
 
+        last = None
         for rset in rsets:
+            # upto / downto break
+            current = rset.type.split(".")[0]
+            if last and current != last and (self.options.upto == last or self.options.downto == last):
+                self.log.info("reached %s barrier" % self.options.upto if self.options.upto else self.options.downto)
+                break
+            last = current
             if rset in aborted:
                 rset.log.debug("skip action: aborted by pre action")
                 continue
@@ -2506,15 +2533,6 @@ class Svc(Crypt):
             if __data["avail"] == "up":
                 return nodename
 
-    def shutdown(self):
-        self.options.force = True
-        self.slave_shutdown()
-        self.master_shutdownapp()
-        self.shutdowncontainer()
-        self.master_shutdownshare()
-        self.master_shutdownfs()
-        self.master_shutdownip()
-
     def command_is_scoped(self, options=None):
         """
         Return True if a resource filter has been setup through
@@ -2524,7 +2542,8 @@ class Svc(Crypt):
             options = self.options
         if (options.rid is not None and options.rid != "") or \
            (options.tags is not None and options.tags != "") or \
-           (options.subsets is not None and options.subsets != ""):
+           (options.subsets is not None and options.subsets != "") or \
+           options.upto or options.downto:
             return True
         return False
 
@@ -2547,104 +2566,68 @@ class Svc(Crypt):
     def slave_run(self):
         self.encap_cmd(['run'], verbose=True)
 
+    def startstandby(self):
+        self.master_startstandby()
+        self.slave_startstandby()
+
+    @_master_action
+    def master_startstandby(self):
+        self.sub_set_action(START_GROUPS, "startstandby", xtags=set(["zone", "docker"]))
+
+    @_slave_action
+    def slave_startstandby(self):
+        self.encap_cmd(sys.argv[1:], verbose=True)
+
     def start(self):
         self.abort_start()
-        self.master_startip()
-        self.master_startfs()
-        self.master_startshare()
-        self.master_startcontainer()
-        self.master_startapp()
+        self.master_start()
         self.slave_start()
+
+    @_master_action
+    def master_start(self):
+        self.sub_set_action(START_GROUPS, "start", xtags=set(["zone", "docker"]))
 
     @_slave_action
     def slave_start(self):
-        self.encap_cmd(['start'], verbose=True)
+        self.encap_cmd(sys.argv[1:], verbose=True)
 
     def rollback(self):
-        self.encap_cmd(['rollback'], verbose=True)
-        try:
-            self.rollbackapp()
-        except ex.excError:
-            pass
-        self.rollbackcontainer()
-        self.rollbackshare()
-        self.rollbackfs()
-        self.rollbackip()
+        self.sub_set_action(STOP_GROUPS, "rollback", xtags=set(["zone", "docker"]))
 
     def stop(self):
         self.slave_stop()
-        try:
-            self.master_stopapp()
-        except ex.excError:
-            pass
-        self.stopcontainer()
-        self.master_stopshare()
-        self.master_stopfs()
-        self.master_stopip()
+        self.master_stop()
 
-    @_slave_action
-    def slave_shutdown(self):
-        self.encap_cmd(['shutdown'], verbose=True, error="continue")
+    @_master_action
+    def master_stop(self):
+        self.sub_set_action(STOP_GROUPS, "stop", xtags=set(["zone", "docker"]))
 
     @_slave_action
     def slave_stop(self):
         self.encap_cmd(['stop'], verbose=True, error="continue")
 
-    def startdisk(self):
-        self.master_startdisk()
-        self.slave_startdisk()
+    def shutdown(self):
+        self.options.force = True
+        self.slave_shutdown()
+        self.master_shutdown()
+
+    @_master_action
+    def master_shutdown(self):
+        self.sub_set_action(STOP_GROUPS, "shutdown", xtags=set(["zone", "docker"]))
 
     @_slave_action
-    def slave_startdisk(self):
-        self.encap_cmd(['startdisk'], verbose=True)
+    def slave_shutdown(self):
+        self.encap_cmd(['shutdown'], verbose=True, error="continue")
 
-    @_master_action
-    def master_startstandbydisk(self):
-        self.sub_set_action("sync.netapp", "startstandby")
-        self.sub_set_action("sync.dcsckpt", "startstandby")
-        self.sub_set_action("sync.nexenta", "startstandby")
-        self.sub_set_action("sync.symclone", "startstandby")
-        self.sub_set_action("sync.symsnap", "startstandby")
-        self.sub_set_action("sync.ibmdssnap", "startstandby")
-        self.sub_set_action("disk.scsireserv", "startstandby", xtags=set(['zone']))
-        self.sub_set_action(DISK_TYPES, "startstandby", xtags=set(['zone']))
+    def unprovision(self):
+        self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone", "docker"]))
 
-    @_master_action
-    def master_startdisk(self):
-        self.sub_set_action("sync.netapp", "start")
-        self.sub_set_action("sync.dcsckpt", "start")
-        self.sub_set_action("sync.nexenta", "start")
-        self.sub_set_action("sync.symclone", "start")
-        self.sub_set_action("sync.symsnap", "start")
-        self.sub_set_action("sync.symsrdfs", "start")
-        self.sub_set_action("sync.hp3par", "start")
-        self.sub_set_action("sync.ibmdssnap", "start")
-        self.sub_set_action("disk.scsireserv", "start", xtags=set(['zone']))
-        self.sub_set_action(DISK_TYPES, "start", xtags=set(['zone']))
+    def provision(self):
+        self.sub_set_action(STOP_GROUPS, "provision", xtags=set(["zone", "docker"]))
 
-    def stopdisk(self):
-        self.slave_stopdisk()
-        self.master_stopdisk()
-
-    @_slave_action
-    def slave_stopdisk(self):
-        self.encap_cmd(['stopdisk'], verbose=True)
-
-    @_master_action
-    def master_stopdisk(self):
-        self.sub_set_action("sync.btrfssnap", "stop")
-        self.sub_set_action(DISK_TYPES, "stop", xtags=set(['zone']))
-        self.sub_set_action("disk.scsireserv", "stop", xtags=set(['zone']))
-
-    @_master_action
-    def master_shutdowndisk(self):
-        self.sub_set_action("sync.btrfssnap", "shutdown")
-        self.sub_set_action(DISK_TYPES, "shutdown", xtags=set(['zone']))
-        self.sub_set_action("disk.scsireserv", "shutdown", xtags=set(['zone']))
-
-    def rollbackdisk(self):
-        self.sub_set_action(DISK_TYPES, "rollback", xtags=set(['zone']))
-        self.sub_set_action("disk.scsireserv", "rollback", xtags=set(['zone']))
+        # return the service to standby
+        self.rollback()
+        self.push()
 
     def abort_start(self):
         """
@@ -2689,256 +2672,12 @@ class Svc(Crypt):
                 raise ex.excError("start aborted due to resource %s "
                                   "conflict" % ",".join(err))
 
-    def startip(self):
-        self.master_startip()
-        self.slave_startip()
-
-    @_slave_action
-    def slave_startip(self):
-        self.encap_cmd(['startip'], verbose=True)
-
-    @_master_action
-    def master_startstandbyip(self):
-        self.sub_set_action("ip", "startstandby", xtags=set(['zone', 'docker']))
-
-    @_master_action
-    def master_startip(self):
-        self.sub_set_action("ip", "start", xtags=set(['zone', 'docker']))
-
-    def stopip(self):
-        self.slave_stopip()
-        self.master_stopip()
-
-    @_slave_action
-    def slave_stopip(self):
-        self.encap_cmd(['stopip'], verbose=True)
-
-    @_master_action
-    def master_stopip(self):
-        self.sub_set_action("ip", "stop", xtags=set(['zone', 'docker']))
-
-    @_master_action
-    def master_shutdownip(self):
-        self.sub_set_action("ip", "shutdown", xtags=set(['zone', 'docker']))
-
-    def rollbackip(self):
-        self.sub_set_action("ip", "rollback", xtags=set(['zone', 'docker']))
-
-    def startshare(self):
-        self.master_startshare()
-        self.slave_startshare()
-
-    @_master_action
-    def master_startshare(self):
-        self.sub_set_action("share.nfs", "start")
-
-    @_master_action
-    def master_startstandbyshare(self):
-        self.sub_set_action("share", "startstandby")
-
-    @_slave_action
-    def slave_startshare(self):
-        self.encap_cmd(['startshare'], verbose=True)
-
-    def stopshare(self):
-        self.slave_stopshare()
-        self.master_stopshare()
-
-    @_master_action
-    def master_stopshare(self):
-        self.sub_set_action("share", "stop")
-
-    @_master_action
-    def master_shutdownshare(self):
-        self.sub_set_action("share", "shutdown")
-
-    @_slave_action
-    def slave_stopshare(self):
-        self.encap_cmd(['stopshare'], verbose=True)
-
-    def rollbackshare(self):
-        self.sub_set_action("share", "rollback")
-
-    def startfs(self):
-        self.master_startfs()
-        self.slave_startfs()
-
-    @_master_action
-    def master_startfs(self):
-        self.master_startdisk()
-        self.sub_set_action("fs", "start", xtags=set(['zone']))
-
-    @_master_action
-    def master_startstandbyfs(self):
-        self.master_startstandbydisk()
-        self.sub_set_action("fs", "startstandby", xtags=set(['zone']))
-
-    @_slave_action
-    def slave_startfs(self):
-        self.encap_cmd(['startfs'], verbose=True)
-
-    def stopfs(self):
-        self.slave_stopfs()
-        self.master_stopfs()
-
-    @_master_action
-    def master_stopfs(self):
-        self.sub_set_action("fs", "stop", xtags=set(['zone']))
-        self.master_stopdisk()
-
-    @_master_action
-    def master_shutdownfs(self):
-        self.sub_set_action("fs", "shutdown", xtags=set(['zone']))
-        self.master_shutdowndisk()
-
-    @_slave_action
-    def slave_stopfs(self):
-        self.encap_cmd(['stopfs'], verbose=True)
-
-    def rollbackfs(self):
-        self.sub_set_action("fs", "rollback", xtags=set(['zone']))
-        self.rollbackdisk()
-
-    def startcontainer(self):
-        self.abort_start()
-        self.master_startcontainer()
-
-    @_master_action
-    def master_startstandbycontainer(self):
-        self.sub_set_action("container", "startstandby")
-        self.refresh_ip_status()
-
-    @_master_action
-    def master_startcontainer(self):
-        self.sub_set_action("container", "start")
-        self.refresh_ip_status()
-
     def refresh_ip_status(self):
         """ Used after start/stop container because the ip resource
             status change after its own start/stop
         """
         for resource in self.get_resources("ip"):
             resource.status(refresh=True)
-
-    @_master_action
-    def shutdowncontainer(self):
-        self.sub_set_action("container", "shutdown")
-        self.refresh_ip_status()
-
-    @_master_action
-    def stopcontainer(self):
-        self.sub_set_action("container", "stop")
-        self.refresh_ip_status()
-
-    def rollbackcontainer(self):
-        self.sub_set_action("container", "rollback")
-        self.refresh_ip_status()
-
-    def unprovision(self):
-        self.sub_set_action("app", "unprovision")
-        self.sub_set_action("container", "unprovision")
-        self.sub_set_action("fs", "unprovision", xtags=set(['zone']))
-        self.sub_set_action("disk", "unprovision", xtags=set(['zone']))
-        self.sub_set_action("ip", "unprovision", xtags=set(['zone', 'docker']))
-
-    def provision(self):
-        self.sub_set_action("ip", "provision", xtags=set(['zone', 'docker']))
-        self.sub_set_action("disk", "provision", xtags=set(['zone']))
-        self.sub_set_action("fs", "provision", xtags=set(['zone']))
-        self.sub_set_action("container", "provision")
-        self.sub_set_action("app", "provision")
-        # return the service to stbdy
-        self.rollback()
-        self.push()
-
-    def startapp(self):
-        self.master_startapp()
-        self.slave_startapp()
-
-    @_slave_action
-    def slave_startapp(self):
-        self.encap_cmd(['startapp'], verbose=True)
-
-    @_master_action
-    def master_startstandbyapp(self):
-        self.sub_set_action("app", "startstandby")
-
-    @_master_action
-    def master_startapp(self):
-        self.sub_set_action("app", "start")
-
-    def stopapp(self):
-        self.slave_stopapp()
-        self.master_stopapp()
-
-    @_slave_action
-    def slave_stopapp(self):
-        self.encap_cmd(['stopapp'], verbose=True)
-
-    @_master_action
-    def master_stopapp(self):
-        self.sub_set_action("app", "stop")
-
-    @_master_action
-    def master_shutdownapp(self):
-        self.sub_set_action("app", "shutdown")
-
-    def rollbackapp(self):
-        self.sub_set_action("app", "rollback")
-
-    def prstop(self):
-        self.slave_prstop()
-        self.master_prstop()
-
-    @_slave_action
-    def slave_prstop(self):
-        self.encap_cmd(['prstop'], verbose=True)
-
-    @_master_action
-    def master_prstop(self):
-        self.sub_set_action("disk.scsireserv", "scsirelease")
-
-    def prstart(self):
-        self.master_prstart()
-        self.slave_prstart()
-
-    @_slave_action
-    def slave_prstart(self):
-        self.encap_cmd(['prstart'], verbose=True)
-
-    @_master_action
-    def master_prstart(self):
-        self.sub_set_action("disk.scsireserv", "scsireserv")
-
-    def prstatus(self):
-        self.sub_set_action("disk.scsireserv", "scsicheckreserv")
-
-    def startstandby(self):
-        self.master_startstandby()
-        self.slave_startstandby()
-
-    @_master_action
-    def master_startstandby(self):
-        self.master_startstandbyip()
-        self.master_startstandbyfs()
-        self.master_startstandbyshare()
-        self.master_startstandbycontainer()
-        self.master_startstandbyapp()
-
-    @_slave_action
-    def slave_startstandby(self):
-        cmd = ['startstandby']
-        for container in self.get_resources('container'):
-            if not container.is_up() and not container.standby:
-                # no need to try to startstandby the encap service on a
-                # container we not activated
-                continue
-            try:
-                self._encap_cmd(cmd, container, verbose=True)
-            except ex.excError:
-                self.log.error("container %s is not joinable to execute "
-                               "action '%s'", container.name, ' '.join(cmd))
-                raise
 
     def dns_update(self):
         """

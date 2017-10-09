@@ -236,3 +236,8 @@ class Container(Res.Resource):
     def get_container_info(self):
         print("TODO: get_container_info(self)")
         return {'vcpus': '0', 'vmem': '0'}
+
+    def post_action(self, action):
+        if action not in ("stop", "start"):
+            return
+        self.svC.refresh_ip_status()

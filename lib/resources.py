@@ -259,7 +259,7 @@ class Resource(object):
 
         self.log.debug('do action %s', action)
 
-        if "stop" in action and self.standby and not self.svc.options.force:
+        if action == "stop" and self.standby and not self.svc.options.force:
             standby_action = action+'standby'
             if hasattr(self, standby_action):
                 self.action_main(standby_action)
@@ -285,6 +285,10 @@ class Resource(object):
         Return True for action known to be causing a resource status change.
         """
         actions = (
+            "start",
+            "startstandby",
+            "stop",
+            "rollback",
             "unprovision",
             "provision",
             "install",
@@ -294,12 +298,6 @@ class Resource(object):
         )
         if self.svc.options.dry_run:
             return False
-        if "start" in action or "stop" in action:
-            return True
-        if "provision" in action:
-            return True
-        if "rollback" in action:
-            return True
         if "sync" in action and self.type.startswith("sync"):
             return True
         if action in actions:
@@ -311,14 +309,15 @@ class Resource(object):
         Return True if the action should be skipped.
         """
         actions = (
+            "start",
+            "startstandby",
+            "stop",
             "provision",
             "unprovision",
             "run",
         )
         if not self.skip:
             return False
-        if action.startswith("start") or action.startswith("stop"):
-            return True
         if action.startswith("sync"):
             return True
         if action.startswith("_pg_"):

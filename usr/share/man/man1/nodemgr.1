@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2017\-10\-08
+.TH NODEMGR 1 2017\-10\-09
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -14,432 +14,500 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
 \fBnodemgr collector ack action\fP
 .RS
 
-acknowledge an action error on the node. an acknowlegment can be completed by --author (defaults to root@nodename) and --comment
+Acknowledge an action error on the node. An acknowlegment can be completed by --author (defaults to root@nodename) and --comment
 
 .TP
 .B --author=AUTHOR
-the acker name to log when used with the 'collector ack action' action
+The acker name to log when acknowledging action log errors
 .TP
 .B --comment=COMMENT
-a comment to log when used with the 'collector ack action' action
+A comment to log when acknowldging action log error entries.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector alerts\fP
 .RS
 
-display node alerts
+Display the node alerts.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector asset\fP
 .RS
 
-display asset information known to the collector
+Display the asset information known to the collector.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector checks\fP
 .RS
 
-display node checks
+Display the node checks.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector cli\fP
 .RS
 
-open a Command Line Interface to the collector rest API. The CLI offers autocompletion of paths and arguments, piping JSON data from files. This command accepts the --user, --password, --api, --insecure and --config parameters. If executed as root, the collector is logged in with the node credentials.
+Open a Command Line Interface to the collector rest API. The CLI offers autocompletion of paths and arguments, piping JSON data from files. If executed as root and with no :opt:`--user`, the collector is logged in with the node credentials.
 
 .TP
 .B --user=USER
-authenticate with the collector using the specified user credentials instead of the node credentials. Required for the 'register' action when the collector is configured to refuse anonymous register.
+Authenticate with the collector using the specified user credentials instead of the node credentials. Required with :cmd:`nodenmgr register` when the collector is configured to refuse anonymous register.
 .TP
 .B --password=PASSWORD
-authenticate with the collector using the specified user credentials instead of the node credentials. Prompted if necessary but not specified.
+Authenticate with the collector using the specified user credentials instead of the node credentials. Prompted if necessary but not specified.
 .TP
 .B --api=API
-specify a collector api url different from the one set in node.conf. Honored by the 'collector cli' action.
+Specify a collector api url different from the one set in node.conf.
 .TP
 .B --insecure
-allow communications with a collector presenting unverified SSL certificates.
+Allow communications with a collector presenting an unverified SSL certificate.
 .TP
 .B --config=CONFIG
-specify a user-specific collector api connection configuration file. defaults to '~/.opensvc-cli'. Honored by the 'collector cli' action.
+Specify a user-specific collector api connection configuration file. Defaults to '~/.opensvc-cli'.
 .TP
 .B --refresh-api
-The OpenSVC collector api url
+Force a reload of the collector's api digest.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector create tag\fP
 .RS
 
-create a new tag with name specified by --tag
+Create a new tag with name specified by :opt:`--tag`.
 
 .TP
 .B --tag=TAG
-a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
+The tag name, as shown by :cmd:`nodemgr collector list tags`.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector disks\fP
 .RS
 
-display node disks
+Display the node disks list, complete with information issued by array parser.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector events\fP
 .RS
 
-display node events during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago.
+Display node events during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago.
 
 .TP
 .B --begin=BEGIN
-a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
 .B --end=END
-a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+A end date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector list actions\fP
 .RS
 
-list actions on the node, whatever the service, during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago
+List actions on the node, whatever the service, during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago.
 
 .TP
 .B --begin=BEGIN
-a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
 .B --end=END
-a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+A end date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector list filtersets\fP
 .RS
 
-show the list of filtersets available on the collector. if specified, --filterset <pattern> limits the resultset to filtersets matching <pattern>
+Show the list of filtersets available on the collector. If specified, :opt:`--filterset <pattern>` limits the resultset to filtersets matching the pattern.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector list nodes\fP
 .RS
 
-show the list of nodes matching the filterset pointed by --filterset
+Show the list of nodes matching the filterset pointed by :opt:`--filterset`.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector list services\fP
 .RS
 
-show the list of services matching the filterset pointed by --filterset
+Show the list of services matching the filterset pointed by :opt:`--filterset`.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector list tags\fP
 .RS
 
-list all available tags. use --like to filter the output.
+List all available tags. Use :opt:`--like` to filter the output.
 
 .TP
 .B --like=LIKE
-a sql like filtering expression. leading and trailing wildcards are automatically set.
+A data filtering expression. '%' is the multi-character wildcard. '_' is the single-character wildcard. Leading and trailing '%' are automatically set.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector log\fP
 .RS
 
-log a message in the collector's node log
+Log a message in the collector's node log.
 
 .TP
 .B --message=MESSAGE
-the message to send to the collector for logging
+The message to send to the collector for logging
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector networks\fP
 .RS
 
-display network information known to the collector for each node ip
+Display network information known to the collector for each node ip, complete with network information from the IPAM database.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector search\fP
 .RS
 
-report the collector objects matching --like [<type>:]<substring>, where <type> is the object type acronym as shown in the collector search widget.
+Report the collector objects matching :opt:`--like [<type>:]<substring>`, where ``<type>`` is the object type acronym as shown in the collector search widget.
 
 .TP
 .B --like=LIKE
-a sql like filtering expression. leading and trailing wildcards are automatically set.
+A data filtering expression. '%' is the multi-character wildcard. '_' is the single-character wildcard. Leading and trailing '%' are automatically set.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector show actions\fP
 .RS
 
-show actions detailed log. a single action is specified by --id. a range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago
+Show actions detailed log. A single action is specified by --id. a range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago.
 
 .TP
 .B --begin=BEGIN
-a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
 .B --id=ID
-specify an id to act on
+Specify an id to act on.
 .TP
 .B --end=END
-a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+A end date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector show tags\fP
@@ -449,66 +517,78 @@ list all node tags
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector tag\fP
 .RS
 
-set a node tag (pointed by --tag)
+Set a node tag (pointed by --tag).
 
 .TP
 .B --tag=TAG
-a tag specifier used by 'collector create tag', 'collector add tag', 'collector del tag'
+The tag name, as shown by :cmd:`nodemgr collector list tags`.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collector untag\fP
 .RS
 
-unset a node tag (pointed by --tag)
+Unset a node tag (pointed by --tag).
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 \fRCOMPLIANCE\fP
 
@@ -516,350 +596,408 @@ show this help message and exit
 \fBnodemgr compliance attach\fP
 .RS
 
-attach ruleset specified by --ruleset and/or moduleset specified by --moduleset for this node
+Attach rulesets specified by :opt:`--ruleset` and modulesets specified by :opt:`--moduleset` to this node. Attached modulesets are scheduled for check or autofix.
 
 .TP
 .B --moduleset=MODULESET
-compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+Specify the modulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
 .TP
 .B --ruleset=RULESET
-compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
+Specify the rulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr compliance auto\fP
 .RS
 
-run compliance checks or fix, according to the autofix property of each module.
+Run compliance checks or fixes, depending on the autofix module property values.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr compliance check\fP
 .RS
 
-run compliance checks.
+Run compliance checks.
 
 .TP
 .B --attach
-attach the modulesets specified during a compliance check/fix/fixable command
+Attach the modulesets specified in a compliance run.
 .TP
 .B --force
-force action
+Force action, ignore sanity checks.
 .TP
 .B --module=MODULE
-compliance, set module list
+Specify the modules to limit the run to. The modules must be in already attached modulesets.
 .TP
 .B --moduleset=MODULESET
-compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+Specify the modulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
 .TP
 .B --ruleset-date=RULESET_DATE
-compliance, use rulesets valid on specified date
+Use an historical ruleset, specified by its date.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr compliance detach\fP
 .RS
 
-detach ruleset specified by --ruleset and/or moduleset specified by --moduleset for this node
+Detach rulesets specified by :opt:`--ruleset` and modulesets specified by :opt:`--moduleset` from this node. Detached modulesets are no longer scheduled for check and autofix.
 
 .TP
 .B --moduleset=MODULESET
-compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+Specify the modulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
 .TP
 .B --ruleset=RULESET
-compliance, set ruleset list. The 'all' value can be used in conjonction with detach.
+Specify the rulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr compliance env\fP
 .RS
 
-show the compliance modules environment variables.
+Show the environment variables set during a compliance module run.
 
 .TP
 .B --module=MODULE
-compliance, set module list
+Specify the modules to limit the run to. The modules must be in already attached modulesets.
 .TP
 .B --moduleset=MODULESET
-compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+Specify the modulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr compliance fix\fP
 .RS
 
-run compliance fixes.
+Run compliance fixes.
 
 .TP
 .B --attach
-attach the modulesets specified during a compliance check/fix/fixable command
+Attach the modulesets specified in a compliance run.
 .TP
 .B --force
-force action
+Force action, ignore sanity checks.
 .TP
 .B --module=MODULE
-compliance, set module list
+Specify the modules to limit the run to. The modules must be in already attached modulesets.
 .TP
 .B --moduleset=MODULESET
-compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+Specify the modulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
 .TP
 .B --ruleset-date=RULESET_DATE
-compliance, use rulesets valid on specified date
+Use an historical ruleset, specified by its date.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr compliance fixable\fP
 .RS
 
-verify compliance fixes prerequisites.
+Verify compliance fixes prerequisites.
 
 .TP
 .B --attach
-attach the modulesets specified during a compliance check/fix/fixable command
+Attach the modulesets specified in a compliance run.
 .TP
 .B --force
-force action
+Force action, ignore sanity checks.
 .TP
 .B --module=MODULE
-compliance, set module list
+Specify the modules to limit the run to. The modules must be in already attached modulesets.
 .TP
 .B --moduleset=MODULESET
-compliance, set moduleset list. The 'all' value can be used in conjonction with detach.
+Specify the modulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
 .TP
 .B --ruleset-date=RULESET_DATE
-compliance, use rulesets valid on specified date
+Use an historical ruleset, specified by its date.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr compliance list module\fP
 .RS
 
-list compliance modules available on this node
+List the compliance modules installed on this node.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr compliance list moduleset\fP
 .RS
 
-list available compliance modulesets. --moduleset f% limit the scope to modulesets matching the f% pattern.
+List available compliance modulesets. Setting :opt:`--moduleset f%` limits the resultset to modulesets matching the ``f%`` pattern.
 
 .TP
+.B --moduleset=MODULESET
+Specify the modulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
+.TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr compliance list ruleset\fP
 .RS
 
-list available compliance rulesets. --ruleset f% limit the scope to rulesets matching the f% pattern.
+List available compliance rulesets. Setting :opt:`--ruleset f%` limits the scope to rulesets matching the ``f%`` pattern.
 
 .TP
+.B --ruleset=RULESET
+Specify the rulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
+.TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr compliance show moduleset\fP
 .RS
 
-show compliance rules applying to this node
+Show compliance rules applying to this node.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr compliance show ruleset\fP
 .RS
 
-show compliance rules applying to this node
+Show compliance rules applying to this node.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr compliance show status\fP
 .RS
 
-show compliance modules status
+Show compliance modules status.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 \fRMISC\fP
 
@@ -867,23 +1005,27 @@ show this help message and exit
 \fBnodemgr prkey\fP
 .RS
 
-show persistent reservation key of this node
+Show the scsi3 persistent reservation key of this node.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 \fRNODE ACTIONS\fP
 
@@ -891,73 +1033,85 @@ show this help message and exit
 \fBnodemgr array\fP
 .RS
 
-pass a command to a supported array whose access method and credentials are defined in auth.conf
+Pass a command to a supported array whose access method and credentials are defined in auth.conf.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr collect stats\fP
 .RS
 
-write in local files metrics not found in the standard metrics collector. these files will be fed to the collector by the 'pushstat' action.
+Write in local files metrics not found in the standard metrics collector. These files will be fed to the collector by the :cmd:`pushstat` action.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr dequeue actions\fP
 .RS
 
-dequeue and execute actions from the collector's action queue for this node and its services.
+Dequeue and execute actions from the collector's action queue for this node and its services.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr freeze\fP
 .RS
 
-freeze services node-wide, preventing the daemon to orchestrate them. this freeze method preserves the frozen state at service-level (with svcmgr).
+Freeze services node-wide, preventing the daemon to orchestrate them. This freeze method preserves the frozen state at service-level (with svcmgr).
 
 .TP
 .B --local
@@ -970,341 +1124,397 @@ Number of seconds to wait for an async action to finish. Default is 300 seconds.
 Wait for asynchronous action termination
 .TP
 .B --node=NODE
-the node to send a request to. if not specified the local node is targeted.
+The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr frozen\fP
 .RS
 
-return 0 if all the services are frozen node-wide, preventing the daemon to orchestrate them. return 1 otherwise
+Return 0 if the services are frozen node-wide, preventing the daemon to orchestrate them. Return 1 otherwise
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr logs\fP
 .RS
 
-fancy display of the node logs
+Display of the nodemgr and daemon logs.
 
 .TP
 .B --no-pager
-do not display the command result in a pager.
+Do not display the command result in a pager.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr print devs\fP
 .RS
 
-print the node devices tree.
+Print the node devices tree.
 
 .TP
 .B --dev=DEVICES
-a device path to limit or apply the action to
+A device path to limit or apply the action to.
 .TP
 .B --reverse
-reverse the tree
+Print the tree leaf-to-root.
 .TP
 .B --verbose
-add more information to some print commands: +next in 'print schedule'
+Include more information to some print commands output. For example, add the 'next run' column in the output of :cmd:`nodemgr print schedule`.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr print schedule\fP
 .RS
 
-print the node tasks schedule
+Print the node tasks schedule.
 
 .TP
 .B --verbose
-add more information to some print commands: +next in 'print schedule'
+Include more information to some print commands output. For example, add the 'next run' column in the output of :cmd:`nodemgr print schedule`.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr reboot\fP
 .RS
 
-reboot the node
+Reboot the node.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr rotate root pw\fP
 .RS
 
-set a new root password and store it in the collector
+Set a new root password and store it in the collector.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr scanscsi\fP
 .RS
 
-scan the scsi hosts in search of new disks
+Scan the scsi hosts in search of new disks.
 
 .TP
 .B --hba=HBA
-specify a hba to scan for new block devices. Example: 5001438002432430 or iqn.1993-08.org.debian:01:659b4bbd68bd
+Specify a hba to scan for new block devices. Example: 5001438002432430 or iqn.1993-08.org.debian:01:659b4bbd68bd.
 .TP
 .B --target=TARGET
-specify a target to scan for new block devices. Example: 5000097358185088 or iqn.clementine.tgt1
+Specify a target to scan for new block devices. Example: 5000097358185088 or iqn.clementine.tgt1.
 .TP
 .B --lun=LUN
-specify a logical unit number to scan for new block devices. Example: 1
+Specify a logical unit number to scan for new block devices. Example: 1.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr schedule reboot\fP
 .RS
 
-mark the node for reboot at the next allowed period. the allowed period is defined by a "reboot" section in node.conf.
+Mark the node for reboot at the next allowed period. The allowed period is defined by a "reboot" section in node.conf.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr schedule reboot status\fP
 .RS
 
-tell if the node is scheduled for reboot
+Tell if the node is scheduled for reboot.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr scheduler\fP
 .RS
 
-run the node task scheduler
+Run the node task scheduler.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr schedulers\fP
 .RS
 
-execute a run of the node and services schedulers. this action is installed in the system scheduler
+Execute a run of the node and services schedulers. This action is installed in the system scheduler.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr shutdown\fP
 .RS
 
-shutdown the node to powered off state
+Shutdown the node to powered off state.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr stonith\fP
 .RS
 
-command executed by the daemon monitor to fence peer node upon failover when the node previously running the service is stale.
+Command executed by the daemon monitor to fence peer node upon failover when the node previously running the service is stale.
 
 .TP
 .B --node=NODE
-the node to send a request to. if not specified the local node is targeted.
+The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr thaw\fP
 .RS
 
-thaw services node-wide, allowing the daemon to orchestrate them. this thaw method does not actually thaw services frozen at service-level (with svcmgr).
+Thaw services node-wide, allowing the daemon to orchestrate them. This thaw method does not actually thaw services frozen at service-level (with svcmgr).
 
 .TP
 .B --local
@@ -1317,116 +1527,136 @@ Number of seconds to wait for an async action to finish. Default is 300 seconds.
 Wait for asynchronous action termination
 .TP
 .B --node=NODE
-the node to send a request to. if not specified the local node is targeted.
+The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr unschedule reboot\fP
 .RS
 
-unmark the node for reboot at the next allowed period.
+Unmark the node for reboot at the next allowed period.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr updatecomp\fP
 .RS
 
-upgrade the opensvc compliance modules. the modules must be available as a tarball behind the node.repo/compliance url.
+Upgrade the opensvc compliance modules. The modules must be available as a tarball behind the :kw:`node.repocomp` url.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr updatepkg\fP
 .RS
 
-upgrade the opensvc agent version. the packages must be available behind the node.repo/packages url.
+Upgrade the opensvc agent version. the packages must be available behind the node.repo/packages url.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr wol\fP
 .RS
 
-forge and send udp wake on lan packet to mac address specified by --mac and --broadcast arguments
+Forge and send a udp Wake-On-LAN packet to the mac addresses specified by :opt:`--mac` and :opt:`--broadcast` arguments.
 
 .TP
 .B --broadcast=BROADCAST
-list of broadcast addresses, comma separated, used by the 'wol' action
+A list of broadcast addresses, comma separated, the send the Wake-On-LAN packets to.
 .TP
 .B --mac=MAC
-list of mac addresses, comma separated, used by the 'wol' action
+A list of mac addresses, comma separated, used as target of the Wake-On-LAN packets.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 \fRNODE CONFIGURATION\fP
 
@@ -1434,207 +1664,254 @@ show this help message and exit
 \fBnodemgr edit authconfig\fP
 .RS
 
-open the auth.conf configuration file with the preferred editor
+Edit the node authentication configuration.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr edit config\fP
 .RS
 
-open the node.conf configuration file with the preferred editor
+Edit the node configuration.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr get\fP
 .RS
 
-get the value of the node configuration parameter pointed by --param
+Get the raw or evaluated value of a node configuration keyword.
 
 .TP
 .B --param=PARAM
-point a node configuration parameter for the 'get' and 'set' actions
+An expression like '[<section>.]<keyword>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr print authconfig\fP
 .RS
 
-open the node.conf configuration file with the preferred editor
+Display the node current authentication configuration.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr print config\fP
 .RS
 
-open the node.conf configuration file with the preferred editor
+Display the node current configuration.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr register\fP
 .RS
 
-obtain a registration number from the collector, used to authenticate the node
+Obtain a registration id from the collector. This is is then used to authenticate the node in collector communications.
 
 .TP
 .B --app=APP
-Optional with the register command, register the node in the specified app. If not specified, the node is registered in the first registering user's app found.
+Optional with the register command. Register the node in the specified app. If not specified, the node is registered in the first registering user's app found.
 .TP
 .B --password=PASSWORD
-authenticate with the collector using the specified user credentials instead of the node credentials. Prompted if necessary but not specified.
+Authenticate with the collector using the specified user credentials instead of the node credentials. Prompted if necessary but not specified.
 .TP
 .B --user=USER
-authenticate with the collector using the specified user credentials instead of the node credentials. Required for the 'register' action when the collector is configured to refuse anonymous register.
+Authenticate with the collector using the specified user credentials instead of the node credentials. Required with :cmd:`nodenmgr register` when the collector is configured to refuse anonymous register.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr set\fP
 .RS
 
-set a node configuration parameter (pointed by --param) value (pointed by --value)
+Set a service configuration parameter.
 
 .TP
 .B --param=PARAM
-point a node configuration parameter for the 'get' and 'set' actions
+An expression like '[<section>.]<keyword>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
 .TP
 .B --value=VALUE
-set a node configuration parameter value for the 'set --param' action
+The value to set for the keyword pointed by :opt:`--param`
 .TP
 .B --add=ADD
-a list member to add from the value pointed by --param in a set action. If --index is set, add the new element at that position in the list
+A list member to add to the value pointed by :opt:'--param'. If :opt:'--index' is set, insert the new element at the specified position in the list.
 .TP
 .B --remove=REMOVE
-a list member to drop from the value pointed by --param in a set action
+A list member to drop from the value pointed by :kw:`--param`.
 .TP
 .B --index=INDEX
-the position in the list pointed by --param where to add the new element on a set action
+The position in the list pointed by --param where to add the new list element on a set action
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr unset\fP
 .RS
 
-unset a node configuration parameter (pointed by --param)
+Unset a node configuration parameter.
 
 .TP
 .B --param=PARAM
-point a node configuration parameter for the 'get' and 'set' actions
+An expression like '[<section>.]<keyword>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 \fRNODE DAEMON MANAGEMENT\fP
 
@@ -1642,838 +1919,974 @@ show this help message and exit
 \fBnodemgr daemon blacklist clear\fP
 .RS
 
-empty the content of the daemon senders blacklist.
+Empty the content of the daemon senders blacklist.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr daemon blacklist status\fP
 .RS
 
-show the content of the daemon senders blacklist.
+Show the content of the daemon senders blacklist.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr daemon join\fP
 .RS
 
-join the node, specified by --node <node>, cluster.
+Join the cluster of the node specified by :opt:`--node <node>`, authenticating with :opt:`--secret <secret>`.
 
 .TP
 .B --node=NODE
-the node to send a request to. if not specified the local node is targeted.
+The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --secret=SECRET
-the cluster secret used as the AES key in the cluster communications.
+The cluster secret used as the AES key in the cluster communications.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr daemon leave\fP
 .RS
 
-inform peer nodes we leave the cluster. make sure the left nodes are no longer in the services nodes list before leaving, so the other nodes won't takeover
+Inform peer nodes we leave the cluster. Make sure the left nodes are no longer in the services nodes list before leaving, so the other nodes won't takeover.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr daemon restart\fP
 .RS
 
-restart the daemon.
+Restart the daemon.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr daemon running\fP
 .RS
 
-return with code 0 if the daemon is running, else return with code 1
+Return with code 0 if the daemon is running, else return with code 1
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr daemon shutdown\fP
 .RS
 
-stop all local services instances then stop the daemon.
+Stop all local services instances then stop the daemon.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr daemon start\fP
 .RS
 
-start the daemon or a daemon thread pointed by --thread-id.
+Start the daemon or a daemon thread pointed by :opt:`--thread-id`.
 
 .TP
 .B --node=NODE
-the node to send a request to. if not specified the local node is targeted.
+The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --thread-id=THR_ID
-specify a daemon thread, as listed in the daemon status output
+Specify a daemon thread, as listed in the :cmd:`nodemgr daemon status` output.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr daemon status\fP
 .RS
 
-display the daemon status.
+Display the daemon status.
 
 .TP
 .B --node=NODE
-the node to send a request to. if not specified the local node is targeted.
+The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr daemon stop\fP
 .RS
 
-stop the daemon or a daemon thread pointed by --thread-id.
+Stop the daemon or a daemon thread pointed by :opt:`--thread-id`.
 
 .TP
 .B --node=NODE
-the node to send a request to. if not specified the local node is targeted.
+The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --thread-id=THR_ID
-specify a daemon thread, as listed in the daemon status output
+Specify a daemon thread, as listed in the :cmd:`nodemgr daemon status` output.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 \fRPUSH DATA TO THE COLLECTOR\fP
+
+.RE
+\fBnodemgr Pushbrocade\fP
+.RS
+
+Push Brocade switch configuration to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pushcentera\fP
+.RS
+
+Push EMC Centera configurations to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pushdcs\fP
+.RS
+
+Push Datacore configurations to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pusheva\fP
+.RS
+
+Push HP EVA configurations to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pushfreenas\fP
+.RS
+
+Push FreeNAS configurations to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pushgcedisks\fP
+.RS
+
+Push Google Compute Engine disks configurations to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pushhds\fP
+.RS
+
+Push HDS configurations to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pushhp3par\fP
+.RS
+
+Push HP 3par configurations to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pushibmds\fP
+.RS
+
+Push IBM DS configurations to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pushibmsvc\fP
+.RS
+
+Push IBM SVC configurations to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pushnecism\fP
+.RS
+
+Push NEC ISM configurations to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pushnetapp\fP
+.RS
+
+Push Netapp configurations to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pushnsr\fP
+.RS
+
+Push EMC Networker index to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pushvioserver\fP
+.RS
+
+Push IBM VIO server configurations to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr Pushxtremio\fP
+.RS
+
+Push XtremIO configurations to the collector.
+
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --cron
+Set by the robots to flag log entries as such in the collector.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
 
 .RE
 \fBnodemgr checks\fP
 .RS
 
-run node sanity checks, push results to collector
+Run node health checks. Push results to collector.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr pushasset\fP
 .RS
 
-push asset information to collector
+Push asset information to collector.
 
 .TP
 .B --sync
-use synchronous collector rpc. to use when chaining a compliance run, to make sure the node ruleset is up-to-date.
+Use synchronous collector communication. For example, :cmd:`pushasset --sync` before a compliance run makes sure the pushed data has hit the collector database before the rulesets are contextualized.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushbrocade\fP
-.RS
-
-push Brocade switch configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushcentera\fP
-.RS
-
-push EMC Centera configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushdcs\fP
-.RS
-
-push Datacore configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr pushdisks\fP
 .RS
 
-push disks usage information to collector
+Push disks usage information to the collector.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr pushemcvnx\fP
 .RS
 
-push EMC CX/VNX configuration to collector
+Push EMC CX/VNX configurations to the collector.
 
 .TP
 .B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pusheva\fP
-.RS
-
-push HP EVA configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushfreenas\fP
-.RS
-
-push FreeNAS configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushgcedisks\fP
-.RS
-
-push Google Compute Engine disks configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushhds\fP
-.RS
-
-push HDS configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushhp3par\fP
-.RS
-
-push HP 3par configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushibmds\fP
-.RS
-
-push IBM DS configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushibmsvc\fP
-.RS
-
-push IBM SVC configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushnecism\fP
-.RS
-
-push NEC ISM configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushnetapp\fP
-.RS
-
-push Netapp configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushnsr\fP
-.RS
-
-push EMC Networker index to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr pushpatch\fP
 .RS
 
-push patch/version list to collector
+Push patch/version list to the collector.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr pushpkg\fP
 .RS
 
-push package/version list to collector
+Push package/version list to the collector.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr pushstats\fP
 .RS
 
-push performance metrics to collector. By default pushed stats interval begins yesterday at the beginning of the allowed interval and ends now. This interval can be changed using --begin/--end parameters. The location where stats files are looked up can be changed using --stats-dir.
+Push performance metrics to collector. By default pushed stats interval begins yesterday at the beginning of the allowed interval and ends now. This interval can be changed using --begin/--end parameters. The location where stats files are looked up can be changed using --stats-dir.
 
 .TP
 .B --begin=BEGIN
-a begin date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
 .B --end=END
-a end date expressed as 'YYYY-MM-DD hh:mm'. used with the 'collector ack action' and pushstats action
+A end date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
 .B --stats-dir=STATS_DIR
-points the directory where the metrics files are stored for pushstats.
+Points the directory where the metrics files are stored for pushstats.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr pushsym\fP
 .RS
 
-push symmetrix configuration to collector
+Push symmetrix configurations to the collector.
 
 .TP
 .B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
 .TP
 .B --symcli-db-file=SYMCLI_DB_FILE
-[pushsym option] use symcli offline mode with the specified file. aclx files are expected to be found in the same directory and named either <symid>.aclx or <same_prefix_as_bin_file>.aclx
+Use symcli offline mode with the specified file. The aclx files are expected to be found in the same directory and named either <symid>.aclx or <same_prefix_as_bin_file>.aclx.
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushvioserver\fP
-.RS
-
-push IBM VIO server configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
-
-.RE
-\fBnodemgr pushxtremio\fP
-.RS
-
-push XtremIO configuration to collector
-
-.TP
-.B --object=OBJECTS
-an object to limit a push* action to. multiple --object <object id> parameters can be set on a single command line
-.TP
-.B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
-.TP
-.B --cron
-cron mode
-.TP
-.B --debug
-debug mode
-.TP
-.B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
-.TP
-.B -h, --help
-show this help message and exit
+Show this help message and exit
 
 .RE
 \fBnodemgr sysreport\fP
 .RS
 
-push system report to the collector for archiving and diff analysis
+Push system report to the collector for archiving and diff analysis.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 
 \fRSERVICE ACTIONS\fP
 
@@ -2481,23 +2894,27 @@ show this help message and exit
 \fBnodemgr discover\fP
 .RS
 
-discover vservices accessible from this host, cloud nodes for example
+Discover vservices accessible from this host. Typically executed on cloud nodes.
 
 .TP
 .B --color=COLOR
-colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
 .TP
 .B --cron
-cron mode
+Set by the robots to flag log entries as such in the collector.
 .TP
 .B --debug
-debug mode
+Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-specify a data formatter for output of the print* and collector* commands. possible values are json, csv or table.
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -h, --help
-show this help message and exit
+Show this help message and exit
 .SH OPTIONS
 .SH SEE ALSO
 .BR nodemgr (1)

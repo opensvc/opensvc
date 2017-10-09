@@ -205,9 +205,12 @@ class OptParser(object):
             action = "collector_cli"
 
         if action in self.actions_translations:
-            action = self.actions_translations[action]
+            data = self.actions_translations[action]
+            if isinstance(data, dict):
+                action = data["action"]
+                options = data["mangle"](options)
 
-        return action
+        return action, options
 
     def get_parser(self):
         """
@@ -254,7 +257,7 @@ class OptParser(object):
         # parse a first time with all possible options to never fail on
         # undefined option.
         options, args = self.parser.parse_args(self.args)
-        action = self.get_action_from_args(args, options)
+        action, options = self.get_action_from_args(args, options)
 
         # now we know the action. and we know if --help was set.
         # we can prepare a contextualized usage message.

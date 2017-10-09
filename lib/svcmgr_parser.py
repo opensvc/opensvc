@@ -80,6 +80,10 @@ OPT = Storage({
         "--discard", default=False,
         action="store_true", dest="discard",
         help="Discard the stashed, invalid, configuration file."),
+    "downto": Option(
+        "--downto", default=None,
+        action="store", dest="upto",
+        help="Stop the service down to the specified rid or driver group."),
     "dry_run": Option(
         "--dry-run", default=False,
         action="store_true", dest="dry_run",
@@ -336,6 +340,10 @@ OPT = Storage({
         action="store_true", dest="unprovision",
         help="Unprovision the service resources before config files file deletion. "
              "Defaults to False."),
+    "upto": Option(
+        "--upto", default=None,
+        action="store", dest="upto",
+        help="Start the service up to the specified rid or driver group."),
     "value": Option(
         "--value", default=None,
         action="store", dest="value",
@@ -427,61 +435,20 @@ ACTIONS = {
                    "start. A failover service is considered started when one "
                    "instance is started. A flex service is considered started "
                    "when ``<flex_min_nodes>`` instances are started.",
-            "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS,
+            "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
+                OPT.upto,
+            ],
         },
         "startstandby": {
             "msg": "Start local service instance resources flagged standby.",
             "options": ACTION_OPTS + START_ACTION_OPTS,
         },
-        "startip": {
-            "msg": "Start local service instance ip resources.",
-            "options": ACTION_OPTS + START_ACTION_OPTS,
-        },
-        "startshare": {
-            "msg": "Start local service instance share resources.",
-            "options": ACTION_OPTS + START_ACTION_OPTS,
-        },
-        "stopshare": {
-            "msg": "Stop local service instance share resources. The standby resources "
-                   "are not stopped, unless :opt:`--force` is specified.",
-            "options": ACTION_OPTS,
-        },
-        "startfs": {
-            "msg": "Start local service instance disk and fs resources.",
-            "options": ACTION_OPTS + START_ACTION_OPTS,
-        },
-        "startapp": {
-            "msg": "Start local service instance app resources.",
-            "options": ACTION_OPTS + START_ACTION_OPTS,
-        },
         "stop": {
             "msg": "Stop all service instances. The standby resources "
                    "are not stopped, unless :opt:`--force` is specified.",
-            "options": ACTION_OPTS + ASYNC_ACTION_OPTS,
-        },
-        "stopip": {
-            "msg": "Stop local service instance ip resources. The standby resources "
-                   "are not stopped, unless :opt:`--force` is specified.",
-            "options": ACTION_OPTS,
-        },
-        "stopfs": {
-            "msg": "Stop local service instance disk and fs resources. The standby resources "
-                   "are not stopped, unless :opt:`--force` is specified.",
-            "options": ACTION_OPTS,
-        },
-        "stopapp": {
-            "msg": "Stop local service instance app resources. The standby resources "
-                   "are not stopped, unless :opt:`--force` is specified.",
-            "options": ACTION_OPTS,
-        },
-        "startcontainer": {
-            "msg": "Start local service instance app resources.",
-            "options": ACTION_OPTS + START_ACTION_OPTS,
-        },
-        "stopcontainer": {
-            "msg": "Stop local service instance container resources. The standby resources "
-                   "are not stopped, unless :opt:`--force` is specified.",
-            "options": ACTION_OPTS,
+            "options": ACTION_OPTS + ASYNC_ACTION_OPTS + [
+                OPT.downto,
+            ],
         },
         "provision": {
             "msg": "Provision the service. Leave the service in frozen, stdby up state.",
@@ -568,29 +535,12 @@ ACTIONS = {
                    "--subset, disregarding their schedule.",
             "options": ACTION_OPTS,
         },
-        "startdisk": {
-            "msg": "Start local service instance disk resources.",
-            "options": ACTION_OPTS + START_ACTION_OPTS,
-        },
-        "stopdisk": {
-            "msg": "Stop local service instance disk resources. The standby resources "
-                   "are not stopped, unless :opt:`--force` is specified.",
-            "options": ACTION_OPTS,
-        },
         "presync": {
             "msg": "Execute the presync method of the resource driver for each local service instance resource. These methods usually update var files needing replication on other nodes.",
             "options": ACTION_OPTS,
         },
         "postsync": {
             "msg": "Execute the postsync method of the resource driver for each local service instance resource. These methods usually take appropriate action based on var files received from the primary node.",
-            "options": ACTION_OPTS,
-        },
-        "prstart": {
-            "msg": "Acquire scsi3 persistent reservation on the disks help by the local service instance.",
-            "options": ACTION_OPTS + START_ACTION_OPTS,
-        },
-        "prstop": {
-            "msg": "Release scsi3 persistent reservation on the disks help by the local service instance.",
             "options": ACTION_OPTS,
         },
         "prstatus": {
@@ -1113,6 +1063,18 @@ DEPRECATED_ACTIONS = [
     "json_env",
     "json_schedule",
     "json_status",
+    "startapp",
+    "startcontainer",
+    "startdisk",
+    "startfs",
+    "startip",
+    "startshare",
+    "stopapp",
+    "stopcontainer",
+    "stopdisk",
+    "stopfs",
+    "stopip",
+    "stopshare",
     "syncall",
     "syncbreak",
     "syncestablish",
@@ -1132,6 +1094,18 @@ ACTIONS_TRANSLATIONS = {
     "push_env_mtime": "push_config_mtime",
     "push_env": "push_config",
     "json_env": "json_config",
+    "startapp": {"action": "start", "mangle": lambda x: add_rid(x, ["app"])},
+    "startip": {"action": "start", "mangle": lambda x: add_rid(x, ["ip"])},
+    "startfs": {"action": "start", "mangle": lambda x: add_rid(x, ["disk", "fs"])},
+    "startdisk": {"action": "start", "mangle": lambda x: add_rid(x, ["disk"])},
+    "startshare": {"action": "start", "mangle": lambda x: add_rid(x, ["share"])},
+    "startcontainer": {"action": "start", "mangle": lambda x: add_rid(x, ["container"])},
+    "stopapp": {"action": "stop", "mangle": lambda x: add_rid(x, ["app"])},
+    "stopip": {"action": "stop", "mangle": lambda x: add_rid(x, ["ip"])},
+    "stopfs": {"action": "stop", "mangle": lambda x: add_rid(x, ["disk", "fs"])},
+    "stopdisk": {"action": "stop", "mangle": lambda x: add_rid(x, ["disk"])},
+    "stopshare": {"action": "stop", "mangle": lambda x: add_rid(x, ["share"])},
+    "stopcontainer": {"action": "stop", "mangle": lambda x: add_rid(x, ["container"])},
     "syncall": "sync_all",
     "syncbreak": "sync_break",
     "syncdrp": "sync_drp",
@@ -1147,6 +1121,19 @@ ACTIONS_TRANSLATIONS = {
     "syncupdate": "sync_update",
     "syncverify": "sync_verify",
 }
+
+def add_rid(options, new_rids):
+    if options.parm_rid is None:
+        options.parm_rid = ",".join(new_rids)
+        return options
+    # discard incompatible rids
+    rids = [rid for rid in options.parm_rid.split(",") if \
+            rid.split('#')[0] in new_rids]
+    if len(rids) == 0:
+        options.parm_rid = "impossible"
+        return options
+    options.parm_rid = ",".join(rids)
+    return options
 
 class SvcmgrOptParser(OptParser):
     """

@@ -127,8 +127,7 @@ def do_svcs_action(node, options, action, argv):
     ret = 0
 
     if not options.daemon and ( \
-        action.startswith("stop") or \
-        action in ("shutdown", "unprovision", "switch") or \
+        action in ("stop", "shutdown", "unprovision", "switch") or \
         (action == "delete" and options.unprovision == True)
        ):
         ret = do_svcs_action_detached(argv)
