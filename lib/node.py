@@ -3281,7 +3281,7 @@ class Node(Crypt):
 
     def daemon_status(self):
         data = self._daemon_status()
-        if data is None:
+        if data is None or data.get("status", 0) != 0:
             return
 
         from rcColor import format_json, colorize, color, unicons
