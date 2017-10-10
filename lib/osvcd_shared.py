@@ -647,7 +647,7 @@ class OsvcThread(threading.Thread):
         """
         def fn(s):
             h = hashlib.md5()
-            h.update(s)
+            h.update(s.encode())
             return h.digest()
         return [nodename for nodename in sorted(candidates, key=lambda x: fn(svc.svcname+x))]
 
