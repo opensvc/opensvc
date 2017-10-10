@@ -2623,7 +2623,7 @@ class Svc(Crypt):
         self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone", "docker"]))
 
     def provision(self):
-        self.sub_set_action(STOP_GROUPS, "provision", xtags=set(["zone", "docker"]))
+        self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone", "docker"]))
 
         # return the service to standby
         self.rollback()
