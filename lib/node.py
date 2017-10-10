@@ -3627,7 +3627,12 @@ class Node(Crypt):
             # * via "nodemgr daemon restart"
             # detect these case and don't stop the services
             self.log.info("requalify shutdown as stop")
-            return self._daemon_stop()
+            data = self._daemon_stop()
+            if data is None:
+                return
+            if data.get("status") == 0:
+                return
+            return data
         self.log.info("really shutdown")
         return self._daemon_shutdown()
 
@@ -3661,7 +3666,20 @@ class Node(Crypt):
         return data
 
     def daemon_stop(self):
-        data = self._daemon_stop()
+        data = None
+        if self.daemon_handled_by_systemd():
+            # 'systemctl restart <osvcunit>' when the daemon has been started
+            # manually causes a direct 'nodemgr daemon start', which fails,
+            # and systemd fallbacks to 'nodemgr daemon stop' and leaves the
+            # daemon stopped.
+            # Detect this situation and stop the daemon ourselves.
+            if self.daemon_active_systemd():
+                data = self.daemon_stop_systemd()
+            else:
+                if self._daemon_running():
+                    data = self._daemon_stop()
+        elif self._daemon_running():
+            data = self._daemon_stop()
         if data is None:
             return
         if data.get("status") == 0:
@@ -3671,6 +3689,8 @@ class Node(Crypt):
     def daemon_start(self):
         if self.options.thr_id:
             return self.daemon_start_thread()
+        if self.daemon_handled_by_systemd():
+            return self.daemon_start_systemd()
         return os.system(sys.executable+" "+os.path.join(rcEnv.paths.pathlib, "osvcd.py"))
 
     def daemon_start_thread(self):
@@ -3701,6 +3721,21 @@ class Node(Crypt):
             unlock(lockfd)
         return False
 
+    def daemon_start_systemd(self):
+        """
+        Do daemon start through the systemd, so that the daemon is
+        service status is correctly reported.
+        """
+        os.system("systemctl reset-failed opensvc-agent")
+        os.system("systemctl start opensvc-agent")
+
+    def daemon_stop_systemd(self):
+        """
+        Do daemon stop through the systemd, so that the daemon is not restarted
+        by systemd, and the systemd service status is correctly reported.
+        """
+        os.system("systemctl stop opensvc-agent")
+
     def daemon_restart_systemd(self):
         """
         Do daemon restart through the systemd, so that the daemon pid is updated
@@ -3720,11 +3755,26 @@ class Node(Crypt):
             return False
         return True
 
+    def daemon_active_systemd(self):
+        cmd = ["systemctl", "show", "-p" "ActiveState", "opensvc-agent.service"]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return False
+        if out.split("=")[-1].strip() == "active":
+            return True
+        return False
+
     def daemon_restart(self):
         if self.daemon_handled_by_systemd():
+            # 'systemctl restart <osvcunit>' when the daemon has been started
+            # manually causes a direct 'nodemgr daemon start', which fails,
+            # and systemd fallbacks to 'nodemgr daemon stop' and leaves the
+            # daemon stopped.
+            # Detect this situation and stop the daemon ourselves.
+            if not self.daemon_active_systemd():
+                if self._daemon_running():
+                    self._daemon_stop()
             return self.daemon_restart_systemd()
-
-        import time
         if self._daemon_running():
             self._daemon_stop()
         self.daemon_start()
