@@ -154,6 +154,12 @@ class Container(resContainer.Container):
         for link in self.get_links():
             self.cleanup_link(link)
 
+    def has_it(self):
+        data = self.lxc_info()
+        if data is None:
+            return False
+        return True
+
     def is_up(self):
         data = self.lxc_info()
         if data is None:

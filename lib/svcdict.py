@@ -1027,6 +1027,37 @@ class KeywordJailRoot(Keyword):
                   required=True,
                 )
 
+class KeywordContainerLxdLaunchImage(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="launch_image",
+                  at=True,
+                  required=True,
+                  order=9,
+                  rtype="lxd",
+                  provisioning=True,
+                  text="The lxd image to instanciate on provision.",
+                  example="ubuntu:16.04"
+                )
+
+class KeywordContainerLxdLaunchOptions(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="launch_options",
+                  at=True,
+                  order=9,
+                  rtype="lxd",
+                  provisioning=True,
+                  convert="shlex",
+                  default=[],
+                  text="The :cmd:``lxc launch <image> ... <name>`` options set on provision.",
+                  example="-p default"
+                )
+
 class KeywordLxcCf(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -5078,6 +5109,8 @@ class KeyDict(KeywordStore):
         self += KeywordGuestos()
         self += KeywordRootfs()
         self += KeywordLxcCf()
+        self += KeywordContainerLxdLaunchImage()
+        self += KeywordContainerLxdLaunchOptions()
         self += KeywordJailRoot()
         self += KeywordJailIps()
         self += KeywordJailIp6s()
