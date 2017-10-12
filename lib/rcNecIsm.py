@@ -3,6 +3,21 @@ import rcExceptions as ex
 import os
 
 class Nec(object):
+    """
+    BV OS Types
+    ===========
+
+    A2 the logical disk is operating on an ACOS-2 system.
+    A4 the logical disk is operating on an ACOS-4 system.
+    AX the logical disk is operating on an AIX system.
+    CX the logical disk is operating on a Solaris system.
+    LX the logical disk is operating on a Linux system.
+    NX the logical disk is operating on an HP-UX system.
+    SX the logical disk is operating on a SUPER-UX system.
+    WN the logical disk is operating on a Windows system (excluding GPT disk).
+    WG the logical disk is operating on a Windows system (GPT disk).
+
+    """
     arrays = []
     view_bin = None
     sc_query_bin = None
@@ -10,6 +25,7 @@ class Nec(object):
     sc_unlink_bin = None
     sc_link_bin = None
     sc_create_bin = None
+    bv_os_types = ["-", "A2", "A4", "AX", "LX", "NX", "SX", "WN", "WG"]
 
     def get_bin(self, bin_attr, candidates):
         if getattr(self, bin_attr) is not None:
@@ -185,19 +201,19 @@ SV Information
         if ret != 0:
             raise ex.excError(err)
         data = {'sv': []}
-        for line in out.split('\n'):
-            if line.strip().startswith('LD Name'):
+        for line in out.splitlines():
+            line = line.strip()
+            if line.startswith('LD Name'):
                 data['LD Name'] = line.split(': ')[1]
-            elif line.strip().startswith('Type'):
+            elif line.startswith('Type'):
                 data['Type'] = line.split(': ')[1]
-            elif line.strip().startswith('Special File'):
+            elif line.startswith('Special File'):
                 data['Special File'] = line.split(': ')[1]
-            elif line.strip().startswith('State'):
+            elif line.startswith('State'):
                 data['State'] = line.split(': ')[1]
-            elif line.strip().startswith('Reserve Area'):
+            elif line.startswith('Reserve Area'):
                 data['Reserve Area'] = line.split(': ')[1]
-            elif line.strip().startswith('LX:') or \
-                 line.strip().startswith('-:'):
+            elif line.split(":", 1)[0] in bv_os_types:
                 data['sv'].append(line[line.index(':')+1:])
         return data
 
