@@ -77,6 +77,9 @@ class Mounts:
         if p.returncode != 0:
             return
         out = bdecode(out).lstrip()
+        lines = out.splitlines()
+        if len(lines) == 2:
+            out = lines[1]
         self.src_dir_devs_cache[dev] = out.split()[0]
         return self.src_dir_devs_cache[dev]
 
