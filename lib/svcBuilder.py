@@ -1118,6 +1118,18 @@ def add_container_srp(svc, s):
     r = m.Srp(**kwargs)
     svc += r
 
+def add_container_lxd(svc, s):
+    kwargs = init_kwargs(svc, s)
+
+    try:
+        kwargs['name'] = svc.conf_get(s, 'name')
+    except ex.OptNotFound as exc:
+        kwargs['name'] = svc.svcname
+
+    m = __import__('resContainerLxd')
+    r = m.Container(**kwargs)
+    svc += r
+
 def add_container_lxc(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
