@@ -55,6 +55,9 @@ class syncNecIsmSnap(resSync.Sync):
         except ex.excError:
             self.status_log("unable to query SV:%s" % sv)
             return
+        if len(data) == 0:
+            self.status_log("SV:%s not found" % sv)
+            return
         svinfo = data['sv'][0]
         try:
             begin = svinfo.index('[')+1
