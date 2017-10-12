@@ -17,6 +17,9 @@ class Prov(provisioning.Prov):
             raise ex.excError
         self.r.can_rollback = True
 
+        self.r.promote_zfs()
+
+
     def stop(self):
         cmd = ["/usr/bin/lxc", "delete", self.r.name] + options
         self.r.vcall(cmd)

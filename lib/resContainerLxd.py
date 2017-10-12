@@ -1,4 +1,5 @@
 import os
+import json
 
 import resources as Res
 from rcUtilities import which, justcall, lazy
@@ -24,7 +25,7 @@ class Container(resContainer.Container):
         self.getaddr = self.dummy
 
     def files_to_sync(self):
-        return []
+        return ["/var/lib/lxd/containers/"+self.name]
 
     def rcp_from(self, src, dst):
         cmd = [lxc, "file", "pull", self.name+":"+src, dst]
@@ -41,11 +42,14 @@ class Container(resContainer.Container):
         return out, err, ret
 
     def lxc_info(self):
-        cmd = [lxc, "info", self.name]
+        cmd = [lxc, "list", self.name, "--format", "json"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
-        return self.parse(out)
+        try:
+            return json.loads(out)[0]
+        except ValueError, IndexError:
+            return
 
     def lxc_start(self):
         cmd = [lxc, "start", self.name]
@@ -162,9 +166,10 @@ class Container(resContainer.Container):
 
     def is_up(self):
         data = self.lxc_info()
+        #print(json.dumps(data, indent=4))
         if data is None:
             return False
-        return data["Status"] == "Running"
+        return data["status"] == "Running"
 
     def get_container_info(self):
         cpu_set = self.get_cf_value("lxc.cgroup.cpuset.cpus")
@@ -221,39 +226,24 @@ class Container(resContainer.Container):
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
-    def parse(self, buff):
-        data = Storage()
-        pos = {}
-        _pos = []
-        indent = 2
-        def dset(key, val, _pos, _data=None):
-            if _data is None:
-                _data = data
-                val = val.strip()
-            if len(_pos) == 0:
-                if key in _data:
-                    if not isinstance(_data[key], list):
-                        _data[key] = [_data[key]]
-                    _data[key].append(val)
-                else:
-                    _data[key] = val
-                return _data
-            _next = _pos[0]
-            if _next not in _data:
-                _data[_next] = Storage()
-            _data[_next] = dset(key, val, _pos[1:], _data=_data[_next])
-            return _data
+    def promote_zfs(self):
+        fpath = "/var/lib/lxd/containers/"+self.name
+        if not os.path.exists(fpath) or which("zfs") is None:
+            return
+        from rcMountsLinux import Mounts
+        fpath = os.readlink(fpath)
+        m = Mounts()
+        dev = m.get_src_dir_dev(fpath)
+        cmd = ["zfs", "get", "-H", "-o", "value", "origin", dev]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return
+        if out.strip() in ("-", ""):
+            return
+        cmd = ["zfs", "promote", dev]
+        self.vcall(cmd)
 
-        for line in buff.splitlines():
-            stripped_line = line.lstrip()
-            _lws = len(line) - len(stripped_line)
-            _pos = pos.get(_lws, [])
-            key, val = stripped_line.split(":", 1)
-            if val == "":
-                # new dict or list
-                _pos = _pos + [key]
-                pos[_lws+indent] = _pos
-                continue
-            dset(key, val, _pos)
+    def presync(self):
+        self.promote_zfs()
 
-        return data
+
