@@ -14,11 +14,14 @@ else
 	export PATH
 fi
 
-# clean up ligering restart flag
+# clean up lingering restart flag
 rm -f $FLAG
 
-# no preinstall if opensvc was not installed yet
-which nodemgr >/dev/null 2>&1 || exit 0
+# opensvc was not installed yet. just set the daemon start flag 
+which nodemgr >/dev/null 2>&1 || {
+	touch $FLAG
+	exit 0
+}
 
 nodemgr daemon running >/dev/null 2>&1
 RUNNING=$?
