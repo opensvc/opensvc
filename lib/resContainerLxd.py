@@ -48,10 +48,19 @@ class Container(resContainer.Container):
             return
         try:
             return json.loads(out)[0]
-        except ValueError, IndexError:
+        except (ValueError, IndexError):
             return
 
+    def lxd_import(self):
+        if self.lxc_info() is not None:
+            return
+        cmd = [lxd, "import", self.name]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+
     def lxc_start(self):
+        self.lxd_import()
         cmd = [lxc, "start", self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
