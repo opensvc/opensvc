@@ -196,7 +196,8 @@ SV Information
                 data['State'] = line.split(': ')[1]
             elif line.strip().startswith('Reserve Area'):
                 data['Reserve Area'] = line.split(': ')[1]
-            elif line.strip().startswith('LX:'):
+            elif line.strip().startswith('LX:') or \
+                 line.strip().startswith('-:'):
                 data['sv'].append(line[line.index(':')+1:])
         return data
 
