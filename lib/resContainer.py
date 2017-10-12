@@ -240,4 +240,4 @@ class Container(Res.Resource):
     def post_action(self, action):
         if action not in ("stop", "start"):
             return
-        self.svC.refresh_ip_status()
+        self.svc.refresh_ip_status()
