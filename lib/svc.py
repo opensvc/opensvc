@@ -261,6 +261,7 @@ STATUS_TYPES = [
     "container.jail",
     "container.kvm",
     "container.lxc",
+    "container.lxd",
     "container.ldom",
     "container.openstack",
     "container.ovm",
@@ -3843,6 +3844,7 @@ class Svc(Crypt):
         self.sub_set_action("container.ovm", "_migrate")
         self.sub_set_action("container.hpvm", "_migrate")
         self.sub_set_action("container.esx", "_migrate")
+        self.sub_set_action("container.lxd", "_migrate")
 
     def destination_node_sanity_checks(self, destination_node=None):
         """
