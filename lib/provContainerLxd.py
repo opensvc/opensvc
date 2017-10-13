@@ -8,6 +8,8 @@ class Prov(provisioning.Prov):
         return self.r.has_it()
 
     def provisioner(self):
+        if self.r.has_it():
+            return
         image = self.r.conf_get("launch_image")
         try:
             options = self.r.conf_get("launch_options")
@@ -19,8 +21,6 @@ class Prov(provisioning.Prov):
             raise ex.excError
         self.r.wait_for_fn(self.r.is_up, self.r.startup_timeout, 2)
         self.r.can_rollback = True
-
-        self.r.promote_zfs()
 
     def unprovisioner(self):
         cmd = ["/usr/bin/lxc", "delete", self.r.name]

@@ -251,30 +251,3 @@ class Container(resContainer.Container):
                 return True
         return False
 
-    def promote_zfs(self):
-        fpath = "/var/lib/lxd/containers/"+self.name
-        if not os.path.exists(fpath) or which("zfs") is None:
-            return
-        from rcMountsLinux import Mounts
-        fpath = os.readlink(fpath)
-        m = Mounts()
-        dev = m.get_src_dir_dev(fpath)
-        cmd = ["zfs", "get", "-H", "-o", "value", "origin", dev]
-        out, err, ret = justcall(cmd)
-        origin = out.strip()
-        if ret != 0 or origin in ("-", ""):
-            return
-        cmd = ["zfs", "promote", dev]
-        self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError
-        cmd = ["zfs", "get", "type", origin]
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            cmd = ["zfs", "snapshot", "-r", origin]
-            self.vcall(cmd)
-
-    def presync(self):
-        self.promote_zfs()
-
-
