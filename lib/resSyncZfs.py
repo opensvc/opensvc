@@ -149,13 +149,13 @@ class SyncZfs(resSync.Sync):
 
     def zfs_send_incremental(self, node):
         if self.recursive:
-            send_cmd = [rcEnv.syspaths.zfs, 'send', '-R', '-i',
-                            self.src_snap_sent, self.src_snap_tosend]
+            send_cmd = [rcEnv.syspaths.zfs, "send", "-R", "-i",
+                        self.src_snap_sent, self.src_snap_tosend]
         else:
-            send_cmd = [rcEnv.syspaths.zfs, 'send', '-i',
-                            self.src_snap_sent, self.src_snap_tosend]
+            send_cmd = [rcEnv.syspaths.zfs, "send", "-i",
+                        self.src_snap_sent, self.src_snap_tosend]
 
-        receive_cmd = [rcEnv.syspaths.zfs, 'receive', '-dF', self.dst_pool]
+        receive_cmd = [rcEnv.syspaths.zfs, "receive", "-dF", self.dst_pool]
         if node is not None:
             receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
 
@@ -173,11 +173,13 @@ class SyncZfs(resSync.Sync):
 
     def zfs_send_initial(self, node=None):
         if self.recursive:
-            send_cmd = [rcEnv.syspaths.zfs, 'send', '-R', self.src_snap_tosend]
+            send_cmd = [rcEnv.syspaths.zfs, "send", "-R",
+                        self.src_snap_tosend]
         else:
-            send_cmd = [rcEnv.syspaths.zfs, 'send', self.src_snap_tosend]
+            send_cmd = [rcEnv.syspaths.zfs, "send", "-p",
+                        self.src_snap_tosend]
 
-        receive_cmd = [rcEnv.syspaths.zfs, 'receive', '-dF', self.dst_pool ]
+        receive_cmd = [rcEnv.syspaths.zfs, "receive", "-dF", self.dst_pool]
         if node is not None:
             receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
 
