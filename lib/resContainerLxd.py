@@ -41,8 +41,12 @@ class Container(resContainer.Container):
             raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
-    def lxc_info(self):
-        cmd = [lxc, "list", self.name, "--format", "json"]
+    def lxc_info(self, nodename=None):
+        if nodename:
+            name = nodename + ":" + self.name
+        else:
+            name = self.name
+        cmd = [lxc, "list", name, "--format", "json"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
@@ -173,8 +177,11 @@ class Container(resContainer.Container):
             return False
         return True
 
-    def is_up(self):
-        data = self.lxc_info()
+    def is_up_on(self, nodename):
+        return self.is_up(nodename=nodename)
+
+    def is_up(self, nodename=None):
+        data = self.lxc_info(nodename=nodename)
         #print(json.dumps(data, indent=4))
         if data is None:
             return False
@@ -235,6 +242,15 @@ class Container(resContainer.Container):
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
+    def abort_start(self):
+        for nodename in self.svc.peers:
+            if nodename == rcEnv.nodename:
+                continue
+            if self.is_up_on(nodename):
+                self.log.error("already up on %s", nodename)
+                return True
+        return False
+
     def promote_zfs(self):
         fpath = "/var/lib/lxd/containers/"+self.name
         if not os.path.exists(fpath) or which("zfs") is None:
@@ -245,12 +261,18 @@ class Container(resContainer.Container):
         dev = m.get_src_dir_dev(fpath)
         cmd = ["zfs", "get", "-H", "-o", "value", "origin", dev]
         out, err, ret = justcall(cmd)
-        if ret != 0:
-            return
-        if out.strip() in ("-", ""):
+        origin = out.strip()
+        if ret != 0 or origin in ("-", ""):
             return
         cmd = ["zfs", "promote", dev]
         self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+        cmd = ["zfs", "get", "type", origin]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            cmd = ["zfs", "snapshot", "-r", origin]
+            self.vcall(cmd)
 
     def presync(self):
         self.promote_zfs()
