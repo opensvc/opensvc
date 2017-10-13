@@ -991,9 +991,10 @@ class Resource(object):
     def is_provisioned(self):
         if self.prov is None:
             return True
-        flag = self.is_provisioned_flag()
-        if flag is not None:
-            return flag
+        if not self.svc.options.force:
+            flag = self.is_provisioned_flag()
+            if flag is not None:
+                return flag
         if not hasattr(self.prov, "is_provisioned"):
             return
         value = self.prov.is_provisioned()
