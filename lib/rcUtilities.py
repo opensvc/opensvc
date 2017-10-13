@@ -384,6 +384,7 @@ def call(argv,
          err_to_info=False,
          warn_to_info=False,
          shell=False,
+         stdin=None,
          preexec_fn=None,
          cwd=None,
          env=None):
@@ -417,7 +418,7 @@ def call(argv,
         log.debug("cache miss for '%s'"%cmd)
 
     if not cache or cmd not in rcEnv.call_cache:
-        process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds, shell=shell, preexec_fn=preexec_fn, cwd=cwd, env=env)
+        process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE, close_fds=close_fds, shell=shell, preexec_fn=preexec_fn, cwd=cwd, env=env)
         buff = process.communicate()
         buff = tuple(map(lambda x: bdecode(x), buff))
         ret = process.returncode
