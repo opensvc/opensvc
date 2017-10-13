@@ -256,6 +256,7 @@ class SyncZfs(resSync.Sync):
             self.create_snap(self.src_snap_tosend)
         if self.snap_exists(self.src_snap_sent):
             for n in self.targets:
+                self.remove_snap(self.dst_snap_tosend, n)
                 self.zfs_send_incremental(n)
                 self.rotate_snaps(self.dst_snap_tosend, self.dst_snap_sent, n)
         else:
