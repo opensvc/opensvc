@@ -799,8 +799,7 @@ class Node(Crypt):
             return
         self.auth_config = read_cf(rcEnv.paths.authconf)
 
-    @staticmethod
-    def setup_sync_outdated():
+    def setup_sync_outdated(self):
         """
         Return True if any configuration file has changed in the last 10'
         else return False

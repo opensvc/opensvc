@@ -293,8 +293,7 @@ class Scheduler(object):
         for _sopt in sopt:
             self._timestamp(_sopt.fname)
 
-    @staticmethod
-    def _timestamp(timestamp_f):
+    def _timestamp(self, timestamp_f):
         """
         Update the timestamp file <timestamp_f>.
         If <timestamp_f> if is not a fullpath, consider it parented to
