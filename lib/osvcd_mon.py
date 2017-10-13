@@ -1620,7 +1620,7 @@ class Monitor(shared.OsvcThread, Crypt):
                             remote = Storage(shared.CLUSTER_DATA[nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"])
                         except KeyError:
                             continue
-                        if remote is None or remote.state is None:
+                        if remote is None or remote.state is None or remote.mtime is None:
                             continue
                         elif remote.mtime > local.mtime + 0.00001:
                             self.log.info("switch %s.%s provisioned flag to %s (merged from %s)",
