@@ -10,7 +10,6 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner, is_string
 from subprocess import *
 from rcColor import color, colorize, formatter
-from rcScheduler import scheduler_fork
 
 comp_dir = os.path.join(rcEnv.paths.pathvar, 'compliance')
 
@@ -396,7 +395,6 @@ class Compliance(object):
         os.environ.clear()
         os.environ.update(self.env_bkp)
 
-    @scheduler_fork
     def compliance_auto(self):
         if self.updatecomp and self.svc is None:
             self.node.updatecomp()

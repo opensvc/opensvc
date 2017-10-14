@@ -377,7 +377,9 @@ class Monitor(shared.OsvcThread, Crypt):
         self.node_orchestrator()
 
         # services (iterate over deleting services too)
-        for svcname in [svcname for svcname in shared.SMON_DATA]:
+        svcnames = [svcname for svcname in shared.SMON_DATA]
+        self.get_agg_services(svcnames)
+        for svcname in svcnames:
             svc = self.get_service(svcname)
             self.service_orchestrator(svcname, svc)
             self.resources_orchestrator(svcname, svc)
@@ -476,7 +478,7 @@ class Monitor(shared.OsvcThread, Crypt):
         if svc is None:
             if smon:
                 # deleting service: unset global expect if done cluster-wide
-                status = self.get_agg_avail(svcname)
+                status = shared.AGG[svcname].avail
                 self.set_smon_g_expect_from_status(svcname, smon, status)
             return
         if svc.disabled:
@@ -485,7 +487,7 @@ class Monitor(shared.OsvcThread, Crypt):
         if smon.status not in ("ready", "idle", "wait children", "wait parents"):
             #self.log.info("service %s orchestrator out (mon status %s)", svc.svcname, smon.status)
             return
-        status = self.get_agg_avail(svc.svcname)
+        status = shared.AGG[svc.svcname].avail
         self.set_smon_g_expect_from_status(svc.svcname, smon, status)
         if smon.global_expect:
             self.service_orchestrator_manual(svc, smon, status)
@@ -776,7 +778,7 @@ class Monitor(shared.OsvcThread, Crypt):
         for child in svc.children:
             if child == svc.svcname:
                 continue
-            avail = self.get_agg_avail(child)
+            avail = shared.AGG[child].avail
             if avail in ("unknown", "down", "stdby down"):
                 continue
             missing.append(child)
@@ -796,7 +798,7 @@ class Monitor(shared.OsvcThread, Crypt):
         for parent in svc.parents:
             if parent == svc.svcname:
                 continue
-            avail = self.get_agg_avail(parent)
+            avail = shared.AGG[parent].avail
             if avail in ("unknown", "up"):
                 continue
             missing.append(parent)
@@ -1386,8 +1388,8 @@ class Monitor(shared.OsvcThread, Crypt):
         if instance is None:
             return
         local_frozen = instance["frozen"]
-        frozen = self.get_agg_frozen(svcname)
-        provisioned = self.get_agg_provisioned(svcname)
+        frozen = shared.AGG[svcname].frozen
+        provisioned = shared.AGG[svcname].provisioned
         deleted = self.get_agg_deleted(svcname)
         purged = self.get_agg_purged(provisioned, deleted)
         if smon.global_expect == "stopped" and status in STOPPED_STATES and \
@@ -1556,32 +1558,32 @@ class Monitor(shared.OsvcThread, Crypt):
         if global_expect == "shutdown":
             return not self.get_agg_shutdown(svcname)
         if global_expect == "started":
-            status = self.get_agg_avail(svcname)
+            status = shared.AGG[svcname].avail
             local_frozen = instance["frozen"]
             if status not in STARTED_STATES or local_frozen:
                 return True
             else:
                 return False
         if global_expect == "frozen":
-            frozen = self.get_agg_frozen(svcname)
+            frozen = shared.AGG[svcname].frozen
             if frozen != "frozen":
                 return True
             else:
                 return False
         if global_expect == "thawed":
-            frozen = self.get_agg_frozen(svcname)
+            frozen = shared.AGG[svcname].frozen
             if frozen != "thawed":
                  return True
             else:
                 return False
         if global_expect == "provisioned":
-            provisioned = self.get_agg_provisioned(svcname)
+            provisioned = shared.AGG[svcname].provisioned
             if provisioned is not True:
                 return True
             else:
                 return False
         if global_expect == "unprovisioned":
-            provisioned = self.get_agg_provisioned(svcname)
+            provisioned = shared.AGG[svcname].provisioned
             if provisioned is not False:
                 return True
             else:
@@ -1593,8 +1595,8 @@ class Monitor(shared.OsvcThread, Crypt):
             else:
                 return False
         if global_expect == "purged":
+            provisioned = shared.AGG[svcname].provisioned
             deleted = self.get_agg_deleted(svcname)
-            provisioned = self.get_agg_provisioned(svcname)
             purged = self.get_agg_purged(provisioned, deleted)
             if purged is False:
                 return True
@@ -1640,20 +1642,29 @@ class Monitor(shared.OsvcThread, Crypt):
                 return False
         return True
 
+    def get_agg(self, svcname):
+        data = Storage()
+        data.avail = self.get_agg_avail(svcname)
+        data.frozen = self.get_agg_frozen(svcname)
+        data.overall = self.get_agg_overall(svcname)
+        data.placement = self.get_agg_placement(svcname)
+        data.provisioned = self.get_agg_provisioned(svcname)
+        with shared.AGG_LOCK:
+            shared.AGG[svcname] = data
+        return data
+
+    def get_agg_services(self, svcnames):
+        data = {}
+        for svcname in svcnames:
+            data[svcname] = self.get_agg(svcname)
+        return data
+
     def status(self):
         self.update_hb_data()
         data = shared.OsvcThread.status(self)
         with shared.CLUSTER_DATA_LOCK:
             data.nodes = dict(shared.CLUSTER_DATA)
         data["compat"] = self.compat
-        data["services"] = {}
         data["frozen"] = self.get_clu_agg_frozen()
-        for svcname in data.nodes[rcEnv.nodename]["services"]["config"]:
-            if svcname not in data["services"]:
-                data["services"][svcname] = Storage()
-            data["services"][svcname].avail = self.get_agg_avail(svcname)
-            data["services"][svcname].frozen = self.get_agg_frozen(svcname)
-            data["services"][svcname].overall = self.get_agg_overall(svcname)
-            data["services"][svcname].placement = self.get_agg_placement(svcname)
-            data["services"][svcname].provisioned = self.get_agg_provisioned(svcname)
+        data["services"] = self.get_agg_services([svcname for svcname in data.nodes[rcEnv.nodename]["services"]["config"]])
         return data

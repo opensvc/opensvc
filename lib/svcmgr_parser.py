@@ -61,7 +61,8 @@ OPT = Storage({
     "cron": Option(
         "--cron", default=False,
         action="store_true", dest="cron",
-        help="Set by the robots to flag log entries as such in the collector."),
+        help="If set, the action is actually executed only if the scheduling"
+             "constraints are satisfied."),
     "debug": Option(
         "--debug", default=False,
         action="store_true", dest="debug",
@@ -373,7 +374,6 @@ SVCMGR_OPTS = [
 GLOBAL_OPTS = SVCMGR_OPTS + [
     OPT.cluster,
     OPT.color,
-    OPT.cron,
     OPT.daemon,
     OPT.debug,
     OPT.env,
@@ -533,7 +533,9 @@ ACTIONS = {
         "run": {
             "msg": "Run all tasks, or tasks specified by --rid --tags and "
                    "--subset, disregarding their schedule.",
-            "options": ACTION_OPTS,
+            "options": ACTION_OPTS + [
+                OPT.cron,
+            ],
         },
         "presync": {
             "msg": "Execute the presync method of the resource driver for each local service instance resource. These methods usually update var files needing replication on other nodes.",
@@ -614,10 +616,15 @@ ACTIONS = {
         },
         "sync_all": {
             "msg": "Chain sync nodes, sync drp and sync update.",
-            "options": ACTION_OPTS,
+            "options": ACTION_OPTS + [
+                OPT.cron,
+            ],
         },
-        "push": {
+        "push_config": {
             "msg": "Push service configuration to the collector.",
+            "options": [
+                OPT.cron,
+            ],
         },
         "pull": {
             "msg": "Pull a service configuration from the collector, overwritting the currently installed one.",
@@ -628,9 +635,15 @@ ACTIONS = {
         "push_resinfo": {
             "msg": "Push the local service instance resources and application launchers info "
                    "key/value pairs the collector.",
+            "options": [
+                OPT.cron,
+            ],
         },
         "push_service_status": {
             "msg": "Push the local service instance and its resources status to the collector.",
+            "options": [
+                OPT.cron,
+            ],
         },
         "print_base_devs": {
             "msg": "Print the list of base devices the local service instance or the "
@@ -700,7 +713,9 @@ ACTIONS = {
         "resource_monitor": {
             "msg": "Refresh the monitored resource status. This action is "
                    "scheduleable, usually every minute.",
-            "options": ACTION_OPTS,
+            "options": ACTION_OPTS + [
+                OPT.cron,
+            ],
         },
         "docker": {
             "msg": "Wrap the docker client command, setting automatically "
@@ -825,6 +840,7 @@ ACTIONS = {
                    "module property values.",
             "options": [
                 OPT.attach,
+                OPT.cron,
                 OPT.force,
                 OPT.module,
                 OPT.moduleset,
@@ -1093,6 +1109,7 @@ DEPRECATED_ACTIONS = [
 ACTIONS_TRANSLATIONS = {
     "push_env_mtime": "push_config_mtime",
     "push_env": "push_config",
+    "push": "push_config",
     "json_env": "json_config",
     "startapp": {"action": "start", "mangle": lambda x: add_rid(x, ["app"])},
     "startip": {"action": "start", "mangle": lambda x: add_rid(x, ["ip"])},

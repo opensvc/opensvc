@@ -60,7 +60,8 @@ OPT = Storage({
     "cron": Option(
         "--cron", default=False,
         action="store_true", dest="cron",
-        help="Set by the robots to flag log entries as such in the collector."),
+        help="If set, the action is actually executed only if the scheduling"
+             "constraints are satisfied."),
     "debug": Option(
         "--debug", default=False,
         action="store_true", dest="debug",
@@ -257,7 +258,6 @@ OPT = Storage({
 
 GLOBAL_OPTS = [
     OPT.color,
-    OPT.cron,
     OPT.debug,
     OPT.format,
     OPT.help,
@@ -275,6 +275,12 @@ DAEMON_OPTS = [
 
 ACTIONS = {
     'Node actions': {
+        'auto_reboot': {
+            'msg': 'Reboot the node if in the specified schedule.',
+            'options': [
+                OPT.cron,
+            ],
+        },
         'frozen': {
             'msg': 'Return 0 if the services are frozen node-wide, '
                    'preventing the daemon to orchestrate them. Return 1 '
@@ -346,9 +352,15 @@ ACTIONS = {
         'dequeue_actions': {
             'msg': "Dequeue and execute actions from the collector's action "
                    "queue for this node and its services.",
+            'options': [
+                OPT.cron,
+            ],
         },
         'rotate_root_pw': {
             'msg': "Set a new root password and store it in the collector.",
+            'options': [
+                OPT.cron,
+            ],
         },
         'print_devs': {
             'msg': 'Print the node devices tree.',
@@ -384,6 +396,9 @@ ACTIONS = {
             'msg': "Write in local files metrics not found in the standard "
                    "metrics collector. These files will be fed to the "
                    "collector by the :cmd:`pushstat` action.",
+            'options': [
+                OPT.cron,
+            ],
         },
     },
     'Service actions': {
@@ -487,6 +502,7 @@ ACTIONS = {
             'msg': 'Push asset information to collector.',
             'options': [
                 OPT.sync,
+                OPT.cron,
             ],
          },
         'pushstats': {
@@ -500,20 +516,31 @@ ACTIONS = {
                 OPT.begin,
                 OPT.end,
                 OPT.stats_dir,
+                OPT.cron,
             ],
          },
         'pushdisks': {
             'msg': 'Push disks usage information to the collector.',
+            'options': [
+                OPT.cron,
+            ],
          },
         'pushpkg': {
             'msg': 'Push package/version list to the collector.',
+            'options': [
+                OPT.cron,
+            ],
          },
         'pushpatch': {
             'msg': 'Push patch/version list to the collector.',
+            'options': [
+                OPT.cron,
+            ],
          },
         'pushsym': {
             'msg': 'Push symmetrix configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
                 OPT.symcli_db_file,
             ],
@@ -521,78 +548,91 @@ ACTIONS = {
         'pushemcvnx': {
             'msg': 'Push EMC CX/VNX configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pushcentera': {
             'msg': 'Push EMC Centera configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pushnetapp': {
             'msg': 'Push Netapp configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pusheva': {
             'msg': 'Push HP EVA configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pushnecism': {
             'msg': 'Push NEC ISM configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pushhds': {
             'msg': 'Push HDS configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pushdcs': {
             'msg': 'Push Datacore configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pushfreenas': {
             'msg': 'Push FreeNAS configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pushxtremio': {
             'msg': 'Push XtremIO configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pushibmsvc': {
             'msg': 'Push IBM SVC configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pushhp3par': {
             'msg': 'Push HP 3par configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pushibmds': {
             'msg': 'Push IBM DS configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pushvioserver': {
             'msg': 'Push IBM VIO server configurations to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
@@ -600,27 +640,36 @@ ACTIONS = {
             'msg': 'Push Google Compute Engine disks configurations to the '
                    'collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pushbrocade': {
             'msg': 'Push Brocade switch configuration to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'Pushnsr': {
             'msg': 'Push EMC Networker index to the collector.',
             'options': [
+                OPT.cron,
                 OPT.opt_object,
             ],
          },
         'sysreport': {
             'msg': 'Push system report to the collector for archiving and '
                    'diff analysis.',
+            'options': [
+                OPT.cron,
+            ],
          },
         'checks': {
             'msg': 'Run node health checks. Push results to collector.',
+            'options': [
+                OPT.cron,
+            ],
          },
     },
     'Misc': {
@@ -632,6 +681,9 @@ ACTIONS = {
         'compliance_auto': {
             "msg": "Run compliance checks or fixes, depending on the autofix "
                    "module property values.",
+            'options': [
+                OPT.cron,
+            ],
         },
         'compliance_env': {
             "msg": "Show the environment variables set during a compliance module run.",

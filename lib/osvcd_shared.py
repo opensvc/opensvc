@@ -36,6 +36,11 @@ NODE_LOCK = threading.RLock()
 SERVICES = {}
 SERVICES_LOCK = threading.RLock()
 
+# Per service aggretated data of instances.
+# Refresh on monitor status eval, and embedded in the returned data
+AGG = {}
+AGG_LOCK = threading.RLock()
+
 # The encrypted message all the heartbeat tx threads send.
 # It is refreshed in the monitor thread loop.
 HB_MSG = None

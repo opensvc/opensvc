@@ -33,7 +33,7 @@ from rcGlobalEnv import rcEnv, Storage
 import rcLogger
 import rcExceptions as ex
 from freezer import Freezer
-from rcScheduler import scheduler_fork, Scheduler, SchedOpts
+from rcScheduler import Scheduler, SchedOpts, sched_action
 from rcConfigParser import RawConfigParser
 from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
@@ -261,17 +261,17 @@ class Node(Crypt):
                 ),
                 "compliance_auto": SchedOpts(
                     "compliance",
-                    fname="node"+os.sep+"last_comp_check",
+                    fname="last_comp_check",
                     schedule_option="comp_schedule"
                 ),
                 "auto_rotate_root_pw": SchedOpts(
                     "rotate_root_pw",
-                    fname="node"+os.sep+"last_rotate_root_pw",
+                    fname="last_rotate_root_pw",
                     schedule_option="no_schedule"
                 ),
                 "auto_reboot": SchedOpts(
                     "reboot",
-                    fname="node"+os.sep+"last_auto_reboot",
+                    fname="last_auto_reboot",
                     schedule_option="no_schedule"
                 )
             },
@@ -832,16 +832,24 @@ class Node(Crypt):
         self.services[svc.svcname] = svc
         return self
 
-    def action(self, action):
+    def action(self, action, options=None):
         """
         The node action wrapper.
         Looks up which method to handle the action (some are not implemented
         in the Node class), and call the handling method.
         """
+        if action == "scheduler":
+            return self.scheduler()
         try:
+            if self.options.cron:
+                self.sched.validate_action(action)
             self.async_action(action)
         except ex.excAbortAction:
             return 0
+        return self._action(action, options)
+
+    @sched_action
+    def _action(self, action, options=None):
         if "_json_" in action:
             self.options.format = "json"
             action = action.replace("_json_", "_")
@@ -902,10 +910,7 @@ class Node(Crypt):
         self.options.cron = True
         for action in self.sched.scheduler_actions:
             try:
-                if action == "compliance_auto":
-                    self.compliance_auto()
-                else:
-                    self.action(action)
+                self.action(action)
             except:
                 self.log.exception("")
 
@@ -939,15 +944,6 @@ class Node(Crypt):
 
     def collect_stats(self):
         """
-        Do the stats collection if the scheduler constraints permit.
-        """
-        if self.sched.skip_action("collect_stats"):
-            return
-        self.task_collect_stats()
-
-    @scheduler_fork
-    def task_collect_stats(self):
-        """
         Choose the os specific stats collection module and call its collect
         method.
         """
@@ -960,6 +956,11 @@ class Node(Crypt):
     def pushstats(self):
         """
         Set stats range to push to "last pushstat => now"
+
+        The scheduled task that collects system statistics from system tools
+        like sar, and sends the data to the collector.
+        A list of metrics can be disabled from the task configuration section,
+        using the 'disable' option.
         """
         fpath = self.sched.get_timestamp_f(self.sched.scheduler_actions["pushstats"].fname)
         try:
@@ -974,18 +975,6 @@ class Node(Crypt):
         if interval < 21:
             interval = 21
 
-        if self.sched.skip_action("pushstats"):
-            return
-        self.task_pushstats(interval)
-
-    @scheduler_fork
-    def task_pushstats(self, interval):
-        """
-        The scheduled task that collects system statistics from system tools
-        like sar, and sends the data to the collector.
-        A list of metrics can be disabled from the task configuration section,
-        using the 'disable' option.
-        """
         def get_disable_stats():
             """
             Returns the list of stats metrics collection disabled through the
@@ -1010,47 +999,6 @@ class Node(Crypt):
                                    interval=interval,
                                    disable=disable)
 
-    def pushpkg(self):
-        """
-        The pushpkg action entrypoint.
-        Inventories the installed packages.
-        """
-        if self.sched.skip_action("pushpkg"):
-            return
-        self.task_pushpkg()
-
-    @scheduler_fork
-    def task_pushpkg(self):
-        """
-        The pushpkg scheduler task.
-        """
-        self.collector.call('push_pkg')
-
-    def pushpatch(self):
-        """
-        The pushpatch action entrypoint.
-        Inventories the installed patches.
-        """
-        if self.sched.skip_action("pushpatch"):
-            return
-        self.task_pushpatch()
-
-    @scheduler_fork
-    def task_pushpatch(self):
-        """
-        The pushpatch scheduler task.
-        """
-        self.collector.call('push_patch')
-
-    def pushasset(self):
-        """
-        The pushasset action entrypoint.
-        Inventories the server properties.
-        """
-        if self.sched.skip_action("pushasset"):
-            return
-        self.task_pushasset()
-
     @lazy
     def asset(self):
         try:
@@ -1060,10 +1008,24 @@ class Node(Crypt):
                               "" % rcEnv.sysname)
         return m.Asset(self)
 
-    @scheduler_fork
-    def task_pushasset(self):
+    def pushpkg(self):
         """
-        The pushasset scheduler task.
+        The pushpkg action entrypoint.
+        Inventories the installed packages.
+        """
+        self.collector.call('push_pkg')
+
+    def pushpatch(self):
+        """
+        The pushpatch action entrypoint.
+        Inventories the installed patches.
+        """
+        self.collector.call('push_patch')
+
+    def pushasset(self):
+        """
+        The pushasset action entrypoint.
+        Inventories the server properties.
         """
         data = self.asset.get_asset_dict()
         try:
@@ -1150,30 +1112,12 @@ class Node(Crypt):
         The pushnsr action entrypoint.
         Inventories Networker Backup Server index databases.
         """
-        if self.sched.skip_action("pushnsr"):
-            return
-        self.task_pushnsr()
-
-    @scheduler_fork
-    def task_pushnsr(self):
-        """
-        The pushnsr scheduler task.
-        """
         self.collector.call('push_nsr')
 
     def pushhp3par(self):
         """
         The push3par action entrypoint.
         Inventories HP 3par storage arrays.
-        """
-        if self.sched.skip_action("pushhp3par"):
-            return
-        self.task_pushhp3par()
-
-    @scheduler_fork
-    def task_pushhp3par(self):
-        """
-        The push3par scheduler task.
         """
         self.collector.call('push_hp3par', self.options.objects)
 
@@ -1182,30 +1126,12 @@ class Node(Crypt):
         The pushnetapp action entrypoint.
         Inventories NetApp storage arrays.
         """
-        if self.sched.skip_action("pushnetapp"):
-            return
-        self.task_pushnetapp()
-
-    @scheduler_fork
-    def task_pushnetapp(self):
-        """
-        The pushnetapp scheduler task.
-        """
         self.collector.call('push_netapp', self.options.objects)
 
     def pushcentera(self):
         """
         The pushcentera action entrypoint.
         Inventories Centera storage arrays.
-        """
-        if self.sched.skip_action("pushcentera"):
-            return
-        self.task_pushcentera()
-
-    @scheduler_fork
-    def task_pushcentera(self):
-        """
-        The pushcentera scheduler task.
         """
         self.collector.call('push_centera', self.options.objects)
 
@@ -1214,30 +1140,12 @@ class Node(Crypt):
         The pushemcvnx action entrypoint.
         Inventories EMC VNX storage arrays.
         """
-        if self.sched.skip_action("pushemcvnx"):
-            return
-        self.task_pushemcvnx()
-
-    @scheduler_fork
-    def task_pushemcvnx(self):
-        """
-        The pushemcvnx scheduler task.
-        """
         self.collector.call('push_emcvnx', self.options.objects)
 
     def pushibmds(self):
         """
         The pushibmds action entrypoint.
         Inventories IBM DS storage arrays.
-        """
-        if self.sched.skip_action("pushibmds"):
-            return
-        self.task_pushibmds()
-
-    @scheduler_fork
-    def task_pushibmds(self):
-        """
-        The pushibmds scheduler task.
         """
         self.collector.call('push_ibmds', self.options.objects)
 
@@ -1246,30 +1154,12 @@ class Node(Crypt):
         The pushgcedisks action entrypoint.
         Inventories Google Compute Engine disks.
         """
-        if self.sched.skip_action("pushgcedisks"):
-            return
-        self.task_pushgcedisks()
-
-    @scheduler_fork
-    def task_pushgcedisks(self):
-        """
-        The pushgce scheduler task.
-        """
         self.collector.call('push_gcedisks', self.options.objects)
 
     def pushfreenas(self):
         """
         The pushfreenas action entrypoint.
         Inventories FreeNas storage arrays.
-        """
-        if self.sched.skip_action("pushfreenas"):
-            return
-        self.task_pushfreenas()
-
-    @scheduler_fork
-    def task_pushfreenas(self):
-        """
-        The pushfreenas scheduler task.
         """
         self.collector.call('push_freenas', self.options.objects)
 
@@ -1278,30 +1168,12 @@ class Node(Crypt):
         The pushxtremio action entrypoint.
         Inventories XtremIO storage arrays.
         """
-        if self.sched.skip_action("pushxtremio"):
-            return
-        self.task_pushxtremio()
-
-    @scheduler_fork
-    def task_pushxtremio(self):
-        """
-        The pushxtremio scheduler task.
-        """
         self.collector.call('push_xtremio', self.options.objects)
 
     def pushdcs(self):
         """
         The pushdcs action entrypoint.
         Inventories DataCore SAN Symphony storage arrays.
-        """
-        if self.sched.skip_action("pushdcs"):
-            return
-        self.task_pushdcs()
-
-    @scheduler_fork
-    def task_pushdcs(self):
-        """
-        The pushdcs scheduler task.
         """
         self.collector.call('push_dcs', self.options.objects)
 
@@ -1310,30 +1182,12 @@ class Node(Crypt):
         The pushhds action entrypoint.
         Inventories Hitachi storage arrays.
         """
-        if self.sched.skip_action("pushhds"):
-            return
-        self.task_pushhds()
-
-    @scheduler_fork
-    def task_pushhds(self):
-        """
-        The pushhds scheduler task.
-        """
         self.collector.call('push_hds', self.options.objects)
 
     def pushnecism(self):
         """
         The pushnecism action entrypoint.
         Inventories NEC iSM storage arrays.
-        """
-        if self.sched.skip_action("pushnecism"):
-            return
-        self.task_pushnecism()
-
-    @scheduler_fork
-    def task_pushnecism(self):
-        """
-        The pushnecism scheduler task.
         """
         self.collector.call('push_necism', self.options.objects)
 
@@ -1342,30 +1196,12 @@ class Node(Crypt):
         The pusheva action entrypoint.
         Inventories HP EVA storage arrays.
         """
-        if self.sched.skip_action("pusheva"):
-            return
-        self.task_pusheva()
-
-    @scheduler_fork
-    def task_pusheva(self):
-        """
-        The pusheva scheduler task.
-        """
         self.collector.call('push_eva', self.options.objects)
 
     def pushibmsvc(self):
         """
         The pushibmsvc action entrypoint.
         Inventories IBM SVC storage arrays.
-        """
-        if self.sched.skip_action("pushibmsvc"):
-            return
-        self.task_pushibmsvc()
-
-    @scheduler_fork
-    def task_pushibmsvc(self):
-        """
-        The pushibmsvc scheduler task.
         """
         self.collector.call('push_ibmsvc', self.options.objects)
 
@@ -1374,30 +1210,12 @@ class Node(Crypt):
         The pushvioserver action entrypoint.
         Inventories IBM vio server storage arrays.
         """
-        if self.sched.skip_action("pushvioserver"):
-            return
-        self.task_pushvioserver()
-
-    @scheduler_fork
-    def task_pushvioserver(self):
-        """
-        The pushvioserver scheduler task.
-        """
         self.collector.call('push_vioserver', self.options.objects)
 
     def pushsym(self):
         """
         The pushsym action entrypoint.
         Inventories EMC Symmetrix server storage arrays.
-        """
-        if self.sched.skip_action("pushsym"):
-            return
-        self.task_pushsym()
-
-    @scheduler_fork
-    def task_pushsym(self):
-        """
-        The pushsym scheduler task.
         """
         objects = self.get_push_objects("sym")
         self.collector.call('push_sym', objects)
@@ -1407,29 +1225,11 @@ class Node(Crypt):
         The pushsym action entrypoint.
         Inventories Brocade SAN switches.
         """
-        if self.sched.skip_action("pushbrocade"):
-            return
-        self.task_pushbrocade()
-
-    @scheduler_fork
-    def task_pushbrocade(self):
-        """
-        The pushbrocade scheduler task.
-        """
         self.collector.call('push_brocade', self.options.objects)
 
     def auto_rotate_root_pw(self):
         """
         The rotate_root_pw node action entrypoint.
-        """
-        if self.sched.skip_action("auto_rotate_root_pw"):
-            return
-        self.task_auto_rotate_root_pw()
-
-    @scheduler_fork
-    def task_auto_rotate_root_pw(self):
-        """
-        The rotate root password scheduler task.
         """
         self.rotate_root_pw()
 
@@ -1492,15 +1292,6 @@ class Node(Crypt):
         The scheduler task executing the node reboot if the scheduler
         constraints are satisfied and the reboot flag is set.
         """
-        if self.sched.skip_action("auto_reboot"):
-            return
-        self.task_auto_reboot()
-
-    @scheduler_fork
-    def task_auto_reboot(self):
-        """
-        Reboot the node if the reboot flag is set.
-        """
         if not os.path.exists(self.paths.reboot_flag):
             print("%s is not present. no reboot scheduled" % self.paths.reboot_flag)
             return
@@ -1519,14 +1310,7 @@ class Node(Crypt):
     def pushdisks(self):
         """
         The pushdisks node action entrypoint.
-        """
-        if self.sched.skip_action("pushdisks"):
-            return
-        self.task_pushdisks()
 
-    @scheduler_fork
-    def task_pushdisks(self):
-        """
         Send to the collector the list of disks visible on this node, and
         their use by service.
         """
@@ -1774,22 +1558,17 @@ class Node(Crypt):
     def sysreport(self):
         """
         The sysreport node action entrypoint.
+
+        Send to the collector a tarball of the files the user wants to track
+        that changed since the last call.
+        If the force option is set, send all files the user wants to track.
         """
-        if self.sched.skip_action("sysreport"):
-            return
         try:
             self.task_sysreport()
         except (OSError, ex.excError) as exc:
             print(exc, file=sys.stderr)
             return 1
 
-    @scheduler_fork
-    def task_sysreport(self):
-        """
-        Send to the collector a tarball of the files the user wants to track
-        that changed since the last call.
-        If the force option is set, send all files the user wants to track.
-        """
         try:
             mod = __import__('rcSysReport'+rcEnv.sysname)
         except ImportError:
@@ -1835,14 +1614,6 @@ class Node(Crypt):
     def checks(self):
         """
         The checks node action entrypoint.
-        """
-        if self.sched.skip_action("checks"):
-            return
-        self.task_checks()
-
-    @scheduler_fork
-    def task_checks(self):
-        """
         Runs health checks.
         """
         import checks
@@ -2328,14 +2099,6 @@ class Node(Crypt):
     def dequeue_actions(self):
         """
         The dequeue_actions node action entrypoint.
-        """
-        if self.sched.skip_action("dequeue_actions"):
-            return
-        self.task_dequeue_actions()
-
-    @scheduler_fork
-    def task_dequeue_actions(self):
-        """
         Poll the collector action queue until emptied.
         """
         actions = self.collector.call('collector_get_action_queue')
@@ -3150,11 +2913,6 @@ class Node(Crypt):
             pass
 
         return "dev"
-
-    def compliance_auto(self):
-        if self.sched.skip_action("compliance_auto"):
-            return
-        self.action("compliance_auto")
 
     def frozen(self):
         """

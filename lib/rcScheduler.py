@@ -10,6 +10,7 @@ import time
 import random
 import logging
 
+import lock
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import is_string
@@ -56,96 +57,6 @@ CALENDAR_NAMES = {
     "sunday": 6,
 }
 
-
-def fork(func, args=None, kwargs=None, serialize=False, delay=300):
-    """
-    A fork daemonizing function.
-    """
-    if args is None:
-        args = []
-    if kwargs is None:
-        kwargs = {}
-
-    if os.fork() > 0:
-        # return to parent execution
-        return
-
-    # separate the son from the father
-    os.chdir('/')
-    os.setsid()
-
-    try:
-        pid = os.fork()
-        if pid > 0:
-            os._exit(0)
-    except:
-        os._exit(1)
-
-    obj = args[0]
-    if obj.__class__.__name__ == "Compliance":
-        if obj.svc:
-            self = obj.svc
-        else:
-            self = obj.node
-    else:
-        # svc or node
-        self = obj
-
-    if self.sched.name == "node":
-        title = "node."+func.__name__.lstrip("_")
-    else:
-        title = self.sched.name+"."+func.__name__.lstrip("_")
-
-    if serialize:
-        lockfile = title+".fork.lock"
-        lockfile = os.path.join(rcEnv.paths.pathlock, lockfile)
-
-        from lock import lock, unlock
-        try:
-            lockfd = lock(lockfile=lockfile, timeout=0, delay=0)
-            self.sched.sched_log(title, "lock acquired", "debug")
-        except Exception:
-            self.sched.sched_log(title, "task is already running", "warning")
-            os._exit(0)
-
-    # now wait for a random delay to not DoS the collector.
-    if delay > 0 and self.sched.name == "node":
-        delay = int(random.random()*delay)
-        self.sched.sched_log(title, "delay %d secs to level database load"%delay, "debug")
-        try:
-            time.sleep(delay)
-        except KeyboardInterrupt as exc:
-            self.log.error(exc)
-            os._exit(1)
-
-    try:
-        func(*args, **kwargs)
-    except Exception as exc:
-        if serialize:
-            unlock(lockfd)
-        self.log.error(exc)
-        os._exit(1)
-
-    if serialize:
-        unlock(lockfd)
-    os._exit(0)
-
-def scheduler_fork(func):
-    """
-    A decorator that runs the decorated function in a detached
-    subprocess if the cron option is set, else runs it inline.
-    The decorated function is run after a random delay, max 59
-    seconds. A lock is held to avoid running the same function
-    twice.
-    """
-    def _func(*args, **kwargs):
-        self = args[0]
-        if self.options.cron:
-            fork(func, args, kwargs, serialize=True, delay=59)
-        else:
-            func(*args, **kwargs)
-    return _func
-
 class SchedNotAllowed(Exception):
     """
     The exception signaling the task can not run due to scheduling
@@ -185,6 +96,24 @@ class SchedOpts(object):
         if self.fname is None:
             self.fname = "last_"+section+"_push"
         self.schedule_option = schedule_option
+
+def sched_action(func):
+    """
+    A decorator in charge of locking and updating the scheduler tasks
+    and subtasks timestamps.
+    """
+    def _func(self, action, options=None):
+        fds = []
+        if options is None:
+            options = Storage()
+        try:
+            if action in self.sched.scheduler_actions:
+                fds = self.sched.action_timestamps(action, options.rid)
+            func(self, action, options)
+        finally:
+            for fd in fds:
+                lock.unlock(fd)
+    return _func
 
 class Scheduler(object):
     """
@@ -240,7 +169,7 @@ class Scheduler(object):
         self.options.cron = True
         for idx in range(_max):
             future_dt = now + datetime.timedelta(minutes=idx*10)
-            data = self.skip_action(action, now=future_dt, deferred_write_timestamp=True)
+            data = self.skip_action(action, now=future_dt)
             if isinstance(data, dict):
                 if len(data["keep"]) > 0:
                     return {"next_sched": future_dt, "minutes": _max}
@@ -271,18 +200,6 @@ class Scheduler(object):
 
         # never reach here
         return True
-
-    @staticmethod
-    def sched_delay(delay=59):
-        """
-        Sleep for a random delay before executing the task, and after the
-        scheduling constraints have been validated.
-        """
-        delay = int(random.random()*delay)
-        try:
-            time.sleep(delay)
-        except KeyboardInterrupt:
-            raise ex.excError("interrupted while waiting for scheduler delay")
 
     def sched_write_timestamp(self, sopt):
         """
@@ -992,6 +909,58 @@ class Scheduler(object):
             os.makedirs(timestamp_d)
         return os.path.join(timestamp_d, fname)
 
+    def validate_action(self, action):
+        """
+        Decide if the scheduler task can run, and return the concerned rids
+        for multi-resources actions.
+
+        The callers are responsible for catching excAbortAction.
+        """
+        if not self._is_croned():
+            return
+        if action not in self.scheduler_actions:
+            return
+        if not isinstance(self.scheduler_actions[action], list):
+            if self.skip_action(action):
+                raise ex.excAbortAction
+            return
+        data = self.skip_action(action)
+        sched_options = data["keep"]
+        if len(sched_options) == 0:
+            raise ex.excAbortAction
+        return [option.section for option in sched_options]
+
+    def action_timestamps(self, action, rids=None):
+        sched_options = self.scheduler_actions[action]
+        tsfiles = []
+        if not isinstance(sched_options, list):
+            tsfile = self.get_timestamp_f(sched_options.fname)
+            tsfiles.append(tsfile)
+        else:
+            if rids is None:
+                return []
+            for _so in sched_options:
+                if not _so.section in rids:
+                    continue
+                tsfile = self.get_timestamp_f(_so.fname)
+                tsfiles.append(tsfile)
+
+        if len(tsfiles) == 0:
+            return []
+
+        fds = []
+        import lock
+        try:
+            for tsfile in tsfiles:
+                fd = lock.lock(timeout=0, lockfile=tsfile)
+                self._timestamp(tsfile)
+                fds.append(fd)
+        except Exception as exc:
+            self.log.warning("a %s action is already in progess")
+            for fd in fds:
+                lock.unlock(fd)
+        return fds
+
     def _is_croned(self):
         """
         Return True if the cron option is set.
@@ -999,8 +968,7 @@ class Scheduler(object):
         return self.options.cron
 
     def skip_action(self, action, section=None, fname=None,
-                    schedule_option=None, now=None,
-                    deferred_write_timestamp=False):
+                    schedule_option=None, now=None):
         if action not in self.scheduler_actions:
             if not self._is_croned():
                 return False
@@ -1013,7 +981,7 @@ class Scheduler(object):
                 skip = self._skip_action(
                     action, sopt,
                     section=section, fname=fname, schedule_option=schedule_option,
-                    now=now, deferred_write_timestamp=deferred_write_timestamp
+                    now=now
                 )
                 if skip:
                     data["skip"].append(sopt)
@@ -1027,12 +995,11 @@ class Scheduler(object):
             return self._skip_action(
                 action, sopt,
                 section=section, fname=fname, schedule_option=schedule_option,
-                now=now, deferred_write_timestamp=deferred_write_timestamp
+                now=now
             )
 
     def _skip_action(self, action, sopt, section=None, fname=None,
-                     schedule_option=None, now=None,
-                     deferred_write_timestamp=False):
+                     schedule_option=None, now=None):
         if section is None:
             section = sopt.section
         if fname is None:
@@ -1060,14 +1027,7 @@ class Scheduler(object):
             self.sched_log(title(), str(exc), "debug")
             return True
 
-        self.sched_log(title(), "run task", "info")
-
-        # update the timestamp file
-        if not deferred_write_timestamp:
-            timestamp_f = self.get_timestamp_f(fname)
-            self._timestamp(timestamp_f)
-            self.sched_log(title(), "last run timestamp updated", "debug")
-
+        #self.sched_log(title(), "run task", "info")
         return False
 
     def print_schedule(self):

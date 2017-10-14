@@ -27,7 +27,7 @@ import rcExceptions as ex
 import rcLogger
 import node
 import svcdict
-from rcScheduler import scheduler_fork, Scheduler, SchedOpts
+from rcScheduler import Scheduler, SchedOpts, sched_action
 from comm import Crypt
 
 if sys.version_info[0] < 3:
@@ -109,7 +109,6 @@ ACTIONS_NO_STATUS_CHANGE = [
     "print_resource_status",
     "print_schedule",
     "print_status",
-    "push",
     "push_resinfo",
     "push_config",
     "push_service_status",
@@ -138,9 +137,8 @@ ACTIONS_NO_LOG = [
     "get",
     "group_status",
     "logs",
-    "push",
-    "push_resinfo",
     "push_config",
+    "push_resinfo",
     "push_service_status",
     "resource_monitor",
     "scheduler",
@@ -162,8 +160,9 @@ ACTIONS_NO_TRIGGER = [
     "pg_kill",
     "logs",
     "edit_config",
+    "push_config",
     "push_resinfo",
-    "push",
+    "push_service_status",
     "group_status",
     "presync",
     "postsync",
@@ -177,7 +176,6 @@ ACTIONS_NO_LOCK = [
     "frozen",
     "get",
     "logs",
-    "push",
     "push_resinfo",
     "push_config",
     "push_service_status",
@@ -520,6 +518,11 @@ class Svc(Crypt):
                     fname="last_push_service_status",
                     schedule_option="status_schedule"
                 ),
+                "push_resinfo": SchedOpts(
+                    "DEFAULT",
+                    fname="last_push_resinfo",
+                    schedule_option="resinfo_schedule"
+                ),
             },
         )
 
@@ -746,16 +749,9 @@ class Svc(Crypt):
         self.sync_dblogger = True
         for action in self.sched.scheduler_actions:
             try:
-                if action == "sync_all":
-                    # save the action logging to the collector if sync_all
-                    # is not needed
-                    self.sched_sync_all()
-                elif action.startswith("task#"):
-                    self.run_task(action)
-                elif action == "compliance_auto":
-                    self.compliance_auto()
-                else:
-                    self.action(action)
+                self.action(action)
+            except ex.excAbortAction:
+                continue
             except ex.excError as exc:
                 self.log.error(exc)
             except:
@@ -792,29 +788,25 @@ class Svc(Crypt):
             )
 
         syncs = []
-
         for resource in self.get_resources("sync"):
             syncs += [SchedOpts(
                 resource.rid,
                 fname="last_syncall_"+resource.rid,
                 schedule_option="sync_schedule"
             )]
-
         if len(syncs) > 0:
             self.sched.scheduler_actions["sync_all"] = syncs
 
+        tasks = []
         for resource in self.get_resources("task"):
-            self.sched.scheduler_actions[resource.rid] = SchedOpts(
+            tasks += [SchedOpts(
                 resource.rid,
                 fname="last_"+resource.rid,
                 schedule_option="no_schedule"
-            )
+            )]
+        if len(tasks) > 0:
+            self.sched.scheduler_actions["run"] = tasks
 
-        self.sched.scheduler_actions["push_resinfo"] = SchedOpts(
-            "DEFAULT",
-            fname="last_push_resinfo",
-            schedule_option="resinfo_schedule"
-        )
 
     def purge_status_caches(self):
         """
@@ -1886,14 +1878,6 @@ class Svc(Crypt):
 
     def resource_monitor(self):
         """
-        The resource monitor action entrypoint
-        """
-        if self.sched.skip_action("resource_monitor"):
-            return
-        self.task_resource_monitor()
-
-    def task_resource_monitor(self):
-        """
         The resource monitor action. Refresh important resources at a different
         schedule.
         """
@@ -2548,13 +2532,6 @@ class Svc(Crypt):
             return True
         return False
 
-    def run_task(self, rid):
-        if self.sched.skip_action(rid):
-            return
-        options = Storage(self.options)
-        options.rid = [rid]
-        self.action("run", options)
-
     def run(self):
         self.master_run()
         self.slave_run()
@@ -2972,34 +2949,12 @@ class Svc(Crypt):
         self.log.debug("nothing to sync for the service for now")
         return False
 
-    def sched_sync_all(self):
-        """
-        The 'sync_all' scheduler task entrypoint.
-        """
-        data = self.sched.skip_action("sync_all", deferred_write_timestamp=True)
-        if len(data["keep"]) == 0:
-            return
-        self._sched_sync_all(data["keep"])
-
-    @scheduler_fork
-    def _sched_sync_all(self, sched_options):
-        """
-        Call the sync_all method of each sync resources that passed the
-        scheduler constraints.
-        """
-        options = Storage(self.options)
-        options.rid = [option.section for option in sched_options]
-        self.action("sync_all", options)
-        self.sched.sched_write_timestamp(sched_options)
-
     def sync_all(self):
         """
         The 'sync all' action entrypoint.
         """
         if not self.can_sync(["sync"]):
             return
-        if self.options.cron:
-            self.sched.sched_delay()
         self.presync()
         self.sub_set_action("sync.rsync", "sync_nodes")
         self.sub_set_action("sync.zfs", "sync_nodes")
@@ -3026,17 +2981,6 @@ class Svc(Crypt):
             if not self.options.cron:
                 self.log.info("push service status is disabled for encapsulated services")
             return
-        if self.sched.skip_action("push_service_status"):
-            return
-        self.task_push_service_status()
-
-    @scheduler_fork
-    def task_push_service_status(self):
-        """
-        Refresh and push the service status to the collector.
-        """
-        if self.options.cron:
-            self.sched.sched_delay()
         self.options.refresh = True
         data = self.svcmon_push_lists()
         self.node.collector.call('svcmon_update_combo', *data, sync=True)
@@ -3044,26 +2988,14 @@ class Svc(Crypt):
     def push_resinfo(self):
         """
         The 'push_resinfo' scheduler task and action entrypoint.
-        """
-        if self.sched.skip_action("push_resinfo"):
-            return
-        self.task_push_resinfo()
-
-    @scheduler_fork
-    def task_push_resinfo(self):
-        """
         Push the per-resource key/value pairs to the collector.
         """
-        if self.options.cron:
-            self.sched.sched_delay()
         self.node.collector.call('push_resinfo', [self])
 
     def push_config(self):
         """
         The 'push_config' scheduler task entrypoint.
         """
-        if self.sched.skip_action("push_config"):
-            return
         self.push()
 
     @lazy
@@ -3088,7 +3020,6 @@ class Svc(Crypt):
             if len(self.log.handlers) > 1:
                 self.log.handlers[1].setLevel(rcEnv.loglevel)
 
-    @scheduler_fork
     def push(self):
         """
         The 'push' action entrypoint.
@@ -3099,18 +3030,9 @@ class Svc(Crypt):
         """
         if self.encap:
             return
-        if self.options.cron:
-            self.sched.sched_delay()
         self.push_encap_config()
         self.node.collector.call('push_all', [self])
         self.log.info("send %s to collector", self.paths.cf)
-        try:
-            import time
-            with open(self.paths.push_flag, 'w') as ofile:
-                ofile.write(str(time.time()))
-            self.log.info("update %s timestamp", self.paths.push_flag)
-        except (OSError, IOError):
-            self.log.error("failed to update %s timestamp", self.paths.push_flag)
 
     def push_encap_config(self):
         """
@@ -3340,7 +3262,7 @@ class Svc(Crypt):
         return [resource for resource in self.resources_by_id.values()
                 if resource.standby]
 
-    def prepare_options(self, options):
+    def prepare_options(self, action, options):
         """
         Return a Storage() from command line options or dict passed as
         <options>, sanitized, merge with default values in self.options.
@@ -3362,6 +3284,11 @@ class Svc(Crypt):
                 except ValueError:
                     raise ex.excError("invalid json in resource definition: "
                                       "%s" % options.resource[idx])
+
+        if self.options.cron:
+            sched_rids = self.sched.validate_action(action)
+            if sched_rids is not None:
+                options.rid = sched_rids
 
         self.options.update(options)
         options = self.options
@@ -3432,9 +3359,11 @@ class Svc(Crypt):
         return rids
 
     def action(self, action, options=None):
+        if action == "scheduler":
+            return self.scheduler()
         self.allow_on_this_node(action)
-        options = self.prepare_options(options)
         try:
+            options = self.prepare_options(action, options)
             self.async_action(action)
         except ex.excError as exc:
             self.log.error(exc)
@@ -3443,6 +3372,7 @@ class Svc(Crypt):
             return 0
         return self._action(action, options=options)
 
+    @sched_action
     def _action(self, action, options=None):
         """
         Filter resources on which the service action must act.
@@ -5033,11 +4963,6 @@ class Svc(Crypt):
                           "'%s' is not a member of DEFAULT.nodes, "
                           "DEFAULT.drpnode nor DEFAULT.drpnodes" % \
                           (action, rcEnv.nodename))
-
-    def compliance_auto(self):
-        if self.sched.skip_action("compliance_auto"):
-            return
-        self.action("compliance_auto")
 
     def logs(self, nodename=None):
         try:
