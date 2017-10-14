@@ -1564,12 +1564,6 @@ class Node(Crypt):
         If the force option is set, send all files the user wants to track.
         """
         try:
-            self.task_sysreport()
-        except (OSError, ex.excError) as exc:
-            print(exc, file=sys.stderr)
-            return 1
-
-        try:
             mod = __import__('rcSysReport'+rcEnv.sysname)
         except ImportError:
             print("sysreport is not supported on this os")
