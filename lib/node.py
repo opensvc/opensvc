@@ -264,7 +264,7 @@ class Node(Crypt):
                     fname="last_comp_check",
                     schedule_option="comp_schedule"
                 ),
-                "auto_rotate_root_pw": SchedOpts(
+                "rotate_root_pw": SchedOpts(
                     "rotate_root_pw",
                     fname="last_rotate_root_pw",
                     schedule_option="no_schedule"
