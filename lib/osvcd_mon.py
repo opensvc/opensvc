@@ -1632,6 +1632,8 @@ class Monitor(shared.OsvcThread, Crypt):
                     except KeyError:
                         local = Storage()
                     for nodename in svc.peers:
+                        if nodename == rcEnv.nodename:
+                            continue
                         try:
                             remote = Storage(shared.CLUSTER_DATA[nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"])
                         except KeyError:
