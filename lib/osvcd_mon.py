@@ -817,6 +817,12 @@ class Monitor(shared.OsvcThread, Crypt):
                     missing=" ".join(missing))
         return False
 
+    def min_instances_reached(self, svc):
+        instances = self.get_service_instances(svc.svcname, discard_empty=False)
+        live_nodes = [nodename for nodename in shared.CLUSTER_DATA if shared.CLUSTER_DATA[nodename] is not None]
+        min_instances = set(svc.peers) & set(live_nodes)
+        return len(instances) >= len(min_instances)
+
     def leader_first(self, svc, provisioned=False, deleted=None):
         """
         Return True if the peer selected for anteriority is found to have
@@ -830,6 +836,9 @@ class Monitor(shared.OsvcThread, Crypt):
           whatever their frozen, constraints, and current provisioning
           state.
         """
+        if not self.min_instances_reached(svc):
+            self.log.info("delay leader-first action until all nodes have fetched the service config")
+            return False
         instances = self.get_service_instances(svc.svcname, discard_empty=True)
         candidates = [nodename for (nodename, data) in instances.items() \
                       if data.get("avail") in ("up", "warn")]
@@ -837,8 +846,7 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.info("service %s has no up instance, relax candidates "
                           "constraints", svc.svcname)
             candidates = self.placement_candidates(svc, discard_frozen=False,
-                                                   discard_unprovisioned=False,
-                                                   discard_constraints_violation=False)
+                                                   discard_unprovisioned=False)
         try:
             top = self.placement_ranks(svc, candidates=candidates)[0]
             self.log.info("elected %s as the first node to take action on "
