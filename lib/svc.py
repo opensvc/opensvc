@@ -2607,8 +2607,10 @@ class Svc(Crypt):
     def provision(self):
         self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone", "docker"]))
 
-        # return the service to standby
-        self.rollback()
+        if not self.options.disable_rollback:
+            # set by the daemon on the placement leaders.
+            # return the service to standby if not a placement leader
+            self.rollback()
         self.action("push_config")
 
     def abort_start(self):
