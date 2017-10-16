@@ -1048,12 +1048,18 @@ class Monitor(shared.OsvcThread, Crypt):
         svc = self.get_service(svcname)
         if svc and svc.orchestrate == "no":
             return "n/a"
+        has_up = False
+        placement = "optimal"
         for instance in self.get_service_instances(svcname).values():
             if "avail" not in instance:
                 continue
-            if instance["avail"] != "up" and instance["monitor"].get("placement") == "leader":
-                return "non-optimal"
-        return "optimal"
+            if instance["avail"] == "up":
+                has_up = True
+            elif instance["monitor"].get("placement") == "leader":
+                placement = "non-optimal"
+        if not has_up:
+            return "n/a"
+        return placement
 
     def get_agg_provisioned(self, svcname):
         provisioned = 0
