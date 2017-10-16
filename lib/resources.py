@@ -953,6 +953,10 @@ class Resource(object):
         return getattr(mod, "Prov")(self)
 
     def provision(self):
+        if self.shared and not self.svc.options.disable_rollback:
+            self.log.info("skip shared resource provisioning: not leader")
+            self.write_is_provisioned_flag(True, mtime=0)
+            return
         self._provision()
         self.prov.start()
 
