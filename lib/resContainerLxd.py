@@ -55,6 +55,9 @@ class Container(resContainer.Container):
         except (ValueError, IndexError):
             return
 
+    def postsync(self):
+        self.lxd_import()
+
     def lxd_import(self):
         if self.lxc_info() is not None:
             return
