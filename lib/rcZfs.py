@@ -41,7 +41,7 @@ def a2pool_dataset(s):
     ss = s
     if s[0] == '/':
         cmd = [rcEnv.syspaths.zfs, 'list', '-H',  '-o', 'name', s]
-        (ret, out, err) = call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             return ("", "")
         ss = out.split('\n')[0]
@@ -65,9 +65,9 @@ class Dataset(object):
             self.log = log
     def __str__(self, option=None):
         if option is None:
-            cmd = [rcEnv.syspaths.zfs, 'list', self.name ]
+            cmd = [rcEnv.syspaths.zfs, 'list', self.name]
         else:
-            cmd = [rcEnv.syspaths.zfs, 'list'] + option + [ self.name ]
+            cmd = [rcEnv.syspaths.zfs, 'list'] + option + [self.name]
         (retcode, stdout, stderr) = call(cmd, log=self.log)
         if retcode == 0:
             return stdout
@@ -77,7 +77,7 @@ class Dataset(object):
     def exists(self, type="all"):
         """return True if dataset exists else return False
         if type is provided, also verify dataset type"""
-        (out, err, ret) = justcall('zfs get -H -o value type'.split()+[self.name])
+        out, err, ret = justcall(["zfs", "get", "-H", "-o", "value", "type", self.name])
         if ret == 0 and type == "all":
             return True
         elif ret == 0 and out.split('\n')[0] == type:
@@ -88,11 +88,11 @@ class Dataset(object):
     def create(self, option = None):
         "create dataset with options"
         if option is None:
-            cmd = [rcEnv.syspaths.zfs, 'create', self.name ]
+            cmd = [rcEnv.syspaths.zfs, 'create', self.name]
         else:
-            cmd = [rcEnv.syspaths.zfs, 'create'] + option + [ self.name ]
-        (retcode, stdout, stderr) = vcall(cmd, log=self.log)
-        if retcode == 0:
+            cmd = [rcEnv.syspaths.zfs, 'create'] + option + [self.name]
+        ret, _, _ = vcall(cmd, log=self.log)
+        if ret == 0:
             return True
         else:
             return False
@@ -100,8 +100,8 @@ class Dataset(object):
     def destroy(self, options=[]):
         "destroy dataset"
         cmd = [rcEnv.syspaths.zfs, 'destroy'] + options + [self.name]
-        (retcode, stdout, stderr) = vcall(cmd, log=self.log)
-        if retcode == 0:
+        ret, _, _ = vcall(cmd, log=self.log)
+        if ret == 0:
             return True
         else:
             return False
@@ -112,9 +112,9 @@ class Dataset(object):
         else return ''
         """
         cmd = [rcEnv.syspaths.zfs, 'get', '-Hp', '-o', 'value', propname, self.name]
-        (stdout, stderr, retcode) = justcall(cmd)
-        if retcode == 0 :
-            return stdout.rstrip('\n')
+        out, _, ret = justcall(cmd)
+        if ret == 0 :
+            return out.rstrip('\n')
         else:
             return ""
 
@@ -123,10 +123,10 @@ class Dataset(object):
         Return True is success else return False
         """
         cmd = [rcEnv.syspaths.zfs, 'set', propname + '='+ propval, self.name]
-        (retcode, stdout, stderr) = vcall(cmd, log=self.log,
-                                        err_to_warn=err_to_warn,
-                                        err_to_info=err_to_info)
-        if retcode == 0 :
+        ret, out, err = vcall(cmd, log=self.log,
+                              err_to_warn=err_to_warn,
+                              err_to_info=err_to_info)
+        if ret == 0 :
             return True
         else:
             return False
@@ -153,8 +153,8 @@ class Dataset(object):
         if recursive:
             cmd.append("-r")
         cmd.append(snapdataset)
-        (retcode, stdout, stderr) = vcall(cmd, log=self.log)
-        if retcode == 0:
+        ret, _, _ = vcall(cmd, log=self.log)
+        if ret == 0:
             return Dataset(snapdataset)
         else:
             return False
@@ -167,9 +167,9 @@ class Dataset(object):
         if option is None:
             cmd = [rcEnv.syspaths.zfs, 'clone', self.name, name]
         else:
-            cmd = [rcEnv.syspaths.zfs, 'clone'] + option + [ self.name, name ]
-        (retcode, stdout, stderr) = vcall(cmd, log=self.log)
-        if retcode == 0:
+            cmd = [rcEnv.syspaths.zfs, 'clone'] + option + [self.name, name]
+        ret, _, _ = vcall(cmd, log=self.log)
+        if ret == 0:
             return Dataset(name)
         else:
             return False
@@ -177,7 +177,7 @@ class Dataset(object):
 if __name__ == "__main__":
     dsname="rpool/toto"
     ds = Dataset(dsname)
-    if ds.create(option=[ "-o", "mountpoint=none"]) is False:
+    if ds.create(option=["-o", "mountpoint=none"]) is False:
         print("========== Failed")
     else:
         print(ds)

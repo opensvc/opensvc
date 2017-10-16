@@ -1,7 +1,9 @@
 import os
-from rcGlobalEnv import rcEnv
 import datetime
 from subprocess import *
+
+from rcGlobalEnv import rcEnv
+from rcUtilities import justcall
 import rcExceptions as ex
 import rcStatus
 import resSync
@@ -49,12 +51,16 @@ class SyncZfs(resSync.Sync):
         skip snapshot creation if delay_snap in tags
         delay_snap should be used for oracle archive datasets
         """
-        resources = [ r for r in self.rset.resources if not r.skip and not r.is_disabled() ]
+        if not hasattr(self, action):
+            return
+        resources = [r for r in self.rset.resources if not r.skip and not r.is_disabled()]
 
         if len(resources) == 0:
             return
 
         self.pre_sync_check_prd_svc_on_non_prd_node()
+        self.pre_sync_check_svc_not_up()
+        self.pre_sync_check_flex_primary()
 
         for i, r in enumerate(resources):
             if 'delay_snap' in r.tags:
@@ -69,7 +75,6 @@ class SyncZfs(resSync.Sync):
                 tgts = r.targets.copy()
                 if len(tgts) == 0 :
                     continue
-            r.get_info()
             if not r.snap_exists(r.src_snap_tosend):
                 r.create_snap(r.src_snap_tosend)
 
@@ -81,21 +86,21 @@ class SyncZfs(resSync.Sync):
         cmd = [rcEnv.syspaths.zfs, 'list', '-t', 'snapshot', snapname]
         if node is not None:
             cmd = rcEnv.rsh.split() + [node] + cmd
-        (ret, out, err) = self.call(cmd, errlog=False)
+        out, err, ret = justcall(cmd)
         if ret == 0:
             return True
         else:
             return False
 
     def create_snap(self, snap):
-        snapds=Dataset(snap)
+        snapds = Dataset(snap)
         if snapds.exists():
             self.log.error('%s should not exist'%snap)
             raise ex.excError
         if self.recursive :
-            cmd = [rcEnv.syspaths.zfs, 'snapshot' , '-r' , snap ]
+            cmd = [rcEnv.syspaths.zfs, 'snapshot' , '-r' , snap]
         else:
-            cmd = [rcEnv.syspaths.zfs, 'snapshot' , snap ]
+            cmd = [rcEnv.syspaths.zfs, 'snapshot' , snap]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -271,18 +276,14 @@ class SyncZfs(resSync.Sync):
         for n in self.targets:
             self.push_statefile(n)
 
-    def start(self):
-        pass
-
-    def stop(self):
-        pass
-
     def can_sync(self, target=None):
+        if not Dataset(self.src).exists():
+            return False
         try:
             ls = self.get_local_state()
             ts = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
         except IOError:
-            self.log.error("zfs state file not found")
+            self.log.debug("zfs state file not found")
             return True
         except:
             import sys
