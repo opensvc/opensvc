@@ -527,6 +527,8 @@ class Resource(object):
             status_str += '\n'.join([entry[0]+": "+entry[1] for entry in self.status_logs])+'\n'
         with open(self.fpath_status_last, 'w') as ofile:
             ofile.write(status_str)
+            ofile.flush()
+            os.fsync(ofile)
 
     def write_status_history(self):
         """
@@ -922,6 +924,8 @@ class Resource(object):
             with open(self.provisioned_flag, 'w') as filep:
                 try:
                     json.dump(value, filep)
+                    filep.flush()
+                    os.fsync(filep)
                 except ValueError:
                     return
         except Exception:
