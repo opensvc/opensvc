@@ -409,7 +409,7 @@ class Svc(Crypt):
             cf=os.path.join(rcEnv.paths.pathetc, self.svcname+'.conf'),
             initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.d'),
             alt_initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.dir'),
-            push_flag=os.path.join(self.var_d, 'scheduler', 'last_pushed_config'),
+            push_flag=os.path.join(self.var_d, 'scheduler', 'last_push_config'),
             tmp_cf=os.path.join(rcEnv.paths.pathtmp, self.svcname+".conf.tmp")
         )
         if cf:
@@ -2609,7 +2609,7 @@ class Svc(Crypt):
 
         # return the service to standby
         self.rollback()
-        self.push()
+        self.action("push_config")
 
     def abort_start(self):
         """
@@ -3019,7 +3019,7 @@ class Svc(Crypt):
         if len(self.log.handlers) > 1:
             self.log.handlers[1].setLevel(logging.CRITICAL)
         try:
-            self.push()
+            self.action("push_config")
         finally:
             if len(self.log.handlers) > 1:
                 self.log.handlers[1].setLevel(rcEnv.loglevel)
@@ -3902,8 +3902,7 @@ class Svc(Crypt):
 
         try:
             mtime = os.stat(self.paths.cf).st_mtime
-            with open(self.paths.push_flag) as flag:
-                last_push = float(flag.read())
+            last_push = os.stat(self.paths.push_flag).st_mtime
         except (ValueError, IOError, OSError):
             self.log.error("can not read timestamp from %s or %s",
                            self.paths.cf, self.paths.push_flag)
