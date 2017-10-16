@@ -314,16 +314,22 @@ class Monitor(shared.OsvcThread, Crypt):
             on_error_kwargs={"status": "purge failed"},
         )
 
-    def service_provision(self, svcname):
-        self.set_smon(svcname, "provisioning")
-        proc = self.service_command(svcname, ["provision"])
+    def service_provision(self, svc):
+        self.set_smon(svc.svcname, "provisioning")
+        candidates = self.placement_candidates(svc, discard_frozen=False,
+                                               discard_unprovisioned=False,
+                                               discard_constraints_violation=False)
+        cmd = ["provision"]
+        if self.placement_leader(svc, candidates):
+            cmd += ["--disable-rollback"]
+        proc = self.service_command(svc.svcname, cmd)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
-            on_success_args=[svcname],
+            on_success_args=[svc.svcname],
             on_success_kwargs={"status": "idle"},
             on_error="generic_callback",
-            on_error_args=[svcname],
+            on_error_args=[svc.svcname],
             on_error_kwargs={"status": "provision failed"},
         )
 
@@ -736,7 +742,7 @@ class Monitor(shared.OsvcThread, Crypt):
         elif smon.global_expect == "provisioned":
             if not self.service_provisioned(instance) and \
                self.leader_first(svc, provisioned=True):
-                self.service_provision(svc.svcname)
+                self.service_provision(svc)
         elif smon.global_expect == "deleted":
             if svc.svcname in shared.SERVICES:
                 self.service_delete(svc.svcname)
