@@ -1548,6 +1548,8 @@ class Monitor(shared.OsvcThread, Crypt):
                         self.log.info("node %s wants service %s %s, already is", nodename, svcname, global_expect)
 
     def accept_g_expect(self, svcname, instance, global_expect):
+        if svcname not in shared.AGG:
+            return False
         if global_expect == "stopped":
             local_avail = instance["avail"]
             local_frozen = instance["frozen"]
