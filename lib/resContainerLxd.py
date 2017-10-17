@@ -11,6 +11,8 @@ lxc = "/usr/bin/lxc"
 lxd = "/usr/bin/lxd"
 
 class Container(resContainer.Container):
+    refresh_provisioned_on_unprovision = True
+
     def __init__(self,
                  rid,
                  name,
@@ -254,15 +256,3 @@ class Container(resContainer.Container):
                 return True
         return False
 
-    def is_provisioned(self):
-        """
-        Run the parent is_provisioned() method with force=True, because even
-        though containers are shared, the replication imports it on the
-        secondary nodes, where it must be deleted too.
-        """
-        force = self.svc.options.force
-        self.svc.options.force = True
-        try:
-            return resContainer.Container.is_provisioned(self)
-        finally:
-            self.svc.options.force = force

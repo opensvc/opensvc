@@ -955,7 +955,7 @@ class Resource(object):
     def provision(self):
         if self.shared and not self.svc.options.disable_rollback:
             self.log.info("skip shared resource provisioning: not leader")
-            self.write_is_provisioned_flag(True, mtime=0)
+            self.write_is_provisioned_flag(True, mtime=1)
             return
         self._provision()
         self.prov.start()
@@ -970,7 +970,11 @@ class Resource(object):
             return
         if self.prov is None:
             return
-        if self.is_provisioned() is True:
+        if hasattr(self, "refresh_provisioned_on_provision"):
+            refresh = self.refresh_provisioned_on_provision
+        else:
+            refresh = False
+        if self.is_provisioned(refresh=refresh) is True:
             self.log.info("%s already provisioned", self.label)
         else:
             self.prov.provisioner()
@@ -990,22 +994,27 @@ class Resource(object):
             return
         if self.prov is None:
             return
-        if self.is_provisioned() is False:
+        if hasattr(self, "refresh_provisioned_on_unprovision"):
+            refresh = self.refresh_provisioned_on_unprovision
+        else:
+            refresh = False
+        if self.is_provisioned(refresh=refresh) is False:
             self.log.info("%s already unprovisioned", self.label)
         else:
             self.prov.unprovisioner()
         self.write_is_provisioned_flag(False)
 
-    def is_provisioned(self):
+    def is_provisioned(self, refresh=False):
         if self.prov is None:
             return True
-        if not self.svc.options.force:
+        if not refresh:
             flag = self.is_provisioned_flag()
             if flag is not None:
                 return flag
         if not hasattr(self.prov, "is_provisioned"):
             return
         value = self.prov.is_provisioned()
-        self.write_is_provisioned_flag(value)
+        if not self.shared or self.svc.options.disable_rollback:
+            self.write_is_provisioned_flag(value)
         return value
 
