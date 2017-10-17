@@ -1702,7 +1702,6 @@ class Svc(Crypt):
                 return
 
             add_subsets(ers[rid], node_res)
-            add_instances(node_instances)
 
         def add_instances(node):
             if len(self.peers) < 1:
@@ -1771,6 +1770,7 @@ class Svc(Crypt):
         node_svcname.add_column(svc_notice)
         node_instances = node_svcname.add_node()
         node_instances.add_column("instances")
+        add_instances(node_instances)
         node_nodename = node_instances.add_node()
         node_nodename.add_column(rcEnv.nodename, color.BOLD)
         node_nodename.add_column()
