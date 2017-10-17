@@ -1057,7 +1057,7 @@ class Scheduler(object):
 
     def _print_schedule_default(self):
         """
-        Print the scheduling table in normal or detailled mode.
+        Print the scheduling table in normal or detailed mode.
         """
         from forest import Forest
         from rcColor import color

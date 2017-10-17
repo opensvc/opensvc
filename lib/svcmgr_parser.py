@@ -488,7 +488,7 @@ ACTIONS = {
             ],
         },
         "print_status": {
-            "msg": "Display the service status, with a detailled with of the local "
+            "msg": "Display the service status, with a detailed view of the local "
                    "instance.",
             "options": [
                 OPT.format,
