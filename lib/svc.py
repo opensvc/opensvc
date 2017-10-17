@@ -21,7 +21,7 @@ import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
 from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         try_decode, eval_expr, action_triggers, read_cf, \
-                        drop_option
+                        drop_option, fcache
 from converters import *
 import rcExceptions as ex
 import rcLogger
@@ -696,7 +696,7 @@ class Svc(Crypt):
     @lazy
     def shared_resources(self):
         return [res for res in self.get_resources() if res.shared]
-            
+
     def action_rid_dependencies(self, action, rid):
         if action in ("provision", "start"):
             action = "start"
@@ -1298,10 +1298,14 @@ class Svc(Crypt):
         group_status = self.group_status()
         return group_status["overall"].status
 
+    @fcache
+    def get_mon_data(self):
+        return self.node._daemon_status(silent=True)["monitor"]
+
     def get_smon_data(self):
         data = {}
         try:
-            mon_data = self.node._daemon_status(silent=True)["monitor"]
+            mon_data = self.get_mon_data()
             data["compat"] = mon_data["compat"]
             data["service"] = mon_data["services"][self.svcname]
             data["instances"] = {}
@@ -1627,27 +1631,36 @@ class Svc(Crypt):
         svc_notice = ", ".join(svc_notice)
 
         # instance-level notices
-        notice = []
-        if data["overall"] == "warn":
-            notice.append(colorize(data["overall"], STATUS_COLOR[data["overall"]]))
-        if self.frozen():
-            notice.append(colorize("frozen", color.BLUE))
-        if self.node.frozen():
-            notice.append(colorize("node frozen", color.BLUE))
-        if not data.get("constraints", True):
-            notice.append("constraints violation")
-        if data.get("provisioned") is False:
-            notice.append(colorize("not provisioned", color.RED))
-        if "monitor" in data:
-            if data["monitor"]["status"] == "idle":
-                notice.append(colorize(data["monitor"]["status"], color.LIGHTBLUE))
+        def instance_notice(overall=None, frozen=None, node_frozen=None, constraints=None,
+                            provisioned=None, monitor=None):
+            notice = []
+            if overall == "warn":
+                notice.append(colorize(overall, STATUS_COLOR[overall]))
+            if frozen:
+                notice.append(colorize("frozen", color.BLUE))
+            if node_frozen:
+                notice.append(colorize("node frozen", color.BLUE))
+            if not constraints:
+                notice.append("constraints violation")
+            if provisioned is False:
+                notice.append(colorize("not provisioned", color.RED))
+            if monitor:
+                if monitor["status"] == "idle":
+                    notice.append(colorize(monitor["status"], color.LIGHTBLUE))
+                else:
+                    notice.append(colorize(monitor["status"], color.RED))
+                if monitor.get("local_expect") not in ("", None):
+                    notice.append(colorize(monitor["local_expect"], color.LIGHTBLUE))
             else:
-                notice.append(colorize(data["monitor"]["status"], color.RED))
-            if data["monitor"].get("local_expect") not in ("", None):
-                notice.append(colorize(data["monitor"]["local_expect"], color.LIGHTBLUE))
-        else:
-            notice.append(colorize("daemon down", color.RED))
-        notice = ", ".join(notice)
+                notice.append(colorize("daemon down", color.RED))
+            return ", ".join(notice)
+
+        notice = instance_notice(overall=data["overall"],
+                                 frozen=self.frozen(),
+                                 node_frozen=self.node.frozen(),
+                                 constraints=data.get("constraints", True),
+                                 provisioned=data.get("provisioned"),
+                                 monitor=data.get("monitor"))
 
         # encap resources
         ers = {}
@@ -1689,6 +1702,55 @@ class Svc(Crypt):
                 return
 
             add_subsets(ers[rid], node_res)
+            add_instances(node_instances)
+
+        def add_instances(node):
+            if len(self.peers) < 1:
+                return
+            for nodename in self.peers:
+                if nodename == rcEnv.nodename:
+                    continue
+                add_instance(nodename, node)
+
+        def add_instance(nodename, node):
+            node_child = node.add_node()
+            node_child.add_column(nodename, color.BOLD)
+            node_child.add_column()
+            mon_data = self.get_mon_data()
+            try:
+                data = mon_data["nodes"][nodename]["services"]["status"][self.svcname]
+                avail = data["avail"]
+                node_frozen = mon_data["nodes"][nodename]["frozen"]
+            except KeyError:
+                avail = "undef"
+                node_frozen = "undef"
+            node_child.add_column(avail, STATUS_COLOR[avail])
+            notice = instance_notice(overall=data["overall"],
+                                     frozen=data["frozen"],
+                                     node_frozen=node_frozen,
+                                     constraints=data.get("constraints", True),
+                                     provisioned=data.get("provisioned"),
+                                     monitor=data.get("monitor"))
+            node_child.add_column(notice, color.LIGHTBLUE)
+
+        def add_children(node):
+            if len(self.children) == 0:
+                return
+            node_children = node.add_node()
+            node_children.add_column("children")
+            for child in self.children:
+                add_child(child, node_children)
+
+        def add_child(svcname, node):
+            node_child = node.add_node()
+            node_child.add_column(svcname, color.BOLD)
+            node_child.add_column()
+            mon_data = self.get_mon_data()
+            try:
+                avail = mon_data["services"][svcname]["avail"]
+            except KeyError:
+                avail = "undef"
+            node_child.add_column(avail, STATUS_COLOR[avail])
 
         tree = Forest(
             separator=" ",
@@ -1707,13 +1769,16 @@ class Svc(Crypt):
         else:
             node_svcname.add_column()
         node_svcname.add_column(svc_notice)
-        node_nodename = node_svcname.add_node()
+        node_instances = node_svcname.add_node()
+        node_instances.add_column("instances")
+        node_nodename = node_instances.add_node()
         node_nodename.add_column(rcEnv.nodename, color.BOLD)
         node_nodename.add_column()
         node_nodename.add_column(data['avail'], STATUS_COLOR[data['avail']])
         node_nodename.add_column(notice, color.LIGHTBLUE)
-
         add_subsets(subsets, node_nodename)
+        add_children(node_svcname)
+
         print(tree)
 
     def svcmon_push_lists(self):
@@ -2906,7 +2971,7 @@ class Svc(Crypt):
         else:
             cmd = ["diff", self.paths.cf, self.paths.tmp_cf]
         call(cmd)
-        
+
     def edit_config(self):
         """
         Execute an editor on the service configuration file.
@@ -5396,7 +5461,7 @@ class Svc(Crypt):
             scope = False
         if t is None:
             t = "string"
-        
+
         kwargs["scope"] = scope
         kwargs["t"] = t
 
