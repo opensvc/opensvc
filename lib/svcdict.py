@@ -1556,6 +1556,20 @@ class KeywordChildren(Keyword):
                   text="List of services that must be 'avail down' before allowing this service to be stopped by the daemon monitor. Whitespace separated."
                 )
 
+class KeywordEnslaveChildren(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="enslave_children",
+                  order=20,
+                  at=True,
+                  default=False,
+                  convert="boolean",
+                  candidates=(True, False),
+                  text="If set to true, start and stop actions are propagated to the children."
+                )
+
 class KeywordNodes(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4869,6 +4883,7 @@ class KeyDict(KeywordStore):
         self += KeywordConstraints()
         self += KeywordParents()
         self += KeywordChildren()
+        self += KeywordEnslaveChildren()
         self += KeywordFlexPrimary()
         self += KeywordDrpFlexPrimary()
         self += KeywordRollback()

@@ -23,16 +23,16 @@ from svcBuilder import build, fix_app_link, fix_exe_link
 
 MON_WAIT_READY = datetime.timedelta(seconds=16)
 
-STARTED_STATES = (
+STARTED_STATES = [
     "n/a",
     "up",
-)
-STOPPED_STATES = (
+]
+STOPPED_STATES = [
     "n/a",
     "down",
     "stdby up",
     "stdby down",
-)
+]
 
 class Monitor(shared.OsvcThread, Crypt):
     """
@@ -554,8 +554,6 @@ class Monitor(shared.OsvcThread, Crypt):
             self.service_orchestrator_auto_flex(svc, smon, status, candidates)
 
     def service_orchestrator_auto_failover(self, svc, smon, status, candidates):
-        if svc.orchestrate == "no":
-            return
         if svc.orchestrate == "start":
             ranks = self.placement_ranks(svc, candidates=svc.peers)
             if ranks == []:
@@ -609,6 +607,8 @@ class Monitor(shared.OsvcThread, Crypt):
                           svc.svcname,
                           str(smon.status_updated+MON_WAIT_READY-now))
         elif smon.status == "idle":
+            if svc.orchestrate == "no" and smon.global_expect != "started":
+                return
             if status not in ("down", "stdby down", "stdby up"):
                 return
             if not self.parents_available(svc):
@@ -626,8 +626,6 @@ class Monitor(shared.OsvcThread, Crypt):
             self.set_smon(svc.svcname, "ready")
 
     def service_orchestrator_auto_flex(self, svc, smon, status, candidates):
-        if svc.orchestrate == "no":
-            return
         if svc.orchestrate == "start":
             ranks = self.placement_ranks(svc, candidates=svc.peers)
             if ranks == []:
@@ -662,6 +660,8 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.log.info("service %s will start in %s", svc.svcname,
                               str(smon.status_updated+MON_WAIT_READY-now))
         elif smon.status == "idle":
+            if svc.orchestrate == "no" and smon.global_expect != "started":
+                return
             if n_up >= svc.flex_min_nodes:
                 return
             if instance.avail not in STOPPED_STATES:
@@ -785,7 +785,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if child == svc.svcname:
                 continue
             avail = shared.AGG[child].avail
-            if avail in ("unknown", "down", "stdby down"):
+            if avail in STOPPED_STATES + ["unknown"]:
                 continue
             missing.append(child)
         if len(missing) == 0:
@@ -805,7 +805,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if parent == svc.svcname:
                 continue
             avail = shared.AGG[parent].avail
-            if avail in ("unknown", "up"):
+            if avail in STARTED_STATES + ["unknown"]:
                 continue
             missing.append(parent)
         if len(missing) == 0:
@@ -1060,8 +1060,6 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def get_agg_placement(self, svcname):
         svc = self.get_service(svcname)
-        if svc and svc.orchestrate == "no":
-            return "n/a"
         has_up = False
         placement = "optimal"
         for instance in self.get_service_instances(svcname).values():

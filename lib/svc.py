@@ -443,6 +443,7 @@ class Svc(Crypt):
         self.stonith = False
         self.parents = []
         self.children = []
+        self.enslave_children = False
         self.show_disabled = False
         self.svc_env = rcEnv.node_env
         self.nodes = set([rcEnv.nodename])
@@ -2449,9 +2450,10 @@ class Svc(Crypt):
                 raise ex.excAbortAction()
             else:
                 raise ex.excError()
-        if action == "start" and self.orchestrate == "no" and not self.command_is_scoped():
-            self.log.info("start the local instance (unorchestrated)")
-            self.options.local = True
+        if action in ("start", "stop") and self.enslave_children and len(self.children) > 0:
+            for svcname in self.children:
+                self.daemon_mon_action(action, svcname=svcname)
+
         if self.options.local or self.options.slave or self.options.slaves or \
            self.options.master:
             return
@@ -2462,14 +2464,19 @@ class Svc(Crypt):
         self.daemon_mon_action(action, wait=wait, timeout=timeout)
         raise ex.excAbortAction()
 
-    def daemon_mon_action(self, action, wait=None, timeout=None):
+    def daemon_mon_action(self, action, wait=None, timeout=None, svcname=None):
+        if svcname is None:
+            svcname = self.svcname
         self.validate_mon_action(action)
         global_expect = ACTION_TGT_STATE[action]
         if action == "delete" and self.options.unprovision:
             global_expect = "purged"
             action = "purge"
-        self.set_service_monitor(global_expect=global_expect)
-        self.log.info("%s action requested", action)
+        self.set_service_monitor(global_expect=global_expect, svcname=svcname)
+        if svcname == self.svcname:
+            self.log.info("%s action requested", action)
+        else:
+            self.log.info("%s action requested on service %s", action, svcname)
         if wait is None:
             wait = self.options.wait
         if timeout is None:
@@ -2490,7 +2497,7 @@ class Svc(Crypt):
             global_expect_set = []
             for nodename in data["monitor"]["nodes"]:
                 try:
-                    _data = data["monitor"]["nodes"][nodename]["services"]["status"][self.svcname]
+                    _data = data["monitor"]["nodes"][nodename]["services"]["status"][svcname]
                 except (KeyError, TypeError) as exc:
                     continue
                 if _data["monitor"].get("global_expect") in (global_expect, "n/a"):
@@ -2501,12 +2508,12 @@ class Svc(Crypt):
                 for nodename in prev_global_expect_set - set(global_expect_set):
                     self.log.info(" work over on %s", nodename)
             if not global_expect_set:
-                if self.svcname not in data["monitor"]["services"]:
+                if svcname not in data["monitor"]["services"]:
                     return
                 self.log.info("final status: avail=%s overall=%s frozen=%s",
-                              data["monitor"]["services"][self.svcname]["avail"],
-                              data["monitor"]["services"][self.svcname]["overall"],
-                              data["monitor"]["services"][self.svcname]["frozen"])
+                              data["monitor"]["services"][svcname]["avail"],
+                              data["monitor"]["services"][svcname]["overall"],
+                              data["monitor"]["services"][svcname]["frozen"])
                 return
             prev_global_expect_set = set(global_expect_set)
             time.sleep(1)
@@ -5072,9 +5079,11 @@ class Svc(Crypt):
         if data is None or data["status"] != 0:
             raise ex.excError("clear on node %s failed" % nodename)
 
-    def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None):
+    def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None, svcname=None):
+        if svcname is None:
+            svcname = self.svcname
         options = {
-            "svcname": self.svcname,
+            "svcname": svcname,
             "status": status,
             "local_expect": local_expect,
             "global_expect": global_expect,
