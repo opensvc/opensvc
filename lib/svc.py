@@ -3914,8 +3914,6 @@ class Svc(Crypt):
         """
         Service move to best node.
         """
-        if self.orchestrate == "no":
-            raise ex.excError("giveback is not supported with orchestrate=no")
         self.svcunlock()
         self.clear()
         self.node.async_action("thaw", wait=True, timeout=self.options.time)
@@ -3929,6 +3927,8 @@ class Svc(Crypt):
             if __data.get("monitor", {}).get("placement") != "leader" and \
                __data.get("avail") == "up":
                 self.daemon_service_action(["stop"], nodename=nodename)
+        if self.orchestrate == "no":
+            self.daemon_mon_action("start")
 
     def switch(self):
         """
