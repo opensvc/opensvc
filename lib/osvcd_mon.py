@@ -934,13 +934,26 @@ class Monitor(shared.OsvcThread, Crypt):
     def get_agg_avail(self, svcname):
         svc = self.get_service(svcname)
         if svc is None:
-            return "unknown"
+            avail = "unknown"
         if svc.clustertype == "failover":
-            return self.get_agg_avail_failover(svc)
+            avail = self.get_agg_avail_failover(svc)
         elif svc.clustertype == "flex":
-            return self.get_agg_avail_flex(svc)
+            avail = self.get_agg_avail_flex(svc)
         else:
-            return "unknown"
+            avail = "unknown"
+        if svc.enslave_children:
+            avails = set([avail])
+            for child in svc.children:
+                try:
+                    child_avail = shared.AGG[child]["avail"]
+                except KeyError:
+                    child_avail = "unknown"
+                avails.add(child_avail)
+            avails -= set(["n/a"])
+            if len(avails) == 1:
+                return list(avails)[0]
+            return "warn"
+        return avail
 
     def get_agg_overall(self, svcname):
         ostatus = 'undef'

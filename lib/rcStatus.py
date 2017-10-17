@@ -93,7 +93,7 @@ def colorize_status(status, lpad=10):
 
     fmt = "%-"+str(lpad)+"s"
     if status is None:
-        return colorize("undef", color.LIGHTBLUE)
+        return colorize(fmt % "undef", color.LIGHTBLUE)
     elif status == "warn":
         return colorize(fmt % status, color.BROWN)
     elif status.endswith("down") or status in ("err", "error"):
@@ -101,6 +101,8 @@ def colorize_status(status, lpad=10):
     elif status.endswith("up") or status == "ok":
         return colorize(fmt % status, color.GREEN)
     elif status == "n/a":
+        return colorize(fmt % status, color.LIGHTBLUE)
+    else:
         return colorize(fmt % status, color.LIGHTBLUE)
     return fmt % status
 

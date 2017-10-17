@@ -68,6 +68,7 @@ STATUS_COLOR = {
     "error": color.RED,
     "n/a": color.LIGHTBLUE,
     "undef": color.LIGHTBLUE,
+    "unknown": color.LIGHTBLUE,
     "warn": color.BROWN,
 }
 
