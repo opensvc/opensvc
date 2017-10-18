@@ -209,6 +209,8 @@ class OptParser(object):
             if isinstance(data, dict):
                 action = data["action"]
                 options = data["mangle"](options)
+            else:
+                action = data
 
         return action, options
 
