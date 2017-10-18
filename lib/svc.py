@@ -5081,9 +5081,15 @@ class Svc(Crypt):
     def _logs(self, nodename=None):
         if nodename is None:
             nodename = self.options.node
+        if self.options.local:
+            nodes = [rcEnv.nodename]
+        elif self.options.node:
+            nodes = [self.options.node]
+        else:
+            nodes = self.peers
         from rcColor import colorize_log_line
         lines = []
-        for nodename in list(self.nodes|self.drpnodes):
+        for nodename in nodes:
             lines += self.daemon_backlogs(nodename)
             for line in sorted(lines):
                 line = colorize_log_line(line)
@@ -5091,7 +5097,7 @@ class Svc(Crypt):
                     print(line)
         if not self.options.follow:
             return
-        for line in self.daemon_logs():
+        for line in self.daemon_logs(nodes):
             line = colorize_log_line(line)
             if line:
                 print(line)
@@ -5123,14 +5129,14 @@ class Svc(Crypt):
             for line in lines:
                 yield line
 
-    def daemon_logs(self):
+    def daemon_logs(self, nodes=None):
         options = {
             "svcname": self.svcname,
             "backlog": 0,
         }
         for lines in self.daemon_get_streams(
             {"action": "service_logs", "options": options},
-            nodenames=list(self.nodes|self.drpnodes),
+            nodenames=nodes,
         ):
             if lines is None:
                 break

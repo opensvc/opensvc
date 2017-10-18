@@ -761,6 +761,7 @@ ACTIONS = {
             "options": [
                 OPT.backlog,
                 OPT.follow,
+                OPT.local,
                 OPT.node,
                 OPT.nopager,
             ]

@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2017\-10\-17
+.TH SVCMGR 1 2017\-10\-18
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -3509,6 +3509,9 @@ A size expression limiting the volume of data fetched from the log file tail. De
 .TP
 .B --follow
 Follow the logs as they come. Use crtl-c to interrupt.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
