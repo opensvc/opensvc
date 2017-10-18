@@ -274,170 +274,170 @@ DAEMON_OPTS = [
 ]
 
 ACTIONS = {
-    'Node actions': {
-        'auto_reboot': {
-            'msg': 'Reboot the node if in the specified schedule.',
-            'options': [
+    "Node actions": {
+        "auto_reboot": {
+            "msg": "Reboot the node if in the specified schedule.",
+            "options": [
                 OPT.cron,
             ],
         },
-        'frozen': {
-            'msg': 'Return 0 if the services are frozen node-wide, '
-                   'preventing the daemon to orchestrate them. Return 1 '
-                   'otherwise',
+        "frozen": {
+            "msg": "Return 0 if the services are frozen node-wide, "
+                   "preventing the daemon to orchestrate them. Return 1 "
+                   "otherwise",
         },
-        'freeze': {
-            'msg': 'Freeze services node-wide, preventing the daemon to '
-                   'orchestrate them. This freeze method preserves the '
-                   'frozen state at service-level (with svcmgr).',
-            'options': ASYNC_OPTS + DAEMON_OPTS,
+        "freeze": {
+            "msg": "Freeze services node-wide, preventing the daemon to "
+                   "orchestrate them. This freeze method preserves the "
+                   "frozen state at service-level (with svcmgr).",
+            "options": ASYNC_OPTS + DAEMON_OPTS,
         },
-        'thaw': {
-            'msg': 'Thaw services node-wide, allowing the daemon to '
-                   'orchestrate them. This thaw method does not actually '
-                   'thaw services frozen at service-level (with svcmgr).',
-            'options': ASYNC_OPTS + DAEMON_OPTS,
+        "thaw": {
+            "msg": "Thaw services node-wide, allowing the daemon to "
+                   "orchestrate them. This thaw method does not actually "
+                   "thaw services frozen at service-level (with svcmgr).",
+            "options": ASYNC_OPTS + DAEMON_OPTS,
         },
-        'logs': {
-            'msg': 'Display of the nodemgr and daemon logs.',
-            'options': [
+        "logs": {
+            "msg": "Display of the nodemgr and daemon logs.",
+            "options": [
                 OPT.nopager,
             ]
         },
-        'shutdown': {
-            'msg': 'Shutdown the node to powered off state.',
+        "shutdown": {
+            "msg": "Shutdown the node to powered off state.",
         },
-        'reboot': {
-            'msg': 'Reboot the node.',
+        "reboot": {
+            "msg": "Reboot the node.",
         },
-        'scheduler': {
-            'msg': 'Run the node task scheduler.',
+        "scheduler": {
+            "msg": "Run the node task scheduler.",
         },
-        'schedulers': {
-            'msg': 'Execute a run of the node and services schedulers. This '
-                   'action is installed in the system scheduler.',
+        "schedulers": {
+            "msg": "Execute a run of the node and services schedulers. This "
+                   "action is installed in the system scheduler.",
         },
-        'schedule_reboot_status': {
-            'msg': 'Tell if the node is scheduled for reboot.',
+        "schedule_reboot_status": {
+            "msg": "Tell if the node is scheduled for reboot.",
         },
-        'schedule_reboot': {
-            'msg': 'Mark the node for reboot at the next allowed period. The '
-                   'allowed period is defined by a "reboot" section in '
-                   'node.conf.',
+        "schedule_reboot": {
+            "msg": "Mark the node for reboot at the next allowed period. The "
+                   "allowed period is defined by a 'reboot' section in "
+                   "node.conf.",
         },
-        'unschedule_reboot': {
-            'msg': 'Unmark the node for reboot at the next allowed period.',
+        "unschedule_reboot": {
+            "msg": "Unmark the node for reboot at the next allowed period.",
         },
-        'array': {
-            'msg': 'Pass a command to a supported array whose access method '
-                   'and credentials are defined in auth.conf.',
+        "array": {
+            "msg": "Pass a command to a supported array whose access method "
+                   "and credentials are defined in auth.conf.",
         },
-        'updatepkg': {
-            'msg': 'Upgrade the opensvc agent version. the packages must be '
-                   'available behind the node.repo/packages url.',
+        "updatepkg": {
+            "msg": "Upgrade the opensvc agent version. the packages must be "
+                   "available behind the node.repo/packages url.",
         },
-        'updatecomp': {
-            'msg': 'Upgrade the opensvc compliance modules. The modules must '
-                   'be available as a tarball behind the :kw:`node.repocomp` '
-                   'url.',
+        "updatecomp": {
+            "msg": "Upgrade the opensvc compliance modules. The modules must "
+                   "be available as a tarball behind the :kw:`node.repocomp` "
+                   "url.",
         },
-        'scanscsi': {
-            'msg': 'Scan the scsi hosts in search of new disks.',
-            'options': [
+        "scanscsi": {
+            "msg": "Scan the scsi hosts in search of new disks.",
+            "options": [
                 OPT.hba,
                 OPT.target,
                 OPT.lun,
             ],
         },
-        'dequeue_actions': {
-            'msg': "Dequeue and execute actions from the collector's action "
+        "dequeue_actions": {
+            "msg": "Dequeue and execute actions from the collector's action "
                    "queue for this node and its services.",
-            'options': [
+            "options": [
                 OPT.cron,
             ],
         },
-        'rotate_root_pw': {
-            'msg': "Set a new root password and store it in the collector.",
-            'options': [
+        "rotate_root_pw": {
+            "msg": "Set a new root password and store it in the collector.",
+            "options": [
                 OPT.cron,
             ],
         },
-        'print_devs': {
-            'msg': 'Print the node devices tree.',
-            'options': [
+        "print_devs": {
+            "msg": "Print the node devices tree.",
+            "options": [
                 OPT.devices,
                 OPT.reverse,
                 OPT.verbose,
             ],
         },
-        'print_schedule': {
-            'msg': 'Print the node tasks schedule.',
-            'options': [
+        "print_schedule": {
+            "msg": "Print the node tasks schedule.",
+            "options": [
                 OPT.verbose,
             ],
         },
-        'stonith': {
-            'msg': 'Command executed by the daemon monitor to fence peer '
-                   'node upon failover when the node previously running '
-                   'the service is stale.',
-            'options': [
+        "stonith": {
+            "msg": "Command executed by the daemon monitor to fence peer "
+                   "node upon failover when the node previously running "
+                   "the service is stale.",
+            "options": [
                 OPT.node,
             ],
         },
-        'wol': {
-            'msg': 'Forge and send a udp Wake-On-LAN packet to the mac addresses '
-                   'specified by :opt:`--mac` and :opt:`--broadcast` arguments.',
-            'options': [
+        "wol": {
+            "msg": "Forge and send a udp Wake-On-LAN packet to the mac addresses "
+                   "specified by :opt:`--mac` and :opt:`--broadcast` arguments.",
+            "options": [
                 OPT.broadcast,
                 OPT.mac,
             ],
         },
-        'collect_stats': {
-            'msg': "Write in local files metrics not found in the standard "
+        "collect_stats": {
+            "msg": "Write in local files metrics not found in the standard "
                    "metrics collector. These files will be fed to the "
                    "collector by the :cmd:`pushstat` action.",
-            'options': [
+            "options": [
                 OPT.cron,
             ],
         },
     },
-    'Service actions': {
-        'discover': {
-            'msg': 'Discover vservices accessible from this host. Typically executed on cloud nodes.',
+    "Service actions": {
+        "discover": {
+            "msg": "Discover vservices accessible from this host. Typically executed on cloud nodes.",
         },
     },
-    'Node configuration': {
-        'print_config': {
+    "Node configuration": {
+        "print_config": {
             "msg": "Display the node current configuration.",
         },
-        'print_authconfig': {
+        "print_authconfig": {
             "msg": "Display the node current authentication configuration.",
         },
-        'edit_config': {
+        "edit_config": {
             "msg": "Edit the node configuration.",
         },
-        'edit_authconfig': {
+        "edit_authconfig": {
             "msg": "Edit the node authentication configuration.",
         },
-        'register': {
-            'msg': "Obtain a registration id from the collector. This is is "
+        "register": {
+            "msg": "Obtain a registration id from the collector. This is is "
                    "then used to authenticate the node in collector communications.",
-            'options': [
+            "options": [
                 OPT.app,
                 OPT.password,
                 OPT.user,
             ],
         },
-        'get': {
+        "get": {
             "msg": "Get the raw or evaluated value of a node "
                    "configuration keyword.",
-            'options': [
+            "options": [
                 OPT.param,
             ],
         },
-        'set': {
+        "set": {
             "msg": "Set a service configuration parameter.",
-            'options': [
+            "options": [
                 OPT.param,
                 OPT.value,
                 OPT.add,
@@ -445,256 +445,256 @@ ACTIONS = {
                 OPT.index,
             ],
         },
-        'unset': {
-            'msg': 'Unset a node configuration parameter.',
-            'options': [
+        "unset": {
+            "msg": "Unset a node configuration parameter.",
+            "options": [
                 OPT.param,
             ],
         },
     },
-    'Node daemon management': {
-        'daemon_blacklist_status': {
-            'msg': 'Show the content of the daemon senders blacklist.',
+    "Node daemon management": {
+        "daemon_blacklist_status": {
+            "msg": "Show the content of the daemon senders blacklist.",
          },
-        'daemon_blacklist_clear': {
-            'msg': 'Empty the content of the daemon senders blacklist.',
+        "daemon_blacklist_clear": {
+            "msg": "Empty the content of the daemon senders blacklist.",
          },
-        'daemon_restart': {
-            'msg': 'Restart the daemon.',
+        "daemon_restart": {
+            "msg": "Restart the daemon.",
          },
-        'daemon_running': {
-            'msg': 'Return with code 0 if the daemon is running, else return '
-                   'with code 1',
+        "daemon_running": {
+            "msg": "Return with code 0 if the daemon is running, else return "
+                   "with code 1",
          },
-        'daemon_shutdown': {
-            'msg': 'Stop all local services instances then stop the daemon.',
+        "daemon_shutdown": {
+            "msg": "Stop all local services instances then stop the daemon.",
          },
-        'daemon_status': {
-            'msg': 'Display the daemon status.',
-            'options': DAEMON_OPTS,
+        "daemon_status": {
+            "msg": "Display the daemon status.",
+            "options": DAEMON_OPTS,
          },
-        'daemon_start': {
-            'msg': 'Start the daemon or a daemon thread pointed by :opt:`--thread-id`.',
-            'options': DAEMON_OPTS + [
+        "daemon_start": {
+            "msg": "Start the daemon or a daemon thread pointed by :opt:`--thread-id`.",
+            "options": DAEMON_OPTS + [
                 OPT.thr_id,
             ],
          },
-        'daemon_stop': {
-            'msg': 'Stop the daemon or a daemon thread pointed by :opt:`--thread-id`.',
-            'options': DAEMON_OPTS + [
+        "daemon_stop": {
+            "msg": "Stop the daemon or a daemon thread pointed by :opt:`--thread-id`.",
+            "options": DAEMON_OPTS + [
                 OPT.thr_id,
             ],
          },
-        'daemon_join': {
-            'msg': 'Join the cluster of the node specified by :opt:`--node <node>`, authenticating with :opt:`--secret <secret>`.',
-            'options': DAEMON_OPTS + [
+        "daemon_join": {
+            "msg": "Join the cluster of the node specified by :opt:`--node <node>`, authenticating with :opt:`--secret <secret>`.",
+            "options": DAEMON_OPTS + [
                 OPT.secret,
             ],
          },
-        'daemon_leave': {
-            'msg': "Inform peer nodes we leave the cluster. Make sure the "
+        "daemon_leave": {
+            "msg": "Inform peer nodes we leave the cluster. Make sure the "
                    "left nodes are no longer in the services nodes list "
                    "before leaving, so the other nodes won't takeover.",
          },
     },
-    'Push data to the collector': {
-        'pushasset': {
-            'msg': 'Push asset information to collector.',
-            'options': [
+    "Push data to the collector": {
+        "pushasset": {
+            "msg": "Push asset information to collector.",
+            "options": [
                 OPT.sync,
                 OPT.cron,
             ],
          },
-        'pushstats': {
-            'msg': 'Push performance metrics to collector. By default pushed '
-                   'stats interval begins yesterday at the beginning of the '
-                   'allowed interval and ends now. This interval can be '
-                   'changed using --begin/--end parameters. The location '
-                   'where stats files are looked up can be changed using '
-                   '--stats-dir.',
-            'options': [
+        "pushstats": {
+            "msg": "Push performance metrics to collector. By default pushed "
+                   "stats interval begins yesterday at the beginning of the "
+                   "allowed interval and ends now. This interval can be "
+                   "changed using --begin/--end parameters. The location "
+                   "where stats files are looked up can be changed using "
+                   "--stats-dir.",
+            "options": [
                 OPT.begin,
                 OPT.end,
                 OPT.stats_dir,
                 OPT.cron,
             ],
          },
-        'pushdisks': {
-            'msg': 'Push disks usage information to the collector.',
-            'options': [
+        "pushdisks": {
+            "msg": "Push disks usage information to the collector.",
+            "options": [
                 OPT.cron,
             ],
          },
-        'pushpkg': {
-            'msg': 'Push package/version list to the collector.',
-            'options': [
+        "pushpkg": {
+            "msg": "Push package/version list to the collector.",
+            "options": [
                 OPT.cron,
             ],
          },
-        'pushpatch': {
-            'msg': 'Push patch/version list to the collector.',
-            'options': [
+        "pushpatch": {
+            "msg": "Push patch/version list to the collector.",
+            "options": [
                 OPT.cron,
             ],
          },
-        'pushsym': {
-            'msg': 'Push symmetrix configurations to the collector.',
-            'options': [
+        "pushsym": {
+            "msg": "Push symmetrix configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
                 OPT.symcli_db_file,
             ],
          },
-        'pushemcvnx': {
-            'msg': 'Push EMC CX/VNX configurations to the collector.',
-            'options': [
+        "pushemcvnx": {
+            "msg": "Push EMC CX/VNX configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushcentera': {
-            'msg': 'Push EMC Centera configurations to the collector.',
-            'options': [
+        "Pushcentera": {
+            "msg": "Push EMC Centera configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushnetapp': {
-            'msg': 'Push Netapp configurations to the collector.',
-            'options': [
+        "Pushnetapp": {
+            "msg": "Push Netapp configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pusheva': {
-            'msg': 'Push HP EVA configurations to the collector.',
-            'options': [
+        "Pusheva": {
+            "msg": "Push HP EVA configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushnecism': {
-            'msg': 'Push NEC ISM configurations to the collector.',
-            'options': [
+        "Pushnecism": {
+            "msg": "Push NEC ISM configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushhds': {
-            'msg': 'Push HDS configurations to the collector.',
-            'options': [
+        "Pushhds": {
+            "msg": "Push HDS configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushdcs': {
-            'msg': 'Push Datacore configurations to the collector.',
-            'options': [
+        "Pushdcs": {
+            "msg": "Push Datacore configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushfreenas': {
-            'msg': 'Push FreeNAS configurations to the collector.',
-            'options': [
+        "Pushfreenas": {
+            "msg": "Push FreeNAS configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushxtremio': {
-            'msg': 'Push XtremIO configurations to the collector.',
-            'options': [
+        "Pushxtremio": {
+            "msg": "Push XtremIO configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushibmsvc': {
-            'msg': 'Push IBM SVC configurations to the collector.',
-            'options': [
+        "Pushibmsvc": {
+            "msg": "Push IBM SVC configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushhp3par': {
-            'msg': 'Push HP 3par configurations to the collector.',
-            'options': [
+        "Pushhp3par": {
+            "msg": "Push HP 3par configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushibmds': {
-            'msg': 'Push IBM DS configurations to the collector.',
-            'options': [
+        "Pushibmds": {
+            "msg": "Push IBM DS configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushvioserver': {
-            'msg': 'Push IBM VIO server configurations to the collector.',
-            'options': [
+        "Pushvioserver": {
+            "msg": "Push IBM VIO server configurations to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushgcedisks': {
-            'msg': 'Push Google Compute Engine disks configurations to the '
-                   'collector.',
-            'options': [
+        "Pushgcedisks": {
+            "msg": "Push Google Compute Engine disks configurations to the "
+                   "collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushbrocade': {
-            'msg': 'Push Brocade switch configuration to the collector.',
-            'options': [
+        "Pushbrocade": {
+            "msg": "Push Brocade switch configuration to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'Pushnsr': {
-            'msg': 'Push EMC Networker index to the collector.',
-            'options': [
+        "Pushnsr": {
+            "msg": "Push EMC Networker index to the collector.",
+            "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        'sysreport': {
-            'msg': 'Push system report to the collector for archiving and '
-                   'diff analysis.',
-            'options': [
+        "sysreport": {
+            "msg": "Push system report to the collector for archiving and "
+                   "diff analysis.",
+            "options": [
                 OPT.cron,
             ],
          },
-        'checks': {
-            'msg': 'Run node health checks. Push results to collector.',
-            'options': [
+        "checks": {
+            "msg": "Run node health checks. Push results to collector.",
+            "options": [
                 OPT.cron,
             ],
          },
     },
-    'Misc': {
-        'prkey': {
-            'msg': 'Show the scsi3 persistent reservation key of this node.',
+    "Misc": {
+        "prkey": {
+            "msg": "Show the scsi3 persistent reservation key of this node.",
          },
     },
-    'Compliance': {
-        'compliance_auto': {
+    "Compliance": {
+        "compliance_auto": {
             "msg": "Run compliance checks or fixes, depending on the autofix "
                    "module property values.",
-            'options': [
+            "options": [
                 OPT.cron,
             ],
         },
-        'compliance_env': {
+        "compliance_env": {
             "msg": "Show the environment variables set during a compliance module run.",
-            'options': [
+            "options": [
                 OPT.module,
                 OPT.moduleset,
             ],
         },
-        'compliance_check': {
-            'msg': 'Run compliance checks.',
-            'options': [
+        "compliance_check": {
+            "msg": "Run compliance checks.",
+            "options": [
                 OPT.attach,
                 OPT.force,
                 OPT.module,
@@ -702,9 +702,9 @@ ACTIONS = {
                 OPT.ruleset_date,
             ],
         },
-        'compliance_fix': {
-            'msg': 'Run compliance fixes.',
-            'options': [
+        "compliance_fix": {
+            "msg": "Run compliance fixes.",
+            "options": [
                 OPT.attach,
                 OPT.force,
                 OPT.module,
@@ -712,9 +712,9 @@ ACTIONS = {
                 OPT.ruleset_date,
             ],
         },
-        'compliance_fixable': {
-            'msg': 'Verify compliance fixes prerequisites.',
-            'options': [
+        "compliance_fixable": {
+            "msg": "Verify compliance fixes prerequisites.",
+            "options": [
                 OPT.attach,
                 OPT.force,
                 OPT.module,
@@ -722,59 +722,59 @@ ACTIONS = {
                 OPT.ruleset_date,
             ],
         },
-        'compliance_list_module': {
-            'msg': 'List the compliance modules installed on this node.',
+        "compliance_list_module": {
+            "msg": "List the compliance modules installed on this node.",
         },
-        'compliance_show_moduleset': {
+        "compliance_show_moduleset": {
             "msg": "Show compliance rules applying to this node.",
         },
-        'compliance_list_moduleset': {
+        "compliance_list_moduleset": {
             "msg": "List available compliance modulesets. Setting :opt:`--moduleset f%` "
                    "limits the resultset to modulesets matching the ``f%`` pattern.",
-            'options': [
+            "options": [
                 OPT.moduleset,
             ],
         },
-        'compliance_list_ruleset': {
+        "compliance_list_ruleset": {
             "msg": "List available compliance rulesets. Setting :opt:`--ruleset f%` limits "
                    "the scope to rulesets matching the ``f%`` pattern.",
-            'options': [
+            "options": [
                 OPT.ruleset,
             ],
         },
-        'compliance_show_ruleset': {
-            'msg': 'Show compliance rules applying to this node.',
+        "compliance_show_ruleset": {
+            "msg": "Show compliance rules applying to this node.",
         },
-        'compliance_show_status': {
-            'msg': 'Show compliance modules status.',
+        "compliance_show_status": {
+            "msg": "Show compliance modules status.",
         },
-        'compliance_attach': {
+        "compliance_attach": {
             "msg": "Attach rulesets specified by :opt:`--ruleset` and modulesets "
                    "specified by :opt:`--moduleset` to this node. Attached modulesets "
                    "are scheduled for check or autofix.",
-            'options': [
+            "options": [
                 OPT.moduleset,
                 OPT.ruleset,
             ],
         },
-        'compliance_detach': {
+        "compliance_detach": {
             "msg": "Detach rulesets specified by :opt:`--ruleset` and modulesets "
                    "specified by :opt:`--moduleset` from this node. Detached "
                    "modulesets are no longer scheduled for check and autofix.",
-            'options': [
+            "options": [
                 OPT.moduleset,
                 OPT.ruleset,
             ],
         },
     },
-    'Collector management': {
-        'collector_cli': {
-            'msg': 'Open a Command Line Interface to the collector rest API. '
-                   'The CLI offers autocompletion of paths and arguments, '
-                   'piping JSON data from files. '
-                   'If executed as root and with no :opt:`--user`, the collector is '
-                   'logged in with the node credentials.',
-            'options': [
+    "Collector management": {
+        "collector_cli": {
+            "msg": "Open a Command Line Interface to the collector rest API. "
+                   "The CLI offers autocompletion of paths and arguments, "
+                   "piping JSON data from files. "
+                   "If executed as root and with no :opt:`--user`, the collector is "
+                   "logged in with the node credentials.",
+            "options": [
                 OPT.user,
                 OPT.password,
                 OPT.api,
@@ -783,108 +783,108 @@ ACTIONS = {
                 OPT.refresh_api,
             ],
         },
-        'collector_events': {
-            'msg': 'Display node events during the period specified by '
-                   '--begin/--end. --end defaults to now. --begin defaults to '
-                   '7 days ago.',
-            'options': [
+        "collector_events": {
+            "msg": "Display node events during the period specified by "
+                   "--begin/--end. --end defaults to now. --begin defaults to "
+                   "7 days ago.",
+            "options": [
                 OPT.begin,
                 OPT.end,
             ],
         },
-        'collector_alerts': {
-            'msg': 'Display the node alerts.',
+        "collector_alerts": {
+            "msg": "Display the node alerts.",
         },
-        'collector_checks': {
-            'msg': 'Display the node checks.',
+        "collector_checks": {
+            "msg": "Display the node checks.",
         },
-        'collector_disks': {
-            'msg': 'Display the node disks list, complete with information issued by array parser.',
+        "collector_disks": {
+            "msg": "Display the node disks list, complete with information issued by array parser.",
         },
-        'collector_list_actions': {
-            'msg': 'List actions on the node, whatever the service, during '
-                   'the period specified by --begin/--end. --end defaults to '
-                   'now. --begin defaults to 7 days ago.',
-            'options': [
+        "collector_list_actions": {
+            "msg": "List actions on the node, whatever the service, during "
+                   "the period specified by --begin/--end. --end defaults to "
+                   "now. --begin defaults to 7 days ago.",
+            "options": [
                 OPT.begin,
                 OPT.end,
             ],
         },
-        'collector_ack_action': {
-            'msg': 'Acknowledge an action error on the node. An acknowlegment '
-                   'can be completed by --author (defaults to root@nodename) '
-                   'and --comment',
-            'options': [
+        "collector_ack_action": {
+            "msg": "Acknowledge an action error on the node. An acknowlegment "
+                   "can be completed by --author (defaults to root@nodename) "
+                   "and --comment",
+            "options": [
                 OPT.author,
                 OPT.comment,
             ],
         },
-        'collector_show_actions': {
-            'msg': 'Show actions detailed log. A single action is specified '
-                   'by --id. a range is specified by --begin/--end dates. '
-                   '--end defaults to now. --begin defaults to 7 days ago.',
-            'options': [
+        "collector_show_actions": {
+            "msg": "Show actions detailed log. A single action is specified "
+                   "by --id. a range is specified by --begin/--end dates. "
+                   "--end defaults to now. --begin defaults to 7 days ago.",
+            "options": [
                 OPT.begin,
                 OPT.id,
                 OPT.end,
             ],
         },
-        'collector_list_nodes': {
-            'msg': 'Show the list of nodes matching the filterset pointed by '
-                   ':opt:`--filterset`.',
+        "collector_list_nodes": {
+            "msg": "Show the list of nodes matching the filterset pointed by "
+                   ":opt:`--filterset`.",
         },
-        'collector_list_services': {
-            'msg': 'Show the list of services matching the filterset pointed '
-                   'by :opt:`--filterset`.',
+        "collector_list_services": {
+            "msg": "Show the list of services matching the filterset pointed "
+                   "by :opt:`--filterset`.",
         },
-        'collector_list_filtersets': {
-            'msg': 'Show the list of filtersets available on the collector. '
-                   'If specified, :opt:`--filterset <pattern>` limits the resultset '
-                   'to filtersets matching the pattern.',
+        "collector_list_filtersets": {
+            "msg": "Show the list of filtersets available on the collector. "
+                   "If specified, :opt:`--filterset <pattern>` limits the resultset "
+                   "to filtersets matching the pattern.",
         },
-        'collector_log': {
-            'msg': "Log a message in the collector's node log.",
-            'options': [
+        "collector_log": {
+            "msg": "Log a message in the collector's node log.",
+            "options": [
                 OPT.message,
             ],
         },
-        'collector_asset': {
-            'msg': 'Display the asset information known to the collector.',
+        "collector_asset": {
+            "msg": "Display the asset information known to the collector.",
         },
-        'collector_networks': {
-            'msg': 'Display network information known to the collector for '
-                   'each node ip, complete with network information from the '
-                   'IPAM database.',
+        "collector_networks": {
+            "msg": "Display network information known to the collector for "
+                   "each node ip, complete with network information from the "
+                   "IPAM database.",
         },
-        'collector_tag': {
-            'msg': 'Set a node tag (pointed by --tag).',
-            'options': [
+        "collector_tag": {
+            "msg": "Set a node tag (pointed by --tag).",
+            "options": [
                 OPT.tag,
             ],
         },
-        'collector_untag': {
-            'msg': 'Unset a node tag (pointed by --tag).',
+        "collector_untag": {
+            "msg": "Unset a node tag (pointed by --tag).",
         },
-        'collector_show_tags': {
-            'msg': 'list all node tags',
+        "collector_show_tags": {
+            "msg": "list all node tags",
         },
-        'collector_list_tags': {
-            'msg': 'List all available tags. Use :opt:`--like` to filter the output.',
-            'options': [
+        "collector_list_tags": {
+            "msg": "List all available tags. Use :opt:`--like` to filter the output.",
+            "options": [
                 OPT.like,
             ],
         },
-        'collector_create_tag': {
-            'msg': 'Create a new tag with name specified by :opt:`--tag`.',
-            'options': [
+        "collector_create_tag": {
+            "msg": "Create a new tag with name specified by :opt:`--tag`.",
+            "options": [
                 OPT.tag,
             ],
         },
-        'collector_search': {
-            'msg': 'Report the collector objects matching :opt:`--like '
-                   '[<type>:]<substring>`, where ``<type>`` is the object type '
-                   'acronym as shown in the collector search widget.',
-            'options': [
+        "collector_search": {
+            "msg": "Report the collector objects matching :opt:`--like "
+                   "[<type>:]<substring>`, where ``<type>`` is the object type "
+                   "acronym as shown in the collector search widget.",
+            "options": [
                 OPT.like,
             ],
         },
