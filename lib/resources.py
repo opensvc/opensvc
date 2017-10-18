@@ -478,7 +478,7 @@ class Resource(object):
             self.status_log("nostatus tag", "info")
             return rcStatus.NA
 
-        if self.rstatus is not None and not refresh:
+        if self.rstatus is not None and not (refresh or self.svc.options.refresh):
             return self.rstatus
 
         last_status = self.load_status_last()
