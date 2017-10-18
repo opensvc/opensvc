@@ -1722,7 +1722,8 @@ class Svc(Crypt):
                 node_frozen = mon_data["nodes"][nodename]["frozen"]
             except KeyError:
                 avail = "undef"
-                node_frozen = "undef"
+                node_frozen = False
+                data = Storage()
             node_child.add_column(avail, STATUS_COLOR[avail])
             notice = instance_notice(overall=data["overall"],
                                      frozen=data["frozen"],
