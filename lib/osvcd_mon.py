@@ -67,6 +67,7 @@ class Monitor(shared.OsvcThread, Crypt):
         self.janitor_threads()
         self.janitor_procs()
         self.reload_config()
+        self.merge_frozen()
         self.last_run = time.time()
         if self._shutdown:
             if len(self.procs) == 0:
@@ -1704,3 +1705,32 @@ class Monitor(shared.OsvcThread, Crypt):
         data["frozen"] = self.get_clu_agg_frozen()
         data["services"] = self.get_agg_services([svcname for svcname in data.nodes[rcEnv.nodename]["services"]["config"]])
         return data
+
+    def merge_frozen(self):
+        """
+        This method is only called during the grace period.
+
+        It freezes the local services instances for services that have
+        a live remote instance frozen. This prevents a node
+        rejoining the cluster from taking over services that where frozen
+        and stopped while we were not alive.
+        """
+        if self.rejoin_grace_period_expired:
+            return
+        for svc in shared.SERVICES.values():
+            if svc.orchestrate == "no":
+                continue
+            if len(svc.peers) < 2:
+                continue
+            if svc.frozen():
+                continue
+            for peer in svc.peers:
+                if peer == rcEnv.nodename:
+                    continue
+                try:
+                    frozen = shared.CLUSTER_DATA[peer]["services"]["status"][svc.svcname]["frozen"]
+                except:
+                    continue
+                if frozen:
+                    svc.freeze()
+
