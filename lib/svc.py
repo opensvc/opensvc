@@ -1733,6 +1733,25 @@ class Svc(Crypt):
                                      monitor=data.get("monitor"))
             node_child.add_column(notice, color.LIGHTBLUE)
 
+        def add_parents(node):
+            if len(self.parents) == 0:
+                return
+            node_parents = node.add_node()
+            node_parents.add_column("parents")
+            for parent in self.parents:
+                add_parent(parent, node_parents)
+
+        def add_parent(svcname, node):
+            node_parent = node.add_node()
+            node_parent.add_column(svcname, color.BOLD)
+            node_parent.add_column()
+            mon_data = self.get_mon_data()
+            try:
+                avail = mon_data["services"][svcname]["avail"]
+            except KeyError:
+                avail = "undef"
+            node_parent.add_column(avail, STATUS_COLOR[avail])
+
         def add_children(node):
             if len(self.children) == 0:
                 return
@@ -1778,6 +1797,7 @@ class Svc(Crypt):
         node_nodename.add_column(data['avail'], STATUS_COLOR[data['avail']])
         node_nodename.add_column(notice, color.LIGHTBLUE)
         add_subsets(subsets, node_nodename)
+        add_parents(node_svcname)
         add_children(node_svcname)
 
         print(tree)

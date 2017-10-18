@@ -41,14 +41,25 @@ class syncSymclone(resSync.Sync):
         self.write_pair_file(pairs)
         return ['/usr/symcli/bin/symclone', '-sid', self.symid, '-f', self.pairs_file(pairs)]
 
-    def is_active(self):
+    @lazy
+    def active_pairs(self):
+        active_pairs = []
         etree = self._showdevs()
         for e in etree.findall("Symmetrix/Device"):
+            clone = e.find("CLONE_Device")
+            if clone is None:
+                dev = e.find("Dev_Info/dev_name").text
+                self.status_log("%s has no clone info" % dev)
+                continue
             src = e.find("CLONE_Device/SRC/dev_name").text
             dst = e.find("CLONE_Device/TGT/dev_name").text
             state = e.find("CLONE_Device/state").text.lower()
             if state in self.active_states:
-                self.active_pairs.append(src+":"+dst)
+                active_pairs.append(src+":"+dst)
+        return active_pairs
+
+    def is_active(self):
+        unset_lazy(self, "active_pairs")
         if len(self.active_pairs) == len(self.pairs):
             return True
         return False
@@ -77,7 +88,6 @@ class syncSymclone(resSync.Sync):
 
     def wait_for_active(self):
         delay = 10
-        self.active_pairs = []
         ass = " or ".join(self.active_states)
         for i in range(self.activate_timeout//delay+1):
             if self.is_active():
@@ -187,8 +197,11 @@ class syncSymclone(resSync.Sync):
 
     def last_action_dev(self, dev):
         # format: Thu Feb 25 10:20:56 2010
-        s = self.showdevs_etree[dev].find("CLONE_Device/last_action").text
-        return datetime.datetime.strptime(s, "%a %b %d %H:%M:%S %Y")
+        try:
+            s = self.showdevs_etree[dev].find("CLONE_Device/last_action").text
+            return datetime.datetime.strptime(s, "%a %b %d %H:%M:%S %Y")
+        except AttributeError:
+            return
 
     @lazy
     def last(self):
@@ -197,6 +210,8 @@ class syncSymclone(resSync.Sync):
         for pair in self.pairs:
             src, dst = self.split_pair(pair)
             dev_last = self.last_action_dev(dst)
+            if dev_last is None:
+                continue
             if _last is None or dev_last > _last:
                 _last = dev_last
         return _last
@@ -204,6 +219,9 @@ class syncSymclone(resSync.Sync):
     def _status(self, verbose=False):
         if self.last is None:
             return rcStatus.DOWN
+        if len(self.active_pairs) in (len(self.pairs), 0):
+            self.status_log("cloneset has %d/%d active devs" % (len(self.active_pairs), len(self.pairs)))
+            return rcStatus.WARN
         elif self.last < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
             self.status_log("Last sync on %s older than %d minutes"%(self.last, self.sync_max_delay))
             return rcStatus.WARN
@@ -269,7 +287,6 @@ class syncSymclone(resSync.Sync):
         self.pairs = pairs
         self.consistent = consistent
         self.svcstatus = {}
-        self.active_pairs = []
         self.default_schedule = "@0"
         if restore_timeout is None:
             self.restore_timeout = 300
