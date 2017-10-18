@@ -219,7 +219,7 @@ class syncSymclone(resSync.Sync):
     def _status(self, verbose=False):
         if self.last is None:
             return rcStatus.DOWN
-        if len(self.active_pairs) in (len(self.pairs), 0):
+        if len(self.active_pairs) not in (len(self.pairs), 0):
             self.status_log("cloneset has %d/%d active devs" % (len(self.active_pairs), len(self.pairs)))
             return rcStatus.WARN
         elif self.last < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
