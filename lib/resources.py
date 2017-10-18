@@ -421,7 +421,7 @@ class Resource(object):
         Handles caching, nostatus tag and disabled flag.
         """
         verbose = kwargs.get("verbose", False)
-        refresh = kwargs.get("refresh", False)
+        refresh = kwargs.get("refresh", False) or self.svc.options.refresh
         ignore_nostatus = kwargs.get("ignore_nostatus", False)
 
         if self.is_disabled():
@@ -436,12 +436,12 @@ class Resource(object):
 
         last_status = self.load_status_last()
 
-        if self.svc.options.refresh or refresh:
+        if refresh:
             self.purge_status_last()
         else:
             self.rstatus = last_status
 
-        if self.rstatus is None or self.svc.options.refresh or refresh:
+        if self.rstatus is None or refresh:
             self.status_logs = []
             self.rstatus = self.try_status(verbose)
             self.rstatus = self.status_stdby(self.rstatus)
