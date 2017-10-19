@@ -286,15 +286,6 @@ class Node(Crypt):
         return xmlrpcClient.Collector(node=self)
 
     @lazy
-    def cmdworker(self):
-        """
-        Lazy initialization of the node asynchronous command execution queue.
-        """
-        self.log.debug("initiatize node::cmdworker")
-        import rcCommandWorker
-        return rcCommandWorker.CommandWorker()
-
-    @lazy
     def nodename(self):
         """
         Lazy initialization of the node name.
@@ -691,8 +682,6 @@ class Node(Crypt):
         """
         if lazy_initialized(self, "collector"):
             self.collector.stop_worker()
-        if lazy_initialized(self, "cmdworker"):
-            self.cmdworker.stop_worker()
         import gc
         import threading
         gc.collect()

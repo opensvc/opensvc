@@ -332,6 +332,7 @@ class Listener(shared.OsvcThread, Crypt):
         * sync: boolean
         """
         sync = kwargs.get("sync", True)
+        action_mode = kwargs.get("action_mode", True)
         cmd = kwargs.get("cmd")
         if cmd is None or len(cmd) == 0:
             self.log.error("node %s requested a peer node action without "
@@ -342,7 +343,9 @@ class Listener(shared.OsvcThread, Crypt):
 
         cmd = drop_option("--node", cmd, drop_value=True)
         cmd = drop_option("--daemon", cmd)
-        cmd = [rcEnv.paths.nodemgr] + cmd + ["--local"]
+        cmd = [rcEnv.paths.nodemgr] + cmd
+        if action_mode and "--local" not in cmd:
+            cmd += ["--local"]
         self.log.info("execute node action requested by node %s: %s",
                       nodename, " ".join(cmd))
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
@@ -372,6 +375,7 @@ class Listener(shared.OsvcThread, Crypt):
         * sync: boolean
         """
         sync = kwargs.get("sync", True)
+        action_mode = kwargs.get("action_mode", True)
         svcname = kwargs.get("svcname")
         if svcname is None:
             self.log.error("node %s requested a service action without "
@@ -396,7 +400,7 @@ class Listener(shared.OsvcThread, Crypt):
 
         cmd = drop_option("--node", cmd, drop_value=True)
         cmd = drop_option("--daemon", cmd)
-        if "--local" not in cmd:
+        if action_mode and "--local" not in cmd:
             cmd.append("--local")
         cmd = [rcEnv.paths.svcmgr, "-s", svcname] + cmd
         self.log.info("execute service action requested by node %s: %s",

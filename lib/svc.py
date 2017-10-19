@@ -2536,10 +2536,6 @@ class Svc(Crypt):
                 raise ex.excAbortAction()
             else:
                 raise ex.excError()
-        if action in ("start", "stop") and self.enslave_children and len(self.children) > 0:
-            for svcname in self.children:
-                self.daemon_mon_action(action, svcname=svcname)
-
         if self.options.local or self.options.slave or self.options.slaves or \
            self.options.master:
             return
@@ -2547,6 +2543,9 @@ class Svc(Crypt):
             return
         if self.command_is_scoped():
             return
+        if action in ("start", "stop") and self.enslave_children and len(self.children) > 0:
+            for svcname in self.children:
+                self.daemon_mon_action(action, svcname=svcname)
         self.daemon_mon_action(action, wait=wait, timeout=timeout)
         raise ex.excAbortAction()
 
@@ -2788,13 +2787,12 @@ class Svc(Crypt):
         self.need_postsync = set()
 
     def remote_action(self, nodename, action, waitlock=DEFAULT_WAITLOCK,
-                      sync=False, verbose=True, action_mode=True):
+                      sync=False, verbose=True, action_mode=True, collect=True):
         if self.options.cron:
-            # the scheduler action runs forked. don't use the cmdworker
-            # in this context as it may hang
+            # don't use async actions in the scheduler codepath
             sync = True
 
-        rcmd = [os.path.join(rcEnv.paths.pathetc, self.svcname)]
+        rcmd = []
         if self.options.debug:
             rcmd += ['--debug']
         if self.options.dry_run:
@@ -2806,14 +2804,10 @@ class Svc(Crypt):
         if self.options.waitlock != DEFAULT_WAITLOCK:
             rcmd += ['--waitlock', str(waitlock)]
         rcmd += action.split()
-        cmd = rcEnv.rsh.split() + [nodename] + rcmd
         if verbose:
             self.log.info("exec '%s' on node %s", ' '.join(rcmd), nodename)
-        if sync:
-            out, err, ret = justcall(cmd)
-            return out, err, ret
-        else:
-            self.node.cmdworker.enqueue(cmd)
+        return self.daemon_service_action(rcmd, nodename=nodename, sync=sync,
+                                          collect=collect, action_mode=action_mode)
 
     def presync(self):
         """ prepare files to send to slave nodes in var/.
@@ -3585,7 +3579,7 @@ class Svc(Crypt):
                 if options.format == "json":
                     try:
                         results[nodename] = json.loads(results[nodename])
-                    except ValueError as exc:
+                    except (TypeError, ValueError) as exc:
                         results[nodename] = {"error": str(exc)}
             results[rcEnv.nodename] = data
             return results
@@ -3597,7 +3591,7 @@ class Svc(Crypt):
 
         return data
 
-    def do_cluster_action(self, action, waitlock=60, collect=False, action_mode=True):
+    def do_cluster_action(self, action, options=None, waitlock=60, collect=False, action_mode=True):
         """
         Execute an action on remote nodes if --cluster is set and the
         service is a flex, and this node is flex primary.
@@ -3608,16 +3602,15 @@ class Svc(Crypt):
         If possible execute in parallel running subprocess. Aggregate and
         return results.
         """
-        if not self.options.cluster:
+        if options is None:
+            options = self.options
+        if not options.cluster:
             return
 
         if action in ("edit_config", "validate_config") or "sync" in action:
             return
 
-        if action_mode and "flex" not in self.clustertype:
-            return
-
-        if "flex" in self.clustertype:
+        if self.clustertype == "flex":
             if rcEnv.nodename == self.drp_flex_primary:
                 peers = set(self.drpnodes) - set([rcEnv.nodename])
             elif rcEnv.nodename == self.flex_primary:
@@ -3630,18 +3623,19 @@ class Svc(Crypt):
             else:
                 peers = set(self.drpnodes)
             peers -= set([rcEnv.nodename])
+        else:
+            return
 
         args = [arg for arg in sys.argv[1:] if arg not in ("-c", "--cluster")]
-        if self.options.docker_argv and len(self.options.docker_argv) > 0:
-            args += self.options.docker_argv
+        if options.docker_argv and len(options.docker_argv) > 0:
+            args += options.docker_argv
 
         def wrapper(queue, **kwargs):
             """
             Execute the remote action and enqueue or print results.
             """
             collect = kwargs["collect"]
-            del kwargs["collect"]
-            out, err, ret = self.remote_action(**kwargs)
+            ret, out, err = self.remote_action(**kwargs)
             if collect:
                 queue.put([out, err, ret])
             else:
@@ -3674,7 +3668,7 @@ class Svc(Crypt):
                 "verbose": False,
                 "sync": True,
                 "action_mode": action_mode,
-                "collect": collect,
+                "collect": True,
             }
             if parallel:
                 queues[nodename] = Queue()
@@ -3730,7 +3724,7 @@ class Svc(Crypt):
             self.log.error(str(exc))
             return 1
 
-        psinfo = self.do_cluster_action(action, options)
+        psinfo = self.do_cluster_action(action, options=options)
 
         def call_action(action):
             self.action_triggers("pre", action)
@@ -5192,7 +5186,7 @@ class Svc(Crypt):
         except Exception as exc:
             self.log.warning("set monitor status failed: %s", str(exc))
 
-    def daemon_service_action(self, cmd, nodename=None, sync=True, time=0):
+    def daemon_service_action(self, cmd, nodename=None, sync=True, time=0, collect=False, action_mode=True):
         """
         Execute a service action on a peer node.
         If sync is set, wait for the action result.
@@ -5203,8 +5197,10 @@ class Svc(Crypt):
             "svcname": self.svcname,
             "cmd": cmd,
             "sync": sync,
+            "action_mode": action_mode,
         }
-        self.log.info("request action '%s' on node %s", " ".join(cmd), nodename)
+        if action_mode:
+            self.log.info("request action '%s' on node %s", " ".join(cmd), nodename)
         try:
             data = self.daemon_send(
                 {"action": "service_action", "options": options},
@@ -5223,13 +5219,16 @@ class Svc(Crypt):
         if "data" not in data:
             return 0
         data = data["data"]
-        if data.get("out") and len(data["out"]) > 0:
-            for line in data["out"].splitlines():
-               print(line)
-        if data.get("err") and len(data["err"]) > 0:
-            for line in data["err"].splitlines():
-               print(line, file=sys.stderr)
-        return data["ret"]
+        if collect:
+            return data["ret"], data.get("out", ""), data.get("err", "")
+        else:
+            if data.get("out") and len(data["out"]) > 0:
+                for line in data["out"].splitlines():
+                   print(line)
+            if data.get("err") and len(data["err"]) > 0:
+                for line in data["err"].splitlines():
+                   print(line, file=sys.stderr)
+            return data["ret"]
 
 
     #########################################################################
