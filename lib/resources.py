@@ -478,17 +478,19 @@ class Resource(object):
             self.status_log("nostatus tag", "info")
             return rcStatus.NA
 
-        if self.rstatus is not None and not (refresh or self.svc.options.refresh):
-            return self.rstatus
-
         last_status = self.load_status_last()
 
-        if self.svc.options.refresh or refresh:
+        if self.rstatus is not None and not refresh:
+            if last_status is None:
+                self.write_status()
+            return self.rstatus
+
+        if refresh:
             self.purge_status_last()
         else:
             self.rstatus = last_status
 
-        if self.rstatus is None or self.svc.options.refresh or refresh:
+        if self.rstatus is None or refresh:
             self.status_logs = []
             self.rstatus = self.try_status(verbose)
             self.log.debug("refresh status: %s => %s",

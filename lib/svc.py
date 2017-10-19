@@ -82,6 +82,7 @@ ACTIONS_NO_STATUS_CHANGE = [
     "push_resinfo",
     "push_config",
     "push_service_status",
+    "monitor_action",
     "prstatus",
     "scheduler",
     "status",
@@ -1000,7 +1001,7 @@ class Svc(object):
         """
         Return the aggregate status a service.
         """
-        group_status = self.group_status()
+        group_status = self.group_status(refresh=self.options.refresh)
         return group_status["overall"].status
 
     @lazy
@@ -1020,6 +1021,7 @@ class Svc(object):
                 pass
 
         now = time.time()
+        group_status = self.group_status(refresh=self.options.refresh)
 
         data = {
             "updated": datetime.datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
@@ -1065,7 +1067,6 @@ class Svc(object):
                     'optional': optional,
                     'encap': encap,
                 }
-        group_status = self.group_status()
         for group in group_status:
             data[group] = str(group_status[group])
         self.write_status_data(data)
@@ -1220,7 +1221,7 @@ class Svc(object):
                 print("resource not found")
                 continue
             resource = self.resources_by_id[rid]
-            print(rcStatus.colorize_status(str(resource.status())))
+            print(rcStatus.colorize_status(str(resource.status(refresh=self.options.refresh))))
         return 0
 
     def print_status(self):
@@ -1596,7 +1597,7 @@ class Svc(object):
 
         return g_vars, g_vals, r_vars, r_vals
 
-    def get_rset_status(self, groups):
+    def get_rset_status(self, groups, refresh=False):
         """
         Return the aggregated status of all resources of the specified resource
         sets, as a dict of status indexed by resourceset type.
@@ -1609,9 +1610,9 @@ class Svc(object):
                 continue
             for rset in self.get_resourcesets(status_type, strict=True):
                 if rset.type not in rsets_status:
-                    rsets_status[rset.type] = rset.status()
+                    rsets_status[rset.type] = rset.status(refresh=refresh)
                 else:
-                    rsets_status[rset.type] += rset.status()
+                    rsets_status[rset.type] += rset.status(refresh=refresh)
         return rsets_status
 
     def resource_monitor(self):
@@ -2124,7 +2125,7 @@ class Svc(object):
 
         return group_status
 
-    def group_status(self, groups=None, excluded_groups=None):
+    def group_status(self, groups=None, excluded_groups=None, refresh=False):
         """
         Return the status data of the service.
         """
@@ -2136,7 +2137,7 @@ class Svc(object):
         status = {}
         moregroups = groups | set(["overall", "avail"])
         groups = groups - excluded_groups
-        self.get_rset_status(groups)
+        self.get_rset_status(groups, refresh=refresh)
 
         # initialise status of each group
         for group in moregroups:
@@ -3239,7 +3240,7 @@ class Svc(object):
         if self.options.cron:
             self.sched.sched_delay()
         import rcSvcmon
-        self.options.refresh = True
+        self.group_status(refresh=True)
         rcSvcmon.svcmon_normal([self])
 
     def push_resinfo(self):
@@ -3713,16 +3714,17 @@ class Svc(object):
 
         if action not in ACTIONS_NO_STATUS_CHANGE and \
            'compliance' not in action and \
-           'collector' not in action:
+           'collector' not in action and \
+           not options.dry_run and \
+           not action.startswith("docker"):
             #
             # here we know we will run a resource state-changing action
             # purge the resource status file cache, so that we don't take
             # decision on outdated information
             #
-            if not options.dry_run and action != "resource_monitor" and \
-               not action.startswith("docker"):
-                self.log.debug("purge all resource status file caches")
-                self.purge_status_caches()
+            self.log.debug("purge all resource status file caches before "
+                           "action %s", action)
+            self.purge_status_caches()
 
         self.setup_environ(action=action)
         self.setup_signal_handlers()
