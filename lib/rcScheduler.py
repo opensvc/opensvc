@@ -109,7 +109,7 @@ def sched_action(func):
         try:
             if action in self.sched.scheduler_actions:
                 fds = self.sched.action_timestamps(action, options.rid)
-            func(self, action, options)
+            return func(self, action, options)
         finally:
             for fd in fds:
                 lock.unlock(fd)
