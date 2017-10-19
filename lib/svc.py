@@ -84,6 +84,7 @@ ACTIONS_NO_STATUS_CHANGE = [
     "push_service_status",
     "monitor_action",
     "prstatus",
+    "resource_monitor",
     "scheduler",
     "status",
     "validate_config",
@@ -1629,9 +1630,7 @@ class Svc(object):
         Trigger the service defined monitor_action if the hb resource is up
         but a monitored resource is down and not restartable.
         """
-        self.options.refresh = True
-        if self.group_status_cache is None:
-            self.group_status(excluded_groups=set(['sync']))
+        self.group_status(excluded_groups=set(['sync']), refresh=True)
         if not self.ha:
             self.log.debug("no active heartbeat resource. no need to check "
                            "monitored resources.")
