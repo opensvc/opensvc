@@ -1120,6 +1120,7 @@ def add_container_srp(svc, s):
 
 def add_container_lxd(svc, s):
     kwargs = init_kwargs(svc, s)
+    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
