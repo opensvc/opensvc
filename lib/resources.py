@@ -421,7 +421,7 @@ class Resource(object):
         Handles caching, nostatus tag and disabled flag.
         """
         verbose = kwargs.get("verbose", False)
-        refresh = kwargs.get("refresh", False) or self.svc.options.refresh
+        refresh = kwargs.get("refresh", False)
         ignore_nostatus = kwargs.get("ignore_nostatus", False)
 
         if self.is_disabled():
@@ -432,13 +432,16 @@ class Resource(object):
             return rcStatus.NA
 
         if self.rstatus is not None and not refresh:
+            if not self.has_status_last():
+                self.write_status()
             return self.rstatus
 
-        last_status = self.load_status_last()
 
         if refresh:
+            last_status = "undef"
             self.purge_status_last()
         else:
+            last_status = self.load_status_last()
             self.rstatus = last_status
 
         if self.rstatus is None or refresh:
@@ -486,6 +489,9 @@ class Resource(object):
         except:
             pass
 
+    def has_status_last(self):
+        return os.path.exists(self.fpath_status_last)
+
     def load_status_last(self):
         """
         Fetch the resource status from the on-disk cache.
@@ -505,6 +511,7 @@ class Resource(object):
             self.log.debug(exc)
             return
 
+        self.status_logs = []
         if len(lines) > 1:
             for line in lines[1:]:
                 if line.startswith("info: "):

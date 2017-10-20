@@ -113,6 +113,7 @@ ACTIONS_NO_STATUS_CHANGE = [
     "push_config",
     "push_service_status",
     "prstatus",
+    "resource_monitor",
     "scheduler",
     "status",
     "validate_config",
@@ -1138,7 +1139,7 @@ class Svc(Crypt):
         """
         Return the list of resourceset matching the specified types.
         """
-        if not isinstance(_type, (list, tuple)):
+        if not isinstance(_type, (set, list, tuple)):
             _types = [_type]
         else:
             _types = _type
@@ -1295,7 +1296,7 @@ class Svc(Crypt):
         """
         Return the aggregate status a service.
         """
-        group_status = self.group_status()
+        group_status = self.group_status(refresh=self.options.refresh)
         return group_status["overall"].status
 
     @fcache
@@ -1332,7 +1333,7 @@ class Svc(Crypt):
         except OSError as exc:
             return True
 
-    def print_status_data(self, from_resource_status_cache=False, mon_data=False):
+    def print_status_data(self, from_resource_status_cache=False, mon_data=False, refresh=False):
         """
         Return a structure containing hierarchical status of
         the service and monitor information. Fetch CRM status from cache if
@@ -1341,16 +1342,16 @@ class Svc(Crypt):
         lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname + ".status")
         with lock.cmlock(timeout=30, delay=1, lockfile=lockfile):
             if not from_resource_status_cache and \
-               not self.options.refresh and \
+               not refresh and \
                os.path.exists(self.status_data_dump) and \
                not self.status_data_dump_outdated():
                 try:
                     with open(self.status_data_dump, 'r') as filep:
                         data = json.load(filep)
                 except ValueError:
-                    data = self.print_status_data_eval()
+                    data = self.print_status_data_eval(refresh=refresh)
             else:
-                data = self.print_status_data_eval()
+                data = self.print_status_data_eval(refresh=refresh)
 
         if mon_data:
             mon_data = self.get_smon_data()
@@ -1367,12 +1368,13 @@ class Svc(Crypt):
 
         return data
 
-    def print_status_data_eval(self):
+    def print_status_data_eval(self, refresh=False):
         """
         Return a structure containing hierarchical status of
         the service.
         """
         now = time.time()
+        group_status = self.group_status(refresh=refresh)
 
         data = {
             "updated": datetime.datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
@@ -1428,7 +1430,6 @@ class Svc(Crypt):
                     data["provisioned"] = False
                 if resource.subset:
                     data['resources'][rid]["subset"] = resource.subset
-        group_status = self.group_status()
         for group in group_status:
             data[group] = str(group_status[group])
         if self.stonith and self.clustertype == "failover" and data["avail"] == "up":
@@ -1527,14 +1528,14 @@ class Svc(Crypt):
                 print("resource not found")
                 continue
             resource = self.resources_by_id[rid]
-            print(rcStatus.colorize_status(str(resource.status())))
+            print(rcStatus.colorize_status(str(resource.status(refresh=self.options.refresh))))
         return 0
 
     def print_status(self):
         """
         Display in human-readable format the hierarchical service status.
         """
-        data = self.print_status_data(mon_data=True)
+        data = self.print_status_data(mon_data=True, refresh=self.options.refresh)
         if self.options.format is not None:
             return data
 
@@ -1947,22 +1948,15 @@ class Svc(Crypt):
 
         return g_vars, g_vals, r_vars, r_vals
 
-    def get_rset_status(self, groups):
+    def get_rset_status(self, groups, refresh=False):
         """
         Return the aggregated status of all resources of the specified resource
         sets, as a dict of status indexed by resourceset type.
         """
         self.setup_environ()
         rsets_status = {}
-        for status_type in STATUS_TYPES:
-            group = status_type.split('.')[0]
-            if group not in groups:
-                continue
-            for rset in self.get_resourcesets(status_type, strict=True):
-                if rset.type not in rsets_status:
-                    rsets_status[rset.type] = rset.status()
-                else:
-                    rsets_status[rset.type] += rset.status()
+        for rset in self.get_resourcesets(groups):
+            rsets_status[rset.type] = rset.status(refresh=refresh)
         return rsets_status
 
     def resource_monitor(self):
@@ -2371,7 +2365,7 @@ class Svc(Crypt):
 
         return group_status
 
-    def group_status(self, groups=None, excluded_groups=None):
+    def group_status(self, groups=None, excluded_groups=None, refresh=False):
         """
         Return the status data of the service.
         """
@@ -2383,7 +2377,7 @@ class Svc(Crypt):
         status = {}
         moregroups = groups | set(["overall", "avail", "optional"])
         groups = groups - excluded_groups
-        self.get_rset_status(groups)
+        self.get_rset_status(groups, refresh=refresh)
 
         # initialise status of each group
         for group in moregroups:
@@ -3074,7 +3068,7 @@ class Svc(Crypt):
             if not self.options.cron:
                 self.log.info("push service status is disabled for encapsulated services")
             return
-        self.options.refresh = True
+        self.group_status(refresh=True)
         data = self.svcmon_push_lists()
         self.node.collector.call('svcmon_update_combo', *data, sync=True)
 
@@ -3504,16 +3498,17 @@ class Svc(Crypt):
 
         if action not in ACTIONS_NO_STATUS_CHANGE and \
            'compliance' not in action and \
-           'collector' not in action:
+           'collector' not in action and \
+            not options.dry_run and \
+            not action.startswith("docker"):
             #
             # here we know we will run a resource state-changing action
             # purge the resource status file cache, so that we don't take
             # decision on outdated information
             #
-            if not options.dry_run and action != "resource_monitor" and \
-               not action.startswith("docker"):
-                self.log.debug("purge all resource status file caches")
-                self.purge_status_caches()
+            self.log.debug("purge all resource status file caches before "
+                           "action %s", action)
+            self.purge_status_caches()
 
         self.setup_environ(action=action)
         self.setup_signal_handlers()
