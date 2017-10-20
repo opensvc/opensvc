@@ -30,14 +30,14 @@ class Container(resContainer.Container):
         return ["/var/lib/lxd/containers/"+self.name]
 
     def rcp_from(self, src, dst):
-        cmd = [lxc, "file", "pull", self.name+":"+src, dst]
+        cmd = [lxc, "file", "pull", self.name+src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def rcp(self, src, dst):
-        cmd = [lxc, "file", "push", src, self.name+":"+dst]
+        cmd = [lxc, "file", "push", src, self.name+dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
