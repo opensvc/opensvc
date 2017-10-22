@@ -956,7 +956,7 @@ class Scheduler(object):
                 self._timestamp(tsfile)
                 fds.append(fd)
         except Exception as exc:
-            self.log.warning("a %s action is already in progess")
+            self.log.warning("a %s action is already in progess", action)
             for fd in fds:
                 lock.unlock(fd)
         return fds
