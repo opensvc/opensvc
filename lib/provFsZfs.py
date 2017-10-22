@@ -15,7 +15,11 @@ class Prov(provFs.Prov):
         if ds.exists():
             ds.destroy(["-r"])
         if os.path.exists(self.r.mount_point) and os.path.isdir(self.r.mount_point):
-            os.rmdir(self.r.mount_point)
+            try:
+                os.rmdir(self.r.mount_point)
+                self.r.log.info("rmdir %s", self.r.mount_point)
+            except OSError as exc:
+                self.r.log.warning("failed to rmdir %s: %s", self.r.mount_point, exc)
 
     def provisioner(self):
         if not which(rcEnv.syspaths.zfs):
