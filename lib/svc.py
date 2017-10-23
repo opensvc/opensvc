@@ -117,6 +117,7 @@ ACTIONS_ALLOW_ON_FROZEN = [
     "push_config",
     "push_service_status",
     "prstatus",
+    "resource_monitor",
     "scheduler",
     "set",
     "status",
@@ -1631,6 +1632,8 @@ class Svc(object):
         but a monitored resource is down and not restartable.
         """
         self.group_status(excluded_groups=set(['sync']), refresh=True)
+        if self.frozen():
+            return
         if not self.ha:
             self.log.debug("no active heartbeat resource. no need to check "
                            "monitored resources.")
