@@ -550,9 +550,9 @@ class Monitor(shared.OsvcThread, Crypt):
                     #              svc.svcname, ','.join(intersection))
                     return
 
-        if svc.clustertype == "failover":
+        if svc.topology == "failover":
             self.service_orchestrator_auto_failover(svc, smon, status, candidates)
-        elif svc.clustertype == "flex":
+        elif svc.topology == "flex":
             self.service_orchestrator_auto_flex(svc, smon, status, candidates)
 
     def service_orchestrator_auto_failover(self, svc, smon, status, candidates):

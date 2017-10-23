@@ -349,7 +349,7 @@ class Rsync(resSync.Sync):
         """
         s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
         if s['avail'].status != rcStatus.UP or \
-           (self.svc.clustertype in ['flex', 'autoflex'] and \
+           (self.svc.topology == 'flex' and \
             rcEnv.nodename != self.svc.flex_primary and \
             s['avail'].status == rcStatus.UP):
             if rcEnv.nodename not in target:

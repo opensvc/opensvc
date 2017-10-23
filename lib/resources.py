@@ -99,14 +99,14 @@ class Resource(object):
                 keys[idx] = [
                     self.svc.svcname,
                     self.svc.node.nodename,
-                    self.svc.clustertype,
+                    self.svc.topology,
                     self.rid
                 ] + key
             elif len(key) == 3:
                 keys[idx] = [
                     self.svc.svcname,
                     self.svc.node.nodename,
-                    self.svc.clustertype
+                    self.svc.topology
                 ] + key
         return keys
 

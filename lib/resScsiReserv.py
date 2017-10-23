@@ -64,9 +64,9 @@ class ScsiReserv(Res.Resource):
     def info(self):
         self.get_hostid()
         data = [
-          [self.svc.svcname, self.svc.node.nodename, self.svc.clustertype, self.rid, "prkey", self.hostid],
+            ["prkey", self.hostid],
         ]
-        return data
+        return self.fmt_info(data)
 
     def scsireserv_supported(self):
         return False

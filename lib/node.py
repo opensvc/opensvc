@@ -3046,9 +3046,9 @@ class Node(Crypt):
 
         def load_svc(svcname, data):
             try:
-                clustertype = services[svcname].topology
+                topology = services[svcname].topology
             except KeyError:
-                clustertype = ""
+                topology = ""
             try:
                 nodes = self.services[svcname].nodes
                 drpnodes = self.services[svcname].drpnodes
@@ -3056,7 +3056,7 @@ class Node(Crypt):
                 nodes = set()
                 drpnodes = set()
             if rcEnv.nodename in drpnodes:
-                clustertype = "drp " + clustertype
+                topology = "drp " + topology
             status = colorize_status(data["avail"], lpad=0)
             if data["overall"] == "warn":
                 status += colorize("!", color.BROWN)
@@ -3065,7 +3065,7 @@ class Node(Crypt):
             line = [
                 " "+colorize(svcname, color.BOLD),
                 status,
-                clustertype,
+                topology,
                 "|",
             ]
             for nodename in nodenames:

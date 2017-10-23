@@ -626,7 +626,7 @@ class OsvcThread(threading.Thread):
         ranks = self.placement_ranks(svc, candidates=candidates)
         if ranks == []:
             return False
-        elif svc.clustertype == "failover":
+        elif svc.topology == "failover":
             if rcEnv.nodename == ranks[0]:
                 if not silent:
                     self.duplog("info", "we have the highest '%(placement)s' "
@@ -641,7 +641,7 @@ class OsvcThread(threading.Thread):
                                   nodename=ranks[0], placement=svc.placement,
                                   svcname=svc.svcname)
                 return False
-        elif svc.clustertype == "flex":
+        elif svc.topology == "flex":
             index = ranks.index(rcEnv.nodename) + 1
             if not silent:
                 self.duplog("info", "we have the %(idx)d/%(mini)d '%(placement)s'"

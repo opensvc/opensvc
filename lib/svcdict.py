@@ -7,6 +7,7 @@ from rcNode import node_get_node_env
 # deprecated => supported
 deprecated_keywords = {
   "DEFAULT.mode": None,
+  "DEFAULT.cluster_type": "topology",
   "DEFAULT.service_type": "env",
   "DEFAULT.affinity": "hard_affinity",
   "DEFAULT.anti_affinity": "hard_anti_affinity",
@@ -768,7 +769,7 @@ class KeywordFlexPrimary(Keyword):
                   keyword="flex_primary",
                   at=True,
                   order=11,
-                  depends=[('cluster_type', ["flex"])],
+                  depends=[('topology', ["flex"])],
                   default_text="<first node of the nodes parameter>",
                   text="The node in charge of syncing the other nodes. --cluster actions on the flex_primary are execute on all peer nodes (ie, not drpnodes)."
                 )
@@ -781,7 +782,7 @@ class KeywordDrpFlexPrimary(Keyword):
                   keyword="drp_flex_primary",
                   at=True,
                   order=11,
-                  depends=[('cluster_type', ["flex"])],
+                  depends=[('topology', ["flex"])],
                   default_text="<first node of the drpnodes parameter>",
                   text="The drpnode in charge of syncing the other drpnodes. --cluster actions on the drp_flex_primary are execute on all drpnodes (ie, not pri nodes)."
                 )
@@ -925,7 +926,7 @@ class KeywordDockerDockerService(Keyword):
                   default=False,
                   convert="boolean",
                   candidates=(True, False),
-                  text="If set to True, run this container as a docker service, which is possible if the cluster_type is set to flex and the docker swarm properly initialized.",
+                  text="If set to True, run this container as a docker service, which is possible if the :kw:`topology` is set to flex and the docker swarm properly initialized.",
                   example=False
                 )
 
@@ -1397,12 +1398,12 @@ class KeywordShowDisabled(Keyword):
                   text="Specifies if the disabled resources must be included in the print status and json status output."
                 )
 
-class KeywordClusterType(Keyword):
+class KeywordTopology(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="cluster_type",
+                  keyword="topology",
                   at=True,
                   order=15,
                   default="failover",
@@ -1434,7 +1435,7 @@ class KeywordStonith(Keyword):
                   order=16,
                   default=False,
                   candidates=(True, False),
-                  depends=[("cluster_type", ["failover"])],
+                  depends=[("topology", ["failover"])],
                   text="Stonith the node previously running the service if stale upon start by the daemon monitor.",
                 )
 
@@ -1474,7 +1475,7 @@ class KeywordFlexMinNodes(Keyword):
                   order=16,
                   default=1,
                   convert="integer",
-                  depends=[("cluster_type", ["flex"])],
+                  depends=[("topology", ["flex"])],
                   text="Minimum number of active nodes in the cluster. Below this number alerts are raised by the collector, and the collector won't stop any more service instances."
                 )
 
@@ -1487,7 +1488,7 @@ class KeywordFlexMaxNodes(Keyword):
                   order=16,
                   default=10,
                   convert="integer",
-                  depends=[("cluster_type", ["flex"])],
+                  depends=[("topology", ["flex"])],
                   text="Maximum number of active nodes in the cluster. Above this number alerts are raised by the collector, and the collector won't start any more service instances. 0 means unlimited."
                 )
 
@@ -1500,7 +1501,7 @@ class KeywordFlexCpuLowThreshold(Keyword):
                   order=16,
                   default=10,
                   convert="integer",
-                  depends=[("cluster_type", ["flex"])],
+                  depends=[("topology", ["flex"])],
                   text="Cluster-wide load average below which flex service instances will be stopped.",
                 )
 
@@ -1513,7 +1514,7 @@ class KeywordFlexCpuHighThreshold(Keyword):
                   order=16,
                   default=70,
                   convert="integer",
-                  depends=[("cluster_type", ["flex"])],
+                  depends=[("topology", ["flex"])],
                   text="Cluster-wide load average above which flex new service instances will be started.",
                 )
 
@@ -4889,7 +4890,7 @@ class KeyDict(KeywordStore):
         self += KeywordSoftAffinity()
         self += KeywordSoftAntiAffinity()
         self += KeywordShowDisabled()
-        self += KeywordClusterType()
+        self += KeywordTopology()
         self += KeywordOrchestrate()
         self += KeywordPlacement()
         self += KeywordConstraints()

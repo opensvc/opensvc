@@ -477,7 +477,7 @@ class Collector(object):
 
         vars = ['res_svcname',
                 'res_nodename',
-                'cluster_type',
+                'topology',
                 'rid',
                 'res_key',
                 'res_value']
@@ -489,6 +489,8 @@ class Collector(object):
               ["optional", str(r.optional).lower()],
               ["disabled", str(r.disabled).lower()],
               ["monitor", str(r.monitor).lower()],
+              ["shared", str(r.shared).lower()],
+              ["encap", str(r.encap).lower()],
               ["restart", str(r.nb_restart)],
             ]
             if r.subset:
@@ -528,7 +530,7 @@ class Collector(object):
             return
 
         vars = ['svc_name',
-                'svc_cluster_type',
+                'svc_topology',
                 'svc_flex_min_nodes',
                 'svc_flex_max_nodes',
                 'svc_flex_cpu_low_threshold',
@@ -543,7 +545,7 @@ class Collector(object):
                 'svc_ha']
 
         vals = [svc.svcname,
-                svc.clustertype,
+                svc.topology,
                 svc.flex_min_nodes,
                 svc.flex_max_nodes,
                 svc.flex_cpu_low_threshold,

@@ -2098,7 +2098,7 @@ def build(name, minimal=False, svcconf=None, node=None):
         pass
 
     try:
-        svc.clustertype = svc.conf_get('DEFAULT', 'cluster_type')
+        svc.topology = svc.conf_get('DEFAULT', 'topology')
     except ex.OptNotFound as exc:
         pass
 

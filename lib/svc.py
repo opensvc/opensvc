@@ -431,7 +431,7 @@ class Svc(Crypt):
         self.conf = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
         self.comment = ""
         self.orchestrate = "ha"
-        self.clustertype = "failover"
+        self.topology = "failover"
         self.placement = "nodes order"
         self.stonith = False
         self.parents = []
@@ -529,7 +529,7 @@ class Svc(Crypt):
 
     @lazy
     def ha(self):
-        if self.clustertype == "flex":
+        if self.topology == "flex":
             return True
         if self.has_monitored_resources():
             return True
@@ -1374,7 +1374,7 @@ class Svc(Crypt):
             "placement": self.placement,
             "flex_min_nodes": self.flex_min_nodes,
             "flex_max_nodes": self.flex_max_nodes,
-            "topology": self.clustertype,
+            "topology": self.topology,
             "parents": self.parents,
             "children": self.children,
             "enslave_children": self.enslave_children,
@@ -1427,7 +1427,7 @@ class Svc(Crypt):
                     data['resources'][rid]["subset"] = resource.subset
         for group in group_status:
             data[group] = str(group_status[group])
-        if self.stonith and self.clustertype == "failover" and data["avail"] == "up":
+        if self.stonith and self.topology == "failover" and data["avail"] == "up":
             data["stonith"] = True
         self.write_status_data(data)
         return data
@@ -3443,7 +3443,7 @@ class Svc(Crypt):
         if action in ("edit_config", "validate_config") or "sync" in action:
             return
 
-        if self.clustertype == "flex":
+        if self.topology == "flex":
             if rcEnv.nodename == self.drp_flex_primary:
                 peers = set(self.drpnodes) - set([rcEnv.nodename])
             elif rcEnv.nodename == self.flex_primary:
@@ -3540,9 +3540,9 @@ class Svc(Crypt):
         flex_primary run the action on all remote nodes.
         """
 
-        if action not in ACTIONS_NO_LOCK and self.clustertype not in CLUSTER_TYPES:
+        if action not in ACTIONS_NO_LOCK and self.topology not in CLUSTER_TYPES:
             raise ex.excError("invalid cluster type '%s'. allowed: %s" % (
-                self.clustertype,
+                self.topology,
                 ', '.join(CLUSTER_TYPES),
             ))
 
@@ -3709,8 +3709,8 @@ class Svc(Crypt):
         * the specified destination is the current node
         * the specified destination is not a service candidate node
         """
-        if self.clustertype != "failover":
-            raise ex.excError("this service clustertype is not 'failover'")
+        if self.topology != "failover":
+            raise ex.excError("this service topology is not 'failover'")
         if destination_node is None:
             destination_node = self.options.destination_node
         if destination_node is None:

@@ -117,7 +117,7 @@ class Sync(Res.Resource, Scheduler):
     def pre_sync_check_flex_primary(self):
         """ Refuse to sync from a flex non-primary node
         """
-        if self.svc.clustertype in ["flex", "autoflex"] and \
+        if self.svc.topology == "flex" and \
            self.svc.flex_primary != rcEnv.nodename:
             if self.svc.options.cron:
                 self.log.debug("won't sync this resource from a flex non-primary node")
