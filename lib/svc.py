@@ -2029,7 +2029,7 @@ class Svc(Crypt):
 
         # make sure the container has an up-to-date service config
         if push_config:
-            self.push_encap_config(container)
+            self._push_encap_config(container)
 
         # now we known we'll execute a command in the slave, so purge the
         # encap cache
@@ -2965,6 +2965,15 @@ class Svc(Crypt):
             self._push_encap_config(resource)
 
     def _push_encap_config(self, container):
+        if len(self.log.handlers) > 1:
+            self.log.handlers[1].setLevel(logging.CRITICAL)
+        try:
+            self.__push_encap_config(container)
+        finally:
+            if len(self.log.handlers) > 1:
+                self.log.handlers[1].setLevel(rcEnv.loglevel)
+
+    def __push_encap_config(self, container):
         """
         Compare last modification time of the master and slave service
         configuration file, and copy the most recent version over the least
