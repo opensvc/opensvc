@@ -17,7 +17,7 @@ from freezer import Freezer
 from converters import convert_duration
 
 # disable orchestration if a peer announces a different compat version than ours
-COMPAT_VERSION = 3
+COMPAT_VERSION = 4
 
 DATEFMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 MAX_MSG_SIZE = 1024 * 1024
@@ -66,6 +66,7 @@ CLUSTER_DATA_LOCK = threading.RLock()
 # thread loop conditions and helpers
 DAEMON_STOP = threading.Event()
 MON_TICKER = threading.Condition()
+COLLECTOR_TICKER = threading.Condition()
 SCHED_TICKER = threading.Condition()
 HB_TX_TICKER = threading.Condition()
 
@@ -82,6 +83,13 @@ def wake_monitor():
     """
     with MON_TICKER:
         MON_TICKER.notify_all()
+
+def wake_collector():
+    """
+    Notify the scheduler thread to do they periodic job immediatly
+    """
+    with COLLECTOR_TICKER:
+        COLLECTOR_TICKER.notify_all()
 
 def wake_scheduler():
     """

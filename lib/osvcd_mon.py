@@ -77,6 +77,7 @@ class Monitor(shared.OsvcThread, Crypt):
             self.orchestrator()
             self.sync_services_conf()
         self.update_hb_data()
+        shared.wake_collector()
 
         with shared.MON_TICKER:
             shared.MON_TICKER.wait(self.monitor_period)
@@ -114,7 +115,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 new_service = True
             if new_service:
                 ref_conf = Storage({
-                    "cksum": "",
+                    "csum": "",
                     "updated": "0",
                 })
                 ref_nodename = rcEnv.nodename
@@ -127,7 +128,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 if rcEnv.nodename not in conf.get("scope", []):
                     # we are not a service node
                     continue
-                if conf.cksum != ref_conf.cksum and \
+                if conf.csum != ref_conf.csum and \
                    conf.updated > ref_conf.updated:
                     ref_conf = conf
                     ref_nodename = nodename
@@ -385,7 +386,7 @@ class Monitor(shared.OsvcThread, Crypt):
 
         # services (iterate over deleting services too)
         svcnames = [svcname for svcname in shared.SMON_DATA]
-        self.get_agg_services(svcnames)
+        self.get_agg_services()
         for svcname in svcnames:
             svc = self.get_service(svcname)
             self.service_orchestrator(svcname, svc)
@@ -933,18 +934,19 @@ class Monitor(shared.OsvcThread, Crypt):
     #
     #########################################################################
     def get_agg_avail(self, svcname):
-        svc = self.get_service(svcname)
-        if svc is None:
-            avail = "unknown"
-        if svc.clustertype == "failover":
-            avail = self.get_agg_avail_failover(svc)
-        elif svc.clustertype == "flex":
-            avail = self.get_agg_avail_flex(svc)
+        try:
+            instance = self.get_service_instances(svcname).values()[0]
+        except IndexError:
+            instance = Storage()
+        if instance["topology"] == "failover":
+            avail = self.get_agg_avail_failover(svcname)
+        elif instance["topology"] == "flex":
+            avail = self.get_agg_avail_flex(svcname)
         else:
             avail = "unknown"
-        if svc.enslave_children:
+        if instance.get("enslave_children"):
             avails = set([avail])
-            for child in svc.children:
+            for child in instance["children"]:
                 try:
                     child_avail = shared.AGG[child]["avail"]
                 except KeyError:
@@ -968,21 +970,21 @@ class Monitor(shared.OsvcThread, Crypt):
         ostatus_s = set(ostatus_l)
 
         if n_instances == 0:
-            ostatus = 'n/a'
-        elif ostatus_s == set(['n/a']):
-            ostatus = 'n/a'
-        elif 'warn' in ostatus_s or 'stdby down' in ostatus_s:
-            ostatus = 'warn'
-        elif set(['up']) == ostatus_s or \
-             set(['up', 'down']) == ostatus_s or \
-             set(['up', 'stdby up']) == ostatus_s or \
-             set(['up', 'down', 'stdby up']) == ostatus_s or \
-             set(['up', 'down', 'stdby up', 'n/a']) == ostatus_s:
-            ostatus = 'up'
-        elif set(['down']) == ostatus_l or \
-             set(['down', 'stdby up']) == ostatus_s or \
-             set(['down', 'stdby up', 'n/a']) == ostatus_s:
-            ostatus = 'down'
+            ostatus = "n/a"
+        elif "warn" in ostatus_s or "stdby down" in ostatus_s:
+            ostatus = "warn"
+        elif len(ostatus_s) == 1:
+            ostatus = ostatus_s.pop()
+        elif set(["up", "down"]) == ostatus_s or \
+             set(["up", "stdby up"]) == ostatus_s or \
+             set(["up", "down", "stdby up"]) == ostatus_s or \
+             set(["up", "down", "stdby up", "n/a"]) == ostatus_s:
+            ostatus = "up"
+        elif set(["down", "stdby up"]) == ostatus_s or \
+             set(["down", "stdby up", "n/a"]) == ostatus_s:
+            ostatus = "down"
+        if "stdby" in ostatus:
+            ostatus = "down"
         return ostatus
 
     def get_agg_frozen(self, svcname):
@@ -1022,10 +1024,10 @@ class Monitor(shared.OsvcThread, Crypt):
                 return False
         return True 
 
-    def get_agg_avail_failover(self, svc):
+    def get_agg_avail_failover(self, svcname):
         astatus_l = []
         n_instances = 0
-        for instance in self.get_service_instances(svc.svcname).values():
+        for instance in self.get_service_instances(svcname).values():
             if "avail" not in instance:
                 continue
             astatus_l.append(instance["avail"])
@@ -1046,10 +1048,10 @@ class Monitor(shared.OsvcThread, Crypt):
         else:
             return 'down'
 
-    def get_agg_avail_flex(self, svc):
+    def get_agg_avail_flex(self, svcname):
         astatus_l = []
         n_instances = 0
-        for instance in self.get_service_instances(svc.svcname).values():
+        for instance in self.get_service_instances(svcname).values():
             if "avail" not in instance:
                 continue
             astatus_l.append(instance["avail"])
@@ -1065,15 +1067,14 @@ class Monitor(shared.OsvcThread, Crypt):
             return 'down'
         elif 'warn' in astatus_l:
             return 'warn'
-        elif n_up > svc.flex_max_nodes:
+        elif n_up > instance["flex_max_nodes"]:
             return 'warn'
-        elif n_up < svc.flex_min_nodes:
+        elif n_up < instance["flex_min_nodes"]:
             return 'warn'
         else:
             return 'up'
 
     def get_agg_placement(self, svcname):
-        svc = self.get_service(svcname)
         has_up = False
         placement = "optimal"
         for instance in self.get_service_instances(svcname).values():
@@ -1214,7 +1215,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if last_config is None or mtime > datetime.datetime.strptime(last_config["updated"], shared.DATEFMT):
                 self.log.info("compute service %s config checksum", svcname)
                 try:
-                    cksum = fsum(cfg)
+                    csum = fsum(cfg)
                 except (OSError, IOError) as exc:
                     self.log.info("service %s config checksum error: %s", svcname, exc)
                     continue
@@ -1225,7 +1226,7 @@ class Monitor(shared.OsvcThread, Crypt):
                     self.log.error("%s build error: %s", svcname, str(exc))
                     continue
             else:
-                cksum = last_config["cksum"]
+                csum = last_config["csum"]
             if last_config is None:
                 self.log.info("purge %s status cache" % svcname)
                 shared.SERVICES[svcname].purge_status_caches()
@@ -1233,7 +1234,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 scope = sorted(list(shared.SERVICES[svcname].nodes | shared.SERVICES[svcname].drpnodes))
             config[svcname] = {
                 "updated": mtime.strftime(shared.DATEFMT),
-                "cksum": cksum,
+                "csum": csum,
                 "scope": scope,
             }
 
@@ -1269,6 +1270,9 @@ class Monitor(shared.OsvcThread, Crypt):
             with shared.SERVICES_LOCK:
                 return shared.SERVICES[svcname].print_status_data(mon_data=False)
         except KeyboardInterrupt:
+            return
+        except Exception as exc:
+            self.log.warning("failed to evaluate service %s status", svcname)
             return
 
     def get_services_status(self, svcnames):
@@ -1660,7 +1664,7 @@ class Monitor(shared.OsvcThread, Crypt):
                             continue
                         if remote is None or remote.state is None or remote.mtime is None:
                             continue
-                        elif remote.mtime > local.mtime + 0.00001:
+                        elif local.mtime is None or remote.mtime > local.mtime + 0.00001:
                             self.log.info("switch %s.%s provisioned flag to %s (merged from %s)",
                                           svc.svcname, resource.rid, str(remote.state), 
                                           nodename)
@@ -1690,7 +1694,14 @@ class Monitor(shared.OsvcThread, Crypt):
             shared.AGG[svcname] = data
         return data
 
-    def get_agg_services(self, svcnames):
+    def get_agg_services(self):
+        svcnames = set()
+        for nodename, data in shared.CLUSTER_DATA.items():
+            try:
+                for svcname in data["services"]["config"]:
+                    svcnames.add(svcname)
+            except KeyError:
+                continue
         data = {}
         for svcname in svcnames:
             data[svcname] = self.get_agg(svcname)
@@ -1703,7 +1714,7 @@ class Monitor(shared.OsvcThread, Crypt):
             data.nodes = dict(shared.CLUSTER_DATA)
         data["compat"] = self.compat
         data["frozen"] = self.get_clu_agg_frozen()
-        data["services"] = self.get_agg_services([svcname for svcname in data.nodes[rcEnv.nodename]["services"]["config"]])
+        data["services"] = self.get_agg_services()
         return data
 
     def merge_frozen(self):

@@ -482,8 +482,9 @@ ACTIONS = {
                    "a service selector expression before running an action.",
         },
         "status": {
-            "msg": "Return the local service instance overall status code",
+            "msg": "Return the local service instance overall status code.",
             "options": [
+                OPT.cron,
                 OPT.refresh,
             ],
         },
@@ -635,12 +636,6 @@ ACTIONS = {
         "push_resinfo": {
             "msg": "Push the local service instance resources and application launchers info "
                    "key/value pairs the collector.",
-            "options": [
-                OPT.cron,
-            ],
-        },
-        "push_service_status": {
-            "msg": "Push the local service instance and its resources status to the collector.",
             "options": [
                 OPT.cron,
             ],
@@ -1108,7 +1103,6 @@ DEPRECATED_ACTIONS = [
 ]
 
 ACTIONS_TRANSLATIONS = {
-    "push_env_mtime": "push_config_mtime",
     "push_env": "push_config",
     "push": "push_config",
     "json_env": "json_config",

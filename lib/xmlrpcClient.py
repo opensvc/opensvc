@@ -517,13 +517,12 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.update_resinfo(*args)
 
-    def push_service(self, svc, sync=True):
+    def push_config(self, svc, sync=True):
         def repr_config(svc):
             import codecs
-            cf = os.path.join(rcEnv.paths.pathetc, svc+'.conf')
-            if not os.path.exists(cf):
+            if not os.path.exists(svc.paths.cf):
                 return
-            with codecs.open(cf, 'r', encoding="utf8") as f:
+            with codecs.open(svc.paths.cf, 'r', encoding="utf8") as f:
                 buff = f.read()
                 return buff
             return
@@ -555,7 +554,7 @@ class Collector(object):
                 ' '.join(svc.drpnodes),
                 svc.comment,
                 svc.app,
-                repr_config(svc.svcname),
+                repr_config(svc),
                 '1' if svc.ha else '0']
 
         args = [vars, vals]
@@ -563,6 +562,7 @@ class Collector(object):
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.update_service(*args)
 
+    def push_containerinfo(self, svc, sync=True):
         vars = ['mon_svcname',
                 'mon_nodname',
                 'mon_vmname',
@@ -823,6 +823,15 @@ class Collector(object):
             self.proxy.update_asset_sync(*args)
         else:
             self.proxy.update_asset(*args)
+
+    def daemon_ping(self, sync=True):
+        args = [(rcEnv.uuid, rcEnv.nodename)]
+        self.proxy.daemon_ping(*args)
+
+    def push_daemon_status(self, data, changes=None, sync=True):
+        import json
+        args = [json.dumps(data), json.dumps(changes), (rcEnv.uuid, rcEnv.nodename)]
+        self.proxy.push_daemon_status(*args)
 
     def push_brocade(self, objects=[], sync=True):
         if 'update_brocade' not in self.proxy_methods:
@@ -1187,7 +1196,8 @@ class Collector(object):
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         for svc in svcs:
-            self.push_service(svc, sync=sync)
+            self.push_config(svc, sync=sync)
+            self.push_containerinfo(svc, sync=sync)
 
     def push_resinfo(self, svcs, sync=True):
         args = [[svc.svcname for svc in svcs]]

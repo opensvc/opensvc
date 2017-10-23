@@ -21,6 +21,7 @@ from node import Node
 from osvcd_mon import Monitor
 from osvcd_lsnr import Listener
 from osvcd_scheduler import Scheduler
+from osvcd_collector import Collector
 from hb_ucast import HbUcastRx, HbUcastTx
 from hb_mcast import HbMcastRx, HbMcastTx
 from hb_disk import HbDiskRx, HbDiskTx
@@ -207,6 +208,7 @@ class Daemon(object):
         self.log.info("signal stop to all threads")
         for thr in self.threads.values():
             thr.stop()
+        shared.wake_collector()
         shared.wake_scheduler()
         shared.wake_monitor()
         shared.wake_heartbeat_tx()
@@ -243,6 +245,10 @@ class Daemon(object):
         if self.need_start("scheduler"):
             self.threads["scheduler"] = Scheduler()
             self.threads["scheduler"].start()
+            changed = True
+        if shared.NODE and rcEnv.dbopensvc and self.need_start("collector"):
+            self.threads["collector"] = Collector()
+            self.threads["collector"].start()
             changed = True
 
         mtime = self.read_config()

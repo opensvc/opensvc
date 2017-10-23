@@ -83,8 +83,6 @@ def get_build_kwargs(optparser, options, action):
     if hasattr(options, "status") and options.status is not None:
         build_kwargs["status"] = [rcStatus.status_value(s) for s in options.status.split(",")]
 
-    # don't autopush when the intent is to push explicitely
-    build_kwargs["autopush"] = action != "push"
     build_kwargs["create_instance"] = action in ("create", "pull")
 
     return build_kwargs
@@ -164,7 +162,6 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
     options.rid = ",".join(data.get("rid", []))
 
     # force a refresh of node.svcs
-    # don't push to the collector yet
     try:
         node.rebuild_services(svcnames, build_kwargs["minimal"])
     except ex.excError as exc:

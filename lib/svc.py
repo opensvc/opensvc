@@ -13,6 +13,7 @@ import time
 import lock
 import json
 import re
+import hashlib
 
 from resources import Resource
 from resourceset import ResourceSet
@@ -70,7 +71,6 @@ DEFAULT_STATUS_GROUPS = [
 ]
 
 CONFIG_DEFAULTS = {
-    'push_schedule': '00:00-06:00@361',
     'sync_schedule': '04:00-06:00@121',
     'comp_schedule': '00:00-06:00@361',
     'status_schedule': '@9',
@@ -87,7 +87,6 @@ ACTIONS_ASYNC = [
 ]
 
 ACTIONS_NO_STATUS_CHANGE = [
-    "autopush",
     "clear",
     "docker",
     "frozen",
@@ -110,8 +109,6 @@ ACTIONS_NO_STATUS_CHANGE = [
     "print_schedule",
     "print_status",
     "push_resinfo",
-    "push_config",
-    "push_service_status",
     "prstatus",
     "resource_monitor",
     "scheduler",
@@ -138,9 +135,8 @@ ACTIONS_NO_LOG = [
     "get",
     "group_status",
     "logs",
-    "push_config",
     "push_resinfo",
-    "push_service_status",
+    "service_status",
     "resource_monitor",
     "scheduler",
     "set",
@@ -161,13 +157,12 @@ ACTIONS_NO_TRIGGER = [
     "pg_kill",
     "logs",
     "edit_config",
-    "push_config",
     "push_resinfo",
-    "push_service_status",
     "group_status",
     "presync",
     "postsync",
     "resource_monitor",
+    "status",
 ]
 
 ACTIONS_NO_LOCK = [
@@ -178,8 +173,6 @@ ACTIONS_NO_LOCK = [
     "get",
     "logs",
     "push_resinfo",
-    "push_config",
-    "push_service_status",
     "run",
     "scheduler",
     "status",
@@ -410,7 +403,6 @@ class Svc(Crypt):
             cf=os.path.join(rcEnv.paths.pathetc, self.svcname+'.conf'),
             initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.d'),
             alt_initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.dir'),
-            push_flag=os.path.join(self.var_d, 'scheduler', 'last_push_config'),
             tmp_cf=os.path.join(rcEnv.paths.pathtmp, self.svcname+".conf.tmp")
         )
         if cf:
@@ -494,6 +486,13 @@ class Svc(Crypt):
         )
 
     @lazy
+    def var_d(self):
+        var_d = os.path.join(rcEnv.paths.pathvar, "services", self.svcname)
+        if not os.path.exists(var_d):
+            os.makedirs(var_d, 0o755)
+        return var_d
+
+    @lazy
     def log(self):
         return rcLogger.initLogger(rcEnv.nodename+"."+self.svcname)
 
@@ -515,9 +514,9 @@ class Svc(Crypt):
                     fname="last_comp_check",
                     schedule_option="comp_schedule"
                 ),
-                "push_service_status": SchedOpts(
+                "status": SchedOpts(
                     "DEFAULT",
-                    fname="last_push_service_status",
+                    fname="status",
                     schedule_option="status_schedule"
                 ),
                 "push_resinfo": SchedOpts(
@@ -770,13 +769,6 @@ class Svc(Crypt):
         A method run after the service is done building.
         Add resource-dependent tasks to the scheduler.
         """
-        if not self.encap:
-            self.sched.scheduler_actions["push_config"] = SchedOpts(
-                "DEFAULT",
-                fname="last_push_config",
-                schedule_option="push_schedule"
-            )
-
         try:
             monitor_schedule = self.conf_get('DEFAULT', 'monitor_schedule')
         except ex.OptNotFound:
@@ -1003,11 +995,6 @@ class Svc(Crypt):
         """
         self.node.collector.call(
             'end_action', self, action, begin, end, actionlogfile,
-            sync=self.sync_dblogger
-        )
-        g_vars, g_vals, r_vars, r_vals = self.svcmon_push_lists()
-        self.node.collector.call(
-            'svcmon_update_combo', g_vars, g_vals, r_vars, r_vals,
             sync=self.sync_dblogger
         )
         os.unlink(actionlogfile)
@@ -1296,7 +1283,8 @@ class Svc(Crypt):
         """
         Return the aggregate status a service.
         """
-        group_status = self.group_status(refresh=self.options.refresh)
+        refresh = self.options.refresh or (not self.encap and self.options.cron)
+        group_status = self.group_status(refresh=refresh)
         return group_status["overall"].status
 
     @fcache
@@ -1383,6 +1371,13 @@ class Svc(Crypt):
             "frozen": self.frozen(),
             "constraints": self.constraints,
             "provisioned": True,
+            "placement": self.placement,
+            "flex_min_nodes": self.flex_min_nodes,
+            "flex_max_nodes": self.flex_max_nodes,
+            "topology": self.clustertype,
+            "parents": self.parents,
+            "children": self.children,
+            "enslave_children": self.enslave_children,
         }
 
         containers = self.get_resources('container')
@@ -1437,7 +1432,24 @@ class Svc(Crypt):
         self.write_status_data(data)
         return data
 
+    def csum_status_data(self, data):
+        h = hashlib.md5()
+        def fn(h, val):
+            if type(val) == dict:
+                for key, _val in val.items():
+                    if key in ("status_updated", "updated", "mtime"):
+                        continue
+                    h = fn(h, _val)
+            elif type(val) == list:
+                for _val in val:
+                    h = fn(h, _val)
+            else:
+                h.update(repr(val).encode())
+            return h
+        return fn(h, data).hexdigest()
+
     def write_status_data(self, data):
+        data["csum"] = self.csum_status_data(data)
         try:
             with open(self.status_data_dump, "w") as filep:
                 json.dump(data, filep)
@@ -1716,12 +1728,12 @@ class Svc(Crypt):
             node_child = node.add_node()
             node_child.add_column(nodename, color.BOLD)
             node_child.add_column()
-            mon_data = self.get_mon_data()
             try:
+                mon_data = self.get_mon_data()
                 data = mon_data["nodes"][nodename]["services"]["status"][self.svcname]
                 avail = data["avail"]
                 node_frozen = mon_data["nodes"][nodename]["frozen"]
-            except KeyError:
+            except KeyError as exc:
                 avail = "undef"
                 node_frozen = False
                 data = Storage()
@@ -1746,8 +1758,8 @@ class Svc(Crypt):
             node_parent = node.add_node()
             node_parent.add_column(svcname, color.BOLD)
             node_parent.add_column()
-            mon_data = self.get_mon_data()
             try:
+                mon_data = self.get_mon_data()
                 avail = mon_data["services"][svcname]["avail"]
             except KeyError:
                 avail = "undef"
@@ -1765,8 +1777,8 @@ class Svc(Crypt):
             node_child = node.add_node()
             node_child.add_column(svcname, color.BOLD)
             node_child.add_column()
-            mon_data = self.get_mon_data()
             try:
+                mon_data = self.get_mon_data()
                 avail = mon_data["services"][svcname]["avail"]
             except KeyError:
                 avail = "undef"
@@ -1802,151 +1814,6 @@ class Svc(Crypt):
         add_children(node_svcname)
 
         print(tree)
-
-    def svcmon_push_lists(self):
-        """
-        Return the list of resource status in a format adequate for
-        collector feeding.
-        """
-        data = self.print_status_data()
-
-        if data["frozen"]:
-            frozen = 1
-        else:
-            frozen = 0
-
-        r_vars = [
-            "svcname",
-            "nodename",
-            "vmname",
-            "rid",
-            "res_type",
-            "res_desc",
-            "res_status",
-            "res_monitor",
-            "res_optional",
-            "res_disable",
-            "updated",
-            "res_log",
-        ]
-        r_vals = []
-        now = datetime.datetime.now()
-
-        for rid, resource in data["resources"].items():
-            r_vals.append([
-                self.svcname,
-                rcEnv.nodename,
-                "",
-                rid,
-                resource["type"],
-                resource["label"],
-                resource["status"],
-                "1" if resource["monitor"] else "0",
-                "1" if resource["optional"] else "0",
-                "1" if resource["disable"] else "0",
-                str(now),
-                resource["log"]
-            ])
-
-        g_vars = [
-            "mon_svcname",
-            "mon_svctype",
-            "mon_nodname",
-            "mon_vmname",
-            "mon_vmtype",
-            "mon_nodtype",
-            "mon_ipstatus",
-            "mon_diskstatus",
-            "mon_syncstatus",
-            "mon_containerstatus",
-            "mon_fsstatus",
-            "mon_sharestatus",
-            "mon_appstatus",
-            "mon_availstatus",
-            "mon_overallstatus",
-            "mon_updated",
-            "mon_prinodes",
-            "mon_frozen",
-        ]
-
-        if "encap" not in data or not data["encap"]:
-            g_vals = [
-                self.svcname,
-                self.svc_env,
-                rcEnv.nodename,
-                "",
-                "hosted",
-                rcEnv.node_env,
-                data["ip"],
-                data["disk"],
-                data["sync"],
-                data["container"],
-                data["fs"],
-                data["share"],
-                data["app"],
-                data["avail"],
-                data["overall"],
-                str(now),
-                ' '.join(self.nodes),
-                str(frozen)
-            ]
-        else:
-            g_vals = []
-            for rid, container in data["encap"].items():
-                if "frozen" not in container:
-                    # no encap agent
-                    continue
-                vhostname = container.get("hostname", self.resources_by_id[rid].name)
-                container_type = self.resources_by_id[rid].type.replace("container.", "")
-                for rid, resource in container['resources'].items():
-                    r_vals.append([
-                        self.svcname,
-                        rcEnv.nodename,
-                        vhostname,
-                        rid,
-                        resource["type"],
-                        resource["label"],
-                        resource["status"],
-                        "1" if resource["monitor"] else "0",
-                        "1" if resource["optional"] else "0",
-                        "1" if resource["disable"] else "0",
-                        str(now),
-                        resource["log"],
-                    ])
-
-                #
-                # 0: global thawed + encap thawed
-                # 1: global frozen + encap thawed
-                # 2: global thawed + encap frozen
-                # 3: global frozen + encap frozen
-                #
-                if container["frozen"]:
-                    e_frozen = frozen + 2
-                else:
-                    e_frozen = frozen
-
-                g_vals.append([
-                    self.svcname,
-                    self.svc_env,
-                    rcEnv.nodename,
-                    vhostname,
-                    container_type,
-                    rcEnv.node_env,
-                    str(rcStatus.Status(data["ip"])+rcStatus.Status(container['ip'])),
-                    str(rcStatus.Status(data["disk"])+rcStatus.Status(container['disk'])),
-                    str(rcStatus.Status(data["sync"])+rcStatus.Status(container['sync'])),
-                    str(rcStatus.Status(data["container"])+rcStatus.Status(container['container'])),
-                    str(rcStatus.Status(data["fs"])+rcStatus.Status(container['fs'])),
-                    str(rcStatus.Status(data["share"])+rcStatus.Status(container['share'] if 'share' in container else 'n/a')),
-                    str(rcStatus.Status(data["app"])+rcStatus.Status(container['app'])),
-                    str(rcStatus.Status(data["avail"])+rcStatus.Status(container['avail'])),
-                    str(rcStatus.Status(data["overall"])+rcStatus.Status(container['overall'])),
-                    str(now),
-                    ' '.join(self.nodes),
-                    e_frozen,
-                ])
-
-        return g_vars, g_vals, r_vars, r_vals
 
     def get_rset_status(self, groups, refresh=False):
         """
@@ -2130,7 +1997,7 @@ class Svc(Crypt):
                     self.log.warning("container %s is not joinable to execute "
                                      "action '%s'", container.name, ' '.join(cmd))
 
-    def _encap_cmd(self, cmd, container, verbose=False):
+    def _encap_cmd(self, cmd, container, verbose=False, push_config=True):
         """
         Execute a command in a service container.
         """
@@ -2159,6 +2026,10 @@ class Svc(Crypt):
 
         if cmd == ['start'] and not self.command_is_scoped():
             return '', '', 0
+
+        # make sure the container has an up-to-date service config
+        if push_config:
+            self.push_encap_config(container)
 
         # now we known we'll execute a command in the slave, so purge the
         # encap cache
@@ -2697,7 +2568,6 @@ class Svc(Crypt):
             # set by the daemon on the placement leaders.
             # return the service to standby if not a placement leader
             self.rollback()
-        self.action("push_config")
 
     def abort_start(self):
         """
@@ -3056,9 +2926,9 @@ class Svc(Crypt):
         self.sync_update()
         self.remote_postsync()
 
-    def push_service_status(self):
+    def service_status(self):
         """
-        The 'push_service_status' scheduler task and action entrypoint.
+        The 'service_status' scheduler task and action entrypoint.
 
         This method returns early if called from an encapsulated agent, as
         the master agent is responsible for pushing the encapsulated
@@ -3069,8 +2939,6 @@ class Svc(Crypt):
                 self.log.info("push service status is disabled for encapsulated services")
             return
         self.group_status(refresh=True)
-        data = self.svcmon_push_lists()
-        self.node.collector.call('svcmon_update_combo', *data, sync=True)
 
     def push_resinfo(self):
         """
@@ -3079,50 +2947,11 @@ class Svc(Crypt):
         """
         self.node.collector.call('push_resinfo', [self])
 
-    def push_config(self):
-        """
-        The 'push_config' scheduler task entrypoint.
-        """
-        self.push()
-
-    @lazy
-    def var_d(self):
-        var_d = os.path.join(rcEnv.paths.pathvar, "services", self.svcname)
-        if not os.path.exists(var_d):
-            os.makedirs(var_d, 0o755)
-        return var_d
-
-    def autopush(self):
-        """
-        If the configuration file has been modified since the last push
-        to the collector, call the push method.
-        """
-        if not self.collector_outdated():
-            return
-        if len(self.log.handlers) > 1:
-            self.log.handlers[1].setLevel(logging.CRITICAL)
-        try:
-            self.action("push_config")
-        finally:
-            if len(self.log.handlers) > 1:
-                self.log.handlers[1].setLevel(rcEnv.loglevel)
-
-    def push(self):
-        """
-        The 'push' action entrypoint.
-        Synchronize the configuration file between encap and master agent,
-        then send the configuration to the collector.
-        Finally update the last push on-disk timestamp.
-        This action is skipped when run by an encapsulated agent.
-        """
-        if self.encap:
-            return
-        self.push_encap_config()
-        self.node.collector.call('push_all', [self])
-        self.log.info("send %s to collector", self.paths.cf)
-
     def push_encap_config(self):
         """
+        Synchronize the configuration file between encap and master agent,
+        This action is skipped when run by an encapsulated agent.
+
         Verify the service has an encapsulated part, and if so, for each
         container in up state running an encapsulated part, synchronize the
         service configuration file.
@@ -3143,7 +2972,7 @@ class Svc(Crypt):
         """
         cmd = ['print', 'config', 'mtime']
         try:
-            cmd_results = self._encap_cmd(cmd, container)
+            cmd_results = self._encap_cmd(cmd, container, push_config=False)
             out = cmd_results[0]
             ret = cmd_results[2]
         except ex.excError:
@@ -3185,7 +3014,7 @@ class Svc(Crypt):
         self.log.info("send %s to %s", self.paths.cf, container.name)
 
         cmd = ['create', '--config', encap_cf]
-        cmd_results = self._encap_cmd(cmd, container=container)
+        cmd_results = self._encap_cmd(cmd, container=container, push_config=False)
         if cmd_results[2] != 0:
             raise ex.excError("failed to create %s slave service" % container.name)
         self.log.info("create %s slave service", container.name)
@@ -3967,34 +3796,6 @@ class Svc(Crypt):
     def collector_rest_delete(self, *args, **kwargs):
         kwargs["svcname"] = self.svcname
         return self.node.collector_rest_delete(*args, **kwargs)
-
-    def collector_outdated(self):
-        """
-        Return True if the configuration file has changed since last push.
-        """
-        if self.encap:
-            return False
-
-        if not os.path.exists(self.paths.push_flag):
-            self.log.debug("no last push timestamp found")
-            return True
-
-        if not os.path.exists(self.paths.cf):
-            # happens in 'pull' action codepath
-            self.log.debug("no config file found")
-            return False
-
-        try:
-            mtime = os.stat(self.paths.cf).st_mtime
-            last_push = os.stat(self.paths.push_flag).st_mtime
-        except (ValueError, IOError, OSError):
-            self.log.error("can not read timestamp from %s or %s",
-                           self.paths.cf, self.paths.push_flag)
-            return True
-        if mtime > last_push:
-            self.log.debug("configuration file changed since last push")
-            return True
-        return False
 
     def write_config(self):
         """

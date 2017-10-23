@@ -596,9 +596,6 @@ class Node(Crypt):
         """
         Instanciate a Svc objects for each requested services and add it to
         the node.
-        If a service configuration file has changed since the last time we
-        sent it to the collector, resend. This behaviour can be blocked by
-        the caller, using the autopush=False keyword argument.
         """
         if self.svcs is not None and \
            ('svcnames' not in kwargs or \
@@ -615,11 +612,6 @@ class Node(Crypt):
                 return
 
         self.services = {}
-        autopush = True
-        if 'autopush' in kwargs:
-            if not kwargs['autopush']:
-                autopush = False
-            del kwargs['autopush']
 
         kwargs["node"] = self
         svcs, errors = svcBuilder.build_services(*args, **kwargs)
@@ -631,13 +623,6 @@ class Node(Crypt):
             if opt_status is not None and not svc.status() in opt_status:
                 continue
             self += svc
-
-        if autopush:
-            for svc in self.svcs:
-                try:
-                    svc.autopush()
-                except ex.excError as exc:
-                    self.log.error(str(exc))
 
         rcLogger.set_namelen(self.svcs)
 
@@ -673,7 +658,7 @@ class Node(Crypt):
         """
         del self.services
         self.services = None
-        self.build_services(svcnames=svcnames, autopush=False, minimal=minimal,
+        self.build_services(svcnames=svcnames, minimal=minimal,
                             node=self)
 
     def close(self):
@@ -3061,11 +3046,13 @@ class Node(Crypt):
 
         def load_svc(svcname, data):
             try:
-                clustertype = self.services[svcname].clustertype
+                clustertype = services[svcname].topology
+            except KeyError:
+                clustertype = ""
+            try:
                 nodes = self.services[svcname].nodes
                 drpnodes = self.services[svcname].drpnodes
             except KeyError:
-                clustertype = ""
                 nodes = set()
                 drpnodes = set()
             if rcEnv.nodename in drpnodes:
@@ -3285,11 +3272,12 @@ class Node(Crypt):
             if node not in data["monitor"]["nodes"]:
                 continue
             for svcname, _data in data["monitor"]["nodes"][node]["services"]["status"].items():
-                if svcname not in data["monitor"]["nodes"][rcEnv.nodename]["services"]["status"]:
-                    # no local instance
-                    continue
+                #if svcname not in data["monitor"]["nodes"][rcEnv.nodename]["services"]["status"]:
+                #    # no local instance
+                #    continue
                 if svcname not in services:
                     services[svcname] = Storage({
+                        "topology": _data.get("topology", ""),
                         "avail": Status(),
                         "overall": "",
                         "nodes": {}
