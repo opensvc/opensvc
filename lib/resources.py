@@ -37,7 +37,8 @@ class Resource(object):
                  tags=None,
                  standby=False,
                  skip_provision=False,
-                 shared=False):
+                 shared=False,
+                 encap=False):
         if tags is None:
             tags = set()
         self.svc = None
@@ -55,6 +56,7 @@ class Resource(object):
         self.rstatus = None
         self.skip_provision = skip_provision
         self.shared = shared
+        self.encap = encap or "encap" in self.tags
         self.sort_key = rid
         try:
             self.label = type
@@ -337,7 +339,7 @@ class Resource(object):
         * if optional, return True
         * else return do_action() return value
         """
-        if self.rid != "app" and not self.svc.encap and 'encap' in self.tags:
+        if self.rid != "app" and not self.svc.encap and self.encap:
             self.log.debug('skip encap resource action: action=%s res=%s', action, self.rid)
             return
 
@@ -620,7 +622,6 @@ class Resource(object):
         excepted by svcmon, print status and the collector feed api.
         """
         status = rcStatus.Status(self.status(verbose=True))
-        encap = 'encap' in self.tags
         return (self.rid,
                 self.type,
                 status,
@@ -629,7 +630,7 @@ class Resource(object):
                 self.monitor,
                 self.is_disabled(),
                 self.optional,
-                encap,
+                self.encap,
                 self.standby)
 
     def call(self, *args, **kwargs):

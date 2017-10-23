@@ -416,7 +416,7 @@ class Mount(Res.Mount):
         return ret, out, err
 
     def mount_zfs(self):
-        if 'encap' not in self.tags and \
+        if not self.encap and \
            not self.svc.config.has_option(self.rid, 'zone') and \
            zfs_getprop(self.device, 'zoned') != 'off':
             if zfs_setprop(self.device, 'zoned', 'off'):

@@ -73,7 +73,7 @@ class Mount(Res.Mount):
             return
 
         if self.fs_type == 'zfs' :
-            if 'encap' not in self.tags and not self.svc.config.has_option(self.rid, 'zone') and zfs_getprop(self.device, 'zoned') != 'off':
+            if not self.encap and not self.svc.config.has_option(self.rid, 'zone') and zfs_getprop(self.device, 'zoned') != 'off':
                 if zfs_setprop(self.device, 'zoned', 'off'):
                     raise ex.excError
             if zfs_getprop(self.device, 'mountpoint') != self.mount_point:

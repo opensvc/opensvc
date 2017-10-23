@@ -116,7 +116,7 @@ class ResourceSet(object):
         for resource in self.resources:
             if resource.is_disabled():
                 continue
-            if not resource.svc.encap and 'encap' in resource.tags:
+            if not self.svc.encap and resource.encap:
                 # don't evaluate encap service resources
                 continue
 
@@ -161,8 +161,7 @@ class ResourceSet(object):
         """
         Return True if the resourceset has at least one encap resource
         """
-        resources = [res for res in self.resources if \
-                     self.tag_match(res.tags, set(['encap']))]
+        resources = [True for res in self.resources if resource.encap]
         if len(resources) == 0:
             return False
         return True

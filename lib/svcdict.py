@@ -4358,7 +4358,7 @@ class KeyDict(KeywordStore):
                   at=True,
                   candidates=None,
                   default=set(),
-                  text="A list of tags. Arbitrary tags can be used to limit action scope to resources with a specific tag. Some tags can influence the driver behaviour. For example the 'encap' tag assigns the resource to the encapsulated service, 'noaction' avoids any state changing action from the driver, 'nostatus' forces the status to n/a."
+                  text="A list of tags. Arbitrary tags can be used to limit action scope to resources with a specific tag. Some tags can influence the driver behaviour. For example 'noaction' avoids any state changing action from the driver, 'nostatus' forces the status to n/a."
                 )
         def kw_subset(resource):
             return Keyword(
@@ -4400,6 +4400,17 @@ class KeyDict(KeywordStore):
                   default=False,
                   convert="boolean",
                   text="Set to True to skip the resource on provision and unprovision actions if the action has already been done by a peer. Shared resources, like vg built on SAN disks must be provisioned once."
+                )
+        def kw_encap(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="encap",
+                  generic=True,
+                  at=True,
+                  candidates=(True, False),
+                  default=False,
+                  convert="boolean",
+                  text="Set to True to ignore this resource in the nodes context and consider it in the encapnodes context. The resource is thus handled by the agents deployed in the service containers."
                 )
         def kw_monitor(resource):
             return Keyword(
@@ -4802,6 +4813,7 @@ class KeyDict(KeywordStore):
             self += kw_standby(r)
             self += kw_provision(r)
             self += kw_shared(r)
+            self += kw_encap(r)
 
             self += kw_pre_unprovision(r)
             self += kw_post_unprovision(r)

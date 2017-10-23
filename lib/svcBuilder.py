@@ -42,6 +42,12 @@ def get_provision(svc, section):
     except ex.OptNotFound as exc:
         return exc.default
 
+def get_encap(svc, section):
+    try:
+        return svc.conf_get(section, "encap")
+    except ex.OptNotFound as exc:
+        return exc.default
+
 def get_shared(svc, section):
     try:
         return svc.conf_get(section, "shared")
@@ -101,6 +107,7 @@ def init_kwargs(svc, s):
         "skip_provision": not get_provision(svc, s),
         "restart": get_restart(svc, s),
         "shared": get_shared(svc, s),
+        "encap": get_encap(svc, s),
     }
 
 def standby_from_always_on(svc, section):
@@ -160,8 +167,9 @@ def add_resource(svc, restype, s):
         return
 
     tags = get_tags(svc, s)
+    encap = get_encap(svc, s)
 
-    if svc.encap and 'encap' not in tags:
+    if svc.encap and 'encap' not in tags and not encap:
         return
 
     if not svc.encap and 'encap' in tags:
@@ -173,6 +181,7 @@ def add_resource(svc, restype, s):
         svc.encap_resources[s] = Storage({
             "rid": s,
             "tags": tags,
+            "encap": encap,
             "subset": subset,
         })
         return

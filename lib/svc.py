@@ -1112,7 +1112,7 @@ class Svc(Crypt):
 
         resources = []
         for resource in self.resources_by_id.values():
-            if not self.encap and 'encap' in resource.tags:
+            if not self.encap and resource.encap:
                 continue
             if discard_disabled and resource.is_disabled():
                 continue
@@ -2174,7 +2174,7 @@ class Svc(Crypt):
                 if group not in groups:
                     continue
                 for resource in rset.resources:
-                    if not self.encap and 'encap' in resource.tags:
+                    if not self.encap and resource.encap:
                         group_status['resources'][resource.rid] = {'status': 'down'}
 
             groups = set(["app", "sync"])
@@ -2185,7 +2185,7 @@ class Svc(Crypt):
                 if group not in groups:
                     continue
                 for resource in rset.resources:
-                    if not self.encap and 'encap' in resource.tags:
+                    if not self.encap and resource.encap:
                         group_status['resources'][resource.rid] = {'status': 'n/a'}
 
             return group_status
