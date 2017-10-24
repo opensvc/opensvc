@@ -593,7 +593,7 @@ class Svc(object):
                 elif action == "compliance_auto":
                     self.compliance_auto()
                 else:
-                    self.action(action)
+                    self.action(action, {"waitlock": 0})
             except ex.MonitorAction as exc:
                 self.svcunlock()
                 self.action("toc")
