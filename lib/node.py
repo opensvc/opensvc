@@ -282,7 +282,7 @@ class Node(Crypt):
         """
         Lazy initialization of the node Collector object.
         """
-        self.log.debug("initiatize node::collector")
+        self.log.debug("initialize node::collector")
         return xmlrpcClient.Collector(node=self)
 
     @lazy
@@ -290,7 +290,7 @@ class Node(Crypt):
         """
         Lazy initialization of the node name.
         """
-        self.log.debug("initiatize node::nodename")
+        self.log.debug("initialize node::nodename")
         return socket.gethostname().lower()
 
     @lazy
