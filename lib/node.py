@@ -1955,6 +1955,12 @@ class Node(Crypt):
         Downloads and upgrades the OpenSVC agent, using the system-specific
         packaging tools.
         """
+        try:
+            self.config.get("node", "branch")
+            branch = "/" + branch
+        except Exception:
+            branch = ""
+
         modname = 'rcUpdatePkg'+rcEnv.sysname
         if not os.path.exists(os.path.join(rcEnv.paths.pathlib, modname+'.py')):
             print("updatepkg not implemented on", rcEnv.sysname, file=sys.stderr)
@@ -1962,10 +1968,10 @@ class Node(Crypt):
         mod = __import__(modname)
         if self.config.has_option('node', 'repopkg'):
             pkg_name = self.config.get('node', 'repopkg').strip('/') + \
-                       "/" + mod.repo_subdir + '/current'
+                       "/" + mod.repo_subdir + branch + '/current'
         elif self.config.has_option('node', 'repo'):
             pkg_name = self.config.get('node', 'repo').strip('/') + \
-                       "/packages/" + mod.repo_subdir + '/current'
+                       "/packages/" + mod.repo_subdir + branch + '/current'
         else:
             print("node.repo or node.repopkg must be set in node.conf",
                   file=sys.stderr)
