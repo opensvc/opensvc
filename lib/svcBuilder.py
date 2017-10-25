@@ -172,7 +172,7 @@ def add_resource(svc, restype, s):
     if svc.encap and 'encap' not in tags and not encap:
         return
 
-    if not svc.encap and 'encap' in tags:
+    if not svc.encap and (encap or 'encap' in tags):
         svc.has_encap_resources = True
         try:
             subset = svc.conf_get(s, 'subset')
