@@ -81,7 +81,7 @@ class Scheduler(shared.OsvcThread):
                     rids = svc.sched.validate_action(action)
                 except ex.excAbortAction:
                     continue
-                cmd = [rcEnv.paths.svcmgr, "-s", svc.svcname, action, "--cron"]
+                cmd = [rcEnv.paths.svcmgr, "-s", svc.svcname, action, "--cron", "--waitlock=5"]
                 if rids:
                     cmd += ["--rid", ",".join(rids)]
                     _run.append("%s(%s)" % (action, ','.join(rids)))
