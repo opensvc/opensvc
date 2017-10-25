@@ -492,7 +492,8 @@ class Monitor(shared.OsvcThread, Crypt):
         if svc.disabled:
             #self.log.info("service %s orchestrator out (disabled)", svc.svcname)
             return
-        if smon.status not in ("ready", "idle", "wait children", "wait parents"):
+        if smon.global_expect != "aborted" and \
+           smon.status not in ("ready", "idle", "wait children", "wait parents"):
             #self.log.info("service %s orchestrator out (mon status %s)", svc.svcname, smon.status)
             return
         status = shared.AGG[svc.svcname].avail
@@ -754,8 +755,8 @@ class Monitor(shared.OsvcThread, Crypt):
                (not self.service_unprovisioned(instance) or instance is not None):
                 self.service_purge(svc.svcname)
         elif smon.global_expect == "aborted" and \
-             (smon.local_expect not in (None, "started") or smon.status != "idle"):
-            self.set_smon(svc.svcname, local_expect="unset", status="idle")
+             smon.local_expect not in (None, "started"):
+            self.set_smon(svc.svcname, local_expect="unset")
 
     def service_orchestrator_auto_grace(self, svc):
         """
@@ -1118,16 +1119,16 @@ class Monitor(shared.OsvcThread, Crypt):
     def get_agg_aborted(self, svcname):
         for inst in self.get_service_instances(svcname).values():
             try:
-                local_expect = inst["monitor"]["local_expect"]
+                global_expect = inst["monitor"]["global_expect"]
             except KeyError:
-                continue
-            if local_expect not in (None, "started"):
+                global_expect = None
+            if global_expect not in (None, "aborted"):
                 return False
             try:
-                status = inst["monitor"]["status"]
+                local_expect = inst["monitor"]["local_expect"]
             except KeyError:
-                continue
-            if status != "idle":
+                local_expect = None
+            if local_expect not in (None, "started"):
                 return False
         return True
 
@@ -1594,6 +1595,9 @@ class Monitor(shared.OsvcThread, Crypt):
             # merge every service monitors
             for svcname, instance in shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"].items():
                 current_global_expect = instance["monitor"].get("global_expect")
+                if current_global_expect == "aborted":
+                    # refuse a new global expect if aborting
+                    continue
                 for nodename in nodenames:
                     rinstance = self.get_service_instance(svcname, nodename)
                     if rinstance is None:

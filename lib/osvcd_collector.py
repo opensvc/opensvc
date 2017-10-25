@@ -93,7 +93,7 @@ class Collector(shared.OsvcThread, Crypt):
                 break
         if nodename == rcEnv.nodename:
             return True
-        self.log.info("the speaker is %s", nodename)
+        #self.log.debug("the speaker is %s", nodename)
         return False
 
     def run_collector(self):
