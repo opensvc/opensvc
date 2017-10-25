@@ -1026,6 +1026,19 @@ class Svc(Crypt):
             raise ex.excError("service has already been asked to reach the "
                               "%s global state" % global_expect)
 
+        data = self.node._daemon_status()
+        if self.svcname not in data["monitor"]["services"]:
+            return
+        avail = data["monitor"]["services"][self.svcname]["avail"]
+        if avail in ("n/a", "warn", "undef"):
+            raise ex.excError("the service is in '%s' avail status. the daemons won't honor this request, so don't submit it." % avail)
+        elif action == "start":
+            if avail == "up":
+                raise ex.excError("the service is already started.")
+        elif action == "stop":
+            if avail in ("down", "stdby down"):
+                raise ex.excError("the service is already stopped.")
+
     def svclock(self, action=None, timeout=30, delay=1):
         """
         Acquire the service action lock.
