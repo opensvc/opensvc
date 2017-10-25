@@ -1956,8 +1956,9 @@ class Node(Crypt):
         packaging tools.
         """
         try:
-            self.config.get("node", "branch")
-            branch = "/" + branch
+            branch = self.config.get("node", "branch")
+            if branch != "":
+                branch = "/" + branch
         except Exception:
             branch = ""
 
