@@ -4693,6 +4693,8 @@ class KeyDict(KeywordStore):
                 section=resource,
                 keyword="pg_cpus",
                 generic=True,
+                inheritance="leaf",
+                at=True,
                 order=31,
                 depends=[('create_pg', [True])],
                 text="Allow service process to bind only the specified cpus. Cpus are specified as list or range : 0,1,2 or 0-2",
@@ -4704,6 +4706,8 @@ class KeyDict(KeywordStore):
                 section=resource,
                 keyword="pg_mems",
                 generic=True,
+                inheritance="leaf",
+                at=True,
                 order=31,
                 depends=[('create_pg', [True])],
                 text="Allow service process to bind only the specified memory nodes. Memory nodes are specified as list or range : 0,1,2 or 0-2",
@@ -4715,6 +4719,8 @@ class KeyDict(KeywordStore):
                 section=resource,
                 keyword="pg_cpu_shares",
                 generic=True,
+                inheritance="leaf",
+                at=True,
                 convert="integer",
                 order=31,
                 depends=[('create_pg', [True])],
@@ -4727,6 +4733,8 @@ class KeyDict(KeywordStore):
                 section=resource,
                 keyword="pg_cpu_quota",
                 generic=True,
+                inheritance="leaf",
+                at=True,
                 order=31,
                 depends=[('create_pg', [True])],
                 text="The percent ratio of one core to allocate to the process group if % is specified, else the absolute value to set in the process group parameter. For example, on Linux cgroups, -1 means unlimited, and a positive absolute value means the number of microseconds to allocate each period. 50%@all means 50% of all cores, and 50%@2 means 50% of two cores.",
@@ -4738,6 +4746,8 @@ class KeyDict(KeywordStore):
                 section=resource,
                 keyword="pg_mem_oom_control",
                 generic=True,
+                inheritance="leaf",
+                at=True,
                 convert="integer",
                 order=31,
                 depends=[('create_pg', [True])],
@@ -4750,6 +4760,8 @@ class KeyDict(KeywordStore):
                 section=resource,
                 keyword="pg_mem_limit",
                 generic=True,
+                inheritance="leaf",
+                at=True,
                 convert="size",
                 order=31,
                 depends=[('create_pg', [True])],
@@ -4762,6 +4774,8 @@ class KeyDict(KeywordStore):
                 section=resource,
                 keyword="pg_vmem_limit",
                 generic=True,
+                inheritance="leaf",
+                at=True,
                 convert="size",
                 order=31,
                 depends=[('create_pg', [True])],
@@ -4774,6 +4788,8 @@ class KeyDict(KeywordStore):
                 section=resource,
                 keyword="pg_mem_swappiness",
                 generic=True,
+                inheritance="leaf",
+                at=True,
                 convert="integer",
                 order=31,
                 depends=[('create_pg', [True])],
@@ -4786,6 +4802,8 @@ class KeyDict(KeywordStore):
                 section=resource,
                 keyword="pg_blkio_weight",
                 generic=True,
+                inheritance="leaf",
+                at=True,
                 convert="integer",
                 order=31,
                 depends=[('create_pg', [True])],
@@ -4807,16 +4825,6 @@ class KeyDict(KeywordStore):
             self += kw_shared(r)
             self += kw_encap(r)
 
-            self += kw_pg_cpus(r)
-            self += kw_pg_mems(r)
-            self += kw_pg_cpu_share(r)
-            self += kw_pg_cpu_quota(r)
-            self += kw_pg_mem_oom_control(r)
-            self += kw_pg_mem_limit(r)
-            self += kw_pg_mem_swappiness(r)
-            self += kw_pg_vmem_limit(r)
-            self += kw_pg_blkio_weight(r)
-
             self += kw_pre_unprovision(r)
             self += kw_post_unprovision(r)
             self += kw_pre_provision(r)
@@ -4837,6 +4845,17 @@ class KeyDict(KeywordStore):
 
             for action in ["unprovision", "provision", "start", "stop"]:
                 self += kw_requires(r, action)
+
+        for r in ["DEFAULT", "sync", "ip", "fs", "disk", "share", "container", "app", "task", "subset"]:
+            self += kw_pg_cpus(r)
+            self += kw_pg_mems(r)
+            self += kw_pg_cpu_share(r)
+            self += kw_pg_cpu_quota(r)
+            self += kw_pg_mem_oom_control(r)
+            self += kw_pg_mem_limit(r)
+            self += kw_pg_mem_swappiness(r)
+            self += kw_pg_vmem_limit(r)
+            self += kw_pg_blkio_weight(r)
 
         for r in ["DEFAULT", "sync"]:
             self += kw_pre_sync_nodes(r)

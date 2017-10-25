@@ -5435,11 +5435,11 @@ class Svc(Crypt):
             "blkio_weight",
         )
 
-        # don't use DEFAULT for resources and subsets
         for option in options:
-            _option = self.conf_has_option_scoped(s, option)
-            if _option:
-                d[option] = self.conf_get(s, option)
+            try:
+                d[option] = self.conf_get(s, "pg_"+option)
+            except ex.OptNotFound as exc:
+                pass
 
         return d
 

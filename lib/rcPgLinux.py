@@ -102,15 +102,13 @@ def get_cgroup(o, t, name):
     return buff
 
 def set_cpu_quota(o):
-    if not hasattr(o, "pg_settings"):
+    try:
+        v = str(o.pg_settings["cpu_quota"])
+    except (AttributeError, KeyError):
         return
-    o.log.debug("set_cpu_quota : start <%s>"%(o.pg_settings))
-
-    if 'cpu_quota' not in o.pg_settings:
-        return
+    o.log.debug("set_cpu_quota : start <%s>", v)
 
     period = int(get_cgroup(o, 'cpu', 'cpu.cfs_period_us'))
-    v = o.pg_settings["cpu_quota"]
 
     if "@" in v:
         try:
