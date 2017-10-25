@@ -938,9 +938,10 @@ class Monitor(shared.OsvcThread, Crypt):
             instance = self.get_service_instances(svcname).values()[0]
         except IndexError:
             instance = Storage()
-        if instance["topology"] == "failover":
+        topology = instance.get("topology")
+        if topology == "failover":
             avail = self.get_agg_avail_failover(svcname)
-        elif instance["topology"] == "flex":
+        elif topology == "flex":
             avail = self.get_agg_avail_flex(svcname)
         else:
             avail = "unknown"
