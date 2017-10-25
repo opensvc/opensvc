@@ -1757,120 +1757,6 @@ class KeywordCreatePg(Keyword):
                   text="Use process containers when possible. Containers allow capping memory, swap and cpu usage per service. Lxc containers are naturally containerized, so skip containerization of their startapp."
                 )
 
-class KeywordPgCpus(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="DEFAULT",
-                  keyword="pg_cpus",
-                  order=31,
-                  depends=[('create_pg', [True])],
-                  text="Allow service process to bind only the specified cpus. Cpus are specified as list or range : 0,1,2 or 0-2",
-                  example="0-2"
-                )
-
-class KeywordPgMems(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="DEFAULT",
-                  keyword="pg_mems",
-                  order=31,
-                  depends=[('create_pg', [True])],
-                  text="Allow service process to bind only the specified memory nodes. Memory nodes are specified as list or range : 0,1,2 or 0-2",
-                  example="0-2"
-                )
-
-class KeywordPgCpuShare(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="DEFAULT",
-                  keyword="pg_cpu_shares",
-                  convert="integer",
-                  order=31,
-                  depends=[('create_pg', [True])],
-                  text="Kernel default value is used, which usually is 1024 shares. In a cpu-bound situation, ensure the service does not use more than its share of cpu ressource. The actual percentile depends on shares allowed to other services.",
-                  example="512"
-                )
-
-class KeywordPgCpuQuota(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="DEFAULT",
-                  keyword="pg_cpu_quota",
-                  order=31,
-                  depends=[('create_pg', [True])],
-                  text="The percent ratio of one core to allocate to the process group if % is specified, else the absolute value to set in the process group parameter. For example, on Linux cgroups, -1 means unlimited, and a positive absolute value means the number of microseconds to allocate each period. 50%@all means 50% of all cores, and 50%@2 means 50% of two cores.",
-                  example="50%@all"
-                )
-
-class KeywordPgMemOomControl(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="DEFAULT",
-                  keyword="pg_mem_oom_control",
-                  convert="integer",
-                  order=31,
-                  depends=[('create_pg', [True])],
-                  text="A flag (0 or 1) that enables or disables the Out of Memory killer for a cgroup. If enabled (0), tasks that attempt to consume more memory than they are allowed are immediately killed by the OOM killer. The OOM killer is enabled by default in every cgroup using the memory subsystem; to disable it, write 1.",
-                  example="1"
-                )
-
-class KeywordPgMemLimit(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="DEFAULT",
-                  keyword="pg_mem_limit",
-                  convert="size",
-                  order=31,
-                  depends=[('create_pg', [True])],
-                  text="Ensures the service does not use more than specified memory (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing.",
-                  example="512000000"
-                )
-
-class KeywordPgVmemLimit(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="DEFAULT",
-                  keyword="pg_vmem_limit",
-                  convert="size",
-                  order=31,
-                  depends=[('create_pg', [True])],
-                  text="Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than pg_mem_limit.",
-                  example="1024000000"
-                )
-
-class KeywordPgMemSwappiness(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="DEFAULT",
-                  keyword="pg_mem_swappiness",
-                  convert="integer",
-                  order=31,
-                  depends=[('create_pg', [True])],
-                  text="Set a swappiness value for the process group.",
-                  example="40"
-                )
-
-class KeywordPgBlkioWeight(Keyword):
-    def __init__(self):
-        Keyword.__init__(
-                  self,
-                  section="DEFAULT",
-                  keyword="pg_blkio_weight",
-                  convert="integer",
-                  order=31,
-                  depends=[('create_pg', [True])],
-                  text="Block IO relative weight. Value: between 10 and 1000. Kernel default: 1000.",
-                  example="50"
-                )
-
 class KeywordAppScript(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4793,14 +4679,119 @@ class KeyDict(KeywordStore):
 
         def kw_requires(section, action):
             return Keyword(
-                  section=section,
-                  keyword=action+"_requires",
-                  generic=True,
-                  at=True,
-                  example="ip#0 fs#0(down,stdby down)",
-                  default="",
-                  text="A whitespace-separated list of conditions to meet to accept running a '%s' action. A condition is expressed as <rid>(<state>,...). If states are omitted, 'up,stdby up' is used as the default expected states." % action
-                )
+                section=section,
+                keyword=action+"_requires",
+                generic=True,
+                at=True,
+                example="ip#0 fs#0(down,stdby down)",
+                default="",
+                text="A whitespace-separated list of conditions to meet to accept running a '%s' action. A condition is expressed as <rid>(<state>,...). If states are omitted, 'up,stdby up' is used as the default expected states." % action
+            )
+
+        def kw_pg_cpus(resource):
+            return Keyword(
+                section=resource,
+                keyword="pg_cpus",
+                generic=True,
+                order=31,
+                depends=[('create_pg', [True])],
+                text="Allow service process to bind only the specified cpus. Cpus are specified as list or range : 0,1,2 or 0-2",
+                example="0-2"
+            )
+
+        def kw_pg_mems(resource):
+            return Keyword(
+                section=resource,
+                keyword="pg_mems",
+                generic=True,
+                order=31,
+                depends=[('create_pg', [True])],
+                text="Allow service process to bind only the specified memory nodes. Memory nodes are specified as list or range : 0,1,2 or 0-2",
+                example="0-2"
+            )
+
+        def kw_pg_cpu_share(resource):
+            return Keyword(
+                section=resource,
+                keyword="pg_cpu_shares",
+                generic=True,
+                convert="integer",
+                order=31,
+                depends=[('create_pg', [True])],
+                text="Kernel default value is used, which usually is 1024 shares. In a cpu-bound situation, ensure the service does not use more than its share of cpu ressource. The actual percentile depends on shares allowed to other services.",
+                example="512"
+            )
+
+        def kw_pg_cpu_quota(resource):
+            return Keyword(
+                section=resource,
+                keyword="pg_cpu_quota",
+                generic=True,
+                order=31,
+                depends=[('create_pg', [True])],
+                text="The percent ratio of one core to allocate to the process group if % is specified, else the absolute value to set in the process group parameter. For example, on Linux cgroups, -1 means unlimited, and a positive absolute value means the number of microseconds to allocate each period. 50%@all means 50% of all cores, and 50%@2 means 50% of two cores.",
+                example="50%@all"
+            )
+
+        def kw_pg_mem_oom_control(resource):
+            return Keyword(
+                section=resource,
+                keyword="pg_mem_oom_control",
+                generic=True,
+                convert="integer",
+                order=31,
+                depends=[('create_pg', [True])],
+                text="A flag (0 or 1) that enables or disables the Out of Memory killer for a cgroup. If enabled (0), tasks that attempt to consume more memory than they are allowed are immediately killed by the OOM killer. The OOM killer is enabled by default in every cgroup using the memory subsystem; to disable it, write 1.",
+                example="1"
+            )
+
+        def kw_pg_mem_limit(resource):
+            return Keyword(
+                section=resource,
+                keyword="pg_mem_limit",
+                generic=True,
+                convert="size",
+                order=31,
+                depends=[('create_pg', [True])],
+                text="Ensures the service does not use more than specified memory (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing.",
+                example="512000000"
+            )
+
+        def kw_pg_vmem_limit(resource):
+            return Keyword(
+                section=resource,
+                keyword="pg_vmem_limit",
+                generic=True,
+                convert="size",
+                order=31,
+                depends=[('create_pg', [True])],
+                text="Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than pg_mem_limit.",
+                example="1024000000"
+            )
+
+        def kw_pg_mem_swappiness(resource):
+            return Keyword(
+                section=resource,
+                keyword="pg_mem_swappiness",
+                generic=True,
+                convert="integer",
+                order=31,
+                depends=[('create_pg', [True])],
+                text="Set a swappiness value for the process group.",
+                example="40"
+            )
+
+        def kw_pg_blkio_weight(resource):
+            return Keyword(
+                section=resource,
+                keyword="pg_blkio_weight",
+                generic=True,
+                convert="integer",
+                order=31,
+                depends=[('create_pg', [True])],
+                text="Block IO relative weight. Value: between 10 and 1000. Kernel default: 1000.",
+                example="50"
+            )
 
 
         for r in ["DEFAULT", "sync", "ip", "fs", "disk", "share", "container", "app", "task"]:
@@ -4815,6 +4806,16 @@ class KeyDict(KeywordStore):
             self += kw_provision(r)
             self += kw_shared(r)
             self += kw_encap(r)
+
+            self += kw_pg_cpus(r)
+            self += kw_pg_mems(r)
+            self += kw_pg_cpu_share(r)
+            self += kw_pg_cpu_quota(r)
+            self += kw_pg_mem_oom_control(r)
+            self += kw_pg_mem_limit(r)
+            self += kw_pg_mem_swappiness(r)
+            self += kw_pg_vmem_limit(r)
+            self += kw_pg_blkio_weight(r)
 
             self += kw_pre_unprovision(r)
             self += kw_post_unprovision(r)
@@ -4926,15 +4927,6 @@ class KeyDict(KeywordStore):
         self += KeywordPreMonitorAction()
         self += KeywordMonitorAction()
         self += KeywordCreatePg()
-        self += KeywordPgCpus()
-        self += KeywordPgMems()
-        self += KeywordPgCpuShare()
-        self += KeywordPgCpuQuota()
-        self += KeywordPgMemOomControl()
-        self += KeywordPgMemLimit()
-        self += KeywordPgMemSwappiness()
-        self += KeywordPgVmemLimit()
-        self += KeywordPgBlkioWeight()
         self += KeywordSyncType()
         self += KeywordSyncDockerTarget()
         self += KeywordSyncBtrfsSrc()
@@ -5174,7 +5166,7 @@ if __name__ == "__main__":
         fmt = sys.argv[1]
     else:
         fmt = "text"
-    
+
     SVCKEYS.print_templates(fmt=fmt)
     #print(SVCKEYS.container.getkey("cf"))
     #print(SVCKEYS['DEFAULT'])
