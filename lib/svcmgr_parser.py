@@ -411,6 +411,9 @@ DAEMON_OPTS = [
 
 ACTIONS = {
     "Service actions": {
+        "abort": {
+            "msg": "Abort the action asynchronously done by the cluster daemons.",
+        },
         "clear": {
             "msg": "Clear the monitor status of the service on the node pointed "
                    "by --node. If --node is not specified, all nodes are "

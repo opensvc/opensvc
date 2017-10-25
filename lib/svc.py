@@ -48,6 +48,7 @@ ACTION_NO_ASYNC = [
 ]
 
 ACTION_TGT_STATE = {
+    "abort": "aborted",
     "start": "started",
     "stop": "stopped",
     "freeze": "frozen",
@@ -80,6 +81,7 @@ CONFIG_DEFAULTS = {
 }
 
 ACTIONS_ASYNC = [
+    "abort",
     "freeze",
     "start",
     "stop",
@@ -87,6 +89,7 @@ ACTIONS_ASYNC = [
 ]
 
 ACTIONS_NO_STATUS_CHANGE = [
+    "abort",
     "clear",
     "docker",
     "frozen",
@@ -146,6 +149,7 @@ ACTIONS_NO_LOG = [
 ]
 
 ACTIONS_NO_TRIGGER = [
+    "abort",
     "delete",
     "dns_update",
     "enable",
@@ -166,6 +170,7 @@ ACTIONS_NO_TRIGGER = [
 ]
 
 ACTIONS_NO_LOCK = [
+    "abort",
     "docker",
     "edit_config",
     "freeze",
@@ -324,7 +329,7 @@ ACTIONS_NEED_SNAP_TRIGGER = [
     "sync_update",
 ]
 
-CLUSTER_TYPES = [
+TOPOLOGIES = [
     "failover",
     "flex",
 ]
@@ -1004,7 +1009,7 @@ class Svc(Crypt):
             pass
 
     def validate_mon_action(self, action):
-        if action in ("freeze"):
+        if action in ("freeze", "abort"):
             return
         if self.options.local:
             return
@@ -3540,10 +3545,10 @@ class Svc(Crypt):
         flex_primary run the action on all remote nodes.
         """
 
-        if action not in ACTIONS_NO_LOCK and self.topology not in CLUSTER_TYPES:
+        if action not in ACTIONS_NO_LOCK and self.topology not in TOPOLOGIES:
             raise ex.excError("invalid cluster type '%s'. allowed: %s" % (
                 self.topology,
-                ', '.join(CLUSTER_TYPES),
+                ', '.join(TOPOLOGIES),
             ))
 
         err = 0
@@ -4941,6 +4946,9 @@ class Svc(Crypt):
                 break
             for line in lines:
                 yield line
+
+    def abort(self):
+        pass
 
     def clear(self):
         if self.options.local:

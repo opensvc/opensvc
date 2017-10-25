@@ -753,6 +753,9 @@ class Monitor(shared.OsvcThread, Crypt):
             if svc.svcname in shared.SERVICES and \
                (not self.service_unprovisioned(instance) or instance is not None):
                 self.service_purge(svc.svcname)
+        elif smon.global_expect == "aborted" and \
+             (smon.local_expect not in (None, "started") or smon.status != "idle"):
+            self.set_smon(svc.svcname, local_expect="unset", status="idle")
 
     def service_orchestrator_auto_grace(self, svc):
         """
@@ -786,7 +789,10 @@ class Monitor(shared.OsvcThread, Crypt):
         for child in svc.children:
             if child == svc.svcname:
                 continue
-            avail = shared.AGG[child].avail
+            try:
+                avail = shared.AGG[child].avail
+            except KeyError:
+                avail = "unknown"
             if avail in STOPPED_STATES + ["unknown"]:
                 continue
             missing.append(child)
@@ -806,7 +812,10 @@ class Monitor(shared.OsvcThread, Crypt):
         for parent in svc.parents:
             if parent == svc.svcname:
                 continue
-            avail = shared.AGG[parent].avail
+            try:
+                avail = shared.AGG[parent].avail
+            except KeyError:
+                avail = "unknown"
             if avail in STARTED_STATES + ["unknown"]:
                 continue
             missing.append(parent)
@@ -1105,6 +1114,22 @@ class Monitor(shared.OsvcThread, Crypt):
         elif provisioned == 0:
             return False
         return "mixed"
+
+    def get_agg_aborted(self, svcname):
+        for inst in self.get_service_instances(svcname).values():
+            try:
+                local_expect = inst["monitor"]["local_expect"]
+            except KeyError:
+                continue
+            if local_expect not in (None, "started"):
+                return False
+            try:
+                status = inst["monitor"]["status"]
+            except KeyError:
+                continue
+            if status != "idle":
+                return False
+        return True
 
     def get_agg_deleted(self, svcname):
         if len([True for inst in self.get_service_instances(svcname).values() if "avail" in inst]) > 0:
@@ -1457,6 +1482,10 @@ class Monitor(shared.OsvcThread, Crypt):
                           svcname, smon.global_expect)
             with shared.SMON_DATA_LOCK:
                 del shared.SMON_DATA[svcname]
+        elif smon.global_expect == "aborted" and \
+             self.get_agg_aborted(svcname):
+            self.log.info("service %s action aborted", svcname)
+            self.set_smon(svcname, global_expect="unset")
 
     def set_smon_l_expect_from_status(self, data, svcname):
         if svcname not in data:
@@ -1638,6 +1667,12 @@ class Monitor(shared.OsvcThread, Crypt):
             deleted = self.get_agg_deleted(svcname)
             purged = self.get_agg_purged(provisioned, deleted)
             if purged is False:
+                return True
+            else:
+                return False
+        if global_expect == "aborted":
+            aborted = self.get_agg_aborted(svcname)
+            if aborted is False:
                 return True
             else:
                 return False
