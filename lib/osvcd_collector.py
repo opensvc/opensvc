@@ -96,9 +96,33 @@ class Collector(shared.OsvcThread, Crypt):
         #self.log.debug("the speaker is %s", nodename)
         return False
 
-    def run_collector(self):
-        # get a copy of CLUSTER_DATA to avoid missing changes happening during our work
+    def get_data(self):
+        """
+        Get a copy of the monitor thread, expunged from encap services,
+        to avoid missing changes happening during our work
+        """
         data = shared.THREADS["monitor"].status()
+        _data = {
+            "nodes": {},
+            "services": {},
+        }
+        for key in data:
+            if key not in _data:
+                _data[key] = data[key]
+
+        for nodename in data["nodes"]:
+            for svcname in list(data["nodes"][nodename]["services"]["status"].keys()):
+                if data["nodes"][nodename]["services"]["status"][svcname]["encap"]:
+                    continue
+                _data["nodes"][nodename]["services"]["status"][svcname] = data["nodes"][nodename]["services"]["status"][svcname]
+                _data["nodes"][nodename]["services"]["config"][svcname] = data["nodes"][nodename]["services"]["config"][svcname]
+                _data["services"][svcname] = data["services"][svcname]
+        return _data
+
+    def run_collector(self):
+        data = self.get_data()
+        if len(data["services"]) == 0:
+            return
 
         last_config, last_config_changed = self.get_last_config(data)
         for svcname in last_config_changed:
@@ -108,7 +132,7 @@ class Collector(shared.OsvcThread, Crypt):
 
         if self.speaker():
             last_status, last_status_changed = self.get_last_status(data)
-            if last_status_changed != []:
+            if last_status_changed != [] or self.last_comm is None:
                 self.send_daemon_status(data, last_status_changed)
             elif self.last_comm <= datetime.datetime.utcnow() - datetime.timedelta(seconds=self.interval):
                 self.ping()
