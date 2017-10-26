@@ -27,6 +27,8 @@ def get_cgroup_mntpt(t):
     return None
 
 def cgroup_capable(res):
+    if os.path.exists("/proc/1/cgroup"):
+        return True
     kconf = os.path.join(os.sep, 'lib', 'modules',
                          os.uname()[2], 'build', '.config')
     if not os.path.exists(kconf):
