@@ -310,6 +310,11 @@ STATUS_TYPES = [
     "task",
 ]
 
+ACTIONS_DO_MASTER = [
+    "freeze",
+    "thaw",
+]
+
 ACTIONS_DO_MASTER_AND_SLAVE = [
     "migrate",
     "prstart",
@@ -343,7 +348,7 @@ def _slave_action(func):
         """
         if self.command_is_scoped():
             return
-        if self.running_action in ACTIONS_DO_MASTER_AND_SLAVE:
+        if self.running_action in ACTIONS_DO_MASTER_AND_SLAVE + ACTIONS_DO_MASTER:
             return
         if self.options.master or self.options.slaves or self.options.slave is not None:
             return
@@ -359,7 +364,8 @@ def _slave_action(func):
         need_specifier(self)
         if self.options.slaves or \
            self.options.slave is not None or \
-           (not self.options.master and not self.options.slaves and self.options.slave is None):
+           (not self.options.master and not self.options.slaves and self.options.slave is None and \
+           self.running_action in ACTIONS_DO_MASTER_AND_SLAVE):
             try:
                 func(self)
             except Exception as exc:
@@ -377,7 +383,7 @@ def _master_action(func):
             return
         if self.command_is_scoped():
             return
-        if self.running_action in ACTIONS_DO_MASTER_AND_SLAVE:
+        if self.running_action in ACTIONS_DO_MASTER_AND_SLAVE + ACTIONS_DO_MASTER:
             return
         if self.options.master or self.options.slaves or self.options.slave is not None:
             return
@@ -386,7 +392,8 @@ def _master_action(func):
     def _func(self):
         need_specifier(self)
         if self.options.master or \
-           (not self.options.master and not self.options.slaves and self.options.slave is None):
+           (not self.options.master and not self.options.slaves and self.options.slave is None and \
+           self.running_action in ACTIONS_DO_MASTER_AND_SLAVE + ACTIONS_DO_MASTER):
             func(self)
     return _func
 
@@ -1031,7 +1038,7 @@ class Svc(Crypt):
         if self.svcname not in data["monitor"]["services"]:
             return
         avail = data["monitor"]["services"][self.svcname]["avail"]
-        if avail in ("n/a", "warn", "undef"):
+        if action in ("start", "stop") and avail in ("n/a", "warn", "undef"):
             raise ex.excError("the service is in '%s' avail status. the daemons won't honor this request, so don't submit it." % avail)
         elif action == "start":
             if avail == "up":
@@ -2433,7 +2440,7 @@ class Svc(Crypt):
             else:
                 raise ex.excError()
         if self.options.local or self.options.slave or self.options.slaves or \
-           self.options.master:
+           self.options.master or self.options.daemon:
             return
         if action not in ACTION_TGT_STATE:
             return
@@ -4499,13 +4506,31 @@ class Svc(Crypt):
         """
         Set the frozen flag.
         """
+        self.master_freeze()
+        self.slave_freeze()
+
+    @_master_action
+    def master_freeze(self):
         self.freezer.freeze()
+
+    @_slave_action
+    def slave_freeze(self):
+        self.encap_cmd(['freeze'], verbose=True)
 
     def thaw(self):
         """
         Unset the frozen flag.
         """
+        self.master_thaw()
+        self.slave_thaw()
+
+    @_master_action
+    def master_thaw(self):
         self.freezer.thaw()
+
+    @_slave_action
+    def slave_thaw(self):
+        self.encap_cmd(['thaw'], verbose=True)
 
     def frozen(self):
         """

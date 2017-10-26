@@ -518,6 +518,9 @@ ACTIONS = {
             "options": ASYNC_ACTION_OPTS + [
                 OPT.node,
                 OPT.local,
+                OPT.master,
+                OPT.slave,
+                OPT.slaves,
             ],
         },
         "thaw": {
@@ -525,6 +528,9 @@ ACTIONS = {
             "options": ASYNC_ACTION_OPTS + [
                 OPT.node,
                 OPT.local,
+                OPT.master,
+                OPT.slave,
+                OPT.slaves,
             ],
         },
         "toc": {
