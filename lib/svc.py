@@ -1010,12 +1010,12 @@ class Svc(object):
     def status_data_dump(self):
         return os.path.join(rcEnv.paths.pathvar, self.svcname, "status.json")
 
-    def print_status_data(self, from_resource_status_cache=False):
+    def print_status_data(self, from_resource_status_cache=False, refresh=False):
         """
         Return a structure containing hierarchical status of
         the service.
         """
-        if not from_resource_status_cache and not self.options.refresh and os.path.exists(self.status_data_dump):
+        if not from_resource_status_cache and not refresh and os.path.exists(self.status_data_dump):
             try:
                 with open(self.status_data_dump, 'r') as filep:
                     return json.load(filep)
@@ -1023,7 +1023,7 @@ class Svc(object):
                 pass
 
         now = time.time()
-        group_status = self.group_status(refresh=self.options.refresh)
+        group_status = self.group_status(refresh=refresh)
 
         data = {
             "updated": datetime.datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
@@ -1039,7 +1039,7 @@ class Svc(object):
                 if container.name is None or len(container.name) == 0:
                     continue
                 try:
-                    data['encap'][container.name] = self.encap_json_status(container)
+                    data['encap'][container.name] = self.encap_json_status(container, refresh=refresh)
                 except:
                     data['encap'][container.name] = {'resources': {}}
                 if hasattr(container, "vm_hostname"):
@@ -1230,7 +1230,7 @@ class Svc(object):
         """
         Display in human-readable format the hierarchical service status.
         """
-        data = self.print_status_data()
+        data = self.print_status_data(refresh=self.options.refresh)
         if self.options.format is not None:
             return data
 
@@ -1631,7 +1631,7 @@ class Svc(object):
         Trigger the service defined monitor_action if the hb resource is up
         but a monitored resource is down and not restartable.
         """
-        self.group_status(excluded_groups=set(['sync']), refresh=True)
+        self.print_status_data(refresh=True)
         if self.frozen():
             return
         if not self.ha:
@@ -2108,7 +2108,7 @@ class Svc(object):
             group_status[group] = 'n/a'
 
         cmd = ['print', 'status', '--format', 'json']
-        if self.options.refresh:
+        if refresh:
             cmd.append('--refresh')
         try:
             results = self._encap_cmd(cmd, container)
@@ -3242,7 +3242,7 @@ class Svc(object):
         if self.options.cron:
             self.sched.sched_delay()
         import rcSvcmon
-        self.group_status(refresh=True)
+        self.print_status_data(refresh=True)
         rcSvcmon.svcmon_normal([self])
 
     def push_resinfo(self):
