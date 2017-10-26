@@ -1706,8 +1706,6 @@ class Svc(Crypt):
             try:
                 ejs = data["encap"][container.rid]
                 ers[container.rid] = dispatch_resources(ejs)
-                if ejs.get("frozen", False):
-                    container.status_log("frozen", "info")
             except ex.excNotAvailable:
                 ers[container.rid] = {}
             except Exception as exc:
@@ -1725,14 +1723,16 @@ class Svc(Crypt):
             node_res.add_column(resource["status"],
                                 STATUS_COLOR[resource["status"]])
             col = node_res.add_column(resource["label"])
+            if rid in ers and data["encap"].get(rid).get("frozen"):
+                col.add_text(colorize("frozen", color.BLUE))
             for line in resource["log"].split("\n"):
                 if line.startswith("warn:"):
-                    color = STATUS_COLOR["warn"]
+                    scolor = STATUS_COLOR["warn"]
                 elif line.startswith("err:"):
-                    color = STATUS_COLOR["err"]
+                    scolor = STATUS_COLOR["err"]
                 else:
-                    color = None
-                col.add_text(line, color)
+                    scolor = None
+                col.add_text(line, scolor)
 
             if rid not in ers:
                 return
