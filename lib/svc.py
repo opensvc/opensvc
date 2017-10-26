@@ -1409,10 +1409,13 @@ class Svc(Crypt):
                     continue
                 try:
                     data['encap'][container.rid] = self.encap_json_status(container, refresh=refresh)
+                    # merge container group status
+                    for group in ("ip", "disk", "fs", "share", "container", "app", "sync", "avail", "overall"):
+                        group_status[group] += rcStatus.Status(data["encap"][container.rid][group] if group in data["encap"][container.rid] else "n/a")
                 except:
-                    data['encap'][container.rid] = {'resources': {}}
+                    data["encap"][container.rid] = {"resources": {}}
                 if hasattr(container, "vm_hostname"):
-                    data['encap'][container.rid]["hostname"] = container.vm_hostname
+                    data["encap"][container.rid]["hostname"] = container.vm_hostname
 
         for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
             for resource in rset.resources:
@@ -1428,23 +1431,23 @@ class Svc(Crypt):
                     encap,
                     standby
                 ) = resource.status_quad(color=False)
-                data['resources'][rid] = {
-                    'status': str(status),
-                    'type': rtype,
-                    'label': label,
-                    'log': log,
-                    'tags': sorted(list(resource.tags)),
-                    'monitor':monitor,
-                    'disable': disable,
-                    'optional': optional,
-                    'encap': encap,
-                    'standby': standby,
+                data["resources"][rid] = {
+                    "status": str(status),
+                    "type": rtype,
+                    "label": label,
+                    "log": log,
+                    "tags": sorted(list(resource.tags)),
+                    "monitor":monitor,
+                    "disable": disable,
+                    "optional": optional,
+                    "encap": encap,
+                    "standby": standby,
                 }
-                data['resources'][rid]["provisioned"] = resource.provisioned_data()
-                if data['resources'][rid]["provisioned"]["state"] is False:
+                data["resources"][rid]["provisioned"] = resource.provisioned_data()
+                if data["resources"][rid]["provisioned"]["state"] is False:
                     data["provisioned"] = False
                 if resource.subset:
-                    data['resources'][rid]["subset"] = resource.subset
+                    data["resources"][rid]["subset"] = resource.subset
         for group in group_status:
             data[group] = str(group_status[group])
         if self.stonith and self.topology == "failover" and data["avail"] == "up":
