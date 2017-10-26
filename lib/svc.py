@@ -1409,10 +1409,13 @@ class Svc(Crypt):
                     continue
                 try:
                     data['encap'][container.rid] = self.encap_json_status(container, refresh=refresh)
+                    # merge container group status
+                    for group in ("ip", "disk", "fs", "share", "container", "app", "sync", "avail", "overall"):
+                        group_status[group] += rcStatus.Status(data["encap"][container.rid][group] if group in data["encap"][container.rid] else "n/a")
                 except:
-                    data['encap'][container.rid] = {'resources': {}}
+                    data["encap"][container.rid] = {"resources": {}}
                 if hasattr(container, "vm_hostname"):
-                    data['encap'][container.rid]["hostname"] = container.vm_hostname
+                    data["encap"][container.rid]["hostname"] = container.vm_hostname
 
         for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
             for resource in rset.resources:
@@ -1428,23 +1431,23 @@ class Svc(Crypt):
                     encap,
                     standby
                 ) = resource.status_quad(color=False)
-                data['resources'][rid] = {
-                    'status': str(status),
-                    'type': rtype,
-                    'label': label,
-                    'log': log,
-                    'tags': sorted(list(resource.tags)),
-                    'monitor':monitor,
-                    'disable': disable,
-                    'optional': optional,
-                    'encap': encap,
-                    'standby': standby,
+                data["resources"][rid] = {
+                    "status": str(status),
+                    "type": rtype,
+                    "label": label,
+                    "log": log,
+                    "tags": sorted(list(resource.tags)),
+                    "monitor":monitor,
+                    "disable": disable,
+                    "optional": optional,
+                    "encap": encap,
+                    "standby": standby,
                 }
-                data['resources'][rid]["provisioned"] = resource.provisioned_data()
-                if data['resources'][rid]["provisioned"]["state"] is False:
+                data["resources"][rid]["provisioned"] = resource.provisioned_data()
+                if data["resources"][rid]["provisioned"]["state"] is False:
                     data["provisioned"] = False
                 if resource.subset:
-                    data['resources'][rid]["subset"] = resource.subset
+                    data["resources"][rid]["subset"] = resource.subset
         for group in group_status:
             data[group] = str(group_status[group])
         if self.stonith and self.topology == "failover" and data["avail"] == "up":
@@ -1703,8 +1706,6 @@ class Svc(Crypt):
             try:
                 ejs = data["encap"][container.rid]
                 ers[container.rid] = dispatch_resources(ejs)
-                if ejs.get("frozen", False):
-                    container.status_log("frozen", "info")
             except ex.excNotAvailable:
                 ers[container.rid] = {}
             except Exception as exc:
@@ -1722,14 +1723,16 @@ class Svc(Crypt):
             node_res.add_column(resource["status"],
                                 STATUS_COLOR[resource["status"]])
             col = node_res.add_column(resource["label"])
+            if rid in ers and data["encap"].get(rid).get("frozen"):
+                col.add_text(colorize("frozen", color.BLUE))
             for line in resource["log"].split("\n"):
                 if line.startswith("warn:"):
-                    color = STATUS_COLOR["warn"]
+                    scolor = STATUS_COLOR["warn"]
                 elif line.startswith("err:"):
-                    color = STATUS_COLOR["err"]
+                    scolor = STATUS_COLOR["err"]
                 else:
-                    color = None
-                col.add_text(line, color)
+                    scolor = None
+                col.add_text(line, scolor)
 
             if rid not in ers:
                 return
@@ -2210,7 +2213,7 @@ class Svc(Crypt):
 
             return group_status
 
-        if not refresh and not self.options.refresh:
+        if not refresh:
             group_status = self.get_cache_encap_json_status(container.rid)
             if group_status:
                 return group_status
@@ -2237,7 +2240,7 @@ class Svc(Crypt):
             group_status[group] = 'n/a'
 
         cmd = ['print', 'status', '--format', 'json']
-        if self.options.refresh:
+        if refresh:
             cmd.append('--refresh')
         try:
             results = self._encap_cmd(cmd, container)

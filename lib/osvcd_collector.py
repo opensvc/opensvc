@@ -112,8 +112,15 @@ class Collector(shared.OsvcThread, Crypt):
 
         for nodename in data["nodes"]:
             for svcname in list(data["nodes"][nodename]["services"]["status"].keys()):
-                if data["nodes"][nodename]["services"]["status"][svcname]["encap"]:
+                if data["nodes"][nodename]["services"]["status"][svcname]["encap"] is True:
                     continue
+                if nodename not in _data["nodes"]:
+                    _data["nodes"][nodename] = {
+                        "services": {
+                            "config": {},
+                            "status": {},
+                        },
+                    }
                 _data["nodes"][nodename]["services"]["status"][svcname] = data["nodes"][nodename]["services"]["status"][svcname]
                 _data["nodes"][nodename]["services"]["config"][svcname] = data["nodes"][nodename]["services"]["config"][svcname]
                 _data["services"][svcname] = data["services"][svcname]
