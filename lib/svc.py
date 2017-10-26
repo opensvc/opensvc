@@ -519,11 +519,6 @@ class Svc(Crypt):
                     fname="last_comp_check",
                     schedule_option="comp_schedule"
                 ),
-                "status": SchedOpts(
-                    "DEFAULT",
-                    fname="last_status",
-                    schedule_option="status_schedule"
-                ),
                 "push_resinfo": SchedOpts(
                     "DEFAULT",
                     fname="last_push_resinfo",
@@ -779,12 +774,18 @@ class Svc(Crypt):
         except ex.OptNotFound:
             monitor_schedule = None
 
-        if self.has_monitored_resources() or monitor_schedule is not None:
-            self.sched.scheduler_actions["resource_monitor"] = SchedOpts(
-                "DEFAULT",
-                fname="last_resource_monitor",
-                schedule_option="monitor_schedule"
+        if not self.encap:
+            self.sched.scheduler_actions["status"] = SchedOpts(
+                    "DEFAULT",
+                    fname="last_status",
+                    schedule_option="status_schedule"
             )
+            if self.has_monitored_resources() or monitor_schedule is not None:
+                self.sched.scheduler_actions["resource_monitor"] = SchedOpts(
+                    "DEFAULT",
+                    fname="last_resource_monitor",
+                    schedule_option="monitor_schedule"
+                )
 
         syncs = []
         for resource in self.get_resources("sync"):
@@ -1396,6 +1397,7 @@ class Svc(Crypt):
             "parents": self.parents,
             "children": self.children,
             "enslave_children": self.enslave_children,
+            "encap": self.encap,
         }
 
         containers = self.get_resources('container')
