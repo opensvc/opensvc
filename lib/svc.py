@@ -521,7 +521,7 @@ class Svc(Crypt):
                 ),
                 "status": SchedOpts(
                     "DEFAULT",
-                    fname="status",
+                    fname="last_status",
                     schedule_option="status_schedule"
                 ),
                 "push_resinfo": SchedOpts(
@@ -1302,8 +1302,8 @@ class Svc(Crypt):
         Return the aggregate status a service.
         """
         refresh = self.options.refresh or (not self.encap and self.options.cron)
-        group_status = self.group_status(refresh=refresh)
-        return group_status["overall"].status
+        data = self.print_status_data(mon_data=False, refresh=refresh)
+        return rcStatus.Status(data["overall"]).value()
 
     @fcache
     def get_mon_data(self):
@@ -1406,7 +1406,7 @@ class Svc(Crypt):
                     # docker case
                     continue
                 try:
-                    data['encap'][container.rid] = self.encap_json_status(container)
+                    data['encap'][container.rid] = self.encap_json_status(container, refresh=refresh)
                 except:
                     data['encap'][container.rid] = {'resources': {}}
                 if hasattr(container, "vm_hostname"):
@@ -1595,7 +1595,7 @@ class Svc(Crypt):
                 flags += 'P'
             else:
                 flags += '/'
-            flags += 'S' if resource["standby"] else '.'
+            flags += 'S' if resource.get("standby") else '.'
             return flags
 
         def dispatch_resources(data):
@@ -2956,7 +2956,7 @@ class Svc(Crypt):
             if not self.options.cron:
                 self.log.info("push service status is disabled for encapsulated services")
             return
-        self.group_status(refresh=True)
+        self.print_status_data(mon_data=False, refresh=True)
 
     def push_resinfo(self):
         """
