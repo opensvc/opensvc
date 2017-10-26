@@ -1409,9 +1409,9 @@ class Svc(Crypt):
                     continue
                 try:
                     data['encap'][container.rid] = self.encap_json_status(container, refresh=refresh)
-                    # merge container group status
-                    for group in ("ip", "disk", "fs", "share", "container", "app", "sync", "avail", "overall"):
-                        group_status[group] += rcStatus.Status(data["encap"][container.rid][group] if group in data["encap"][container.rid] else "n/a")
+                    # merge container overall status, so we propagate encap alerts
+                    # up to instance and service level.
+                    group_status["overall"] += rcStatus.Status(data["encap"][container.rid]["overall"] if "overall" in data["encap"][container.rid] else "n/a")
                 except:
                     data["encap"][container.rid] = {"resources": {}}
                 if hasattr(container, "vm_hostname"):
@@ -1723,8 +1723,16 @@ class Svc(Crypt):
             node_res.add_column(resource["status"],
                                 STATUS_COLOR[resource["status"]])
             col = node_res.add_column(resource["label"])
-            if rid in ers and data["encap"].get(rid).get("frozen"):
-                col.add_text(colorize("frozen", color.BLUE))
+            if rid in ers:
+                edata = Storage(data["encap"].get(rid))
+                encap_notice = instance_notice(
+                    overall=edata.overall,
+                    frozen=edata.frozen,
+                    constraints=edata.constraints,
+                    provisioned=edata.provisioned,
+                    monitor=edata.monitor,
+                )
+                col.add_text(encap_notice, color.LIGHTBLUE)
             for line in resource["log"].split("\n"):
                 if line.startswith("warn:"):
                     scolor = STATUS_COLOR["warn"]
