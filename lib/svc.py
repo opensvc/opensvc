@@ -4016,7 +4016,7 @@ class Svc(Crypt):
                 except ValueError:
                     raise ex.excError("malformed kw expression: %s: index is "
                                       "not integer" % kw)
-            if "." in keyword:
+            if "." in keyword and "#" not in keyword:
                 # <group>.keyword[@<scope>] format => loop over all rids in group
                 group = keyword.split(".")[0]
                 if group in DEFAULT_STATUS_GROUPS:
