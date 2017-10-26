@@ -2210,7 +2210,7 @@ class Svc(Crypt):
 
             return group_status
 
-        if not refresh and not self.options.refresh:
+        if not refresh:
             group_status = self.get_cache_encap_json_status(container.rid)
             if group_status:
                 return group_status
@@ -2237,7 +2237,7 @@ class Svc(Crypt):
             group_status[group] = 'n/a'
 
         cmd = ['print', 'status', '--format', 'json']
-        if self.options.refresh:
+        if refresh:
             cmd.append('--refresh')
         try:
             results = self._encap_cmd(cmd, container)
