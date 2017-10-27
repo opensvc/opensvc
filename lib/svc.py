@@ -1749,7 +1749,7 @@ class Svc(Crypt):
                     scolor = None
                 col.add_text(line, scolor)
 
-            if rid not in ers:
+            if rid not in ers and resource["status"] in ("up", "stdby up"):
                 return
 
             add_subsets(ers[rid], node_res)
