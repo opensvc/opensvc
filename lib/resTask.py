@@ -106,8 +106,6 @@ class Task(Res.Resource):
             raise ex.excError("run aborted")
 
     def run(self):
-        if self.svc.sched.skip_action("run"):
-            return
         kwargs = {
           'blocking': True,
         }

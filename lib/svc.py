@@ -312,6 +312,7 @@ STATUS_TYPES = [
 
 ACTIONS_DO_MASTER = [
     "freeze",
+    "run",
     "thaw",
 ]
 
