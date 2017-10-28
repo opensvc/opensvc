@@ -88,10 +88,11 @@ class Collector(shared.OsvcThread, Crypt):
         self.last_comm = datetime.datetime.utcnow()
 
     def speaker(self):
-        for nodename in self.cluster_nodes:
+        for nodename in self.sorted_cluster_nodes:
             if nodename in shared.CLUSTER_DATA and shared.CLUSTER_DATA[nodename] != "unknown":
                 break
         if nodename == rcEnv.nodename:
+            #self.log.debug("we are speaker", nodename)
             return True
         #self.log.debug("the speaker is %s", nodename)
         return False
@@ -129,6 +130,7 @@ class Collector(shared.OsvcThread, Crypt):
     def run_collector(self):
         data = self.get_data()
         if len(data["services"]) == 0:
+            #self.log.debug("no service")
             return
 
         last_config, last_config_changed = self.get_last_config(data)

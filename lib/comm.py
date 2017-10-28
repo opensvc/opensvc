@@ -95,6 +95,10 @@ class Crypt(object):
                 locker.release()
 
     @lazy
+    def sorted_cluster_nodes(self):
+        return sorted(self.cluster_nodes)
+
+    @lazy
     def cluster_nodes(self):
         """
         Return the cluster nodes, read from cluster.nodes in the node
