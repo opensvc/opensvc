@@ -534,6 +534,9 @@ class Resource(object):
         status_str = "%s\n" % rcStatus.Status(self.rstatus)
         if len(self.status_logs) > 0:
             status_str += '\n'.join([entry[0]+": "+entry[1] for entry in self.status_logs])+'\n'
+        dpath = os.path.dirname(self.fpath_status_last)
+        if not os.path.exists(dpath):
+            os.makedirs(dpath, 0o0755)
         with open(self.fpath_status_last, 'w') as ofile:
             ofile.write(status_str)
             ofile.flush()
