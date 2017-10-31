@@ -185,10 +185,6 @@ def test_logs():
     ret = svcmgr.main(argv=["logs", "-s", "unittest", "--no-pager"])
     assert ret == 0
 
-def test_push():
-    ret = svcmgr.main(argv=["push", "-s", "unittest"])
-    assert ret == 0
-
 def test_pull():
     ret = svcmgr.main(argv=["pull", "-s", "unittest"])
     assert ret == 0
