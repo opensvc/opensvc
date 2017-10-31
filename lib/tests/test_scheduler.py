@@ -68,10 +68,5 @@ def test_schedules():
     for test in tests:
         assert sched.test_schedule(*test)
 
-def test_fork():
-    def dummy(*args, **kwargs):
-        return 0
-    rcScheduler.fork(dummy, args=[node], kwargs={}, serialize=True, delay=0)
-    rcScheduler.fork(dummy, args=[node], kwargs={}, serialize=False, delay=0)
 
 
