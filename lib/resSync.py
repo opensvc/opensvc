@@ -140,5 +140,5 @@ class Sync(Res.Resource, Scheduler):
             if avail != "up":
                 self.status_log("paused, service not up", "info")
                 return rcStatus.NA
-        return self.__status(**kwargs)
+        return self.sync_status(**kwargs)
 
