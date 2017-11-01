@@ -89,7 +89,7 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
             return rcStatus.WARN
         return rcStatus.UP
 
-    def __status(self, verbose=False, skip_prereq=False):
+    def sync_status(self, verbose=False, skip_prereq=False):
         if rcEnv.nodename in self.svc.nodes:
             return self.nodes_status(verbose, skip_prereq)
         else:
