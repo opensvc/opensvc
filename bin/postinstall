@@ -199,6 +199,7 @@ def install_cron_unix():
            'ok': False
     }]
     remove_entries = [
+      'bin/nodemgr schedulers',
       'bin/nodemgr compliance check',
       'bin/svcmon ',
       'bin/cron/opensvc',
