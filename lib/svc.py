@@ -1731,7 +1731,7 @@ class Svc(Crypt):
             node_res.add_column(resource["status"],
                                 STATUS_COLOR[resource["status"]])
             col = node_res.add_column(resource["label"])
-            if rid in ers:
+            if rid in ers and resource["status"] in ("up", "stdby up"):
                 edata = Storage(data["encap"].get(rid))
                 encap_notice = instance_notice(
                     overall=edata.overall,
