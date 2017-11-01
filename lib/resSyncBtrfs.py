@@ -365,7 +365,7 @@ class SyncBtrfs(resSync.Sync):
             return False
         return True
 
-    def _status(self, verbose=False):
+    def __status(self, verbose=False):
         self.init_src_btrfs()
         try:
             ls = self.get_local_state()

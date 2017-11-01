@@ -243,7 +243,7 @@ class syncHp3par(resSync.Sync):
     def showrcopy(self):
         return self.array_obj.showrcopy(self.rcg)
 
-    def _status(self, verbose=False):
+    def __status(self, verbose=False):
         if self.array_obj is None:
             self.status_log("array %s is not accessible" % self.array)
             return rcStatus.WARN

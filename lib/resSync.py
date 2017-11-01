@@ -133,3 +133,12 @@ class Sync(Res.Resource, Scheduler):
                 self.log.info("won't sync a PRD service running on a !PRD node")
             raise ex.excAbortAction
 
+    def _status(self, **kwargs):
+        data = self.svc.node._daemon_status()
+        if self.svc.svcname in data["monitor"]["services"]:
+            avail = data["monitor"]["services"][self.svc.svcname]["avail"]
+            if avail != "up":
+                self.status_log("paused, service not up", "info")
+                return rcStatus.NA
+        return self.__status(**kwargs)
+

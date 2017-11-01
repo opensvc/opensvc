@@ -251,7 +251,7 @@ class syncNetapp(resSync.Sync):
     def stop(self):
         pass
 
-    def _status(self, verbose=False):
+    def __status(self, verbose=False):
         try:
             s = self.snapmirror_status(self.slave())
         except ex.excError as e:

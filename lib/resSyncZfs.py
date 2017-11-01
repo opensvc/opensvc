@@ -296,7 +296,7 @@ class SyncZfs(resSync.Sync):
             return False
         return True
 
-    def _status(self, verbose=False):
+    def __status(self, verbose=False):
         try:
             ls = self.get_local_state()
             now = datetime.datetime.now()

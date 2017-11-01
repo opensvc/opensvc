@@ -481,7 +481,7 @@ class syncSymSrdfS(resSync.Sync):
             if self.last is None or last > self.last:
                 self.last = last
 
-    def _status(self, verbose=False):
+    def __status(self, verbose=False):
         try:
             self.get_syminfo()
         except ex.excError as e:

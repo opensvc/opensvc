@@ -127,7 +127,7 @@ class SyncDocker(resSync.Sync):
         if out is not None and len(out) > 0:
             self.log.info(out)
 
-    def _status(self, verbose=False):
+    def __status(self, verbose=False):
         self.get_targets()
         if len(self.targets) == 0:
             self.status_log("no target nodes")

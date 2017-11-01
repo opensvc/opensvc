@@ -120,7 +120,7 @@ class syncRadosSnap(resSync.Sync):
             data[idx] = img_data
         return data
 
-    def _status(self, verbose=False):
+    def __status(self, verbose=False):
         try:
             self.validate_image_fmt()
         except Exception as e:

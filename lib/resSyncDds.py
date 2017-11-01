@@ -338,7 +338,7 @@ class syncDds(resSync.Sync):
             return True
         return not self.skip_sync(last)
 
-    def _status(self, verbose=False):
+    def __status(self, verbose=False):
         try:
             ls = self.get_local_state()
             now = datetime.datetime.now()

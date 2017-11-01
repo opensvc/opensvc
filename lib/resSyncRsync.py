@@ -329,7 +329,7 @@ class Rsync(resSync.Sync):
                 self.log.info("no nodes to sync")
             pass
 
-    def _status(self, verbose=False):
+    def __status(self, verbose=False):
         """ mono-node service should return n/a as a sync state
         """
         target = set()
