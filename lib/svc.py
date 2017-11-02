@@ -2441,7 +2441,7 @@ class Svc(Crypt):
             else:
                 raise ex.excError()
         if self.options.local or self.options.slave or self.options.slaves or \
-           self.options.master or self.options.daemon:
+           self.options.master:
             return
         if action not in ACTION_TGT_STATE:
             return
