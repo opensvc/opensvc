@@ -1748,7 +1748,6 @@ class Monitor(shared.OsvcThread, Crypt):
         return data
 
     def status(self):
-        self.update_hb_data()
         data = shared.OsvcThread.status(self)
         with shared.CLUSTER_DATA_LOCK:
             data.nodes = dict(shared.CLUSTER_DATA)
