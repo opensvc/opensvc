@@ -3402,7 +3402,7 @@ class Node(Crypt):
 
     def daemon_stop(self):
         data = None
-        if self.daemon_handled_by_systemd():
+        if self.options.thr_id is None and self.daemon_handled_by_systemd():
             # 'systemctl restart <osvcunit>' when the daemon has been started
             # manually causes a direct 'nodemgr daemon start', which fails,
             # and systemd fallbacks to 'nodemgr daemon stop' and leaves the
@@ -3446,6 +3446,11 @@ class Node(Crypt):
             raise ex.excError
 
     def _daemon_running(self):
+        if self.options.thr_id:
+            data = self._daemon_status()
+            if self.options.thr_id not in data:
+                return False
+            return data[self.options.thr_id].get("state") == "running"
         from lock import lock, unlock
         lockfd = None
         try:
