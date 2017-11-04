@@ -15,6 +15,11 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, bdecode
 
+if sys.version_info[0] >= 3:
+    to_bytes = lambda x: bytes(x, "utf-8")
+else:
+    to_bytes = lambda x: bytes(x)
+
 # Number of received misencrypted data messages by senders
 BLACKLIST = {}
 BLACKLIST_LOCK = threading.RLock()
@@ -236,8 +241,8 @@ class Crypt(object):
             return None, None
         if self.blacklisted(sender_id):
             return None, None
-        iv = base64.urlsafe_b64decode(str(iv))
-        data = base64.urlsafe_b64decode(str(message["data"]))
+        iv = base64.urlsafe_b64decode(to_bytes(iv))
+        data = base64.urlsafe_b64decode(to_bytes(message["data"]))
         try:
             data = bdecode(self._decrypt(data, cluster_key, iv))
         except Exception as exc:
