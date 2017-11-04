@@ -44,6 +44,7 @@ class Monitor(shared.OsvcThread, Crypt):
     def __init__(self):
         shared.OsvcThread.__init__(self)
         self._shutdown = False
+        self.compat = True
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
@@ -51,7 +52,6 @@ class Monitor(shared.OsvcThread, Crypt):
         self.log.info("monitor started")
         self.startup = datetime.datetime.utcnow()
         self.rejoin_grace_period_expired = False
-        self.compat = True
 
         try:
             while True:
