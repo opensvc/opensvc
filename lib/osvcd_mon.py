@@ -945,7 +945,7 @@ class Monitor(shared.OsvcThread, Crypt):
     #########################################################################
     def get_agg_avail(self, svcname):
         try:
-            instance = self.get_service_instances(svcname).values()[0]
+            instance = self.get_any_service_instance(svcname)
         except IndexError:
             instance = Storage()
         topology = instance.get("topology")
@@ -1214,6 +1214,21 @@ class Monitor(shared.OsvcThread, Crypt):
                 except KeyError:
                     continue
         return instances
+
+    @staticmethod
+    def get_any_service_instance(svcname):
+        """
+        Return the specified service status structure on any node.
+        """
+        with shared.CLUSTER_DATA_LOCK:
+            for nodename in shared.CLUSTER_DATA:
+                try:
+                    if svcname in shared.CLUSTER_DATA[nodename]["services"]["status"]:
+                        if shared.CLUSTER_DATA[nodename]["services"]["status"][svcname] in (None, ""):
+                            continue
+                        return shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]
+                except KeyError:
+                    continue
 
     @staticmethod
     def get_last_svc_config(svcname):
