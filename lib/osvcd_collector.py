@@ -102,6 +102,9 @@ class Collector(shared.OsvcThread, Crypt):
         Get a copy of the monitor thread, expunged from encap services,
         to avoid missing changes happening during our work
         """
+        if "monitor" not in shared.THREADS:
+            # the monitor thread is not started
+            return
         data = shared.THREADS["monitor"].status()
         _data = {
             "nodes": {},
@@ -129,6 +132,8 @@ class Collector(shared.OsvcThread, Crypt):
 
     def run_collector(self):
         data = self.get_data()
+        if data is None:
+            return
         if len(data["services"]) == 0:
             #self.log.debug("no service")
             return
