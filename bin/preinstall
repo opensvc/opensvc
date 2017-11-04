@@ -29,21 +29,23 @@ RUNNING=$?
 # option not found => upgrade from 1.8-
 if [ $RUNNING -eq 2 ]
 then
+	echo "daemon flagged for start"
 	touch $FLAG
+
+	echo "freeze all services"
 	svcmgr freeze
 	exit 0
 fi
 
 # set a flag for postinstall to know if the daemon should be restarted
-nodemgr daemon running >/dev/null 2>&1
-if [ $? -eq 0 ]
+if [ $RUNNING -eq 0 ]
 then
 	echo "daemon flagged for restart"
 	touch $FLAG
 
-        # freeze the cluster
+        echo "freeze the node"
         nodemgr freeze --wait
         
-        # stop the daemon
+        echo "stop the daemon"
         nodemgr daemon stop
 fi
