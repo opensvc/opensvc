@@ -27,6 +27,7 @@ from hb_mcast import HbMcastRx, HbMcastTx
 from hb_disk import HbDiskRx, HbDiskTx
 
 DAEMON_TICKER = threading.Condition()
+DAEMON_INTERVAL = 2
 
 HEARTBEATS = (
     ("multicast", HbMcastTx, HbMcastRx),
@@ -197,7 +198,7 @@ class Daemon(object):
                 self.stop_threads()
                 break
             with DAEMON_TICKER:
-                DAEMON_TICKER.wait(1)
+                DAEMON_TICKER.wait(DAEMON_INTERVAL)
         self.log.info("daemon graceful stop")
 
     def stop_threads(self):
@@ -236,6 +237,8 @@ class Daemon(object):
         Start threads or restart threads dead of an unexpected cause.
         Stop and delete heartbeat threads whose configuration was deleted.
         """
+        config_changed = self.read_config()
+
         # a thread can only be started once, allocate a new one if not alive.
         changed = False
         if self.need_start("listener"):
@@ -250,10 +253,10 @@ class Daemon(object):
             self.threads["collector"] = Collector()
             self.threads["collector"].start()
             changed = True
-
-        mtime = self.read_config()
-        if mtime:
-            unset_lazy(self, "config_hbs")
+        if self.need_start("monitor"):
+            self.threads["monitor"] = Monitor()
+            self.threads["monitor"].start()
+            changed = True
 
         for hb_type, txc, rxc in HEARTBEATS:
             for name in self.get_config_hb(hb_type):
@@ -268,12 +271,7 @@ class Daemon(object):
                     self.threads[hb_id].start()
                     changed = True
 
-        if self.need_start("monitor"):
-            self.threads["monitor"] = Monitor()
-            self.threads["monitor"].start()
-            changed = True
-
-        if mtime is not None:
+        if config_changed:
             # clean up deleted heartbeats
             thr_ids = list(self.threads.keys())
             sections = self.config.sections()
@@ -294,16 +292,25 @@ class Daemon(object):
             with shared.THREADS_LOCK:
                 shared.THREADS = self.threads
 
+    def get_config_mtime(self, first=True):
+        try:
+            mtime = os.path.getmtime(rcEnv.paths.nodeconf)
+        except Exception as exc:
+            if first:
+                self.init_nodeconf()
+                return self.get_config_mtime(first=False)
+            else:
+                self.log.warning("failed to get node config mtime: %s", str(exc))
+                return
+        return mtime
+
     def read_config(self):
         """
         Reload the node configuration file and notify the threads to do the
         same, if the file's mtime has changed since the last load.
         """
-        self.init_nodeconf()
-        try:
-            mtime = os.path.getmtime(rcEnv.paths.nodeconf)
-        except Exception as exc:
-            self.log.warning("failed to get node config mtime: %s", str(exc))
+        mtime = self.get_config_mtime()
+        if mtime is None:
             return
         if self.last_config_mtime is not None and \
            self.last_config_mtime >= mtime:
@@ -314,6 +321,7 @@ class Daemon(object):
                     shared.NODE.close()
                 shared.NODE = Node()
             unset_lazy(self, "config")
+            unset_lazy(self, "config_hbs")
             if self.last_config_mtime:
                 self.log.info("node config reloaded (changed)")
             else:
@@ -323,9 +331,11 @@ class Daemon(object):
             # signal the node config change to threads
             for thr_id in self.threads:
                 self.threads[thr_id].notify_config_change()
+
+            # signal the caller the config has changed
+            return True
         except Exception as exc:
             self.log.warning("failed to load config: %s", str(exc))
-        return mtime
 
     def get_config_hb(self, hb_type=None):
         """
