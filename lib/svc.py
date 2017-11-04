@@ -307,6 +307,7 @@ STATUS_TYPES = [
     "sync.symsrdfs",
     "sync.s3",
     "sync.zfs",
+    "sync.zfssnap",
     "task",
 ]
 
