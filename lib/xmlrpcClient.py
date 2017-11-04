@@ -774,7 +774,7 @@ class Collector(object):
         gen = {}
         if 'hba' in d:
             vars = ['nodename', 'hba_id', 'hba_type']
-            vals = [(rcEnv.nodename, _d["hba_id"], _d["tgt_type"]) for _d in d['hba']]
+            vals = [(rcEnv.nodename, _d["hba_id"], _d["hba_type"]) for _d in d['hba']]
             del(d['hba'])
             gen.update({'hba': [vars, vals]})
 
