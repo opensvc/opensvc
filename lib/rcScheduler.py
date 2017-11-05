@@ -273,7 +273,7 @@ class Scheduler(object):
         return True
 
     @staticmethod
-    def sched_delay(delay=59):
+    def sched_delay(delay=5):
         """
         Sleep for a random delay before executing the task, and after the
         scheduling constraints have been validated.
