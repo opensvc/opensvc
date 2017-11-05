@@ -1008,6 +1008,8 @@ class Svc(Crypt):
         Send to the collector the service status after an action, and
         the action log.
         """
+        if self.options.cron:
+            self.sync_dblogger = True
         self.node.collector.call(
             'end_action', self, action, begin, end, actionlogfile,
             sync=self.sync_dblogger
