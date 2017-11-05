@@ -54,8 +54,13 @@ class Collector(shared.OsvcThread, Crypt):
             last_config[svcname] = config_csum
         return last_config, last_config_changed
 
+    def init_collector(self):
+        if " 127.0.0.1/" in repr(shared.NODE.collector.proxy):
+            shared.NODE.collector.init()
+
     def do(self):
         self.reload_config()
+        self.init_collector()
         self.run_collector()
         with shared.COLLECTOR_TICKER:
             shared.COLLECTOR_TICKER.wait(self.interval)
