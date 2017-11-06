@@ -7,7 +7,7 @@ import datetime
 import time
 import codecs
 import hashlib
-from subprocess import Popen, PIPE
+from subprocess import Popen
 
 import rcExceptions as ex
 from rcConfigParser import RawConfigParser
