@@ -193,12 +193,7 @@ class Container(resContainer.Container):
         return data["status"] == "Running"
 
     def get_container_info(self):
-        cpu_set = self.get_cf_value("lxc.cgroup.cpuset.cpus")
-        if cpu_set is None:
-            vcpus = 0
-        else:
-            vcpus = len(cpu_set.split(','))
-        return {'vcpus': str(vcpus), 'vmem': '0'}
+        return {'vcpus': '0', 'vmem': '0'}
 
     def check_manual_boot(self):
         return True
