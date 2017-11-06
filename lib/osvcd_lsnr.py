@@ -76,6 +76,7 @@ class Listener(shared.OsvcThread, Crypt):
 
     def do(self):
         self.reload_config()
+        self.janitor_procs()
         self.janitor_threads()
 
         try:

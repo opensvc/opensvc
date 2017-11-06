@@ -197,6 +197,7 @@ class OsvcThread(threading.Thread):
             for _ in range(self.stop_tmo):
                 data.proc.poll()
                 if data.proc.returncode is not None:
+                    data.proc.communicate()
                     break
                 time.sleep(1)
 
@@ -205,6 +206,7 @@ class OsvcThread(threading.Thread):
         for idx, data in enumerate(self.procs):
             data.proc.poll()
             if data.proc.returncode is not None:
+                data.proc.communicate()
                 done.append(idx)
                 if data.proc.returncode == 0 and data.on_success:
                     getattr(self, data.on_success)(*data.on_success_args,
