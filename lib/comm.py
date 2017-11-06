@@ -9,6 +9,7 @@ import socket
 import sys
 import threading
 import zlib
+import time
 
 import pyaes
 import rcExceptions as ex
@@ -393,7 +394,7 @@ class Crypt(object):
         return data
 
     def daemon_send(self, data, nodename=None, with_result=True, silent=False,
-                    cluster_name=None, secret=None, time=0):
+                    cluster_name=None, secret=None, timeout=0):
         """
         Send a request to the daemon running on nodename and return the result
         fetched if with_result is set.
@@ -411,13 +412,12 @@ class Crypt(object):
                 return {"status": 1, "err": "failed to encrypt message"}
             sock.sendall(message)
             if with_result:
-                import time
                 elapsed = 0
                 while True:
                     try:
                         return self.recv_message(sock, cluster_name=cluster_name, secret=secret)
                     except socket.timeout:
-                        if elapsed > time:
+                        if elapsed > timeout:
                             return {"status": 1, "err": "timeout"}
                         time.sleep(0.1)
                         elapsed += 0.1
