@@ -2481,7 +2481,7 @@ class Svc(Crypt):
         # poll global service status
         prev_global_expect_set = set()
         for _ in range(timeout):
-            data = self.node._daemon_status()
+            data = self.node._daemon_status(refresh=True)
             if data is None:
                 # interrupted, daemon died
                 time.sleep(1)
@@ -3808,7 +3808,7 @@ class Svc(Crypt):
         self.clear()
         self.node.async_action("thaw", wait=True, timeout=self.options.time)
         self.daemon_mon_action("thaw", wait=True)
-        data = self.node._daemon_status()
+        data = self.node._daemon_status(refresh=True)
         if self.placement_optimal(data):
             self.log.info("placement is already optimal")
             return

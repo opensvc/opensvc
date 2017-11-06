@@ -65,8 +65,8 @@ class Listener(shared.OsvcThread, Crypt):
                 self.sock.close()
                 sys.exit(0)
 
-    def status(self):
-        data = shared.OsvcThread.status(self)
+    def status(self, **kwargs):
+        data = shared.OsvcThread.status(self, **kwargs)
         data["stats"] = self.stats
         data["config"] = {
             "port": self.port,
@@ -179,7 +179,7 @@ class Listener(shared.OsvcThread, Crypt):
         data = {}
         with shared.THREADS_LOCK:
             for thr_id, thread in shared.THREADS.items():
-                data[thr_id] = thread.status()
+                data[thr_id] = thread.status(**kwargs)
         return data
 
     def action_daemon_shutdown(self, nodename, **kwargs):

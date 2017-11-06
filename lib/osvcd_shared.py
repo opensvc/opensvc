@@ -145,7 +145,7 @@ class OsvcThread(threading.Thread):
         """
         return self._stop_event.is_set()
 
-    def status(self):
+    def status(self, **kwargs):
         """
         Return the thread status data structure to embed in the 'daemon
         status' data.

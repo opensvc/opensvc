@@ -24,8 +24,8 @@ class Hb(shared.OsvcThread):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd."+self.id)
         self.peers = {}
 
-    def status(self):
-        data = shared.OsvcThread.status(self)
+    def status(self, **kwargs):
+        data = shared.OsvcThread.status(self, **kwargs)
         data.peers = {}
         for nodename in self.cluster_nodes:
             if nodename == rcEnv.nodename:

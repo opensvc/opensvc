@@ -19,8 +19,8 @@ class HbUcast(Hb, Crypt):
     DEFAULT_UCAST_PORT = 10000
     DEFAULT_UCAST_TIMEOUT = 15
 
-    def status(self):
-        data = Hb.status(self)
+    def status(self, **kwargs):
+        data = Hb.status(self, **kwargs)
         data.stats = Storage(self.stats)
         data.config = {
             "addr": self.peer_config[rcEnv.nodename].addr,
@@ -100,8 +100,8 @@ class HbUcastTx(HbUcast):
         except Exception as exc:
             self.log.exception(exc)
 
-    def status(self):
-        data = HbUcast.status(self)
+    def status(self, **kwargs):
+        data = HbUcast.status(self, **kwargs)
         data["config"] = {}
         return data
 

@@ -1762,8 +1762,10 @@ class Monitor(shared.OsvcThread, Crypt):
             data[svcname] = self.get_agg(svcname)
         return data
 
-    def status(self):
-        data = shared.OsvcThread.status(self)
+    def status(self, **kwargs):
+        if kwargs.get("refresh"):
+            self.update_hb_data()
+        data = shared.OsvcThread.status(self, **kwargs)
         with shared.CLUSTER_DATA_LOCK:
             data.nodes = dict(shared.CLUSTER_DATA)
         data["compat"] = self.compat

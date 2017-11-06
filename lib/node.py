@@ -3001,9 +3001,14 @@ class Node(Crypt):
     #
     # daemon actions
     #
-    def _daemon_status(self, silent=False):
+    def _daemon_status(self, silent=False, refresh=False):
         data = self.daemon_send(
-            {"action": "daemon_status"},
+            {
+                "action": "daemon_status",
+                "options": {
+                    "refresh": refresh,
+                },
+            },
             nodename=self.options.node,
             silent=silent,
         )

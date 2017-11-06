@@ -21,8 +21,8 @@ class HbMcast(Hb, Crypt):
     DEFAULT_MCAST_ADDR = "224.3.29.71"
     DEFAULT_MCAST_TIMEOUT = 15
 
-    def status(self):
-        data = Hb.status(self)
+    def status(self, **kwargs):
+        data = Hb.status(self, **kwargs)
         data.stats = Storage(self.stats)
         data.config = {
             "addr": self.addr,

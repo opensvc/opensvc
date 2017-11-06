@@ -28,8 +28,8 @@ class HbDisk(Hb, Crypt):
     MAX_SLOTS = METASIZE // mmap.PAGESIZE
     DEFAULT_DISK_TIMEOUT = 15
 
-    def status(self):
-        data = Hb.status(self)
+    def status(self, **kwargs):
+        data = Hb.status(self, **kwargs)
         data.stats = Storage(self.stats)
         data.config = {
             "dev": self.dev,
@@ -219,8 +219,8 @@ class HbDiskTx(HbDisk):
         except Exception as exc:
             self.log.exception(exc)
 
-    def status(self):
-        data = HbDisk.status(self)
+    def status(self, **kwargs):
+        data = HbDisk.status(self, **kwargs)
         data["config"] = {}
         return data
 
