@@ -414,8 +414,8 @@ class Listener(shared.OsvcThread, Crypt):
         cmd = [rcEnv.paths.svcmgr, "-s", svcname] + cmd
         self.log.info("execute service action requested by node %s: %s",
                       nodename, " ".join(cmd))
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
         if sync:
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
             out, err = proc.communicate()
             result = {
                 "status": 0,
@@ -426,6 +426,7 @@ class Listener(shared.OsvcThread, Crypt):
                 },
             }
         else:
+            proc = Popen(cmd, stdin=None, close_fds=True)
             self.push_proc(proc)
             result = {
                 "status": 0,
