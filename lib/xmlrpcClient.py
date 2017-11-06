@@ -340,6 +340,8 @@ class Collector(object):
         if len(pids) == 0:
             pids = set([os.getpid()])
 
+        duration = datetime.strptime(end, "%Y-%m-%d %H:%M:%S") - \
+                   datetime.strptime(begin, "%Y-%m-%d %H:%M:%S")
         args = [
             ['svcname',
              'action',
@@ -354,9 +356,9 @@ class Collector(object):
              str(action),
              str(rcEnv.nodename),
              ','.join(map(str, pids)),
-             str(begin),
-             str(end),
-             str(end-begin),
+             begin,
+             end,
+             str(duration.seconds),
              str(err),
              '1' if cron else '0']
         ]
