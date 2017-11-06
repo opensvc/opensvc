@@ -665,8 +665,6 @@ class Node(Crypt):
         """
         Stop the node class workers
         """
-        if lazy_initialized(self, "collector"):
-            self.collector.stop_worker()
         import gc
         import threading
         gc.collect()
@@ -3001,6 +2999,20 @@ class Node(Crypt):
     #
     # daemon actions
     #
+    def daemon_collector_xmlrpc(self, *args, **kwargs):
+        data = self.daemon_send(
+            {
+                "action": "collector_xmlrpc",
+                "options": {
+                    "args": args,
+                    "kwargs": kwargs,
+                },
+            },
+            nodename=self.options.node,
+            silent=True,
+        )
+        return data
+
     def _daemon_status(self, silent=False, refresh=False):
         data = self.daemon_send(
             {
@@ -3012,8 +3024,6 @@ class Node(Crypt):
             nodename=self.options.node,
             silent=silent,
         )
-        if data is None:
-            return
         return data
 
     def daemon_status(self):

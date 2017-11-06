@@ -70,6 +70,9 @@ COLLECTOR_TICKER = threading.Condition()
 SCHED_TICKER = threading.Condition()
 HB_TX_TICKER = threading.Condition()
 
+# a queue of xmlrpc calls to do, fed by the lsnr, purged by the collector thread
+COLLECTOR_XMLRPC_QUEUE = []
+
 def wake_heartbeat_tx():
     """
     Notify the heartbeat tx thread to do they periodic job immediatly

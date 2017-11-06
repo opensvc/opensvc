@@ -301,6 +301,15 @@ class Listener(shared.OsvcThread, Crypt):
         }
         return result
 
+    def action_collector_xmlrpc(self, nodename, **kwargs):
+        args = kwargs.get("args", [])
+        kwargs = kwargs.get("kwargs", {})
+        shared.COLLECTOR_XMLRPC_QUEUE.insert(0, (args, kwargs))
+        result = {
+            "status": 0,
+        }
+        return result
+
     def action_join(self, nodename, **kwargs):
         if nodename in self.cluster_nodes:
             new_nodes = self.cluster_nodes

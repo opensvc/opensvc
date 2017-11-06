@@ -62,8 +62,23 @@ class Collector(shared.OsvcThread, Crypt):
         self.reload_config()
         self.init_collector()
         self.run_collector()
+        self.unqueue_xmlrpc()
         with shared.COLLECTOR_TICKER:
             shared.COLLECTOR_TICKER.wait(self.interval)
+
+    def unqueue_xmlrpc(self):
+        while True:
+            try:
+                args, kwargs = shared.COLLECTOR_XMLRPC_QUEUE.pop()
+            except IndexError:
+                break
+            if len(args) == 0:
+                continue
+            try:
+                #self.log.info("call %s", args[0])
+                shared.NODE.collector.call(*args, **kwargs)
+            except Exception as exc:
+                self.log.exception(exc)
 
     def send_containerinfo(self, svcname):
         if svcname not in shared.SERVICES:

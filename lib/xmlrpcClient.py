@@ -1,6 +1,7 @@
 from __future__ import print_function
 import socket
 import sys
+import os
 socket.setdefaulttimeout(180)
 
 kwargs = {}
@@ -54,19 +55,6 @@ try:
 except Exception as e:
     pass
 
-try:
-    if sys.version_info[0] >= 3:
-        from multiprocessing import queue as Queue, Process
-    else:
-        from multiprocessing import Queue, Process
-    from Queue import Empty
-    if rcEnv.sysname == 'Windows':
-        from multiprocessing import set_executable
-        set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
-    mp = True
-except:
-    mp = False
-
 def do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
     tries = 5
     for i in range(tries):
@@ -102,27 +90,7 @@ def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
         _d = _e - _b
         log.exception("call %s error after %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
 
-def call_worker(q, node):
-    e = "foo"
-    o = Collector(worker=True, node=node)
-    o.init()
-    try:
-        while e is not None:
-            e = q.get()
-            if e is None:
-                break
-            fn, args, kwargs = e
-            do_call(fn, args, kwargs, o.log, o.proxy, mode="asynchronous")
-        o.log.info("shutdown")
-    except ex.excSignal:
-        o.log.info("interrupted on signal")
-
 class Collector(object):
-    def submit(self, fn, *args, **kwargs):
-        self.init_worker()
-        self.log.info("enqueue %s"%fn)
-        self.queue.put((fn, args, kwargs), block=True)
-
     def call(self, *args, **kwargs):
         fn = args[0]
         self.init(fn)
@@ -149,16 +117,13 @@ class Collector(object):
             return
         return do_call(fn, args, kwargs, self.log, self, mode="synchronous")
 
-    def __init__(self, worker=False, node=None):
+    def __init__(self, node=None):
         self.node = node
         self.proxy = None
         self.proxy_methods = []
         self.comp_proxy = None
         self.comp_proxy_methods = []
 
-        self._worker = worker
-        self.worker = None
-        self.queue = None
         self.comp_fns = ['comp_get_data_moduleset',
                          'comp_get_svc_data_moduleset',
                          'comp_get_data',
@@ -179,7 +144,7 @@ class Collector(object):
                          'comp_show_status',
                          'comp_log_actions']
         self.auth_node = True
-        self.log = logging.getLogger("xmlrpc%s"%('.worker' if worker else ''))
+        self.log = logging.getLogger("xmlrpc")
 
     def get_methods_dbopensvc(self):
         if rcEnv.dbopensvc is None:
@@ -259,66 +224,25 @@ class Collector(object):
         if "register_node" not in self.proxy_methods:
             self.auth_node = False
 
-    def stop_worker(self):
-        if self.queue is None:
-            self.log.debug("worker already stopped (queue is None)")
-            return
-        if self.worker is None:
-            self.log.debug("worker already stopped (worker is None)")
-            return
-        try:
-            if not self.worker.is_alive():
-                self.log.debug("worker already stopped (not alive)")
-                return
-        except AssertionError:
-            self.log.error("don't stop worker (not a child of this process)")
-            return
-
-        self.log.debug("give poison pill to worker")
-        self.queue.put(None)
-        self.worker.join()
-        self.queue = None
-        self.worker = None
-
-    def init_worker(self):
-        if self._worker:
-            return
-
-        if self.worker is not None:
-            return
-
-        try:
-            self.queue = Queue()
-        except Exception as e:
-            self.log.error("Queue not supported. disable async mode. %s" % str(e))
-            self.queue = None
-            return
-        self.worker = Process(target=call_worker, name="xmlrpc", args=(self.queue, self.node))
-        self.worker.start()
-        self.log.info("worker started")
-
-    def begin_action(self, svc, action, begin, sync=True):
+    def begin_action(self, svcname, action, version, begin, cron):
         args = [['svcname',
              'action',
              'hostname',
              'version',
              'begin',
              'cron'],
-            [str(svc.svcname),
+            [str(svcname),
              str(action),
              str(rcEnv.nodename),
-             str(svc.node.agent_version()),
+             str(version),
              str(begin),
-             '1' if svc.options.cron else '0']
+             '1' if cron else '0']
         ]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        if sync or not mp:
-            self.proxy.begin_action(*args)
-        else:
-            self.submit("begin_action", *args)
+        self.proxy.begin_action(*args)
 
-    def end_action(self, svc, action, begin, end, alogfile, sync=True):
+    def end_action(self, svcname, action, begin, end, cron, alogfile):
         err = 'ok'
         dateprev = None
         res = None
@@ -353,8 +277,8 @@ class Collector(object):
             """
             if res is not None and dateprev is not None:
                 res = res.lower()
-                res = res.replace(rcEnv.nodename+'.'+svc.svcname+'.','')
-                vals.append([svc.svcname,
+                res = res.replace(rcEnv.nodename+'.'+svcname+'.','')
+                vals.append([svcname,
                              res+' '+action,
                              rcEnv.nodename,
                              pid,
@@ -362,7 +286,7 @@ class Collector(object):
                              date,
                              msg,
                              res_err,
-                             '1' if svc.options.cron else '0'])
+                             '1' if cron else '0'])
 
             res_err = 'ok'
             (date, res, lvl, msg, pid) = line.split(';;')
@@ -391,8 +315,8 @@ class Collector(object):
         """
         if dateprev is not None:
             res = res.lower()
-            res = res.replace(rcEnv.nodename+'.'+svc.svcname+'.','')
-            vals.append([svc.svcname,
+            res = res.replace(rcEnv.nodename+'.'+svcname+'.','')
+            vals.append([svcname,
                          res+' '+action,
                          rcEnv.nodename,
                          pid,
@@ -400,16 +324,13 @@ class Collector(object):
                          date,
                          msg,
                          res_err,
-                         '1' if svc.options.cron else '0'])
+                         '1' if cron else '0'])
 
         if len(vals) > 0:
             args = [vars, vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            if sync or not mp:
-                self.proxy.res_action_batch(*args)
-            else:
-                self.submit("res_action_batch", *args)
+            self.proxy.res_action_batch(*args)
 
         """Complete the wrap-up database entry
         """
@@ -429,7 +350,7 @@ class Collector(object):
              'time',
              'status',
              'cron'],
-            [str(svc.svcname),
+            [str(svcname),
              str(action),
              str(rcEnv.nodename),
              ','.join(map(str, pids)),
@@ -437,39 +358,28 @@ class Collector(object):
              str(end),
              str(end-begin),
              str(err),
-             '1' if svc.options.cron else '0']
+             '1' if cron else '0']
         ]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        if sync or not mp:
-            self.proxy.end_action(*args)
-        else:
-            self.submit("end_action", *args)
+        self.proxy.end_action(*args)
+        os.unlink(alogfile)
 
-    def svcmon_update_combo(self, g_vars, g_vals, r_vars, r_vals, sync=True):
+    def svcmon_update_combo(self, g_vars, g_vals, r_vars, r_vals):
         if 'svcmon_update_combo' in self.proxy_methods:
             args = [g_vars, g_vals, r_vars, r_vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            if sync or not mp:
-                self.proxy.svcmon_update_combo(*args)
-            else:
-                self.submit("svcmon_update_combo", *args)
+            self.proxy.svcmon_update_combo(*args)
         else:
             args = [g_vars, g_vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            if sync or not mp:
-                self.proxy.svcmon_update(*args)
-            else:
-                self.submit("svcmon_update", *args)
+            self.proxy.svcmon_update(*args)
             args = [r_vars, r_vals]
             if self.auth_node:
                 args += [(rcEnv.uuid, rcEnv.nodename)]
-            if sync or not mp:
-                self.proxy.resmon_update(*args)
-            else:
-                self.submit("resmon_update", *args)
+            self.proxy.resmon_update(*args)
 
     def _push_resinfo(self, svc, sync=True):
         if 'update_resinfo' not in self.proxy_methods:

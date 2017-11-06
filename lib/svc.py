@@ -461,7 +461,6 @@ class Svc(Crypt):
         self.encapnodes = set()
         self.flex_primary = ""
         self.drp_flex_primary = ""
-        self.sync_dblogger = False
         self.create_pg = False
         self.disable_rollback = False
         self.presync_done = False
@@ -756,7 +755,6 @@ class Svc(Crypt):
         The service scheduler action entrypoint.
         """
         self.options.cron = True
-        self.sync_dblogger = True
         for action in self.sched.scheduler_actions:
             try:
                 self.action(action)
@@ -1008,13 +1006,9 @@ class Svc(Crypt):
         Send to the collector the service status after an action, and
         the action log.
         """
-        if self.options.cron:
-            self.sync_dblogger = True
-        self.node.collector.call(
-            'end_action', self, action, begin, end, actionlogfile,
-            sync=self.sync_dblogger
-        )
-        os.unlink(actionlogfile)
+        self.node.daemon_collector_xmlrpc('end_action', self.svcname, action,
+                                          begin, end, self.options.cron,
+                                          actionlogfile)
         try:
             logging.shutdown()
         except:
@@ -3694,15 +3688,12 @@ class Svc(Crypt):
         Finally, feed the log to the collector.
         """
         import tempfile
-        begin = datetime.datetime.now()
+        begin = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Provision a database entry to store action log later
-        if action in ('postsync', 'shutdown'):
-            # don't loose the action log on node shutdown
-            # no background dblogger for remotely triggered postsync
-            self.sync_dblogger = True
-        self.node.collector.call('begin_action', self, action, begin,
-                                 sync=self.sync_dblogger)
+        self.node.daemon_collector_xmlrpc("begin_action", self.svcname,
+                                          action, self.node.agent_version(),
+                                          begin, self.options.cron)
 
         # Per action logfile to push to database at the end of the action
         tmpfile = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.paths.pathtmp,
@@ -3723,7 +3714,7 @@ class Svc(Crypt):
         # Push result and logs to database
         actionlogfilehandler.close()
         self.log.removeHandler(actionlogfilehandler)
-        end = datetime.datetime.now()
+        end = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.dblogger(action, begin, end, actionlogfile)
         return err
 
