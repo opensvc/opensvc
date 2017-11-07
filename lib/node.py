@@ -3026,7 +3026,7 @@ class Node(Crypt):
         )
         return data
 
-    def daemon_status(self):
+    def daemon_status(self, svcnames=None):
         data = self._daemon_status()
         if data is None or data.get("status", 0) != 0:
             return
@@ -3067,6 +3067,8 @@ class Node(Crypt):
             out.append(line)
 
         def load_svc(svcname, data):
+            if svcname not in services:
+                return
             try:
                 topology = services[svcname].topology
             except KeyError:
@@ -3217,7 +3219,7 @@ class Node(Crypt):
             widths = [0] * len(data[0])
             _data = []
             for line in data:
-                _data.append(tuple(map(lambda x: x.encode("utf-8"), line)))
+                _data.append(tuple(map(lambda x: x.encode("utf-8") if x is not None else "".encode("utf-8"), line)))
             for line in _data:
                 for i, val in enumerate(line):
                     strlen = bare_len(val)
@@ -3297,6 +3299,8 @@ class Node(Crypt):
                 #if svcname not in data["monitor"]["nodes"][rcEnv.nodename]["services"]["status"]:
                 #    # no local instance
                 #    continue
+                if svcnames and svcname not in svcnames:
+                    continue
                 if svcname not in services:
                     services[svcname] = Storage({
                         "topology": _data.get("topology", ""),
@@ -3313,6 +3317,8 @@ class Node(Crypt):
                     "provisioned": _data.get("provisioned"),
                 }
         for svcname, _data in data["monitor"]["services"].items():
+            if svcnames and svcname not in svcnames:
+                continue
             if svcname not in services:
                 services[svcname] = Storage({
                     "avail": Status(),
