@@ -5051,6 +5051,8 @@ class Svc(Crypt):
         Execute a service action on a peer node.
         If sync is set, wait for the action result.
         """
+        if timeout is not None:
+            timeout = convert_duration(timeout)
         if nodename is None:
             nodename = self.options.node
         options = {
