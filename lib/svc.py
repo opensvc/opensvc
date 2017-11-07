@@ -1050,7 +1050,8 @@ class Svc(Crypt):
         Acquire the service action lock.
         """
         suffix = None
-        if action in ACTIONS_NO_LOCK or \
+        if (action not in ACTION_NO_ASYNC and self.options.node is not None and self.options.node != "") or \
+           action in ACTIONS_NO_LOCK or \
            action.startswith("collector") or \
            self.lockfd is not None:
             # explicitly blacklisted or
@@ -2100,7 +2101,7 @@ class Svc(Crypt):
             out, err, ret = container.rcmd(cmd)
         elif hasattr(container, "runmethod"):
             cmd = container.runmethod + cmd
-            out, err, ret = justcall(cmd)
+            out, err, ret = justcall(cmd, stdin=self.node.devnull)
         else:
             raise ex.excEncapUnjoignable("undefined rcmd/runmethod in "
                                          "resource %s"%container.rid)

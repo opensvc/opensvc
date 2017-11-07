@@ -133,6 +133,10 @@ class Node(Crypt):
         self.log = rcLogger.initLogger(rcEnv.nodename)
 
     @lazy
+    def devnull(self):
+        return os.open(os.devnull, os.O_RDWR)
+
+    @lazy
     def var_d(self):
         var_d = os.path.join(rcEnv.paths.pathvar, "node")
         if not os.path.exists(var_d):
@@ -665,6 +669,9 @@ class Node(Crypt):
         """
         Stop the node class workers
         """
+        if lazy_initialized(self, "devnull"):
+            os.close(self.devnull)
+
         import gc
         import threading
         gc.collect()

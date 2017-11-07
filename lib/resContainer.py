@@ -77,7 +77,8 @@ class Container(Res.Resource):
                                   self.name, 'pwd']
         else:
             cmd = self.runmethod + ['pwd']
-        out, err, ret = justcall(cmd)
+        import subprocess
+        out, err, ret = justcall(cmd, stdin=self.svc.node.devnull)
         if ret == 0:
             return True
         return False

@@ -215,7 +215,7 @@ class Container(resContainer.Container):
             return False
 
         cmd = self.runmethod + ['test', '-f', '/bin/systemctl']
-        out, err, ret = justcall(cmd)
+        out, err, ret = justcall(cmd, stdin=self.svc.node.devnull)
         if ret == 1:
             # not a systemd container. no more checking.
             self.log.debug("/bin/systemctl not found in container")
@@ -226,7 +226,7 @@ class Container(resContainer.Container):
         # and listening apps.
         # => wait for systemd default target to become active
         cmd = self.runmethod + ['systemctl', 'is-active', 'default.target']
-        out, err, ret = justcall(cmd)
+        out, err, ret = justcall(cmd, stdin=self.svc.node.devnull)
         if ret == 1:
             # if systemctl is-active fails, retry later
             self.log.debug("systemctl is-active failed")

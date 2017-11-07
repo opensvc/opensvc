@@ -294,12 +294,12 @@ def which(program):
 
     return
 
-def justcall(argv=['/bin/false']):
+def justcall(argv=['/bin/false'], stdin=None):
     """subprosses call argv, return (stdout,stderr,returncode)
     """
     if which(argv[0]) is None:
         return ("", "", 1)
-    process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
+    process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
     stdout, stderr = process.communicate(input=None)
     return bdecode(stdout), bdecode(stderr), process.returncode
 
