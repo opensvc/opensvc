@@ -417,7 +417,7 @@ class Crypt(object):
                     try:
                         return self.recv_message(sock, cluster_name=cluster_name, secret=secret)
                     except socket.timeout:
-                        if elapsed > timeout:
+                        if timeout > 0 and elapsed > timeout:
                             return {"status": 1, "err": "timeout"}
                         time.sleep(0.1)
                         elapsed += 0.1
