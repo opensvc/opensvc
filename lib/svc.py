@@ -1032,7 +1032,7 @@ class Svc(Crypt):
             raise ex.excError("service has already been asked to reach the "
                               "%s global state" % global_expect)
 
-        data = self.node._daemon_status()
+        data = self.node._daemon_status(refresh=True)
         if self.svcname not in data["monitor"]["services"]:
             return
         avail = data["monitor"]["services"][self.svcname]["avail"]
