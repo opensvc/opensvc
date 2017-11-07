@@ -455,6 +455,7 @@ def add_scsireserv(svc, resource, conf, section):
     kwargs['no_preempt_abort'] = pa
 
     r = sr.ScsiReserv(**kwargs)
+    add_triggers_and_requires(svc, r, conf, pr_rid)
     svc += r
 
 def add_triggers(svc, resource, conf, section):
