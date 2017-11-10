@@ -2870,7 +2870,7 @@ class Node(Crypt):
         try:
             import version
         except ImportError:
-            return "dev"
+            pass
 
         try:
             reload(version)
@@ -2891,6 +2891,20 @@ class Node(Crypt):
             return version.version
         except:
             pass
+        if which("git"):
+            cmd = ["git", "--git-dir", os.path.join(rcEnv.paths.pathsvc, ".git"),
+                   "describe", "--tags", "--abbrev=0"]
+            out, err, ret = justcall(cmd)
+            if ret != 0:
+                return "dev"
+            _version = out.strip()
+            cmd = ["git", "--git-dir", os.path.join(rcEnv.paths.pathsvc, ".git"),
+                   "describe", "--tags"]
+            out, err, ret = justcall(cmd)
+            if ret != 0:
+                return "dev"
+            _release = out.strip().split("-")[1]
+            return "-".join((_version, _release+"dev"))
 
         return "dev"
 
