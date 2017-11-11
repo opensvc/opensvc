@@ -149,11 +149,10 @@ class syncZfsSnap(resSync.Sync):
         return True
 
     def _sync_update(self, dataset):
-        if not self.can_update():
-            if not self.svc.options.cron:
-                self.log.info("skip update on instance not up")
-            return
-        self.create_snap(dataset)
+        if self.can_update():
+            self.create_snap(dataset)
+        elif not self.svc.options.cron:
+            self.log.info("skip snapshot creation on instance not up")
         self.remove_snap(dataset)
 
     def sync_update(self):
