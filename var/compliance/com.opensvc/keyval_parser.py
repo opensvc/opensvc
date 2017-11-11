@@ -135,7 +135,7 @@ class Parser(object):
     def parse(self, buff):
         section = None
 
-        for line in buff.split("\n"):
+        for line in buff.splitlines():
             line = line.strip()
 
             # store comment line and continue
@@ -157,6 +157,7 @@ class Parser(object):
 
             l = line.split()
             if len(l) < 2:
+                self.comments[self.lastkey].append(line)
                  continue
             key = l[0]
             value = line[len(key):].strip()
