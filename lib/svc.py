@@ -2187,7 +2187,7 @@ class Svc(Crypt):
         if container.guestos == 'windows':
             raise ex.excNotAvailable
 
-        if container.status(ignore_nostatus=True) == rcStatus.DOWN:
+        if container.status(ignore_nostatus=True, refresh=refresh) == rcStatus.DOWN:
             #
             #  passive node for the vservice => forge encap resource status
             #    - encap sync are n/a
