@@ -154,10 +154,10 @@ class SyncZfs(resSync.Sync):
 
     def zfs_send_incremental(self, node):
         if self.recursive:
-            send_cmd = [rcEnv.syspaths.zfs, "send", "-R", "-i",
+            send_cmd = [rcEnv.syspaths.zfs, "send", "-R", "-I",
                         self.src_snap_sent, self.src_snap_tosend]
         else:
-            send_cmd = [rcEnv.syspaths.zfs, "send", "-i",
+            send_cmd = [rcEnv.syspaths.zfs, "send", "-I",
                         self.src_snap_sent, self.src_snap_tosend]
 
         receive_cmd = [rcEnv.syspaths.zfs, "receive", "-dF", self.dst_pool]

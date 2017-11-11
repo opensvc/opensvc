@@ -141,7 +141,18 @@ class syncZfsSnap(resSync.Sync):
             return rcStatus.UP
         return rcStatus.WARN
 
+    def can_update(self):
+        s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
+        if not self.svc.options.force and \
+           s['avail'].status not in [rcStatus.UP, rcStatus.NA]:
+            return False
+        return True
+
     def _sync_update(self, dataset):
+        if not self.can_update():
+            if not self.svc.options.cron:
+                self.log.info("skip update on instance not up")
+            return
         self.create_snap(dataset)
         self.remove_snap(dataset)
 
