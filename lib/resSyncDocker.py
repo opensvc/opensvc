@@ -41,8 +41,7 @@ class SyncDocker(resSync.Sync):
 
     def get_images(self):
         for r in self.svc.get_resources("container.docker"):
-            image = r.run_image
-            image_id = self.svc.dockerlib.get_run_image_id(image)
+            image_id = self.svc.dockerlib.get_run_image_id(r)
             self.image_id_name[image_id] = r.run_image
             self.images.append(image_id)
 
