@@ -130,7 +130,7 @@ class syncZfsSnap(resSync.Sync):
         if last < limit:
             self.status_log("%s last snap is too old (%s)" % (dataset, last.strftime("%Y-%m-%d %H:%M:%S")))
 
-    def _status(self, verbose=False):
+    def sync_status(self, verbose=False):
         for dataset in self.dataset:
             if dataset.count("/") < 1:
                 self.status_log("misformatted dataset entry %s (expected <pool>/<ds>)" % dataset)
