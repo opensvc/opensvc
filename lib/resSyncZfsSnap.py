@@ -159,6 +159,10 @@ class syncZfsSnap(resSync.Sync):
         for dataset in self.dataset:
             self._sync_update(dataset)
 
+    def postsync(self):
+        for dataset in self.dataset:
+            self.remove_snap(dataset)
+
     def __str__(self):
         return "%s dataset=%s keep=%s" % (resSync.Sync.__str__(self), str(self.dataset), str(self.keep))
 

@@ -2949,6 +2949,7 @@ class Svc(Crypt):
         """
         if not self.can_sync(["sync"]):
             return
+        self.sync_update()
         self.presync()
         self.sub_set_action("sync.rsync", "sync_nodes")
         self.sub_set_action("sync.zfs", "sync_nodes")
@@ -2960,7 +2961,6 @@ class Svc(Crypt):
         self.sub_set_action("sync.btrfs", "sync_drp")
         self.sub_set_action("sync.docker", "sync_drp")
         self.sub_set_action("sync.dds", "sync_drp")
-        self.sync_update()
         self.remote_postsync()
 
     def service_status(self):
