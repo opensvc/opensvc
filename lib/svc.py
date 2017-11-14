@@ -597,6 +597,8 @@ class Svc(object):
             except ex.MonitorAction as exc:
                 self.svcunlock()
                 self.action("toc")
+            except ex.excContinueAction as exc:
+                self.log.debug(exc)
             except ex.excError as exc:
                 self.log.error(exc)
             except:
