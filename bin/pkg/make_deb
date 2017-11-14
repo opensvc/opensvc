@@ -47,13 +47,9 @@ Section: admin
 Priority: optional
 Architecture: all
 Depends: python, psmisc
-Pre-Depends: 
 Recommends: sg3-utils
-Suggests: 
 Installed-Size: 5000
 Maintainer: OpenSVC <support@opensvc.com>
-Conflicts: 
-Replaces: 
 Provides: opensvc
 Description: $SUMMARY
 EOF
