@@ -497,11 +497,6 @@ class Svc(object):
                     fname=self.svcname+os.sep+"last_comp_check",
                     schedule_option="comp_schedule"
                 ),
-                "push_service_status": SchedOpts(
-                    "DEFAULT",
-                    fname=self.svcname+os.sep+"last_push_service_status",
-                    schedule_option="status_schedule"
-                ),
             },
         )
 
@@ -610,23 +605,28 @@ class Svc(object):
         Add resource-dependent tasks to the scheduler.
         """
         if not self.encap:
+            self.sched.scheduler_actions["push_service_status"] = SchedOpts(
+                "DEFAULT",
+                fname=self.svcname+os.sep+"last_push_service_status",
+                schedule_option="status_schedule"
+            ),
             self.sched.scheduler_actions["push_config"] = SchedOpts(
                 "DEFAULT",
                 fname=self.svcname+os.sep+"last_push_config",
                 schedule_option="push_schedule"
             )
 
-        try:
-            monitor_schedule = conf_get_string_scope(self, self.config, 'DEFAULT', 'monitor_schedule')
-        except ex.OptNotFound:
-            monitor_schedule = None
+            try:
+                monitor_schedule = conf_get_string_scope(self, self.config, 'DEFAULT', 'monitor_schedule')
+            except ex.OptNotFound:
+                monitor_schedule = None
 
-        if (self.ha and "flex" not in self.clustertype) or monitor_schedule is not None:
-            self.sched.scheduler_actions["resource_monitor"] = SchedOpts(
-                "DEFAULT",
-                fname=self.svcname+os.sep+"last_resource_monitor",
-                schedule_option="monitor_schedule"
-            )
+            if (self.ha and "flex" not in self.clustertype) or monitor_schedule is not None:
+                self.sched.scheduler_actions["resource_monitor"] = SchedOpts(
+                    "DEFAULT",
+                    fname=self.svcname+os.sep+"last_resource_monitor",
+                    schedule_option="monitor_schedule"
+                )
 
         syncs = []
 
