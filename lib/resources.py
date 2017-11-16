@@ -434,16 +434,14 @@ class Resource(object):
             return rcStatus.NA
 
         if self.rstatus is not None and not refresh:
-            if not self.has_status_last():
-                self.write_status()
+            self.write_status()
             return self.rstatus
 
+        last_status = self.load_status_last()
 
         if refresh:
-            last_status = "undef"
             self.purge_status_last()
         else:
-            last_status = self.load_status_last()
             self.rstatus = last_status
 
         if self.rstatus is None or refresh:
@@ -505,13 +503,13 @@ class Resource(object):
             if exc.errno != 2:
                 # not EEXISTS
                 self.log.debug(exc)
-            return
+            return rcStatus.UNDEF
 
         try:
             status = rcStatus.Status(lines[0])
         except (IndexError, AttributeError, ValueError) as exc:
             self.log.debug(exc)
-            return
+            return rcStatus.UNDEF
 
         self.status_logs = []
         if len(lines) > 1:
