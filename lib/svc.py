@@ -609,7 +609,7 @@ class Svc(object):
                 "DEFAULT",
                 fname=self.svcname+os.sep+"last_push_service_status",
                 schedule_option="status_schedule"
-            ),
+            )
             self.sched.scheduler_actions["push_config"] = SchedOpts(
                 "DEFAULT",
                 fname=self.svcname+os.sep+"last_push_config",
