@@ -153,6 +153,8 @@ class SyncZfs(resSync.Sync):
             self.force_remove_snap(self.dst_snap_sent, node)
 
     def zfs_send_incremental(self, node):
+        if not self.snap_exists(self.src_snap_sent, node):
+            return self.zfs_send_initial(node)
         if self.recursive:
             send_cmd = [rcEnv.syspaths.zfs, "send", "-R", "-I",
                         self.src_snap_sent, self.src_snap_tosend]
