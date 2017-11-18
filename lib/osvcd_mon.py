@@ -1702,32 +1702,33 @@ class Monitor(shared.OsvcThread, Crypt):
         Merge the resource provisioned state from the peer with the most
         up-to-date change time.
         """
-        with shared.SERVICES_LOCK, shared.CLUSTER_DATA_LOCK:
-            for svc in shared.SERVICES.values():
-                changed = False
-                for resource in svc.shared_resources:
-                    try:
-                        local = Storage(shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"])
-                    except KeyError:
-                        local = Storage()
-                    for nodename in svc.peers:
-                        if nodename == rcEnv.nodename:
-                            continue
+        with shared.SERVICES_LOCK:
+            with shared.CLUSTER_DATA_LOCK:
+                for svc in shared.SERVICES.values():
+                    changed = False
+                    for resource in svc.shared_resources:
                         try:
-                            remote = Storage(shared.CLUSTER_DATA[nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"])
+                            local = Storage(shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"])
                         except KeyError:
-                            continue
-                        if remote is None or remote.state is None or remote.mtime is None:
-                            continue
-                        elif local.mtime is None or remote.mtime > local.mtime + 0.00001:
-                            self.log.info("switch %s.%s provisioned flag to %s (merged from %s)",
-                                          svc.svcname, resource.rid, str(remote.state), 
-                                          nodename)
-                            resource.write_is_provisioned_flag(remote.state, remote.mtime)
-                            shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"]["mtime"] = remote.mtime
-                            changed = True
-                if changed:
-                    svc.purge_status_data_dump()
+                            local = Storage()
+                        for nodename in svc.peers:
+                            if nodename == rcEnv.nodename:
+                                continue
+                            try:
+                                remote = Storage(shared.CLUSTER_DATA[nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"])
+                            except KeyError:
+                                continue
+                            if remote is None or remote.state is None or remote.mtime is None:
+                                continue
+                            elif local.mtime is None or remote.mtime > local.mtime + 0.00001:
+                                self.log.info("switch %s.%s provisioned flag to %s (merged from %s)",
+                                              svc.svcname, resource.rid, str(remote.state), 
+                                              nodename)
+                                resource.write_is_provisioned_flag(remote.state, remote.mtime)
+                                shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"]["mtime"] = remote.mtime
+                                changed = True
+                    if changed:
+                        svc.purge_status_data_dump()
 
     def service_provisioned(self, instance):
         return instance.get("provisioned")
