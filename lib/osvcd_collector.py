@@ -136,6 +136,9 @@ class Collector(shared.OsvcThread, Crypt):
 
         for nodename in data["nodes"]:
             for svcname in list(data["nodes"][nodename]["services"]["status"].keys()):
+                if svcname not in data["nodes"][nodename]["services"]["config"]:
+                    # deleted service instance
+                    continue
                 if data["nodes"][nodename]["services"]["status"][svcname].get("encap") is True:
                     continue
                 if nodename not in _data["nodes"]:

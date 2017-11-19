@@ -1286,6 +1286,10 @@ class Monitor(shared.OsvcThread, Crypt):
                 if svcname not in config:
                     self.log.info("purge deleted service %s", svcname)
                     del shared.SERVICES[svcname]
+                    try:
+                        del shared.SMON_DATA[svcname]
+                    except KeyError:
+                        pass
         return config
 
     def get_last_svc_status_mtime(self, svcname):
