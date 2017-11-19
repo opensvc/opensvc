@@ -220,12 +220,12 @@ def _xform_ld_data_for_tabular(d, include_header=True, prepend=None):
     d = flatten_list(d)
     l = []
     if include_header:
-        header = d[0].keys()
+        header = list(d[0].keys())
         if prepend:
             header.insert(0, prepend[0])
         l += [header]
     for e in d:
-        values = e.values()
+        values = list(e.values())
         if prepend:
             values.insert(0, prepend[1])
         l.append(values)
