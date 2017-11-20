@@ -1539,6 +1539,12 @@ class Monitor(shared.OsvcThread, Crypt):
         config = self.get_services_config()
         status = self.get_services_status(config.keys())
 
+        # purge deleted service instances
+        for svcname in status:
+            if svcname not in config:
+                self.log.info(config)
+                del status[svcname]
+
         try:
             with shared.CLUSTER_DATA_LOCK:
                 shared.CLUSTER_DATA[rcEnv.nodename] = {
