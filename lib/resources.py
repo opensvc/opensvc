@@ -444,7 +444,8 @@ class Resource(object):
         else:
             self.rstatus = last_status
 
-        if self.rstatus is None or refresh:
+        # now the rstatus can no longer be None
+        if self.rstatus == rcStatus.UNDEF or refresh:
             self.status_logs = []
             self.rstatus = self.try_status(verbose)
             self.rstatus = self.status_stdby(self.rstatus)
