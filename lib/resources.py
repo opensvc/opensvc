@@ -489,7 +489,7 @@ class Resource(object):
         else:
             self.rstatus = last_status
 
-        if self.rstatus is None or refresh:
+        if self.rstatus == rcStatus.UNDEF or refresh:
             self.status_logs = []
             self.rstatus = self.try_status(verbose)
             self.log.debug("refresh status: %s => %s",
