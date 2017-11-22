@@ -1418,6 +1418,7 @@ class Svc(Crypt):
                     # merge container overall status, so we propagate encap alerts
                     # up to instance and service level.
                     group_status["overall"] += rcStatus.Status(data["encap"][container.rid]["overall"] if "overall" in data["encap"][container.rid] else "n/a")
+                    group_status["avail"] += rcStatus.Status(data["encap"][container.rid]["avail"] if "avail" in data["encap"][container.rid] else "n/a")
                 except:
                     data["encap"][container.rid] = {"resources": {}}
                 if hasattr(container, "vm_hostname"):
