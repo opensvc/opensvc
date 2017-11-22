@@ -1046,6 +1046,8 @@ class Svc(object):
                     data['encap'][container.name] = {'resources': {}}
                 if hasattr(container, "vm_hostname"):
                     data['encap'][container.name]["hostname"] = container.vm_hostname
+                group_status["overall"] += rcStatus.Status(data["encap"][container.name]["overall"] if "overall" in data["encap"][container.name] else "n/a")
+                group_status["avail"] += rcStatus.Status(data["encap"][container.name]["avail"] if "avail" in data["encap"][container.name] else "n/a")
 
         for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
             for resource in rset.resources:
