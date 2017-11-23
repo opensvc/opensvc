@@ -130,11 +130,11 @@ class Ip(Res.Resource):
             else:
                 return rcStatus.DOWN
         except ex.excNotSupported:
-            self.status_log("not supported")
-            return rcStatus.UNDEF
+            self.status_log("not supported", "info")
+            return rcStatus.NA
         except ex.excError as exc:
-            self.status_log(str(exc))
-            return rcStatus.UNDEF
+            self.status_log(str(exc), "error")
+            return rcStatus.WARN
 
     def arp_announce(self):
         """

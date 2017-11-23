@@ -149,7 +149,7 @@ class syncNexenta(resSync.Sync):
         except:
             self.status_log("unexpected error")
             self.save_exc()
-            return rcStatus.UNDEF
+            return rcStatus.WARN
 
         limit = datetime.timedelta(minutes=self.sync_max_delay)
         if self.age > limit:

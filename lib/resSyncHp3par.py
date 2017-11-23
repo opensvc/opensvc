@@ -252,7 +252,7 @@ class syncHp3par(resSync.Sync):
             data = self.showrcopy()
         except ex.excError as e:
             self.status_log(str(e))
-            return rcStatus.UNDEF
+            return rcStatus.WARN
 
         elapsed = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.sync_max_delay)
         r = None

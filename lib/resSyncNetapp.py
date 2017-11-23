@@ -256,7 +256,7 @@ class syncNetapp(resSync.Sync):
             s = self.snapmirror_status(self.slave())
         except ex.excError as e:
             self.status_log(str(e))
-            return rcStatus.UNDEF
+            return rcStatus.WARN
         if s['state'] == "Snapmirrored":
             if "Transferring" in s['status']:
                 self.log.debug("snapmirror transfer in progress")
