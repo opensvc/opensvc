@@ -131,6 +131,7 @@ class syncZfsSnap(resSync.Sync):
             self.status_log("%s last snap is too old (%s)" % (dataset, last.strftime("%Y-%m-%d %H:%M:%S")))
 
     def sync_status(self, verbose=False):
+        self.remove_snaps()
         for dataset in self.dataset:
             if dataset.count("/") < 1:
                 self.status_log("misformatted dataset entry %s (expected <pool>/<ds>)" % dataset)
@@ -159,7 +160,7 @@ class syncZfsSnap(resSync.Sync):
         for dataset in self.dataset:
             self._sync_update(dataset)
 
-    def postsync(self):
+    def remove_snaps(self):
         for dataset in self.dataset:
             self.remove_snap(dataset)
 
