@@ -26,14 +26,25 @@ class Prov(provFs.Prov):
             self.r.log.error("zfs command not found")
             raise ex.excError
         ds = Dataset(self.r.device, log=self.r.log)
+        mkfs_opt = ["-p"]
+        try:
+            mkfs_opt += self.r.svc.conf_get(self.r.rid, "mkfs_opt")
+        except ex.OptNotFound as exc:
+            pass
+
+        if not any([True for e in mkfs_opt if e.startswith("mountpoint=")]):
+            mkfs_opt += ['-o', 'mountpoint='+self.r.mount_point]
+        if not any([True for e in mkfs_opt if e.startswith("canmount=")]):
+            mkfs_opt += ['-o', 'canmount=noauto']
+
         if ds.exists() is False:
-            ds.create(['-p', '-o', 'mountpoint='+self.r.mount_point, '-o', 'canmount=noauto'])
+            ds.create(mkfs_opt)
 
         nv_list = dict()
         try:
             size = self.r.svc.conf_get(self.r.rid, "size")
         except ex.OptNotFound as exc:
-            size = exc.default
+            return
         if size:
             nv_list['refquota'] = "%dM" % convert_size(size, _to="m")
         ds.verify_prop(nv_list)
