@@ -100,7 +100,7 @@ class Prov(provisioning.Prov):
             self.do_mkfs()
         elif hasattr(self, "mkfs"):
             try:
-                opts = self.r.svc.conf_get(self.r.rid, "mkfs_opt").split()
+                opts = self.r.svc.conf_get(self.r.rid, "mkfs_opt")
             except:
                 opts = []
             cmd = self.mkfs + opts + [self.mkfs_dev]

@@ -3550,6 +3550,7 @@ class KeywordFsMkfsOpt(Keyword):
                   self,
                   section="fs",
                   keyword="mkfs_opt",
+                  convert="shlex",
                   provisioning=True,
                   at=True,
                   order=13,
