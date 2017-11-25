@@ -132,6 +132,11 @@ class Prov(provisioning.Prov):
             return
         self.unprovisioner_fs()
         self.purge_mountpoint()
-        self.unprovision_dev()
+        if self.r.fs_type not in self.r.netfs:
+            try:
+                self.r.conf_get("vg", verbose=False)
+                self.unprovision_dev()
+            except ex.RequiredOptNotFound:
+                pass
 
 

@@ -5266,7 +5266,7 @@ class Svc(Crypt):
         return val
 
     def conf_get(self, s, o, t=None, scope=None, impersonate=None,
-                 use_default=True, config=None):
+                 use_default=True, config=None, verbose=True):
         """
         Handle keyword and section deprecation.
         """
@@ -5292,7 +5292,8 @@ class Svc(Crypt):
                                   section=section, rtype=rtype)
         except ex.RequiredOptNotFound:
             if deprecated_keyword is None:
-                self.log.error("%s.%s is mandatory" % (s, o))
+                if verbose:
+                    self.log.error("%s.%s is mandatory" % (s, o))
                 raise
         except ex.OptNotFound:
             if deprecated_keyword is None:
