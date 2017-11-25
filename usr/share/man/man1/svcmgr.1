@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2017\-10\-25
+.TH SVCMGR 1 2017\-11\-25
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -3283,6 +3283,15 @@ The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --local
 Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -9113,6 +9122,15 @@ The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --local
 Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
