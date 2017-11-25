@@ -484,7 +484,7 @@ class Monitor(shared.OsvcThread, Crypt):
     def service_orchestrator(self, svcname, svc):
         smon = self.get_service_monitor(svcname)
         if svc is None:
-            if smon:
+            if smon and svcname in shared.AGG:
                 # deleting service: unset global expect if done cluster-wide
                 status = shared.AGG[svcname].avail
                 self.set_smon_g_expect_from_status(svcname, smon, status)
