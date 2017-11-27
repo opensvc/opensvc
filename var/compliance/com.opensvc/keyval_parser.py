@@ -158,7 +158,7 @@ class Parser(object):
             l = line.split()
             if len(l) < 2:
                 self.comments[self.lastkey].append(line)
-                 continue
+                continue
             key = l[0]
             value = line[len(key):].strip()
 
