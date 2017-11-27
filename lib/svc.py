@@ -3966,8 +3966,14 @@ class Svc(Crypt):
         """
         try:
             print(self._get(self.options.param, self.options.eval))
+        except ex.OptNotFound as exc:
+            print(exc.default)
+        except ex.RequiredOptNotFound as exc:
+            return 1
         except ex.excError as exc:
             print(exc, file=sys.stderr)
+            return 1
+        except Exception:
             return 1
         return 0
 
@@ -3988,8 +3994,6 @@ class Svc(Crypt):
         section, option = elements
         if section != 'DEFAULT' and not self.config.has_section(section):
             raise ex.excError("section [%s] not found" % section)
-        if not self.config.has_option(section, option):
-            raise ex.excError("option '%s' not found in section [%s]" % (option, section))
         if evaluate:
             return self.conf_get(section, option, "string", scope=True)
         else:
