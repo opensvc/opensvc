@@ -60,6 +60,19 @@ ACTION_TGT_STATE = {
     "shutdown": "shutdown",
 }
 
+ACTION_PROGRESS = {
+    "abort": "aborting",
+    "start": "starting",
+    "stop": "stopping",
+    "freeze": "freezing",
+    "thaw": "thawing",
+    "provision": "provisioning",
+    "unprovision": "unprovisioning",
+    "delete": "deleting",
+    "purge": "purging",
+    "shutdown": "shutting",
+}
+
 DEFAULT_STATUS_GROUPS = [
     "ip",
     "disk",
@@ -2007,6 +2020,9 @@ class Svc(Crypt):
         """
         Call the resource monitor action.
         """
+        if self.frozen():
+            self.log.info("refuse to toc from a frozen service")
+            return
         self.do_pre_monitor_action()
         if self.monitor_action is None:
             return
@@ -3610,6 +3626,7 @@ class Svc(Crypt):
                 err = getattr(self.compliance, action)()
             elif hasattr(self, action):
                 self.running_action = action
+                self.notify_action(action)
                 err = call_action(action)
                 if err is None:
                     err = 0
@@ -3644,6 +3661,7 @@ class Svc(Crypt):
             self.save_exc()
         finally:
             self.running_action = None
+            self.clear_action(action, err)
 
         self.svcunlock()
 
@@ -3654,6 +3672,32 @@ class Svc(Crypt):
             self.join_cluster_action(**psinfo)
 
         return err
+
+    def notify_action(self, action):
+        progress = ACTION_PROGRESS.get(action)
+        if progress is None:
+            return
+        if action == "stop" and not self.command_is_scoped():
+            self.freeze()
+        try:
+            self.set_service_monitor(local_expect="unset", status=progress)
+            self.log.info("daemon notified of action '%s' begin" % action)
+        except Exception as exc:
+            self.log.warning("failed to notify action begin to the daemon: %s", str(exc))
+
+    def clear_action(self, action, err):
+        progress = ACTION_PROGRESS.get(action)
+        if progress is None:
+            return
+        if err:
+            status = action + " failed"
+        else:
+            status = "idle"
+        try:
+            self.set_service_monitor(status=status)
+            self.log.info("daemon notified of action '%s' end" % action)
+        except Exception as exc:
+            self.log.warning("failed to notify action end to the daemon: %s", str(exc))
 
     def rollback_handler(self, action):
         """
@@ -3797,19 +3841,19 @@ class Svc(Crypt):
         """
         Service move to best node.
         """
-        self.svcunlock()
-        self.clear()
-        self.node.async_action("thaw", wait=True, timeout=self.options.time)
-        self.daemon_mon_action("thaw", wait=True)
         data = self.node._daemon_status(refresh=True)
         if self.placement_optimal(data):
             self.log.info("placement is already optimal")
             return
+        self.svcunlock()
+        self.clear()
+        self.node.async_action("thaw", wait=True, timeout=self.options.time)
         for nodename, _data in data.get("monitor", {}).get("nodes", {}).items():
             __data = _data.get("services", {}).get("status", {}).get(self.svcname, {})
             if __data.get("monitor", {}).get("placement") != "leader" and \
                __data.get("avail") == "up":
                 self.daemon_service_action(["stop"], nodename=nodename)
+        self.daemon_mon_action("thaw", wait=True)
         if self.orchestrate == "no":
             self.daemon_mon_action("start")
 
