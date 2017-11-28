@@ -3673,8 +3673,14 @@ class Svc(Crypt):
 
         return err
 
-    def notify_action(self, action):
+    def action_progress(self, action):
         progress = ACTION_PROGRESS.get(action)
+        if action.startswith("sync"):
+            progress = "syncing"
+        return progress
+
+    def notify_action(self, action):
+        progress = self.action_progress(action)
         if progress is None:
             return
         if action == "stop" and not self.command_is_scoped():
@@ -3686,7 +3692,7 @@ class Svc(Crypt):
             self.log.warning("failed to notify action begin to the daemon: %s", str(exc))
 
     def clear_action(self, action, err):
-        progress = ACTION_PROGRESS.get(action)
+        progress = self.action_progress(action)
         if progress is None:
             return
         if err:
