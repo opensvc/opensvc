@@ -1059,6 +1059,19 @@ class Svc(Crypt):
             if avail in ("down", "stdby down"):
                 raise ex.excError("the service is already stopped.")
 
+    def started_on(self):
+        nodenames = []
+        data = self.get_smon_data()
+        if data is None:
+            return []
+        if "instances" not in data:
+            return []
+        for nodename, _data in data["instances"].items():
+            status = _data.get("local_expect")
+            if status == "started":
+                nodenames.append(nodename)
+        return nodenames
+
     def svclock(self, action=None, timeout=30, delay=1):
         """
         Acquire the service action lock.
@@ -3823,11 +3836,21 @@ class Svc(Crypt):
         * the destination node --to arg not set
         * the specified destination is the current node
         * the specified destination is not a service candidate node
+
+        If the destination node is not specified and the cluster has
+        only 2 nodes, consider the destination node is our peer.
+
+        Return the validated destination node name.
         """
         if self.topology != "failover":
             raise ex.excError("this service topology is not 'failover'")
         if destination_node is None:
             destination_node = self.options.destination_node
+        if destination_node is None and len(self.peers) == 2:
+            nodenames = self.started_on()
+            candidates = list(set(self.peers) - set(nodenames))
+            if len(candidates) == 1:
+                destination_node = candidates[0]
         if destination_node is None:
             raise ex.excError("a destination node must be provided this action")
         if destination_node == self.current_node():
@@ -3835,21 +3858,22 @@ class Svc(Crypt):
         if destination_node not in self.nodes:
             raise ex.excError("the destination node %s is not in the service "
                               "nodes list" % destination_node)
+        return destination_node
 
     @_master_action
     def migrate(self):
         """
         Service online migration.
         """
-        self.destination_node_sanity_checks()
+        dst = self.destination_node_sanity_checks()
         self.svcunlock()
         self._clear(nodename=rcEnv.nodename)
-        self._clear(nodename=self.options.destination_node)
+        self._clear(nodename=dst)
         self.daemon_mon_action("freeze", wait=True)
         src_node = self.current_node()
         self.daemon_service_action(["prstop"], nodename=src_node)
         try:
-            self.daemon_service_action(["startfs", "--master"], nodename=self.options.destination_node)
+            self.daemon_service_action(["startfs", "--master"], nodename=dst)
             self._migrate()
         except:
             if self.has_resourceset(['disk.scsireserv']):
@@ -3859,7 +3883,7 @@ class Svc(Crypt):
                                "depending on your problem analysis.")
             raise
         self.daemon_service_action(["stop"], nodename=src_node)
-        self.daemon_service_action(["prstart", "--master"], nodename=self.options.destination_node)
+        self.daemon_service_action(["prstart", "--master"], nodename=dst)
 
     def takeover(self):
         """
@@ -3897,12 +3921,12 @@ class Svc(Crypt):
         """
         Service move to another node.
         """
-        self.destination_node_sanity_checks()
+        dst = self.destination_node_sanity_checks()
         self.svcunlock()
         self._clear(nodename=rcEnv.nodename)
-        self._clear(nodename=self.options.destination_node)
+        self._clear(nodename=dst)
         self.daemon_mon_action("stop", wait=True)
-        self.daemon_service_action(["start"], nodename=self.options.destination_node, timeout=self.options.time)
+        self.daemon_service_action(["start"], nodename=dst, timeout=self.options.time)
         self.daemon_mon_action("thaw", wait=True)
 
     def collector_rest_get(self, *args, **kwargs):
