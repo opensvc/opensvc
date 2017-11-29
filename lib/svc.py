@@ -71,6 +71,7 @@ ACTION_PROGRESS = {
     "delete": "deleting",
     "purge": "purging",
     "shutdown": "shutting",
+    "toc": "tocing",
 }
 
 DEFAULT_STATUS_GROUPS = [
@@ -3600,6 +3601,12 @@ class Svc(Crypt):
                 ', '.join(TOPOLOGIES),
             ))
 
+        try:
+            self.validate_local_action(action)
+        except ex.excError as exc:
+            self.log.error(exc)
+            return 1
+
         err = 0
         waitlock = convert_duration(options.waitlock)
         if waitlock < 0:
@@ -3679,28 +3686,44 @@ class Svc(Crypt):
             progress = "syncing"
         return progress
 
+    def validate_local_action(self, action):
+        if action in ("clear", "abort"):
+            return
+        data = self.get_smon_data()
+        if data is not None and rcEnv.nodename in data["instances"]:
+            status = data["instances"][rcEnv.nodename].get("status", "unknown")
+            if action == "start" and status == "ready":
+                return
+            if status != "idle":
+                raise ex.excError("instance in %s state" % status)
+
     def notify_action(self, action):
         progress = self.action_progress(action)
         if progress is None:
             return
-        if action == "stop" and not self.command_is_scoped():
+        local_expect = None
+        if action in ("stop", "unprovision", "delete", "shutdown") and not self.command_is_scoped():
+            local_expect = "unset"
             self.freeze()
         try:
-            self.set_service_monitor(local_expect="unset", status=progress)
+            self.set_service_monitor(local_expect=local_expect, status=progress)
             self.log.info("daemon notified of action '%s' begin" % action)
         except Exception as exc:
             self.log.warning("failed to notify action begin to the daemon: %s", str(exc))
 
     def clear_action(self, action, err):
         progress = self.action_progress(action)
+        local_expect = None
         if progress is None:
             return
         if err:
             status = action + " failed"
         else:
             status = "idle"
+            if action == "start":
+                local_expect == "started"
         try:
-            self.set_service_monitor(status=status)
+            self.set_service_monitor(local_expect=local_expect, status=status)
             self.log.info("daemon notified of action '%s' end" % action)
         except Exception as exc:
             self.log.warning("failed to notify action end to the daemon: %s", str(exc))
