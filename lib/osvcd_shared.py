@@ -1,6 +1,7 @@
 """
 A module to share variables used by osvcd threads.
 """
+import os
 import sys
 import threading
 import datetime
@@ -443,9 +444,11 @@ class OsvcThread(threading.Thread):
         """
         A generic svcmgr command Popen wrapper.
         """
+        env = os.environ.copy()
+        env["OSVC_ACTION_ORIGIN"] = "daemon"
         cmd = [rcEnv.paths.svcmgr, '-s', svcname, "--local"] + cmd
         self.log.info("execute: %s", " ".join(cmd))
-        proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
+        proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True, env=env)
         return proc
 
     def add_cluster_node(self, nodename):

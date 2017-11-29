@@ -231,47 +231,93 @@ class Monitor(shared.OsvcThread, Crypt):
         proc = self.service_command(svcname, ["toc"])
         self.push_proc(
             proc=proc,
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "toc failed"},
         )
 
     def service_start(self, svcname):
+        self.set_smon(svcname, "starting")
         proc = self.service_command(svcname, ["start"])
         self.push_proc(
             proc=proc,
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle", "local_expect": "started"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "start failed"},
         )
 
     def service_stop(self, svcname):
+        self.set_smon(svcname, "stopping")
         proc = self.service_command(svcname, ["stop"])
         self.push_proc(
             proc=proc,
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle", "local_expect": "unset"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "stop failed"},
         )
 
     def service_shutdown(self, svcname):
+        self.set_smon(svcname, "shutdown")
         proc = self.service_command(svcname, ["shutdown"])
         self.push_proc(
             proc=proc,
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle", "local_expect": "unset"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "shutdown failed"},
         )
 
     def service_delete(self, svcname):
+        self.set_smon(svcname, "deleting", local_expect="unset")
         proc = self.service_command(svcname, ["delete"])
         self.push_proc(
             proc=proc,
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "delete failed"},
         )
 
     def service_purge(self, svcname):
+        self.set_smon(svcname, "unprovisioning")
         proc = self.service_command(svcname, ["unprovision"])
         self.push_proc(
             proc=proc,
             on_success="service_purge_on_success",
             on_success_args=[svcname],
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "purge failed"},
         )
 
     def service_purge_on_success(self, svcname):
+        self.set_smon(svcname, "deleting", local_expect="unset")
         proc = self.service_command(svcname, ["delete"])
         self.push_proc(
             proc=proc,
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "purge failed"},
         )
 
     def service_provision(self, svc):
+        self.set_smon(svc.svcname, "provisioning")
         candidates = self.placement_candidates(svc, discard_frozen=False,
                                                discard_unprovisioned=False,
                                                discard_constraints_violation=False)
@@ -281,24 +327,51 @@ class Monitor(shared.OsvcThread, Crypt):
         proc = self.service_command(svc.svcname, cmd)
         self.push_proc(
             proc=proc,
+            on_success="generic_callback",
+            on_success_args=[svc.svcname],
+            on_success_kwargs={"status": "idle"},
+            on_error="generic_callback",
+            on_error_args=[svc.svcname],
+            on_error_kwargs={"status": "provision failed"},
         )
 
     def service_unprovision(self, svcname):
+        self.set_smon(svcname, "unprovisioning", local_expect="unset")
         proc = self.service_command(svcname, ["unprovision"])
         self.push_proc(
             proc=proc,
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle", "local_expect": "unset"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "unprovision failed"},
         )
 
     def service_freeze(self, svcname):
+        self.set_smon(svcname, "freezing")
         proc = self.service_command(svcname, ["freeze"])
         self.push_proc(
             proc=proc,
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "idle"},
         )
 
     def service_thaw(self, svcname):
+        self.set_smon(svcname, "thawing")
         proc = self.service_command(svcname, ["thaw"])
         self.push_proc(
             proc=proc,
+            on_success="generic_callback",
+            on_success_args=[svcname],
+            on_success_kwargs={"status": "idle"},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "idle"},
         )
 
 

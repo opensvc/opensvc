@@ -3687,7 +3687,10 @@ class Svc(Crypt):
         return progress
 
     def validate_local_action(self, action):
-        if action in ("clear", "abort"):
+        if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
+            return
+        progress = self.action_progress(action)
+        if progress is None:
             return
         data = self.get_smon_data()
         if data is not None and rcEnv.nodename in data["instances"]:
@@ -3698,6 +3701,8 @@ class Svc(Crypt):
                 raise ex.excError("instance in %s state" % status)
 
     def notify_action(self, action):
+        if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
+            return
         progress = self.action_progress(action)
         if progress is None:
             return
@@ -3712,6 +3717,8 @@ class Svc(Crypt):
             self.log.warning("failed to notify action begin to the daemon: %s", str(exc))
 
     def clear_action(self, action, err):
+        if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
+            return
         progress = self.action_progress(action)
         local_expect = None
         if progress is None:
