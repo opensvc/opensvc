@@ -1196,15 +1196,17 @@ class Svc(object):
         except:
             pipe = sys.stdout
 
+        import codecs
         try:
             for _logfile in [logfile+".1", logfile]:
                 if not os.path.exists(_logfile):
                     continue
-                with open(_logfile, "r") as ofile:
+                with codecs.open(_logfile, "r", "utf8") as ofile:
                     for line in ofile.readlines():
                         buff = fmt(line)
                         if buff:
-                            pipe.write(buff+"\n")
+                            pipe.write(buff.encode("utf-8", errors="ignore"))
+                            pipe.write("\n")
         except BrokenPipeError:
             try:
                 sys.stdout = os.fdopen(1)
