@@ -350,7 +350,7 @@ class Cmd(object):
                 except:
                     print("error opening file %s" % fpath, file=sys.stderr)
                     raise
-                files["file"] = (os.path.realpath(fpath), fd) 
+                files["file"] = (os.path.realpath(fpath), fd)
             else:
                 data[key] = val
         return data, files, headers
@@ -443,20 +443,30 @@ class Cmd(object):
                 data = [d for d in data if fnmatch.fnmatch(d.get(filter_prop), shell_pattern)]
             for i, d in enumerate(data):
                 data[i]["path"] = re.sub("^"+req_path, relpath, d["path"])
-            
-            ls_data += map(lambda d: "API " + fmt % d, data)
+
+            for d in data:
+                line = "API "
+                for action in ("GET", "POST", "DELETE", "PUT"):
+                    if action in d["actions"]:
+                        line += action
+                    else:
+                        line += "."*len(action)
+                    line += " "
+                line += fmt %d
+                ls_data.append(line)
         return ls_data
 
     def get_handler_paths(self):
         data = self.cli.api_o.get()
-        all_handlers = []
-        all_paths = []
-        for l in data.values():
+        all_handlers = {}
+        for action, l in data.items():
             for h in l:
-                if h["path"] not in all_paths:
-                    all_handlers.append(h)
-                    all_paths.append(h["path"])
-        return sorted(all_handlers, key=lambda x: x["path"])
+                if h["path"] not in all_handlers:
+                    h["actions"] = [action]
+                    all_handlers[h["path"]] = h
+                else:
+                    all_handlers[h["path"]]["actions"].append(action)
+        return [all_handlers[p] for p in sorted(all_handlers.keys())]
 
     def is_glob(self, s):
         if len(set(s) & set("?*[")) > 0:
@@ -777,7 +787,7 @@ class CmdSafe(Cmd):
         files = {
           "file": (os.path.realpath(options.file), open(options.file, 'rb')),
         }
-        
+
         r = requests.post(self.cli.api+"/safe/upload", data=data, files=files, auth=self.cli.auth, verify=not self.cli.insecure)
         validate_response(r)
         self.print_content(r.content)
@@ -1595,7 +1605,7 @@ class CmdVariable(Cmd):
         variable = json.loads(bdecode(r.content))["data"][0]
         variable_class = str(variable["var_class"])
         variable_value = variable["var_value"]
-        
+
         # get form definition
         _path = "/forms"
         params = {
@@ -1630,7 +1640,7 @@ class CmdVariable(Cmd):
                 d[k] = v
         else:
             d = ""
-                
+
         if variable_data is not None:
             text_data = variable_data
         elif output_format == "raw":
@@ -2216,7 +2226,7 @@ def path_match_handler_or_parents(p, d):
     return False
 
 class Completer(object):
-    
+
     def __init__(self, commands):
         self.commands = commands
         self.current_candidates = []
@@ -2229,7 +2239,7 @@ class Completer(object):
         response = None
         if state == 0:
             # This is the first time for this text, so build a match list.
-            
+
             origline = readline.get_line_buffer()
             begin = readline.get_begidx()
             end = readline.get_endidx()
@@ -2241,7 +2251,7 @@ class Completer(object):
             #print('end=%s'% end)
             #print('being_completed=%s'% being_completed)
             #print('words=%s'% words)
-            
+
             self.current_candidates = sorted(self.base_commands)
             try:
                 if begin == 0:
@@ -2269,10 +2279,10 @@ class Completer(object):
                     self.current_candidates = candidates
 
                 #print('candidates=%s', self.current_candidates)
-                
+
             except (KeyError, IndexError) as err:
                 self.current_candidates = []
-    
+
         try:
             response = self.current_candidates[state]
         except IndexError:
@@ -2343,14 +2353,14 @@ class Cli(object):
 
         if self.insecure and InsecureRequestWarning is not None:
             requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-    
+
         self.host = self.api.replace("https://", "").replace("http://", "")
         if "/" in self.host:
             self.host = self.host[:self.host.index("/")]
-    
+
         if not self.api.endswith("/rest/api"):
             self.api = "https://" + self.host + "/init/rest/api"
-    
+
         if self.need_save:
             self.save_config()
 
@@ -2383,7 +2393,7 @@ class Cli(object):
             if s.st_mode & stat.S_IWOTH:
                 print("set ", self.options.config, "mode to 0600")
                 os.chmod(self.options.config, 0o0600)
-    
+
         try:
             self.conf = ConfigParser.RawConfigParser()
             self.conf.read(self.options.config)
@@ -2437,13 +2447,13 @@ class Cli(object):
         parser.add_option("--format", default="table",
                           action="store", dest="format",
                           help="format data as table, json, csv or yaml")
-    
+
         self.options, self.args = parser.parse_args()
 
         if len(self.args) > 1 and self.args[0] == "collector" and self.args[1] == "cli":
             self.args.pop(0)
             self.args.pop(0)
-        
+
     def dispatch_noninteractive(self):
         if len(self.args) > 0:
             # non interactive mode
