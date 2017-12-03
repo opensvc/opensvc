@@ -485,6 +485,12 @@ class Listener(shared.OsvcThread, Crypt):
             msg_size = 0
             conn.settimeout(1)
             loops = 0
+
+            if skip:
+                # drop first line (that is incomplete as the seek placed the
+                # cursor in the middle
+                line = ofile.readline()
+
             while True:
                 line = ofile.readline()
                 line_size = len(line)
