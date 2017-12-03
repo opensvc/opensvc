@@ -28,6 +28,13 @@ class Disk(resDisk.Disk):
         self.label = "md " + uuid
 
     @lazy
+    def mdadm_cf(self):
+        if os.path.exists("/etc/mdadm"):
+            return "/etc/mdadm/mdadm.conf"
+        else:
+            return "/etc/mdadm.conf"
+
+    @lazy
     def is_shared(self):
         if self.shared is not None:
             return self.shared
@@ -186,9 +193,34 @@ class Disk(resDisk.Disk):
             self.status_log(state)
         return False
 
+    def auto_assemble_disabled(self):
+        if not os.path.exists(self.mdadm_cf):
+            self.status_log("auto-assemble is not disabled")
+            return False
+        with open(self.mdadm_cf, "r") as ofile:
+            for line in ofile.readlines():
+                words = line.strip().split()
+                if len(words) < 2:
+                    continue
+                if words[0] == "AUTO" and "-all" in words:
+                    return True
+                if words[0] == "ARRAY" and words[1] == "<ignore>" and \
+                   "UUID="+self.uuid in words:
+                    return True
+        self.status_log("auto-assemble is not disabled")
+        return False
+
+    def auto_assemble_disable(self):
+        if self.auto_assemble_disabled():
+            return
+        self.log.info("disable auto-assemble in %s" % self.mdadm_cf)
+        with open(self.mdadm_cf, "a+") as ofile:
+            ofile.write("ARRAY <ignore> UUID=%s\n" % self.uuid)
+
     def _status(self, verbose=False):
         if self.uuid is None:
             return rcStatus.NA
+        self.auto_assemble_disabled()
         s = resDisk.Disk._status(self, verbose=verbose)
         if s == rcStatus.DOWN:
              self.down_state_alerts()
@@ -197,6 +229,7 @@ class Disk(resDisk.Disk):
     def do_start(self):
         if self.uuid is None:
             raise ex.excError("uuid is not set")
+        self.auto_assemble_disable()
         if self.is_up():
             self.log.info("md %s is already assembled" % self.uuid)
             return 0
@@ -207,6 +240,7 @@ class Disk(resDisk.Disk):
     def do_stop(self):
         if self.uuid is None:
             raise ex.excError("uuid is not set")
+        self.auto_assemble_disable()
         if not self.is_up():
             self.log.info("md %s is already down" % self.uuid)
             return
