@@ -210,7 +210,7 @@ class Module(object):
         for rset in self.ruleset.values():
             if rset["name"] != self.moduleset:
                 continue
-            if rset["filter"] != "explicit attachment via moduleset":
+            if "via moduleset" not in rset["filter"]:
                 continue
             for rule in sorted(rset['vars'], key=lambda x: x[0]):
                 var, val, var_class = self.context.parse_rule(rule)
