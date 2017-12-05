@@ -124,6 +124,9 @@ class Module(object):
             except locale.Error:
                 continue
 
+    def reset_env(self):
+        self.context.reset_env()
+
     def setup_env(self):
         os.environ.clear()
         os.environ.update(self.context.env_bkp)
@@ -191,6 +194,7 @@ class Module(object):
         self.setup_env()
         for var in sorted(os.environ):
             print(var, "=", os.environ[var], sep="")
+        self.reset_env()
         return 0
 
     def do_action(self, action):
@@ -231,6 +235,7 @@ class Module(object):
                     # stop at frist error in a 'fix' action
                     break
 
+        self.reset_env()
         return ret, log
 
     def get_obj(self, var_class):
@@ -314,6 +319,7 @@ class Module(object):
         fe.close()
         _fo.close()
         _fe.close()
+        self.reset_env()
         return p.returncode, log
 
     def print_bold(self, s):
