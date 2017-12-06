@@ -2412,6 +2412,8 @@ class Svc(Crypt):
         else:
             resources = [self.get_resource(rid) for rid in self.action_rid]
         for resource in resources:
+            if resource is None:
+                continue
             for cat in categories:
                 devs = sorted(list(getattr(resource, cat+"_devs")()))
                 if len(devs) == 0:
