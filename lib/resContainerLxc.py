@@ -87,8 +87,11 @@ class Lxc(resContainer.Container):
             self.log.error("unsupported lxc action: %s" % action)
             return 1
 
+        def prex():
+            os.umask(022)
+
         t = datetime.now()
-        (ret, out, err) = self.vcall(cmd)
+        ret, out, err = self.vcall(cmd, preexec_fn=prex)
         len = datetime.now() - t
         self.log.info('%s done in %s - ret %i - logs in %s' % (action, len, ret, outf))
         if ret != 0:
