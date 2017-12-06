@@ -232,9 +232,11 @@ def _main(node, argv=None):
         node.options.format = options.format
     except AttributeError:
         pass
+    if action != "ls" and options.svcs is None and options.status is None:
+        raise ex.excError("no service specified. set --service or --status.")
     if action != "create":
         expanded_svcs = node.svcs_selector(options.svcs)
-        if options.svcs is None and expanded_svcs == []:
+        if options.svcs in (None, "*") and expanded_svcs == []:
             return
         options.svcs = expanded_svcs
     else:
@@ -248,10 +250,12 @@ def _main(node, argv=None):
         try:
             node.build_services(**build_kwargs)
         except IOError as exc:
-            print(exc, file=sys.stderr)
+            if len(str(exc)) > 0:
+                print(exc, file=sys.stderr)
             build_err = True
         except ex.excError as exc:
-            print(exc, file=sys.stderr)
+            if len(str(exc)) > 0:
+                print(exc, file=sys.stderr)
             build_err = True
 
     if node.svcs is not None and len(node.svcs) > 0:
