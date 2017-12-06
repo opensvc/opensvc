@@ -232,7 +232,8 @@ def _main(node, argv=None):
         node.options.format = options.format
     except AttributeError:
         pass
-    if action != "ls" and options.svcs is None and options.status is None:
+    if os.environ.get("OSVC_SERVICE_LINK") is None and \
+       action != "ls" and options.svcs is None and options.status is None:
         raise ex.excError("no service specified. set --service or --status.")
     if action != "create":
         expanded_svcs = node.svcs_selector(options.svcs)
