@@ -617,7 +617,7 @@ def add_sync(svc, s):
     try:
         rtype = svc.conf_get(s, 'type')
     except ex.OptNotFound as exc:
-        rtype = "rsync"
+        rtype = exc.default
     globals()["add_sync_"+rtype](svc, s)
 
 def add_container(svc, s):

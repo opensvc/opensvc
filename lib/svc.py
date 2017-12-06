@@ -5389,8 +5389,12 @@ class Svc(Crypt):
                 rtype = self.config.get(s, "type")
                 fkey = ".".join((section, rtype, o))
             except Exception:
-                rtype = None
-                fkey = ".".join((section, o))
+                if section == "sync":
+                    rtype = "rsync"
+                    fkey = ".".join((section, rtype, o))
+                else:
+                    rtype = None
+                    fkey = ".".join((section, o))
 
         deprecated_keyword = svcdict.reverse_deprecated_keywords.get(fkey)
 
@@ -5519,7 +5523,7 @@ class Svc(Crypt):
             config = self.config
         if config.has_option(s, o):
             return config.get(s, o)
-        raise ex.OptNotFound("unscoped keyword %s.%s not found" % (s, o))
+        raise ex.OptNotFound("unscoped keyword %s.%s not found." % (s, o))
 
     def conf_has_option_scoped(self, s, o, impersonate=None, config=None, scope_order=None):
         """
@@ -5571,7 +5575,7 @@ class Svc(Crypt):
                                              config=config,
                                              scope_order=scope_order)
         if option is None and not use_default:
-            raise ex.OptNotFound("scoped keyword %s.%s not found" % (s, o))
+            raise ex.OptNotFound("scoped keyword %s.%s not found." % (s, o))
 
         if option is None and use_default:
             if s != "DEFAULT":
@@ -5581,7 +5585,7 @@ class Svc(Crypt):
                                                 config=config,
                                                 scope_order=scope_order)
             else:
-                raise ex.OptNotFound("scoped keyword %s.%s not found" % (s, o))
+                raise ex.OptNotFound("scoped keyword %s.%s not found." % (s, o))
 
         try:
             val = config.get(s, option)

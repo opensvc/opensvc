@@ -1055,6 +1055,7 @@ class KeywordContainerLxdLaunchOptions(Keyword):
                   provisioning=True,
                   convert="shlex",
                   default=[],
+                  default_text="",
                   text="The :cmd:``lxc launch <image> ... <name>`` options set on provision.",
                   example="-p default"
                 )
@@ -1540,6 +1541,7 @@ class KeywordParents(Keyword):
                   order=20,
                   at=True,
                   default=[],
+                  default_text="",
                   convert="list_lower",
                   text="List of services that must be 'avail up' before allowing this service to be started by the daemon monitor. Whitespace separated."
                 )
@@ -1553,6 +1555,7 @@ class KeywordChildren(Keyword):
                   order=20,
                   at=True,
                   default=[],
+                  default_text="",
                   convert="list_lower",
                   text="List of services that must be 'avail down' before allowing this service to be stopped by the daemon monitor. Whitespace separated."
                 )
@@ -1580,8 +1583,8 @@ class KeywordNodes(Keyword):
                   order=20,
                   at=True,
                   default=[rcEnv.nodename],
-                  convert="list_lower",
                   default_text="<hostname of the current node>",
+                  convert="list_lower",
                   text="List of cluster local nodes able to start the service.  Whitespace separated."
                 )
 
@@ -1607,6 +1610,7 @@ class KeywordDrpnodes(Keyword):
                   at=True,
                   convert="list_lower",
                   default=[],
+                  default_text="",
                   text="Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for 'sync' resources.",
                   example="node1 node2"
                 )
@@ -1620,6 +1624,7 @@ class KeywordEncapnodes(Keyword):
                   order=21,
                   convert="list_lower",
                   default=[],
+                  default_text="",
                   text="The list of containers handled by this service and with an OpenSVC agent installed to handle the encapsulated resources. With this parameter set, parameters can be scoped with the @encapnodes suffix.",
                   example="vm1 vm2"
                 )
@@ -2360,6 +2365,8 @@ class KeywordSyncRsyncTags(Keyword):
                   keyword="tags",
                   convert="set",
                   default=set(),
+                  default_text="",
+                  example="foo bar",
                   at=True,
                   rtype="rsync",
                   text="The sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the rsync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
@@ -2371,7 +2378,10 @@ class KeywordSyncRsyncOptions(Keyword):
                   self,
                   section="sync",
                   keyword="options",
-                  convert="list",
+                  convert="shlex",
+                  default=[],
+                  default_text="",
+                  example="--acls --xattrs --exclude foo/bar",
                   at=True,
                   rtype="rsync",
                   text="A whitespace-separated list of params passed unchanged to rsync. Typical usage is ACL preservation activation."
@@ -4352,6 +4362,7 @@ class KeyDict(KeywordStore):
                   generic=True,
                   convert="list",
                   default=[],
+                  default_text="",
                   candidates=['nodes', 'drpnodes'],
                   strict_candidates=False,
                   text="Possible values are 'nodes', 'drpnodes' or 'nodes drpnodes', or a list of nodes. Sets the nodes on which the resource is always kept up. Primary usage is file synchronization receiving on non-shared disks. Don't set this on shared disk !! danger !!"
