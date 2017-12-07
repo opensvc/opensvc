@@ -3028,6 +3028,23 @@ class Svc(Crypt):
                 if rid not in data:
                     data[rid] = []
                 data[rid].append(__data)
+        if not self.config.has_section("env"):
+            return data
+        for key in self.config.options("env"):
+            try:
+                val = self.conf_get("env", key)
+            except ex.OptNotFound as exc:
+                continue
+            if "env" not in data:
+                data["env"] = []
+            data["env"].append([
+                self.svcname,
+                rcEnv.nodename,
+                self.topology,
+                "env",
+                key,
+                val,
+            ])
         return data
 
     def print_resinfo(self):
