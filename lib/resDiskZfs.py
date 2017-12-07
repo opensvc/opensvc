@@ -23,11 +23,11 @@ class Disk(resDisk.Disk):
                               **kwargs)
         self.label = 'pool ' + name
 
-    def info(self):
+    def _info(self):
         data = [
           ["name", self.name],
         ]
-        return self.fmt_info(data)
+        return data
 
     @lazy
     def sub_devs_name(self):

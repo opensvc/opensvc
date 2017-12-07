@@ -24,10 +24,10 @@ class Disk(Res.Resource):
         else:
             self.label = "disk "+str(self.disk_id)
 
-    def info(self):
-        return self.fmt_info([
+    def _info(self):
+        return [
             ["disk_id", self.disk_id],
-        ])
+        ]
 
     def __str__(self):
         return "%s disk disk_id=%s" % (

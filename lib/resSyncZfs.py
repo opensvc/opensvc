@@ -35,7 +35,7 @@ class SyncZfs(resSync.Sync):
         (self.src_pool, self.src_ds) = a2pool_dataset(src)
         (self.dst_pool, self.dst_ds) = a2pool_dataset(dst)
 
-    def info(self):
+    def _info(self):
         data = [
           ["src", self.src],
           ["dst", self.dst],
@@ -43,7 +43,7 @@ class SyncZfs(resSync.Sync):
           ["target", " ".join(self.target) if self.target else ""],
           ["recursive", str(self.recursive).lower()],
         ]
-        return self.fmt_info(data)
+        return data
 
     def pre_action(self, action):
         """Prepare dataset snapshots

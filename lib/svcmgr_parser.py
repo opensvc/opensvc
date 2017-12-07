@@ -772,6 +772,13 @@ ACTIONS = {
         },
     },
     "Service configuration": {
+        "print_resinfo": {
+            "msg": "Display the service resource and env section key/val pairs "
+                   "pushed to the collector.",
+            "options": [
+                OPT.format,
+            ],
+        },
         "print_config": {
             "msg": "Display the service current configuration.",
             "options": [

@@ -164,14 +164,14 @@ class syncSymclone(resSync.Sync):
         if ret != 0:
             raise ex.excError(err)
 
-    def info(self):
+    def _info(self):
         data = [
           ["precopy", str(self.precopy)],
           ["pairs", str(self.pairs)],
           ["symid", str(self.symid)],
           ["consistent", str(self.consistent)],
         ]
-        return self.fmt_info(data)
+        return data
 
     def split_pair(self, pair):
         l = pair.split(":")

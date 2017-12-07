@@ -442,7 +442,7 @@ class Rsync(resSync.Sync):
         for resource in self.svc.get_resources():
             self.src += resource.files_to_sync()
 
-    def info(self):
+    def _info(self):
         self.add_resource_files_to_sync()
         data = [
           ["src", " ".join(self.src)],
@@ -454,7 +454,7 @@ class Rsync(resSync.Sync):
           ["target", " ".join(sorted(self.target))],
           ["options", " ".join(self.options)],
         ]
-        return self.fmt_info(data)
+        return data
 
     def __str__(self):
         return "%s src=%s dst=%s options=%s target=%s" % (resSync.Sync.__str__(self),\

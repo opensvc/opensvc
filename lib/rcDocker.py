@@ -423,7 +423,7 @@ class DockerLib(object):
             data[elements[2]] = elements[0]+':'+elements[1]
         return data
 
-    def info(self):
+    def _info(self):
         """
         Return the keys contributed to resinfo.
         """

@@ -383,49 +383,17 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.resmon_update(*args)
 
-    def _push_resinfo(self, svc, sync=True):
+    def push_resinfo(self, vals, sync=True):
         if 'update_resinfo' not in self.proxy_methods:
             return
-
         vars = ['res_svcname',
                 'res_nodename',
                 'topology',
                 'rid',
                 'res_key',
                 'res_value']
-        vals = []
-        for r in svc.get_resources():
-            l = [
-              ["driver", r.type],
-              ["standby", str(r.standby).lower()],
-              ["optional", str(r.optional).lower()],
-              ["disabled", str(r.disabled).lower()],
-              ["monitor", str(r.monitor).lower()],
-              ["shared", str(r.shared).lower()],
-              ["encap", str(r.encap).lower()],
-              ["restart", str(r.nb_restart)],
-            ]
-            if r.subset:
-                l.append(["subset", r.subset])
-            if len(r.tags) > 0:
-                l.append(["tags", " ".join(r.tags)])
-            vals += r.fmt_info(l)
-
-            if not hasattr(r, "info"):
-                continue
-            try:
-                vals += r.info()
-            except Exception as e:
-                print(e, file=sys.stderr)
         if len(vals) == 0:
             return
-
-        for val in vals:
-            try:
-                print("%-16s %-20s %s"%(val[3], val[4], val[5]))
-            except Exception as e:
-                print(e, val, file=sys.stderr)
-
         args = [vars, vals]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
@@ -1112,16 +1080,6 @@ class Collector(object):
         for svc in svcs:
             self.push_config(svc, sync=sync)
             self.push_containerinfo(svc, sync=sync)
-
-    def push_resinfo(self, svcs, sync=True):
-        args = [[svc.svcname for svc in svcs]]
-        if self.auth_node:
-            args += [(rcEnv.uuid, rcEnv.nodename)]
-        for svc in svcs:
-            try:
-                self._push_resinfo(svc, sync=sync)
-            except Exception as e:
-                print(e)
 
     def push_checks(self, vars, vals, sync=True):
         if "push_checks" not in self.proxy_methods:

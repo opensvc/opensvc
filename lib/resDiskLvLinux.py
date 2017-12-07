@@ -22,12 +22,12 @@ class Disk(resDisk.Disk):
         self.label = "lv %s" % self.fullname
         self.vg = vg
 
-    def info(self):
+    def _info(self):
         data = [
           ["name", self.name],
           ["vg", self.vg],
         ]
-        return self.fmt_info(data)
+        return data
 
     def has_it(self):
         attr = self.get_lv_attr()

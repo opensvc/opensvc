@@ -61,12 +61,12 @@ class ScsiReserv(Res.Resource):
         except Exception as e:
             raise ex.excError(str(e))
 
-    def info(self):
+    def _info(self):
         self.get_hostid()
         data = [
             ["prkey", self.hostid],
         ]
-        return self.fmt_info(data)
+        return data
 
     def scsireserv_supported(self):
         return False

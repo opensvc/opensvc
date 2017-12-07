@@ -55,7 +55,7 @@ class Task(Res.Resource):
     def __str__(self):
         return "%s command=%s user=%s" % (Res.Resource.__str__(self), self.command, str(self.user))
 
-    def info(self):
+    def _info(self):
         data = [
           ["command", self.command],
         ]
@@ -63,7 +63,7 @@ class Task(Res.Resource):
             data.append(["on_error", self.on_error])
         if self.user:
             data.append(["user", self.user])
-        return self.fmt_info(data)
+        return data
 
     def has_it(self):
         return False

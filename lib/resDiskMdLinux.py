@@ -53,11 +53,11 @@ class Disk(resDisk.Disk):
                            "configuration")
             return True
 
-    def info(self):
+    def _info(self):
         data = [
           ["uuid", self.uuid],
         ]
-        return self.fmt_info(data)
+        return data
 
     def md_config_file_name(self):
         return os.path.join(self.var_d, 'disks')

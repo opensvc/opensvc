@@ -899,6 +899,28 @@ class Resource(object):
         """
         return self.svc.conf_get(self.rid, o, **kwargs)
 
+    def info(self):
+        data = [
+          ["driver", self.type],
+          ["standby", str(self.standby).lower()],
+          ["optional", str(self.optional).lower()],
+          ["disabled", str(self.disabled).lower()],
+          ["monitor", str(self.monitor).lower()],
+          ["shared", str(self.shared).lower()],
+          ["encap", str(self.encap).lower()],
+          ["restart", str(self.nb_restart)],
+        ]
+        if self.subset:
+            data.append(["subset", self.subset])
+        if len(self.tags) > 0:
+            data.append(["tags", " ".join(self.tags)])
+        if hasattr(self, "_info"):
+            try:
+                data += self._info()
+            except Exception as e:
+                print(e, file=sys.stderr)
+        return self.fmt_info(data)
+
     ##########################################################################
     #
     # provisioning

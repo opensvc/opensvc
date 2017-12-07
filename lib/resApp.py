@@ -188,7 +188,7 @@ class App(Resource):
         ret = self.run("status", cmd, dedicated_log=False)
         return ret
 
-    def info(self):
+    def _info(self):
         """
         Contribute app resource standard and script-provided key/val pairs
         to the service's resinfo.
@@ -208,7 +208,7 @@ class App(Resource):
         try:
             cmd = self.get_cmd("info")
         except ex.excAbortAction:
-            return self.fmt_info(keyvals)
+            return keyvals
 
         buff = self.run('info', cmd, dedicated_log=False, return_out=True)
         if not is_string(buff) or len(buff) == 0:
@@ -222,7 +222,7 @@ class App(Resource):
                 keyvals.append(["Error", "parsing: %s" % line])
                 continue
             keyvals.append([elements[0].strip(), ":".join(elements[1:]).strip()])
-        return self.fmt_info(keyvals)
+        return keyvals
 
     def get_cmd(self, action, script_arg=None):
         key = action + "_seq"

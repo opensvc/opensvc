@@ -61,7 +61,7 @@ class Disk(resDisk.Disk):
         # os specific plug
         return True
 
-    def info(self):
+    def _info(self):
         self.validate_devs()
         data = []
         if self.create_char_devices:
@@ -77,7 +77,7 @@ class Disk(resDisk.Disk):
                 data += [["dev", dev+":"+self.devs_map[dev]]]
             else:
                 data += [["dev", dev]]
-        return self.fmt_info(data)
+        return data
 
     def subst_container_root(self, path):
         m = re.match("<(\w+)>", path)

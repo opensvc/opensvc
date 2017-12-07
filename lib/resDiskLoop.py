@@ -11,8 +11,8 @@ class Disk(Res.Resource):
         self.loopFile = loopFile
         self.label = "loop "+loopFile
 
-    def info(self):
-        return self.fmt_info([["file", self.loopFile]])
+    def _info(self):
+        return [["file", self.loopFile]]
 
     def __str__(self):
         return "%s loopfile=%s" % (Res.Resource.__str__(self),\

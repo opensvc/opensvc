@@ -2395,8 +2395,13 @@ class Node(Crypt):
                     if need_aggregate:
                         if ret is not None:
                             data.outs[svc.svcname] = ret
+                    elif action.startswith("print_"):
+                        self.print_data(ret)
+                        ret = 0
                     else:
                         if ret is None:
+                            ret = 0
+                        elif isinstance(ret, list):
                             ret = 0
                         elif isinstance(ret, dict):
                             if "error" in ret:

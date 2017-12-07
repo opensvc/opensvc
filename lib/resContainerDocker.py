@@ -347,12 +347,12 @@ class Docker(resContainer.Container):
         resContainer.Container.stop(self)
         self.svc.dockerlib.get_running_instance_ids(refresh=True)
 
-    def info(self):
+    def _info(self):
         """
         Return keys to contribute to resinfo.
         """
-        data = self.svc.dockerlib.info()
-        return self.fmt_info(data)
+        data = self.svc.dockerlib._info()
+        return data
 
     def wanted_nodes_count(self):
         if rcEnv.nodename in self.svc.nodes:

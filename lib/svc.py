@@ -123,6 +123,7 @@ ACTIONS_NO_STATUS_CHANGE = [
     "print_base_devs",
     "print_config_mtime",
     "print_resource_status",
+    "print_resinfo",
     "print_schedule",
     "print_status",
     "push_resinfo",
@@ -3010,12 +3011,69 @@ class Svc(Crypt):
             return
         self.print_status_data(mon_data=False, refresh=True)
 
+    def resinfo(self):
+        """
+        Return a list of (key, val) for each service resource and
+        env section.
+        """
+        data = {}
+        for res in self.get_resources():
+            try:
+                _data = res.info()
+            except Exception as exc:
+                _data = []
+                print(exc, file=sys.stderr)
+            for __data in _data:
+                rid = __data[-3]
+                if rid not in data:
+                    data[rid] = []
+                data[rid].append(__data)
+        return data
+
+    def print_resinfo(self):
+        if self.options.format is None:
+            self.print_resinfo_tree()
+            return
+        data = [[
+            'res_svcname',
+            'res_nodename',
+            'topology',
+            'rid',
+            'res_key',
+            'res_value',
+        ]]
+        for _data in self.resinfo().values():
+            data += _data
+        return data
+
+    def print_resinfo_tree(self):
+        from forest import Forest
+        from rcColor import color
+        tree = Forest()
+        node1 = tree.add_node()
+        node1.add_column(self.svcname, color.BOLD)
+        data = self.resinfo()
+        for rid in sorted(data.keys()):
+            _data = data[rid]
+            node = node1.add_node()
+            text = "%s" % rid
+            node.add_column(text, color.BROWN)
+            for __data in _data:
+                catnode = node.add_node()
+                text = "%s: %s" % (__data[-2], __data[-1])
+                catnode.add_column(text, color.LIGHTBLUE)
+        print(tree)
+
     def push_resinfo(self):
         """
         The 'push_resinfo' scheduler task and action entrypoint.
         Push the per-resource key/value pairs to the collector.
         """
-        self.node.collector.call('push_resinfo', [self])
+        data = []
+        for _data in self.resinfo().values():
+            data += _data
+        self.node.collector.call('push_resinfo', data)
+        return data
 
     def push_encap_config(self):
         """

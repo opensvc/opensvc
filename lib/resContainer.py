@@ -38,7 +38,7 @@ class Container(Res.Resource):
             self.runmethod = rcEnv.rsh.split() + [name]
         self.booted = False
 
-    def info(self):
+    def _info(self):
         """
         Contribute resource key/val pairs to the service's resinfo.
         """
@@ -46,7 +46,7 @@ class Container(Res.Resource):
             ["name", self.name],
             ["guestos", self.guestos],
         ]
-        return self.fmt_info(data)
+        return data
 
     @lazy
     def vm_hostname(self):

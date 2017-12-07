@@ -20,11 +20,11 @@ class Disk(resDisk.Disk):
         self.label = "vg "+name
         self.tag = rcEnv.nodename
 
-    def info(self):
+    def _info(self):
         data = [
           ["name", self.name],
         ]
-        return self.fmt_info(data)
+        return data
 
     def is_child_dev(self, device):
         l = device.split("/")

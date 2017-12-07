@@ -43,7 +43,7 @@ class Ip(Res.Resource):
         """
         self.label = str(self.ipname) + '@' + self.ipdev
 
-    def info(self):
+    def _info(self):
         """
         Contribute resource key/val pairs to the service's resinfo.
         """
@@ -61,7 +61,7 @@ class Ip(Res.Resource):
             ["mask", str(to_cidr(self.mask))],
             ["gateway", str(self.gateway)],
         ]
-        return self.fmt_info(data)
+        return data
 
     def getaddr(self, cache_fallback=False):
         """

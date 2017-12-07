@@ -31,7 +31,7 @@ class syncZfsSnap(resSync.Sync):
         self.name = name
         self.zfs = {}
 
-    def info(self):
+    def _info(self):
         data = [
           ["dataset", " ".join(self.dataset)],
           ["name", self.name if self.name else ""],
@@ -40,7 +40,7 @@ class syncZfsSnap(resSync.Sync):
           ["sync_max_delay", str(self.sync_max_delay) if self.sync_max_delay else ""],
           ["schedule", self.schedule if self.schedule else ""],
         ]
-        return self.fmt_info(data)
+        return data
 
     def on_add(self):
         pass
