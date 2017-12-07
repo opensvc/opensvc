@@ -3077,8 +3077,8 @@ class Svc(Crypt):
             node.add_column(text, color.BROWN)
             for __data in _data:
                 catnode = node.add_node()
-                text = "%s: %s" % (__data[-2], __data[-1])
-                catnode.add_column(text, color.LIGHTBLUE)
+                catnode.add_column(__data[-2], color.LIGHTBLUE)
+                catnode.add_column(__data[-1])
         print(tree)
 
     def push_resinfo(self):
