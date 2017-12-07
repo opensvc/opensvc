@@ -10,11 +10,17 @@ import optparse
 import shlex
 import re
 import copy
+
+# issue19884 workaround (spurious heading '\033[1034h')
+TERM = os.environ("TERM")
+del os.environ["TERM"]
+import readline
+os.environ["TERM"] = TERM
+
 try:
     import ConfigParser
 except ImportError:
     import configparser as ConfigParser
-import readline
 import atexit
 import fnmatch
 import rcExceptions as ex
