@@ -17,7 +17,7 @@ import rcStatus
 import rcColor
 from svcmgr_parser import SvcmgrOptParser
 import rcExceptions as ex
-from rcUtilities import ximport
+from rcUtilities import ximport, check_privs
 from rcGlobalEnv import Storage
 
 def get_docker_argv(argv=None):
@@ -308,7 +308,7 @@ def main(argv=None):
         return 1
     except IOError as exc:
         if exc.errno == errno.EACCES:
-            print(exc, file=sys.stderr)
+            check_privs()
             return 1
         else:
             raise

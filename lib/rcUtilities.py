@@ -253,11 +253,18 @@ def ximport(base):
 def check_privs():
     if os.name == 'nt':
         return
-    if os.getuid() != 0:
-        import copy
-        l = copy.copy(sys.argv)
-        l[0] = os.path.basename(l[0]).replace(".py", "")
-        print('Insufficient privileges. Try:\n sudo ' + ' '.join(l))
+    if os.geteuid() == 0:
+        return
+    import copy
+    l = copy.copy(sys.argv)
+    l[0] = os.path.basename(l[0]).replace(".py", "")
+    env = rcEnv.initial_env
+    if which("sudo"):
+        os.execvpe("sudo", ["sudo"] + l, env=env)
+    elif which("pfexec"):
+        os.execvpe("sudo", ["pfexec"] + l, env=env)
+    else:
+        print("Insufficient privileges")
         sys.exit(1)
 
 def banner(text, ch='=', length=78):
