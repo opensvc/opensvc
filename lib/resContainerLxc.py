@@ -88,7 +88,7 @@ class Lxc(resContainer.Container):
             return 1
 
         def prex():
-            os.umask(022)
+            os.umask(0o022)
 
         t = datetime.now()
         ret, out, err = self.vcall(cmd, preexec_fn=prex)
