@@ -2,6 +2,7 @@ import os
 import pwd
 import sys
 import resources as Res
+import lock
 import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
@@ -107,7 +108,7 @@ class Task(Res.Resource):
 
     def run(self):
         try:
-            with cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=0):
+            with lock.cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=0):
                 self._run()
         except Exception:
             raise ex.excError("task is already running (maybe too long for the schedule)")
