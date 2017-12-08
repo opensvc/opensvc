@@ -300,6 +300,7 @@ STATUS_TYPES = [
     "fs.dir",
     "ip",
     "ip.docker",
+    "ip.cni",
     "share.nfs",
     "sync.btrfs",
     "sync.btrfssnap",

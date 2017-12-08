@@ -294,6 +294,12 @@ def add_ip(svc, s):
         except ex.OptNotFound as exc:
             kwargs['del_net_route'] = exc.default
 
+    if rtype == "cni":
+        try:
+            kwargs['network'] = svc.conf_get(s, 'network')
+        except ex.OptNotFound as exc:
+            kwargs['network'] = exc.default
+
     if rtype == "crossbow":
         try:
             kwargs['ipdevExt'] = svc.conf_get(s, 'ipdevext')
@@ -308,6 +314,8 @@ def add_ip(svc, s):
         ip = __import__('resIpZone')
     elif rtype == "docker":
         ip = __import__('resIpDocker'+rcEnv.sysname)
+    elif rtype == "cni":
+        ip = __import__('resIpCni')
     else:
         ip = __import__('resIp'+rcEnv.sysname)
 

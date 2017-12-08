@@ -2531,7 +2531,35 @@ class KeywordIpDockerContainerRid(Keyword):
                   order=12,
                   at=True,
                   required=True,
-                  text="The docker container resource id to plumb the ip into.",
+                  text="The resource id of the container to plumb the ip into.",
+                  example="container#0"
+                )
+
+class KeywordIpCniNetwork(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="cni",
+                  keyword="network",
+                  order=12,
+                  at=True,
+                  required=True,
+                  text="The name of the CNI network to plug into.",
+                  example="container#0"
+                )
+
+class KeywordIpCniContainerRid(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="cni",
+                  keyword="container_rid",
+                  order=12,
+                  at=True,
+                  required=False,
+                  text="The resource id of the container to plug into the CNI network.",
                   example="container#0"
                 )
 
@@ -2736,7 +2764,7 @@ class KeywordIpType(Keyword):
                   section="ip",
                   keyword="type",
                   at=True,
-                  candidates=[None, 'crossbow', 'amazon', 'docker', 'gce'],
+                  candidates=[None, 'crossbow', 'amazon', 'docker', 'gce', 'cni'],
                   text="The opensvc ip driver name.",
                   order=10,
                   example="crossbow",
@@ -5005,6 +5033,8 @@ class KeyDict(KeywordStore):
         self += KeywordIpDnsNameSuffix()
         self += KeywordIpNetwork()
         self += KeywordIpZone()
+        self += KeywordIpCniNetwork()
+        self += KeywordIpCniContainerRid()
         self += KeywordIpDockerContainerRid()
         self += KeywordIpAmazonEip()
         self += KeywordIpAmazonCascadeAllocation()
