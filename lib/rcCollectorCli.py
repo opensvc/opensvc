@@ -12,10 +12,11 @@ import re
 import copy
 
 # issue19884 workaround (spurious heading '\033[1034h')
-TERM = os.environ("TERM")
-del os.environ["TERM"]
-import readline
-os.environ["TERM"] = TERM
+TERM = os.environ.get("TERM")
+if TERM:
+    del os.environ["TERM"]
+    import readline
+    os.environ["TERM"] = TERM
 
 try:
     import ConfigParser
