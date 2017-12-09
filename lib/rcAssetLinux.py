@@ -415,6 +415,16 @@ class Asset(rcAsset.Asset):
                 return l[l.index(":")+1:].strip()
         return 'Unknown'
 
+    def _get_manufacturer(self):
+        if self.container:
+            return ""
+        elif self.xenguest and len(self.dmidecode) < 5:
+            return ""
+        out, err, ret = justcall(["dmidecode", "-s", "system-manufacturer"])
+        if ret != 0:
+            return ""
+        return out.strip()
+
     def _get_model(self):
         if self.container:
             return 'container'
