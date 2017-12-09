@@ -412,7 +412,7 @@ class Asset(rcAsset.Asset):
             return 'n/a'
         for l in self.dmidecode:
             if 'Enclosure Name:' in l:
-                return l.split(':')[-1].strip()
+                return l[l.index(":")+1:].strip()
         return 'Unknown'
 
     def _get_model(self):
@@ -422,7 +422,7 @@ class Asset(rcAsset.Asset):
             return "Xen Virtual Machine (PVM)"
         for l in self.dmidecode:
             if 'Product Name:' in l:
-                return l.split(':')[-1].strip()
+                return l[l.index(":")+1:].strip()
         return 'Unknown'
 
     def get_iscsi_hba_id(self):
