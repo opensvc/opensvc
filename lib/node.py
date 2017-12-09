@@ -1025,7 +1025,7 @@ class Node(Crypt):
         head_node.add_column("Source", color.BOLD)
         for key, _data in data.items():
             node = head_node.add_node()
-            if key not in ("targets", "lan", "uids", "gids", "hba"):
+            if key not in ("targets", "lan", "uids", "gids", "hba", "hardware"):
                 if _data["value"] is None:
                     _data["value"] = ""
                 node.add_column(_data["title"], color.LIGHTBLUE)
@@ -1046,6 +1046,16 @@ class Node(Crypt):
             node.add_column("gids", color.LIGHTBLUE)
             node.add_column(str(len(data['gids'])))
             node.add_column(self.asset.s_probe)
+
+        if 'hardware' in data:
+            node = head_node.add_node()
+            node.add_column("hardware", color.LIGHTBLUE)
+            node.add_column(str(len(data['hardware'])))
+            node.add_column(self.asset.s_probe)
+            for _data in data['hardware']:
+                _node = node.add_node()
+                _node.add_column("%s %s" % (_data["type"], _data["path"]))
+                _node.add_column("%s: %s [%s]" % (_data["class"], _data["description"], _data["driver"]))
 
         if 'hba' in data:
             node = head_node.add_node()

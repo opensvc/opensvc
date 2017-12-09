@@ -591,6 +591,13 @@ class Asset(object):
             s = []
         return s
 
+    def get_hardware(self):
+        try:
+            s = self._get_hardware()
+        except:
+            s = []
+        return s
+
     def get_uids(self):
         return self.get_ids("/etc/passwd", ("username", "uid"))
 
@@ -790,6 +797,9 @@ class Asset(object):
         team_support = self.get_team_support()
         if team_support is not None:
             self.data['team_support'] = team_support
+        hardware = self.get_hardware()
+        if hardware is not None:
+            self.data['hardware'] = hardware
         hba = self.get_hba()
         if hba is not None:
             self.data['hba'] = hba

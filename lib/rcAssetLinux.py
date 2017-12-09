@@ -1,4 +1,5 @@
 import os
+import re
 import datetime
 from rcUtilities import justcall, which, bdecode
 import rcAsset
@@ -540,6 +541,104 @@ class Asset(rcAsset.Asset):
                 pass
 
         return [{"hba_id": e[0], "tgt_id": e[1]} for e in l]
+
+    def get_hardware(self):
+        devs = []
+        devs += self.get_hardware_mem()
+        devs += self.get_hardware_pci()
+        return devs
+
+    def get_hardware_mem(self):
+        out, err, ret = justcall(["dmidecode", "-t", "memory"])
+        if ret != 0:
+            return []
+        devs = []
+        dev = None
+        path = []
+        cla = []
+        desc = []
+        for line in out.splitlines():
+            if line.strip() == "Memory Device":
+                # new mem device
+                if dev is not None:
+                    dev["path"] = " ".join(path)
+                    dev["class"] = " ".join(cla)
+                    dev["description"] = " ".join(desc)
+                    devs.append(dev)
+                dev = {
+                    "type": "mem",
+                    "path": "",
+                    "class": "",
+                    "description": "",
+                    "driver": "",
+                }
+                path = []
+                desc = []
+                cla = []
+            elif "Locator:" in line:
+                path.append(line[line.index(":")+1:].strip())
+            elif "Bank Locator:" in line:
+                path.append(line[line.index(":")+1:].strip())
+            elif "Type:" in line:
+                s = line[line.index(":")+1:].strip()
+                if s != "Unknown":
+                    cla.append(s)
+            elif "Type Detail:" in line:
+                s = line[line.index(":")+1:].strip()
+                if s != "None":
+                    cla.append(s)
+            elif "  Speed:" in line:
+                s = line[line.index(":")+1:].strip()
+                if s != "Unknown":
+                    cla.append(s)
+            elif "Size:" in line:
+                s = line[line.index(":")+1:].strip()
+                if s != "Unknown":
+                    cla.append(s)
+            elif "Manufacturer:" in line:
+                s = line[line.index(":")+1:].strip()
+                if s != "Unknown":
+                    desc.append(s)
+            elif "Part Number:" in line:
+                s = line[line.index(":")+1:].strip()
+                if s != "Unknown":
+                    desc.append(s)
+        if dev is not None:
+            dev["path"] = " ".join(path)
+            dev["class"] = " ".join(cla)
+            dev["description"] = " ".join(desc)
+            devs.append(dev)
+        return devs
+ 
+    def get_hardware_pci(self):
+        out, err, ret = justcall(["lspci", "-v"])
+        if ret != 0:
+            return []
+        devs = []
+        dev = None
+        for line in out.splitlines():
+            if re.match("^\w", line):
+                # new pci device
+                if dev is not None:
+                    devs.append(dev)
+                words = line.split()
+                path = words.pop(0)
+                line = " ".join(words)
+                cla = line[:line.index(":")]
+                description = line[line.index(":")+1:].strip()
+                dev = {
+                    "type": "pci",
+                    "path": path,
+                    "class": cla,
+                    "description": description,
+                    "driver": "",
+                }
+            elif "Kernel driver in use:" in line:
+                dev["driver"] = line[line.index(":")+1:].strip()
+        if dev is not None:
+            devs.append(dev)
+        return devs
+                
 
 if __name__ == "__main__":
     from rcGlobalEnv import rcEnv
