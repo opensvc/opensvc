@@ -3043,8 +3043,8 @@ class Svc(Crypt):
                 rcEnv.nodename,
                 self.topology,
                 "env",
-                key,
-                val,
+                key if key is not None else "",
+                val if val is not None else "",
             ])
         return data
 
