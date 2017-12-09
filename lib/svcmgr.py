@@ -251,6 +251,9 @@ def _main(node, argv=None):
         try:
             node.build_services(**build_kwargs)
         except IOError as exc:
+            if exc.errno == errno.EACCES:
+                check_privs()
+                return 1
             if len(str(exc)) > 0:
                 print(exc, file=sys.stderr)
             build_err = True
