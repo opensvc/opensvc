@@ -403,6 +403,25 @@ class Asset(object):
         print("connect to address (%s)"%source)
         print(" ", s)
 
+    def get_manufacturer(self):
+        s = 'Unknown'
+        source = self.s_default
+        try:
+            s = self.node.config.get('node', 'manufacturer')
+            source = self.s_config
+        except:
+            try:
+                s = self._get_manufacturer()
+                source = self.s_probe
+            except:
+                pass
+        self.print_manufacturer(s, source)
+        return s
+
+    def print_manufacturer(self, s, source):
+        print("manufacturer (%s)"%source)
+        print(" ", s)
+
     def get_model(self):
         s = 'Unknown'
         source = self.s_default
@@ -793,6 +812,7 @@ class Asset(object):
         self.data['cpu_model'] = self.get_cpu_model()
         self.data['serial'] = self.get_serial()
         self.data['model'] = self.get_model()
+        self.data['manufacturer'] = self.get_manufacturer()
         self.data['bios_version'] = self.get_bios_version()
         self.data['sp_version'] = self.get_sp_version()
         self.data['node_env'] = self.get_node_env()
