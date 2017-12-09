@@ -652,6 +652,10 @@ class Collector(object):
         d = dict(data)
 
         gen = {}
+        if 'hardware' in d:
+            gen["hardware"] = d["hardware"]
+            del(d['hardware'])
+
         if 'hba' in d:
             vars = ['nodename', 'hba_id', 'hba_type']
             vals = [(rcEnv.nodename, _d["hba_id"], _d["hba_type"]) for _d in d['hba']]
