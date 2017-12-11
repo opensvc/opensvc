@@ -263,17 +263,24 @@ class CompObject(object):
         else:
             config.read("/etc/opensvc/node.conf")
         data = {}
-        data["username"] = nodename
+        svcname = os.environ.get("OSVC_COMP_SERVICES_SVCNAME")
+        if svcname:
+            data["username"] = svcname+"@"+nodename
+        else:
+            data["username"] = nodename
         data["password"] = config.get("node", "uuid")
-        data["url"] = config.get("node", "dbopensvc").replace("/feed/default/call/xmlrpc", "/init/rest/api")
+        data["url"] = config.get("node", "dbopensvc").replace("/feed/default/call/xmlrpc", "")
+        data["url"] = data["url"].replace("/init/rest/api", "")
+        data["url"] += "/init/rest/api"
         self.collector_api_cache = data
         return self.collector_api_cache
 
     def collector_url(self):
         api = self.collector_api()
         s = "%s:%s@" % (api["username"], api["password"])
-        url = api["url"].replace("https://", "https://"+s)
-        url = url.replace("http://", "http://"+s)
+        url = api["url"].replace("https://", "")
+        url = url.replace("http://", "")
+        url = "https://"+s+url
         return url
 
     def collector_request(self, path):
