@@ -11,6 +11,8 @@ from rcGlobalEnv import rcEnv
 mntpt_blacklist = [
     "/proc",
     "/sys/fs/cgroup",
+    "/run/user/[0-9]+",
+    "(/var){0,1}/run/user/[0-9]+",
     ".*/docker/.*/[0-9a-f]{64}.*",
 ]
 
