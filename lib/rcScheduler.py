@@ -109,7 +109,11 @@ def sched_action(func):
         try:
             if action in self.sched.scheduler_actions:
                 fds = self.sched.action_timestamps(action, options.rid)
-            return func(self, action, options)
+            ret = func(self, action, options)
+            print(action, ret)
+            if ret == 0:
+                self.sched.action_timestamps(action, options.rid, success=True)
+            return ret
         finally:
             for fd in fds:
                 lock.unlock(fd)
@@ -896,7 +900,7 @@ class Scheduler(object):
             return True
         return True
 
-    def get_timestamp_f(self, fname):
+    def get_timestamp_f(self, fname, success=False):
         """
         Return the full path of the last run timestamp file with the <fname>
         basename.
@@ -907,7 +911,10 @@ class Scheduler(object):
             timestamp_d = os.path.join(rcEnv.paths.pathvar, "services", self.name, "scheduler")
         if not os.path.exists(timestamp_d):
             os.makedirs(timestamp_d)
-        return os.path.join(timestamp_d, fname)
+        fpath = os.path.join(timestamp_d, fname)
+        if success:
+            fpath += ".success"
+        return fpath
 
     def validate_action(self, action):
         """
@@ -930,11 +937,11 @@ class Scheduler(object):
             raise ex.excAbortAction
         return [option.section for option in sched_options]
 
-    def action_timestamps(self, action, rids=None):
+    def action_timestamps(self, action, rids=None, success=False):
         sched_options = self.scheduler_actions[action]
         tsfiles = []
         if not isinstance(sched_options, list):
-            tsfile = self.get_timestamp_f(sched_options.fname)
+            tsfile = self.get_timestamp_f(sched_options.fname, success=success)
             tsfiles.append(tsfile)
         else:
             if rids is None:
@@ -942,7 +949,7 @@ class Scheduler(object):
             for _so in sched_options:
                 if not _so.section in rids:
                     continue
-                tsfile = self.get_timestamp_f(_so.fname)
+                tsfile = self.get_timestamp_f(_so.fname, success=success)
                 tsfiles.append(tsfile)
 
         if len(tsfiles) == 0:
@@ -952,9 +959,10 @@ class Scheduler(object):
         import lock
         try:
             for tsfile in tsfiles:
-                fd = lock.lock(timeout=0, lockfile=tsfile)
+                if not success:
+                    fd = lock.lock(timeout=0, lockfile=tsfile)
+                    fds.append(fd)
                 self._timestamp(tsfile)
-                fds.append(fd)
         except Exception as exc:
             self.log.warning("a %s action is already in progess", action)
             for fd in fds:

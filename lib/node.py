@@ -934,14 +934,17 @@ class Node(Crypt):
 
     def pushstats(self):
         """
-        Set stats range to push to "last pushstat => now"
+        Set stats range to push to "last successful pushstat => now"
+
+        Enforce a minimum interval of 21m, and a maximum of 1450m.
 
         The scheduled task that collects system statistics from system tools
         like sar, and sends the data to the collector.
         A list of metrics can be disabled from the task configuration section,
         using the 'disable' option.
         """
-        fpath = self.sched.get_timestamp_f(self.sched.scheduler_actions["pushstats"].fname)
+        fpath = self.sched.get_timestamp_f(self.sched.scheduler_actions["pushstats"].fname,
+                                           success=True)
         try:
             with open(fpath, "r") as ofile:
                 buff = ofile.read()

@@ -3091,7 +3091,6 @@ class Svc(Crypt):
         for _data in self.resinfo().values():
             data += _data
         self.node.collector.call('push_resinfo', data)
-        return data
 
     def push_encap_config(self):
         """
