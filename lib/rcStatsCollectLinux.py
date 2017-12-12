@@ -4,11 +4,23 @@ import sys
 import datetime
 import time
 import json
+import re
 from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
 
+mntpt_blacklist = [
+    "/proc",
+    "/sys/fs/cgroup",
+    ".*/docker/.*/[0-9a-f]{64}.*",
+]
+
 def collect(node):
     now = str(datetime.datetime.now())
+
+    def blacklisted(mntpt):
+        for bl in mntpt_blacklist:
+            if re.match(bl, mntpt):
+                return True
 
     def fs_u():
         cmd = ['df', '-lP']
@@ -22,6 +34,8 @@ def collect(node):
         for line in lines[1:]:
             l = line.split()
             if len(l) != 6:
+                continue
+            if blacklisted(l[5]):
                 continue
             vals.append([now, node.nodename, l[5], l[1], l[4].replace('%','')])
 
