@@ -110,7 +110,7 @@ def sched_action(func):
             if action in self.sched.scheduler_actions:
                 fds = self.sched.action_timestamps(action, options.rid)
             ret = func(self, action, options)
-            if ret == 0:
+            if ret == 0 and action in self.sched.scheduler_actions:
                 self.sched.action_timestamps(action, options.rid, success=True)
             return ret
         finally:
