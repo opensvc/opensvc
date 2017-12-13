@@ -645,7 +645,7 @@ class DockerLib(object):
         if not self.docker_daemon_private:
             return
         import lock
-        lockfile = os.path.join(rcEnv.paths.pathlock, 'docker_start')
+        lockfile = os.path.join(rcEnv.paths.pathlock, self.svc.svcname+'.docker_start')
         try:
             lockfd = lock.lock(timeout=15, delay=1, lockfile=lockfile)
         except lock.LOCK_EXCEPTIONS as exc:
