@@ -18,6 +18,10 @@ class StatsProvider(object):
             delta = self.stats_end - self.stats_start
             interval = delta.days * 1440 + delta.seconds // 60
 
+        # discard seconds
+        self.stats_start -= datetime.timedelta(seconds=self.stats_start.second)
+        self.stats_end -= datetime.timedelta(seconds=self.stats_end.second)
+
         x, self.nodename, x, x, x = os.uname()
 
         self.minutes_first_day = 60*self.stats_end.hour + self.stats_end.minute + 1
@@ -37,7 +41,7 @@ class StatsProvider(object):
             if start != end:
                 self.ranges.append((start, end))
             end = start - one_minute
-        #print(self.stats_end, interval, map(lambda x: map(lambda y: y.strftime("%d-%m-%y %H:%M"), x), self.ranges))
+        #print(self.stats_end, interval, [x.strftime("%Y-%m-%d %H:%M:%S")+" - "+y.strftime("%Y-%m-%d %H:%M:%S") for x, y in self.ranges])
 
     def get(self, fname):
         lines = []
