@@ -21,6 +21,7 @@ from converters import convert_duration
 COMPAT_VERSION = 4
 
 DATEFMT = "%Y-%m-%dT%H:%M:%S.%fZ"
+JSON_DATEFMT = "%Y-%m-%dT%H:%M:%SZ"
 MAX_MSG_SIZE = 1024 * 1024
 
 # The threads store
@@ -167,7 +168,7 @@ class OsvcThread(threading.Thread):
         data = Storage({
             "state": state,
             "created": datetime.datetime.utcfromtimestamp(self.created)\
-                               .strftime('%Y-%m-%dT%H:%M:%SZ'),
+                               .strftime(JSON_DATEFMT),
         })
         return data
 

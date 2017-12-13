@@ -817,11 +817,7 @@ class Node(Crypt):
         Looks up which method to handle the action (some are not implemented
         in the Node class), and call the handling method.
         """
-        if action == "scheduler":
-            return self.scheduler()
         try:
-            if self.options.cron:
-                self.sched.validate_action(action)
             self.async_action(action)
         except ex.excAbortAction:
             return 0
@@ -879,34 +875,6 @@ class Node(Crypt):
         The 'print schedule' node and service action entrypoint.
         """
         return self.sched.print_schedule()
-
-    def scheduler(self):
-        """
-        The node scheduler entrypoint.
-        Evaluates execution constraints for all scheduled tasks and executes
-        the tasks if required.
-        """
-        self.options.cron = True
-        for action in self.sched.scheduler_actions:
-            try:
-                self.action(action)
-            except:
-                self.log.exception("")
-
-    def schedulers(self):
-        """
-        schedulers node action entrypoint.
-        Run the node scheduler and each configured service scheduler.
-        """
-        purge_cache_expired()
-        self.scheduler()
-
-        self.build_services()
-        for svc in self.svcs:
-            try:
-                svc.scheduler()
-            except ex.excError as exc:
-                svc.log.error(exc)
 
     def get_push_objects(self, section):
         """

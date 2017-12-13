@@ -310,13 +310,6 @@ ACTIONS = {
         "reboot": {
             "msg": "Reboot the node.",
         },
-        "scheduler": {
-            "msg": "Run the node task scheduler.",
-        },
-        "schedulers": {
-            "msg": "Execute a run of the node and services schedulers. This "
-                   "action is installed in the system scheduler.",
-        },
         "schedule_reboot_status": {
             "msg": "Tell if the node is scheduled for reboot.",
         },

@@ -129,7 +129,6 @@ ACTIONS_NO_STATUS_CHANGE = [
     "push_resinfo",
     "prstatus",
     "resource_monitor",
-    "scheduler",
     "status",
     "validate_config",
 ]
@@ -156,7 +155,6 @@ ACTIONS_NO_LOG = [
     "push_resinfo",
     "service_status",
     "resource_monitor",
-    "scheduler",
     "set",
     "status",
     "unset",
@@ -170,7 +168,6 @@ ACTIONS_NO_TRIGGER = [
     "enable",
     "disable",
     "status",
-    "scheduler",
     "pg_freeze",
     "pg_thaw",
     "pg_kill",
@@ -194,7 +191,6 @@ ACTIONS_NO_LOCK = [
     "logs",
     "push_resinfo",
     "run",
-    "scheduler",
     "status",
     "thaw",
     "toc",
@@ -765,21 +761,6 @@ class Svc(Crypt):
         The 'print schedule' node and service action entrypoint.
         """
         return self.sched.print_schedule()
-
-    def scheduler(self):
-        """
-        The service scheduler action entrypoint.
-        """
-        self.options.cron = True
-        for action in self.sched.scheduler_actions:
-            try:
-                self.action(action)
-            except ex.excAbortAction:
-                continue
-            except ex.excError as exc:
-                self.log.error(exc)
-            except:
-                self.save_exc()
 
     def has_monitored_resources(self):
         for res in self.get_resources():
@@ -3355,11 +3336,6 @@ class Svc(Crypt):
                     raise ex.excError("invalid json in resource definition: "
                                       "%s" % options.resource[idx])
 
-        if self.options.cron:
-            sched_rids = self.sched.validate_action(action)
-            if sched_rids is not None:
-                options.rid = sched_rids
-
         self.options.update(options)
         options = self.options
 
@@ -3429,8 +3405,6 @@ class Svc(Crypt):
         return rids
 
     def action(self, action, options=None):
-        if action == "scheduler":
-            return self.scheduler()
         self.allow_on_this_node(action)
         try:
             options = self.prepare_options(action, options)
@@ -3802,7 +3776,7 @@ class Svc(Crypt):
             self.freeze()
         try:
             self.set_service_monitor(local_expect=local_expect, status=progress)
-            self.log.info("daemon notified of action '%s' begin" % action)
+            self.log.debug("daemon notified of action '%s' begin" % action)
         except Exception as exc:
             self.log.warning("failed to notify action begin to the daemon: %s", str(exc))
 
@@ -3821,7 +3795,7 @@ class Svc(Crypt):
                 local_expect == "started"
         try:
             self.set_service_monitor(local_expect=local_expect, status=status)
-            self.log.info("daemon notified of action '%s' end" % action)
+            self.log.debug("daemon notified of action '%s' end" % action)
         except Exception as exc:
             self.log.warning("failed to notify action end to the daemon: %s", str(exc))
 

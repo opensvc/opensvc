@@ -5,6 +5,7 @@ import os
 import sys
 import logging
 import time
+import datetime
 from subprocess import Popen, PIPE
 
 import osvcd_shared as shared
@@ -13,6 +14,16 @@ from rcGlobalEnv import rcEnv
 
 class Scheduler(shared.OsvcThread):
     interval = 60
+    delayed = {}
+
+    def status(self, **kwargs):
+        data = shared.OsvcThread.status(self, **kwargs)
+        data["delayed"] = [{
+            "cmd": " ".join(entry["cmd"]),
+            "queued": entry["queued"].strftime(shared.JSON_DATEFMT),
+            "expire": entry["expire"].strftime(shared.JSON_DATEFMT),
+        } for entry in self.delayed.values()]
+        return data
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.scheduler")
@@ -42,30 +53,65 @@ class Scheduler(shared.OsvcThread):
             if self.stopped():
                 break
 
-    def run_scheduler(self):
-        #self.log.info("run schedulers")
+    def exec_action(self, cmd):
         kwargs = dict(stdout=self.devnull, stderr=self.devnull,
                       stdin=self.devnull, close_fds=True)
-        run = []
-        nonprov = []
+        try:
+            proc = Popen(cmd, **kwargs)
+        except KeyboardInterrupt:
+            return
+        self.push_proc(proc=proc)
 
+    def queue_action(self, cmd, delay, sig):
+        if sig in self.delayed:
+            return []
+        if delay == 0:
+            self.log.debug("immediate exec of action '%s'" % ' '.join(cmd))
+            self.exec_action(cmd)
+            return [sig]
+        now = datetime.datetime.utcnow()
+        exp = now + datetime.timedelta(seconds=delay)
+        self.delayed[sig] = {
+            "queued": now,
+            "expire": exp,
+            "cmd": cmd,
+        }
+        self.log.debug("queued action '%s' delayed until %s" % (' '.join(cmd), exp))
+        return []
+
+    def dequeue_action(self, data, now):
+        if now < data["expire"]:
+            return False
+        self.log.info("dequeue action '%s' queued at %s" % (data["cmd"], data["queued"]))
+        self.exec_action(data["cmd"])
+        return True
+
+    def dequeue_actions(self):
+        now = datetime.datetime.utcnow()
+        dequeued = []
+        for sig, data in self.delayed.items():
+            ret = self.dequeue_action(data, now)
+            if ret:
+                dequeued.append(sig)
+        for sig in dequeued:
+            del self.delayed[sig]
+
+    def run_scheduler(self):
+        #self.log.info("run schedulers")
+        nonprov = []
+        run = []
+
+        self.dequeue_actions()
         if shared.NODE:
             shared.NODE.options.cron = True
-            _run = []
             for action in shared.NODE.sched.scheduler_actions:
                 try:
-                    shared.NODE.sched.validate_action(action)
+                    delay = shared.NODE.sched.validate_action(action)
                 except ex.excAbortAction:
                     continue
-                _run.append(action)
                 cmd = [rcEnv.paths.nodemgr, action, "--cron"]
-                try:
-                    proc = Popen(cmd, **kwargs)
-                except KeyboardInterrupt:
-                    return
-                self.push_proc(proc=proc)
-            if len(_run) > 0:
-                run.append("node:%s" % ",".join(_run))
+                sig = ":".join(["node", action])
+                run += self.queue_action(cmd, delay, sig)
         for svc in shared.SERVICES.values():
             svc.options.cron = True
             try:
@@ -75,25 +121,21 @@ class Scheduler(shared.OsvcThread):
             if provisioned is not True:
                 nonprov.append(svc.svcname)
                 continue
-            _run = []
             for action in svc.sched.scheduler_actions:
                 try:
-                    rids = svc.sched.validate_action(action)
+                    data = svc.sched.validate_action(action)
                 except ex.excAbortAction:
                     continue
                 cmd = [rcEnv.paths.svcmgr, "-s", svc.svcname, action, "--cron", "--waitlock=5"]
-                if rids:
-                    cmd += ["--rid", ",".join(rids)]
-                    _run.append("%s(%s)" % (action, ','.join(rids)))
-                else:
-                    _run.append(action)
                 try:
-                    proc = Popen(cmd, **kwargs)
-                except KeyboardInterrupt:
-                    return
-                self.push_proc(proc=proc)
-            if len(_run) > 0:
-                run.append("%s:%s" % (svc.svcname, ",".join(_run)))
+                    rids, delay = data
+                    rids = ','.join(rids)
+                    sig = ":".join(["svc", action, rids])
+                    cmd += ["--rid", rids]
+                except TypeError:
+                    delay = data
+                    sig = ":".join(["svc", action])
+                run += self.queue_action(cmd, delay, sig)
 
         # log a scheduler loop digest
         msg = []

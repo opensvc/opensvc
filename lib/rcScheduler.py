@@ -235,70 +235,49 @@ class Scheduler(object):
         """
         return not self._need_action_interval(last, interval, now=now)
 
-    def _in_timerange_probabilistic(self, timerange, now=None):
+    def _timerange_delay(self, timerange, now=None):
         """
-        Validate a timerange constraint of a scheduled task, with an added
-        failure probability decreasing with the remaining allowed window.
+        Return a delay in seconds, compatible with the timerange.
 
-            proba
-              ^
-        100%  |
-         75%  |XXX
-         50%  |XXXX
-         25%  |XXXXXX
-          0%  ----|----|-> elapsed
-             0%  50%  100%
+        The daemon scheduler thread will honor this delay,
+        executing the task only when expired.
 
         This algo is meant to level collector's load which peaks
-        when all daily cron trigger at the same minute.
+        when tasks trigger at the same minute on every nodes.
         """
         if not timerange.get("probabilistic", False):
-            return
+            return 0
 
         try:
             begin = self._time_to_minutes(timerange["begin"])
             end = self._time_to_minutes(timerange["end"])
             now = self._time_to_minutes(now)
         except:
-            raise SchedNotAllowed("time conversion error in probabilistic "
-                                  "challenge")
+            raise SchedNotAllowed("time conversion error delay eval")
 
+        # day change in the timerange
         if begin > end:
             end += 1440
         if now < begin:
             now += 1440
 
         length = end - begin
+        remaining = end - now - 1
 
-        if length < 60:
-            # no need to play this game on short allowed periods
-            return
+        if remaining < 10:
+            # no need to delay for tasks with a short remaining valid time
+            return 0
 
-        if timerange["interval"] <= length:
-            # don't skip if interval <= period length, because the user
-            # expects the action to run multiple times in the period
-            return
+        if timerange["interval"] < length:
+            # don't delay if interval < period length, because the user
+            # expects the action to run multiple times in the period. And
+            # '@<n>' interval-only schedule are already different across
+            # nodes due to daemons not starting at the same moment.
+            return 0
 
-        length -= 11
-        elapsed = now - begin
-        elapsed_pct = min(100, int(100.0 * elapsed / length))
+        rnd = random.random()
 
-        if elapsed_pct < 50:
-            # fixed skip proba for a perfect leveling on the first half-period
-            proba = 100.0 - max(1, 1000.0 / length)
-        else:
-            # decreasing skip proba on the second half-period
-            proba = 100.0 - min(elapsed_pct, 100)
-
-        rnd = random.random() * 100.0
-
-        if rnd >= proba:
-            self.log.debug("win probabilistic challenge: %d, "
-                           "over %d"%(rnd, proba))
-            return
-
-        raise SchedNotAllowed("lost probabilistic challenge: %d, "
-                              "over %d"%(rnd, proba))
+        return int(remaining*60*rnd)
 
     @staticmethod
     def _time_to_minutes(dt_spec):
@@ -319,20 +298,29 @@ class Scheduler(object):
     def _in_timeranges(self, schedule, fname=None, now=None, last=None):
         """
         Validate the timerange constraints of a schedule.
-        Iterates multiple allowed timeranges, and switch between simple and
-        probabilistic validation.
+        Iterates multiple allowed timeranges.
+
+        Return a delay the caller should wait before executing the task,
+        with garanty the delay doesn't reach outside the valid timerange:
+
+        * 0 => immediate execution
+        * n => seconds to wait
+
+        Raises SchedNotAllowed if the validation fails the timerange
+        constraints.
         """
         if len(schedule["timeranges"]) == 0:
             raise SchedNotAllowed("no timeranges")
         errors = []
+        delay = 0
         for timerange in schedule["timeranges"]:
             try:
                 self.in_timerange(timerange, now=now)
                 self.in_timerange_interval(timerange, fname=fname, now=now, last=last)
                 if fname is not None:
                     # fname as None indicates we run in test mode
-                    self._in_timerange_probabilistic(timerange, now=now)
-                return
+                    delay = self._timerange_delay(timerange, now=now)
+                return delay
             except SchedNotAllowed as exc:
                 errors.append(str(exc))
         raise SchedNotAllowed(", ".join(errors))
@@ -399,7 +387,8 @@ class Scheduler(object):
         Validate if <now> is in the allowed days and in the allowed timranges.
         """
         self._in_days(schedule, now=now)
-        self._in_timeranges(schedule, fname=fname, now=now, last=last)
+        delay = self._in_timeranges(schedule, fname=fname, now=now, last=last)
+        return delay
 
     def in_schedule(self, schedules, fname=None, now=None, last=None):
         """
@@ -411,11 +400,11 @@ class Scheduler(object):
         errors = []
         for schedule in schedules:
             try:
-                self._in_schedule(schedule, fname=fname, now=now, last=last)
+                delay = self._in_schedule(schedule, fname=fname, now=now, last=last)
                 if schedule["exclude"]:
                     raise SchedExcluded('excluded by schedule member "%s"' % schedule["raw"])
                 else:
-                    return
+                    return delay
             except SchedNotAllowed as exc:
                 errors.append(str(exc))
         raise SchedNotAllowed(", ".join(errors))
@@ -881,7 +870,8 @@ class Scheduler(object):
             now = datetime.datetime.now()
         try:
             schedule = self.sched_get_schedule(section, option)
-            self.in_schedule(schedule, fname=fname, now=now, last=last)
+            delay = self.in_schedule(schedule, fname=fname, now=now, last=last)
+            return delay
         except SchedNoDefault:
             raise SchedNotAllowed("no schedule in section %s and no default "
                                   "schedule"%section)
@@ -927,14 +917,15 @@ class Scheduler(object):
         if action not in self.scheduler_actions:
             return
         if not isinstance(self.scheduler_actions[action], list):
-            if self.skip_action(action):
+            skip = self.skip_action(action)
+            if skip is True:
                 raise ex.excAbortAction
-            return
+            return skip
         data = self.skip_action(action)
         sched_options = data["keep"]
         if len(sched_options) == 0:
             raise ex.excAbortAction
-        return [option.section for option in sched_options]
+        return [option.section for option in sched_options], data["delay"]
 
     def action_timestamps(self, action, rids=None, success=False):
         sched_options = self.scheduler_actions[action]
@@ -990,10 +981,12 @@ class Scheduler(object):
                     section=section, fname=fname, schedule_option=schedule_option,
                     now=now
                 )
-                if skip:
+                if skip is True:
                     data["skip"].append(sopt)
                 else:
                     data["keep"].append(sopt)
+                    if "delay" not in data or skip < data["delay"]:
+                        data["delay"] = skip
             data["count"] = idx + 1
             return data
 
@@ -1029,13 +1022,13 @@ class Scheduler(object):
 
         # check if we are in allowed scheduling period
         try:
-            self.allow_action_schedule(section, schedule_option, fname=fname, now=now)
+            delay = self.allow_action_schedule(section, schedule_option, fname=fname, now=now)
         except Exception as exc:
             self.sched_log(title(), str(exc), "debug")
             return True
 
         #self.sched_log(title(), "run task", "info")
-        return False
+        return delay
 
     def print_schedule(self):
         """
@@ -1189,7 +1182,7 @@ class Scheduler(object):
                 print("failed : schedule syntax error %s (%s)" % (repr(schedule_s), str(exc)))
                 return False
         try:
-            self.in_schedule(schedule, fname=None, now=dtm)
+            delay = self.in_schedule(schedule, fname=None, now=dtm)
             result = True
             result_s = ""
         except SchedSyntaxError as exc:

@@ -745,9 +745,6 @@ ACTIONS = {
                 OPT.verbose,
             ],
         },
-        "scheduler": {
-            "msg": "Run the service task scheduler.",
-        },
         "pg_freeze": {
             "msg": "Freeze the tasks of a process group.",
             "options": ACTION_OPTS,

@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2017\-12\-07
+.TH NODEMGR 1 2017\-12\-13
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -1282,52 +1282,6 @@ Show this help message and exit
 .RS
 
 Tell if the node is scheduled for reboot.
-
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr scheduler\fP
-.RS
-
-Run the node task scheduler.
-
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr schedulers\fP
-.RS
-
-Execute a run of the node and services schedulers. This action is installed in the system scheduler.
 
 .TP
 .B --color=COLOR
