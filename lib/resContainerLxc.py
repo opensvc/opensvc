@@ -139,9 +139,12 @@ class Lxc(resContainer.Container):
             return
         path = "/sys/fs/cgroup/cpuset/lxc"
         val = "1"
-        if not os.path.exists(path):
-            self.log.info("mkdir %s" % path)
+        try:
             os.makedirs(path)
+            self.log.info("mkdir %s" % path)
+        except (OSError, IOError):
+            # errno 17: file exists
+            pass
         for parm in ("cpuset.mems", "cpuset.cpus"):
             current_val = self.get_sysfs(path, parm)
             if current_val is None:
