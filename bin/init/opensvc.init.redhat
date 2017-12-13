@@ -20,9 +20,9 @@ OSVC_ROOT_PATH="/usr/share/opensvc"
 
 case $1 in
 start)
-        ${OSVC_ROOT_PATH}/bin/nodemgr pushasset
         ${OSVC_ROOT_PATH}/bin/nodemgr daemon start
 	[ -d /var/lock/subsys ] && touch /var/lock/subsys/opensvc
+        ${OSVC_ROOT_PATH}/bin/nodemgr pushasset
 	;;
 stop)
         ${OSVC_ROOT_PATH}/bin/nodemgr daemon shutdown

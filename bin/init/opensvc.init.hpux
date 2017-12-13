@@ -21,9 +21,9 @@ start)
 	else
 		exit 0
 	fi
+        ${OSVC_ROOT_PATH}/bin/nodemgr daemon start
 	${OSVC_ROOT_PATH}/bin/nodemgr collect stats
         ${OSVC_ROOT_PATH}/bin/nodemgr pushasset
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon start
 	;;
 stop_msg)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then

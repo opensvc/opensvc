@@ -17,11 +17,11 @@ OSVC_ROOT_PATH="/usr/share/opensvc"
 case $1 in
 start)
         ipconfig waitall
-        echo "OpenSVC : Pushing node information"
-	${OSVC_ROOT_PATH}/bin/nodemgr pushasset
-        echo
         echo "OpenSVC : Starting daemon"
 	${OSVC_ROOT_PATH}/bin/nodemgr daemon start
+        echo
+        echo "OpenSVC : Pushing node information"
+	${OSVC_ROOT_PATH}/bin/nodemgr pushasset
 	;;
 stop)
 	echo "OpenSVC : Stopping services and daemon"
