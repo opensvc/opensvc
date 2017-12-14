@@ -394,7 +394,7 @@ class Docker(resContainer.Container):
         """
         Executed after executing <action> on the resourceset
         """
-        if action not in ("stop", "unprovision", "shutdown"):
+        if action not in ("stop", "unprovision", "shutdown", "rollback"):
             return
         self.svc.dockerlib.docker_stop()
 
