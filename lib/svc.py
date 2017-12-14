@@ -1197,8 +1197,11 @@ class Svc(Crypt):
         Execute an action on all resources of the resource sets of the
         specified type.
         """
-        rsets = self.get_resourcesets(_type, strict=strict)
-        self.set_action(rsets, action=action, tags=tags, xtags=xtags)
+        if not isinstance(_type, (list, tuple, set)):
+            _type = [_type]
+        for __type in _type:
+            rsets = self.get_resourcesets(__type, strict=strict)
+            self.set_action(rsets, action=action, tags=tags, xtags=xtags)
 
     def need_snap_trigger(self, rsets, action):
         """
