@@ -299,6 +299,10 @@ def add_ip(svc, s):
             kwargs['network'] = svc.conf_get(s, 'network')
         except ex.OptNotFound as exc:
             kwargs['network'] = exc.default
+        try:
+            kwargs['container_rid'] = svc.conf_get(s, 'container_rid')
+        except ex.OptNotFound as exc:
+            pass
 
     if rtype == "crossbow":
         try:

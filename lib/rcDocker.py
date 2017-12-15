@@ -502,7 +502,9 @@ class DockerLib(object):
         """
         Return the "docker inspect" data dict.
         """
-        if isinstance(container_id, list):
+        if container_id is None:
+            raise IndexError("container id is None")
+        elif isinstance(container_id, list):
             cmd = self.docker_cmd + ['inspect'] + container_id
             out = justcall(cmd)[0]
             data = json.loads(out)

@@ -16,6 +16,7 @@ class Ip(Res.Ip):
                  ipname=None,
                  ipdev=None,
                  network=None,
+                 container_rid=None,
                  **kwargs):
         Res.Ip.__init__(self,
                         rid,
@@ -24,6 +25,10 @@ class Ip(Res.Ip):
                         type="ip.cni",
                         **kwargs)
         self.network = network
+        self.container_rid = container_rid
+        if container_rid:
+            self.tags = self.tags | set(["docker"])
+            self.tags.add(container_rid)
 
     def set_label(self):
         pass
@@ -46,20 +51,36 @@ class Ip(Res.Ip):
         pass
 
     def get_ifconfig(self):
+        if self.container_rid:
+            return self.container_get_ifconfig()
+        else:
+            return self._get_ifconfig()
+
+    def container_get_ifconfig(self):
+        sandboxkey = self.container_sandboxkey
+        if sandboxkey is None:
+            return
+
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.container_sandboxkey, "ip", "addr"]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return
+
+        ifconfig = rcIfconfig.ifconfig(ip_out=out)
+        return ifconfig
+
+    def _get_ifconfig(self):
         try:
             nspid = self.nspid
         except ex.excError as e:
             return
         if nspid is None:
             return
-        #self.create_netns_link(nspid=nspid, verbose=False)
 
         cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nspid, "ip", "addr"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
-
-        #self.delete_netns_link(nspid=nspid, verbose=False)
 
         ifconfig = rcIfconfig.ifconfig(ip_out=out)
         return ifconfig
@@ -109,39 +130,28 @@ class Ip(Res.Ip):
     def nspidfile(self):
         return "/var/run/netns/%s" % self.nspid
 
+    @lazy
+    def container(self):
+        return self.svc.resources_by_id.get(self.container_rid)
+
+    @lazy
+    def container_sandboxkey(self):
+        try:
+            data = self.svc.dockerlib.docker_inspect(self.container.container_id)
+            return data["NetworkSettings"]["SandboxKey"]
+        except (IndexError, KeyError):
+            return
+
+    @lazy
+    def container_pid(self):
+        try:
+            data = self.svc.dockerlib.docker_inspect(self.container.container_id)
+            return data["State"]["Pid"]
+        except (IndexError, KeyError):
+            return
+
     def allow_start(self):
         pass
-
-    def delete_netns_link(self, nspid=None, verbose=True):
-        if nspid is None:
-            nspid = self.get_nspid()
-        if nspid is None:
-            raise ex.excError("can not determine nspid")
-        run_d = "/var/run/netns"
-        if not os.path.exists(run_d):
-            return
-        run_netns = os.path.join(run_d, self.nspid)
-        try:
-            os.unlink(run_netns)
-            if verbose:
-                self.log.info("remove %s" % run_netns)
-        except:
-            pass
-
-    def create_netns_link(self, nspid=None, verbose=True):
-        if nspid is None:
-            nspid = self.get_nspid()
-        if nspid is None:
-            raise ex.excError("can not determine nspid")
-        run_d = "/var/run/netns"
-        if not os.path.exists(run_d):
-            os.makedirs(run_d)
-        run_netns = os.path.join(run_d, self.nspid)
-        proc_netns = "/proc/%s/ns/net" % nspid
-        if os.path.exists(proc_netns) and not os.path.exists(run_netns):
-            if verbose:
-                self.log.info("create symlink %s -> %s" % (run_netns, proc_netns))
-            os.symlink(proc_netns, run_netns)
 
     def start_locked(self):
         self.startip_cmd()
@@ -175,9 +185,14 @@ class Ip(Res.Ip):
         self.log.info(text)
 
     def has_netns(self):
+        if self.container_rid:
+            return True
         return os.path.exists(self.nspidfile)
 
     def add_netns(self):
+        if self.container_rid:
+            # the container is expected to already have a netns
+            return
         if self.has_netns():
             self.log.info("netns %s already added" % self.nspid)
             return
@@ -187,6 +202,9 @@ class Ip(Res.Ip):
             raise ex.excError(err)
 
     def del_netns(self):
+        if self.container_rid:
+            # the container is expected janitor its netns himself
+            return
         if not self.has_netns():
             self.log.info("netns %s already deleted" % self.nspid)
             return
@@ -203,11 +221,17 @@ class Ip(Res.Ip):
             return
         _env = {
             "CNI_COMMAND": "ADD",
-            #"CNI_CONTAINERID": "",
-            "CNI_NETNS": self.nspidfile,
             "CNI_IFNAME": self.ipdev,
             "CNI_PATH": "/opt/cni/bin",
         }
+        if self.container_rid:
+            if self.container_pid is None:
+                raise ex.excError("container %s is down" % self.container_rid)
+            _env["CNI_CONTAINERID"] = str(self.container_pid)
+            _env["CNI_NETNS"] = self.container_sandboxkey
+        else:
+            _env["CNI_NETNS"] = self.nspidfile
+
         cmd = [self.cni_bin]
         return self.cni_cmd(_env, cmd)
 
@@ -216,11 +240,18 @@ class Ip(Res.Ip):
             return
         _env = {
             "CNI_COMMAND": "DEL",
-            #"CNI_CONTAINERID": "",
-            "CNI_NETNS": self.nspidfile,
             "CNI_IFNAME": self.ipdev,
             "CNI_PATH": "/opt/cni/bin",
         }
+        if self.container_rid:
+            if self.container_pid is None:
+                self.log.info("container %s is already down" % self.container_rid)
+                return
+            _env["CNI_CONTAINERID"] = str(self.container_pid)
+            _env["CNI_NETNS"] = self.container_sandboxkey
+        else:
+            _env["CNI_NETNS"] = self.nspidfile
+
         cmd = [self.cni_bin]
         return self.cni_cmd(_env, cmd)
 
@@ -235,15 +266,17 @@ class Ip(Res.Ip):
     def _status(self, verbose=False):
         _has_netns = self.has_netns()
         _has_ipdev = self.has_ipdev()
-        if not _has_netns and not _has_ipdev:
+        if self.container_rid and not _has_ipdev:
+            return rcStatus.DOWN
+        elif not _has_netns and not _has_ipdev:
             return rcStatus.DOWN
         elif _has_netns and _has_ipdev:
             return rcStatus.UP
         else:
             if not _has_netns:
-                self.status("netns %s not found" % self.nspid)
+                self.status_log("netns %s not found" % self.nspid)
             if not _has_ipdev:
-                self.status("cni %s not found" % self.ipdev)
+                self.status_log("cni %s not found" % self.ipdev)
             return rcStatus.DOWN
 
     def is_up(self):

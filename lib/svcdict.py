@@ -2526,7 +2526,7 @@ class KeywordIpDockerContainerRid(Keyword):
         Keyword.__init__(
                   self,
                   section="ip",
-                  rtype="docker",
+                  rtype=["cni", "docker"],
                   keyword="container_rid",
                   order=12,
                   at=True,
