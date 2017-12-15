@@ -3372,6 +3372,56 @@ class Node(Crypt):
         )
         print(json.dumps(data, indent=4, sort_keys=True))
 
+    def _ping(self, node):
+        """
+        Fetch the daemon senders blacklist as a ping test, from either
+        a peer or an arbitrator node, swiching between secrets as appropriate.
+        """
+        if node not in self.cluster_nodes:
+            secret = None
+            for section in self.config.sections():
+                if not section.startswith("arbitrator#"):
+                    continue
+                try:
+                    arbitrator = self.config.get(section, "name")
+                except Exception:
+                    continue
+                if arbitrator != node:
+                    continue
+                try:
+                    secret = self.config.get(section, "secret")
+                    cluster_name = "join"
+                    break
+                except Exception:
+                    self.log.warning("missing 'secret' in configuration section %s" % section)
+                    continue
+            if secret is None:
+                raise ex.excError("unable to find a secret for node '%s': neither in cluster.nodes nor arbitrator#*.name" % node)
+        else:
+            cluster_name = None
+            secret = None
+        data = self.daemon_send(
+            {"action": "daemon_blacklist_status"},
+            nodename=node,
+            cluster_name=cluster_name,
+            secret=secret,
+        )
+        if data is None or "status" not in data or data["status"] != 0:
+            return 1
+        return 0
+
+    def ping(self):
+        try:
+            ret = self._ping(self.options.node)
+        except ex.excError as exc:
+            print(exc)
+            ret = 2
+        if ret == 0:
+            print("%s is alive" % self.options.node)
+        elif ret == 1:
+            print("%s is not alive" % self.options.node)
+        return ret
+
     def systemd_restart(self):
         if not which("systemctl"):
             return False

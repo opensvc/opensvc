@@ -15,7 +15,7 @@ from rcConfigParser import RawConfigParser
 from rcUtilities import lazy, unset_lazy, is_string
 from rcGlobalEnv import rcEnv, Storage
 from freezer import Freezer
-from converters import convert_duration
+from converters import convert_duration, convert_boolean
 
 # disable orchestration if a peer announces a different compat version than ours
 COMPAT_VERSION = 4
@@ -258,6 +258,8 @@ class OsvcThread(threading.Thread):
         self._node_conf_event.clear()
         self.log.info("config change event received")
         unset_lazy(self, "config")
+        unset_lazy(self, "quorum")
+        unset_lazy(self, "arbitrators")
         unset_lazy(self, "cluster_name")
         unset_lazy(self, "cluster_key")
         unset_lazy(self, "cluster_nodes")
@@ -465,6 +467,13 @@ class OsvcThread(threading.Thread):
         return proc.wait()
 
     @lazy
+    def quorum(self):
+        if self.config.has_option("cluster", "quorum"):
+            return convert_boolean(self.config.get("cluster", "quorum"))
+        else:
+            return False
+
+    @lazy
     def maintenance_grace_period(self):
         if self.config.has_option("node", "maintenance_grace_period"):
             return convert_duration(self.config.get("node", "maintenance_grace_period"))
@@ -483,6 +492,36 @@ class OsvcThread(threading.Thread):
            nmon.status_updated > datetime.datetime.utcnow() - datetime.timedelta(seconds=self.maintenance_grace_period):
             return True
         return False
+
+    def split_handler(self):
+        if not self.quorum:
+            self.duplog("info", "cluster is split, ignore as cluster.quorum is "
+                        "false", msgid="quorum disabled")
+            return
+        live = len(CLUSTER_DATA)
+        total = len(self.cluster_nodes)
+        if live > total / 2:
+            self.duplog("info", "cluster is split, we have 1st ring quorum: "
+                        "%(live)d/%(total)d nodes", live=live, total=total)
+            return
+        arbitrator_vote = 0
+        for arbitrator in self.arbitrators:
+            ret = NODE._ping(arbitrator["name"])
+            if ret == 0:
+                arbitrator_vote = 1
+                break
+        if live + arbitrator_vote > total / 2:
+            self.duplog("info", "cluster is split, we have 2nd ring quorum: "
+                        "%(live)d+%(avote)d/%(total)d nodes (%(a)s)",
+                        live=live, avote=arbitrator_vote, total=total,
+                        a=arbitrator["name"])
+            return
+        self.log.info("cluster is split, we don't have 1st nor 2nd ring "
+                      "quorum: %(live)d+%(avote)d/%(total)d nodes (%(a)s)",
+                      live=live, avote=arbitrator_vote, total=total,
+                      a=arbitrator["name"])
+        self.log.info("toc")
+        NODE.system.crash()
 
     def forget_peer_data(self, nodename, change=False):
         """
@@ -509,6 +548,7 @@ class OsvcThread(threading.Thread):
                 del CLUSTER_DATA[nodename]
             except KeyError:
                 pass
+        self.split_handler()
 
     def peer_down(self, nodename):
         """

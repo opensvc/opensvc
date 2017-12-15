@@ -304,6 +304,13 @@ ACTIONS = {
                 OPT.nopager,
             ]
         },
+        "ping": {
+            "msg": "Ping a cluster node or arbitrator node. The ping "
+                   "validates the remote is functional.",
+            "options": [
+                OPT.node,
+            ]
+        },
         "shutdown": {
             "msg": "Shutdown the node to powered off state.",
         },

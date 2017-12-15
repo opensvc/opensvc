@@ -158,6 +158,9 @@ class Listener(shared.OsvcThread, Crypt):
         options = data.get("options", {})
         return getattr(self, fname)(nodename, conn=conn, **options)
 
+    def action_arbitrate(self, nodename, **kwargs):
+        pass
+
     def action_daemon_blacklist_clear(self, nodename, **kwargs):
         """
         Clear the senders blacklist.
