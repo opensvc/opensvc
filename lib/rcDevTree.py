@@ -178,7 +178,7 @@ class Dev(object):
         return d
 
     def get_top_devs_chain(self, chain=[]):
-        if len(self.parents) == 0:
+        if len(self.parents) == 0 or self.devtype == "multipath":
             return [[self, chain]]
         d = []
         for parent in self.parents:
