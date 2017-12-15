@@ -96,13 +96,12 @@ class Disk(resDisk.Disk):
         return ret
 
     def sub_devs(self):
-        if not os.path.exists(self.sub_devs_name):
-            if self.is_up():
-                self.log.debug("no sub devs cache file and resource up ... refresh sub devs cache")
-                self.presync()
-            else:
-                self.log.debug("no sub devs cache file and service not up ... unable to evaluate sub devs")
-                return set()
+        if self.is_up():
+            self.log.debug("resource up ... refresh sub devs cache")
+            self.presync()
+        elif not os.path.exists(self.sub_devs_name):
+            self.log.debug("no sub devs cache file and service not up ... unable to evaluate sub devs")
+            return set()
         with open(self.sub_devs_name, 'r') as f:
             buff = f.read()
         try:
