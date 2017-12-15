@@ -5,7 +5,7 @@ import rcIfconfigLinux as rcIfconfig
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import check_ping
-from rcUtilities import which, justcall, to_cidr, lazy
+from rcUtilities import which, justcall, to_cidr, lazy, unset_lazy
 
 class Ip(Res.Ip):
     def __init__(self,
@@ -46,8 +46,7 @@ class Ip(Res.Ip):
         Execute a ip link command in the container net namespace to parse
         used eth netdevs.
         """
-        nspid = self.get_nspid()
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip" , "link"]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip" , "link"]
         out, err, ret = justcall(cmd)
         used = []
         for line in out.splitlines():
@@ -85,14 +84,11 @@ class Ip(Res.Ip):
             return
         if nspid is None:
             return
-        self.create_netns_link(nspid=nspid, verbose=False)
 
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "addr"]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "addr"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
-
-        self.delete_netns_link(nspid=nspid, verbose=False)
 
         ifconfig = rcIfconfig.ifconfig(ip_out=out)
         return ifconfig
@@ -133,6 +129,7 @@ class Ip(Res.Ip):
         return False
 
     def _status(self, verbose=False):
+        unset_lazy(self, "sandboxkey")
         if self.container_running_elsewhere():
             self.status_log("%s is hosted by another host" % self.container_rid, "info")
             return rcStatus.NA
@@ -146,6 +143,7 @@ class Ip(Res.Ip):
         return ret
 
     def startip_cmd(self):
+        unset_lazy(self, "sandboxkey")
         if self.container.docker_service and \
            self._status() != rcStatus.STDBY_DOWN:
             return 0, "", ""
@@ -167,9 +165,6 @@ class Ip(Res.Ip):
             return self.startip_cmd_shared_macvlan()
 
     def startip_cmd_dedicated(self):
-        nspid = self.get_nspid()
-        self.create_netns_link(nspid=nspid)
-
         # assign interface to the nspid
         cmd = [rcEnv.syspaths.ip, "link", "set", self.ipdev, "netns", nspid, "name", self.guest_dev]
         ret, out, err = self.vcall(cmd)
@@ -177,36 +172,34 @@ class Ip(Res.Ip):
             return ret, out, err
 
         # plumb the ip
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # activate
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "link", "set", self.guest_dev, "up"]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "link", "set", self.guest_dev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # add default route
         if self.gateway:
-            cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "route", "add", "default", "via", self.gateway, "dev", self.guest_dev]
+            cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "route", "add", "default", "via", self.gateway, "dev", self.guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
 
         # announce
         if which("arping") is not None:
-            cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
+            cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
             self.log.info(" ".join(cmd))
             out, err, ret = justcall(cmd)
 
-        self.delete_netns_link(nspid=nspid)
         return 0, "", ""
 
     def startip_cmd_shared_bridge(self):
         nspid = self.get_nspid()
-        self.create_netns_link(nspid=nspid)
         tmp_guest_dev = "v%spg%s" % (self.guest_dev, nspid)
         tmp_local_dev = "v%spl%s" % (self.guest_dev, nspid)
         mtu = self.ip_get_mtu()
@@ -234,27 +227,26 @@ class Ip(Res.Ip):
             return ret, out, err
 
         # rename the tmp guest dev
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # plumb ip
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # setup default route
-        self.ip_setup_route(nspid)
+        self.ip_setup_route()
 
         self.ip_wait()
-        self.delete_netns_link(nspid=nspid)
         return 0, "", ""
 
     def startip_cmd_shared_macvlan(self):
         nspid = self.get_nspid()
-        self.create_netns_link(nspid=nspid)
+
         tmp_guest_dev = "ph%s%s" % (nspid, self.guest_dev)
         mtu = self.ip_get_mtu()
 
@@ -277,22 +269,21 @@ class Ip(Res.Ip):
             return ret, out, err
 
         # rename the tmp guest dev
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # plumb the ip
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # setup default route
-        self.ip_setup_route(nspid)
+        self.ip_setup_route()
 
         self.ip_wait()
-        self.delete_netns_link(nspid=nspid)
         return 0, "", ""
 
     def ip_get_mtu(self):
@@ -304,30 +295,30 @@ class Ip(Res.Ip):
         mtu = out.split()[4]
         return mtu
 
-    def ip_setup_route(self, nspid):
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "route", "del", "default"]
+    def ip_setup_route(self):
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "route", "del", "default"]
         ret, out, err = self.call(cmd, errlog=False)
 
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "link", "set", self.guest_dev, "up"]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "link", "set", self.guest_dev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         if self.gateway:
-            cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "route", "replace", "default", "via", self.gateway]
+            cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "route", "replace", "default", "via", self.gateway]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
 
         if self.del_net_route and self.network:
-            cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "route", "del", self.network+"/"+to_cidr(self.mask), "dev", self.guest_dev]
+            cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "route", "del", self.network+"/"+to_cidr(self.mask), "dev", self.guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
 
         # announce
         if which("arping") is not None:
-            cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
+            cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
             self.log.info(" ".join(cmd))
             out, err, ret = justcall(cmd)
 
@@ -354,51 +345,30 @@ class Ip(Res.Ip):
             raise ex.excError("nspid is 0")
         return nspid
 
-    @staticmethod
-    def nsname(nspid):
-        return "osvc.%s" % nspid
-
-    def delete_netns_link(self, nspid=None, verbose=True):
-        if nspid is None:
-            nspid = self.get_nspid()
-        if nspid is None:
-            raise ex.excError("can not determine nspid")
-        run_d = "/var/run/netns"
-        if not os.path.exists(run_d):
+    @lazy
+    def sandboxkey(self):
+        container_id = self.container_id(refresh=True)
+        if container_id is None:
             return
-        run_netns = os.path.join(run_d, self.nsname(nspid))
-        try:
-            os.unlink(run_netns)
-            if verbose:
-                self.log.info("remove %s" % run_netns)
-        except:
-            pass
-
-    def create_netns_link(self, nspid=None, verbose=True):
-        if nspid is None:
-            nspid = self.get_nspid()
-        if nspid is None:
-            raise ex.excError("can not determine nspid")
-        run_d = "/var/run/netns"
-        if not os.path.exists(run_d):
-            os.makedirs(run_d)
-        run_netns = os.path.join(run_d, self.nsname(nspid))
-        proc_netns = "/proc/%s/ns/net" % nspid
-        if os.path.exists(proc_netns) and not os.path.exists(run_netns):
-            if verbose:
-                self.log.info("create symlink %s -> %s" % (run_netns, proc_netns))
-            os.symlink(proc_netns, run_netns)
+        cmd = self.svc.dockerlib.docker_cmd + ["inspect", "--format='{{ .NetworkSettings.SandboxKey }}'", container_id]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError("failed to get sandboxkey: %s" % err)
+        sandboxkey = out.strip()
+        if "'" in sandboxkey:
+            sandboxkey = sandboxkey.replace("'","")
+        if sandboxkey == "":
+            raise ex.excError("sandboxkey is empty")
+        return sandboxkey
 
     def stopip_cmd(self):
         intf = self.get_docker_interface()
-        nspid = self.get_nspid()
-        self.create_netns_link(nspid=nspid)
         if intf is None:
             raise ex.excContinueAction("can't find on which interface %s is plumbed in container %s" % (self.addr, self.container_id()))
         if self.mask is None:
             raise ex.excContinueAction("netmask is not set")
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nsname(nspid), "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]
         ret, out, err = self.vcall(cmd)
-        self.delete_netns_link(nspid=nspid)
+        unset_lazy(self, "sandboxkey")
         return ret, out, err
 

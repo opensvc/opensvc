@@ -180,6 +180,7 @@ class rcEnv:
         syspaths.lvs = "/sbin/lvs"
         syspaths.multipath = "/sbin/multipath"
         syspaths.multipathd = "/sbin/multipathd"
+        syspaths.nsenter = "/usr/bin/nsenter"
         syspaths.pvs = "/sbin/pvs"
         syspaths.pvscan = "/sbin/pvscan"
         syspaths.vgs = "/sbin/vgs"
