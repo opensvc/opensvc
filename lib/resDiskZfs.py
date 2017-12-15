@@ -97,13 +97,12 @@ class Disk(resDisk.Disk):
         return ret
 
     def disklist(self):
+        if self.is_up():
+            self.log.debug("resource up ... refresh disklist cache")
+            self.presync()
         if not os.path.exists(self.disklist_name):
-            if self.is_up():
-                self.log.debug("no disklist cache file and resource up ... refresh disklist cache")
-                self.presync()
-            else:
-                self.log.debug("no disklist cache file and service not up ... unable to evaluate disklist")
-                return set([])
+            self.log.debug("no disklist cache file and service not up ... unable to evaluate disklist")
+            return set([])
         with open(self.disklist_name, 'r') as f:
             buff = f.read()
         try:
