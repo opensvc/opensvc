@@ -70,6 +70,8 @@ def _main(node, argv=None):
     while True:
         if options.watch:
             preamble = "\033[H\033[J" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
+        else:
+            preamble = ""
         node.daemon_status(svcnames=expanded_svcs, preamble=preamble)
         if not options.watch:
             break
