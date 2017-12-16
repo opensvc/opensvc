@@ -3159,6 +3159,8 @@ class Node(Crypt):
                 config = _data["config"]["addr"]+":"+str(_data["config"]["port"])
             elif "dev" in _data["config"]:
                 config = os.path.basename(_data["config"]["dev"])
+            elif "relay" in _data["config"]:
+                config = _data["config"]["relay"]
             else:
                 config = ""
             line = [
