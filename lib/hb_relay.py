@@ -120,7 +120,7 @@ class HbRelayTx(HbRelay):
         request = {
             "action": "relay_tx",
             "options": {
-                "msg": message,
+                "msg": message[:-1].decode("ascii"),
             },
         }
         resp = self.daemon_send(request, cluster_name="join", nodename=self.relay, secret=self.secret)
@@ -205,7 +205,11 @@ class HbRelayRx(HbRelay):
             raise ex.excError("return status not 0")
         if resp.get("data") is None:
             raise ex.excError("no data in response")
-        return resp["data"]
+        try:
+            # python3
+            return bytes(resp["data"], "ascii")
+        except TypeError:
+            return resp["data"]
 
 
 
