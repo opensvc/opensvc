@@ -3641,8 +3641,9 @@ class Node(Crypt):
 
         # remove obsolete hb configurations
         for section in self.config.sections():
-            if section.startswith("hb#"):
-                self.log.info("remove heartbeat %s", section)
+            if section.startswith("hb#") or \
+               section.startswith("arbitrator#"):
+                self.log.info("remove configuration %s", section)
                 self.config.remove_section(section)
             self.config.remove_section("cluster")
 
