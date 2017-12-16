@@ -774,10 +774,10 @@ class Monitor(shared.OsvcThread, Crypt):
             self.rejoin_grace_period_expired = True
             if n_reachable < len(self.cluster_nodes):
                 self.freezer.node_freeze()
-		self.duplog("info", "end of rejoin grace period: now rejoined "
+                self.duplog("info", "end of rejoin grace period: now rejoined "
                             "but frozen (cluster incomplete)", svcname="")
             else:
-		self.duplog("info", "end of rejoin grace period: now rejoined", svcname="")
+                self.duplog("info", "end of rejoin grace period: now rejoined", svcname="")
             return False
         now = datetime.datetime.utcnow()
         if now > self.startup + datetime.timedelta(seconds=self.rejoin_grace_period):
