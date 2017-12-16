@@ -3033,7 +3033,7 @@ class Node(Crypt):
         )
         return data
 
-    def daemon_status(self, svcnames=None):
+    def daemon_status(self, svcnames=None, preamble=""):
         data = self._daemon_status()
         if data is None or data.get("status", 0) != 0:
             return
@@ -3350,6 +3350,7 @@ class Node(Crypt):
             load_svc(svcname, services[svcname])
 
         # print tabulated lists
+        print(preamble)
         print_section(out)
 
     def daemon_blacklist_clear(self):

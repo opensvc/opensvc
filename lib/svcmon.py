@@ -1,6 +1,8 @@
 from __future__ import print_function
 import sys
 import optparse
+import time
+import datetime
 
 #
 # add project lib to path
@@ -21,6 +23,10 @@ __usage = prog + " [ OPTIONS ]\n"
 parser = optparse.OptionParser(version=__ver, usage=__usage)
 parser.add_option("--color", default="auto", action="store", dest="color",
                   help="colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize")
+parser.add_option("-w", "--watch", default=False, action="store_true", dest="watch",
+                  help="refresh the information every --interval.")
+parser.add_option("-i", "--interval", default=2, action="store", dest="interval", type="int",
+                  help="with --watch, set the refresh interval.")
 parser.add_option(
     "-s", "--service", default=None,
     action="store", dest="parm_svcs",
@@ -61,7 +67,14 @@ def _main(node, argv=None):
     node.options.update({
         "color": options.color,
     })
-    node.daemon_status(svcnames=expanded_svcs)
+    while True:
+        if options.watch:
+            preamble = "\033[H\033[J" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
+        node.daemon_status(svcnames=expanded_svcs, preamble=preamble)
+        if not options.watch:
+            break
+        time.sleep(options.interval)
+
 
 def main(argv=None):
     if argv is None:
