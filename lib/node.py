@@ -32,9 +32,9 @@ import xmlrpcClient
 from rcGlobalEnv import rcEnv, Storage
 import rcLogger
 import rcExceptions as ex
+import rcConfigParser
 from freezer import Freezer
 from rcScheduler import Scheduler, SchedOpts, sched_action
-from rcConfigParser import RawConfigParser
 from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         call, which, purge_cache_expired, read_cf, unset_lazy, \
@@ -763,6 +763,8 @@ class Node(Crypt):
         """
         try:
             self.config = read_cf(rcEnv.paths.nodeconf, CONFIG_DEFAULTS)
+        except rcConfigParser.ParsingError as exc:
+            print(str(exc), file=sys.stderr)
         except IOError:
             # some action don't need self.config
             pass
@@ -1671,6 +1673,8 @@ class Node(Crypt):
 
         if param is None:
             raise ex.excError("no parameter. set --param")
+        if self.config is None:
+            raise ex.excError("invalid configuration file")
         elements = param.split('.')
         if len(elements) != 2:
             raise ex.excError("malformed parameter. format as 'section.key'")
@@ -2265,7 +2269,7 @@ class Node(Crypt):
             "vm_name": vmname,
             "cloud_id": cloud.cid,
         }
-        config = RawConfigParser(defaults)
+        config = rcConfigParser.RawConfigParser(defaults)
 
         try:
             ofile = open(fpath, 'w')
