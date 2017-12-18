@@ -3698,7 +3698,7 @@ class Node(Crypt):
             raise ex.excError("join failed: no cluster.nodes in response")
         if not isinstance(cluster_nodes, list):
             raise ex.excError("join failed: cluster.nodes value is not a list")
-        quorum = data.get("quorum", False)
+        quorum = data.get("cluster", {}).get("quorum", False)
 
         self.config.set("cluster", "name", cluster_name)
         self.config.set("cluster", "nodes", " ".join(cluster_nodes))
