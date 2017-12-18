@@ -31,8 +31,8 @@ class Prov(provisioning.Prov):
         # the resource is a fs
         try:
             dev = self.r.conf_get("dev")
-        except ex.OptNotFound:
-            raise ex.excError("the '%s.dev' keyword is mandatory" % self.r.rid)
+        except ex.RequiredOptNotFound:
+            raise ex.excError
 
         if dev.startswith("LABEL=") or dev.startswith("UUID="):
             _dev = label_to_dev(dev, tree=self.r.svc.node.devtree)
@@ -43,8 +43,8 @@ class Prov(provisioning.Prov):
 
         try:
             vg = self.r.conf_get("vg")
-        except ex.OptNotFound:
-            raise ex.excError("the '%s.vg' keyword is mandatory" % self.r.rid)
+        except ex.RequiredOptNotFound:
+            raise ex.excError
 
         if dev.startswith('/dev/mapper/'):
             dev = dev.replace(vg.replace('-', '--')+'-', '')
