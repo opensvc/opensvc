@@ -520,10 +520,10 @@ class OsvcThread(threading.Thread):
                         live=live, avote=arbitrator_vote, total=total,
                         a=arbitrator["name"])
             return
-        self.log.info("cluster is split, we don't have 1st nor 2nd ring "
-                      "quorum: %(live)d+%(avote)d/%(total)d nodes (%(a)s)",
-                      live=live, avote=arbitrator_vote, total=total,
-                      a=arbitrator["name"])
+        self.duplog("info", "cluster is split, we don't have 1st nor 2nd ring "
+                    "quorum: %(live)d+%(avote)d/%(total)d nodes (%(a)s)",
+                    live=live, avote=arbitrator_vote, total=total,
+                    a=arbitrator["name"])
         self.log.info("toc")
         NODE.system.crash()
 
