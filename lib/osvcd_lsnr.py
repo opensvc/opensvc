@@ -158,8 +158,19 @@ class Listener(shared.OsvcThread, Crypt):
         options = data.get("options", {})
         return getattr(self, fname)(nodename, conn=conn, **options)
 
-    def action_arbitrate(self, nodename, **kwargs):
-        pass
+    def action_relay_tx(self, nodename, **kwargs):
+        if not hasattr(self, "relay_data"):
+            self.relay_data = {}
+        self.relay_data[nodename] = kwargs.get("msg")
+        return {"status": 0}
+
+    def action_relay_rx(self, nodename, **kwargs):
+        if not hasattr(self, "relay_data"):
+            return {"status": 1, "error": "no data"}
+        _nodename = kwargs.get("slot")
+        if _nodename not in self.relay_data:
+            return {"status": 1, "error": "no data"}
+        return {"status": 0, "data": self.relay_data[_nodename]}
 
     def action_daemon_blacklist_clear(self, nodename, **kwargs):
         """
@@ -331,7 +342,9 @@ class Listener(shared.OsvcThread, Crypt):
             },
         }
         for section in self.config.sections():
-            if section.startswith("hb#") or section.startswith("stonith#"):
+            if section.startswith("hb#") or \
+               section.startswith("stonith#") or \
+               section.startswith("arbitrator#"):
                 result["data"][section] = {}
                 for key, val in self.config.items(section):
                     result["data"][section][key] = val

@@ -3735,12 +3735,10 @@ class Svc(Crypt):
             self.save_exc()
         finally:
             self.running_action = None
+            if not (action == "delete" and not self.command_is_scoped()):
+                self.update_status_data()
             self.clear_action(action, err)
-
-        self.svcunlock()
-
-        if not (action == "delete" and not self.command_is_scoped()):
-            self.update_status_data()
+            self.svcunlock()
 
         if psinfo:
             self.join_cluster_action(**psinfo)
@@ -3774,7 +3772,7 @@ class Svc(Crypt):
         if progress is None:
             return
         local_expect = None
-        if action in ("stop", "unprovision", "delete", "shutdown") and not self.command_is_scoped():
+        if action in ("stop", "unprovision", "delete", "shutdown", "rollback") and not self.command_is_scoped():
             local_expect = "unset"
             self.freeze()
         try:

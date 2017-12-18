@@ -6,6 +6,8 @@ try:
 except ImportError:
     import configparser as ConfigParser
 
+ParsingError = ConfigParser.ParsingError
+
 if sys.version_info[0] < 3:
     class RawConfigParser(ConfigParser.RawConfigParser):
         def __init__(self, *args, **kwargs):

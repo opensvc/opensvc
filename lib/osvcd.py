@@ -25,6 +25,7 @@ from osvcd_collector import Collector
 from hb_ucast import HbUcastRx, HbUcastTx
 from hb_mcast import HbMcastRx, HbMcastTx
 from hb_disk import HbDiskRx, HbDiskTx
+from hb_relay import HbRelayRx, HbRelayTx
 
 DAEMON_TICKER = threading.Condition()
 DAEMON_INTERVAL = 2
@@ -33,6 +34,7 @@ HEARTBEATS = (
     ("multicast", HbMcastTx, HbMcastRx),
     ("unicast", HbUcastTx, HbUcastRx),
     ("disk", HbDiskTx, HbDiskRx),
+    ("relay", HbRelayTx, HbRelayRx),
 )
 
 def fork(func, args=None, kwargs=None):

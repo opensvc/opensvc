@@ -767,11 +767,17 @@ class Monitor(shared.OsvcThread, Crypt):
             return False
         if len(self.cluster_nodes) == 1:
             self.rejoin_grace_period_expired = True
-            self.duplog("info", "disable rejoin grace period: single node cluster", svcname="")
+            self.duplog("info", "end of rejoin grace period: single node cluster", svcname="")
             return False
-        if len(shared.CLUSTER_DATA.keys()) > 1:
+        n_reachable = len(shared.CLUSTER_DATA.keys())
+        if n_reachable > 1:
             self.rejoin_grace_period_expired = True
-            self.duplog("info", "disable rejoin grace period: now rejoined", svcname="")
+            if n_reachable < len(self.cluster_nodes):
+                self.freezer.node_freeze()
+                self.duplog("info", "end of rejoin grace period: now rejoined "
+                            "but frozen (cluster incomplete)", svcname="")
+            else:
+                self.duplog("info", "end of rejoin grace period: now rejoined", svcname="")
             return False
         now = datetime.datetime.utcnow()
         if now > self.startup + datetime.timedelta(seconds=self.rejoin_grace_period):

@@ -498,6 +498,10 @@ class OsvcThread(threading.Thread):
             self.duplog("info", "cluster is split, ignore as cluster.quorum is "
                         "false", msgid="quorum disabled")
             return
+        if self.freezer.node_frozen():
+            self.duplog("info", "cluster is split, ignore as the node is frozen",
+                        msgid="quorum disabled")
+            return
         live = len(CLUSTER_DATA)
         total = len(self.cluster_nodes)
         if live > total / 2:
