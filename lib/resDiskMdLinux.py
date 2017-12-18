@@ -8,7 +8,7 @@ import resDisk
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
-                             devs_to_disks
+                             dev_to_paths
 from rcUtilities import which, justcall, lazy, fcache
 
 class Disk(resDisk.Disk):
@@ -285,7 +285,8 @@ class Disk(resDisk.Disk):
             if inblock and "devices=" in line:
                 l = line.split("devices=")[-1].split(",")
                 l = map(lambda x: os.path.realpath(x), l)
-                devs |= set(l)
+                for dev in l:
+                    devs |= set(dev_to_paths(dev))
                 break
 
         self.log.debug("found devs %s held by md %s" % (devs, self.uuid))
