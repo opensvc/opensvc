@@ -3705,6 +3705,8 @@ class Node(Crypt):
         self.config.set("cluster", "secret", self.options.secret)
         if quorum:
             self.config.set("cluster", "quorum", "true")
+        elif self.config.has_option("cluster", "quorum"):
+            self.config.remove_option("cluster", "quorum")
 
         for section, _data in data.items():
             if section.startswith("hb#"):
