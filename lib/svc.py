@@ -4229,11 +4229,12 @@ class Svc(Crypt):
 
     def set_mangle(self, keyword, op, value, index):
         def list_value(keyword):
+            import rcConfigParser
             if keyword in self.set_multi_cache:
                 return self.set_multi_cache[keyword].split()
             try:
                 _value = self._get(keyword, self.options.eval).split()
-            except ex.excError as exc:
+            except (ex.excError, rcConfigParser.NoOptionError) as exc:
                 _value = []
             return _value
 
