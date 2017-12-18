@@ -636,6 +636,12 @@ ACTIONS = {
                 OPT.cron,
             ],
         },
+        "push_encap_config": {
+            "msg": "Push service configuration to the containers hosting an encapsulated service.",
+            "options": [
+                OPT.cron,
+            ],
+        },
         "pull": {
             "msg": "Pull a service configuration from the collector, overwritting the currently installed one.",
             "options": [
