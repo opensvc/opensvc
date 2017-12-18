@@ -3698,10 +3698,13 @@ class Node(Crypt):
             raise ex.excError("join failed: no cluster.nodes in response")
         if not isinstance(cluster_nodes, list):
             raise ex.excError("join failed: cluster.nodes value is not a list")
+        quorum = data.get("quorum", False)
 
         self.config.set("cluster", "name", cluster_name)
         self.config.set("cluster", "nodes", " ".join(cluster_nodes))
         self.config.set("cluster", "secret", self.options.secret)
+        if quorum:
+            self.config.set("cluster", "quorum", "true")
 
         for section, _data in data.items():
             if section.startswith("hb#"):
@@ -3722,6 +3725,15 @@ class Node(Crypt):
                 self.config.add_section(section)
                 for option, value in _data.items():
                     self.config.set(section, option, value)
+            elif section.startswith("arbitrator#"):
+                if self.config.has_section(section):
+                    self.log.info("update arbitrator %s", section)
+                    self.config.remove_section(section)
+                else:
+                    self.log.info("add arbitrator %s", section)
+                self.config.add_section(section)
+                for option, value in _data.items():
+                    self.config.set(section, option, value)
 
         # remove obsolete hb configurations
         for section in self.config.sections():
@@ -3733,6 +3745,12 @@ class Node(Crypt):
         for section in self.config.sections():
             if section.startswith("stonith#") and section not in data:
                 self.log.info("remove stonith %s", section)
+                self.config.remove_section(section)
+
+        # remove obsolete arbitrator configurations
+        for section in self.config.sections():
+            if section.startswith("arbitrator#") and section not in data:
+                self.log.info("remove arbitrator %s", section)
                 self.config.remove_section(section)
 
         self.write_config()
