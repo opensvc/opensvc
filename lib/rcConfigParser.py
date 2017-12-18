@@ -7,6 +7,7 @@ except ImportError:
     import configparser as ConfigParser
 
 ParsingError = ConfigParser.ParsingError
+NoOptionError = ConfigParser.NoOptionError
 
 if sys.version_info[0] < 3:
     class RawConfigParser(ConfigParser.RawConfigParser):
