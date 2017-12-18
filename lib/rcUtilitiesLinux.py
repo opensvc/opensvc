@@ -23,11 +23,13 @@ def dev_to_paths(dev, log=None):
     if ret != 0:
         raise ex.excError
     paths = []
-    for line in out.split("\n"):
-        l = line.split()
-        if len(l) < 3:
+    for line in out.splitlines():
+        # strip forest markers
+        line = line.strip("\\- +_|`")
+        l = re.split("\s+", line)
+        if len(l) < 2:
             continue
-        dev = l[2]
+        dev = l[1]
         if not dev.startswith("sd"):
             continue
         paths.append("/dev/"+dev)
