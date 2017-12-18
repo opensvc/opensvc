@@ -279,5 +279,5 @@ class ScsiReserv(Res.Resource):
         if self.scsirelease() != 0:
             raise ex.excError
 
-    def is_provisioned(self):
+    def is_provisioned(self, refresh=False):
         return True
