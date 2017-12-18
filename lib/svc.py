@@ -3789,7 +3789,8 @@ class Svc(Crypt):
         local_expect = None
         if action in ("stop", "unprovision", "delete", "shutdown", "rollback") and not self.command_is_scoped():
             local_expect = "unset"
-            self.freeze()
+            if self.orchestrate == "ha":
+                self.freeze()
         try:
             self.set_service_monitor(local_expect=local_expect, status=progress)
             self.log.debug("daemon notified of action '%s' begin" % action)
