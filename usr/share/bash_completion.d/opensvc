@@ -244,7 +244,9 @@ opts_with_arg=( "--add" "--api" "--app" "--author" "--backlog" "--begin" "--broa
 
 
 
-svcs=$(find /etc/opensvc /opt/opensvc/etc -maxdepth 1 -lname "*/bin/svcmgr" -a ! -name "*.*" -exec basename {} \; 2>/dev/null)
+svcs=($(ls -d /opt/opensvc/var/services/* /var/lib/opensvc/services/* 2>/dev/null))
+svcs=$(echo ${svcs[@]##*/})
+nodes=$(cat /opt/opensvc/etc/node.conf /etc/opensvc/node.conf 2>/dev/null | grep "nodes.*=" | cut -d= -f2)
 
 opt_has_arg()
 {
@@ -280,6 +282,10 @@ _comp_handler()
             ;;
         --service|-s)
             COMPREPLY=( $(compgen -W "${svcs}" -- ${a}) )
+            return 0
+            ;;
+        --node)
+            COMPREPLY=( $(compgen -W "${nodes}" -- ${a}) )
             return 0
             ;;
         *)
