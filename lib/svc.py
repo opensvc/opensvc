@@ -3066,6 +3066,13 @@ class Svc(Crypt):
                 catnode.add_column(__data[-1])
         print(tree)
 
+    def push_config(self):
+        """
+        Push the service config to the collector. Usually done
+        automatically by the collector thread.
+        """
+        self.node.collector.call('push_config', self)
+
     def push_resinfo(self):
         """
         The 'push_resinfo' scheduler task and action entrypoint.
