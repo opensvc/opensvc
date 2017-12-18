@@ -338,7 +338,7 @@ class Listener(shared.OsvcThread, Crypt):
                 "cluster": {
                     "nodes": new_nodes,
                     "name": self.cluster_name,
-                    "name": self.quorum,
+                    "quorum": self.quorum,
                 },
             },
         }
