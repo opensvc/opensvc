@@ -1,6 +1,7 @@
 import resources as Res
 import uuid
 import re
+import os
 import time
 import rcStatus
 import rcExceptions as ex
@@ -98,7 +99,7 @@ class ScsiReserv(Res.Resource):
     def disk_preempt_reservation(self, disk, oldkey):
         if not hasattr(self, '_disk_preempt_reservation'):
             raise ex.notImplemented
-        if not self.svc.options.force and not self.svc.options.daemon:
+        if not self.svc.options.force and os.environ.get("OSVC_ACTION_ORIGIN") != "daemon":
             self.log.error("%s is already reserved. use --force to override this safety net"%disk)
             raise ex.excError
         return self._disk_preempt_reservation(disk, oldkey)
