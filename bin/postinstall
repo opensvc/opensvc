@@ -14,6 +14,10 @@ except:
     import platform
     sysname, nodename, x, x, machine, x = platform.uname()
 
+p0755 = int("0755", 8)
+p0700 = int("0700", 8)
+p0644 = int("0644", 8)
+
 postinstall_d = sys.path[0]
 if '/catalog/' in postinstall_d:
     # hpux packaging subsystem executes the postinstall from dir
@@ -53,7 +57,7 @@ else:
 
 def make_sure_path_exists(path):
     try:
-        os.makedirs(path, 0o0755)
+        os.makedirs(path, p0755)
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
@@ -364,7 +368,7 @@ def activate_systemd(launcher):
     logit("installing systemd unit file",stdout=True)
     try:
         shutil.copyfile(src, dst)
-        os.chmod(dst, 0o0644)
+        os.chmod(dst, p0644)
     except:
         logit("issue met while trying to install systemd unit file",stderr=True)
 
@@ -638,7 +642,7 @@ def install_rc():
     if copyrc:
         logit("copying src launcher script to rc")
         shutil.copyfile(src, rc)
-        os.chmod(rc, 0o0755)
+        os.chmod(rc, p0755)
 
     if params is not None and not os.path.exists(params):
         logit("installing default parameters file")
@@ -659,7 +663,7 @@ def gen_keys():
     logit("sshhome <%s>"%sshhome)
     if not os.path.exists(sshhome):
         logit("create dir %s"%sshhome,stdout=True)
-        os.makedirs(sshhome, 0o0700)
+        os.makedirs(sshhome, p0700)
     priv = os.path.join(sshhome, "id_rsa")
     pub = os.path.join(sshhome, "id_rsa.pub")
     if os.path.exists(pub) or os.path.exists(priv):
@@ -675,7 +679,7 @@ def missing_dir(pathd):
     logit("begin")
     if not os.path.exists(pathd):
         logit("create dir %s"%pathd,stdout=True)
-        os.makedirs(pathd, 0o0755)
+        os.makedirs(pathd, p0755)
 
 def missing_dirs():
     logit("begin")
@@ -804,7 +808,7 @@ def move_var_files_19():
     old_node_frozen = os.path.join(pathvar, "FROZEN")
     pathvar_node = os.path.join(pathvar, "node")
     if not os.path.exists(pathvar_node):
-        os.makedirs(pathvar_node, 0o755)
+        os.makedirs(pathvar_node, p0755)
     if os.path.exists(old_node_frozen):
         node_frozen = os.path.join(pathvar_node, "frozen")
         shutil.move(old_node_frozen, node_frozen)
@@ -814,14 +818,14 @@ def move_var_files_19():
         svcname = os.path.basename(fpath).replace("FROZEN.", "")
         pathvar_svc = os.path.join(pathvar, "services", svcname)
         if not os.path.exists(pathvar_svc):
-            os.makedirs(pathvar_svc, 0o755)
+            os.makedirs(pathvar_svc, p0755)
         svc_frozen = os.path.join(pathvar_svc, "frozen")
         shutil.move(fpath, svc_frozen)
 
     # stats
     pathstats = os.path.join(pathvar, "stats")
     if not os.path.exists(pathstats):
-        os.makedirs(pathstats, 0o755)
+        os.makedirs(pathstats, p0755)
     for fpath in glob.glob(os.path.join(pathvar, "stats_*")):
         fname = os.path.basename(fpath).replace("stats_", "")
         dst = os.path.join(pathvar, "stats", fname)
@@ -906,7 +910,7 @@ def install_bash_completion():
     try:
         logit("installing bash completion file src %s to tgt %s"%(src,dst))
         shutil.copyfile(src, dst)
-        os.chmod(dst, 0o0644)
+        os.chmod(dst, p0644)
     except:
         logit("issue met while trying to install bash completion file src %s to tgt %s"%(src,dst))
 
@@ -1098,7 +1102,7 @@ def chmod_directories():
             for subdirname in dirnames:
                 dirpath = os.path.join(dirname, subdirname)
                 try:
-                    os.chmod(dirpath, 0o0755)
+                    os.chmod(dirpath, p0755)
                     msg = "setting %s permissions to 0755" % dirpath
                 except:
                     msg = "issue met while trying to set %s permissions to 0755" % dirpath
