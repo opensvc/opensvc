@@ -1,3 +1,7 @@
+"""
+A CNI driver following the specs available at
+https://github.com/containernetworking/cni/blob/master/SPEC.md
+"""
 import os
 import hashlib
 import json
@@ -99,26 +103,34 @@ class Ip(Res.Ip):
             return False
         return True
 
+    def has_ip(self):
+        ifconfig = self.get_ifconfig()
+        if ifconfig is None:
+            return False
+        iface = ifconfig.interface(self.ipdev)
+        if iface is None:
+            return False
+        if len(iface.ipaddr) == 0:
+            return False
+        return True
+
     def abort_start(self):
         return False
 
     @lazy
     def cni_data(self):
-        with open(self.cni_conf, "r") as ofile:
-            return json.load(ofile)
+        try:
+            with open(self.cni_conf, "r") as ofile:
+                return json.load(ofile)
+        except ValueError:
+            raise ex.excError("invalid json in cni configuration file %s" % self.cni_conf)
 
     @lazy
     def cni_conf(self):
         return "/opt/cni/net.d/%s.conf" % self.network
 
-    @lazy
-    def cni_bin(self):
-        cni_driver = self.cni_data["type"]
-        return "/opt/cni/bin/%s" % cni_driver
-
-    @lazy
-    def cni_ipam_bin(self):
-        cni_driver = self.cni_data["ipam"]["type"]
+    def cni_bin(self, data):
+        cni_driver = data["type"]
         return "/opt/cni/bin/%s" % cni_driver
 
     @lazy
@@ -157,31 +169,29 @@ class Ip(Res.Ip):
         self.startip_cmd()
         return False
 
-    def cni_cmd(self, _env, cmd):
-        self.log_cmd(_env, cmd)
+    def cni_cmd(self, _env, data):
+        cmd = [self.cni_bin(data)]
+        self.log_cmd(_env, data, cmd)
         env = {}
         env.update(rcEnv.initial_env)
         env.update(_env)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE, env=env)
-        with open(self.cni_conf, "r") as ofile:
-            buff = ofile.read()
-        out, err = proc.communicate(input=buff)
+        out, err = proc.communicate(input=json.dumps(data))
         try:
             data = json.loads(out)
         except ValueError:
             if proc.returncode == 0:
-                return 0, out, err
-            else:
-                raise ex.excError(err)
+                # for example a del portmap outs nothing
+                return
+            raise ex.excError(err)
         if "code" in data:
-            self.log.error(data.get("msg", ""))
-            return 1, "", data.get("msg", "")
+            raise ex.excError(data.get("msg", ""))
         self.log.info(out)
-        return 0, out, err
+        return data
 
-    def log_cmd(self, _env, cmd):
-        text = " ".join(map(lambda x: "%s=%s" % (x[0], x[1]), _env.items()))
-        text += " %s <%s" % (" ".join(cmd), self.cni_conf)
+    def log_cmd(self, _env, data, cmd):
+        envs = " ".join(map(lambda x: "%s=%s" % (x[0], x[1]), _env.items()))
+        text = "echo '%s' | %s %s" % (json.dumps(data), envs, " ".join(cmd))
         self.log.info(text)
 
     def has_netns(self):
@@ -213,6 +223,13 @@ class Ip(Res.Ip):
         if ret != 0:
             raise ex.excError()
 
+    def get_plugins(self):
+        if "type" in self.cni_data:
+            return self.cni_data
+        elif "plugins" in self.cni_data:
+            return self.cni_data["plugins"]
+        raise ex.excError("no type nor plugins in cni configuration %s" % self.cni_conf)
+
     def add_cni(self):
         if not self.has_netns():
             raise ex.excError("netns %s not found" % self.nspid)
@@ -232,11 +249,21 @@ class Ip(Res.Ip):
         else:
             _env["CNI_NETNS"] = self.nspidfile
 
-        cmd = [self.cni_bin]
-        return self.cni_cmd(_env, cmd)
+        ret = 0
+        result = None
+        for data in self.get_plugins():
+            data["cniVersion"] = self.cni_data["cniVersion"]
+            data["name"] = self.cni_data["name"]
+            if result is not None:
+                data["prevResult"] = result
+            result = self.cni_cmd(_env, data)
 
     def del_cni(self):
         if not self.has_netns():
+            self.log.info("already no ip dev %s" % self.ipdev)
+            return
+        if not self.has_ip():
+            self.log.info("already no ip on dev %s" % self.ipdev)
             return
         _env = {
             "CNI_COMMAND": "DEL",
@@ -252,8 +279,10 @@ class Ip(Res.Ip):
         else:
             _env["CNI_NETNS"] = self.nspidfile
 
-        cmd = [self.cni_bin]
-        return self.cni_cmd(_env, cmd)
+        for data in reversed(self.get_plugins()):
+            data["cniVersion"] = self.cni_data["cniVersion"]
+            data["name"] = self.cni_data["name"]
+            result = self.cni_cmd(_env, data)
 
     def start(self):
         self.add_netns()
@@ -264,6 +293,10 @@ class Ip(Res.Ip):
         self.del_netns()
 
     def _status(self, verbose=False):
+        try:
+            self.cni_data
+        except ex.excError as exc:
+            self.status_log(str(exc))
         _has_netns = self.has_netns()
         _has_ipdev = self.has_ipdev()
         if self.container_rid and not _has_ipdev:
