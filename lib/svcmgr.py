@@ -124,7 +124,8 @@ def do_svcs_action(node, options, action, argv):
     """
     ret = 0
 
-    if not options.daemon and ( \
+    if os.environ.get("OSVC_ACTION_ORIGIN") != "daemon" and \
+       not options.daemon and ( \
         action in ("stop", "shutdown", "unprovision", "switch") or \
         (action == "delete" and options.unprovision == True)
        ):

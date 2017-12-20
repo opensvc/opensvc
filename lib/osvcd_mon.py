@@ -954,6 +954,9 @@ class Monitor(shared.OsvcThread, Crypt):
             instance = self.get_any_service_instance(svcname)
         except IndexError:
             instance = Storage()
+        if instance is None:
+            self.log.error("service %s has no instance", svcname)
+            return "unknown"
         topology = instance.get("topology")
         if topology == "failover":
             avail = self.get_agg_avail_failover(svcname)
