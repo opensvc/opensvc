@@ -5,7 +5,7 @@ data = {
   "example_value": """ 
 {
   "path": "/some/path/to/file",
-  "fmt": "---",
+  "fmt": "---"
 }
   """,
   "description": """* Fetch a playbook from a href if required
