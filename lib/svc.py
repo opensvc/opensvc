@@ -1431,6 +1431,8 @@ class Svc(Crypt):
         if len(containers) > 0:
             data['encap'] = {}
             for container in containers:
+                if not self.has_encap_resources:
+                    continue
                 if container.name is None or len(container.name) == 0:
                     # docker case
                     continue
@@ -1734,6 +1736,8 @@ class Svc(Crypt):
             try:
                 ejs = data["encap"][container.rid]
                 ers[container.rid] = dispatch_resources(ejs)
+            except KeyError:
+                continue
             except ex.excNotAvailable:
                 ers[container.rid] = {}
             except Exception as exc:
