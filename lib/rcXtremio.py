@@ -27,9 +27,6 @@ OPT = Storage({
     "array": Option(
         "-a", "--array", action="store", dest="array_name",
         help="The name of the array, as defined in auth.conf"),
-    "cluster": Option(
-        "--cluster", action="store", dest="cluster",
-        help="The name or id of the arry cluster. Optional for single-cluster setups, mandatory otherwise"),
     "name": Option(
         "--name", action="store", dest="name",
         help="The object name"),
@@ -103,7 +100,6 @@ OPT = Storage({
 
 GLOBAL_OPTS = [
     OPT.array,
-    OPT.cluster,
 ]
 
 DEPRECATED_ACTIONS = []
@@ -283,6 +279,9 @@ class Array(object):
         return data
 
     def delete(self, uri, params=None, data=None):
+	if params is None:
+	    params = {}
+	params["cluster-name"] = self.name
         headers = {"Cache-Control": "no-cache"}
         data = self.convert_ids(data)
         if not uri.startswith("http"):
@@ -295,6 +294,9 @@ class Array(object):
         raise ex.excError(response.content)
 
     def put(self, uri, params=None, data=None):
+	if data is None:
+	    data = {}
+	data["cluster-id"] = self.name
         headers = {"Cache-Control": "no-cache"}
         data = self.convert_ids(data)
         if not uri.startswith("http"):
@@ -306,6 +308,9 @@ class Array(object):
         raise ex.excError(response.content)
 
     def post(self, uri, params=None, data=None):
+	if data is None:
+	    data = {}
+	data["cluster-id"] = self.name
         headers = {"Cache-Control": "no-cache"}
         data = self.convert_ids(data)
         if not uri.startswith("http"):
@@ -318,6 +323,9 @@ class Array(object):
         raise ex.excError(response.content)
 
     def get(self, uri, params=None):
+	if params is None:
+	    params = {}
+	params["cluster-name"] = self.name
         headers = {"Cache-Control": "no-cache"}
         if not uri.startswith("http"):
             uri = self.api + uri
@@ -337,7 +345,7 @@ class Array(object):
         return json.dumps(data["volumes"], indent=8)
 
     def add_disk(self, name=None, size=None, blocksize=None, tags=None,
-                 cluster=None, access=None, vaai_tp_alerts=None,
+                 access=None, vaai_tp_alerts=None,
                  small_io_alerts=None, unaligned_io_alerts=None,
                  alignment_offset=None, mappings=None, **kwargs):
         if name is None:
@@ -348,8 +356,6 @@ class Array(object):
             "vol-name": name,
             "vol-size": str(convert_size(size, _to="MB"))+"M",
         }
-        if cluster is not None:
-            d["cluster-id"] = cluster
         if blocksize is not None:
             d["lb-size"] = blocksize
         if small_io_alerts is not None:
@@ -365,8 +371,8 @@ class Array(object):
         self.post("/volumes", data=d)
         driver_data = {}
         if mappings:
-            mappings_data = self.add_map(volume=name, mappings=mappings, cluster=cluster)
-        driver_data["volume"] = self.get_volumes(volume=name, cluster=cluster)["content"]
+            mappings_data = self.add_map(volume=name, mappings=mappings)
+        driver_data["volume"] = self.get_volumes(volume=name)["content"]
         driver_data["mappings"] = mappings_data.values()
         results = {
             "driver_data": driver_data,
@@ -389,7 +395,7 @@ class Array(object):
         self.push_diskinfo(results, name, size)
         return results
 
-    def resize_disk(self, volume=None, size=None, cluster=None, **kwargs):
+    def resize_disk(self, volume=None, size=None, **kwargs):
         if volume is None:
             raise ex.excError("--volume is mandatory")
         if volume is "":
@@ -398,7 +404,7 @@ class Array(object):
             raise ex.excError("--size is mandatory")
         if size.startswith("+"):
             incr = convert_size(size.lstrip("+"), _to="KB")
-            data = self.get_volumes(cluster=cluster, volume=volume)
+            data = self.get_volumes(volume=volume)
             current_size = int(data["content"]["vol-size"])
             size = str(current_size + incr)+"K"
         d = {
@@ -412,40 +418,36 @@ class Array(object):
                 uri += "/"+str(volume)
             except ValueError:
                 params["name"] = volume
-        if cluster is not None:
-            d["cluster-id"] = cluster
         self.put(uri, params=params, data=d)
-        ret = self.get_volumes(volume=volume, cluster=cluster)
+        ret = self.get_volumes(volume=volume)
         return ret
 
-    def get_volume_mappings(self, cluster=None, volume=None, **kwargs):
+    def get_volume_mappings(self, volume=None, **kwargs):
         params = {"full": 1}
         uri = "/lun-maps"
         if volume is None:
             raise ex.excError("--volume is mandatory")
-        data = self.get_volumes(cluster=cluster, volume=volume)
+        data = self.get_volumes(volume=volume)
         vol_name = data["content"]["name"]
         params["filter"] = "vol-name:eq:"+vol_name
-        if cluster is not None:
-            params["cluster-id"] = cluster
         data = self.get(uri, params=params)
         return data
 
-    def del_volume_mappings(self, cluster=None, volume=None, **kwargs):
-        data = self.get_volume_mappings(cluster=cluster, volume=volume)
+    def del_volume_mappings(self, volume=None, **kwargs):
+        data = self.get_volume_mappings(volume=volume)
         for mapping in data["lun-maps"]:
-            self.del_map(cluster=cluster, mapping=mapping["index"])
+            self.del_map(mapping=mapping["index"])
 
-    def del_disk(self, cluster=None, volume=None, **kwargs):
+    def del_disk(self, volume=None, **kwargs):
         if volume is None:
             raise ex.excError("--volume is mandatory")
         if volume == "":
             raise ex.excError("volume can not be empty")
-        data = self.get_volumes(cluster=cluster, volume=volume)
+        data = self.get_volumes(volume=volume)
         if "content" not in data:
             raise ex.excError("volume %s does not exist" % volume)
         disk_id = data["content"]["naa-name"]
-        self.del_volume_mappings(cluster=cluster, volume=volume)
+        self.del_volume_mappings(volume=volume)
         params = {}
         uri = "/volumes"
         try:
@@ -453,8 +455,6 @@ class Array(object):
             uri += "/"+str(volume)
         except ValueError:
             params["name"] = volume
-        if cluster is not None:
-            params["cluster-id"] = cluster
         ret = self.delete(uri, params=params)
         self.del_diskinfo(disk_id)
         return ret
@@ -470,13 +470,11 @@ class Array(object):
                  hba_id[14:16]
         return hba_id
 
-    def get_hba_initiatorgroup(self, hba_id, cluster=None):
+    def get_hba_initiatorgroup(self, hba_id):
         params = {"full": 1}
         uri = "/initiators"
         hba_id = self.convert_hba_id(hba_id)
         params["filter"] = "port-address:eq:"+hba_id
-        if cluster is not None:
-            params["cluster-id"] = cluster
         data = self.get(uri, params=params)
         if len(data["initiators"]) == 0:
             raise ex.excError("no initiator found with port-address=%s" % hba_id)
@@ -484,13 +482,11 @@ class Array(object):
             raise ex.excError("initiator %s found in no initiatorgroup" % hba_id)
         return data["initiators"][0]["ig-id"][-1]
 
-    def get_target_targetgroup(self, hba_id, cluster=None):
+    def get_target_targetgroup(self, hba_id):
         params = {"full": 1}
         uri = "/targets"
         hba_id = self.convert_hba_id(hba_id)
         params["filter"] = "port-address:eq:"+hba_id
-        if cluster is not None:
-            params["cluster-id"] = cluster
         data = self.get(uri, params=params)
         if len(data["targets"]) == 0:
             raise ex.excError("no target found with port-address=%s" % hba_id)
@@ -498,7 +494,7 @@ class Array(object):
             raise ex.excError("target %s found in no targetgroup" % hba_id)
         return data["targets"][0]["tg-id"][-1]
 
-    def translate_mappings(self, mappings, cluster=None):
+    def translate_mappings(self, mappings):
         internal_mappings = {}
         for mapping in mappings:
             elements = mapping.split(":")
@@ -510,7 +506,7 @@ class Array(object):
             self.ig_portname[ig].append(hba_id)
             internal_mappings[ig] = set()
             for target in targets:
-                tg = self.get_target_targetgroup(target, cluster=cluster)
+                tg = self.get_target_targetgroup(target)
                 if tg not in self.tg_portname:
                     self.tg_portname[tg] = []
                 self.tg_portname[tg].append(target)
@@ -518,23 +514,23 @@ class Array(object):
         return internal_mappings
 
     def add_map(self, volume=None, mappings=None, initiatorgroup=None, targetgroup=None,
-                cluster=None, lun=None, **kwargs):
+                lun=None, **kwargs):
         if volume is None:
             raise ex.excError("--volume is mandatory")
         results = {}
         if mappings is not None and initiatorgroup is None:
-            internal_mappings = self.translate_mappings(mappings, cluster=cluster)
+            internal_mappings = self.translate_mappings(mappings)
             for ig, tgs in internal_mappings.items():
                 for tg in tgs:
-                    map_data = self._add_map(volume=volume, initiatorgroup=ig, targetgroup=tg, cluster=cluster, lun=lun, **kwargs)
+                    map_data = self._add_map(volume=volume, initiatorgroup=ig, targetgroup=tg, lun=lun, **kwargs)
                     results[(ig, tg)] = map_data
         else:
-            map_data = self._add_map(volume=volume, initiatorgroup=initiatorgroup, targetgroup=targetgroup, cluster=cluster, lun=lun, **kwargs)
+            map_data = self._add_map(volume=volume, initiatorgroup=initiatorgroup, targetgroup=targetgroup, lun=lun, **kwargs)
             results[(initiatorgroup, targetgroup)] = map_data
         return results
 
     def _add_map(self, volume=None, initiatorgroup=None, targetgroup=None,
-                 cluster=None, lun=None, **kwargs):
+                 lun=None, **kwargs):
         if initiatorgroup is None:
             raise ex.excError("--initiatorgroup is mandatory")
         d = {
@@ -543,14 +539,12 @@ class Array(object):
         }
         if targetgroup is not None:
             d["tg-id"] = targetgroup
-        if cluster is not None:
-            d["cluster-id"] = cluster
         if lun is not None:
             d["lun"] = lun
         ret = self.post("/lun-maps", data=d)
         return ret["content"]
 
-    def del_map(self, mapping=None, cluster=None, **kwargs):
+    def del_map(self, mapping=None, **kwargs):
         if mapping is None:
             raise ex.excError("--mapping is mandatory")
         if mapping == "":
@@ -563,11 +557,9 @@ class Array(object):
                 uri += "/"+str(mapping)
             except ValueError:
                 params["name"] = mapping
-        if cluster is not None:
-            params["cluster-id"] = cluster
         return self.delete(uri, params=params)
 
-    def list_target_groups(self, cluster=None, targetgroup=None, **kwargs):
+    def list_target_groups(self, targetgroup=None, **kwargs):
         params = {"full": 1}
         uri = "/target-groups"
         if targetgroup is not None:
@@ -576,8 +568,6 @@ class Array(object):
                 uri += "/"+str(targetgroup)
             except ValueError:
                 params["name"] = targetgroup
-        if cluster is not None:
-            params["cluster-id"] = cluster
         data = self.get(uri, params=params)
         if "target-groups" in data:
             print(json.dumps(data["target-groups"], indent=8))
@@ -586,7 +576,7 @@ class Array(object):
         else:
             print(json.dumps(data, indent=8))
 
-    def get_initiators(self, cluster=None, initiator=None, **kwargs):
+    def get_initiators(self, initiator=None, **kwargs):
         params = {"full": 1}
         uri = "/initiators"
         if initiator is not None:
@@ -595,13 +585,11 @@ class Array(object):
                 uri += "/"+str(initiator)
             except ValueError:
                 params["name"] = initiator
-        if cluster is not None:
-            params["cluster-id"] = cluster
         data = self.get(uri, params=params)
         return data
 
-    def list_initiators(self, cluster=None, initiator=None, **kwargs):
-        data = self.get_initiators(cluster=cluster, initiator=initiator, **kwargs)
+    def list_initiators(self, initiator=None, **kwargs):
+        data = self.get_initiators(initiator=initiator, **kwargs)
         if "initiators" in data:
             print(json.dumps(data["initiators"], indent=8))
         elif "content" in data:
@@ -609,7 +597,7 @@ class Array(object):
         else:
             print(json.dumps(data, indent=8))
 
-    def list_initiator_groups(self, cluster=None, initiatorgroup=None, **kwargs):
+    def list_initiator_groups(self, initiatorgroup=None, **kwargs):
         params = {"full": 1}
         uri = "/initiator-groups"
         if initiatorgroup is not None:
@@ -618,8 +606,6 @@ class Array(object):
                 uri += "/"+str(initiatorgroup)
             except ValueError:
                 params["name"] = initiatorgroup
-        if cluster is not None:
-            params["cluster-id"] = cluster
         data = self.get(uri, params=params)
         if "initiator-groups" in data:
             print(json.dumps(data["initiator-groups"], indent=8))
@@ -628,18 +614,16 @@ class Array(object):
         else:
             print(json.dumps(data, indent=8))
 
-    def list_initiators_connectivity(self, cluster=None, **kwargs):
+    def list_initiators_connectivity(self, **kwargs):
         params = {}
         uri = "/initiators-connectivity"
-        if cluster is not None:
-            params["cluster-id"] = cluster
         data = self.get(uri, params=params)
         if "content" in data:
             print(json.dumps(data["content"], indent=8))
         else:
             print(json.dumps(data, indent=8))
 
-    def list_targets(self, cluster=None, target=None, **kwargs):
+    def list_targets(self, target=None, **kwargs):
         params = {"full": 1}
         uri = "/targets"
         if target is not None:
@@ -648,8 +632,6 @@ class Array(object):
                 uri += "/"+str(target)
             except ValueError:
                 params["name"] = target
-        if cluster is not None:
-            params["cluster-id"] = cluster
         data = self.get(uri, params=params)
         if "targets" in data:
             print(json.dumps(data["targets"], indent=8))
@@ -658,7 +640,7 @@ class Array(object):
         else:
             print(json.dumps(data, indent=8))
 
-    def list_mappings(self, cluster=None, mapping=None, volume=None, **kwargs):
+    def list_mappings(self, mapping=None, volume=None, **kwargs):
         params = {"full": 1}
         uri = "/lun-maps"
         if mapping is not None:
@@ -674,8 +656,6 @@ class Array(object):
                 print(params)
             except ValueError:
                 params["filter"] = "vol-name:eq:"+volume
-        if cluster is not None:
-            params["cluster-id"] = cluster
         data = self.get(uri, params=params)
         if "targets" in data:
             print(json.dumps(data["lun-maps"], indent=8))
@@ -684,7 +664,7 @@ class Array(object):
         else:
             print(json.dumps(data, indent=8))
 
-    def get_volumes(self, cluster=None, volume=None, **kwargs):
+    def get_volumes(self, volume=None, **kwargs):
         params = {"full": 1}
         uri = "/volumes"
         if volume is not None:
@@ -693,13 +673,11 @@ class Array(object):
                 uri += "/"+str(volume)
             except ValueError:
                 params["name"] = volume
-        if cluster is not None:
-            params["cluster-id"] = cluster
         data = self.get(uri, params=params)
         return data
 
-    def list_volumes(self, cluster=None, volume=None, **kwargs):
-        data = self.get_volumes(cluster=cluster, volume=volume, **kwargs)
+    def list_volumes(self, volume=None, **kwargs):
+        data = self.get_volumes(volume=volume, **kwargs)
         if "volumes" in data:
             print(json.dumps(data["volumes"], indent=8))
         elif "content" in data:
