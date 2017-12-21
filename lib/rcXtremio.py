@@ -283,9 +283,9 @@ class Array(object):
         return data
 
     def delete(self, uri, params=None, data=None):
-	if params is None:
-	    params = {}
-	params["cluster-name"] = self.name
+        if params is None:
+            params = {}
+        params["cluster-name"] = self.name
         headers = {"Cache-Control": "no-cache"}
         data = self.convert_ids(data)
         if not uri.startswith("http"):
@@ -298,9 +298,9 @@ class Array(object):
         raise ex.excError(response.content)
 
     def put(self, uri, params=None, data=None):
-	if data is None:
-	    data = {}
-	data["cluster-id"] = self.name
+        if data is None:
+            data = {}
+        data["cluster-id"] = self.name
         headers = {"Cache-Control": "no-cache"}
         data = self.convert_ids(data)
         if not uri.startswith("http"):
@@ -312,9 +312,9 @@ class Array(object):
         raise ex.excError(response.content)
 
     def post(self, uri, params=None, data=None):
-	if data is None:
-	    data = {}
-	data["cluster-id"] = self.name
+        if data is None:
+            data = {}
+        data["cluster-id"] = self.name
         headers = {"Cache-Control": "no-cache"}
         data = self.convert_ids(data)
         if not uri.startswith("http"):
@@ -327,9 +327,9 @@ class Array(object):
         raise ex.excError(response.content)
 
     def get(self, uri, params=None):
-	if params is None:
-	    params = {}
-	params["cluster-name"] = self.name
+        if params is None:
+            params = {}
+        params["cluster-name"] = self.name
         headers = {"Cache-Control": "no-cache"}
         if not uri.startswith("http"):
             uri = self.api + uri
