@@ -2549,6 +2549,25 @@ class KeywordIpCniNetwork(Keyword):
                   example="container#0"
                 )
 
+class KeywordIpCniExpose(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="cni",
+                  keyword="expose",
+                  order=12,
+                  at=True,
+                  required=False,
+                  default=[],
+                  convert="list",
+                  text="A whitespace-separated list of <netns port>/<protocol>:<host port> "
+                       "describing port mappings configured by the portmap CNI plugin. "
+                       "The <netns port>/<protocol>:<host port> format is also supported "
+                       "for compat with the docker syntax.",
+                  example="443/tcp:8443"
+                )
+
 class KeywordIpCniContainerRid(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -5033,6 +5052,7 @@ class KeyDict(KeywordStore):
         self += KeywordIpDnsNameSuffix()
         self += KeywordIpNetwork()
         self += KeywordIpZone()
+        self += KeywordIpCniExpose()
         self += KeywordIpCniNetwork()
         self += KeywordIpCniContainerRid()
         self += KeywordIpDockerContainerRid()

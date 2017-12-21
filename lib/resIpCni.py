@@ -3,6 +3,7 @@ A CNI driver following the specs available at
 https://github.com/containernetworking/cni/blob/master/SPEC.md
 """
 import os
+import re
 import hashlib
 import json
 from subprocess import Popen, PIPE
@@ -21,6 +22,7 @@ class Ip(Res.Ip):
                  ipdev=None,
                  network=None,
                  container_rid=None,
+                 expose=None,
                  **kwargs):
         Res.Ip.__init__(self,
                         rid,
@@ -29,6 +31,7 @@ class Ip(Res.Ip):
                         type="ip.cni",
                         **kwargs)
         self.network = network
+        self.expose = expose
         self.container_rid = container_rid
         if container_rid:
             self.tags = self.tags | set(["docker"])
@@ -47,6 +50,8 @@ class Ip(Res.Ip):
             label += " %s/%s" % (intf.ip6addr[0], intf.ip6mask[0])
         if self.ipdev:
             label += "@%s" % self.ipdev
+        if self.expose:
+            label += " %s" % " ".join(self.expose)
         return label
 
     def arp_announce(self):
@@ -230,6 +235,39 @@ class Ip(Res.Ip):
             return self.cni_data["plugins"]
         raise ex.excError("no type nor plugins in cni configuration %s" % self.cni_conf)
 
+    def runtime_config(self):
+        data = {}
+        if self.expose:
+            data["portMappings"] = self.expose_data()
+        return data
+
+    def expose_data(self):
+        data = []
+        for expose in self.expose:
+            data.append(self.parse_expose(expose))
+        return data
+
+    def parse_expose(self, expose):
+        data = {}
+        words = expose.split(":")
+        if len(words) != 2:
+            raise ex.excError("invalid expose format %s. expected <nsport>/<proto>:<hostport>" % expose)
+        try:
+            data["hostPort"] = int(words[1])
+        except ValueError:
+            raise ex.excError("invalid host port format %s. expected integer" % words[1])
+        words = re.split("[-/]", words[0])
+        if len(words) != 2:
+            raise ex.excError("invalid expose format %s. expected <nsport>/<proto>:<hostport>" % expose)
+        try:
+            data["containerPort"] = int(words[0])
+        except ValueError:
+            raise ex.excError("invalid ns port format %s. expected integer" % words[0])
+        if words[1] not in ("tcp", "udp"):
+            raise ex.excError("invalid expose protcol %s. expected tcp or udp" % words[1])
+        data["protocol"] = words[1]
+        return data
+
     def add_cni(self):
         if not self.has_netns():
             raise ex.excError("netns %s not found" % self.nspid)
@@ -256,6 +294,7 @@ class Ip(Res.Ip):
             data["name"] = self.cni_data["name"]
             if result is not None:
                 data["prevResult"] = result
+            data["runtimeConfig"] = self.runtime_config()
             result = self.cni_cmd(_env, data)
 
     def del_cni(self):
@@ -282,6 +321,7 @@ class Ip(Res.Ip):
         for data in reversed(self.get_plugins()):
             data["cniVersion"] = self.cni_data["cniVersion"]
             data["name"] = self.cni_data["name"]
+            data["runtimeConfig"] = self.runtime_config()
             result = self.cni_cmd(_env, data)
 
     def start(self):
