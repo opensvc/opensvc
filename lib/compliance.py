@@ -43,7 +43,7 @@ class Module(object):
     def init_module_exe(self, fpath):
         base = fpath
         if base[0] == 'S':
-            base == base[1:]
+            base = base[1:]
         for i, c in enumerate(base):
             if not c.isdigit():
                break
