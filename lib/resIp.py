@@ -56,9 +56,10 @@ class Ip(Res.Resource):
             ["ipaddr", self.addr],
             ["ipname", self.ipname],
             ["ipdev", self.ipdev],
-            ["mask", str(to_cidr(self.mask))],
             ["gateway", str(self.gateway)],
         ]
+        if self.mask is not None:
+            data.append(["mask", str(to_cidr(self.mask))])
         return self.fmt_info(data)
 
     def getaddr(self, cache_fallback=False):
