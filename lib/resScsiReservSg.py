@@ -5,7 +5,7 @@ import re
 import time
 import rcStatus
 import rcExceptions as ex
-from rcUtilities import which
+from rcUtilities import which, bdecode
 from subprocess import *
 import resScsiReserv
 from rcGlobalEnv import rcEnv
@@ -33,14 +33,16 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
             i -= 1
             cmd = [ 'sg_persist', '-n', '-r', d ]
             p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-            out = p.communicate()
+            out, err = p.communicate()
+            out = bdecode(out)
+            err = bdecode(err)
             ret = p.returncode
-            if "unsupported service action" in out[1]:
+            if "unsupported service action" in err:
                 self.log.error("disk %s does not support persistent reservation" % d)
                 raise ex.excScsiPrNotsupported
-            if "error opening file" in out[1]:
+            if "error opening file" in err:
                 return 0
-            if "Unit Attention" in out[0] or ret != 0:
+            if "Unit Attention" in out or ret != 0:
                 self.log.debug("disk %s reports 'Unit Attention' ... waiting" % d)
                 time.sleep(1)
                 continue
