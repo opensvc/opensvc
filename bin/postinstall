@@ -56,11 +56,9 @@ else:
     pathusr = os.path.join(pathsvc, 'usr')
 
 def make_sure_path_exists(path):
-    try:
-        os.makedirs(path, p0755)
-    except OSError as exception:
-        if exception.errno != errno.EEXIST:
-            raise
+    if os.path.exists(path):
+        return
+    os.makedirs(path, p0755)
 
 def logit(msg, stdout=False, stderr=False):
     curframe = inspect.currentframe()
