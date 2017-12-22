@@ -158,6 +158,11 @@ def initLogger(name, handlers=None):
         except:
             facility = "daemon"
         try:
+            lvl = config.get("syslog", "level").upper()
+            lvl = getattr(logging, lvl)
+        except:
+            lvl = logging.INFO
+        try:
             host = config.get("syslog", "host")
         except:
             host = None
@@ -188,7 +193,7 @@ def initLogger(name, handlers=None):
             else:
                 sysloghandler = None
         if sysloghandler:
-            sysloghandler.setLevel(logging.INFO)
+            sysloghandler.setLevel(lvl)
             sysloghandler.setFormatter(syslogformatter)
             log.addHandler(sysloghandler)
 
