@@ -98,7 +98,9 @@ class Dataset(object):
             return False
 
     def destroy(self, options=[]):
-        "destroy dataset"
+        """destroy dataset"""
+        if not self.exists():
+            return True
         cmd = [rcEnv.syspaths.zfs, 'destroy'] + options + [self.name]
         ret, _, _ = vcall(cmd, log=self.log)
         if ret == 0:
