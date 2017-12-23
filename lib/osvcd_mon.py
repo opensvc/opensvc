@@ -509,7 +509,7 @@ class Monitor(shared.OsvcThread, Crypt):
         """
         if not self.compat:
             return
-        if smon.local_expect == "started":
+        if svc.topology == "failover" and smon.local_expect == "started":
             return
         if svc.frozen() or self.freezer.node_frozen():
             #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
@@ -664,7 +664,6 @@ class Monitor(shared.OsvcThread, Crypt):
         elif smon.status == "idle":
             if svc.orchestrate == "no" and smon.global_expect != "started":
                 return
-            self.log.info("%d/%d-%d", n_up, svc.flex_min_nodes, svc.flex_max_nodes)
             if n_up < svc.flex_min_nodes:
                 if instance.avail not in STOPPED_STATES:
                     return
