@@ -266,6 +266,7 @@ class OsvcThread(threading.Thread):
         unset_lazy(self, "sorted_cluster_nodes")
         unset_lazy(self, "maintenance_grace_period")
         unset_lazy(self, "rejoin_grace_period")
+        unset_lazy(self, "ready_period")
         if hasattr(self, "reconfigure"):
             getattr(self, "reconfigure")()
 
@@ -486,6 +487,14 @@ class OsvcThread(threading.Thread):
             return convert_duration(self.config.get("node", "rejoin_grace_period"))
         else:
             return 90
+
+    @lazy
+    def ready_period(self):
+        if self.config.has_option("node", "ready_period"):
+            seconds = convert_duration(self.config.get("node", "ready_period"))
+        else:
+            seconds = "16s"
+        return datetime.timedelta(seconds=seconds)
 
     def in_maintenance_grace_period(self, nmon):
         if nmon.status == "maintenance" and \

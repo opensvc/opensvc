@@ -21,8 +21,6 @@ from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode, purge_cache, fsum
 from svcBuilder import build, fix_app_link, fix_exe_link
 
-MON_WAIT_READY = datetime.timedelta(seconds=16)
-
 STARTED_STATES = [
     "n/a",
     "up",
@@ -597,7 +595,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 return
         elif smon.status == "ready":
             now = datetime.datetime.utcnow()
-            if smon.status_updated < (now - MON_WAIT_READY):
+            if smon.status_updated < (now - self.ready_period):
                 self.log.info("failover service %s status %s/ready for "
                               "%s", svc.svcname, status,
                               now-smon.status_updated)
@@ -608,7 +606,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 return
             self.log.info("service %s will start in %s",
                           svc.svcname,
-                          str(smon.status_updated+MON_WAIT_READY-now))
+                          str(smon.status_updated+self.ready_period-now))
         elif smon.status == "idle":
             if svc.orchestrate == "no" and smon.global_expect != "started":
                 return
@@ -656,16 +654,17 @@ class Monitor(shared.OsvcThread, Crypt):
                 return
         if smon.status == "ready":
             now = datetime.datetime.utcnow()
-            if smon.status_updated < (now - MON_WAIT_READY):
+            if smon.status_updated < (now - self.ready_period):
                 self.log.info("flex service %s status %s/ready for %s",
                               svc.svcname, status, now-smon.status_updated)
                 self.service_start(svc.svcname)
             else:
                 self.log.info("service %s will start in %s", svc.svcname,
-                              str(smon.status_updated+MON_WAIT_READY-now))
+                              str(smon.status_updated+self.ready_period-now))
         elif smon.status == "idle":
             if svc.orchestrate == "no" and smon.global_expect != "started":
                 return
+            self.log.info("%d/%d-%d", n_up, svc.flex_min_nodes, svc.flex_max_nodes)
             if n_up < svc.flex_min_nodes:
                 if instance.avail not in STOPPED_STATES:
                     return
