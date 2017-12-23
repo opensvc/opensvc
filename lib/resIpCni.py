@@ -15,6 +15,18 @@ import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, to_cidr, lazy
 
+CNI_VERSION = "0.2.0"
+PORTMAP_CONF = {
+    "cniVersion": CNI_VERSION,
+    "name": "osvc-portmap",
+    "type": "portmap",
+    "snat": True,
+    "capabilities": {
+        "portMappings": True
+    },
+    "externalSetMarkChain": "OSVC-MARK-MASQ"
+}
+
 class Ip(Res.Ip):
     def __init__(self,
                  rid=None,
@@ -133,6 +145,10 @@ class Ip(Res.Ip):
             raise ex.excError("invalid json in cni configuration file %s" % self.cni_conf)
 
     @lazy
+    def cni_portmap_conf(self):
+        return "/opt/cni/net.d/osvc-portmap.conf"
+
+    @lazy
     def cni_conf(self):
         return "/opt/cni/net.d/%s.conf" % self.network
 
@@ -234,7 +250,8 @@ class Ip(Res.Ip):
         if "type" in self.cni_data:
             return [self.cni_data]
         elif "plugins" in self.cni_data:
-            return self.cni_data["plugins"]
+            return [pdata for pdata in self.cni_data["plugins"]
+                    if pdata.get("type") != "portmap"]
         raise ex.excError("no type nor plugins in cni configuration %s" % self.cni_conf)
 
     def runtime_config(self):
@@ -296,7 +313,12 @@ class Ip(Res.Ip):
             data["name"] = self.cni_data["name"]
             if result is not None:
                 data["prevResult"] = result
+            result = self.cni_cmd(_env, data)
+        if self.expose and result:
+            data = {}
+            data.update(PORTMAP_CONF)
             data["runtimeConfig"] = self.runtime_config()
+            data["prevResult"] = result
             result = self.cni_cmd(_env, data)
 
     def del_cni(self):
@@ -320,10 +342,14 @@ class Ip(Res.Ip):
         else:
             _env["CNI_NETNS"] = self.nspidfile
 
+        if self.expose:
+            data = {}
+            data.update(PORTMAP_CONF)
+            data["runtimeConfig"] = self.runtime_config()
+            result = self.cni_cmd(_env, data)
         for data in reversed(self.get_plugins()):
             data["cniVersion"] = self.cni_data["cniVersion"]
             data["name"] = self.cni_data["name"]
-            data["runtimeConfig"] = self.runtime_config()
             result = self.cni_cmd(_env, data)
 
     def start(self):
