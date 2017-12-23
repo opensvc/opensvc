@@ -19,7 +19,8 @@ svcmgr_print_config="mtime"
 svcmgr_print_exposed="devs"
 svcmgr_print_resource="status"
 svcmgr_print_sub="devs"
-svcmgr_push="config resinfo"
+svcmgr_push="config encap resinfo"
+svcmgr_push_encap="config"
 svcmgr_resource="monitor"
 svcmgr_sync="all break drp establish full nodes quiesce restore resume resync revert split update verify"
 svcmgr_validate="config"
@@ -64,6 +65,7 @@ svcmgr_collector_events="--begin --color --daemon --debug --end --env --format -
 svcmgr_collector_asset="--color --daemon --debug --env --format --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_takeover="--color --daemon --debug --disable-rollback --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --time --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_sync_update="--color --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
+svcmgr_push_encap_config="--color --cron --daemon --debug --env --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_shutdown="--color --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --time --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_push_resinfo="--color --cron --daemon --debug --env --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_sync_establish="--color --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
@@ -120,7 +122,7 @@ svcmgr_switch="--color --daemon --debug --disable-rollback --dry-run --env --loc
 svcmgr_disable="--color --daemon --debug --env --rid --status --subsets --tags --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_print_schedule="--color --daemon --debug --env --format --status --verbose --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_docker="--color --daemon --debug --env --status --waitlock -c --cluster -h --help -p --parallel -s --service"
-nodemgr="Pushbrocade Pushcentera Pushdcs Pusheva Pushfreenas Pushgcedisks Pushhds Pushhp3par Pushibmds Pushibmsvc Pushnecism Pushnetapp Pushnsr Pushvioserver Pushxtremio array auto checks collect collector compliance daemon dequeue discover edit freeze frozen get logs print prkey pushasset pushdisks pushemcvnx pushpatch pushpkg pushstats pushsym reboot register rotate scanscsi schedule set shutdown stonith sysreport thaw unschedule unset updatecomp updatepkg wol"
+nodemgr="Pushbrocade Pushcentera Pushdcs Pusheva Pushfreenas Pushgcedisks Pushhds Pushhp3par Pushibmds Pushibmsvc Pushnecism Pushnetapp Pushnsr Pushvioserver Pushxtremio array auto checks collect collector compliance daemon dequeue discover edit freeze frozen get logs network ping print prkey pushasset pushdisks pushemcvnx pushpatch pushpkg pushstats pushsym reboot register rotate scanscsi schedule set shutdown stonith sysreport thaw unschedule unset updatecomp updatepkg wol"
 nodemgr_auto="reboot"
 nodemgr_collect="stats"
 nodemgr_collector="ack alerts asset checks cli create disks events list log networks search show tag untag"
@@ -135,6 +137,7 @@ nodemgr_daemon="blacklist join leave restart running shutdown start status stop"
 nodemgr_daemon_blacklist="clear status"
 nodemgr_dequeue="actions"
 nodemgr_edit="authconfig config"
+nodemgr_network="ls"
 nodemgr_print="authconfig config devs schedule"
 nodemgr_rotate="root"
 nodemgr_rotate_root="pw"
@@ -154,6 +157,7 @@ nodemgr_compliance_list_module="--color --debug --format -h --help"
 nodemgr_compliance_show_moduleset="--color --debug --format -h --help"
 nodemgr_compliance_check="--attach --color --debug --force --format --module --moduleset --ruleset-date -h --help"
 nodemgr_compliance_auto="--color --cron --debug --format -h --help"
+nodemgr_prkey="--color --debug --format -h --help"
 nodemgr_Pushibmsvc="--color --cron --debug --format --object -h --help"
 nodemgr_Pushnetapp="--color --cron --debug --format --object -h --help"
 nodemgr_Pushgcedisks="--color --cron --debug --format --object -h --help"
@@ -187,27 +191,28 @@ nodemgr_edit_config="--color --debug --format -h --help"
 nodemgr_register="--app --color --debug --format --password --user -h --help"
 nodemgr_edit_authconfig="--color --debug --format -h --help"
 nodemgr_print_config="--color --debug --format -h --help"
-nodemgr_updatecomp="--color --debug --format -h --help"
-nodemgr_thaw="--color --debug --format --local --node --time --wait -h --help"
 nodemgr_logs="--color --debug --format --no-pager -h --help"
-nodemgr_updatepkg="--color --debug --format -h --help"
-nodemgr_unschedule_reboot="--color --debug --format -h --help"
 nodemgr_auto_reboot="--color --cron --debug --format -h --help"
-nodemgr_rotate_root_pw="--color --cron --debug --format -h --help"
-nodemgr_reboot="--color --debug --format -h --help"
 nodemgr_freeze="--color --debug --format --local --node --time --wait -h --help"
-nodemgr_stonith="--color --debug --format --node -h --help"
-nodemgr_frozen="--color --debug --format -h --help"
 nodemgr_schedule_reboot="--color --debug --format -h --help"
-nodemgr_collect_stats="--color --cron --debug --format -h --help"
 nodemgr_shutdown="--color --debug --format -h --help"
-nodemgr_print_schedule="--color --debug --format --verbose -h --help"
-nodemgr_schedule_reboot_status="--color --debug --format -h --help"
-nodemgr_dequeue_actions="--color --cron --debug --format -h --help"
 nodemgr_array="--color --debug --format -h --help"
-nodemgr_wol="--broadcast --color --debug --format --mac -h --help"
 nodemgr_scanscsi="--color --debug --format --hba --lun --target -h --help"
+nodemgr_unschedule_reboot="--color --debug --format -h --help"
+nodemgr_ping="--color --debug --format --node -h --help"
+nodemgr_reboot="--color --debug --format -h --help"
+nodemgr_wol="--broadcast --color --debug --format --mac -h --help"
+nodemgr_collect_stats="--color --cron --debug --format -h --help"
+nodemgr_thaw="--color --debug --format --local --node --time --wait -h --help"
+nodemgr_schedule_reboot_status="--color --debug --format -h --help"
 nodemgr_print_devs="--color --debug --dev --format --reverse --verbose -h --help"
+nodemgr_dequeue_actions="--color --cron --debug --format -h --help"
+nodemgr_updatepkg="--color --debug --format -h --help"
+nodemgr_frozen="--color --debug --format -h --help"
+nodemgr_stonith="--color --debug --format --node -h --help"
+nodemgr_rotate_root_pw="--color --cron --debug --format -h --help"
+nodemgr_updatecomp="--color --debug --format -h --help"
+nodemgr_print_schedule="--color --debug --format --verbose -h --help"
 nodemgr_daemon_stop="--color --debug --format --node --thread-id -h --help"
 nodemgr_daemon_status="--color --debug --format --node -h --help"
 nodemgr_daemon_running="--color --debug --format -h --help"
@@ -218,7 +223,7 @@ nodemgr_daemon_blacklist_status="--color --debug --format -h --help"
 nodemgr_daemon_shutdown="--color --debug --format -h --help"
 nodemgr_daemon_restart="--color --debug --format -h --help"
 nodemgr_daemon_start="--color --debug --format --node --thread-id -h --help"
-nodemgr_prkey="--color --debug --format -h --help"
+nodemgr_network_ls="--color --debug --format -h --help"
 nodemgr_collector_list_tags="--color --debug --format --like -h --help"
 nodemgr_collector_disks="--color --debug --format -h --help"
 nodemgr_collector_log="--color --debug --format --message -h --help"
@@ -244,9 +249,7 @@ opts_with_arg=( "--add" "--api" "--app" "--author" "--backlog" "--begin" "--broa
 
 
 
-svcs=($(ls -d /opt/opensvc/var/services/* /var/lib/opensvc/services/* 2>/dev/null))
-svcs=$(echo ${svcs[@]##*/})
-nodes=$(cat /opt/opensvc/etc/node.conf /etc/opensvc/node.conf 2>/dev/null | grep "nodes.*=" | cut -d= -f2)
+svcs=$(find /etc/opensvc /opt/opensvc/etc -maxdepth 1 -lname "*/bin/svcmgr" -a ! -name "*.*" -exec basename {} \; 2>/dev/null)
 
 opt_has_arg()
 {
@@ -282,10 +285,6 @@ _comp_handler()
             ;;
         --service|-s)
             COMPREPLY=( $(compgen -W "${svcs}" -- ${a}) )
-            return 0
-            ;;
-        --node)
-            COMPREPLY=( $(compgen -W "${nodes}" -- ${a}) )
             return 0
             ;;
         *)

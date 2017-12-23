@@ -401,6 +401,11 @@ ACTIONS = {
             ],
         },
     },
+    "Network actions": {
+        "network_ls": {
+            "msg": "List the available networks.",
+        },
+    },
     "Service actions": {
         "discover": {
             "msg": "Discover vservices accessible from this host. Typically executed on cloud nodes.",

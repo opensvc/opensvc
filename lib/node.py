@@ -3840,5 +3840,27 @@ class Node(Crypt):
                print(line, file=sys.stderr)
         return data["ret"]
 
+    def network_data(self):
+        import glob
+        import re
+        nets = {}
+        for net in glob.glob("/opt/cni/net.d/*.conf"):
+            try:
+                with open(net, "r") as ofile:
+                    data = json.load(ofile)
+            except ValueError:
+                continue
+            if data.get("type") == "portmap":
+                continue
+            net = os.path.basename(net)
+            net = re.sub(".conf$", "", net)
+            nets[net] = data
+        return nets
 
+    @formatter
+    def network_ls(self):
+        nets = self.network_data()
+        if self.options.format == "json":
+            return nets
+        print("\n".join([net for net in nets]))
 
