@@ -641,7 +641,8 @@ class Monitor(shared.OsvcThread, Crypt):
                 # not a natural leader, skip orchestration
                 return
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
-        n_up = self.count_up_service_instances(svc.svcname)
+        up_nodes = self.up_service_instances(svc.svcname)
+        n_up = len(up_nodes)
         if smon.status in ("ready", "wait parents"):
             if (n_up - 1) >= svc.flex_min_nodes:
                 self.log.info("flex service %s instance count reached "
@@ -665,20 +666,34 @@ class Monitor(shared.OsvcThread, Crypt):
         elif smon.status == "idle":
             if svc.orchestrate == "no" and smon.global_expect != "started":
                 return
-            if n_up >= svc.flex_min_nodes:
-                return
-            if instance.avail not in STOPPED_STATES:
-                return
-            if not self.placement_leader(svc, candidates):
-                return
-            if not self.parents_available(svc):
-                self.set_smon(svc.svcname, status="wait parents")
-                return
-            self.log.info("flex service %s started, starting or ready to "
-                          "start instances: %d/%d. local status %s",
-                          svc.svcname, n_up, svc.flex_min_nodes,
-                          instance.avail)
-            self.set_smon(svc.svcname, "ready")
+            if n_up < svc.flex_min_nodes:
+                if instance.avail not in STOPPED_STATES:
+                    return
+                if not self.placement_leader(svc, candidates):
+                    return
+                if not self.parents_available(svc):
+                    self.set_smon(svc.svcname, status="wait parents")
+                    return
+                self.log.info("flex service %s started, starting or ready to "
+                              "start instances: %d/%d-%d. local status %s",
+                              svc.svcname, n_up, svc.flex_min_nodes,
+                              svc.flex_max_nodes, instance.avail)
+                self.set_smon(svc.svcname, "ready")
+            elif n_up > svc.flex_max_nodes:
+                if instance.avail not in STARTED_STATES:
+                    return
+                n_to_stop = n_up - svc.flex_max_nodes
+                to_stop = self.placement_ranks(svc, candidates=up_nodes)[-n_to_stop:]
+                self.log.info("%d nodes to stop to honor flex_max_nodes=%d. "
+                              "choose %s", n_to_stop, svc.flex_max_nodes,
+                              ", ".join(to_stop))
+                if rcEnv.nodename not in to_stop:
+                    return
+                self.log.info("flex service %s started, starting or ready to "
+                              "start instances: %d/%d-%d. local status %s",
+                              svc.svcname, n_up, svc.flex_min_nodes,
+                              svc.flex_max_nodes, instance.avail)
+                self.service_stop(svc.svcname)
 
     def service_orchestrator_manual(self, svc, smon, status):
         """
@@ -882,14 +897,14 @@ class Monitor(shared.OsvcThread, Crypt):
         self.log.info("delay leader-first action")
         return False
 
-    def count_up_service_instances(self, svcname):
-        n_up = 0
-        for instance in self.get_service_instances(svcname).values():
+    def up_service_instances(self, svcname):
+        nodenames = []
+        for nodename, instance in self.get_service_instances(svcname).items():
             if instance["avail"] == "up":
-                n_up += 1
+                nodenames.append(nodename)
             elif instance["monitor"]["status"] in ("restarting", "starting", "wait children", "ready"):
-                n_up += 1
-        return n_up
+                nodenames.append(nodename)
+        return nodenames
 
     def peer_transitioning(self, svc):
         """

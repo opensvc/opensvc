@@ -663,7 +663,7 @@ class Svc(Crypt):
            val = self.conf_get('DEFAULT', 'flex_max_nodes')
         except ex.OptNotFound:
            return nb_nodes
-        if val < nb_nodes:
+        if val > nb_nodes:
            val = nb_nodes
         if val < self.flex_min_nodes:
            val = self.flex_min_nodes
