@@ -124,6 +124,8 @@ class Ip(Res.Ip):
 
     @lazy
     def cni_data(self):
+        if not os.path.exists(self.cni_conf):
+            raise ex.excError("cni configuration %s does not exist" % self.cni_conf)
         try:
             with open(self.cni_conf, "r") as ofile:
                 return json.load(ofile)
@@ -230,7 +232,7 @@ class Ip(Res.Ip):
 
     def get_plugins(self):
         if "type" in self.cni_data:
-            return self.cni_data
+            return [self.cni_data]
         elif "plugins" in self.cni_data:
             return self.cni_data["plugins"]
         raise ex.excError("no type nor plugins in cni configuration %s" % self.cni_conf)
