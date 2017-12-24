@@ -5296,6 +5296,10 @@ class Svc(Crypt):
                 return rcEnv.paths.svcmgr
             if ref == "nodemgr":
                 return rcEnv.paths.nodemgr
+            if ref == "etc":
+                return rcEnv.paths.pathetc
+            if ref == "var":
+                return rcEnv.paths.pathvar
 
             if "[" in ref and ref.endswith("]"):
                 i = ref.index("[")
