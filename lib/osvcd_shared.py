@@ -18,7 +18,7 @@ from freezer import Freezer
 from converters import convert_duration, convert_boolean
 
 # disable orchestration if a peer announces a different compat version than ours
-COMPAT_VERSION = 4
+COMPAT_VERSION = 5
 
 DATEFMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 JSON_DATEFMT = "%Y-%m-%dT%H:%M:%SZ"

@@ -406,9 +406,9 @@ class Monitor(shared.OsvcThread, Crypt):
             return
 
         def monitored_resource(svc, rid, resource):
-            if not resource["monitor"]:
+            if not resource.get("monitor"):
                 return False
-            if resource["disable"]:
+            if resource.get("disable"):
                 return False
             if smon.local_expect != "started":
                 return False
@@ -941,7 +941,7 @@ class Monitor(shared.OsvcThread, Crypt):
         with shared.CLUSTER_DATA_LOCK:
             for node in shared.CLUSTER_DATA.values():
                 try:
-                    fstatus_l.append(node["frozen"])
+                    fstatus_l.append(node.get("frozen"))
                 except KeyError:
                     # sender daemon outdated
                     continue
@@ -979,7 +979,7 @@ class Monitor(shared.OsvcThread, Crypt):
             avail = "unknown"
         if instance.get("enslave_children"):
             avails = set([avail])
-            for child in instance["children"]:
+            for child in instance.get("children", []):
                 try:
                     child_avail = shared.AGG[child]["avail"]
                 except KeyError:
@@ -1027,7 +1027,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if "frozen" not in instance:
                 # deleting instance
                 continue
-            if instance["frozen"]:
+            if instance.get("frozen"):
                 frozen += 1
             total += 1
         if total == 0:
@@ -1042,7 +1042,7 @@ class Monitor(shared.OsvcThread, Crypt):
     def is_instance_shutdown(self, instance):
         def has_stdby(instance):
             for resource in instance["resources"].values():
-                if resource["standby"]:
+                if resource.get("standby"):
                     return True
             return False
         _has_stdby = has_stdby(instance)
@@ -1173,7 +1173,7 @@ class Monitor(shared.OsvcThread, Crypt):
         """
         return [nodename for (nodename, instance) in \
                 self.get_service_instances(svcname).items() if \
-                instance["frozen"]]
+                instance.get("frozen")]
 
     def service_instances_thawed(self, svcname):
         """
@@ -1181,7 +1181,7 @@ class Monitor(shared.OsvcThread, Crypt):
         """
         return [nodename for (nodename, instance) in \
                 self.get_service_instances(svcname).items() if \
-                not instance["frozen"]]
+                not instance.get("frozen")]
 
     @staticmethod
     def get_local_svcnames():
@@ -1458,14 +1458,14 @@ class Monitor(shared.OsvcThread, Crypt):
     def all_nodes_frozen(self):
         with shared.CLUSTER_DATA_LOCK:
              for data in shared.CLUSTER_DATA.values():
-                 if not data["frozen"]:
+                 if not data.get("frozen", False):
                      return False
         return True
 
     def all_nodes_thawed(self):
         with shared.CLUSTER_DATA_LOCK:
              for data in shared.CLUSTER_DATA.values():
-                 if data["frozen"]:
+                 if data.get("frozen", False):
                      return False
         return True
 
@@ -1491,7 +1491,7 @@ class Monitor(shared.OsvcThread, Crypt):
         instance = self.get_service_instance(svcname, rcEnv.nodename)
         if instance is None:
             return
-        local_frozen = instance["frozen"]
+        local_frozen = instance.get("frozen", False)
         frozen = shared.AGG[svcname].frozen
         provisioned = shared.AGG[svcname].provisioned
         deleted = self.get_agg_deleted(svcname)
@@ -1631,7 +1631,7 @@ class Monitor(shared.OsvcThread, Crypt):
                     continue
                 if global_expect is None:
                     continue
-                local_frozen = shared.CLUSTER_DATA[rcEnv.nodename]["frozen"]
+                local_frozen = shared.CLUSTER_DATA[rcEnv.nodename].get("frozen", False)
                 if (global_expect == "frozen" and not local_frozen) or \
                    (global_expect == "thawed" and local_frozen):
                     self.log.info("node %s wants local node %s", nodename, global_expect)
@@ -1669,7 +1669,7 @@ class Monitor(shared.OsvcThread, Crypt):
             return False
         if global_expect == "stopped":
             local_avail = instance["avail"]
-            local_frozen = instance["frozen"]
+            local_frozen = instance.get("frozen", False)
             if local_avail not in STOPPED_STATES or not local_frozen:
                 return True
             else:
@@ -1678,7 +1678,7 @@ class Monitor(shared.OsvcThread, Crypt):
             return not self.get_agg_shutdown(svcname)
         if global_expect == "started":
             status = shared.AGG[svcname].avail
-            local_frozen = instance["frozen"]
+            local_frozen = instance("frozen", False)
             if status not in STARTED_STATES or local_frozen:
                 return True
             else:
@@ -1828,7 +1828,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 if peer == rcEnv.nodename:
                     continue
                 try:
-                    frozen = shared.CLUSTER_DATA[peer]["services"]["status"][svc.svcname]["frozen"]
+                    frozen = shared.CLUSTER_DATA[peer]["services"]["status"][svc.svcname].get("frozen", False)
                 except:
                     continue
                 if frozen:

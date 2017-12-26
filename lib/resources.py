@@ -598,6 +598,9 @@ class Resource(object):
             levels = ["info", "warn", "error"]
         return len(self.status_logs_get(levels=levels))
 
+    def status_logs_strlist(self):
+        return ["%s: %s" % (lvl, msg) for (lvl, msg) in self.status_logs]
+
     def status_logs_str(self, color=False):
         """
         Returns the formatted resource status log buffer entries.
@@ -618,23 +621,6 @@ class Resource(object):
             else:
                 status_str += entry
         return status_str
-
-    def status_quad(self, color=True):
-        """
-        Returns the resource properties and status as a tuple, as
-        excepted by svcmon, print status and the collector feed api.
-        """
-        status = rcStatus.Status(self.status(verbose=True))
-        return (self.rid,
-                self.type,
-                status,
-                self.label,
-                self.status_logs_str(color=color),
-                self.monitor,
-                self.is_disabled(),
-                self.optional,
-                self.encap,
-                self.standby)
 
     def call(self, *args, **kwargs):
         """

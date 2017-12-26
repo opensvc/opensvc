@@ -74,6 +74,12 @@ ACTION_PROGRESS = {
     "toc": "tocing",
 }
 
+TOP_STATUS_GROUPS = [
+    "overall",
+    "avail",
+    "optional",
+]
+
 DEFAULT_STATUS_GROUPS = [
     "ip",
     "disk",
@@ -1414,22 +1420,25 @@ class Svc(Crypt):
             "updated": datetime.datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "mtime": now,
             "resources": {},
-            "frozen": self.frozen(),
-            "constraints": self.constraints,
-            "provisioned": True,
             "placement": self.placement,
             "topology": self.topology,
-            "parents": self.parents,
-            "children": self.children,
-            "enslave_children": self.enslave_children,
-            "encap": self.encap,
         }
-
         if self.topology == "flex":
             data.update({
                 "flex_min_nodes": self.flex_min_nodes,
                 "flex_max_nodes": self.flex_max_nodes,
             })
+        frozen = self.frozen()
+        if frozen:
+            data["frozen"] = frozen
+        if not self.constraints:
+            data["constraints"] = self.constraints
+        if self.enslave_children:
+            data["enslave_children"] = self.enslave_children
+        if len(self.parents) > 0:
+            data["parents"] = self.parents
+        if len(self.children) > 0:
+            data["children"] = self.children
 
         containers = self.get_resources('container')
         if len(containers) > 0:
@@ -1453,38 +1462,43 @@ class Svc(Crypt):
 
         for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
             for resource in rset.resources:
-                (
-                    rid,
-                    rtype,
-                    status,
-                    label,
-                    log,
-                    monitor,
-                    disable,
-                    optional,
-                    encap,
-                    standby
-                ) = resource.status_quad(color=False)
-                data["resources"][rid] = {
+                status = rcStatus.Status(resource.status(verbose=True))
+                log = resource.status_logs_strlist()
+                info = resource.status_info()
+                tags = sorted(list(resource.tags))
+                disable = resource.is_disabled()
+                _data = {
                     "status": str(status),
-                    "type": rtype,
-                    "label": label,
-                    "log": log,
-                    "tags": sorted(list(resource.tags)),
-                    "monitor":monitor,
-                    "disable": disable,
-                    "optional": optional,
-                    "encap": encap,
-                    "standby": standby,
-                    "info": resource.status_info(),
+                    "type": resource.type,
+                    "label": resource.label,
                 }
-                data["resources"][rid]["provisioned"] = resource.provisioned_data()
-                if data["resources"][rid]["provisioned"]["state"] is False:
+                _data["provisioned"] = resource.provisioned_data()
+                if disable:
+                    _data["disable"] = disable
+                if resource.standby:
+                    _data["standby"] = resource.standby
+                if resource.encap:
+                    _data["encap"] = resource.encap
+                if resource.optional:
+                    _data["optional"] = resource.optional
+                if resource.monitor:
+                    _data["monitor"] = resource.monitor
+                if len(log) > 0:
+                    _data["log"] = log
+                if len(info) > 0:
+                    _data["info"] = info
+                if len(tags) > 0:
+                    _data["tags"] = tags
+                if _data["provisioned"]["state"] is False:
                     data["provisioned"] = False
                 if resource.subset:
-                    data["resources"][rid]["subset"] = resource.subset
-        for group in group_status:
-            data[group] = str(group_status[group])
+                    _data["subset"] = resource.subset
+                data["resources"][resource.rid] = _data
+        for group in TOP_STATUS_GROUPS:
+            group_status[group] = str(group_status[group])
+        for group in group_status["status_group"]:
+            group_status["status_group"][group] = str(group_status["status_group"][group])
+        data.update(group_status)
         if self.stonith and self.topology == "failover" and data["avail"] == "up":
             data["stonith"] = True
         self.write_status_data(data)
@@ -1624,10 +1638,10 @@ class Svc(Crypt):
             S  Standby
             """
             flags = ''
-            flags += 'M' if resource["monitor"] else '.'
-            flags += 'D' if resource["disable"] else '.'
-            flags += 'O' if resource["optional"] else '.'
-            flags += 'E' if resource["encap"] else '.'
+            flags += 'M' if resource.get("monitor") else '.'
+            flags += 'D' if resource.get("disable") else '.'
+            flags += 'O' if resource.get("optional") else '.'
+            flags += 'E' if resource.get("encap") else '.'
             provisioned = resource.get("provisioned", {}).get("state")
             if provisioned is True:
                 flags += '.'
@@ -1770,7 +1784,7 @@ class Svc(Crypt):
                     monitor=edata.monitor,
                 )
                 col.add_text(encap_notice, color.LIGHTBLUE)
-            for line in resource["log"].split("\n"):
+            for line in resource.get("log", []):
                 if line.startswith("warn:"):
                     scolor = STATUS_COLOR["warn"]
                 elif line.startswith("err:"):
@@ -1800,14 +1814,14 @@ class Svc(Crypt):
                 mon_data = self.get_mon_data()
                 data = mon_data["nodes"][nodename]["services"]["status"][self.svcname]
                 avail = data["avail"]
-                node_frozen = mon_data["nodes"][nodename]["frozen"]
+                node_frozen = mon_data["nodes"][nodename].get("frozen")
             except KeyError as exc:
                 avail = "undef"
                 node_frozen = False
                 data = Storage()
             node_child.add_column(avail, STATUS_COLOR[avail])
             notice = instance_notice(overall=data["overall"],
-                                     frozen=data["frozen"],
+                                     frozen=data.get("frozen"),
                                      node_frozen=node_frozen,
                                      constraints=data.get("constraints", True),
                                      provisioned=data.get("provisioned"),
@@ -2316,14 +2330,17 @@ class Svc(Crypt):
         if groups is None:
             groups = set(DEFAULT_STATUS_GROUPS)
 
-        status = {}
-        moregroups = groups | set(["overall", "avail", "optional"])
+        status = {
+            "status_group": {},
+        }
         groups = groups - excluded_groups
         self.get_rset_status(groups, refresh=refresh)
 
         # initialise status of each group
-        for group in moregroups:
+        for group in TOP_STATUS_GROUPS:
             status[group] = rcStatus.Status(rcStatus.NA)
+        for group in groups:
+            status["status_group"][group] = rcStatus.Status(rcStatus.NA)
 
         for driver in STATUS_TYPES:
             if driver in excluded_groups:
@@ -2338,7 +2355,7 @@ class Svc(Crypt):
                         rstatus = rcStatus.NA
                     elif rstatus == rcStatus.DOWN:
                         rstatus = rcStatus.WARN
-                status[group] += rstatus
+                status["status_group"][group] += rstatus
                 if resource.is_optional():
                     status["optional"] += rstatus
                 else:
@@ -2536,7 +2553,7 @@ class Svc(Crypt):
                 self.log.info("final status: avail=%s overall=%s frozen=%s",
                               data["monitor"]["services"][svcname]["avail"],
                               data["monitor"]["services"][svcname]["overall"],
-                              data["monitor"]["services"][svcname]["frozen"])
+                              data["monitor"]["services"][svcname].get("frozen", False))
                 return
             prev_global_expect_set = set(global_expect_set)
             time.sleep(1)
