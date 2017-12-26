@@ -58,6 +58,7 @@ class Resource(object):
         self.shared = shared
         self.encap = encap or "encap" in self.tags
         self.sort_key = rid
+        self.info_in_status = []
         try:
             self.label = type
         except AttributeError:
@@ -898,6 +899,9 @@ class Resource(object):
         config section.
         """
         return self.svc.conf_get(self.rid, o, **kwargs)
+
+    def status_info(self):
+        return {}
 
     def info(self):
         data = [

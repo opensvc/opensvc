@@ -1418,14 +1418,18 @@ class Svc(Crypt):
             "constraints": self.constraints,
             "provisioned": True,
             "placement": self.placement,
-            "flex_min_nodes": self.flex_min_nodes,
-            "flex_max_nodes": self.flex_max_nodes,
             "topology": self.topology,
             "parents": self.parents,
             "children": self.children,
             "enslave_children": self.enslave_children,
             "encap": self.encap,
         }
+
+        if self.topology == "flex":
+            data.update({
+                "flex_min_nodes": self.flex_min_nodes,
+                "flex_max_nodes": self.flex_max_nodes,
+            })
 
         containers = self.get_resources('container')
         if len(containers) > 0:
@@ -1472,6 +1476,7 @@ class Svc(Crypt):
                     "optional": optional,
                     "encap": encap,
                     "standby": standby,
+                    "info": resource.status_info(),
                 }
                 data["resources"][rid]["provisioned"] = resource.provisioned_data()
                 if data["resources"][rid]["provisioned"]["state"] is False:

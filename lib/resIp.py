@@ -43,6 +43,27 @@ class Ip(Res.Resource):
         """
         self.label = str(self.ipname) + '@' + self.ipdev
 
+    def status_info(self):
+        """
+        Contribute resource key/val pairs to the resource info.
+        """
+        if self.ipname is None:
+            return {}
+        try:
+            self.getaddr()
+        except ex.excError:
+            pass
+        data = {
+            "ipaddr": self.addr,
+            "ipdev": self.ipdev,
+        }
+        if self.gateway:
+            data["gateway"] = self.gateway
+        if self.mask is not None:
+            from rcUtilities import to_cidr
+            data["mask"] = to_cidr(self.mask)
+        return data
+
     def _info(self):
         """
         Contribute resource key/val pairs to the service's resinfo.
