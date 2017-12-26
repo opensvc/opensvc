@@ -15,9 +15,11 @@ from rcGlobalEnv import rcEnv
 class Scheduler(shared.OsvcThread):
     interval = 60
     delayed = {}
+    running = set()
 
     def status(self, **kwargs):
         data = shared.OsvcThread.status(self, **kwargs)
+        data["running"] = len(self.running)
         data["delayed"] = [{
             "cmd": " ".join(entry["cmd"]),
             "queued": entry["queued"].strftime(shared.JSON_DATEFMT),
@@ -53,22 +55,33 @@ class Scheduler(shared.OsvcThread):
             if self.stopped():
                 break
 
-    def exec_action(self, cmd):
+    def drop_running(self, sig):
+        self.running -= set([sig])
+
+    def exec_action(self, sig, cmd):
+        if sig in self.running:
+            self.log.debug("drop already running action '%s'", " ".join(cmd))
         kwargs = dict(stdout=self.devnull, stderr=self.devnull,
                       stdin=self.devnull, close_fds=True)
         try:
             proc = Popen(cmd, **kwargs)
         except KeyboardInterrupt:
             return
-        self.push_proc(proc=proc)
+        self.running.add(sig)
+        self.push_proc(proc=proc,
+                       on_success="drop_running",
+                       on_success_args=[sig],
+                       on_error="drop_running",
+                       on_error_args=[sig])
 
     def queue_action(self, cmd, delay, sig):
-        if sig in self.delayed:
-            return []
         if delay == 0:
             self.log.debug("immediate exec of action '%s'" % ' '.join(cmd))
-            self.exec_action(cmd)
+            self.exec_action(sig, cmd)
             return [sig]
+        if sig in self.delayed:
+            self.log.debug("drop already queued delayed action '%s'", " ".join(cmd))
+            return []
         now = datetime.datetime.utcnow()
         exp = now + datetime.timedelta(seconds=delay)
         self.delayed[sig] = {
@@ -79,18 +92,18 @@ class Scheduler(shared.OsvcThread):
         self.log.debug("queued action '%s' delayed until %s" % (' '.join(cmd), exp))
         return []
 
-    def dequeue_action(self, data, now):
+    def dequeue_action(self, sig, data, now):
         if now < data["expire"]:
             return False
         self.log.info("dequeue action '%s' queued at %s" % (data["cmd"], data["queued"]))
-        self.exec_action(data["cmd"])
+        self.exec_action(sig, data["cmd"])
         return True
 
     def dequeue_actions(self):
         now = datetime.datetime.utcnow()
         dequeued = []
         for sig, data in self.delayed.items():
-            ret = self.dequeue_action(data, now)
+            ret = self.dequeue_action(sig, data, now)
             if ret:
                 dequeued.append(sig)
         for sig in dequeued:
