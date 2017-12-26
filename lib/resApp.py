@@ -193,6 +193,7 @@ class App(Resource):
         Contribute app resource standard and script-provided key/val pairs
         to the service's resinfo.
         """
+        import re
         keyvals = [
             ["script", self.script if self.script else ""],
             ["start", str(self.start_seq) if self.start_seq else ""],
@@ -215,11 +216,12 @@ class App(Resource):
             keyvals.append(["Error", "info not implemented in launcher"])
             return keyvals
         for line in buff.splitlines():
+            if re.match("\w+:\s*.*$", line) is None:
+                continue
             if len(line) == 0:
                 continue
             elements = line.split(":")
             if len(elements) < 2:
-                keyvals.append(["Error", "parsing: %s" % line])
                 continue
             keyvals.append([elements[0].strip(), ":".join(elements[1:]).strip()])
         return keyvals
