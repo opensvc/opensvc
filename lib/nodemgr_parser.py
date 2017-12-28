@@ -71,7 +71,7 @@ OPT = Storage({
         help="A device path to limit or apply the action to."),
     "duration": Option(
         "--duration", default=None,
-        action="store", dest="duration", type="int",
+        action="store", dest="duration",
         help="A duration expression like, ``1h10m``."),
     "end": Option(
         "--end", default=None,
@@ -100,7 +100,7 @@ OPT = Storage({
         help="Show this help message and exit"),
     "id": Option(
         "--id", default=0,
-        action="store", dest="id", type="int",
+        action="store", dest="id",
         help="Specify an id to act on."),
     "index": Option(
         "--index", default=None,
@@ -404,6 +404,12 @@ ACTIONS = {
     "Network actions": {
         "network_ls": {
             "msg": "List the available networks.",
+        },
+        "network_show": {
+            "msg": "Show a network configuration.",
+            "options": [
+                OPT.id,
+            ],
         },
     },
     "Service actions": {

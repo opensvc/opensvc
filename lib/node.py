@@ -39,7 +39,7 @@ from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         call, which, purge_cache_expired, read_cf, unset_lazy, \
                         drop_option
-from converters import convert_duration
+from converters import convert_duration, convert_boolean
 from comm import Crypt
 
 if sys.version_info[0] < 3:
@@ -1265,8 +1265,14 @@ class Node(Crypt):
         if statinfo.st_mode & stat.S_IWOTH:
             print("%s is world writable. abort scheduled reboot" % self.paths.reboot_flag)
             return
-        print("remove %s and reboot" % self.paths.reboot_flag)
-        os.unlink(self.paths.reboot_flag)
+        try:
+            once = self.config.get("reboot", "once")
+            once = convert_boolean(once)
+        except:
+            once = True
+        if once:
+            print("remove %s and reboot" % self.paths.reboot_flag)
+            os.unlink(self.paths.reboot_flag)
         self.reboot()
 
     def pushdisks(self):
@@ -3863,4 +3869,20 @@ class Node(Crypt):
         if self.options.format == "json":
             return nets
         print("\n".join([net for net in nets]))
+
+    @formatter
+    def network_show(self):
+        nets = self.network_data()
+        if self.options.format == "json":
+            if self.options.id not in nets:
+                return {}
+            return nets[self.options.id]
+        if self.options.id not in nets:
+            return
+        from forest import Forest
+        from rcColor import color
+        tree = Forest()
+        tree.load({self.options.id: nets[self.options.id]}, title=rcEnv.nodename)
+        print(tree)
+
 
