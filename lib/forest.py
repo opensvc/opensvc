@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 from textwrap import wrap
 
 from rcUtilities import term_width
-from rcColor import colorize
+from rcColor import colorize, color
 
 LAST_NODE = "`- "
 NEXT_NODE = "|- "
@@ -332,6 +332,33 @@ class Node(object):
         """
         return self.forest.add_node(parent_id=self.node_id)
 
+    def load(self, data, title=None):
+        if title:
+            head = self.add_node()
+            head.add_column(title, color.BOLD)
+        else:
+            head = self
+
+        def add_list(head, _data):
+            for val in _data:
+                add_gen(head, val)
+
+        def add_dict(head, _data):
+            for key, val in _data.items():
+                leaf = head.add_node()
+                leaf.add_column(key, color.LIGHTBLUE)
+                add_gen(leaf, val)
+
+        def add_gen(head, _data):
+            if isinstance(_data, list):
+                add_list(head, _data)
+            elif isinstance(_data, dict):
+                add_dict(head, _data)
+            else:
+                head.add_column(str(_data))
+
+        add_gen(head, data)
+
 class Forest(object):
     """
     The forest object, offering methods to populate and print the tree.
@@ -398,4 +425,8 @@ class Forest(object):
         node_id = parent_id + [len(parent["children"])]
         parent["children"].append({})
         return Node(self, node_id)
+
+    def load(self, *args, **kwargs):
+        head = self.add_node()
+        head.load(*args, **kwargs)
 
