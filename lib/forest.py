@@ -333,11 +333,9 @@ class Node(object):
         return self.forest.add_node(parent_id=self.node_id)
 
     def load(self, data, title=None):
+        head = self
         if title:
-            head = self.add_node()
             head.add_column(title, color.BOLD)
-        else:
-            head = self
 
         def add_list(head, _data):
             for val in _data:
