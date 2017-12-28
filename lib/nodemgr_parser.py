@@ -69,6 +69,10 @@ OPT = Storage({
     "devices": Option(
         "--dev", default=[], action="append", dest="devices",
         help="A device path to limit or apply the action to."),
+    "discard": Option(
+        "--discard", default=False,
+        action="store_true", dest="discard",
+        help="Discard the stashed, invalid, configuration file."),
     "duration": Option(
         "--duration", default=None,
         action="store", dest="duration",
@@ -78,6 +82,11 @@ OPT = Storage({
         action="store", dest="end",
         help="A end date expressed as ``YYYY-MM-DD hh:mm`` limiting the "
              "timerange the action applies to."),
+    "eval": Option(
+        "--eval", default=False,
+        action="store_true", dest="eval",
+        help="If set with the :cmd:`svcmgr get` action, the printed value of "
+             ":opt:`--param` is evaluated, scoped and dereferenced."),
     "filterset": Option(
         "--filterset", default="",
         action="store", dest="filterset",
@@ -112,6 +121,27 @@ OPT = Storage({
         action="store_true", dest="insecure",
         help="Allow communications with a collector presenting an "
              "unverified SSL certificate."),
+    "kw": Option(
+        "--kw", action="append", dest="kw",
+        help="An expression like ``[<section>.]<keyword>[@<scope>][[<index>]]<op><value>`` where\n\n"
+             "* <section> can be:\n\n"
+             "  * a resource id\n"
+             "  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.\n"
+             "* <op> can be:\n\n"
+             "  * ``=``\n"
+             "  * ``+=``\n"
+             "  * ``-=``\n\n"
+             "Multiple --kw can be set to apply multiple configuration change "
+             "in a file with a single write.\n\n"
+             "Examples:\n\n"
+             "* app.start=false\n"
+             "  Turn off app start for all app resources\n"
+             "* app#1.start=true\n"
+             "  Turn on app start for app#1\n"
+             "* nodes+=node3\n"
+             "  Append node3 to nodes\n"
+             "* nodes[0]+=node3\n"
+             "  Preprend node3 to nodes\n"),
     "like": Option(
         "--like", default="%",
         action="store", dest="like",
@@ -171,6 +201,11 @@ OPT = Storage({
              "specified user credentials instead of the node "
              "credentials. Prompted if necessary but not "
              "specified."),
+    "recover": Option(
+        "--recover", default=False,
+        action="store_true", dest="recover",
+        help="Recover the stashed erroneous configuration file "
+             "in a :cmd:`nodemgr edit config` command"),
     "refresh_api": Option(
         "--refresh-api", default=False,
         action="store_true", dest="refresh_api",
@@ -426,6 +461,10 @@ ACTIONS = {
         },
         "edit_config": {
             "msg": "Edit the node configuration.",
+            "options": [
+                OPT.discard,
+                OPT.recover,
+            ],
         },
         "edit_authconfig": {
             "msg": "Edit the node authentication configuration.",
@@ -443,12 +482,14 @@ ACTIONS = {
             "msg": "Get the raw or evaluated value of a node "
                    "configuration keyword.",
             "options": [
+                OPT.eval,
                 OPT.param,
             ],
         },
         "set": {
             "msg": "Set a service configuration parameter.",
             "options": [
+                OPT.kw,
                 OPT.param,
                 OPT.value,
                 OPT.add,
@@ -461,6 +502,9 @@ ACTIONS = {
             "options": [
                 OPT.param,
             ],
+        },
+        "validate_config": {
+            "msg": "Check the section names and keywords are valid.",
         },
     },
     "Node daemon management": {

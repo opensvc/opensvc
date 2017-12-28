@@ -17,6 +17,7 @@ import sys
 import json
 import socket
 import time
+import re
 
 if sys.version_info[0] < 3:
     from urllib2 import Request, urlopen
@@ -38,25 +39,20 @@ from rcScheduler import Scheduler, SchedOpts, sched_action
 from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         call, which, purge_cache_expired, read_cf, unset_lazy, \
-                        drop_option
-from converters import convert_duration, convert_boolean
+                        drop_option, is_string, try_decode
+from converters import *
 from comm import Crypt
+import nodedict
 
 if sys.version_info[0] < 3:
     BrokenPipeError = IOError
 
 os.environ['LANG'] = 'C'
 
-DEPRECATED_KEYWORDS = {
-    "node.host_mode": "env",
-    "node.environment": "asset_env",
-    "node.environnement": "asset_env",
-}
-
-REVERSE_DEPRECATED_KEYWORDS = {
-    "node.asset_env": ["environnement", "environment"],
-    "node.env": ["host_mode"],
-}
+DEFAULT_STATUS_GROUPS = [
+    "hb",
+    "arbitrator",
+]
 
 REMOTE_ACTIONS = [
     "freeze",
@@ -103,6 +99,7 @@ class Node(Crypt):
         self.clouds = None
         self.paths = Storage(
             reboot_flag=os.path.join(rcEnv.paths.pathvar, "REBOOT_FLAG"),
+            tmp_cf=os.path.join(rcEnv.paths.pathvar, "node.conf.tmp"),
         )
         self.services = None
         self.load_config()
@@ -680,12 +677,90 @@ class Node(Crypt):
                 thr.join(1)
 
 
+    def make_temp_config(self):
+        """
+        Copy the current service configuration file to a temporary
+        location for edition.
+        If the temp file already exists, propose the --discard
+        or --recover options.
+        """
+        import shutil
+        if os.path.exists(self.paths.tmp_cf):
+            if self.options.recover:
+                pass
+            elif self.options.discard:
+                shutil.copy(rcEnv.paths.nodeconf, self.paths.tmp_cf)
+            else:
+                self.edit_config_diff()
+                print("%s exists: node conf is already being edited. Set "
+                      "--discard to edit from the current configuration, "
+                      "or --recover to open the unapplied config" % \
+                      self.paths.tmp_cf, file=sys.stderr)
+                raise ex.excError
+        else:
+            shutil.copy(rcEnv.paths.nodeconf, self.paths.tmp_cf)
+        return self.paths.tmp_cf
+
+    def edit_config_diff(self):
+        """
+        Display the diff between the current config and the pending
+        unvalidated config.
+        """
+        from subprocess import call
+
+        def diff_capable(opts):
+            cmd = ["diff"] + opts + [rcEnv.paths.nodeconf, self.paths.cf]
+            cmd_results = justcall(cmd)
+            if cmd_results[2] == 0:
+                return True
+            return False
+
+        if not os.path.exists(self.paths.tmp_cf):
+            return
+        if diff_capable(["-u", "--color"]):
+            cmd = ["diff", "-u", "--color", rcEnv.paths.nodeconf, self.paths.tmp_cf]
+        elif diff_capable(["-u"]):
+            cmd = ["diff", "-u", rcEnv.paths.nodeconf, self.paths.tmp_cf]
+        else:
+            cmd = ["diff", rcEnv.paths.nodeconf, self.paths.tmp_cf]
+        call(cmd)
+
     def edit_config(self):
         """
-        edit_config node action entrypoint
+        Execute an editor on the node configuration file.
+        When the editor exits, validate the new configuration file.
+        If validation pass, install the new configuration,
+        else keep the previous configuration in place and offer the
+        user the --recover or --discard choices for its next edit
+        config action.
         """
-        fpath = os.path.join(rcEnv.paths.pathetc, "node.conf")
-        return self.edit_cf(fpath)
+        if "EDITOR" in os.environ:
+            editor = os.environ["EDITOR"]
+        elif os.name == "nt":
+            editor = "notepad"
+        else:
+            editor = "vi"
+        from rcUtilities import which, fsum
+        if not which(editor):
+            print("%s not found" % editor, file=sys.stderr)
+            return 1
+        path = self.make_temp_config()
+        os.environ["LANG"] = "en_US.UTF-8"
+        os.system(' '.join((editor, path)))
+        if fsum(path) == fsum(rcEnv.paths.nodeconf):
+            os.unlink(path)
+            return 0
+        results = self._validate_config(path=path)
+        if results["errors"] == 0:
+            import shutil
+            shutil.copy(path, rcEnv.paths.nodeconf)
+            os.unlink(path)
+        else:
+            print("your changes were not applied because of the errors "
+                  "reported above. you can use the edit config command "
+                  "with --recover to try to fix your changes or with "
+                  "--discard to restart from the live config")
+        return results["errors"] + results["warnings"]
 
     def edit_authconfig(self):
         """
@@ -1628,147 +1703,382 @@ class Node(Crypt):
 
     def unset(self):
         """
-        Unset an option in the node configuration file.
+        The 'unset' action entrypoint.
+        Verifies the --param and --value are set, and finally call the _unset
+        internal method.
         """
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
         elements = self.options.param.split('.')
-
-        if len(elements) == 1:
-            section = self.options.param
-            if not self.config.has_section(section):
-                print("section '%s' not found" % section, file=sys.stderr)
-                return 1
-            self.config.remove_section(section)
-            self.write_config()
-            return 0
-
         if len(elements) != 2:
-            print("malformed parameter. format as '<section>.<key>' or '<section>'",
+            print("malformed parameter. format as 'section.key'",
                   file=sys.stderr)
             return 1
         section, option = elements
-        if not self.config.has_section(section):
-            print("section '%s' not found" % section, file=sys.stderr)
-            return 1
-        if not self.config.has_option(section, option):
-            print("option '%s' not found in section '%s'" % (option, section),
-                  file=sys.stderr)
-            return 1
-        self.config.remove_option(section, option)
-        self.write_config()
-        return 0
+        if section in DEFAULT_STATUS_GROUPS:
+            err = 0
+            for rid in [rid for rid in self.config.sections() if rid.startswith(section+"#")]:
+                try:
+                    self._unset(rid, option)
+                except ex.excError as exc:
+                    print(exc, file=sys.stderr)
+                    err += 1
+            return err
+        else:
+            try:
+                self._unset(section, option)
+                return 0
+            except ex.excError as exc:
+                print(exc, file=sys.stderr)
+                return 1
+
+    def _unset(self, section, option):
+        """
+        Delete an option in the service configuration file specified section.
+        """
+        lines = self._read_cf().splitlines()
+        lines = self.__unset(lines, section, option)
+        try:
+            self._write_cf(lines)
+        except (IOError, OSError) as exc:
+            raise ex.excError(str(exc))
+
+    def __unset(self, lines, section, option):
+        section = "[%s]" % section
+        need_write = False
+        in_section = False
+        for i, line in enumerate(lines):
+            sline = line.strip()
+            if sline == section:
+                in_section = True
+            elif in_section:
+                if sline.startswith("["):
+                    break
+                elif "=" in sline:
+                    elements = sline.split("=")
+                    _option = elements[0].strip()
+                    if option != _option:
+                        continue
+                    del lines[i]
+                    need_write = True
+                    while i < len(lines) and "=" not in lines[i] and \
+                          not lines[i].strip().startswith("[") and \
+                          lines[i].strip() != "":
+                        del lines[i]
+
+        if not in_section:
+            raise ex.excError("section %s not found" % section)
+
+        if not need_write:
+            raise ex.excError("option '%s' not found in section %s" % (option, section))
+
+        return lines
+
+    def _read_cf(self):
+        """
+        Return the service config file content.
+        """
+        import codecs
+        with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as ofile:
+            buff = ofile.read()
+        return buff
+
+    def _write_cf(self, buff):
+        """
+        Truncate the service config file and write buff.
+        """
+        import codecs
+        import tempfile
+        import shutil
+        if isinstance(buff, list):
+            buff = "\n".join(buff) + "\n"
+        ofile = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.paths.pathtmp, prefix="node")
+        fpath = ofile.name
+        os.chmod(fpath, 0o0644)
+        ofile.close()
+        with codecs.open(fpath, "w", "utf8") as ofile:
+            ofile.write(buff)
+            ofile.flush()
+            os.fsync(ofile)
+        shutil.move(fpath, rcEnv.paths.nodeconf)
+
+    def allocate_rid(self, group, sections):
+        """
+        Return an unused rid in <group>.
+        """
+        prefix = group + "#"
+        rids = [section for section in sections if section.startswith(prefix)]
+        idx = 1
+        while True:
+            rid = "#".join((group, str(idx)))
+            if rid in rids:
+                idx += 1
+                continue
+            return rid
 
     def get(self):
         """
-        Print the raw value of any option of any section of the node
-        configuration file.
+        The 'get' action entrypoint.
+        Verifies the --param is set, set DEFAULT as section if no section was
+        specified, and finally print,
+        * the raw value if --eval is not set
+        * the dereferenced and evaluated value if --eval is set
         """
         try:
-            print(self._get(self.options.param))
+            print(self._get(self.options.param, self.options.eval))
+        except ex.OptNotFound as exc:
+            print(exc.default)
+        except ex.RequiredOptNotFound as exc:
+            return 1
         except ex.excError as exc:
             print(exc, file=sys.stderr)
+            return 1
+        except Exception:
             return 1
         return 0
 
     def _get(self, param=None, evaluate=False):
         """
-        Verifies the param is set and return the value.
+        Verifies the param is set, set DEFAULT as section if no section was
+        specified, and finally return,
+        * the raw value if evaluate is False
+        * the dereferenced and evaluated value if evaluate is True
         """
-
         if param is None:
             raise ex.excError("no parameter. set --param")
-        if self.config is None:
-            raise ex.excError("invalid configuration file")
         elements = param.split('.')
         if len(elements) != 2:
             raise ex.excError("malformed parameter. format as 'section.key'")
         section, option = elements
-
         if section == "DEFAULT":
             raise ex.excError("the DEFAULT section is not allowed in %s" % rcEnv.paths.nodeconf)
         if not self.config.has_section(section):
-            self.config.add_section(section)
-
-        if self.config.has_option(section, option):
+            raise ex.excError("section [%s] not found" % section)
+        if evaluate:
+            return self.conf_get(section, option, "string", scope=True)
+        else:
             return self.config.get(section, option)
-
-        if param in DEPRECATED_KEYWORDS:
-            newkw = DEPRECATED_KEYWORDS[param]
-            if self.config.has_option(section, newkw):
-                print("deprecated keyword %s translated to %s" % \
-                      (param, newkw), file=sys.stderr)
-                return self.config.get(section, newkw)
-
-        if param in REVERSE_DEPRECATED_KEYWORDS:
-            for oldkw in REVERSE_DEPRECATED_KEYWORDS[param]:
-                if self.config.has_option(section, oldkw):
-                    print("keyword %s not found, translated to deprecated %s" % \
-                          (param, oldkw), file=sys.stderr)
-                    return self.config.get(section, oldkw)
-        raise ex.excError("option '%s' not found in section '%s'"%(option, section))
 
     def set(self):
         """
         The 'set' action entrypoint.
-        Verifies the --param and --value are set, set DEFAULT as section
-        if no section was specified, and set the value using the internal
-        _set() method.
+        Verifies the --param and --value are set, and set the value using the
+        internal _set() method.
         """
+        if self.options.kw is not None:
+            return self.set_multi(self.options.kw)
+        else:
+            return self.set_mono()
+
+    def set_multi(self, kws):
+        changes = []
+        self.set_multi_cache = {}
+        for kw in kws:
+            if "=" not in kw:
+                raise ex.excError("malformed kw expression: %s: no '='" % kw)
+            keyword, value = kw.split("=", 1)
+            if keyword[-1] == "-":
+                op = "remove"
+                keyword = keyword[:-1]
+            elif keyword[-1] == "+":
+                op = "add"
+                keyword = keyword[:-1]
+            else:
+                op = "set"
+            index = None
+            if "[" in keyword:
+                keyword, right = keyword.split("[", 1)
+                if not right.endswith("]"):
+                    raise ex.excError("malformed kw expression: %s: no trailing"
+                                      " ']' at the end of keyword" % kw)
+                try:
+                    index = int(right[:-1])
+                except ValueError:
+                    raise ex.excError("malformed kw expression: %s: index is "
+                                      "not integer" % kw)
+            if "." in keyword and "#" not in keyword:
+                # <group>.keyword[@<scope>] format => loop over all rids in group
+                group = keyword.split(".")[0]
+                if group in DEFAULT_STATUS_GROUPS:
+                    for rid in [rid for rid in self.config.sections() if rid.startswith(group+"#")]:
+                        keyword = rid + keyword[keyword.index("."):]
+                        changes.append(self.set_mangle(keyword, op, value, index))
+                else:
+                    # <section>.keyword[@<scope>]
+                    changes.append(self.set_mangle(keyword, op, value, index))
+            else:
+                # <rid>.keyword[@<scope>]
+                changes.append(self.set_mangle(keyword, op, value, index))
+        self._set_multi(changes)
+
+    def set_mono(self):
+        self.set_multi_cache = {}
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
             return 1
-        if self.options.value is not None:
-            value = self.options.value
-        elif self.options.remove is not None:
-            try:
-                value = self._get(self.options.param, self.options.eval).split()
-            except ex.excError as exc:
-                value = []
-            if self.options.remove not in value:
-                return 0
-            value.remove(self.options.remove)
-            value = " ".join(value)
-        elif self.options.add is not None:
-            try:
-                value = self._get(self.options.param, self.options.eval).split()
-            except ex.excError as exc:
-                value = []
-            if self.options.add in value:
-                return 0
-            index = self.options.index if self.options.index is not None else len(value)
-            value.insert(index, self.options.add)
-            value = " ".join(value)
+        if self.options.value is None and \
+           self.options.add is None and \
+           self.options.remove is None:
+            print("no value. set --value, --add or --remove", file=sys.stderr)
+            return 1
+        if self.options.add:
+            op = "add"
+            value = self.options.add
+        elif self.options.remove:
+            op = "remove"
+            value = self.options.remove
         else:
-            print("no value. set --value or --remove", file=sys.stderr)
-            return 1
-        elements = self.options.param.split('.')
-        if len(elements) == 1:
-            elements.insert(0, "DEFAULT")
-        elif len(elements) != 2:
-            print("malformed parameter. format as 'section.key'", file=sys.stderr)
-            return 1
-        try:
-            self._set(elements[0], elements[1], value)
-        except ex.excError as exc:
-            print(exc, file=sys.stderr)
-            return 1
-        return 0
+            op = "set"
+            value = self.options.value
+        keyword = self.options.param
+        index = self.options.index
+        changes = []
+        if "." in keyword and "#" not in keyword:
+            # <group>.keyword[@<scope>] format => loop over all rids in group
+            group = keyword.split(".")[0]
+            if group in DEFAULT_STATUS_GROUPS:
+                for rid in [rid for rid in self.config.sections() if rid.startswith(group+"#")]:
+                    keyword = rid + keyword[keyword.index("."):]
+                    changes.append(self.set_mangle(keyword, op, value, index))
+            else:
+                # <section>.keyword[@<scope>]
+                changes.append(self.set_mangle(keyword, op, value, index))
+        else:
+            # <rid>.keyword[@<scope>]
+            changes.append(self.set_mangle(keyword, op, value, index))
+        self._set_multi(changes)
+
+    def set_mangle(self, keyword, op, value, index):
+        def list_value(keyword):
+            import rcConfigParser
+            if keyword in self.set_multi_cache:
+                return self.set_multi_cache[keyword].split()
+            try:
+                _value = self._get(keyword, self.options.eval).split()
+            except (ex.excError, rcConfigParser.NoOptionError) as exc:
+                _value = []
+            return _value
+
+        if op == "remove":
+            _value = list_value(keyword)
+            if value not in _value:
+                return
+            _value.remove(value)
+            _value = " ".join(_value)
+            self.set_multi_cache[keyword] = _value
+        elif op == "add":
+            _value = list_value(keyword)
+            if value in _value:
+                return
+            index = index if index is not None else len(_value)
+            _value.insert(index, value)
+            _value = " ".join(_value)
+            self.set_multi_cache[keyword] = _value
+        else:
+            _value = value
+        elements = keyword.split('.')
+        if len(elements) != 2:
+            raise ex.excError("malformed kw: format as 'section.key'")
+        return elements[0], elements[1], _value
 
     def _set(self, section, option, value):
+        self._set_multi([[section, option, value]])
+
+    def _set_multi(self, changes):
+        changed = False
+        lines = self._read_cf().splitlines()
+        for change in changes:
+            if change is None:
+                continue
+            section, option, value = change
+            lines = self.__set(lines, section, option, value)
+            changed = True
+        if not changed:
+            # all changes were None
+            return
+        try:
+            self._write_cf(lines)
+        except (IOError, OSError) as exc:
+            raise ex.excError(str(exc))
+
+    def __set(self, lines, section, option, value):
         """
-        Set any option in any section of the node configuration file
+        Set <option> to <value> in <section> of the configuration file.
         """
-        if not self.config.has_section(section):
-            try:
-                self.config.add_section(section)
-            except ValueError as exc:
-                print(exc, file=sys.stderr)
-                return 1
-        self.config.set(section, option, value)
-        self.write_config()
-        return 0
+        section = "[%s]" % section
+        done = False
+        in_section = False
+        value = try_decode(value)
+
+        for idx, line in enumerate(lines):
+            sline = line.strip()
+            if sline == section:
+                in_section = True
+            elif in_section:
+                if sline.startswith("["):
+                    if done:
+                        # matching section done and new section begins
+                        break
+                    else:
+                        # section found and parsed and no option => add option
+                        section_idx = idx
+                        while section_idx > 0 and lines[section_idx-1].strip() == "":
+                            section_idx -= 1
+                        lines.insert(section_idx, "%s = %s" % (option, value))
+                        done = True
+                        break
+                elif "=" in sline:
+                    elements = sline.split("=")
+                    _option = elements[0].strip()
+
+                    if option != _option:
+                        continue
+
+                    if done:
+                        # option already set : remove dup
+                        del lines[idx]
+                        while idx < len(lines) and "=" not in lines[idx] and \
+                              not lines[idx].strip().startswith("[") and \
+                              lines[idx].strip() != "":
+                            del lines[idx]
+                        continue
+
+                    _value = elements[1].strip()
+                    section_idx = idx
+
+                    while section_idx < len(lines)-1 and  \
+                          "=" not in lines[section_idx+1] and \
+                          not lines[section_idx+1].strip().startswith("["):
+                        section_idx += 1
+                        if lines[section_idx].strip() == "":
+                            continue
+                        _value += " %s" % lines[section_idx].strip()
+
+                    if value.replace("\n", " ") == _value:
+                        return lines
+
+                    lines[idx] = "%s = %s" % (option, value)
+                    section_idx = idx
+
+                    while section_idx < len(lines)-1 and \
+                          "=" not in lines[section_idx+1] and \
+                          not lines[section_idx+1].strip().startswith("[") and \
+                          lines[section_idx+1].strip() != "":
+                        del lines[section_idx+1]
+
+                    done = True
+
+        if not done:
+            while len(lines) > 0 and lines[-1].strip() == "":
+                lines.pop()
+            if not in_section:
+                # section in last position and no option => add section
+                lines.append("")
+                lines.append(section)
+            lines.append("%s = %s" % (option, value))
+
+        return lines
 
     def register_as_user(self):
         """
@@ -3884,5 +4194,491 @@ class Node(Crypt):
         tree = Forest()
         tree.load({self.options.id: nets[self.options.id]}, title=rcEnv.nodename)
         print(tree)
+
+    #########################################################################
+    #
+    # config helpers
+    #
+    #########################################################################
+    def handle_reference(self, ref, scope=False, impersonate=None, config=None):
+            # hardcoded references
+            if ref == "nodename":
+                return rcEnv.nodename
+            if ref == "short_nodename":
+                return rcEnv.nodename.split(".")[0]
+            if ref == "clusternodes":
+                return " ".join(self.cluster_nodes)
+            if ref == "svcmgr":
+                return rcEnv.paths.svcmgr
+            if ref == "nodemgr":
+                return rcEnv.paths.nodemgr
+            if ref == "etc":
+                return rcEnv.paths.pathetc
+            if ref == "var":
+                return rcEnv.paths.pathvar
+
+            if "[" in ref and ref.endswith("]"):
+                i = ref.index("[")
+                index = ref[i+1:-1]
+                ref = ref[:i]
+                index = int(self.handle_references(index, scope=scope,
+                                                   impersonate=impersonate))
+            else:
+                index = None
+
+            n_dots = ref.count(".")
+            if n_dots == 1:
+                _section, _v = ref.split(".")
+            else:
+                raise ex.excError("%s: reference can have only one dot" % ref)
+
+            if len(_section) == 0:
+                raise ex.excError("%s: reference section can not be empty" % ref)
+            if len(_v) == 0:
+                raise ex.excError("%s: reference option can not be empty" % ref)
+
+            if _v[0] == "#":
+                return_length = True
+                _v = _v[1:]
+            else:
+                return_length = False
+
+            val = self._handle_reference(ref, _section, _v, scope=scope,
+                                         impersonate=impersonate,
+                                         config=config)
+
+            if val is None:
+                # deferred
+                return
+
+            if return_length or index is not None:
+                if is_string(val):
+                    val = val.split()
+                if return_length:
+                    return str(len(val))
+                if index is not None:
+                    try:
+                        return val[index]
+                    except IndexError:
+                        if _v in ("exposed_devs", "sub_devs", "base_devs"):
+                            return
+                        raise
+
+            return val
+
+    def _handle_reference(self, ref, _section, _v, scope=False,
+                          impersonate=None, config=None):
+        if config is None:
+            config = self.config
+        # give os env precedence over the env cf section
+        if _section == "env" and _v.upper() in os.environ:
+            return os.environ[_v.upper()]
+
+        if _section != "DEFAULT" and not config.has_section(_section):
+            raise ex.excError("%s: section %s does not exist" % (ref, _section))
+
+        try:
+            return self.conf_get(_section, _v, "string", scope=scope,
+                                 impersonate=impersonate, config=config)
+        except ex.OptNotFound as exc:
+            return exc.default
+        except ex.RequiredOptNotFound:
+            raise ex.excError("%s: unresolved reference (%s)"
+                              "" % (ref, str(exc)))
+
+        raise ex.excError("%s: unknown reference" % ref)
+
+    def _handle_references(self, s, scope=False, impersonate=None, config=None):
+        if not is_string(s):
+            return s
+        while True:
+            m = re.search(r'{\w*[\w#][\w\.\[\]]*}', s)
+            if m is None:
+                return s
+            ref = m.group(0).strip("{}")
+            val = self.handle_reference(ref, scope=scope,
+                                        impersonate=impersonate,
+                                        config=config)
+            if val is None:
+                # deferred
+                return
+            s = s[:m.start()] + val + s[m.end():]
+
+    @staticmethod
+    def _handle_expressions(s):
+        if not is_string(s):
+            return s
+        while True:
+            m = re.search(r'\$\((.+)\)', s)
+            if m is None:
+                return s
+            expr = m.group(1)
+            try:
+                val = eval_expr(expr)
+            except TypeError as exc:
+                raise ex.excError("invalid expression: %s: %s" % (expr, str(exc)))
+            s = s[:m.start()] + str(val) + s[m.end():]
+
+    def handle_references(self, s, scope=False, impersonate=None, config=None):
+        key = (s, scope, impersonate)
+        if hasattr(self, "ref_cache") and self.ref_cache is not None \
+           and key in self.ref_cache:
+            return self.ref_cache[key]
+        try:
+            val = self._handle_references(s, scope=scope,
+                                          impersonate=impersonate,
+                                          config=config)
+            val = self._handle_expressions(val)
+            val = self._handle_references(val, scope=scope,
+                                          impersonate=impersonate,
+                                          config=config)
+        except Exception as e:
+            raise
+            raise ex.excError("%s: reference evaluation failed: %s"
+                              "" % (s, str(e)))
+        if hasattr(self, "ref_cache") and self.ref_cache is not None:
+            self.ref_cache[key] = val
+        return val
+
+    def conf_get(self, s, o, t=None, scope=None, impersonate=None,
+                 use_default=True, config=None, verbose=True):
+        """
+        Handle keyword and section deprecation.
+        """
+        section = s.split("#")[0]
+        if section in nodedict.DEPRECATED_SECTIONS:
+            section, rtype = nodedict.DEPRECATED_SECTIONS[section]
+            fkey = ".".join((section, rtype, o))
+        else:
+            try:
+                rtype = self.config.get(s, "type")
+                fkey = ".".join((section, rtype, o))
+            except Exception:
+                rtype = None
+                fkey = ".".join((section, o))
+
+        deprecated_keyword = nodedict.REVERSE_DEPRECATED_KEYWORDS.get(fkey)
+
+        # 1st try: supported keyword
+        try:
+            return self._conf_get(s, o, t=t, scope=scope,
+                                  impersonate=impersonate,
+                                  use_default=use_default, config=config,
+                                  section=section, rtype=rtype)
+        except ex.RequiredOptNotFound:
+            if deprecated_keyword is None:
+                if verbose:
+                    self.log.error("%s.%s is mandatory" % (s, o))
+                raise
+        except ex.OptNotFound:
+            if deprecated_keyword is None:
+                raise
+
+        # 2nd try: deprecated keyword
+        try:
+            return self._conf_get(s, deprecated_keyword, t=t, scope=scope,
+                                  impersonate=impersonate,
+                                  use_default=use_default, config=config,
+                                  section=section, rtype=rtype)
+        except ex.RequiredOptNotFound:
+            self.log.error("%s.%s is mandatory" % (s, o))
+            raise
+
+    def _conf_get(self, s, o, t=None, scope=None, impersonate=None,
+                 use_default=True, config=None, section=None, rtype=None):
+        """
+        Get keyword properties and handle inheritance.
+        """
+        inheritance = "leaf"
+        kwargs = {
+            "default": None,
+            "required": False,
+            "deprecated": False,
+            "impersonate": impersonate,
+            "use_default": use_default,
+            "config": config,
+        }
+        if s != "env":
+            key = nodedict.NODEKEYS[section].getkey(o, rtype)
+            if key is None:
+                if scope is None and t is None:
+                    raise ValueError("%s.%s not found in the node "
+                                     "configuration dictionary" % (s, o))
+                else:
+                    # passing 't' and 'scope' skips NODEKEYS validation.
+                    # used for keywords not in NODEKEYS.
+                    pass
+            else:
+                kwargs["deprecated"] = (key.keyword != o)
+                kwargs["required"] = key.required
+                kwargs["default"] = key.default
+                inheritance = key.inheritance
+                if scope is None:
+                    scope = key.at
+                if t is None:
+                    t = key.convert
+        else:
+            # env key are always string and scopable
+            t = "string"
+            scope = True
+
+        if scope is None:
+            scope = False
+        if t is None:
+            t = "string"
+
+        kwargs["scope"] = scope
+        kwargs["t"] = t
+
+        # in order of probability
+        if inheritance == "leaf > head":
+            return self.__conf_get(s, o, **kwargs)
+        if inheritance == "leaf":
+            kwargs["use_default"] = False
+            return self.__conf_get(s, o, **kwargs)
+        raise ex.excError("unsupported inheritance value: %s" % str(inheritance))
+
+    def __conf_get(self, s, o, t=None, scope=None, impersonate=None,
+                   use_default=None, config=None, default=None, required=None,
+                   deprecated=None):
+        try:
+            if not scope:
+                val = self.conf_get_val_unscoped(s, o, use_default=use_default,
+                                                 config=config)
+            else:
+                val = self.conf_get_val_scoped(s, o, use_default=use_default,
+                                               config=config,
+                                               impersonate=impersonate)
+        except ex.OptNotFound as exc:
+            if required:
+                raise ex.RequiredOptNotFound
+            else:
+                exc.default = default
+                raise exc
+
+        try:
+            val = self.handle_references(val, scope=scope,
+                                         impersonate=impersonate,
+                                         config=config)
+        except ex.excError as exc:
+            if o.startswith("pre_") or o.startswith("post_") or \
+               o.startswith("blocking_"):
+                pass
+            else:
+                raise
+
+        if t in (None, "string"):
+            return val
+        return globals()["convert_"+t](val)
+
+    def conf_get_val_unscoped(self, s, o, use_default=True, config=None):
+        if config is None:
+            config = self.config
+        if config.has_option(s, o):
+            return config.get(s, o)
+        raise ex.OptNotFound("unscoped keyword %s.%s not found." % (s, o))
+
+    def conf_has_option_scoped(self, s, o, impersonate=None, config=None, scope_order=None):
+        """
+        Handles the keyword scope_order property, at and impersonate
+        """
+        if config is None:
+            config = self.config
+        if impersonate is None:
+            nodename = rcEnv.nodename
+        else:
+            nodename = impersonate
+
+        if s != "DEFAULT" and not config.has_section(s):
+            return
+
+        if s == "DEFAULT":
+            options = config.defaults().keys()
+        else:
+            options = config._sections[s].keys()
+
+        candidates = [
+            (o+"@"+nodename, True),
+            (o, True),
+        ]
+
+        if scope_order == "head: generic > specific" and s == "DEFAULT":
+            candidates.reverse()
+        elif scope_order == "generic > specific":
+            candidates.reverse()
+
+        for option, condition in candidates:
+            if option in options and condition:
+                return option
+
+    def conf_get_val_scoped(self, s, o, impersonate=None, use_default=True, config=None, scope_order=None):
+        if config is None:
+            config = self.config
+        if impersonate is None:
+            nodename = rcEnv.nodename
+        else:
+            nodename = impersonate
+
+        option = self.conf_has_option_scoped(s, o, impersonate=impersonate,
+                                             config=config,
+                                             scope_order=scope_order)
+        if option is None:
+            raise ex.OptNotFound("scoped keyword %s.%s not found." % (s, o))
+
+        try:
+            val = config.get(s, option)
+        except Exception as e:
+            raise ex.excError("param %s.%s: %s"%(s, o, str(e)))
+
+        return val
+
+    def validate_config(self, path=None):
+        """
+        The validate config action entrypoint.
+        """
+        ret = self._validate_config(path=path)
+        return ret["warnings"] + ret["errors"]
+
+    def _validate_config(self, path=None):
+        """
+        The validate config core method.
+        Returns a dict with the list of syntax warnings and errors.
+        """
+        try:
+            import ConfigParser
+        except ImportError:
+            import configparser as ConfigParser
+
+        ret = {
+            "errors": 0,
+            "warnings": 0,
+        }
+
+        if path is None:
+            config = self.config
+        else:
+            try:
+                config = read_cf(path)
+            except ConfigParser.ParsingError:
+                self.log.error("error parsing %s" % path)
+                ret["errors"] += 1
+
+        def check_scoping(key, section, option):
+            """
+            Verify the specified option scoping is allowed.
+            """
+            if not key.at and "@" in option:
+                self.log.error("option %s.%s does not support scoping", section, option)
+                return 1
+            return 0
+
+        def check_references(section, option):
+            """
+            Verify the specified option references.
+            """
+            value = config.get(section, option)
+            try:
+                value = self.handle_references(value, scope=True, config=config)
+            except ex.excError as exc:
+                if not option.startswith("pre_") and \
+                   not option.startswith("post_") and \
+                   not option.startswith("blocking_"):
+                    self.log.error(str(exc))
+                    return 1
+            except Exception as exc:
+                self.log.error(str(exc))
+                return 1
+            return 0
+
+        def get_val(key, section, option):
+            """
+            Fetch the value and convert it to the expected type.
+            """
+            _option = option.split("@")[0]
+            value = self.conf_get(section, _option, config=config)
+            return value
+
+        def check_candidates(key, section, option, value):
+            """
+            Verify the specified option value is in allowed candidates.
+            """
+            if not key.strict_candidates:
+                return 0
+            if key.candidates is None:
+                return 0
+            if isinstance(value, (list, tuple, set)):
+                valid = len(set(value) - set(key.candidates)) == 0
+            else:
+                valid = value in key.candidates
+            if not valid:
+                if isinstance(key.candidates, (set, list, tuple)):
+                    candidates = ", ".join(key.candidates)
+                else:
+                    candidates = str(key.candidates)
+                self.log.error("option %s.%s value %s is not in valid candidates: %s",
+                               section, option, str(value), candidates)
+                return 1
+            return 0
+
+        def check_known_option(key, section, option):
+            """
+            Verify the specified option scoping, references and that the value
+            is in allowed candidates.
+            """
+            err = 0
+            err += check_scoping(key, section, option)
+            if check_references(section, option) != 0:
+                err += 1
+                return err
+            try:
+                value = get_val(key, section, option)
+            except ValueError as exc:
+                self.log.warning(str(exc))
+                return 0
+            except ex.OptNotFound:
+                return 0
+            err += check_candidates(key, section, option, value)
+            return err
+
+        def validate_resources_options(config, ret):
+            """
+            Validate resource sections options.
+            """
+            for section in config.sections():
+                if section == "env":
+                    # the "env" section is not handled by a resource driver, and is
+                    # unknown to the nodedict. Just ignore it.
+                    continue
+                family = section.split("#")[0]
+                if config.has_option(section, "type"):
+                    rtype = config.get(section, "type")
+                else:
+                    rtype = None
+                if family not in list(nodedict.NODEKEYS.sections.keys()) + list(nodedict.DEPRECATED_SECTIONS.keys()):
+                    self.log.warning("ignored section %s", section)
+                    ret["warnings"] += 1
+                    continue
+                if family in nodedict.DEPRECATED_SECTIONS:
+                    self.log.warning("deprecated section prefix %s", family)
+                    ret["warnings"] += 1
+                    family, rtype = nodedict.DEPRECATED_SECTIONS[family]
+                for option in config.options(section):
+                    if option in config.defaults():
+                        continue
+                    key = nodedict.NODEKEYS.sections[family].getkey(option, rtype=rtype)
+                    if key is None:
+                        key = nodedict.NODEKEYS.sections[family].getkey(option)
+                    if key is None:
+                        self.log.warning("ignored option %s.%s%s", section,
+                                         option, ", driver %s" % rtype if rtype else "")
+                        ret["warnings"] += 1
+                    else:
+                        ret["errors"] += check_known_option(key, section, option)
+            return ret
+
+        ret = validate_resources_options(config, ret)
+
+        return ret
+
 
 
