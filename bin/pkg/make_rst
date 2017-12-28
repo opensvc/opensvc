@@ -3,4 +3,5 @@
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(whence -- $0 || echo $0));pwd)"
 
 python $PATH_SCRIPT/../../lib/svcdict.py rst
+python $PATH_SCRIPT/../../lib/nodedict.py rst
 

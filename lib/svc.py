@@ -2218,12 +2218,12 @@ class Svc(Crypt):
 
     @lazy
     def encap_groups(self):
-        from svcDict import deprecated_sections
+        from svcDict import DEPRECATED_SECTIONS
         egroups = set()
         for rid in self.encap_resources:
             egroup = rid.split('#')[0]
-            if egroup in deprecated_sections:
-                egroup = deprecated_sections[egroup][0]
+            if egroup in DEPRECATED_SECTIONS:
+                egroup = DEPRECATED_SECTIONS[egroup][0]
             egroups.add(egroup)
         return egroups
 
@@ -4884,10 +4884,10 @@ class Svc(Crypt):
                     for section in config.sections():
                         family = section.split("#")[0]
                         if family not in list(svcdict.SVCKEYS.sections.keys()) + \
-                           list(svcdict.deprecated_sections.keys()):
+                           list(svcdict.DEPRECATED_SECTIONS.keys()):
                             continue
-                        if family in svcdict.deprecated_sections:
-                            results = svcdict.deprecated_sections[family]
+                        if family in svcdict.DEPRECATED_SECTIONS:
+                            results = svcdict.DEPRECATED_SECTIONS[family]
                             family = results[0]
                         if svcdict.SVCKEYS.sections[family].getkey(option) is not None:
                             found = True
@@ -4914,14 +4914,14 @@ class Svc(Crypt):
                     rtype = config.get(section, "type")
                 else:
                     rtype = None
-                if family not in list(svcdict.SVCKEYS.sections.keys()) + list(svcdict.deprecated_sections.keys()):
+                if family not in list(svcdict.SVCKEYS.sections.keys()) + list(svcdict.DEPRECATED_SECTIONS.keys()):
                     self.log.warning("ignored section %s", section)
                     ret["warnings"] += 1
                     continue
-                if family in svcdict.deprecated_sections:
+                if family in svcdict.DEPRECATED_SECTIONS:
                     self.log.warning("deprecated section prefix %s", family)
                     ret["warnings"] += 1
-                    family, rtype = svcdict.deprecated_sections[family]
+                    family, rtype = svcdict.DEPRECATED_SECTIONS[family]
                 for option in config.options(section):
                     if option in config.defaults():
                         continue
@@ -5478,8 +5478,8 @@ class Svc(Crypt):
         Handle keyword and section deprecation.
         """
         section = s.split("#")[0]
-        if section in svcdict.deprecated_sections:
-            section, rtype = svcdict.deprecated_sections[section]
+        if section in svcdict.DEPRECATED_SECTIONS:
+            section, rtype = svcdict.DEPRECATED_SECTIONS[section]
             fkey = ".".join((section, rtype, o))
         else:
             try:
@@ -5493,7 +5493,7 @@ class Svc(Crypt):
                     rtype = None
                     fkey = ".".join((section, o))
 
-        deprecated_keyword = svcdict.reverse_deprecated_keywords.get(fkey)
+        deprecated_keyword = svcdict.REVERSE_DEPRECATED_KEYWORDS.get(fkey)
 
         # 1st try: supported keyword
         try:
