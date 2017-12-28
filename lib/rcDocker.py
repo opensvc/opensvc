@@ -601,7 +601,14 @@ class DockerLib(object):
         """
         The docker daemon startup command, adapted to the docker version.
         """
-        if self.docker_min_version("1.13"):
+        if self.docker_min_version("17.05"):
+            cmd = [
+                self.dockerd_exe,
+                '-H', self.docker_socket,
+                '--data-root', self.docker_data_dir,
+                '-p', self.docker_pid_file
+            ]
+        elif self.docker_min_version("1.13"):
             cmd = [
                 self.dockerd_exe,
                 '-H', self.docker_socket,
@@ -622,7 +629,7 @@ class DockerLib(object):
                 '-p', self.docker_pid_file
             ]
         if self.docker_min_version("1.9") and '--exec-root' not in str(self.docker_daemon_args):
-            cmd += ["--exec-root", self.docker_data_dir]
+            cmd += ["--exec-root", os.path.join(self.svc.var_d, "docker_exec")]
         cmd += self.docker_daemon_args
         return cmd
 
