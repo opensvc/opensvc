@@ -1513,7 +1513,7 @@ class Node(Crypt):
         """
         import shlex
         _cmd = shlex.split(cmd)
-        ret, out, err = self.vcall(_cmd, err_to_warn)
+        ret, out, err = self.vcall(_cmd, err_to_warn=err_to_warn)
         if ret != 0:
             raise ex.excError((ret, out, err))
 
