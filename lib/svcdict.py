@@ -3708,7 +3708,8 @@ class KeyDict(KeywordStore):
             self, provision,
             deprecated_keywords=DEPRECATED_KEYWORDS,
             deprecated_sections=DEPRECATED_SECTIONS,
-            base_sections=["env", "DEFAULT"]
+            base_sections=["env", "DEFAULT"],
+            template_prefix="template.service.",
         )
 
         def kw_tags(resource):
