@@ -3870,3 +3870,19 @@ class Node(Crypt):
             return nets
         print("\n".join([net for net in nets]))
 
+    @formatter
+    def network_show(self):
+        nets = self.network_data()
+        if self.options.format == "json":
+            if self.options.id not in nets:
+                return {}
+            return nets[self.options.id]
+        if self.options.id not in nets:
+            return
+        from forest import Forest
+        from rcColor import color
+        tree = Forest()
+        tree.load({self.options.id: nets[self.options.id]}, title=rcEnv.nodename)
+        print(tree)
+
+
