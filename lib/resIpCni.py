@@ -145,16 +145,23 @@ class Ip(Res.Ip):
             raise ex.excError("invalid json in cni configuration file %s" % self.cni_conf)
 
     @lazy
+    def cni_plugins(self):
+        return self.svc.node.conf_get("cni", "plugins")
+
+    @lazy
+    def cni_config(self):
+        return self.svc.node.conf_get("cni", "config")
+
+    @lazy
     def cni_portmap_conf(self):
-        return "/opt/cni/net.d/osvc-portmap.conf"
+        return os.path.join(self.cni_config, "osvc-portmap.conf")
 
     @lazy
     def cni_conf(self):
-        return "/opt/cni/net.d/%s.conf" % self.network
+        return os.path.join(self.cni_config, "%s.conf" % self.network)
 
     def cni_bin(self, data):
-        cni_driver = data["type"]
-        return "/opt/cni/bin/%s" % cni_driver
+        return os.path.join(self.cni_plugins, data["type"])
 
     @lazy
     def nspid(self):
@@ -296,7 +303,7 @@ class Ip(Res.Ip):
         _env = {
             "CNI_COMMAND": "ADD",
             "CNI_IFNAME": self.ipdev,
-            "CNI_PATH": "/opt/cni/bin",
+            "CNI_PATH": self.cni_plugins,
         }
         if self.container_rid:
             if self.container_pid is None:
@@ -331,7 +338,7 @@ class Ip(Res.Ip):
         _env = {
             "CNI_COMMAND": "DEL",
             "CNI_IFNAME": self.ipdev,
-            "CNI_PATH": "/opt/cni/bin",
+            "CNI_PATH": self.cni_plugins,
         }
         if self.container_rid:
             if self.container_pid is None:

@@ -1070,6 +1070,28 @@ class KeywordHbRelaySecret(Keyword):
                   text="The secret to use to encrypt/decrypt data exchanged with the relay (AES256)."
                 )
 
+class KeywordCniPlugins(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="cni",
+                  keyword="plugins",
+                  order=15,
+                  default="/opt/cni/bin",
+                  text="The directory hosting the CNI plugins."
+                )
+
+class KeywordCniConfig(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="cni",
+                  keyword="config",
+                  order=15,
+                  default="/opt/cni/net.d",
+                  text="The directory hosting the CNI network configuration files."
+                )
+
 
 class KeyDict(KeywordStore):
     def __init__(self):
@@ -1164,6 +1186,8 @@ class KeyDict(KeywordStore):
         self += KeywordHbDiskDev()
         self += KeywordHbRelayRelay()
         self += KeywordHbRelaySecret()
+        self += KeywordCniPlugins()
+        self += KeywordCniConfig()
 
 NODEKEYS = KeyDict()
 
