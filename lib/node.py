@@ -1453,7 +1453,7 @@ class Node(Crypt):
                             "vdev_id": vdev_id,
                             "vdisk_id": r.vm_hostname+'.'+vdev_id,
                             "size": disk_size,
-                            "cluster": self.cluster_name.cluster,
+                            "cluster": self.cluster_name,
                         }
 
                 try:
