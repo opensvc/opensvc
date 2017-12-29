@@ -181,6 +181,9 @@ class Rsync(resSync.Sync):
         sync_timestamp_f = get_timestamp_filename(self, node)
         sync_timestamp_f_src = get_timestamp_filename(self, rcEnv.nodename)
         sched_timestamp_f = os.path.join(self.svc.var_d, "scheduler", "last_syncall_"+self.rid)
+        dst_d = os.path.basename(sched_timestamp_f)
+        if not os.path.exists(dst_d):
+            os.makedirs(dst_d)
         with open(sync_timestamp_f, 'w') as f:
             f.write(str(self.svc.action_start_date)+'\n')
         import shutil
