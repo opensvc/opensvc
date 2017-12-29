@@ -1205,7 +1205,7 @@ class Svc(object):
                     for line in ofile.readlines():
                         buff = fmt(line)
                         if buff:
-                            pipe.write(buff.encode("utf-8", errors="ignore"))
+                            pipe.write(buff.encode("utf-8", "ignore"))
                             pipe.write("\n")
         except BrokenPipeError:
             try:
