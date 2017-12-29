@@ -146,11 +146,17 @@ class Ip(Res.Ip):
 
     @lazy
     def cni_plugins(self):
-        return self.svc.node.conf_get("cni", "plugins")
+        try:
+            return self.svc.node.conf_get("cni", "plugins")
+        except ex.OptNotFound as exc:
+            return exc.default
 
     @lazy
     def cni_config(self):
-        return self.svc.node.conf_get("cni", "config")
+        try:
+            return self.svc.node.conf_get("cni", "config")
+        except ex.OptNotFound as exc:
+            return exc.default
 
     @lazy
     def cni_portmap_conf(self):
