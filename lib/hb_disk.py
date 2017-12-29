@@ -13,6 +13,7 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage
 from comm import Crypt
 from hb import Hb
+from rcUtilities import bdecode
 
 class HbDisk(Hb, Crypt):
     """
@@ -56,7 +57,7 @@ class HbDisk(Hb, Crypt):
             config = self.config
 
         if not hasattr(self, "meta_slot_buff"):
-            self.meta_slot_buff = mmap.mmap(-1, mmap.PAGESIZE)
+            self.meta_slot_buff = mmap.mmap(-1, 2*mmap.PAGESIZE)
         if not hasattr(self, "slot_buff"):
             self.slot_buff = mmap.mmap(-1, self.SLOTSIZE)
 
@@ -76,6 +77,7 @@ class HbDisk(Hb, Crypt):
         if not os.path.exists(self.dev):
             raise ex.excAbortAction("no %s does not exist" % self.dev)
 
+        self.dev = os.path.realpath(self.dev)
         statinfo = os.stat(self.dev)
         if rcEnv.sysname == "Linux":
             if stat.S_ISBLK(statinfo.st_mode):
@@ -119,7 +121,7 @@ class HbDisk(Hb, Crypt):
         offset = self.meta_slot_offset(slot)
         fo.seek(offset, os.SEEK_SET)
         fo.readinto(self.meta_slot_buff)
-        return self.meta_slot_buff[:]
+        return bdecode(self.meta_slot_buff[:mmap.PAGESIZE])
 
     def meta_write_slot(self, slot, data, fo=None):
         if len(data) > mmap.PAGESIZE:
@@ -139,8 +141,9 @@ class HbDisk(Hb, Crypt):
         offset = self.slot_offset(slot)
         fo.seek(offset, os.SEEK_SET)
         fo.readinto(self.slot_buff)
-        end = self.slot_buff[:].index("\0")
-        return self.slot_buff[:end]
+        data = bdecode(self.slot_buff[:])
+        end = data.index("\0")
+        return data[:end]
 
     def write_slot(self, slot, data, fo=None):
         if len(data) > self.SLOTSIZE:
