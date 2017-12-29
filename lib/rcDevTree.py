@@ -20,7 +20,7 @@ try:
     from hashlib import md5
     def hash(s):
         o = md5()
-        o.update(s)
+        o.update(s.encode('utf-8'))
         return o.hexdigest()
 except:
     from rcMd5 import md5

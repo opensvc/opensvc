@@ -1357,14 +1357,12 @@ class Node(Crypt):
         Send to the collector the list of disks visible on this node, and
         their use by service.
         """
-        try:
-            data = self.push_disks_data()
-            if self.options.format is None:
-                self.print_push_disks(data)
-                return
-            self.print_data(data)
-        finally:
-            self.collector.call('push_disks', data)
+        data = self.push_disks_data()
+        if self.options.format is None:
+            self.print_push_disks(data)
+            return
+        self.print_data(data)
+        self.collector.call('push_disks', data)
 
     def print_push_disks(self, data):
         from forest import Forest
