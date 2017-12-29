@@ -4811,7 +4811,7 @@ class Svc(object):
             """
             if key.strict_candidates and key.candidates and value not in key.candidates:
                 if isinstance(key.candidates, (set, list, tuple)):
-                    candidates = ", ".join(key.candidates)
+                    candidates = ", ".join([str(candidate) for candidate in key.candidates])
                 else:
                     candidates = str(key.candidates)
                 self.log.error("option %s.%s value %s is not in valid candidates: %s",
