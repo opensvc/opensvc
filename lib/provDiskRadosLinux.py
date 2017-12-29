@@ -1,5 +1,6 @@
 import provisioning
 import rcExceptions as ex
+from converters import convert_size
 
 class Prov(provisioning.Prov):
     def __init__(self, r):
@@ -16,14 +17,13 @@ class Prov(provisioning.Prov):
         if self.r.exists(image):
             self.r.log.info("%s already provisioned"%image)
             return
+        size = self.r.conf_get('size')
+        size = convert_size(size, _to="m")
+
         try:
-            size = self.r.svc.config.get(self.r.rid, 'size')
-        except:
-            raise ex.excError("'size' provisioning parameter not set")
-        try:
-            image_format = self.r.svc.config.get(self.r.rid, 'image_format')
-        except:
-            image_format = None
+            image_format = self.r.conf_get('image_format')
+        except ex.OptNotFound as exc:
+            image_format = exc.default
 
         cmd = self.r.rbd_rcmd() + ['create', '--size', str(size), image]
         if image_format:

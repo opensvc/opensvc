@@ -152,6 +152,9 @@ def convert_size(s, _to='', _round=1, default_unit=''):
     """
     if s is None:
         return
+    if re.match("[0-9]+%(FREE|VG|ORIGIN|PVS)", s):
+        # lvm2 size expressions
+        return s
     l = ['', 'K', 'M', 'G', 'T', 'P', 'Z', 'E']
     if type(s) in (int, float):
         s = str(s)

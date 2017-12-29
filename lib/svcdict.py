@@ -2311,6 +2311,7 @@ class KeywordDiskLvSize(Keyword):
                   section="disk",
                   rtype="lv",
                   keyword="size",
+                  convert="size",
                   order=12,
                   at=True,
                   provisioning=True,
@@ -2368,6 +2369,7 @@ class KeywordDiskDiskSize(Keyword):
                   section="disk",
                   rtype="disk",
                   keyword="size",
+                  convert="size",
                   order=11,
                   at=True,
                   provisioning=True,
@@ -2694,6 +2696,7 @@ class KeywordDiskSize(Keyword):
                   section="disk",
                   rtype="rados",
                   keyword="size",
+                  convert="size",
                   provisioning=True,
                   text="The rados image size in MB"
                 )
@@ -2972,7 +2975,7 @@ class KeywordFsSize(Keyword):
                   required=True,
                   convert="size",
                   at=True,
-                  text="The size in MB of the logical volume to provision for this filesystem. A size expression or <n>%{FREE|PVS|VG}.",
+                  text="The size of the logical volume to provision for this filesystem. A size expression or <n>%{FREE|PVS|VG}.",
                   provisioning=True
                 )
 
