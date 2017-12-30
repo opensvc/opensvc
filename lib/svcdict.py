@@ -205,6 +205,8 @@ class KeywordDockerSwarmManagers(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="docker_swarm_managers",
+                  convert="list",
+                  default=[],
                   order=20,
                   at=True,
                   text="List of nodes promoted as docker swarm managers.The flex primary node is implicitely a manager. Whitespace separated."
@@ -253,7 +255,7 @@ class KeywordDockerDaemonPrivate(Keyword):
                   section="DEFAULT",
                   keyword="docker_daemon_private",
                   at=True,
-                  default=True,
+                  default_text="<true on Linux, else False>",
                   convert="boolean",
                   order=11,
                   text="If set to False, this service will use the system's shared docker daemon instance. This is parameter is forced to False on non-Linux systems.",
@@ -268,6 +270,8 @@ class KeywordDockerDaemonArgs(Keyword):
                   keyword="docker_daemon_args",
                   at=True,
                   order=12,
+                  convert="shlex",
+                  default=[],
                   text="If the service has docker-type container resources, the service handles the startup of a private docker daemon. OpenSVC sets the socket and data dir parameters. Admins can set extra parameters using this keyword. For example, it can be useful to set the --ip parameter for a docker registry service.",
                   example="--ip 1.2.3.4"
                 )
@@ -280,6 +284,8 @@ class KeywordDockerSwarmArgs(Keyword):
                   keyword="docker_swarm_args",
                   at=True,
                   order=12,
+                  convert="shlex",
+                  default=[],
                   text="The arguments passed to docker swarm init on the flex primary, and to docker swarm join on the the other nodes. The --token argument must not be specified, as it is handled by the agent. Scoping this parameter permits to set additional parameters on the flex_primary for use with swarm init only, like --autolock.",
                   example="--advertize-addr {ip#0.ipname} --listen-addr {ip#0.ipname}",
                 )

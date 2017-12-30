@@ -42,14 +42,14 @@ class Prov(provisioning.Prov):
         if not self.r.svc.config.get(self.r.rid, "docker_daemon_ip"):
             return
         try:
-            args = self.r.svc.config.get("DEFAULT", "docker_daemon_args")
-        except:
-            args = ""
-        args += " --ip "+self.r.ipname
-        self.r.svc.config.set("DEFAULT", "docker_daemon_args", args)
+            args = self.svc.conf_get('DEFAULT', 'docker_daemon_args')
+        except ex.OptNotFound as exc:
+            args = exc.default
+        args += ["--ip", self.r.ipname]
+        self.r.svc.config.set("DEFAULT", "docker_daemon_args", " ".join(args))
         self.r.svc.write_config()
         for r in self.r.svc.get_resources("container.docker"):
-            # reload docker dameon args
+            # reload docker daemon args
             r.on_add()
 
     def provisioner_private(self):

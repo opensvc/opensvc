@@ -38,38 +38,38 @@ class DockerLib(object):
         try:
             self.docker_exe_init = \
                 self.svc.conf_get('DEFAULT', 'docker_exe')
-        except ex.OptNotFound:
-            self.docker_exe_init = None
+        except ex.OptNotFound as exc:
+            self.docker_exe_init = exc.default
 
         try:
             self.dockerd_exe_init = \
                 self.svc.conf_get('DEFAULT', 'dockerd_exe')
-        except ex.OptNotFound:
-            self.dockerd_exe_init = None
+        except ex.OptNotFound as exc:
+            self.dockerd_exe_init = exc.default
 
         try:
             self.docker_data_dir = \
                 self.svc.conf_get('DEFAULT', 'docker_data_dir')
-        except ex.OptNotFound:
-            self.docker_data_dir = None
+        except ex.OptNotFound as exc:
+            self.docker_data_dir = exc.default
 
         try:
             self.docker_daemon_args = \
-                self.svc.conf_get('DEFAULT', 'docker_daemon_args').split()
-        except ex.OptNotFound:
-            self.docker_daemon_args = []
+                self.svc.conf_get('DEFAULT', 'docker_daemon_args')
+        except ex.OptNotFound as exc:
+            self.docker_daemon_args = exc.default
 
         try:
             self.docker_swarm_args = \
-                self.svc.conf_get('DEFAULT', 'docker_swarm_args').split()
-        except ex.OptNotFound:
-            self.docker_swarm_args = []
+                self.svc.conf_get('DEFAULT', 'docker_swarm_args')
+        except ex.OptNotFound as exc:
+            self.docker_swarm_args = exc.default
 
         try:
             self.docker_swarm_managers = \
-                self.svc.conf_get('DEFAULT', 'docker_swarm_managers').split()
-        except ex.OptNotFound:
-            self.docker_swarm_managers = []
+                self.svc.conf_get('DEFAULT', 'docker_swarm_managers')
+        except ex.OptNotFound as exc:
+            self.docker_swarm_managers = exc.default
 
         if self.docker_data_dir:
             if "--exec-opt" not in self.docker_daemon_args and self.docker_min_version("1.7"):
