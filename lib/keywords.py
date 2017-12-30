@@ -98,7 +98,8 @@ class Keyword(object):
         s += "# ----------------------------------------------------------------------------\n"
         s += "#  scopable:        %s\n"%str(self.at)
         s += "#  required:        %s\n"%str(self.required)
-        s += "#  provisioning:    %s\n"%str(self.provisioning)
+        if self.top.has_default_section:
+            s += "#  provisioning:    %s\n"%str(self.provisioning)
         s += "#  default:         %s\n"%str(self.default_text)
         if self.top.has_default_section:
             s += "#  inheritance:     %s\n"%str(self.inheritance)
@@ -145,7 +146,8 @@ class Keyword(object):
         s += "================= ================================================================\n"
         s += "**scopable**      %s\n"%str(self.at)
         s += "**required**      %s\n"%str(self.required)
-        s += "**provisioning**  %s\n"%str(self.provisioning)
+        if self.top.has_default_section:
+            s += "**provisioning**  %s\n"%str(self.provisioning)
         s += "**default**       %s\n"%str(self.default_text)
         if self.top.has_default_section:
             s += "**inheritance**   %s\n"%str(self.inheritance)
