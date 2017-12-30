@@ -493,7 +493,7 @@ class OsvcThread(threading.Thread):
         if self.config.has_option("node", "ready_period"):
             seconds = convert_duration(self.config.get("node", "ready_period"))
         else:
-            seconds = "16s"
+            seconds = 16
         return datetime.timedelta(seconds=seconds)
 
     def in_maintenance_grace_period(self, nmon):
