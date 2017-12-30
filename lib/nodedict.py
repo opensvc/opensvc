@@ -1101,6 +1101,7 @@ class KeyDict(KeywordStore):
            deprecated_sections=DEPRECATED_SECTIONS,
            template_prefix="template.node.",
            base_sections=BASE_SECTIONS,
+           has_default_section=False,
         )
 
         self += KeywordNodeUuid()
@@ -1189,7 +1190,7 @@ class KeyDict(KeywordStore):
         self += KeywordCniPlugins()
         self += KeywordCniConfig()
 
-NODEKEYS = KeyDict()
+KEYS = KeyDict()
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:
@@ -1197,4 +1198,4 @@ if __name__ == "__main__":
     else:
         fmt = "text"
 
-    NODEKEYS.print_templates(fmt=fmt)
+    KEYS.print_templates(fmt=fmt)

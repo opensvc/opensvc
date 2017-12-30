@@ -100,7 +100,8 @@ class Keyword(object):
         s += "#  required:        %s\n"%str(self.required)
         s += "#  provisioning:    %s\n"%str(self.provisioning)
         s += "#  default:         %s\n"%str(self.default_text)
-        s += "#  inheritance:     %s\n"%str(self.inheritance)
+        if self.top.has_default_section:
+            s += "#  inheritance:     %s\n"%str(self.inheritance)
         s += "#  scope order:     %s\n"%str(self.scope_order)
         if self.candidates:
             s += "#  candidates:      %s\n"%candidates
@@ -146,7 +147,8 @@ class Keyword(object):
         s += "**required**      %s\n"%str(self.required)
         s += "**provisioning**  %s\n"%str(self.provisioning)
         s += "**default**       %s\n"%str(self.default_text)
-        s += "**inheritance**   %s\n"%str(self.inheritance)
+        if self.top.has_default_section:
+            s += "**inheritance**   %s\n"%str(self.inheritance)
         s += "**scope order**   %s\n"%str(self.scope_order)
         if self.candidates:
             s += "**candidates**    %s\n"%candidates
@@ -404,13 +406,14 @@ class Section(object):
 
 class KeywordStore(dict):
     def __init__(self, provision=False, deprecated_keywords={}, deprecated_sections={},
-                 template_prefix="template.", base_sections=[]):
+                 template_prefix="template.", base_sections=[], has_default_section=True):
         self.sections = {}
         self.deprecated_sections = deprecated_sections
         self.deprecated_keywords = deprecated_keywords
         self.template_prefix = template_prefix
         self.base_sections = base_sections
         self.provision = provision
+        self.has_default_section = has_default_section
 
     def __iadd__(self, o):
         if not isinstance(o, Keyword):

@@ -4661,7 +4661,7 @@ class KeyDict(KeywordStore):
         self += KeywordTaskUser()
         self += KeywordTaskSchedule()
 
-SVCKEYS = KeyDict(provision=True)
+KEYS = KeyDict(provision=True)
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:
@@ -4669,6 +4669,6 @@ if __name__ == "__main__":
     else:
         fmt = "text"
 
-    SVCKEYS.print_templates(fmt=fmt)
-    #print(SVCKEYS.container.getkey("cf"))
-    #print(SVCKEYS['DEFAULT'])
+    KEYS.print_templates(fmt=fmt)
+    #print(KEYS.container.getkey("cf"))
+    #print(KEYS['DEFAULT'])
