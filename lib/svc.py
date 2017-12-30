@@ -1573,38 +1573,6 @@ class Svc(Crypt, ExtConfig):
                 data[key] = config["env"][key]
         return data
 
-    def print_config_data(self):
-        """
-        Return a simple dict (OrderedDict if possible), fed with the
-        service configuration sections and keys
-        """
-        try:
-            from collections import OrderedDict
-            best_dict = OrderedDict
-        except ImportError:
-            best_dict = dict
-        svc_config = best_dict()
-        tmp = best_dict()
-        config = self.config
-
-        defaults = config.defaults()
-        for key in defaults.keys():
-            tmp[key] = defaults[key]
-
-        svc_config['DEFAULT'] = tmp
-        config._defaults = {}
-
-        sections = config.sections()
-        for section in sections:
-            options = config.options(section)
-            tmpsection = best_dict()
-            for option in options:
-                if config.has_option(section, option):
-                    tmpsection[option] = config.get(section, option)
-            svc_config[section] = tmpsection
-        unset_lazy(self, "config")
-        return svc_config
-
     def print_resource_status(self):
         """
         Print a single resource status string.

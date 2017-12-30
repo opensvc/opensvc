@@ -6,9 +6,8 @@ import os
 
 import rcExceptions as ex
 from converters import *
-from rcUtilities import is_string, try_decode, read_cf, eval_expr
+from rcUtilities import is_string, try_decode, read_cf, eval_expr, unset_lazy, lazy
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy
 
 class ExtConfig(object):
     @lazy
@@ -997,5 +996,41 @@ class ExtConfig(object):
             ofile.flush()
             os.fsync(ofile)
         shutil.move(fpath, self.paths.cf)
+
+    def print_config_data(self, src_config=None):
+        """
+        Return a simple dict (OrderedDict if possible), fed with the
+        service configuration sections and keys
+        """
+        try:
+            from collections import OrderedDict
+            best_dict = OrderedDict
+        except ImportError:
+            best_dict = dict
+        data = best_dict()
+        tmp = best_dict()
+        if src_config is None:
+            config = self.config
+        else:
+            config = src_config
+
+        defaults = config.defaults()
+        for key in defaults.keys():
+            tmp[key] = defaults[key]
+
+        data['DEFAULT'] = tmp
+        config._defaults = {}
+
+        sections = config.sections()
+        for section in sections:
+            options = config.options(section)
+            tmpsection = best_dict()
+            for option in options:
+                if config.has_option(section, option):
+                    tmpsection[option] = config.get(section, option)
+            data[section] = tmpsection
+        if src_config is None:
+            unset_lazy(self, "config")
+        return data
 
 

@@ -2765,26 +2765,8 @@ class Node(Crypt, ExtConfig):
                 pipe.close()
 
     @formatter
-    def print_config_data(self, src_config):
-        """
-        Return a simple dict (OrderedDict if possible), fed with the
-        service configuration sections and keys
-        """
-        try:
-            from collections import OrderedDict
-            best_dict = OrderedDict
-        except ImportError:
-            best_dict = dict
-
-        config = best_dict()
-
-        for section in src_config.sections():
-            options = src_config.options(section)
-            tmpsection = best_dict()
-            for option in options:
-                tmpsection[option] = src_config.get(section, option)
-            config[section] = tmpsection
-        return config
+    def print_config_data(self, src_config=None):
+        return ExtConfig.print_config_data(self, src_config=src_config)
 
     def print_devs(self):
         if self.options.reverse:
