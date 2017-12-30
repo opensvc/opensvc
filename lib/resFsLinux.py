@@ -302,11 +302,13 @@ class Mount(Res.Mount):
 
     def sub_devs(self):
         dev = self.realdev()
-        if dev is None:
+        if dev is None or dev.startswith("LABEL=") or dev.startswith("UUID="):
+            # realdev() may fail to resolve UUID and LABEL if the hosting dev
+            # is not visible
             return set()
 
-        if dev.startswith("/dev/rbd"):
-            return set()
+        if dev.startswith("/dev/rbd") or dev.startswith("/dev/loop"):
+            return set([dev])
 
         try:
             self.dm_major = major('device-mapper')
