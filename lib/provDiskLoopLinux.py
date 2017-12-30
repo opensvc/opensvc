@@ -14,11 +14,13 @@ class Prov(provisioning.Prov):
             return
 
     def unprovisioner(self):
-        self.r.stop()
         try:
             self.path = self.r.loopFile
         except Exception as e:
             raise ex.excError(str(e))
+
+        if not self.is_provisioned():
+            return
 
         self.r.log.info("unlink %s" % self.path)
         os.unlink(self.path)
