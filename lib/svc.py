@@ -3769,6 +3769,8 @@ class Svc(Crypt, ExtConfig):
     def validate_local_action(self, action):
         if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
             return
+        if action in ("freeze", "thaw"):
+            return
         progress = self.action_progress(action)
         if progress is None:
             return
