@@ -1219,9 +1219,12 @@ class Svc(Crypt, ExtConfig):
         """
         if not isinstance(_type, (list, tuple, set)):
             _type = [_type]
+        rsets = []
         for __type in _type:
-            rsets = self.get_resourcesets(__type, strict=strict)
-            self.set_action(rsets, action=action, tags=tags, xtags=xtags)
+            for rset in self.get_resourcesets(__type, strict=strict):
+                if rset not in rsets:
+                    rsets.append(rset)
+        self.set_action(rsets, action=action, tags=tags, xtags=xtags)
 
     def need_snap_trigger(self, rsets, action):
         """
