@@ -202,7 +202,10 @@ def add_ip_gce(svc, s):
     if rtype != "gce":
         return
 
-    kwargs['ipname'] = svc.conf_get(s, 'ipname')
+    try:
+         kwargs['ipname'] = svc.conf_get(s, 'ipname')
+    except ex.OptNotFound:
+         pass
     kwargs['ipdev'] = svc.conf_get(s, 'ipdev')
 
     try:
@@ -230,7 +233,10 @@ def add_ip_amazon(svc, s):
     if rtype != "amazon":
         return
 
-    kwargs['ipname'] = svc.conf_get(s, 'ipname')
+    try:
+        kwargs['ipname'] = svc.conf_get(s, 'ipname')
+    except ex.OptNotFound:
+         pass
     kwargs['ipdev'] = svc.conf_get(s, 'ipdev')
 
     try:
@@ -260,8 +266,8 @@ def add_ip(svc, s):
 
     try:
         kwargs['ipname'] = svc.conf_get(s, 'ipname')
-    except ex.OptNotFound as exc:
-        kwargs['ipname'] = exc.default
+    except ex.OptNotFound:
+        pass
 
     kwargs['ipdev'] = svc.conf_get(s, 'ipdev')
 

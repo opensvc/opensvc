@@ -479,9 +479,11 @@ class Ip(Res.Resource):
         import ipaddress
 
         try:
-            self.svc.conf_get(self.rid, "ipname")
+            self.conf_get("ipname")
             self.log.info("skip allocate: an ip is already defined")
             return
+        except ex.RequiredOptNotFound:
+            pass
         except ex.OptNotFound:
             pass
 

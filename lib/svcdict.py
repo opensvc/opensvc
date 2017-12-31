@@ -1885,7 +1885,7 @@ class KeywordIpIpname(Keyword):
                   section="ip",
                   keyword="ipname",
                   order=12,
-                  required=True,
+                  required=False,
                   at=True,
                   text="The DNS name or IP address of the ip resource. Can be different from one node to the other, in which case '@nodename' can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter. With the amazon driver, the special <allocate> value tells the provisioner to assign a new private address."
                 )
@@ -1899,6 +1899,20 @@ class KeywordIpDnsNameSuffix(Keyword):
                   order=12,
                   at=True,
                   text="Add the value as a suffix to the DNS record name. The record created is thus formatted as <svcname>-<dns_name_suffix>.<app>.<managed zone>."
+                )
+
+class KeywordIpProvisioner(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  keyword="provisioner",
+                  provisioning=True,
+                  candidates=("collector", None),
+                  order=12,
+                  at=True,
+                  example="collector",
+                  text="The IPAM driver to use to provision the ip.",
                 )
 
 class KeywordIpNetwork(Keyword):
@@ -4475,6 +4489,7 @@ class KeyDict(KeywordStore):
         self += KeywordIpDelNetRoute()
         self += KeywordIpNetmask()
         self += KeywordIpGateway()
+        self += KeywordIpProvisioner()
         self += KeywordIpDnsUpdate()
         self += KeywordIpDnsNameSuffix()
         self += KeywordIpNetwork()
