@@ -136,6 +136,9 @@ class Prov(provisioning.Prov):
             try:
                 self.r.conf_get("vg", verbose=False)
                 self.unprovision_dev()
+            except ValueError:
+                # keyword not supported (ex. bind mounts)
+                return
             except ex.RequiredOptNotFound:
                 pass
 
