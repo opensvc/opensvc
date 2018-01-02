@@ -4,6 +4,11 @@ Converters, used by arguments and config file parsers.
 import re
 import shlex
 
+try:
+    NUMERIC_TYPES = (int, float, long)
+except:
+    NUMERIC_TYPES = (int, float)
+
 def convert_shlex(s):
     return shlex.split(s)
 
@@ -152,7 +157,7 @@ def convert_size(s, _to='', _round=1, default_unit=''):
     """
     if s is None:
         return
-    if type(s) in (int, float):
+    if type(s) in NUMERIC_TYPES:
         s = str(s)
     elif re.match("[0-9]+%(FREE|VG|ORIGIN|PVS)", s):
         # lvm2 size expressions
