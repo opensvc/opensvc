@@ -6,7 +6,7 @@ def test_import():
     import rcExceptions as ex
 
     for fpath in glob.glob(mod_d+"/*.py"):
-        if "Win" in fpath or "wmi" in fpath:
+        if "Win" in fpath or "wmi" in fpath or "osvcd_win" in fpath:
             continue
         mod = os.path.basename(fpath).replace(".py", "")
         try:
