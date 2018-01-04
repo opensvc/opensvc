@@ -1112,6 +1112,7 @@ class KeyDict(KeywordStore):
         self += KeywordNodeLocCountry()
         self += KeywordNodeLocCity()
         self += KeywordNodeLocZip()
+        self += KeywordNodeLocAddr()
         self += KeywordNodeLocBuilding()
         self += KeywordNodeLocFloor()
         self += KeywordNodeLocRoom()
