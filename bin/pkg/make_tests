@@ -1,0 +1,13 @@
+#!/bin/bash
+
+PATH_SCRIPT="$(cd $(/usr/bin/dirname $(which -- $0 || echo $0));pwd)"
+PYTHONPATH=$PATH_SCRIPT/../../lib
+export PYTHONPATH
+
+(
+	cd $PATH_SCRIPT/../..
+	nosetests --with-coverage --cover-inclusive --cover-html \
+		--cover-html-dir=$PATH_SCRIPT/../../tmp/cover \
+		lib/tests/
+)
+
