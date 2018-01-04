@@ -27,7 +27,9 @@ class ExtConfig(object):
             print("no parameter. set --param", file=sys.stderr)
             return 1
         elements = self.options.param.split('.')
-        if len(elements) != 2:
+        if self.has_default_section and len(elements) == 1:
+            elements.insert(0, "DEFAULT")
+        elif len(elements) != 2:
             print("malformed parameter. format as 'section.key'",
                   file=sys.stderr)
             return 1
