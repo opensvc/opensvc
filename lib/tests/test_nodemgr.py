@@ -111,7 +111,6 @@ def test_get_not_found():
         sys.stderr = _stderr
 
     assert ret == 1
-    assert "not found" in output
 
 def test_nodemgr_checks():
     ret = nodemgr.main(argv=["checks"])
