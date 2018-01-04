@@ -4402,8 +4402,10 @@ class Svc(Crypt, ExtConfig):
             raise ex.excError(data["error"])
         if len(data["data"]) == 0:
             raise ex.excError("service not found on the collector")
+        if data["data"][0]["svc_config"] is None:
+            raise ex.excError("service has an empty configuration on the collector")
         if len(data["data"][0]["svc_config"]) == 0:
-            raise ex.excError("service has an empty configuration")
+            raise ex.excError("service has an empty configuration on the collector")
         buff = data["data"][0]["svc_config"].replace("\\n", "\n").replace("\\t", "\t")
         import codecs
         with codecs.open(self.paths.cf, "w", "utf8") as ofile:
