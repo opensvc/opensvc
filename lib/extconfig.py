@@ -32,7 +32,7 @@ class ExtConfig(object):
                   file=sys.stderr)
             return 1
         section, option = elements
-        if section in self.self.default_status_groups:
+        if section in self.default_status_groups:
             err = 0
             for rid in [rid for rid in self.config.sections() if rid.startswith(section+"#")]:
                 try:
