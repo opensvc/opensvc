@@ -555,7 +555,7 @@ class Node(Crypt, ExtConfig):
         def svc_matching(svc, param, op, value):
             try:
                 current = svc._get(param, evaluate=True)
-            except ex.excError:
+            except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
                 current = None
             if current is None:
                 if "." in param:
