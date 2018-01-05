@@ -279,7 +279,7 @@ def formatter(fn):
             return
         if type(data) in (int, float):
             return
-        if len(data) == 0:
+        if fmt != "json" and len(data) == 0:
             return
 
         if not isinstance(data, (dict, list)):
