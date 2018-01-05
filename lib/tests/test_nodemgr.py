@@ -198,6 +198,27 @@ def test_nodemgr_pushdisks():
     ret = nodemgr.main(argv=["pushdisks"])
     assert ret == 0
 
+def test_nodemgr_schedule_reboot():
+    """
+    Run schedule reboot
+    """
+    ret = nodemgr.main(argv=["schedule", "reboot"])
+    assert ret == 0
+
+def test_nodemgr_unschedule_reboot():
+    """
+    Run unschedule reboot
+    """
+    ret = nodemgr.main(argv=["unschedule", "reboot"])
+    assert ret == 0
+
+def test_nodemgr_print_reboot_status():
+    """
+    Print reboot schedule status
+    """
+    ret = nodemgr.main(argv=["schedule", "reboot", "status"])
+    assert ret == 0
+
 def test_nodemgr_logs():
     """
     Print node logs
