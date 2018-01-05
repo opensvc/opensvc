@@ -1,4 +1,11 @@
 [report]
-
 exclude_lines =
     if __name__ == .__main__.:
+omit =
+    /usr/local/lib/*
+    */tests/*
+    */pyaes/*
+    */tabulate.py
+    */wmi.py
+    */objgraph.py
+

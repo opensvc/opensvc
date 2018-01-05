@@ -5,11 +5,13 @@ from __future__ import unicode_literals
 
 import sys
 import json
+import logging
 from StringIO import StringIO
 
 import nodemgr
 
 UNICODE_STRING = "bêh"
+logging.disable(logging.CRITICAL)
 
 def test_nodemgr_print_schedule():
     """

@@ -1,7 +1,10 @@
 import os
+import logging
 import rcExceptions as ex
 from node import Node
 node = Node()
+
+logging.disable(logging.CRITICAL)
 
 def test_kwdict():
     """

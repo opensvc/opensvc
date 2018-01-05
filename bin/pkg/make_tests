@@ -1,13 +1,23 @@
 #!/bin/bash
 
+# apt install python-nose-json
+
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(which -- $0 || echo $0));pwd)"
 PYTHONPATH=$PATH_SCRIPT/../../lib
 export PYTHONPATH
 
 (
 	cd $PATH_SCRIPT/../..
-	nosetests --with-coverage --cover-inclusive --cover-html \
+	nosetests \
+		--verbosity=2 \
+		--with-coverage \
+		--cover-html \
 		--cover-html-dir=$PATH_SCRIPT/../../tmp/cover \
+		--with-html-output \
+		--html-out-file=$PATH_SCRIPT/../../tmp/xunit.html \
+		--cover-package=.. \
+		--with-json \
+		--json-file=$PATH_SCRIPT/../../tmp/xunit.json \
 		lib/tests/
 )
 
