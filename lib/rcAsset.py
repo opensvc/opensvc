@@ -353,6 +353,9 @@ class Asset(object):
             return
         cmd = ["gcloud", "compute", "instances", "describe", "-q", "--format", "json", rcEnv.nodename]
         out, err, ret = justcall(cmd)
+        return self._parse_connect_to(out)
+
+    def _parse_connect_to(self, out):
         """
 	  "networkInterfaces": [
 	    {
