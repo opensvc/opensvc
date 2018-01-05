@@ -210,7 +210,19 @@ class TestSvcmgr:
         ret = svcmgr.main(argv=["pull", "-s", "unittest"])
         assert ret == 0
 
-    def test_024_delete(self):
+    def test_024_svc_selector(self):
+        ret = svcmgr.main(argv=["ls", "-s", "uni*"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["ls", "-s", "notexists*"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["ls", "-s", "*dns,ha*+app.timeout>1*"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["ls", "-s", "ip:+task:"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["ls", "-s", "!*excluded"])
+        assert ret == 0
+
+    def test_025_delete(self):
         ret = svcmgr.main(argv=["delete", "-s", "unittest", "--local"])
         assert ret == 0
 
