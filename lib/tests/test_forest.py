@@ -1,26 +1,27 @@
 from forest import Forest
 from rcColor import color
 
-def test_forest_class():
-    """
-    Test the forest class
-    """
-    tree = Forest()
-    overall_node = tree.add_node()
-    overall_node.add_column("overall")
-    node = overall_node.add_node()
-    node.add_column("avail")
-    node.add_column()
-    node.add_column("up", color.GREEN)
-    node = node.add_node()
-    node.add_column("res#id")
-    node.add_column("....")
-    node.add_column("up", color.GREEN)
-    col = node.add_column("docker container collector.container.0@registry.ope"
-                          "nsvc.com/busybox:latest")
-    col.add_text("warn", color.BROWN)
-    col.add_text("err", color.RED)
-    node = overall_node.add_node()
-    node.add_column("accessory")
-    print(tree)
+class TestForest:
+    def test_forest_class(self):
+        """
+        Forest class
+        """
+        tree = Forest()
+        overall_node = tree.add_node()
+        overall_node.add_column("overall")
+        node = overall_node.add_node()
+        node.add_column("avail")
+        node.add_column()
+        node.add_column("up", color.GREEN)
+        node = node.add_node()
+        node.add_column("res#id")
+        node.add_column("....")
+        node.add_column("up", color.GREEN)
+        col = node.add_column("docker container collector.container.0@registry.ope"
+                              "nsvc.com/busybox:latest")
+        col.add_text("warn", color.BROWN)
+        col.add_text("err", color.RED)
+        node = overall_node.add_node()
+        node.add_column("accessory")
+        print(tree)
 
