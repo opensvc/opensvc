@@ -64,7 +64,7 @@ class TestUtilities:
         """
         which()
         """
-        assert which("ls") == "/bin/ls"
+        assert which("ls") in ("/bin/ls", "/usr/bin/ls")
         assert which("foo") == None
 
     def test_justcall(self):
