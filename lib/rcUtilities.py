@@ -279,7 +279,7 @@ def is_exe(fpath):
     """Returns True if file path is executable, False otherwize
     does not follow symlink
     """
-    if os.path.isdir(fpath):
+    if os.path.isdir(fpath) or os.path.islink(fpath):
         return False
     return os.path.exists(fpath) and os.access(fpath, os.X_OK)
 
