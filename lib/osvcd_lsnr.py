@@ -155,7 +155,10 @@ class Listener(shared.OsvcThread, Crypt):
         fname = "action_"+data["action"]
         if not hasattr(self, fname):
             return {"error": "action not supported", "status": 1}
-        options = data.get("options", {})
+        # prepare options, sanitized for use as keywords
+        options = {}
+        for key, val in data.get("options", {}).items():
+            options[str(key)] = val
         return getattr(self, fname)(nodename, conn=conn, **options)
 
     def action_relay_tx(self, nodename, **kwargs):
