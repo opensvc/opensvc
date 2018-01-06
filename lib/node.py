@@ -861,7 +861,13 @@ class Node(Crypt, ExtConfig):
         """
         if self.auth_config is not None:
             return
-        self.auth_config = read_cf(rcEnv.paths.authconf)
+        try:
+            self.auth_config = read_cf(rcEnv.paths.authconf)
+        except rcConfigParser.ParsingError as exc:
+            print(str(exc), file=sys.stderr)
+        except IOError:
+            # some action don't need self.auth_config
+            pass
 
     def setup_sync_outdated(self):
         """
@@ -2783,6 +2789,8 @@ class Node(Crypt, ExtConfig):
         """
         if self.options.format is not None:
             return self.print_config_data(self.config)
+        if not os.path.exists(rcEnv.paths.nodeconf):
+            return
         from rcColor import print_color_config
         print_color_config(rcEnv.paths.nodeconf)
 
@@ -2793,6 +2801,8 @@ class Node(Crypt, ExtConfig):
         if self.options.format is not None:
             self.load_auth_config()
             return self.print_config_data(self.auth_config)
+        if not os.path.exists(rcEnv.paths.authconf):
+            return
         from rcColor import print_color_config
         print_color_config(rcEnv.paths.authconf)
 
