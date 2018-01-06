@@ -1350,7 +1350,10 @@ class Svc(Crypt, ExtConfig):
 
     @fcache
     def get_mon_data(self):
-        return self.node._daemon_status(silent=True)["monitor"]
+        data = self.node._daemon_status(silent=True)
+        if data is not None:
+            return data["monitor"]
+        return {}
 
     def get_smon_data(self):
         data = {}

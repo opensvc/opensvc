@@ -135,7 +135,12 @@ class Sync(Res.Resource, Scheduler):
 
     def _status(self, **kwargs):
         data = self.svc.node._daemon_status()
-        if self.svc.svcname in data["monitor"]["services"]:
+        try:
+            svcnames = data["monitor"]["services"]
+        except (KeyError, TypeError):
+            # the daemon is not returning proper status data
+            svcnames = []
+        if self.svc.svcname in svcnames:
             avail = data["monitor"]["services"][self.svc.svcname]["avail"]
             if avail != "up":
                 self.status_log("paused, service not up", "info")
