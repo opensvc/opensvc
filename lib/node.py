@@ -1319,11 +1319,12 @@ class Node(Crypt, ExtConfig):
         if statinfo is None or \
            statinfo.st_uid != 0 or statinfo.st_mode & stat.S_IWOTH:
             print("reboot is not scheduled")
-        else:
-            sch = self.sched.scheduler_actions["auto_reboot"]
-            schedule = self.sched.sched_get_schedule_raw(sch.section, sch.schedule_option)
-            print("reboot is scheduled")
-            print("reboot schedule: %s" % schedule)
+            return
+
+        sch = self.sched.scheduler_actions["auto_reboot"]
+        schedule = self.sched.sched_get_schedule_raw(sch.section, sch.schedule_option)
+        print("reboot is scheduled")
+        print("reboot schedule: %s" % schedule)
 
         result = self.sched.get_next_schedule("auto_reboot")
         if result["next_sched"]:
