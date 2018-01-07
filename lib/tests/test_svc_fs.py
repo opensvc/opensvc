@@ -31,19 +31,31 @@ class TestSvc:
         self.svc += r
 
     def test_002_start(self):
+        """
+        Svc::action("start")
+        """
         ret = self.svc.action("start", {"local": True})
         assert ret == 0
         assert self.svc.get_resource("fs#1").is_up() == True
 
     def test_003_restart(self):
+        """
+        Svc::action("restart")
+        """
         ret = self.svc.action("restart", {"local": True})
         assert ret == 0
 
     def test_004_action_on_wrong_rid(self):
+        """
+        Svc::action("start"), rid scoped
+        """
         ret = self.svc.action("start", {"rid": "fs#2", "local": True})
         assert ret == 1
 
     def test_005_update(self):
+        """
+        Svc::action("update"), from json
+        """
         ret = self.svc.action("update", {
             "resource": ['{"rtype": "fs", "mnt": "/srv/{svcname}/foo", "dev": "/tmp", "type": "none", "mnt_opt": "bind"}'],
             "provision": True,
@@ -51,6 +63,9 @@ class TestSvc:
         assert ret == 0
 
     def test_006_update(self):
+        """
+        Svc::action("update"), from dict
+        """
         ret = self.svc.action("update", {
             "resource": [{"rtype": "fs", "mnt": "/srv/{svcname}/foo", "dev": "/tmp", "type": "none", "mnt_opt": "bind"}],
             "provision": True,
@@ -58,26 +73,51 @@ class TestSvc:
         assert ret == 0
 
     def test_007_start(self):
+        """
+        Svc::action("start")
+        """
         ret = self.svc.action("start", {"local": True})
         assert ret == 0
 
     def test_008_stop(self):
+        """
+        Svc::action("stop")
+        """
         ret = self.svc.action("stop", {"local": True})
         assert ret == 0
 
     def test_009_delete_rid_unprovision(self):
+        """
+        Svc::action("delete"), rid scoped, unprovision
+        """
         ret = self.svc.action("delete", {"rid": "fs#1", "unprovision": True})
         assert ret == 0
 
-    def test_010_delete_unprovision(self):
+    def test_010_push(self):
+        """
+        Svc::action("push_config")
+        """
+        ret = self.svc.action("push_config")
+        assert ret == 0
+
+    def test_011_delete_unprovision(self):
+        """
+        Svc::action("delete"), unprovision
+        """
         ret = self.svc.action("delete", {"unprovision": True, "local": True})
         assert ret == 0
 
-    def test_011_pull_provision(self):
+    def test_012_pull_provision(self):
+        """
+        Svc::action("pull"), provision
+        """
         ret = self.svc.action("pull", {"provision": True, "local": True})
         assert ret == 0
 
-    def test_012_delete_unprovision(self):
+    def test_13_delete_unprovision(self):
+        """
+        Svc::action("delete"), unprovision
+        """
         ret = self.svc.action("delete", {"unprovision": True, "local": True})
         assert ret == 0
 
