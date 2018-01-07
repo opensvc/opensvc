@@ -252,4 +252,11 @@ class TestNodemgr:
         assert ret == 0
         assert isinstance(json.loads(output), dict)
 
+    def test_161_nodemgr_print_devs(self):
+        """
+        Print node device tree
+        """
+        ret = nodemgr.main(argv=["print", "devs"])
+        assert ret == 0
+
 
