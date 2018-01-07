@@ -77,10 +77,12 @@ def _main(node, argv=None):
             break
         time.sleep(options.interval)
 
-
 def main(argv=None):
     if argv is None:
         argv = sys.argv
+    else:
+        argv.insert(0, __file__)
+    print(argv)
 
     try:
         node = Node()
@@ -89,7 +91,8 @@ def main(argv=None):
         return 1
 
     try:
-        return _main(node, argv)
+        _main(node, argv)
+        return 0
     except ex.excError as e:
         print(e, file=sys.stderr)
         return 1
