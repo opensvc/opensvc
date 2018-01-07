@@ -112,6 +112,8 @@ class TestSvcmgr:
         """
         ret = svcmgr.main(argv=["create", "-s", "unittest"])
         assert ret == 0
+        ret = svcmgr.main(argv=["create", "-s", "unittest2"])
+        assert ret == 0
 
     def test_0081_set_default(self):
         """
@@ -256,11 +258,25 @@ class TestSvcmgr:
         ret = nodemgr.main(argv=["thaw", "--local"])
         assert ret == 0
 
-    def test_0161_freeze(self):
+    def test_01611_freeze(self):
         """
         Freeze the service
         """
         ret = svcmgr.main(argv=["freeze", "-s", "unittest", "--local"])
+        assert ret == 0
+
+    def test_01612_freeze(self):
+        """
+        Freeze the services (parallel)
+        """
+        ret = svcmgr.main(argv=["freeze", "-s", "unittest*", "--parallel", "--local"])
+        assert ret == 0
+
+    def test_01613_freeze(self):
+        """
+        Freeze the services (serial)
+        """
+        ret = svcmgr.main(argv=["freeze", "-s", "unittest*", "--local"])
         assert ret == 0
 
     def test_0162_frozen(self):
@@ -282,6 +298,13 @@ class TestSvcmgr:
         The service is no longer frozen
         """
         ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
+        assert ret == 0
+
+    def test_0165_multi_get(self):
+        """
+        Multi-service get
+        """
+        ret = svcmgr.main(argv=["get", "-s", "unittest*", "--param", "nodes", "--eval"])
         assert ret == 0
 
     def test_021_logs(self):
@@ -312,49 +335,49 @@ class TestSvcmgr:
         ret = svcmgr.main(argv=["ls"])
         assert ret == 0
 
-    def test_0241_svc_selector(self):
+    def test_0242_svc_selector(self):
         """
         Service selector: uni*
         """
         ret = svcmgr.main(argv=["ls", "-s", "uni*"])
         assert ret == 0
 
-    def test_0241_svc_selector(self):
+    def test_0243_svc_selector(self):
         """
         Service selector: notexists*
         """
         ret = svcmgr.main(argv=["ls", "-s", "notexists*"])
         assert ret == 0
 
-    def test_0241_svc_selector(self):
+    def test_0244_svc_selector(self):
         """
         Service selector: *dns,ha*+app.timeout>1*
         """
         ret = svcmgr.main(argv=["ls", "-s", "*dns,ha*+app.timeout>1*"])
         assert ret == 0
 
-    def test_0241_svc_selector(self):
+    def test_0245_svc_selector(self):
         """
         Service selector: ip:+task:
         """
         ret = svcmgr.main(argv=["ls", "-s", "ip:+task:"])
         assert ret == 0
 
-    def test_0241_svc_selector(self):
+    def test_0246_svc_selector(self):
         """
         Service selector: !*excluded
         """
         ret = svcmgr.main(argv=["ls", "-s", "!*excluded"])
         assert ret == 0
 
-    def test_0241_svc_selector(self):
+    def test_0247_svc_selector(self):
         """
         Service selector: notexists
         """
         ret = svcmgr.main(argv=["ls", "-s", "notexists"])
         assert ret == 1
 
-    def test_0241_svc_selector(self):
+    def test_0248_svc_selector(self):
         """
         Service selector: OSVC_SERVICE_LINK=unittest
         """
@@ -368,6 +391,8 @@ class TestSvcmgr:
         Delete local service instance
         """
         ret = svcmgr.main(argv=["delete", "-s", "unittest", "--local"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["delete", "-s", "unittest2", "--local"])
         assert ret == 0
 
 

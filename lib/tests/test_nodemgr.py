@@ -40,11 +40,18 @@ class TestNodemgr:
         assert ret == 0
         assert isinstance(json.loads(output), list)
 
-    def test_021_nodemgr_print_config(self):
+    def test_0211_nodemgr_print_config(self):
         """
         Print node config
         """
         ret = nodemgr.main(argv=["print", "config"])
+        assert ret == 0
+
+    def test_0212_nodemgr_print_config(self):
+        """
+        Print node json config (compat)
+        """
+        ret = nodemgr.main(argv=["json", "config"])
         assert ret == 0
 
     def test_022_nodemgr_print_config_json(self):
@@ -257,6 +264,34 @@ class TestNodemgr:
         Print node device tree
         """
         ret = nodemgr.main(argv=["print", "devs"])
+        assert ret == 0
+
+    def test_162_nodemgr_prkey(self):
+        """
+        Print persistent resevation key
+        """
+        ret = nodemgr.main(argv=["prkey"])
+        assert ret == 0
+
+    def test_163_nodemgr_dequeue_actions(self):
+        """
+        Dequeue actions
+        """
+        ret = nodemgr.main(argv=["dequeue", "actions"])
+        assert ret == 0
+
+    def test_164_nodemgr_scan_scsi(self):
+        """
+        Scan scsi buses
+        """
+        ret = nodemgr.main(argv=["scanscsi"])
+        assert ret == 0
+
+    def test_164_nodemgr_collector_networks(self):
+        """
+        Collector networks
+        """
+        ret = nodemgr.main(argv=["collector", "networks"])
         assert ret == 0
 
 

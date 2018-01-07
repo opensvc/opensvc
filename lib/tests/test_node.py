@@ -1,12 +1,19 @@
 import os
 import logging
 import rcExceptions as ex
+from rcGlobalEnv import rcEnv
 from node import Node
 node = Node()
 
 logging.disable(logging.CRITICAL)
 
 class TestNode:
+    def test_010_str(self):
+        """
+        Eval the Node::kwdict lazy attr
+        """
+        assert str(node) == rcEnv.nodename
+
     def test_011_kwdict(self):
         """
         Eval the Node::kwdict lazy attr

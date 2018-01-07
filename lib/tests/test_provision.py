@@ -7,11 +7,14 @@ import os
 import sys
 import json
 import socket
+import logging
 from StringIO import StringIO
 from rcUtilities import try_decode
 
 import svcmgr
 import nodemgr
+
+logging.disable(logging.CRITICAL)
 
 class TestSvcmgr:
 
