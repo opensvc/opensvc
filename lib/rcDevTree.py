@@ -22,7 +22,7 @@ try:
         o = md5()
         o.update(s.encode('utf-8'))
         return o.hexdigest()
-except:
+except ImportError:
     from rcMd5 import md5
     def hash(s):
         return md5(s).digest().encode('hex')
