@@ -40,18 +40,11 @@ class TestNodemgr:
         assert ret == 0
         assert isinstance(json.loads(output), list)
 
-    def test_0211_nodemgr_print_config(self):
+    def test_021_nodemgr_print_config(self):
         """
         Print node config
         """
         ret = nodemgr.main(argv=["print", "config"])
-        assert ret == 0
-
-    def test_0212_nodemgr_print_config(self):
-        """
-        Print node json config (compat)
-        """
-        ret = nodemgr.main(argv=["json", "config"])
         assert ret == 0
 
     def test_022_nodemgr_print_config_json(self):
