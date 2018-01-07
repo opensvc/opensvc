@@ -4270,8 +4270,7 @@ class Svc(Crypt, ExtConfig):
         if self.options.unprovision:
             self.unprovision()
 
-        if not self.command_is_scoped() or \
-           len(self.action_rid) == len(self.resources_by_id.keys()):
+        if not self.command_is_scoped():
             for peer in self.peers:
                 if peer == rcEnv.nodename:
                     continue
