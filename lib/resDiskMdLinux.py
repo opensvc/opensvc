@@ -25,7 +25,10 @@ class Disk(resDisk.Disk):
                           name=uuid,
                           type='disk.md',
                           **kwargs)
-        self.label = "md " + uuid
+        if uuid:
+            self.label = "md " + uuid
+        else:
+            self.label = "md"
 
     @lazy
     def mdadm_cf(self):
@@ -176,7 +179,7 @@ class Disk(resDisk.Disk):
         return "unknown"
 
     def has_it(self):
-        if self.uuid == "":
+        if self.uuid == "" or self.uuid is None:
             return False
         return self.uuid in self.mdadm_scan_v()[0]
 
@@ -194,6 +197,8 @@ class Disk(resDisk.Disk):
         return False
 
     def auto_assemble_disabled(self):
+        if self.uuid == "" or self.uuid is None:
+            return True
         if not os.path.exists(self.mdadm_cf):
             self.status_log("auto-assemble is not disabled")
             return False
@@ -211,6 +216,8 @@ class Disk(resDisk.Disk):
         return False
 
     def auto_assemble_disable(self):
+        if self.uuid == "" or self.uuid is None:
+            return
         if self.auto_assemble_disabled():
             return
         self.log.info("disable auto-assemble in %s" % self.mdadm_cf)
@@ -251,6 +258,8 @@ class Disk(resDisk.Disk):
 
     @fcache
     def sub_devs(self):
+        if self.uuid == "" or self.uuid is None:
+            return set()
         try:
             devpath = self.md_devpath()
         except ex.excError as e:

@@ -97,4 +97,32 @@ class TestSvcmgr:
         ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "disk#0,fs#0"])
         assert ret == 0
 
+    def test_031(self):
+        """
+        Provision, disk.md
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "set",
+                                "--kw", "disk#0.type=loop",
+                                "--kw", "disk#0.file=/var/tmp/{svcname}.1.dd",
+                                "--kw", "disk#0.size=10m",
+                                "--kw", "disk#1.type=loop",
+                                "--kw", "disk#1.file=/var/tmp/{svcname}.2.dd",
+                                "--kw", "disk#1.size=10m",
+                                "--kw", "disk#2.type=md",
+                                "--kw", "disk#2.level=raid0",
+                                "--kw", "disk#2.devs={disk#0.exposed_devs[0]} {disk#1.exposed_devs[0]}",
+                               ])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
+        assert ret == 0
+
+    def test_032(self):
+        """
+        Unprovision, disk.md
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "unprovision", "--local"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "disk#0,disk#1,disk#2"])
+        assert ret == 0
+
 

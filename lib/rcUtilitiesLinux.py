@@ -16,6 +16,8 @@ def udevadm_settle():
     justcall(cmd)
 
 def dev_to_paths(dev, log=None):
+    if dev.startswith("/dev/loop"):
+        return [dev]
     if dev.startswith("/dev/dm-"):
         dev = "252:%s" % dev[8:]
     cmd = [rcEnv.syspaths.multipath, '-l', dev]

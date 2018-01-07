@@ -82,7 +82,7 @@ class Prov(provisioning.Prov):
         raise ex.excError("unable to determine md uuid")
 
     def unprovisioner(self):
-        if self.r.uuid == "":
+        if self.r.uuid == "" or self.r.uuid is None:
             return
         for dev in self.r.sub_devs():
             self.r.vcall([self.r.mdadm, "--brief", "--zero-superblock", dev])

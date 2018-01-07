@@ -350,7 +350,10 @@ def add_lv(svc, s):
 
 def add_md(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['uuid'] = svc.conf_get(s, 'uuid')
+    try:
+        kwargs['uuid'] = svc.conf_get(s, 'uuid')
+    except ex.OptNotFound as exc:
+        kwargs['uuid'] = exc.default
 
     m = __import__('resDiskMdLinux')
     r = m.Disk(**kwargs)
@@ -1213,7 +1216,10 @@ def add_container_docker(svc, s):
 def add_container_ovm(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-    kwargs['uuid'] = svc.conf_get(s, 'uuid')
+    try:
+        kwargs['uuid'] = svc.conf_get(s, 'uuid')
+    except ex.OptNotFound as exc:
+        kwargs['uuid'] = exc.default
 
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
