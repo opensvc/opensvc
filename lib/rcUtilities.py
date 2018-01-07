@@ -275,11 +275,12 @@ def banner(text, ch='=', length=78):
     banner = spaced_text.center(length, ch)
     return banner
 
-def is_exe(fpath):
+def is_exe(fpath, realpath=False):
     """Returns True if file path is executable, False otherwize
-    does not follow symlink
     """
-    if os.path.isdir(fpath) or os.path.islink(fpath):
+    if realpath:
+        fpath = os.path.realpath(fpath)
+    if os.path.isdir(fpath):
         return False
     return os.path.exists(fpath) and os.access(fpath, os.X_OK)
 
@@ -293,13 +294,13 @@ def which(program):
 
     fpath, fname = os.path.split(program)
     if fpath:
-        if os.path.isfile(program) and is_exe(program):
+        if os.path.isfile(program) and is_exe(program, realpath=True):
             return program
     else:
         for path in os.environ["PATH"].split(os.pathsep):
             exe_file = os.path.join(path, program)
             for candidate in ext_candidates(exe_file):
-                if is_exe(candidate):
+                if is_exe(candidate, realpath=True):
                     return candidate
 
     return

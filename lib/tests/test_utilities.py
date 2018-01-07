@@ -59,6 +59,7 @@ class TestUtilities:
         assert is_exe("/dev/null") == False
         assert is_exe("/tmp") == False
         assert is_exe("/etc/hosts") == False
+        assert is_exe("/etc/hosts", realpath=True) == False
 
     def test_which(self):
         """
