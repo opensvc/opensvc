@@ -1562,10 +1562,8 @@ class Monitor(shared.OsvcThread, Crypt):
         status = self.get_services_status(config.keys())
 
         # purge deleted service instances
-        for svcname in status:
-            if svcname not in config:
-                self.log.info(config)
-                del status[svcname]
+        for svcname in [name for name in status if name not in config]:
+            del status[svcname]
 
         try:
             with shared.CLUSTER_DATA_LOCK:
