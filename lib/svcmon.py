@@ -82,7 +82,6 @@ def main(argv=None):
         argv = sys.argv
     else:
         argv.insert(0, __file__)
-    print(argv)
 
     try:
         node = Node()
