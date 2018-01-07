@@ -6,7 +6,7 @@ import re
 import datetime
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_exe, justcall, banner
+from rcUtilities import justcall, banner
 from converters import convert_duration
 from subprocess import *
 
