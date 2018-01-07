@@ -1803,10 +1803,11 @@ class Node(Crypt, ExtConfig):
         """
         try:
             ret = svc.action(action, options)
-        finally:
+        except Exception:
             self.close()
             sys.exit(1)
-        self.close()
+        finally:
+            self.close()
         sys.exit(ret)
 
     @lazy
