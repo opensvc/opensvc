@@ -1563,7 +1563,7 @@ class Monitor(shared.OsvcThread, Crypt):
 
         # purge deleted service instances
         for svcname in list(status.keys()):
-            if not in config:
+            if svcname not in config:
                 self.log.debug("purge deleted service %s from status data", svcname)
                 del status[svcname]
 
