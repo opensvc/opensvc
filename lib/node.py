@@ -929,26 +929,27 @@ class Node(Crypt, ExtConfig):
                self.config.getboolean('compliance', 'auto_update'):
                 self.compliance.updatecomp = True
                 self.compliance.node = self
-            return getattr(self.compliance, action)()
+            ret = getattr(self.compliance, action)()
         elif action.startswith("collector_") and action != "collector_cli":
             from collector import Collector
             coll = Collector(self.options, self)
             data = getattr(coll, action)()
             self.print_data(data)
-            return 0
+            ret = 0
         elif action.startswith("print"):
             getattr(self, action)()
-            return 0
+            ret = 0
         else:
             ret = getattr(self, action)()
-            if ret is None:
+
+        if ret is None:
+            ret = 0
+        elif isinstance(ret, bool):
+            if ret:
+                return 1
+            else:
                 return 0
-            elif isinstance(ret, bool):
-                if ret:
-                    return 1
-                else:
-                    return 0
-            return ret
+        return ret
 
     @formatter
     def print_data(self, data):
