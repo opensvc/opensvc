@@ -13,7 +13,10 @@ class check(object):
         if self.svcs is None:
             self.svcs = []
 
-    def do_check(self):
+    def do_check(self): # pragma: no cover
+        """
+        To be implemented by child classes.
+        """
         return []
 
 class checks(check):
