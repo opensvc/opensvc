@@ -287,4 +287,67 @@ class TestNodemgr:
         ret = nodemgr.main(argv=["collector", "networks"])
         assert ret == 0
 
+    def test_0251_compliance(self):
+        """
+        Node compliance auto
+        """
+        ret = nodemgr.main(argv=["compliance", "auto"])
+        assert ret == 0
+
+    def test_0252_compliance(self):
+        """
+        Node compliance check
+        """
+        ret = nodemgr.main(argv=["compliance", "check"])
+        assert ret == 0
+
+    def test_0253_compliance(self):
+        """
+        Node compliance fix
+        """
+        ret = nodemgr.main(argv=["compliance", "fix"])
+        assert ret == 0
+
+    def test_0254_compliance(self):
+        """
+        Node compliance show moduleset
+        """
+        ret = nodemgr.main(argv=["compliance", "show", "moduleset"])
+        assert ret == 0
+
+    def test_0255_compliance(self):
+        """
+        Node compliance list moduleset
+        """
+        ret = nodemgr.main(argv=["compliance", "list", "moduleset"])
+        assert ret == 0
+
+    def test_0256_compliance(self):
+        """
+        Node compliance show ruleset
+        """
+        ret = nodemgr.main(argv=["compliance", "show", "ruleset"])
+        assert ret == 0
+
+    def test_0257_compliance(self):
+        """
+        Node compliance list ruleset
+        """
+        ret = nodemgr.main(argv=["compliance", "list", "ruleset"])
+        assert ret == 0
+
+    def test_0258_compliance(self):
+        """
+        Node compliance attach
+        """
+        ret = nodemgr.main(argv=["compliance", "attach", "--ruleset", "abcdef", "--moduleset", "abcdef"])
+        assert ret == 1
+
+    def test_0259_compliance(self):
+        """
+        Node compliance detach
+        """
+        ret = nodemgr.main(argv=["compliance", "detach", "--ruleset", "abcdef", "--moduleset", "abcdef"])
+        assert ret == 0
+
 

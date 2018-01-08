@@ -386,7 +386,70 @@ class TestSvcmgr:
         assert ret == 0
         del os.environ["OSVC_SERVICE_LINK"]
 
-    def test_025_delete(self):
+    def test_0251_compliance(self):
+        """
+        Service compliance auto
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "compliance", "auto"])
+        assert ret == 0
+
+    def test_0252_compliance(self):
+        """
+        Service compliance check
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "compliance", "check"])
+        assert ret == 0
+
+    def test_0253_compliance(self):
+        """
+        Service compliance fix
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "compliance", "fix"])
+        assert ret == 0
+
+    def test_0254_compliance(self):
+        """
+        Service compliance show moduleset
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "compliance", "show", "moduleset"])
+        assert ret == 0
+
+    def test_0255_compliance(self):
+        """
+        Service compliance list moduleset
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "compliance", "list", "moduleset"])
+        assert ret == 0
+
+    def test_0256_compliance(self):
+        """
+        Service compliance show ruleset
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "compliance", "show", "ruleset"])
+        assert ret == 0
+
+    def test_0257_compliance(self):
+        """
+        Service compliance list ruleset
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "compliance", "list", "ruleset"])
+        assert ret == 0
+
+    def test_0258_compliance(self):
+        """
+        Service compliance attach
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "compliance", "attach", "--ruleset", "abcdef", "--moduleset", "abcdef"])
+        assert ret == 1
+
+    def test_0259_compliance(self):
+        """
+        Service compliance detach
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "compliance", "detach", "--ruleset", "abcdef", "--moduleset", "abcdef"])
+        assert ret == 0
+
+    def test_026_delete(self):
         """
         Delete local service instance
         """
