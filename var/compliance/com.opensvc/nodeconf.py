@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 data = {
   "default_prefix": "OSVC_COMP_NODECONF_",
@@ -96,7 +97,13 @@ class NodeConf(CompObject):
             target = str(target)
         cmd = ['nodemgr', 'set', '--param', keyname, '--value', target]
         pinfo(' '.join(cmd))
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        try:
+            cmd[-1] = cmd[-1].encode("utf-8")
+        except UnicodeDecodeError:
+            pass
+        env = os.environ
+        env["LC_ALL"] = "C.UTF-8"
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, env=env)
         out, err = p.communicate()
         return p.returncode
 
