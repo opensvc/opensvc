@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2017\-12\-13
+.TH SVCMGR 1 2018\-01\-09
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -5667,6 +5667,94 @@ Show this help message and exit.
 .RS
 
 Push service configuration to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B -c, --cluster
+Execute the action on all cluster nodes. Aggregate the json outputs.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --daemon
+A flag inhibiting the daemonization. Set by the daemonization routine.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr push encap config\fP
+.RS
+
+Push service configuration to the containers hosting an encapsulated service.
 
 .TP
 .B --cron

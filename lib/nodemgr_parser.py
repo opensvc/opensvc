@@ -227,6 +227,10 @@ OPT = Storage({
         "--ruleset-date", default="",
         action="store", dest="ruleset_date",
         help="Use an historical ruleset, specified by its date."),
+    "save": Option(
+        "--save", default=False,
+        action="store_true", dest="save",
+        help="Save the collector cli settings to the file specified by --config or ~/.opensvc-cli by default."),
     "stats_dir": Option(
         "--stats-dir", default=None,
         action="store", dest="stats_dir",
@@ -836,6 +840,7 @@ ACTIONS = {
                 OPT.insecure,
                 OPT.config,
                 OPT.refresh_api,
+                OPT.save,
             ],
         },
         "collector_events": {

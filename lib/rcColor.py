@@ -261,7 +261,7 @@ def formatter(fn):
             _fmt = format_table
         elif fmt == "csv":
             _fmt = format_csv
-        elif fmt is None:
+        elif fmt is None or fmt == "default":
             _fmt = format_default
         elif hasattr(fmt, "__call__"):
             _fmt = fmt
@@ -272,7 +272,7 @@ def formatter(fn):
 
         if fmt == "json":
             data = xform_data_for_json(data)
-        elif fmt in ("table", "csv", None):
+        elif fmt in ("table", "csv", "default", None):
             data = xform_data_for_tabular(data)
 
         if data is None:

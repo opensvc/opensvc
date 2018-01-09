@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2017\-12\-13
+.TH NODEMGR 1 2018\-01\-09
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -132,6 +132,9 @@ Specify a user-specific collector api connection configuration file. Defaults to
 .TP
 .B --refresh-api
 Force a reload of the collector's api digest.
+.TP
+.B --save
+Save the collector cli settings to the file specified by --config or ~/.opensvc-cli by default.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -928,6 +931,57 @@ Specify a data formatter. Possible values are json, csv or table.
 .B -h, --help
 Show this help message and exit
 
+\fRNETWORK ACTIONS\fP
+
+.RE
+\fBnodemgr network ls\fP
+.RS
+
+List the available networks.
+
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr network show\fP
+.RS
+
+Show a network configuration.
+
+.TP
+.B --id=ID
+Specify an id to act on.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
 \fRNODE ACTIONS\fP
 
 .RE
@@ -1098,6 +1152,32 @@ Display of the nodemgr and daemon logs.
 .TP
 .B --no-pager
 Do not display the command result in a pager.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr ping\fP
+.RS
+
+Ping a cluster node or arbitrator node. The ping validates the remote is functional.
+
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1514,6 +1594,12 @@ Show this help message and exit
 Edit the node configuration.
 
 .TP
+.B --discard
+Discard the stashed, invalid, configuration file.
+.TP
+.B --recover
+Recover the stashed erroneous configuration file in a :cmd:`nodemgr edit config` command
+.TP
 .B --color=COLOR
 Colorize output. Possible values are:
 
@@ -1536,6 +1622,9 @@ Show this help message and exit
 
 Get the raw or evaluated value of a node configuration keyword.
 
+.TP
+.B --eval
+If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced.
 .TP
 .B --param=PARAM
 An expression like '[<section>.]<keyword>' where
@@ -1646,6 +1735,33 @@ Show this help message and exit
 Set a service configuration parameter.
 
 .TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
+.TP
 .B --param=PARAM
 An expression like '[<section>.]<keyword>' where
 
@@ -1696,6 +1812,29 @@ An expression like '[<section>.]<keyword>' where
 
   * a resource id
   * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr validate config\fP
+.RS
+
+Check the section names and keywords are valid.
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:

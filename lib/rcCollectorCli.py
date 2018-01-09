@@ -167,7 +167,7 @@ class Cmd(object):
     def __init__(self, cli=None):
         self.cli = cli
         self.options = Storage()
-        self.options.format=cli.options.format
+        self.options.format=cli.format
 
     @formatter
     def print_content(self, s):
@@ -578,7 +578,7 @@ class Api(object):
                 os.unlink(api_cache_f)
 
         # fallback to fetching the cache
-        print("load api cache")
+        print("load api cache", file=sys.stderr)
         r = requests.get(self.cli.api, auth=self.cli.auth, verify=not self.cli.insecure)
         validate_response(r)
         try:
@@ -2299,16 +2299,21 @@ class Completer(object):
 
 
 class Cli(object):
-    def __init__(self, user=None, password=None, api=None, insecure=None):
-        self.user = user
-        self.password = password
-        self.api = api
-        self.insecure = insecure
+    def __init__(self, user=None, password=None, api=None, insecure=None, refresh_api=None, fmt=None, config=conf_f, save=True):
+        self.options = Storage({
+            "user": user,
+            "password": password,
+            "api": api,
+            "refresh_api": refresh_api,
+            "insecure": insecure,
+            "config": config,
+            "format": fmt,
+            "save": save,
+        })
 
-        self.parse_args()
         self.read_config()
         self.parse_options()
-        self.refresh_api()
+        self.do_refresh_api()
 
         self.commands = [
           CmdCd(cli=self),
@@ -2330,7 +2335,6 @@ class Cli(object):
           CmdSafe(cli=self),
         ]
 
-        self.dispatch_noninteractive()
 
     def dispatch(self, line):
         if line.strip() == "":
@@ -2347,16 +2351,12 @@ class Cli(object):
 
     def parse_options(self):
         self.need_save = False
-        if self.user is None:
-            self.user = self.set_option("user")
-        if self.password is None:
-            self.password = self.set_option("password")
-        if self.api is None:
-            self.api = self.set_option("api")
-        if self.insecure is None:
-            self.insecure = self.set_option("insecure", False)
+        self.user = self.set_option("user")
+        self.password = self.set_option("password")
+        self.api = self.set_option("api")
+        self.format = self.set_option("format")
+        self.insecure = self.set_option("insecure", False)
         self.auth = (self.user, self.password)
-        self.config = self.options.config
 
         if self.insecure and InsecureRequestWarning is not None:
             requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -2368,7 +2368,7 @@ class Cli(object):
         if not self.api.endswith("/rest/api"):
             self.api = "https://" + self.host + "/init/rest/api"
 
-        if self.need_save:
+        if self.need_save and self.options.save:
             self.save_config()
 
     def save_config(self):
@@ -2376,23 +2376,23 @@ class Cli(object):
         """
         if self.user is None or self.password is None or self.api is None or self.insecure is None:
             return
-        print("updating %s config file with provided parameters" % self.config, file=sys.stderr)
+        print("updating %s config file with provided parameters" % self.options.config, file=sys.stderr)
         if not self.conf.has_section(conf_section):
             self.conf.add_section(conf_section)
         self.conf.set(conf_section, "user", self.user)
         self.conf.set(conf_section, "password", self.password)
         self.conf.set(conf_section, "api", self.api)
         self.conf.set(conf_section, "insecure", self.insecure)
-        with open(self.config, 'w') as fp:
+        self.conf.set(conf_section, "format", self.format)
+        with open(self.options.config, 'w') as fp:
             self.conf.write(fp)
-        os.chmod(self.config, 0o0600)
+        os.chmod(self.options.config, 0o0600)
 
-    def refresh_api(self):
+    def do_refresh_api(self):
         try:
             self.api_o = Api(cli=self, refresh=self.options.refresh_api)
         except Exception as e:
-            print(str(e), file=sys.stderr)
-            sys.exit(1)
+            raise ex.excError(str(e))
 
     def read_config(self):
         if os.path.exists(self.options.config):
@@ -2408,76 +2408,30 @@ class Cli(object):
             pass
 
     def set_option(self, o, default=None):
-        if self.options.__dict__[o] == "?":
+        if self.options[o] == "?":
             self.need_save = True
             if o == "password":
                 import getpass
                 return getpass.getpass()
             else:
                 return raw_input(o+": ")
-        if self.options.__dict__[o] is not None:
+        if self.options[o] is not None:
             self.need_save = True
-            return self.options.__dict__[o]
+            return self.options[o]
         if self.conf.has_option(conf_section, o):
             return self.conf.get(conf_section, o)
         if default is not None:
             return default
-        print("missing parameter: "+o, file=sys.stderr)
-        sys.exit(1)
+        raise ex.excError("missing parameter: "+o)
 
-    def parse_args(self):
-        __ver = ""
-        __usage = "nodemgr collector cli [options] command"
-        desc = "A command line interface to manage and access data on the OpenSVC collector."
-        parser = optparse.OptionParser(version=__ver, usage=__usage, description=desc)
-        parser.add_option("--user", "-u", default=None,
-                          action="store", dest="user",
-                          help="The OpenSVC collector account user email")
-        parser.add_option("--password", "-p", default=None,
-                          action="store", dest="password",
-                          help="The OpenSVC collector account user password. Set to ? to prompt.")
-        parser.add_option("--api", "-a", default=None,
-                          action="store", dest="api",
-                          help="The OpenSVC collector api url")
-        parser.add_option("--refresh-api", default=False,
-                          action="store_true", dest="refresh_api",
-                          help="The OpenSVC collector api url")
-        parser.add_option("--insecure", "-i", default=None,
-                          action="store_true", dest="insecure",
-                          help="Ignore ssl certification verification")
-        parser.add_option("--config", "-c", default=conf_f,
-                          action="store", dest="config",
-                          help="The file the collector credentials and access url are read from, or written to if empty. Defaults to %s" % conf_f)
-        parser.add_option("--color", default="auto",
-                          action="store", dest="color",
-                          help="colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize")
-        parser.add_option("--format", default="table",
-                          action="store", dest="format",
-                          help="format data as table, json, csv or yaml")
-
-        self.options, self.args = parser.parse_args()
-
-        if len(self.args) > 1 and self.args[0] == "collector" and self.args[1] == "cli":
-            self.args.pop(0)
-            self.args.pop(0)
-
-    def dispatch_noninteractive(self):
-        if len(self.args) > 0:
-            # non interactive mode
-            import subprocess
-            line = subprocess.list2cmdline(self.args)
-            try:
-                self.dispatch(line)
-            except ValueError as exc:
-                print(exc)
-                sys.exit(1)
-            except KeyboardInterrupt:
-                print("Interrupted")
-                sys.exit(1)
-            except Exception as exc:
-                print(exc)
-                sys.exit(1)
-            sys.exit(0)
+    def dispatch_noninteractive(self, args):
+        # non interactive mode
+        import subprocess
+        line = subprocess.list2cmdline(args)
+        try:
+            return self.dispatch(line)
+        except Exception as exc:
+            raise ex.excError(str(exc))
 
     def readline_setup(self):
         readline.parse_and_bind('tab: complete')
@@ -2515,8 +2469,11 @@ class Cli(object):
                 print(e[0], e[1], traceback.print_tb(e[2]))
 
 
-    def run(self):
-        self.input_loop()
+    def run(self, argv=None):
+        if argv and len(argv) > 0:
+            self.dispatch_noninteractive(argv)
+        else:
+            self.input_loop()
 
 if __name__ == "__main__":
     cli = Cli()

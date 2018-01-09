@@ -40,6 +40,10 @@ class Test:
         assert ret == 0
         ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
         assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "resinfo"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "devs"])
+        assert ret == 0
 
     def test_002(self):
         """
@@ -62,6 +66,10 @@ class Test:
                                ])
         assert ret == 0
         ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "resinfo"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "devs"])
         assert ret == 0
 
     def test_012(self):
@@ -90,6 +98,10 @@ class Test:
         assert ret == 0
         ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
         assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "resinfo"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "devs"])
+        assert ret == 0
 
     def test_022(self):
         """
@@ -116,6 +128,10 @@ class Test:
         assert ret == 0
         ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
         assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "resinfo"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "devs"])
+        assert ret == 0
 
     def test_032(self):
         """
@@ -141,6 +157,10 @@ class Test:
         assert ret == 0
         ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
         assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "resinfo"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "devs"])
+        assert ret == 0
 
     def test_122(self):
         """
@@ -165,6 +185,10 @@ class Test:
         assert ret == 0
         ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
         assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "resinfo"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "devs"])
+        assert ret == 0
 
     def test_132(self):
         """
@@ -187,6 +211,10 @@ class Test:
         assert ret == 0
         ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
         assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "resinfo"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "devs"])
+        assert ret == 0
 
     def test_202(self):
         """
@@ -206,6 +234,10 @@ class Test:
                                ])
         assert ret == 0
         ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "resinfo"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "devs"])
         assert ret == 0
 
     def test_302(self):
@@ -234,6 +266,10 @@ class Test:
                                ])
         assert ret == 0
         ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "resinfo"])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "print", "devs"])
         assert ret == 0
 
     def test_312(self):

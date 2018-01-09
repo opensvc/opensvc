@@ -30,14 +30,23 @@ def get_extra_argv(argv=None):
         argv = sys.argv[1:]
     if len(argv) < 2:
         return argv, []
-    if "array" not in argv:
+
+    if "array" in argv:
+        pos = argv.index('array')
+    elif "cli" in argv:
+        pos = argv.index('cli')
+        if pos > 0 and argv[pos-1] != "collector":
+            return argv, []
+    else:
         return argv, []
-    pos = argv.index('array')
+
     if len(argv) > pos + 1:
         extra_argv = argv[pos+1:]
     else:
         extra_argv = []
     argv = argv[:pos+1]
+    if len(extra_argv) > 0 and extra_argv[0] == "--":
+        extra_argv.pop(0)
     return argv, extra_argv
 
 def do_symcli_db_file(options):

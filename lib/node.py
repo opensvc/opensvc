@@ -2399,13 +2399,24 @@ class Node(Crypt, ExtConfig):
                 user, password = self.collector_auth_node()
                 data["user"] = user
                 data["password"] = password
+                data["save"] = False
             if self.options.api is None:
                 if rcEnv.dbopensvc is None:
                     raise ex.excError("node.dbopensvc is not set in node.conf")
                 data["api"] = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
+        else:
+            data["user"] = self.options.user
+            data["password"] = self.options.password
+            data["api"] = self.options.api
+            data["save"] = self.options.save
+
+        data["refresh_api"] = self.options.refresh_api
+        data["fmt"] = self.options.format
+        if self.options.config:
+            data["config"] = self.options.config
         from rcCollectorCli import Cli
         cli = Cli(**data)
-        return cli.run()
+        return cli.run(argv=self.options.extra_argv)
 
     def collector_api(self, svcname=None):
         """

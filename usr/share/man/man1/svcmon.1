@@ -1,4 +1,4 @@
-.TH SVCMON 1 2017\-12\-13
+.TH SVCMON 1 2018\-01\-09
 .SH NAME
 svcmon - OpenSVC agent's services instances status requesting command.
 .SH SYNOPSIS
@@ -16,6 +16,12 @@ show this help message and exit
 .TP
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B -i INTERVAL, --interval=INTERVAL
+with --watch, set the refresh interval.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
