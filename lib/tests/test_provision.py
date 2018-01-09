@@ -171,4 +171,24 @@ class TestSvcmgr:
         ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "container#0"])
         assert ret == 0
 
+    def test_301(self):
+        """
+        Provision, ip
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "set",
+                                "--kw", "ip#0.provisioner=collector",
+                                "--kw", "ip#0.ipdev=lo",
+                                "--kw", "ip#0.network=192.168.0.0",
+                               ])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
+        assert ret == 0
+
+    def test_302(self):
+        """
+        Unprovision, ip
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "ip#0"])
+        assert ret == 0
+
 

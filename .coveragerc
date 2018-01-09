@@ -12,5 +12,6 @@ omit =
     */pyaes/*
     */tabulate.py
     */wmi.py
+    */ipaddress.py
     */objgraph.py
 
