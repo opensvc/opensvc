@@ -14,6 +14,19 @@ class ExecError(Exception):
 class ExistError(Exception):
      pass
 
+def btrfs_devs(mnt):
+    out, err, ret = justcall(["btrfs", "fi", "show", mnt])
+    if ret != 0:
+        return []
+    devs = []
+    for line in out.splitlines():
+        line = line.strip()
+        if not line.startswith("devid"):
+            continue
+        dev = line.split(" path ")[-1]
+        devs.append(dev)
+    return devs
+
 class Btrfs(object):
     log = None
     #snapvol = ".osvcsnap"

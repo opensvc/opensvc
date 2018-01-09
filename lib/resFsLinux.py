@@ -301,6 +301,10 @@ class Mount(Res.Mount):
         return False
 
     def sub_devs(self):
+        if self.fs_type == "btrfs":
+            from rcBtrfs import btrfs_devs
+            return set(btrfs_devs(self.mount_point))
+
         dev = self.realdev()
         if dev is None or dev.startswith("LABEL=") or dev.startswith("UUID="):
             # realdev() may fail to resolve UUID and LABEL if the hosting dev
