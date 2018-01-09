@@ -16,7 +16,7 @@ import nodemgr
 
 logging.disable(logging.CRITICAL)
 
-class TestSvcmgr:
+class Test:
 
     @classmethod
     def setup_class(cls):
@@ -149,6 +149,30 @@ class TestSvcmgr:
         ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "disk#0,fs#0"])
         assert ret == 0
 
+    def test_131(self):
+        """
+        Provision, fs.btrfs
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "set",
+                                "--kw", "disk#0.type=loop",
+                                "--kw", "disk#0.file=/var/tmp/{svcname}.dd",
+                                "--kw", "disk#0.size=1g",
+                                "--kw", "fs#0.type=btrfs",
+                                "--kw", "fs#0.dev={disk#0.file}",
+                                "--kw", "fs#0.mnt=/var/tmp/{svcname}",
+                                "--kw", "fs#0.mnt_opt=rw,noatime,subvol=init",
+                               ])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
+        assert ret == 0
+
+    def test_132(self):
+        """
+        Unprovision, fs.btrfs
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "disk#0,fs#0"])
+        assert ret == 0
+
     def test_201(self):
         """
         Provision, container.docker (shared)
@@ -189,6 +213,34 @@ class TestSvcmgr:
         Unprovision, ip
         """
         ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "ip#0"])
+        assert ret == 0
+
+    def test_311(self):
+        """
+        Provision, ip.docker
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "set",
+                                "--kw", "docker_daemon_private=false",
+                                "--kw", "container#0.type=docker",
+                                "--kw", "container#0.run_image=alpine:latest",
+                                "--kw", "container#0.run_args=-it --net=none --rm",
+                                "--kw", "container#0.run_command=/bin/sh",
+                                "--kw", "ip#0.type=docker",
+                                "--kw", "ip#0.ipname=128.3.2.1",
+                                "--kw", "ip#0.ipdev=docker0",
+                                "--kw", "ip#0.network=128.3.2.0",
+                                "--kw", "ip#0.netmask=24",
+                                "--kw", "ip#0.container_rid=container#0",
+                               ])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
+        assert ret == 0
+
+    def test_312(self):
+        """
+        Unprovision, ip.docker
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "container#0,ip#0"])
         assert ret == 0
 
 
