@@ -13,6 +13,11 @@ class Prov(provisioning.Prov):
         provisioning.Prov.__init__(self, r)
 
     def is_provisioned(self):
+        # don't trust cache for that
+        self.r.clear_cache("vg.lvs")
+        self.r.clear_cache("vg.lvs.attr")
+        self.r.clear_cache("vg.tags")
+        self.r.clear_cache("vg.pvs")
         return self.r.has_it()
 
     def unprovisioner(self):
@@ -25,6 +30,7 @@ class Prov(provisioning.Prov):
         self.r.clear_cache("vg.lvs")
         self.r.clear_cache("vg.lvs.attr")
         self.r.clear_cache("vg.tags")
+        self.r.clear_cache("vg.pvs")
 
     def has_pv(self, pv):
         cmd = [rcEnv.syspaths.pvscan, "--cache", pv]
@@ -106,3 +112,4 @@ class Prov(provisioning.Prov):
         self.r.clear_cache("vg.lvs")
         self.r.clear_cache("vg.lvs.attr")
         self.r.clear_cache("vg.tags")
+        self.r.clear_cache("vg.pvs")
