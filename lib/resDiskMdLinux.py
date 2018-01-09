@@ -246,7 +246,8 @@ class Disk(resDisk.Disk):
 
     def do_stop(self):
         if self.uuid is None:
-            raise ex.excError("uuid is not set")
+            self.log.warning("uuid is not set: skip")
+            return
         self.auto_assemble_disable()
         if not self.is_up():
             self.log.info("md %s is already down" % self.uuid)
