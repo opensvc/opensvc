@@ -4226,14 +4226,54 @@ class Svc(Crypt, ExtConfig):
                 self.log.info("remove %s", dpath)
                 shutil.rmtree(dpath)
 
-    def delete_resources(self):
+    def delete_resources(self, rids=None):
+        """
+        Delete service resources objects and references and in configuration file
+        """
+        if rids is None:
+            rids = self.action_rid
+        self._delete_resources_config(rids)
+        self._delete_resources_live(rids)
+
+    def _delete_resources_live(self, rids):
+        """
+        Delete service resources objects and references
+        """
+        for rid in rids:
+            self._delete_resource_live(rid)
+
+    def _delete_resource_live(self, rid):
+        """
+        Delete service a resource object and references
+        """
+        if rid in self.resources_by_id:
+            del(self.resources_by_id[rid])
+        if rid in self.encap_resources:
+            del(self.encap_resources[rid])
+        rs_to_delete = []
+        for rsidx, rset in enumerate(self.resourcesets):
+            to_delete = []
+            for idx, res in enumerate(rset.resources):
+                if res.rid == rid:
+                    res.remove_is_provisioned_flag()
+                    to_delete.append(idx)
+            for idx in to_delete:
+                del rset.resources[idx]
+            if len(rset.resources) == 0:
+                rs_to_delete.append(rsidx)
+                if rset.type in self.resourcesets_by_type:
+                    del self.resourcesets_by_type[res.type]
+        for rsidx in rs_to_delete:
+            del self.resourcesets[rsidx]
+
+    def _delete_resources_config(self, rids):
         """
         Delete service resources from its configuration file
         """
         lines = self._read_cf().splitlines()
         need_write = False
 
-        for rid in self.action_rid:
+        for rid in rids:
             section = "[%s]" % rid
             in_section = False
             for i, line in enumerate(lines):
@@ -4257,6 +4297,8 @@ class Svc(Crypt, ExtConfig):
             self._write_cf(buff)
         except (IOError, OSError):
             raise ex.excError("failed to rewrite %s" % self.paths.cf)
+
+        unset_lazy(self, "config")
 
     def delete(self):
         """
