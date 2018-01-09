@@ -2394,7 +2394,7 @@ class Node(Crypt, ExtConfig):
         """
         data = {}
 
-        if os.getuid() == 0:
+        if self.options.config is None and os.getuid() == 0:
             if self.options.user is None:
                 user, password = self.collector_auth_node()
                 data["user"] = user
