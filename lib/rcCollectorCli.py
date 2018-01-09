@@ -167,7 +167,7 @@ class Cmd(object):
     def __init__(self, cli=None):
         self.cli = cli
         self.options = Storage()
-        self.options.format=cli.format
+        self.options.format = cli.format if cli else None
 
     @formatter
     def print_content(self, s):
@@ -984,12 +984,12 @@ class CmdFilter(Cmd):
         if options.list is None:
             return
         p = "/filters"
-        o = CmdLs().cmd(p)
+        o = CmdLs(self.cli).cmd(p)
 
     def show_filter(self, options):
         if options.show is None or options.filter is None:
             return
-        o = CmdShow()
+        o = CmdShow(self.cli)
         data = o.get_data("/filters/"+options.filter)
         o.print_filter(options.filter, data)
 
@@ -1116,12 +1116,12 @@ class CmdFilterset(Cmd):
         if options.list is None:
             return
         p = "/filtersets"
-        o = CmdLs().cmd(p)
+        o = CmdLs(self.cli).cmd(p)
 
     def show_filterset(self, options):
         if options.show is None or options.filterset is None:
             return
-        o = CmdShow()
+        o = CmdShow(self.cli)
         data = o.get_data("/filtersets/"+options.filterset)
         o.print_filterset(options.filterset, data)
 
@@ -1253,12 +1253,12 @@ class CmdModuleset(Cmd):
         if options.list is None:
             return
         p = "/compliance/modulesets"
-        o = CmdLs().cmd(p)
+        o = CmdLs(self.cli).cmd(p)
 
     def show_moduleset(self, options):
         if options.show is None:
             return
-        o = CmdShow()
+        o = CmdShow(self.cli)
         data = o.get_data("/compliance/modulesets/"+options.moduleset)
         o.print_moduleset(options.moduleset, data)
 
@@ -1403,7 +1403,7 @@ class CmdModule(Cmd):
         if options.list is None or options.moduleset is None:
             return
         p = "/compliance/modulesets/%s/modules" % options.moduleset
-        o = CmdLs().cmd(p)
+        o = CmdLs(self.cli).cmd(p)
 
     def add_module(self, options):
         if options.add is None or options.moduleset is None or options.module is None:
@@ -1514,7 +1514,7 @@ class CmdVariable(Cmd):
         if options.list is None or options.ruleset is None:
             return
         p = "/compliance/rulesets/%s/variables" % options.ruleset
-        o = CmdLs().cmd(p)
+        o = CmdLs(self.cli).cmd(p)
 
     def add_variable(self, options):
         if options.add is None or options.ruleset is None or options.variable is None:
@@ -1773,12 +1773,12 @@ class CmdRuleset(Cmd):
         if options.list is None:
             return
         p = "/compliance/rulesets"
-        o = CmdLs().cmd(p)
+        o = CmdLs(self.cli).cmd(p)
 
     def show_ruleset(self, options):
         if options.show is None:
             return
-        o = CmdShow()
+        o = CmdShow(self.cli)
         data = o.get_data("/compliance/rulesets/"+options.ruleset)
         o.print_ruleset(options.ruleset, data)
 
