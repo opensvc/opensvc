@@ -25,7 +25,7 @@ class TestSvcmgr:
 
     @classmethod
     def teardown_class(cls):
-        ret = svcmgr.main(argv=["-s", "unittest", "delete", "--local"])
+        ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--local"])
         assert ret == 0
 
     def test_001(self):
@@ -66,26 +66,26 @@ class TestSvcmgr:
 
     def test_012(self):
         """
-        Unprovision, disk.loop
+        Unprovision, disk.vg
         """
-        ret = svcmgr.main(argv=["-s", "unittest", "unprovision", "--local"])
-        assert ret == 0
         ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "disk#0,disk#1"])
         assert ret == 0
 
     def test_021(self):
         """
-        Provision, fs.ext4
+        Provision, disk.lv
         """
         ret = svcmgr.main(argv=["-s", "unittest", "set",
                                 "--kw", "disk#0.type=loop",
                                 "--kw", "disk#0.file=/var/tmp/{svcname}.dd",
                                 "--kw", "disk#0.size=10m",
-                                "--kw", "fs#0.type=ext4",
-                                "--kw", "fs#0.mkfs_opt=-L {svcname}.fs.0",
-                                "--kw", "fs#0.dev={disk#0.file}",
-                                "--kw", "fs#0.mnt=/var/tmp/{svcname}",
-                                "--kw", "fs#0.mnt_opt=rw,noatime",
+                                "--kw", "disk#1.type=vg",
+                                "--kw", "disk#1.name={svcname}",
+                                "--kw", "disk#1.pvs={disk#0.file}",
+                                "--kw", "disk#2.type=lv",
+                                "--kw", "disk#2.name=init",
+                                "--kw", "disk#2.vg={disk#1.name}",
+                                "--kw", "disk#2.size=100%FREE",
                                ])
         assert ret == 0
         ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
@@ -93,11 +93,9 @@ class TestSvcmgr:
 
     def test_022(self):
         """
-        Unprovision, fs.ext4
+        Unprovision, disk.lv
         """
-        ret = svcmgr.main(argv=["-s", "unittest", "unprovision", "--local"])
-        assert ret == 0
-        ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "disk#0,fs#0"])
+        ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "disk#0,disk#1,disk#2"])
         assert ret == 0
 
     def test_031(self):
@@ -123,9 +121,54 @@ class TestSvcmgr:
         """
         Unprovision, disk.md
         """
-        ret = svcmgr.main(argv=["-s", "unittest", "unprovision", "--local"])
-        assert ret == 0
         ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "disk#0,disk#1,disk#2"])
+        assert ret == 0
+
+    def test_121(self):
+        """
+        Provision, fs.ext4
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "set",
+                                "--kw", "disk#0.type=loop",
+                                "--kw", "disk#0.file=/var/tmp/{svcname}.dd",
+                                "--kw", "disk#0.size=10m",
+                                "--kw", "fs#0.type=ext4",
+                                "--kw", "fs#0.mkfs_opt=-L {svcname}.fs.0",
+                                "--kw", "fs#0.dev={disk#0.file}",
+                                "--kw", "fs#0.mnt=/var/tmp/{svcname}",
+                                "--kw", "fs#0.mnt_opt=rw,noatime",
+                               ])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
+        assert ret == 0
+
+    def test_122(self):
+        """
+        Unprovision, fs.ext4
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "disk#0,fs#0"])
+        assert ret == 0
+
+    def test_201(self):
+        """
+        Provision, container.docker (shared)
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "set",
+                                "--kw", "docker_daemon_private=false",
+                                "--kw", "container#0.type=docker",
+                                "--kw", "container#0.run_image=alpine:latest",
+                                "--kw", "container#0.run_args=-it --net=none --rm",
+                                "--kw", "container#0.run_command=/bin/sh",
+                               ])
+        assert ret == 0
+        ret = svcmgr.main(argv=["-s", "unittest", "provision", "--local"])
+        assert ret == 0
+
+    def test_202(self):
+        """
+        Unprovision, container.docker (shared)
+        """
+        ret = svcmgr.main(argv=["-s", "unittest", "delete", "--unprovision", "--rid", "container#0"])
         assert ret == 0
 
 
