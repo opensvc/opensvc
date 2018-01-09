@@ -918,21 +918,35 @@ class Resource(object):
     ##########################################################################
     @lazy
     def provisioned_flag(self):
+        """
+        The full path to the provisioned state cache file.
+        """
         return os.path.join(self.var_d, "provisioned")
 
     def provisioned_flag_mtime(self):
+        """
+        Return the provisioned state cache file modification time.
+        """
         try:
             return os.path.getmtime(self.provisioned_flag)
         except Exception:
             return
 
     def provisioned_data(self):
+        """
+        Return the resource provisioned state from the on-disk cache and its
+        state change time as a dictionnary.
+        """
         return {
             "state": self.is_provisioned(),
             "mtime": self.provisioned_flag_mtime(),
         }
 
     def is_provisioned_flag(self):
+        """
+        Return the boolean provisioned state cached on disk.
+        Return None if the file does not exist or is corrupted.
+        """
         try:
             with open(self.provisioned_flag, 'r') as filep:
                 return json.load(filep)
@@ -940,6 +954,10 @@ class Resource(object):
             return
 
     def write_is_provisioned_flag(self, value, mtime=None):
+        """
+        Write a resource-private file containing the boolean provisioned
+        state and state change time.
+        """
         if value is None:
             return
         try:
@@ -955,6 +973,15 @@ class Resource(object):
             return
         if mtime:
             os.utime(self.provisioned_flag, (mtime, mtime))
+
+    def remove_is_provisioned_flag(self):
+        """
+        Remove the provisioned state cache file. Used in the Svc::delete_resource()
+        code path.
+        """
+        if not os.path.exists(self.provisioned_flag):
+            return
+        os.unlink(self.provisioned_flag)
 
     @lazy
     def prov(self):
