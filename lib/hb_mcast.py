@@ -67,16 +67,6 @@ class HbMcast(Hb, Crypt):
             self.src_addr = "0.0.0.0"
             self.mreq = struct.pack("4sl", group, socket.INADDR_ANY)
 
-        try:
-            self.intf = self.config.get(self.name, "intf")
-            self.src_addr = self.get_ip_address(self.intf)
-            self.src_naddr = socket.inet_aton(self.src_addr)
-        except Exception:
-            self.intf = "any"
-            self.src_addr = "0.0.0.0"
-            self.src_naddr = socket.INADDR_ANY
-
-
 class HbMcastTx(HbMcast):
     """
     The multicast heartbeat tx class.
@@ -92,12 +82,22 @@ class HbMcastTx(HbMcast):
 
         try:
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
-            self.addr = addrinfo[4][0]
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.group = (self.addr, self.port)
             ttl = struct.pack('b', 32)
-            self.sock.settimeout(2)
+            self.addr = addrinfo[4][0]
+            try:
+                intf_b = bytes(self.intf, "utf-8")
+            except TypeError:
+                intf_b = str(self.intf)
+            self.group = (self.addr, self.port)
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            try:
+                # Linux only
+                self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, intf_b)
+            except AttributeError:
+                pass
+            self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, self.mreq)
             self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
+            self.sock.settimeout(2)
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
             return
@@ -151,9 +151,20 @@ class HbMcastRx(HbMcast):
         try:
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
             self.addr = addrinfo[4][0]
+            try:
+                intf_b = bytes(self.intf, "utf-8")
+            except TypeError:
+                intf_b = str(self.intf)
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.bind(('', self.port))
+            try:
+                # Linux only
+                self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, intf_b)
+            except AttributeError:
+                pass
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, self.mreq)
             self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, self.mreq)
+            self.sock.bind(('', self.port))
             self.sock.settimeout(2)
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
