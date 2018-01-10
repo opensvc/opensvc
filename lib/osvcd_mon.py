@@ -1091,6 +1091,10 @@ class Monitor(shared.OsvcThread, Crypt):
             n_instances += 1
         astatus_s = set(astatus_l)
 
+        if "flex_max_nodes" not in instance:
+            # in transition from flex to failover
+            return "unknown"
+
         n_up = astatus_l.count("up")
         if n_instances == 0:
             return 'n/a'
@@ -1678,7 +1682,7 @@ class Monitor(shared.OsvcThread, Crypt):
             return not self.get_agg_shutdown(svcname)
         if global_expect == "started":
             status = shared.AGG[svcname].avail
-            local_frozen = instance("frozen", False)
+            local_frozen = instance.get("frozen", False)
             if status not in STARTED_STATES or local_frozen:
                 return True
             else:
