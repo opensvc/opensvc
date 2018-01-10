@@ -185,6 +185,12 @@ def unset_lazy(self, attr):
     if hasattr(self, attr_name):
         delattr(self, attr_name)
 
+def bencode(buff):
+    try:
+        return bytes(buff, "utf-8")
+    except TypeError:
+        return buff
+
 def bdecode(buff):
     if sys.version_info[0] < 3:
         return buff
@@ -198,7 +204,8 @@ def bdecode(buff):
     return buff
 
 def is_string(s):
-    """ python[23] compatible
+    """
+    python[23] compatible string-type test
     """
     if sys.version_info[0] == 2:
         l = (str, unicode)
