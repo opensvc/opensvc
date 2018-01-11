@@ -67,6 +67,20 @@ class HbMcast(Hb, Crypt):
             self.src_addr = "0.0.0.0"
             self.mreq = struct.pack("4sl", group, socket.INADDR_ANY)
 
+    def set_if(self):
+        if self.intf == "any":
+            return
+        try:
+            intf_b = bytes(self.intf, "utf-8")
+        except TypeError:
+            intf_b = str(self.intf)
+        try:
+            # Linux only
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, intf_b)
+        except AttributeError:
+            pass
+        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, self.mreq)
+
 class HbMcastTx(HbMcast):
     """
     The multicast heartbeat tx class.
@@ -84,18 +98,9 @@ class HbMcastTx(HbMcast):
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
             ttl = struct.pack('b', 32)
             self.addr = addrinfo[4][0]
-            try:
-                intf_b = bytes(self.intf, "utf-8")
-            except TypeError:
-                intf_b = str(self.intf)
             self.group = (self.addr, self.port)
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            try:
-                # Linux only
-                self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, intf_b)
-            except AttributeError:
-                pass
-            self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, self.mreq)
+            self.set_if()
             self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
             self.sock.settimeout(2)
         except socket.error as exc:
@@ -151,18 +156,9 @@ class HbMcastRx(HbMcast):
         try:
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
             self.addr = addrinfo[4][0]
-            try:
-                intf_b = bytes(self.intf, "utf-8")
-            except TypeError:
-                intf_b = str(self.intf)
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            try:
-                # Linux only
-                self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, intf_b)
-            except AttributeError:
-                pass
+            self.set_if()
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, self.mreq)
             self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, self.mreq)
             self.sock.bind(('', self.port))
             self.sock.settimeout(2)
