@@ -1052,15 +1052,21 @@ class Svc(Crypt, ExtConfig):
         data = self.node._daemon_status(refresh=True)
         if self.svcname not in data["monitor"]["services"]:
             return
-        avail = data["monitor"]["services"][self.svcname]["avail"]
-        if action in ("start", "stop") and avail in ("n/a", "warn", "undef"):
-            raise ex.excError("the service is in '%s' avail status. the daemons won't honor this request, so don't submit it." % avail)
-        elif action == "start":
-            if avail == "up":
+        if action in ("start", "stop"):
+            avail = data["monitor"]["services"][self.svcname]["avail"]
+            if action == "start" and avail == "up":
                 raise ex.excError("the service is already started.")
-        elif action == "stop":
-            if avail in ("down", "stdby down"):
+            elif action == "stop" and avail in ("down", "stdby down"):
                 raise ex.excError("the service is already stopped.")
+            if avail in ("n/a", "undef"):
+                raise ex.excError("the service is in '%s' aggregated avail "
+                                  "status. the daemons won't honor this "
+                                  "request, so don't submit it." % avail)
+            avails = set([data["monitor"]["nodes"][node]["services"]["status"].get(self.svcname, {}).get("avail") for node in data["monitor"]["nodes"]])
+            if len(avails & set(["warn"])) > 0:
+                raise ex.excError("the service has instances in 'warn' avail "
+                                  "status. the daemons won't honor this request,"
+                                  " so don't submit it." % avail)
 
     def started_on(self):
         nodenames = []
