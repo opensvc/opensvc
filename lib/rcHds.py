@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import logging
 import os
-import ConfigParser
+import rcConfigParser
 import sys
 import json
 from xml.etree.ElementTree import XML, fromstring
@@ -132,7 +132,7 @@ class Arrays(object):
         cf = rcEnv.paths.authconf
         if not os.path.exists(cf):
             return
-        conf = ConfigParser.RawConfigParser()
+        conf = rcConfigParser.RawConfigParser()
         conf.read(cf)
         m = []
         for s in conf.sections():
