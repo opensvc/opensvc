@@ -3785,7 +3785,7 @@ class Svc(Crypt, ExtConfig):
             status = data["instances"][rcEnv.nodename].get("status", "unknown")
             if action == "start" and status == "ready":
                 return
-            if status != "idle":
+            if status != "idle" and not " failed" in status:
                 raise ex.excError("instance in %s state" % status)
 
     def notify_action(self, action):
