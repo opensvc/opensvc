@@ -487,9 +487,6 @@ class Monitor(shared.OsvcThread, Crypt):
                 status = shared.AGG[svcname].avail
                 self.set_smon_g_expect_from_status(svcname, smon, status)
             return
-        if svc.disabled:
-            #self.log.info("service %s orchestrator out (disabled)", svc.svcname)
-            return
         if smon.global_expect != "aborted" and \
            smon.status not in ("ready", "idle", "wait children", "wait parents"):
             #self.log.info("service %s orchestrator out (mon status %s)", svc.svcname, smon.status)
@@ -507,6 +504,9 @@ class Monitor(shared.OsvcThread, Crypt):
         Verifies hard and soft affinity and anti-affinity, then routes to
         failover and flex specific policies.
         """
+        if svc.disabled:
+            #self.log.info("service %s orchestrator out (disabled)", svc.svcname)
+            return
         if not self.compat:
             return
         if svc.topology == "failover" and smon.local_expect == "started":
@@ -1657,6 +1657,9 @@ class Monitor(shared.OsvcThread, Crypt):
                         self.set_smon(svcname, stonith=nodename)
                     global_expect = rinstance["monitor"].get("global_expect")
                     if global_expect is None:
+                        continue
+                    if svcname in shared.SERVICES and shared.SERVICES[svcname].disabled and \
+                       global_expect not in ("frozen", "thawed", "aborted", "deleted"):
                         continue
                     if global_expect == current_global_expect:
                         self.log.info("node %s wants service %s %s, already targeting that",
