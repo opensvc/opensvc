@@ -645,6 +645,7 @@ ACTIONS = {
         "pull": {
             "msg": "Pull a service configuration from the collector, overwritting the currently installed one.",
             "options": [
+                OPT.disable_rollback,
                 OPT.provision,
             ],
         },
@@ -802,6 +803,7 @@ ACTIONS = {
             "msg": "Create a new service.",
             "options": ACTION_OPTS + [
                 OPT.config,
+                OPT.disable_rollback,
                 OPT.interactive,
                 OPT.provision,
                 OPT.resource,
@@ -812,6 +814,7 @@ ACTIONS = {
             "msg": "Update definitions in an existing service configuration "
                    "file.",
             "options": ACTION_OPTS + [
+                OPT.disable_rollback,
                 OPT.interactive,
                 OPT.provision,
                 OPT.resource,
