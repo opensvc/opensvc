@@ -13,9 +13,6 @@ class Prov(provisioning.Prov):
         except ex.OptNotFound:
             return False
 
-    def start(self):
-        pass
-
     @lazy
     def kw_provisioner(self):
         try:
