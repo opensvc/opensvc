@@ -140,7 +140,10 @@ class Ip(Res.Resource):
             self.getaddr()
         except Exception as exc:
             self.status_log(str(exc))
-            return rcStatus.WARN
+            if "not allocated" in str(exc):
+                return rcStatus.DOWN
+            else:
+                return rcStatus.WARN
         ifconfig = IFCONFIG_MOD.ifconfig()
         intf = ifconfig.interface(self.ipdev)
         if intf is None and "dedicated" not in self.tags:
