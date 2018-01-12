@@ -1717,12 +1717,13 @@ class Svc(Crypt, ExtConfig):
             if provisioned is False:
                 notice.append(colorize("not provisioned", color.RED))
             if monitor:
+                mon_status = monitor.get("status", "unknown")
                 if monitor["status"] == "idle":
-                    notice.append(colorize(monitor["status"], color.LIGHTBLUE))
+                    notice.append(colorize(mon_status, color.LIGHTBLUE))
                 else:
-                    notice.append(colorize(monitor["status"], color.RED))
+                    notice.append(colorize(mon_status, color.RED))
                 if monitor.get("local_expect") not in ("", None):
-                    notice.append(colorize(monitor["local_expect"], color.LIGHTBLUE))
+                    notice.append(colorize(monitor.get("local_expect", ""), color.LIGHTBLUE))
             else:
                 notice.append(colorize("daemon down", color.RED))
             return ", ".join(notice)
