@@ -3289,7 +3289,7 @@ class Node(Crypt, ExtConfig):
                     "avail": _data.get("avail", "undef"),
                     "overall": _data.get("overall", "undef"),
                     "frozen": _data.get("frozen", False),
-                    "mon": _data["monitor"]["status"],
+                    "mon": _data["monitor"].get("status", ""),
                     "placement": _data["monitor"].get("placement", ""),
                     "provisioned": _data.get("provisioned"),
                 }
