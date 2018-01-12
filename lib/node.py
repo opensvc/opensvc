@@ -2410,6 +2410,7 @@ class Node(Crypt, ExtConfig):
             data["api"] = self.options.api
             data["save"] = self.options.save
 
+        data["insecure"] = self.options.insecure
         data["refresh_api"] = self.options.refresh_api
         data["fmt"] = self.options.format
         if self.options.config:

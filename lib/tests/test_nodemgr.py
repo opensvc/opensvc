@@ -287,6 +287,13 @@ class TestNodemgr:
         ret = nodemgr.main(argv=["collector", "networks"])
         assert ret == 0
 
+    def test_164_nodemgr_collector_search(self):
+        """
+        Collector search
+        """
+        ret = nodemgr.main(argv=["collector", "search", "--like", "safe:%"])
+        assert ret == 0
+
     def test_0251_compliance(self):
         """
         Node compliance auto

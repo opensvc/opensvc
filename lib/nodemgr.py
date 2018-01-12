@@ -40,13 +40,13 @@ def get_extra_argv(argv=None):
     else:
         return argv, []
 
+    if "--" in argv:
+        pos = argv.index("--")
     if len(argv) > pos + 1:
         extra_argv = argv[pos+1:]
     else:
         extra_argv = []
     argv = argv[:pos+1]
-    if len(extra_argv) > 0 and extra_argv[0] == "--":
-        extra_argv.pop(0)
     return argv, extra_argv
 
 def do_symcli_db_file(options):
