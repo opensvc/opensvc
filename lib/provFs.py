@@ -85,7 +85,14 @@ class Prov(provisioning.Prov):
             self.r.log.info("%s mount point created"%self.mnt)
 
         if not os.path.exists(self.dev) and self.r.fs_type not in self.r.netfs:
-            self.provision_dev()
+            try:
+                self.r.conf_get("vg", verbose=False)
+                self.provision_dev()
+            except ValueError:
+                # keyword not supported (ex. bind mounts)
+                pass
+            except ex.OptNotFound:
+                pass
 
         self.get_mkfs_dev()
 
@@ -139,7 +146,7 @@ class Prov(provisioning.Prov):
             except ValueError:
                 # keyword not supported (ex. bind mounts)
                 return
-            except ex.RequiredOptNotFound:
+            except ex.OptNotFound:
                 pass
 
 

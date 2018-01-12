@@ -2305,6 +2305,7 @@ class KeywordDiskLvName(Keyword):
                   section="disk",
                   rtype="lv",
                   keyword="name",
+                  required=True,
                   order=10,
                   at=True,
                   text="The name of the logical volume.",
@@ -2979,7 +2980,7 @@ class KeywordFsVg(Keyword):
                   section="fs",
                   keyword="vg",
                   rtype=rcEnv.fs_non_pooling,
-                  required=True,
+                  required=False,
                   at=True,
                   text="The name of the disk group the filesystem device should be provisioned from.",
                   provisioning=True
