@@ -422,7 +422,7 @@ class OsvcThread(threading.Thread):
                 self.set_smon(svcname, "idle")
             data = Storage(SMON_DATA[svcname])
             data["placement"] = self.get_service_placement(svcname)
-            if datestr:
+            if datestr and isinstance(data.status_updated, datetime.datetime):
                 data.status_updated = data.status_updated.strftime(DATEFMT)
             return data
 
