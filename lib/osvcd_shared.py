@@ -335,7 +335,10 @@ class OsvcThread(threading.Thread):
         global SMON_DATA
         with SMON_DATA_LOCK:
             if svcname not in SMON_DATA:
-                SMON_DATA[svcname] = Storage({})
+                SMON_DATA[svcname] = Storage({
+                    "status": "idle",
+                    "status_updated": datetime.datetime.utcnow(),
+                })
             if status:
                 if status != SMON_DATA[svcname].status:
                     self.log.info(
