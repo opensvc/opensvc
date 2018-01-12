@@ -1440,6 +1440,7 @@ class Svc(Crypt, ExtConfig):
             "resources": {},
             "placement": self.placement,
             "topology": self.topology,
+            "provisioned": True,
         }
         if self.topology == "flex":
             data.update({
