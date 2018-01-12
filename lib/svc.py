@@ -4512,6 +4512,8 @@ class Svc(Crypt, ExtConfig):
         Add resources to the service configuration, and provision them if
         instructed to do so.
         """
+        from keywords import MissKeyNoDefault, KeyInvalidValue
+
         sections = {}
         rtypes = {}
         defaults = self.config.defaults()
@@ -4568,7 +4570,7 @@ class Svc(Crypt, ExtConfig):
             if is_resource:
                 try:
                     sections[section].update(self.kwdict.KEYS.update(section, data))
-                except (self.kwdict.MissKeyNoDefault, self.kwdict.KeyInvalidValue) as exc:
+                except (MissKeyNoDefault, KeyInvalidValue) as exc:
                     if not self.options.interactive:
                         raise ex.excError(str(exc))
                 rid.append(section)
