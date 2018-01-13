@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-01\-09
+.TH SVCMGR 1 2018\-01\-13
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -4963,7 +4963,7 @@ Display a specific service resource status, pointed by --rid
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
-.B --refresh
+.B -r, --refresh
 Drop status caches and re-evaluate before printing.
 .TP
 .B --rid=PARM_RID
@@ -5162,7 +5162,7 @@ Specify a data formatter. Possible values are json, csv or table.
 .B --hide-disabled
 Do not include the disabled resources. This option supersedes the :kw:`show_disabled` value in the service configuration.
 .TP
-.B --refresh
+.B -r, --refresh
 Drop status caches and re-evaluate before printing.
 .TP
 .B --show-disabled
@@ -5580,6 +5580,9 @@ Show this help message and exit.
 
 Pull a service configuration from the collector, overwritting the currently installed one.
 
+.TP
+.B --disable-rollback
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B --provision
 Provision the service resources after config file creation. Defaults to False.
@@ -6851,7 +6854,7 @@ Return the local service instance overall status code.
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
 .TP
-.B --refresh
+.B -r, --refresh
 Drop status caches and re-evaluate before printing.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
@@ -9524,6 +9527,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .B --config=PARM_CONFIG
 The configuration file to use as template when creating or installing a service
 .TP
+.B --disable-rollback
+If set, don't try to rollback resources activated before a start action interrupts on error.
+.TP
 .B -i, --interactive
 Prompt the user for a choice instead of using defaults, or failing if no default is defined.
 .TP
@@ -10507,6 +10513,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
 .B -i, --interactive
 Prompt the user for a choice instead of using defaults, or failing if no default is defined.

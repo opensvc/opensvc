@@ -226,7 +226,7 @@ OPT = Storage({
         help="Recover the stashed erroneous configuration file "
              "in a :cmd:`svcmgr edit config` command"),
     "refresh": Option(
-        "--refresh", default=False,
+        "-r", "--refresh", default=False,
         action="store_true", dest="refresh",
         help="Drop status caches and re-evaluate before printing."),
     "remove": Option(
