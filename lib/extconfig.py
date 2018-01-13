@@ -540,7 +540,9 @@ class ExtConfig(object):
             raise
             raise ex.excError("%s: reference evaluation failed: %s"
                               "" % (s, str(e)))
-        if hasattr(self, "ref_cache") and self.ref_cache is not None:
+        if hasattr(self, "ref_cache") and self.ref_cache is not None and \
+           val is not None:
+            # don't cache lazy reference miss-evaluations
             self.ref_cache[key] = val
         return val
 
