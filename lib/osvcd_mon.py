@@ -1764,7 +1764,10 @@ class Monitor(shared.OsvcThread, Crypt):
                                               svc.svcname, resource.rid, str(remote.state), 
                                               nodename)
                                 resource.write_is_provisioned_flag(remote.state, remote.mtime)
-                                shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"]["mtime"] = remote.mtime
+                                try:
+                                    shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"]["mtime"] = remote.mtime
+                                except KeyError:
+                                    continue
                                 changed = True
                     if changed:
                         svc.purge_status_data_dump()
