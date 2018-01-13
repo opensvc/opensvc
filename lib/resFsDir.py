@@ -3,7 +3,7 @@ import os
 import rcExceptions as ex
 import rcStatus
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_string
+from rcUtilities import is_string, lazy
 import pwd
 import grp
 import stat
@@ -29,7 +29,10 @@ class FsDir(Res.Resource):
         self.user = user
         self.group = group
         self.perm = perm
-        self.label = "dir " + path
+
+    @lazy
+    def label(self):
+        return "dir " + path
 
     def start(self):
         self.create()

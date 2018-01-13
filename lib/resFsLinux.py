@@ -7,7 +7,7 @@ from stat import ST_MODE, ST_INO, S_ISREG, S_ISBLK, S_ISDIR
 from rcGlobalEnv import rcEnv
 import rcMountsLinux as rcMounts
 import resFs as Res
-from rcUtilities import qcall, protected_mount, getmount, justcall
+from rcUtilities import qcall, protected_mount, getmount, justcall, lazy
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists, devs_to_disks, label_to_dev
 from rcLoopLinux import file_to_loop
 import rcExceptions as ex
@@ -20,11 +20,10 @@ class Mount(Res.Mount):
     def __init__(self, **kwargs):
         self.mounts = None
         Res.Mount.__init__(self, **kwargs)
+        self.loopdevice = None
+        self.dm_major = None
 
-        dev_realpath = os.path.realpath(self.device)
-        if self.device.startswith("/dev/disk/by-") or dev_realpath.startswith("/dev/rbd"):
-            self.device = dev_realpath
-
+    def set_fsck_h(self):
         # 0    - No errors
         # 1    - File system errors corrected
         # 32   - E2fsck canceled by user request
@@ -45,8 +44,20 @@ class Mount(Res.Mount):
                 'allowed_ret': [0, 1, 32, 33]
             },
         }
-        self.loopdevice = None
-        self.dm_major = None
+
+    @lazy
+    def device(self):
+        if self._device is not None:
+            device = self._device
+        else:
+            # lazy reference support
+            device = self.conf_get("dev")
+        if device is None:
+            return device
+        dev_realpath = os.path.realpath(device)
+        if device.startswith("/dev/disk/by-") or dev_realpath.startswith("/dev/rbd"):
+            device = dev_realpath
+        return device
 
     def umount_generic(self, mnt=None):
         if mnt is None:
@@ -103,6 +114,8 @@ class Mount(Res.Mount):
         return out.replace(" (deleted)", "").strip()
 
     def is_up(self):
+        if self.device is None:
+            return False
         self.mounts = rcMounts.Mounts()
         ret = self.mounts.has_mount(self.device, self.mount_point)
         if ret:

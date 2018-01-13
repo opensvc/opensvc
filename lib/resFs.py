@@ -25,16 +25,37 @@ class Mount(Res.Resource):
                               type="fs",
                               **kwargs)
         self.mount_point = mount_point
-        self.device = device
+        self._device = device
         self.fs_type = fs_type
         self.mount_options = mount_options
         self.snap_size = snap_size
-        self.label = device + '@' + mount_point
-        if self.fs_type != "none":
-            self.label = self.fs_type + " " + self.label
         self.fsck_h = {}
         self.testfile = os.path.join(mount_point, '.opensvc')
         self.netfs = ['nfs', 'nfs4', 'cifs', 'smbfs', '9pfs', 'gpfs', 'afs', 'ncpfs']
+
+    def set_fsck_h(self):
+        """
+        Placeholder
+        """
+        pass
+
+    @lazy
+    def device(self):
+        if self._device is not None:
+            return self._device
+        # lazy ref support, like {<rid>.exposed_devs[<n>]}
+        return self.conf_get("dev")
+
+    @lazy
+    def label(self):
+        if self.device is None:
+            label = self.svc._get(self.rid+".dev", evaluate=False)
+        else:
+            label = self.device
+        label += "@" + self.mount_point
+        if self.fs_type != "none":
+            label = self.fs_type + " " + label
+        return label
 
     def _info(self):
         data = [
@@ -74,6 +95,7 @@ class Mount(Res.Resource):
         if self.fs_type in ("", "none") or os.path.isdir(self.device):
             # bind mounts are in this case
             return
+        self.set_fsck_h()
         if self.fs_type not in self.fsck_h:
             self.log.debug("no fsck method for %s"%self.fs_type)
             return

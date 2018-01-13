@@ -32,6 +32,8 @@ class Mount(Res.Mount):
                            mount_options=mount_options,
                            snap_size=snap_size,
                            **kwargs)
+
+    def set_fsck_h(self):
         self.fsck_h = {
             'ufs': {
                 'bin': 'fsck',

@@ -44,6 +44,8 @@ class Mount(Res.Mount):
     def __init__(self, **kwargs):
         self.Mounts = None
         Res.Mount.__init__(self, **kwargs)
+
+    def set_fsck_h(self):
         self.fsck_h = {
             'ufs': {
                 'bin': 'fsck',

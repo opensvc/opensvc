@@ -1,5 +1,5 @@
 import provisioning
-from rcUtilities import justcall, which, protected_dir
+from rcUtilities import justcall, which, protected_dir, unset_lazy
 from rcGlobalEnv import rcEnv
 import os
 import rcExceptions as ex
@@ -43,9 +43,11 @@ class Prov(provisioning.Prov):
         if "bind" in self.r.mount_options:
             return True
         try:
-            self.dev = self.r.svc.conf_get(self.r.rid, "dev")
-            self.mnt = self.r.svc.conf_get(self.r.rid, "mnt")
+            self.dev = self.r.conf_get("dev")
+            self.mnt = self.r.conf_get("mnt")
         except ex.OptNotFound:
+            return
+        if self.dev is None:
             return
         if not os.path.exists(self.mnt):
             return False
@@ -77,9 +79,11 @@ class Prov(provisioning.Prov):
         if self.r.fs_type in self.r.netfs:
             return
 
-        self.dev = self.r.svc.conf_get(self.r.rid, "dev")
-        self.mnt = self.r.svc.conf_get(self.r.rid, "mnt")
+        self.dev = self.r.conf_get("dev")
+        self.mnt = self.r.conf_get("mnt")
 
+        if self.dev is None:
+            raise ex.excError("device not found. parent resource is down ?")
         if not os.path.exists(self.mnt):
             os.makedirs(self.mnt)
             self.r.log.info("%s mount point created"%self.mnt)
@@ -119,6 +123,8 @@ class Prov(provisioning.Prov):
             raise ex.excError("no mkfs method implemented")
 
     def provisioner(self):
+        unset_lazy(self.r, "device")
+        unset_lazy(self.r, "label")
         if "bind" in self.r.mount_options:
             return
         self.provisioner_fs()
