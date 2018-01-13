@@ -1002,7 +1002,8 @@ class Resource(object):
         return getattr(mod, "Prov")(self)
 
     def provision(self):
-        if self.shared and not self.svc.options.disable_rollback:
+        if self.shared and not self.svc.options.disable_rollback and \
+           os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
             self.log.info("skip shared resource provisioning: not leader")
             self.write_is_provisioned_flag(True, mtime=1)
             return
