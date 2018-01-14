@@ -843,11 +843,13 @@ ACTIONS = {
             "options": ACTION_OPTS + [
                 OPT.eval,
                 OPT.param,
+                OPT.kw,
             ],
         },
         "unset": {
             "msg": "Unset a node configuration keyword.",
             "options": ACTION_OPTS + [
+                OPT.kw,
                 OPT.param,
             ],
         },

@@ -23,10 +23,22 @@ class ExtConfig(object):
         Verifies the --param and --value are set, and finally call the _unset
         internal method.
         """
-        if self.options.param is None:
-            print("no parameter. set --param", file=sys.stderr)
+        if self.options.kw:
+            kw = self.options.kw
+        elif self.options.param:
+            kw = [self.options.param]
+        else:
+            kw = None
+        if kw is None:
+            print("no keyword specified. set --kw <keyword>", file=sys.stderr)
             return 1
-        elements = self.options.param.split('.')
+        ret = 0
+        for _kw in kw:
+            ret += self.unset_one(_kw)
+        return ret
+
+    def unset_one(self, kw):
+        elements = kw.split('.')
         if self.has_default_section and len(elements) == 1:
             elements.insert(0, "DEFAULT")
         elif len(elements) != 2:
@@ -96,13 +108,19 @@ class ExtConfig(object):
     def get(self):
         """
         The 'get' action entrypoint.
-        Verifies the --param is set, set DEFAULT as section if no section was
+        Verifies the --param or --kw is set, set DEFAULT as section if no section was
         specified, and finally print,
         * the raw value if --eval is not set
         * the dereferenced and evaluated value if --eval is set
         """
+        if self.options.kw and len(self.options.kw) == 1:
+            kw = self.options.kw[0]
+        elif self.options.param:
+            kw = self.options.param
+        else:
+            kw = None
         try:
-            print(self._get(self.options.param, self.options.eval))
+            print(self._get(kw, self.options.eval))
         except ex.OptNotFound as exc:
             print(exc.default)
         except ex.RequiredOptNotFound as exc:

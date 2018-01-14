@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2018\-01\-13
+.TH NODEMGR 1 2018\-01\-14
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -1634,6 +1634,33 @@ An expression like '[<section>.]<keyword>' where
   * a resource id
   * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
 .TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
+.TP
 .B --color=COLOR
 Colorize output. Possible values are:
 
@@ -1812,6 +1839,33 @@ An expression like '[<section>.]<keyword>' where
 
   * a resource id
   * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
+.TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:

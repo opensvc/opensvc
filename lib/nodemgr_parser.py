@@ -488,6 +488,7 @@ ACTIONS = {
             "options": [
                 OPT.eval,
                 OPT.param,
+                OPT.kw,
             ],
         },
         "set": {
@@ -505,6 +506,7 @@ ACTIONS = {
             "msg": "Unset a node configuration parameter.",
             "options": [
                 OPT.param,
+                OPT.kw,
             ],
         },
         "validate_config": {

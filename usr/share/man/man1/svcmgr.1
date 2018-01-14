@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-01\-13
+.TH SVCMGR 1 2018\-01\-14
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -9905,6 +9905,33 @@ An expression like '[<section>.]<keyword>' where
   * a resource id
   * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
 .TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -10379,6 +10406,33 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
 .TP
 .B --param=PARAM
 An expression like '[<section>.]<keyword>' where
