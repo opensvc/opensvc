@@ -226,6 +226,8 @@ class Docker(resContainer.Container):
         if action == 'start':
             unset_lazy(self, "container_id")
             self.svc.dockerlib.get_running_instance_ids(refresh=True)
+        elif action in ("stop", "kill"):
+            self.svc.dockerlib.docker_stop()
 
     def service_stop(self):
         if not self.svc.dockerlib.docker_daemon_private and self.swarm_node_role() == "worker":
@@ -389,14 +391,6 @@ class Docker(resContainer.Container):
     @lazy
     def ready_nodes(self):
         return [node["ID"] for node in self.svc.dockerlib.node_ls_data() if node["Status"]["State"] == "ready"]
-
-    def post_action(self, action):
-        """
-        Executed after executing <action> on the resourceset
-        """
-        if action not in ("stop", "unprovision", "shutdown", "rollback"):
-            return
-        self.svc.dockerlib.docker_stop()
 
     def service_running_instances(self, refresh=False):
         if refresh:
