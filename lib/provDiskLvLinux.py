@@ -35,7 +35,10 @@ class Prov(provisioning.Prov):
             raise ex.excError
 
         if dev.startswith("LABEL=") or dev.startswith("UUID="):
-            _dev = label_to_dev(dev, tree=self.r.svc.node.devtree)
+            try:
+                _dev = label_to_dev(dev, tree=self.r.svc.node.devtree)
+            except ex.excError as exc:
+                _dev = None
             if _dev is None:
                 self.r.log.info("unable to find device identified by %s", dev)
                 return

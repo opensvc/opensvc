@@ -65,8 +65,11 @@ class Btrfs(object):
         if hasattr(self, "dev"):
             return
         if self.node is None:
-            self.dev = label_to_dev("LABEL="+self.label,
-                                    tree=self.resource.svc.node.devtree)
+            try:
+                self.dev = label_to_dev("LABEL="+self.label,
+                                        tree=self.resource.svc.node.devtree)
+            except ex.excError as exc:
+                self.dev = None
         else:
             return
         if self.dev is None:

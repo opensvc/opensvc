@@ -4,6 +4,7 @@ import os
 import time
 import rcExceptions as ex
 from rcUtilities import which, justcall, lazy, unset_lazy
+from rcBtrfs import Btrfs
 
 class Prov(provFs.Prov):
     info = ['btrfs', 'device', 'ready']
@@ -19,6 +20,20 @@ class Prov(provFs.Prov):
     @lazy
     def label(self):
         return self.r.svc.svcname + '.' + self.r.rid.replace("#", ".")
+
+    def is_provisioned(self):
+        ret = provFs.Prov.is_provisioned(self)
+        if not ret:
+            return ret
+        if self.subvol is None:
+            return ret
+        mnt = tempfile.mkdtemp()
+        self.mount(mnt)
+        try:
+            btrfs = Btrfs(path=mnt)
+            return btrfs.has_subvol()
+        finally:
+            self.cleanup(mnt)
 
     def current_label(self, mnt):
         cmd = ["btrfs", "filesystem", "label", mnt]
@@ -68,7 +83,12 @@ class Prov(provFs.Prov):
         raise ex.excError("timeout waiting for label to become usable")
 
     def mount(self, mnt):
-        cmd = ["mount", "-t", "btrfs", "-o", "subvolid=0", self.r.device, mnt]
+        self.r.set_loopdevice()
+        if self.r.loopdevice is None:
+            device = self.r.device
+        else:
+            device = self.r.loopdevice
+        cmd = ["mount", "-t", "btrfs", "-o", "subvolid=0", device, mnt]
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -77,12 +97,11 @@ class Prov(provFs.Prov):
         if self.subvol is None:
             return
         mnt = tempfile.mkdtemp()
-
         self.mount(mnt)
         try:
             self.write_label(mnt)
             self._create_subvol(mnt)
-            self.r.log.info("provisioned")
+            self.r.log.info("subvolume %s provisioned" % self.subvol)
             self.r.start()
         finally:
             self.cleanup(mnt)

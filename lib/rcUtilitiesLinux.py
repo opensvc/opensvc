@@ -144,6 +144,8 @@ def label_to_dev(label, tree=None):
             label_to_dev_cache[label] = devp
             return devp
 
+    raise ex.excError("multiple devs match the label: %s" % ", ".join(devps))
+
 def major(driver):
     path = os.path.join(os.path.sep, 'proc', 'devices')
     try:
