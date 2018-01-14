@@ -9,7 +9,7 @@ import rcMountsLinux as rcMounts
 import resFs as Res
 from rcUtilities import qcall, protected_mount, getmount, justcall, lazy
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists, devs_to_disks, label_to_dev
-from rcLoopLinux import file_to_loop
+from rcLoopLinux import file_to_loop, loop_to_file
 import rcExceptions as ex
 from rcZfs import zfs_getprop, zfs_setprop
 
@@ -106,13 +106,6 @@ class Mount(Res.Mount):
 
         return ret
 
-    def loop_dev_to_file(self, dev):
-        cmd = [rcEnv.syspaths.losetup, dev, "-O", "BACK-FILE", "-n"]
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            return
-        return out.replace(" (deleted)", "").strip()
-
     def is_up(self):
         if self.device is None:
             return False
@@ -135,7 +128,7 @@ class Mount(Res.Mount):
 
         # might be a loop device seen in mounts as its backing file
         if self.device.startswith("/dev/loop"):
-            backfile = self.loop_dev_to_file(self.device)
+            backfile = loop_to_file(self.device)
             if backfile and self.mounts.has_mount(backfile, os.path.realpath(self.mount_point)):
                 return True
 
@@ -148,7 +141,7 @@ class Mount(Res.Mount):
             if ret:
                 return True
             if dev.startswith("/dev/loop"):
-                backfile = self.loop_dev_to_file(dev)
+                backfile = loop_to_file(dev)
                 if backfile and self.mounts.has_mount(backfile, os.path.realpath(self.mount_point)):
                     return True
 
