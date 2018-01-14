@@ -74,6 +74,14 @@ class Prov(provisioning.Prov):
                     self.mkfs_dev = devs[0]
                 else:
                     raise ex.excError("unable to find a device associated to %s" % self.mkfs_dev)
+        elif rcEnv.sysname == 'Linux':
+            if os.path.isfile(self.mkfs_dev):
+                from rcLoopLinux import file_to_loop
+                devs = file_to_loop(self.mkfs_dev)
+                if len(devs) == 1:
+                    self.mkfs_dev = devs[0]
+                else:
+                    raise ex.excError("unable to find a device associated to %s" % self.mkfs_dev)
 
     def provisioner_fs(self):
         if self.r.fs_type in self.r.netfs:
