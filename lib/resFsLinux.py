@@ -201,7 +201,11 @@ class Mount(Res.Mount):
 
     def realdev(self):
         if self.device.startswith("LABEL=") or self.device.startswith("UUID="):
-            _dev = label_to_dev(self.device, self.svc.node.devtree)
+            try:
+                _dev = label_to_dev(self.device, self.svc.node.devtree)
+            except ex.excError as exc:
+                self.status_log(str(exc))
+                _dev = None
             if _dev:
                 return _dev
             return self.device
@@ -256,7 +260,7 @@ class Mount(Res.Mount):
                 try:
                     statinfo = os.stat(dev)
                 except:
-                    self.log.warning("can not stat %s", dev)
+                    self.log.debug("can not stat %s", dev)
                     continue
                 minor = os.minor(statinfo.st_rdev)
                 devname = 'dm-%i'%minor
@@ -358,27 +362,31 @@ class Mount(Res.Mount):
             return False
         return True
 
+    def set_loopdevice(self):
+        # loopback mount
+        # if the file has already been binded to a loop re-use
+        # the loopdev to avoid allocating another one
+        if not os.path.exists(self.device):
+            return
+        if not os.path.isfile(self.device):
+            return
+        try:
+            devs = file_to_loop(self.device)
+            if len(devs) > 0:
+                self.loopdevice = devs[0]
+                mntopt_l = self.mount_options.split(',')
+                if "loop" in mntopt_l:
+                    mntopt_l.remove("loop")
+                    self.mount_options = ','.join(mntopt_l)
+        except Exception as exc:
+            raise ex.excError(str(exc))
+
     def start(self):
         if self.mounts is None:
             self.mounts = rcMounts.Mounts()
         Res.Mount.start(self)
 
-        # loopback mount
-        # if the file has already been binded to a loop re-use
-        # the loopdev to avoid allocating another one
-        if os.path.exists(self.device):
-            try:
-                mode = os.stat(self.device)[ST_MODE]
-                if S_ISREG(mode):
-                    devs = file_to_loop(self.device)
-                    if len(devs) > 0:
-                        self.loopdevice = devs[0]
-                        mntopt_l = self.mount_options.split(',')
-                        if "loop" in mntopt_l:
-                            mntopt_l.remove("loop")
-                            self.mount_options = ','.join(mntopt_l)
-            except Exception as exc:
-                raise ex.excError(str(exc))
+        self.set_loopdevice()
 
         if self.fs_type == "zfs":
             self._check_zfs_canmount()
