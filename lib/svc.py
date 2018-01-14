@@ -478,7 +478,6 @@ class Svc(Crypt, ExtConfig):
         self.stonith = False
         self.parents = []
         self.children = []
-        self.enslave_children = False
         self.show_disabled = False
         self.svc_env = rcEnv.node_env
         self.nodes = set([rcEnv.nodename])
@@ -626,6 +625,13 @@ class Svc(Crypt, ExtConfig):
             return True
         except ex.excError:
             return True
+
+    @lazy
+    def enslave_children(self):
+        try:
+            return self.conf_get("DEFAULT", "enslave_children")
+        except ex.OptNotFound as exc:
+            return exc.default
 
     @lazy
     def hard_affinity(self):

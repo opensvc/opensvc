@@ -2054,11 +2054,6 @@ def build(name, minimal=False, svcconf=None, node=None):
         svc.children = exc.default
 
     try:
-        svc.enslave_children = svc.conf_get('DEFAULT', "enslave_children")
-    except ex.OptNotFound as exc:
-        svc.enslave_children = exc.default
-
-    try:
         svc.placement = svc.conf_get('DEFAULT', "placement")
     except ex.OptNotFound as exc:
         svc.placement = exc.default
