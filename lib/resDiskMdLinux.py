@@ -76,12 +76,12 @@ class Disk(resDisk.Disk):
         devs = self.sub_devs()
         disk_ids = set()
         for dev in devs:
-            treedev = self.svc.node.get_dev_by_devpath(dev)
+            treedev = self.svc.node.devtree.get_dev_by_devpath(dev)
             if not treedev:
                 continue
             disk_ids.add(treedev.alias)
         with open(self.md_config_file_name(), "w") as ofile:
-             json.dump(disk_ids, ofile)
+             json.dump(list(disk_ids), ofile)
 
     def postsync(self):
         pass
