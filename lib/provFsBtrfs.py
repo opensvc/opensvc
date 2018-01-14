@@ -3,7 +3,7 @@ import tempfile
 import os
 import time
 import rcExceptions as ex
-from rcUtilities import which, justcall, lazy
+from rcUtilities import which, justcall, lazy, unset_lazy
 
 class Prov(provFs.Prov):
     info = ['btrfs', 'device', 'ready']
@@ -50,7 +50,7 @@ class Prov(provFs.Prov):
             raw_label = self.raw_label
         self.r.svc.config.set(self.r.rid, "dev", "LABEL="+raw_label)
         self.r.svc.write_config()
-        self.r.device = "LABEL="+label
+        unset_lazy(self.r, "device")
         self.wait_label(label)
 
     def wait_label(self, label):
@@ -97,7 +97,6 @@ class Prov(provFs.Prov):
             raise ex.excError
 
     def provisioner(self):
-        self.r.device = self.r.svc.conf_get(self.r.rid, "dev")
         if self.r.device.startswith("LABEL=") or self.r.device.startswith("UUID="):
             self.r.log.info("skip formatting because dev is specified by LABEL or UUID")
         else:
