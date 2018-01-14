@@ -36,7 +36,8 @@ class Monitor(shared.OsvcThread, Crypt):
     """
     The monitoring thread collecting local service states and taking decisions.
     """
-    monitor_period = 5
+    monitor_period = 1
+    max_shortloops = 5
     default_stdby_nb_restart = 2
 
     def __init__(self):
@@ -50,6 +51,7 @@ class Monitor(shared.OsvcThread, Crypt):
         self.log.info("monitor started")
         self.startup = datetime.datetime.utcnow()
         self.rejoin_grace_period_expired = False
+        self.shortloops = 0
 
         try:
             while True:
@@ -62,8 +64,13 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.exception(exc)
 
     def do(self):
+        terminated = self.janitor_procs()
+        if terminated == 0 and self.shortloops < self.max_shortloops:
+            self.shortloops += 1
+            with shared.MON_TICKER:
+                shared.MON_TICKER.wait(self.monitor_period)
+        self.shortloops = 0
         self.janitor_threads()
-        self.janitor_procs()
         self.reload_config()
         self.merge_frozen()
         self.last_run = time.time()
@@ -900,7 +907,7 @@ class Monitor(shared.OsvcThread, Crypt):
         for nodename, instance in self.get_service_instances(svcname).items():
             if instance["avail"] == "up":
                 nodenames.append(nodename)
-            elif instance["monitor"]["status"] in ("restarting", "starting", "wait children", "ready"):
+            elif instance["monitor"]["status"] in ("restarting", "starting", "wait children", "provisioning"):
                 nodenames.append(nodename)
         return nodenames
 
