@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2018\-01\-14
+.TH NODEMGR 1 2018\-01\-15
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -2162,441 +2162,6 @@ Show this help message and exit
 \fRPUSH DATA TO THE COLLECTOR\fP
 
 .RE
-\fBnodemgr Pushbrocade\fP
-.RS
-
-Push Brocade switch configuration to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pushcentera\fP
-.RS
-
-Push EMC Centera configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pushdcs\fP
-.RS
-
-Push Datacore configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pusheva\fP
-.RS
-
-Push HP EVA configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pushfreenas\fP
-.RS
-
-Push FreeNAS configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pushgcedisks\fP
-.RS
-
-Push Google Compute Engine disks configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pushhds\fP
-.RS
-
-Push HDS configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pushhp3par\fP
-.RS
-
-Push HP 3par configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pushibmds\fP
-.RS
-
-Push IBM DS configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pushibmsvc\fP
-.RS
-
-Push IBM SVC configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pushnecism\fP
-.RS
-
-Push NEC ISM configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pushnetapp\fP
-.RS
-
-Push Netapp configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pushnsr\fP
-.RS
-
-Push EMC Networker index to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pushvioserver\fP
-.RS
-
-Push IBM VIO server configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr Pushxtremio\fP
-.RS
-
-Push XtremIO configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
 \fBnodemgr checks\fP
 .RS
 
@@ -2652,6 +2217,93 @@ Specify a data formatter. Possible values are json, csv or table.
 Show this help message and exit
 
 .RE
+\fBnodemgr pushbrocade\fP
+.RS
+
+Push Brocade switch configuration to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pushcentera\fP
+.RS
+
+Push EMC Centera configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pushdcs\fP
+.RS
+
+Push Datacore configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
 \fBnodemgr pushdisks\fP
 .RS
 
@@ -2682,6 +2334,296 @@ Show this help message and exit
 .RS
 
 Push EMC CX/VNX configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pusheva\fP
+.RS
+
+Push HP EVA configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pushfreenas\fP
+.RS
+
+Push FreeNAS configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pushgcedisks\fP
+.RS
+
+Push Google Compute Engine disks configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pushhds\fP
+.RS
+
+Push HDS configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pushhp3par\fP
+.RS
+
+Push HP 3par configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pushibmds\fP
+.RS
+
+Push IBM DS configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pushibmsvc\fP
+.RS
+
+Push IBM SVC configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pushnecism\fP
+.RS
+
+Push NEC ISM configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pushnetapp\fP
+.RS
+
+Push Netapp configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pushnsr\fP
+.RS
+
+Push EMC Networker index to the collector.
 
 .TP
 .B --cron
@@ -2808,6 +2750,64 @@ An object to limit a push* action to. Multiple --object <object id> parameters c
 .TP
 .B --symcli-db-file=SYMCLI_DB_FILE
 Use symcli offline mode with the specified file. The aclx files are expected to be found in the same directory and named either <symid>.aclx or <same_prefix_as_bin_file>.aclx.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pushvioserver\fP
+.RS
+
+Push IBM VIO server configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr pushxtremio\fP
+.RS
+
+Push XtremIO configurations to the collector.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --object=OBJECTS
+An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
