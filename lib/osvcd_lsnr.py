@@ -280,6 +280,21 @@ class Listener(shared.OsvcThread, Crypt):
         shared.wake_monitor()
         return {"status": 0}
 
+    def get_service_slaves(self, svcname):
+        slaves = set()
+        for nodename in shared.CLUSTER_DATA:
+            try:
+                data = shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]
+            except KeyError:
+                continue
+            if not data.get("enslave_children"):
+                continue
+            _slaves = set(data.get("children")) - slaves
+            slaves |= _slaves
+            for slave in _slaves:
+                slaves |= self.get_service_slaves(slave)
+        return slaves
+
     def action_set_service_monitor(self, nodename, **kwargs):
         svcname = kwargs.get("svcname")
         if svcname is None:
@@ -289,12 +304,14 @@ class Listener(shared.OsvcThread, Crypt):
         global_expect = kwargs.get("global_expect")
         reset_retries = kwargs.get("reset_retries", False)
         stonith = kwargs.get("stonith")
-        self.set_smon(
-            svcname, status=status,
-            local_expect=local_expect, global_expect=global_expect,
-            reset_retries=reset_retries,
-            stonith=stonith,
-        )
+        svcnames = set([svcname]) | self.get_service_slaves(svcname)
+        for svcname in svcnames:
+            self.set_smon(
+                svcname, status=status,
+                local_expect=local_expect, global_expect=global_expect,
+                reset_retries=reset_retries,
+                stonith=stonith,
+            )
         shared.wake_monitor()
         return {"status": 0}
 

@@ -2492,9 +2492,6 @@ class Svc(Crypt, ExtConfig):
             return
         if self.command_is_scoped():
             return
-        if action in ("start", "stop") and self.enslave_children and len(self.children) > 0:
-            for svcname in self.children:
-                self.daemon_mon_action(action, svcname=svcname)
         self.daemon_mon_action(action, wait=wait, timeout=timeout)
         raise ex.excAbortAction()
 

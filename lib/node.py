@@ -3041,8 +3041,11 @@ class Node(Crypt, ExtConfig):
                 line.append(colorize(nodename, color.BOLD))
             out.append(line)
 
-        def load_svc(svcname, data):
+        def load_svc(svcname, prefix=""):
             if svcname not in services:
+                return
+            data = services[svcname]
+            if svcname in slave_parents and prefix == "":
                 return
             try:
                 topology = services[svcname].topology
@@ -3062,45 +3065,45 @@ class Node(Crypt, ExtConfig):
             if data["placement"] == "non-optimal":
                 status += colorize("^", color.RED)
             line = [
-                " "+colorize(svcname, color.BOLD),
+                " "+colorize(prefix+svcname, color.BOLD),
                 status,
                 topology,
                 "|",
             ]
             for nodename in nodenames:
-                if nodename in services[svcname]["nodes"]:
+                if nodename in data["nodes"]:
                     val = []
                     # frozen unicon
-                    if services[svcname]["nodes"][nodename]["frozen"]:
+                    if data["nodes"][nodename]["frozen"]:
                         frozen_icon = colorize(unicons["frozen"], color.BLUE)
                     else:
                         frozen_icon = ""
                     # avail status unicon
-                    avail = services[svcname]["nodes"][nodename]["avail"]
+                    avail = data["nodes"][nodename]["avail"]
                     if avail == "unknown":
                         avail_icon = colorize("?", color.RED)
                     else:
                         avail_icon = colorize_status(avail, lpad=0).replace(avail, unicons[avail])
                     # overall status unicon
-                    overall = services[svcname]["nodes"][nodename]["overall"]
+                    overall = data["nodes"][nodename]["overall"]
                     if overall == "warn":
                         overall_icon = colorize_status(overall, lpad=0).replace(overall, unicons[overall])
                     else:
                         overall_icon = ""
                     # mon status
-                    smon = services[svcname]["nodes"][nodename]["mon"]
+                    smon = data["nodes"][nodename]["mon"]
                     if smon == "idle":
                         # don't display 'idle', as its to normal status and thus repeated as nauseam
                         smon = ""
                     else:
                         smon = " " + smon
                     # leader
-                    if services[svcname]["nodes"][nodename]["placement"] == "leader":
+                    if data["nodes"][nodename]["placement"] == "leader":
                         leader = colorize("^", color.LIGHTBLUE)
                     else:
                         leader = ""
                     # provisioned
-                    if services[svcname]["nodes"][nodename]["provisioned"] is False:
+                    if data["nodes"][nodename]["provisioned"] is False:
                         provisioned = colorize("P", color.RED)
                     else:
                         provisioned = ""
@@ -3117,6 +3120,10 @@ class Node(Crypt, ExtConfig):
                 else:
                     line.append(colorize("?", color.RED))
             out.append(line)
+            if not data["enslave_children"]:
+                return
+            for child in data["children"]:
+                load_svc(child, prefix=prefix+" ")
 
         def load_hb(key, _data):
             if _data["state"] == "running":
@@ -3269,13 +3276,11 @@ class Node(Crypt, ExtConfig):
             out.append(line)
 
         # init the services hash
+        slave_parents = {}
         for node in nodenames:
             if node not in data["monitor"]["nodes"]:
                 continue
             for svcname, _data in data["monitor"]["nodes"][node]["services"]["status"].items():
-                #if svcname not in data["monitor"]["nodes"][rcEnv.nodename]["services"]["status"]:
-                #    # no local instance
-                #    continue
                 if svcnames and svcname not in svcnames:
                     continue
                 if svcname not in services:
@@ -3285,6 +3290,14 @@ class Node(Crypt, ExtConfig):
                         "overall": "",
                         "nodes": {}
                     })
+                enslave_children = _data.get("enslave_children")
+                children = _data.get("children", [])
+                if enslave_children:
+                    for child in children:
+                        if child not in slave_parents:
+                            slave_parents[child] = set([svcname])
+                        else:
+                            slave_parents[child] |= set([svcname])
                 services[svcname].nodes[node] = {
                     "avail": _data.get("avail", "undef"),
                     "overall": _data.get("overall", "undef"),
@@ -3293,6 +3306,8 @@ class Node(Crypt, ExtConfig):
                     "placement": _data["monitor"].get("placement", ""),
                     "provisioned": _data.get("provisioned"),
                 }
+                services[svcname].children = children
+                services[svcname].enslave_children = enslave_children
         for svcname, _data in data["monitor"]["services"].items():
             if svcnames and svcname not in svcnames:
                 continue
@@ -3317,7 +3332,7 @@ class Node(Crypt, ExtConfig):
         out.append([])
         load_header("Services")
         for svcname in sorted(list(services.keys())):
-            load_svc(svcname, services[svcname])
+            load_svc(svcname)
 
         # print tabulated lists
         print(preamble)
