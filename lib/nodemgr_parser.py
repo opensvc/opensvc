@@ -613,91 +613,91 @@ ACTIONS = {
                 OPT.opt_object,
             ],
          },
-        "Pushcentera": {
+        "pushcentera": {
             "msg": "Push EMC Centera configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        "Pushnetapp": {
+        "pushnetapp": {
             "msg": "Push Netapp configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        "Pusheva": {
+        "pusheva": {
             "msg": "Push HP EVA configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        "Pushnecism": {
+        "pushnecism": {
             "msg": "Push NEC ISM configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        "Pushhds": {
+        "pushhds": {
             "msg": "Push HDS configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        "Pushdcs": {
+        "pushdcs": {
             "msg": "Push Datacore configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        "Pushfreenas": {
+        "pushfreenas": {
             "msg": "Push FreeNAS configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        "Pushxtremio": {
+        "pushxtremio": {
             "msg": "Push XtremIO configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        "Pushibmsvc": {
+        "pushibmsvc": {
             "msg": "Push IBM SVC configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        "Pushhp3par": {
+        "pushhp3par": {
             "msg": "Push HP 3par configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        "Pushibmds": {
+        "pushibmds": {
             "msg": "Push IBM DS configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        "Pushvioserver": {
+        "pushvioserver": {
             "msg": "Push IBM VIO server configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        "Pushgcedisks": {
+        "pushgcedisks": {
             "msg": "Push Google Compute Engine disks configurations to the "
                    "collector.",
             "options": [
@@ -705,14 +705,14 @@ ACTIONS = {
                 OPT.opt_object,
             ],
          },
-        "Pushbrocade": {
+        "pushbrocade": {
             "msg": "Push Brocade switch configuration to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
          },
-        "Pushnsr": {
+        "pushnsr": {
             "msg": "Push EMC Networker index to the collector.",
             "options": [
                 OPT.cron,
