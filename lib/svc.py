@@ -1072,7 +1072,7 @@ class Svc(Crypt, ExtConfig):
             if len(avails & set(["warn"])) > 0:
                 raise ex.excError("the service has instances in 'warn' avail "
                                   "status. the daemons won't honor this request,"
-                                  " so don't submit it." % avail)
+                                  " so don't submit it.")
 
     def started_on(self):
         nodenames = []
