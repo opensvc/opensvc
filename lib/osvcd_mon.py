@@ -1689,8 +1689,8 @@ class Monitor(shared.OsvcThread, Crypt):
                        global_expect not in ("frozen", "thawed", "aborted", "deleted"):
                         continue
                     if global_expect == current_global_expect:
-                        self.log.info("node %s wants service %s %s, already targeting that",
-                                      nodename, svcname, global_expect)
+                        self.log.debug("node %s wants service %s %s, already targeting that",
+                                       nodename, svcname, global_expect)
                         continue
                     if self.accept_g_expect(svcname, instance, global_expect):
                         self.log.info("node %s wants service %s %s", nodename, svcname, global_expect)
