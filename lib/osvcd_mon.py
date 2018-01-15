@@ -648,11 +648,20 @@ class Monitor(shared.OsvcThread, Crypt):
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
         up_nodes = self.up_service_instances(svc.svcname)
         n_up = len(up_nodes)
+        n_missing = svc.flex_min_nodes - n_up
+
         if smon.status in ("ready", "wait parents"):
             if (n_up - 1) >= svc.flex_min_nodes:
                 self.log.info("flex service %s instance count reached "
                               "required minimum while we were ready",
                               svc.svcname)
+                self.set_smon(svc.svcname, "idle")
+                return
+            better_peers = self.better_peers_ready(svc);
+            if len(better_peers) >= n_missing:
+                self.log.info("abort 'ready' because nodes %s have a better "
+                              "placement score for service %s and are also "
+                              "ready", ','.join(better_peers), svc.svcname)
                 self.set_smon(svc.svcname, "idle")
                 return
         if smon.status == "wait parents":
@@ -922,6 +931,17 @@ class Monitor(shared.OsvcThread, Crypt):
             if instance["monitor"]["status"].endswith("ing"):
                 return nodename
 
+    def better_peers_ready(self, svc):
+        ranks = self.placement_ranks(svc, candidates=svc.peers)
+        peers = []
+        for nodename in ranks:
+            if nodename == rcEnv.nodename:
+                return peers
+            instance = self.get_service_instance(svc.svcname, nodename)
+            if instance["monitor"].get("status") == "ready":
+                peers.append(nodename)
+        return peers
+
     def better_peer_ready(self, svc, candidates):
         """
         Return the nodename of the first peer with the service in ready state, or
@@ -932,7 +952,7 @@ class Monitor(shared.OsvcThread, Crypt):
         for nodename, instance in self.get_service_instances(svc.svcname).items():
             if nodename == rcEnv.nodename:
                 continue
-            if instance["monitor"]["status"] == "ready":
+            if instance["monitor"].get("status") == "ready":
                 return nodename
 
     #########################################################################
