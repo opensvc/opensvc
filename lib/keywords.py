@@ -351,6 +351,8 @@ class Section(object):
             fpath = os.path.join(dpath, self.top.template_prefix+section+".rst")
         s = section + "\n"
         s += "*" * len(section) + "\n\n"
+        if self.top.template_prefix != "template.node." and len(section.split('.')) > 1:
+            s += ".. include:: template.service." + section + ".example\n\n"
         for keyword in sorted(self.getkeys(rtype)):
             s += keyword.template(fmt="rst", section=section)
         for keyword in sorted(self.getprovkeys(rtype)):
