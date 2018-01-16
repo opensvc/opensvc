@@ -132,10 +132,11 @@ class OptParser(object):
         else:
             desc = "  " + fancya
         desc += '\n\n'
-        wrapper = textwrap.TextWrapper(subsequent_indent=self.subsequent_indent,
-                                       width=self.width)
-        text = self.subsequent_indent + self.actions[section][action]["msg"]
-        desc += wrapper.fill(text)
+        wrapper = textwrap.TextWrapper(width=self.width-self.indent, replace_whitespace=False)
+        text = self.actions[section][action]["msg"]
+        for line in wrapper.wrap(text):
+            for _line in line.splitlines():
+                desc += self.subsequent_indent+_line.replace("``", "`")+"\n"
         desc += '\n'
 
         if options:

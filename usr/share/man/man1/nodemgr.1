@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2018\-01\-15
+.TH NODEMGR 1 2018\-01\-16
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -15,6 +15,7 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
 .RS
 
 Acknowledge an action error on the node. An acknowlegment can be completed by --author (defaults to root@nodename) and --comment
+
 
 .TP
 .B --author=AUTHOR
@@ -45,6 +46,7 @@ Show this help message and exit
 
 Display the node alerts.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -67,6 +69,7 @@ Show this help message and exit
 .RS
 
 Display the asset information known to the collector.
+
 
 .TP
 .B --color=COLOR
@@ -91,6 +94,7 @@ Show this help message and exit
 
 Display the node checks.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -113,6 +117,7 @@ Show this help message and exit
 .RS
 
 Open a Command Line Interface to the collector rest API. The CLI offers autocompletion of paths and arguments, piping JSON data from files. If executed as root and with no :opt:`--user`, the collector is logged in with the node credentials.
+
 
 .TP
 .B --user=USER
@@ -158,6 +163,7 @@ Show this help message and exit
 
 Create a new tag with name specified by :opt:`--tag`.
 
+
 .TP
 .B --tag=TAG
 The tag name, as shown by :cmd:`nodemgr collector list tags`.
@@ -184,6 +190,7 @@ Show this help message and exit
 
 Display the node disks list, complete with information issued by array parser.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -206,6 +213,7 @@ Show this help message and exit
 .RS
 
 Display node events during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago.
+
 
 .TP
 .B --begin=BEGIN
@@ -236,6 +244,7 @@ Show this help message and exit
 
 List actions on the node, whatever the service, during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago.
 
+
 .TP
 .B --begin=BEGIN
 A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
@@ -265,6 +274,7 @@ Show this help message and exit
 
 Show the list of filtersets available on the collector. If specified, :opt:`--filterset <pattern>` limits the resultset to filtersets matching the pattern.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -287,6 +297,7 @@ Show this help message and exit
 .RS
 
 Show the list of nodes matching the filterset pointed by :opt:`--filterset`.
+
 
 .TP
 .B --color=COLOR
@@ -311,6 +322,7 @@ Show this help message and exit
 
 Show the list of services matching the filterset pointed by :opt:`--filterset`.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -333,6 +345,7 @@ Show this help message and exit
 .RS
 
 List all available tags. Use :opt:`--like` to filter the output.
+
 
 .TP
 .B --like=LIKE
@@ -360,6 +373,7 @@ Show this help message and exit
 
 Log a message in the collector's node log.
 
+
 .TP
 .B --message=MESSAGE
 The message to send to the collector for logging
@@ -386,6 +400,7 @@ Show this help message and exit
 
 Display network information known to the collector for each node ip, complete with network information from the IPAM database.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -407,7 +422,8 @@ Show this help message and exit
 \fBnodemgr collector search\fP
 .RS
 
-Report the collector objects matching :opt:`--like [<type>:]<substring>`, where ``<type>`` is the object type acronym as shown in the collector search widget.
+Report the collector objects matching :opt:`--like [<type>:]<substring>`, where `<type>` is the object type acronym as shown in the collector search widget.
+
 
 .TP
 .B --like=LIKE
@@ -434,6 +450,7 @@ Show this help message and exit
 .RS
 
 Show actions detailed log. A single action is specified by --id. a range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago.
+
 
 .TP
 .B --begin=BEGIN
@@ -467,6 +484,7 @@ Show this help message and exit
 
 list all node tags
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -489,6 +507,7 @@ Show this help message and exit
 .RS
 
 Set a node tag (pointed by --tag).
+
 
 .TP
 .B --tag=TAG
@@ -516,6 +535,7 @@ Show this help message and exit
 
 Unset a node tag (pointed by --tag).
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -540,6 +560,7 @@ Show this help message and exit
 .RS
 
 Attach rulesets specified by :opt:`--ruleset` and modulesets specified by :opt:`--moduleset` to this node. Attached modulesets are scheduled for check or autofix.
+
 
 .TP
 .B --moduleset=MODULESET
@@ -570,6 +591,7 @@ Show this help message and exit
 
 Run compliance checks or fixes, depending on the autofix module property values.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -595,6 +617,7 @@ Show this help message and exit
 .RS
 
 Run compliance checks.
+
 
 .TP
 .B --attach
@@ -634,6 +657,7 @@ Show this help message and exit
 
 Detach rulesets specified by :opt:`--ruleset` and modulesets specified by :opt:`--moduleset` from this node. Detached modulesets are no longer scheduled for check and autofix.
 
+
 .TP
 .B --moduleset=MODULESET
 Specify the modulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
@@ -663,6 +687,7 @@ Show this help message and exit
 
 Show the environment variables set during a compliance module run.
 
+
 .TP
 .B --module=MODULE
 Specify the modules to limit the run to. The modules must be in already attached modulesets.
@@ -691,6 +716,7 @@ Show this help message and exit
 .RS
 
 Run compliance fixes.
+
 
 .TP
 .B --attach
@@ -730,6 +756,7 @@ Show this help message and exit
 
 Verify compliance fixes prerequisites.
 
+
 .TP
 .B --attach
 Attach the modulesets specified in a compliance run.
@@ -768,6 +795,7 @@ Show this help message and exit
 
 List the compliance modules installed on this node.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -789,7 +817,8 @@ Show this help message and exit
 \fBnodemgr compliance list moduleset\fP
 .RS
 
-List available compliance modulesets. Setting :opt:`--moduleset f%` limits the resultset to modulesets matching the ``f%`` pattern.
+List available compliance modulesets. Setting :opt:`--moduleset f%` limits the resultset to modulesets matching the `f%` pattern.
+
 
 .TP
 .B --moduleset=MODULESET
@@ -815,7 +844,8 @@ Show this help message and exit
 \fBnodemgr compliance list ruleset\fP
 .RS
 
-List available compliance rulesets. Setting :opt:`--ruleset f%` limits the scope to rulesets matching the ``f%`` pattern.
+List available compliance rulesets. Setting :opt:`--ruleset f%` limits the scope to rulesets matching the `f%` pattern.
+
 
 .TP
 .B --ruleset=RULESET
@@ -843,6 +873,7 @@ Show this help message and exit
 
 Show compliance rules applying to this node.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -866,6 +897,7 @@ Show this help message and exit
 
 Show compliance rules applying to this node.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -888,6 +920,7 @@ Show this help message and exit
 .RS
 
 Show compliance modules status.
+
 
 .TP
 .B --color=COLOR
@@ -914,6 +947,7 @@ Show this help message and exit
 
 Show the scsi3 persistent reservation key of this node.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -939,6 +973,7 @@ Show this help message and exit
 
 List the available networks.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -961,6 +996,7 @@ Show this help message and exit
 .RS
 
 Show a network configuration.
+
 
 .TP
 .B --id=ID
@@ -990,6 +1026,7 @@ Show this help message and exit
 
 Pass a command to a supported array whose access method and credentials are defined in auth.conf.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1012,6 +1049,7 @@ Show this help message and exit
 .RS
 
 Reboot the node if in the specified schedule.
+
 
 .TP
 .B --cron
@@ -1039,6 +1077,7 @@ Show this help message and exit
 
 Write in local files metrics not found in the standard metrics collector. These files will be fed to the collector by the :cmd:`pushstat` action.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -1065,6 +1104,7 @@ Show this help message and exit
 
 Dequeue and execute actions from the collector's action queue for this node and its services.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -1090,6 +1130,7 @@ Show this help message and exit
 .RS
 
 Freeze services node-wide, preventing the daemon to orchestrate them. This freeze method preserves the frozen state at service-level (with svcmgr).
+
 
 .TP
 .B --local
@@ -1126,6 +1167,7 @@ Show this help message and exit
 
 Return 0 if the services are frozen node-wide, preventing the daemon to orchestrate them. Return 1 otherwise
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1148,6 +1190,7 @@ Show this help message and exit
 .RS
 
 Display of the nodemgr and daemon logs.
+
 
 .TP
 .B --no-pager
@@ -1175,6 +1218,7 @@ Show this help message and exit
 
 Ping a cluster node or arbitrator node. The ping validates the remote is functional.
 
+
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
@@ -1200,6 +1244,7 @@ Show this help message and exit
 .RS
 
 Print the node devices tree.
+
 
 .TP
 .B --dev=DEVICES
@@ -1233,6 +1278,7 @@ Show this help message and exit
 
 Print the node tasks schedule.
 
+
 .TP
 .B --verbose
 Include more information to some print commands output. For example, add the 'next run' column in the output of :cmd:`nodemgr print schedule`.
@@ -1259,6 +1305,7 @@ Show this help message and exit
 
 Reboot the node.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1281,6 +1328,7 @@ Show this help message and exit
 .RS
 
 Set a new root password and store it in the collector.
+
 
 .TP
 .B --cron
@@ -1307,6 +1355,7 @@ Show this help message and exit
 .RS
 
 Scan the scsi hosts in search of new disks.
+
 
 .TP
 .B --hba=HBA
@@ -1340,6 +1389,7 @@ Show this help message and exit
 
 Mark the node for reboot at the next allowed period. The allowed period is defined by a 'reboot' section in node.conf.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1362,6 +1412,7 @@ Show this help message and exit
 .RS
 
 Tell if the node is scheduled for reboot.
+
 
 .TP
 .B --color=COLOR
@@ -1386,6 +1437,7 @@ Show this help message and exit
 
 Shutdown the node to powered off state.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1408,6 +1460,7 @@ Show this help message and exit
 .RS
 
 Command executed by the daemon monitor to fence peer node upon failover when the node previously running the service is stale.
+
 
 .TP
 .B --node=NODE
@@ -1434,6 +1487,7 @@ Show this help message and exit
 .RS
 
 Thaw services node-wide, allowing the daemon to orchestrate them. This thaw method does not actually thaw services frozen at service-level (with svcmgr).
+
 
 .TP
 .B --local
@@ -1470,6 +1524,7 @@ Show this help message and exit
 
 Unmark the node for reboot at the next allowed period.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1492,6 +1547,7 @@ Show this help message and exit
 .RS
 
 Upgrade the opensvc compliance modules. The modules must be available as a tarball behind the :kw:`node.repocomp` url.
+
 
 .TP
 .B --color=COLOR
@@ -1516,6 +1572,7 @@ Show this help message and exit
 
 Upgrade the opensvc agent version. the packages must be available behind the node.repo/packages url.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1538,6 +1595,7 @@ Show this help message and exit
 .RS
 
 Forge and send a udp Wake-On-LAN packet to the mac addresses specified by :opt:`--mac` and :opt:`--broadcast` arguments.
+
 
 .TP
 .B --broadcast=BROADCAST
@@ -1570,6 +1628,7 @@ Show this help message and exit
 
 Edit the node authentication configuration.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1592,6 +1651,7 @@ Show this help message and exit
 .RS
 
 Edit the node configuration.
+
 
 .TP
 .B --discard
@@ -1621,6 +1681,7 @@ Show this help message and exit
 .RS
 
 Get the raw or evaluated value of a node configuration keyword.
+
 
 .TP
 .B --eval
@@ -1683,6 +1744,7 @@ Show this help message and exit
 
 Display the node current authentication configuration.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1706,6 +1768,7 @@ Show this help message and exit
 
 Display the node current configuration.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1728,6 +1791,7 @@ Show this help message and exit
 .RS
 
 Obtain a registration id from the collector. This is is then used to authenticate the node in collector communications.
+
 
 .TP
 .B --app=APP
@@ -1760,6 +1824,7 @@ Show this help message and exit
 .RS
 
 Set a service configuration parameter.
+
 
 .TP
 .B --kw=KW
@@ -1831,6 +1896,7 @@ Show this help message and exit
 
 Unset a node configuration parameter.
 
+
 .TP
 .B --param=PARAM
 An expression like '[<section>.]<keyword>' where
@@ -1889,6 +1955,7 @@ Show this help message and exit
 
 Check the section names and keywords are valid.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1914,6 +1981,7 @@ Show this help message and exit
 
 Empty the content of the daemon senders blacklist.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1937,6 +2005,7 @@ Show this help message and exit
 
 Show the content of the daemon senders blacklist.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1959,6 +2028,7 @@ Show this help message and exit
 .RS
 
 Join the cluster of the node specified by :opt:`--node <node>`, authenticating with :opt:`--secret <secret>`.
+
 
 .TP
 .B --node=NODE
@@ -1989,6 +2059,7 @@ Show this help message and exit
 
 Inform peer nodes we leave the cluster. Make sure the left nodes are no longer in the services nodes list before leaving, so the other nodes won't takeover.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -2011,6 +2082,7 @@ Show this help message and exit
 .RS
 
 Restart the daemon.
+
 
 .TP
 .B --color=COLOR
@@ -2035,6 +2107,7 @@ Show this help message and exit
 
 Return with code 0 if the daemon is running, else return with code 1
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -2058,6 +2131,7 @@ Show this help message and exit
 
 Stop all local services instances then stop the daemon.
 
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -2080,6 +2154,7 @@ Show this help message and exit
 .RS
 
 Start the daemon or a daemon thread pointed by :opt:`--thread-id`.
+
 
 .TP
 .B --node=NODE
@@ -2110,6 +2185,7 @@ Show this help message and exit
 
 Display the daemon status.
 
+
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
@@ -2135,6 +2211,7 @@ Show this help message and exit
 .RS
 
 Stop the daemon or a daemon thread pointed by :opt:`--thread-id`.
+
 
 .TP
 .B --node=NODE
@@ -2167,6 +2244,7 @@ Show this help message and exit
 
 Run node health checks. Push results to collector.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2192,6 +2270,7 @@ Show this help message and exit
 .RS
 
 Push asset information to collector.
+
 
 .TP
 .B --sync
@@ -2222,6 +2301,7 @@ Show this help message and exit
 
 Push Brocade switch configuration to the collector.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2250,6 +2330,7 @@ Show this help message and exit
 .RS
 
 Push EMC Centera configurations to the collector.
+
 
 .TP
 .B --cron
@@ -2280,6 +2361,7 @@ Show this help message and exit
 
 Push Datacore configurations to the collector.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2309,6 +2391,7 @@ Show this help message and exit
 
 Push disks usage information to the collector.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2334,6 +2417,7 @@ Show this help message and exit
 .RS
 
 Push EMC CX/VNX configurations to the collector.
+
 
 .TP
 .B --cron
@@ -2364,6 +2448,7 @@ Show this help message and exit
 
 Push HP EVA configurations to the collector.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2392,6 +2477,7 @@ Show this help message and exit
 .RS
 
 Push FreeNAS configurations to the collector.
+
 
 .TP
 .B --cron
@@ -2422,6 +2508,7 @@ Show this help message and exit
 
 Push Google Compute Engine disks configurations to the collector.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2450,6 +2537,7 @@ Show this help message and exit
 .RS
 
 Push HDS configurations to the collector.
+
 
 .TP
 .B --cron
@@ -2480,6 +2568,7 @@ Show this help message and exit
 
 Push HP 3par configurations to the collector.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2508,6 +2597,7 @@ Show this help message and exit
 .RS
 
 Push IBM DS configurations to the collector.
+
 
 .TP
 .B --cron
@@ -2538,6 +2628,7 @@ Show this help message and exit
 
 Push IBM SVC configurations to the collector.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2566,6 +2657,7 @@ Show this help message and exit
 .RS
 
 Push NEC ISM configurations to the collector.
+
 
 .TP
 .B --cron
@@ -2596,6 +2688,7 @@ Show this help message and exit
 
 Push Netapp configurations to the collector.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2624,6 +2717,7 @@ Show this help message and exit
 .RS
 
 Push EMC Networker index to the collector.
+
 
 .TP
 .B --cron
@@ -2654,6 +2748,7 @@ Show this help message and exit
 
 Push patch/version list to the collector.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2680,6 +2775,7 @@ Show this help message and exit
 
 Push package/version list to the collector.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2705,6 +2801,7 @@ Show this help message and exit
 .RS
 
 Push performance metrics to collector. By default pushed stats interval begins yesterday at the beginning of the allowed interval and ends now. This interval can be changed using --begin/--end parameters. The location where stats files are looked up can be changed using --stats-dir.
+
 
 .TP
 .B --begin=BEGIN
@@ -2741,6 +2838,7 @@ Show this help message and exit
 
 Push symmetrix configurations to the collector.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2773,6 +2871,7 @@ Show this help message and exit
 
 Push IBM VIO server configurations to the collector.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2801,6 +2900,7 @@ Show this help message and exit
 .RS
 
 Push XtremIO configurations to the collector.
+
 
 .TP
 .B --cron
@@ -2831,6 +2931,7 @@ Show this help message and exit
 
 Push system report to the collector for archiving and diff analysis.
 
+
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -2858,6 +2959,7 @@ Show this help message and exit
 .RS
 
 Discover vservices accessible from this host. Typically executed on cloud nodes.
+
 
 .TP
 .B --color=COLOR

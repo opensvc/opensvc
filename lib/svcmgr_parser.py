@@ -493,7 +493,15 @@ ACTIONS = {
         },
         "print_status": {
             "msg": "Display the service status, with a detailed view of the local "
-                   "instance.",
+                   "instance.\n\n"
+                   "Resources Flags:\n"
+                   "* ``M``  Monitored\n"
+                   "* ``D``  Disabled\n"
+                   "* ``O``  Optional\n"
+                   "* ``E``  Encap\n"
+                   "* ``P``  Provisioned\n"
+                   "* ``S``  Standby\n"
+                   "",
             "options": [
                 OPT.format,
                 OPT.hide_disabled,
