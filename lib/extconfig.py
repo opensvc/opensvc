@@ -991,6 +991,8 @@ class ExtConfig(object):
         """
         Return the service config file content.
         """
+        if not os.path.exists(self.paths.cf):
+            return ""
         import codecs
         with codecs.open(self.paths.cf, "r", "utf8") as ofile:
             buff = ofile.read()
