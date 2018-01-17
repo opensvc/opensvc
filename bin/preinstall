@@ -33,7 +33,8 @@ then
 	touch $FLAG
 
 	echo "freeze all services"
-	svcmgr -s '*' freeze
+	svcmgr freeze >/dev/null 2>&1
+        # can output error if no services are present
 	exit 0
 fi
 
