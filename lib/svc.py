@@ -3256,6 +3256,8 @@ class Svc(Crypt, ExtConfig):
                     retained_rids.add(_rid)
                 else:
                     continue
+            elif '.' in rid and rid == self.resources_by_id[_rid].type:
+                retained_rids.add(_rid)
             elif _rid[:_rid.index('#')] == rid:
                 retained_rids.add(_rid)
         return retained_rids

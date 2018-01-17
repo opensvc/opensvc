@@ -1150,6 +1150,8 @@ ACTIONS_TRANSLATIONS = {
     "stopdisk": {"action": "stop", "mangle": lambda x: add_rid(x, ["disk"])},
     "stopshare": {"action": "stop", "mangle": lambda x: add_rid(x, ["share"])},
     "stopcontainer": {"action": "stop", "mangle": lambda x: add_rid(x, ["container"])},
+    "prstart": {"action": "start", "mangle": lambda x: add_rid(x, ["disk.scsireserv"])},
+    "prstop": {"action": "stop", "mangle": lambda x: add_rid(x, ["disk.scsireserv"])},
     "syncall": "sync_all",
     "syncbreak": "sync_break",
     "syncdrp": "sync_drp",
