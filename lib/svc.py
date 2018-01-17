@@ -4002,6 +4002,7 @@ class Svc(Crypt, ExtConfig):
             if __data.get("monitor", {}).get("placement") != "leader" and \
                __data.get("avail") == "up":
                 self.daemon_service_action(["stop"], nodename=nodename)
+                self._clear(nodename=nodename)
         self.daemon_mon_action("thaw", wait=True)
         if self.orchestrate == "no":
             self.daemon_mon_action("start")
