@@ -14,6 +14,9 @@ else
 	export PATH
 fi
 
+# create the flag hosting dir if it does not exist yet
+mkdir -p `dirname $FLAG` >/dev/null 2>&1
+
 # clean up lingering restart flag
 rm -f $FLAG
 
