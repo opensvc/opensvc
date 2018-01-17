@@ -16,25 +16,18 @@ def udevadm_settle():
     justcall(cmd)
 
 def dev_to_paths(dev, log=None):
-    if dev.startswith("/dev/loop") or dev.startswith("/dev/vd"):
+    if dev.startswith("/dev/sd"):
         return [dev]
-    if dev.startswith("/dev/dm-"):
-        dev = "252:%s" % dev[8:]
-    cmd = [rcEnv.syspaths.multipath, '-l', dev]
+    if not dev.startswith("/dev/dm-"):
+        raise ex.excError
+    name = os.path.basename(dev)
+    cmd = ["dmsetup", "table", "-j", str(major("device-mapper")), "-m", dev[8:]]
     out, err, ret = justcall(cmd)
     if ret != 0:
         raise ex.excError
-    paths = []
-    for line in out.splitlines():
-        # strip forest markers
-        line = line.strip("\\- +_|`")
-        l = re.split("\s+", line)
-        if len(l) < 2:
-            continue
-        dev = l[1]
-        if not dev.startswith("sd"):
-            continue
-        paths.append("/dev/"+dev)
+    if "multipath" not in out:
+        raise ex.excError
+    paths = ["/dev/"+os.path.basename(_name) for _name in glob.glob("/sys/block/%s/slaves/*" % name)]
     return paths
 
 def dev_is_ro(dev):
