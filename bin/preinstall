@@ -33,7 +33,7 @@ then
 	touch $FLAG
 
 	echo "freeze all services"
-	svcmgr freeze
+	svcmgr -s '*' freeze
 	exit 0
 fi
 
