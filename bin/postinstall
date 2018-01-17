@@ -1194,6 +1194,8 @@ def restart_daemon():
     cmd = "%s/nodemgr daemon start" % pathbin
     logit(cmd, stdout=True)
     os.system(cmd)
+    cmd = "%s/nodemgr daemon running" % pathbin
+    os.system(cmd)
 
 try:
     move_var_files_in_subdirs()
