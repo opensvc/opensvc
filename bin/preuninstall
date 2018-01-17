@@ -1,0 +1,24 @@
+#!/bin/sh
+
+if [ -z "$OSVC_ROOT_PATH" ]
+then
+	FLAG=/var/lib/opensvc/postinstall.restart
+else
+	FLAG=$OSVC_ROOT_PATH/var/postinstall.restart
+	PATH=$PATH:$OSVC_ROOT_PATH/bin
+	export PATH
+fi
+
+nodemgr daemon running >/dev/null 2>&1
+RUNNING=$?
+
+if [ $1 -eq 0 ]
+then
+	# uninstall package
+	if [ $RUNNING -eq 0 ]
+	then
+		nodemgr daemon stop
+	fi
+	exit 0
+fi
+

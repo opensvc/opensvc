@@ -58,6 +58,9 @@ tar cpf - . | ( cd %{buildroot} && tar xf - )
 %pre
 $(cat $OSVC/bin/preinstall)
 
+%preun
+$(cat $OSVC/bin/preuninstall)
+
 %post
 /usr/bin/python %{_datadir}/opensvc/bin/postinstall
 
