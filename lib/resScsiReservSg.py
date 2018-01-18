@@ -14,7 +14,7 @@ from rcGlobalEnv import rcEnv
 class ScsiReserv(resScsiReserv.ScsiReserv):
     def scsireserv_supported(self):
         if which('sg_persist') is None:
-            self.log.debug("sg_persist must be installed to use scsi-3 reservations" )
+            self.status_log("sg_persist must be installed to use scsi-3 reservations" )
             return False
         return True
 
@@ -38,8 +38,7 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
             err = bdecode(err)
             ret = p.returncode
             if "unsupported service action" in err:
-                self.log.error("disk %s does not support persistent reservation" % d)
-                raise ex.excScsiPrNotsupported
+                raise ex.excScsiPrNotsupported("disk %s does not support persistent reservation" % d)
             if "error opening file" in err:
                 return 0
             if "Unit Attention" in out or ret != 0:

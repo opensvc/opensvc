@@ -116,7 +116,8 @@ class ScsiReserv(Res.Resource):
             try:
                 if self.ack_unit_attention(d) != 0:
                     return 1
-            except ex.excScsiPrNotsupported:
+            except ex.excScsiPrNotsupported as exc:
+                self.status_log(str(exc))
                 continue
         return 0
 
@@ -128,7 +129,8 @@ class ScsiReserv(Res.Resource):
             try:
                 r += self.ack_unit_attention(d)
                 r += self.disk_register(d)
-            except ex.excScsiPrNotsupported:
+            except ex.excScsiPrNotsupported as exc:
+                self.log.error(str(exc))
                 continue
         return r
 
@@ -142,7 +144,8 @@ class ScsiReserv(Res.Resource):
                 if not self.disk_registered(d):
                     continue
                 r += self.disk_unregister(d)
-            except ex.excScsiPrNotsupported:
+            except ex.excScsiPrNotsupported as exc:
+                self.log.error(str(exc))
                 continue
         return r
 
@@ -171,7 +174,8 @@ class ScsiReserv(Res.Resource):
                 else:
                     r += self.disk_preempt_reservation(d, key)
                     r += self.disk_wait_reservation(d)
-            except ex.excScsiPrNotsupported:
+            except ex.excScsiPrNotsupported as exc:
+                self.log.error(str(exc))
                 continue
         return r
 
@@ -185,7 +189,8 @@ class ScsiReserv(Res.Resource):
                 if not self.disk_reserved(d):
                     continue
                 r += self.disk_release(d)
-            except ex.excScsiPrNotsupported:
+            except ex.excScsiPrNotsupported as exc:
+                self.log.error(str(exc))
                 continue
         return r
 
@@ -199,7 +204,8 @@ class ScsiReserv(Res.Resource):
                 if not self.disk_reserved(d):
                     continue
                 r += self.disk_clear_reservation(d)
-            except ex.excScsiPrNotsupported:
+            except ex.excScsiPrNotsupported as exc:
+                self.log.error(str(exc))
                 continue
         return r
 
@@ -220,7 +226,8 @@ class ScsiReserv(Res.Resource):
                 else:
                     self.log.debug("disk %s is correctly reserved" % d)
                     r += rcStatus.UP
-            except ex.excScsiPrNotsupported:
+            except ex.excScsiPrNotsupported as exc:
+                self.log.error(str(exc))
                 continue
         return r.status
 
@@ -259,6 +266,7 @@ class ScsiReserv(Res.Resource):
             self.status_log(str(e))
             return rcStatus.WARN
         if not self.scsireserv_supported():
+            self.status_log("scsi reservation is not supported")
             return rcStatus.NA
         return self.checkreserv()
 
