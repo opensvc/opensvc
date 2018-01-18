@@ -53,7 +53,9 @@ class SyncZfs(resSync.Sync):
         """
         if not hasattr(self, action):
             return
-        resources = [r for r in self.rset.resources if not r.skip and not r.is_disabled()]
+        resources = [r for r in self.rset.resources if \
+                     not r.skip and not r.is_disabled() and \
+                     r.type == self.type]
 
         if len(resources) == 0:
             return

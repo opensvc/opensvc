@@ -214,20 +214,6 @@ ACTIONS_NO_LOCK = [
     "validate_config",
 ]
 
-DISK_TYPES = [
-    "disk.drbd",
-    "disk.gandi",
-    "disk.gce",
-    "disk.lock",
-    "disk.loop",
-    "disk.md",
-    "disk.rados",
-    "disk.raw",
-    "disk.vg",
-    "disk.lv",
-    "disk.zpool",
-]
-
 START_GROUPS = [
     "ip",
     "sync.netapp",
@@ -238,18 +224,7 @@ START_GROUPS = [
     "sync.symsrdfs",
     "sync.hp3par",
     "sync.ibmdssnap",
-    "disk.scsireserv",
-    "disk.drbd",
-    "disk.gandi",
-    "disk.gce",
-    "disk.lock",
-    "disk.loop",
-    "disk.md",
-    "disk.rados",
-    "disk.raw",
-    "disk.vg",
-    "disk.lv",
-    "disk.zpool",
+    "disk",
     "fs",
     "share",
     "container",
@@ -262,18 +237,7 @@ STOP_GROUPS = [
     "share",
     "fs",
     "sync.btrfssnap",
-    "disk.zpool",
-    "disk.lv",
-    "disk.vg",
-    "disk.raw",
-    "disk.rados",
-    "disk.md",
-    "disk.loop",
-    "disk.lock",
-    "disk.gce",
-    "disk.gandi",
-    "disk.drbd",
-    "disk.scsireserv",
+    "disk",
     "ip",
 ]
 
@@ -988,14 +952,14 @@ class Svc(Crypt, ExtConfig):
             other.svc = self
             return self
 
+        base_type = other.type.split(".")[0]
         if other.subset is not None:
             # the resource wants to be added to a specific resourceset
             # for action grouping, parallel execution or sub-resource
             # triggers
-            base_type = other.type.split(".")[0]
             rtype = "%s:%s" % (base_type, other.subset)
         else:
-            rtype = other.type
+            rtype = base_type
 
         if rtype in self.resourcesets_by_type:
             # the resource set already exists. add resource or resourceset.

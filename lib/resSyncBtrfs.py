@@ -65,7 +65,9 @@ class SyncBtrfs(resSync.Sync):
         skip snapshot creation if delay_snap in tags
         delay_snap should be used for oracle archive datasets
         """
-        resources = [ r for r in self.rset.resources if not r.skip and not r.is_disabled() ]
+        resources = [r for r in self.rset.resources if \
+                     not r.skip and not r.is_disabled() and \
+                     r.type == self.type]
 
         if len(resources) == 0:
             return

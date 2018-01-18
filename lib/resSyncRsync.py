@@ -251,7 +251,9 @@ class Rsync(resSync.Sync):
            trigger action() on each one
         """
 
-        resources = [ r for r in self.rset.resources if not r.skip and not r.is_disabled() ]
+        resources = [r for r in self.rset.resources if \
+                     not r.skip and not r.is_disabled() and \
+                     r.type == self.type]
 
         if len(resources) == 0:
             return
@@ -300,7 +302,9 @@ class Rsync(resSync.Sync):
         """Actions to do after resourceSet has iterated through the resources to
            trigger action() on each one
         """
-        resources = [ r for r in self.rset.resources if not r.skip and not r.is_disabled() ]
+        resources = [r for r in self.rset.resources if \
+                     not r.skip and not r.is_disabled() and \
+                     r.type == self.type]
 
         if len(self.rset.resources) == 0:
             return

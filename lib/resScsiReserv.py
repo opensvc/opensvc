@@ -34,6 +34,12 @@ class ScsiReserv(Res.Resource):
                               type="disk.scsireserv",
                               **kwargs)
 
+    def __lt__(self, other):
+        """
+        Order so that we always come first.
+        """
+        return True
+
     def mangle_devs(self, devs):
         """
         Can be overidden by child class to apply a mangling the peer
