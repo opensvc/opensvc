@@ -153,6 +153,10 @@ class Resource(object):
         Resources needing to be started or stopped in a specific order
         should redefine that.
         """
+        if self.rid+"pr" == other.rid:
+            return False
+        if self.rid == other.rid+"pr":
+            return True
         return self.sort_key < other.sort_key
 
     def save_exc(self):
