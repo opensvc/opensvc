@@ -32,7 +32,7 @@ class FsDir(Res.Resource):
 
     @lazy
     def label(self):
-        return "dir " + path
+        return "dir " + self.path
 
     def start(self):
         self.create()
