@@ -1291,6 +1291,12 @@ class Svc(Crypt, ExtConfig):
         aborted = do_trigger("pre")
         do_snap_trigger("post")
 
+        if action in ["start", "startstandby", "provision"] or \
+           self.type.startswith("sync"):
+            rsets.sort()
+        else:
+            rsets.sort(reverse=True)
+
         last = None
         for rset in rsets:
             # upto / downto break
