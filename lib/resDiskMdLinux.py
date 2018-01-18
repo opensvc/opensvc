@@ -186,15 +186,17 @@ class Disk(resDisk.Disk):
     def is_up(self):
         if not self.has_it():
             return False
-        state = self.detail_status().split(", ")[0]
-        if state in ("clean", "active"):
-            return True
-        if state in ("inactive"):
-            self.status_log(state, "warn")
-            return True
-        if state not in ("devpath does not exist", "unable to find a devpath for md"):
-            self.status_log(state)
-        return False
+        buff = self.detail_status()
+        states = buff.split(", ")
+        if len(states) > 1:
+            self.status_log(buff, "warn")
+        if "Not Started" in states or len(states) == 0:
+            return False
+        if "devpath does not exist" in states or \
+           "unable to find a devpath for md" in states:
+            self.status_log(buff, "warn")
+            return False
+        return True
 
     def auto_assemble_disabled(self):
         if self.uuid == "" or self.uuid is None:
