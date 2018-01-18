@@ -1,6 +1,10 @@
+import sys
 import os
 from rcGlobalEnv import rcEnv
 from textwrap import TextWrapper
+
+if sys.version_info[0] >= 3:
+    raw_input = input
 
 class MissKeyNoDefault(Exception):
      pass

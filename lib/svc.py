@@ -33,6 +33,9 @@ from extconfig import ExtConfig
 
 if sys.version_info[0] < 3:
     BrokenPipeError = IOError
+else:
+    raw_input = input
+
 
 def signal_handler(*args):
     """
