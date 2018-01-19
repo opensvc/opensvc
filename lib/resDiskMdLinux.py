@@ -194,7 +194,6 @@ class Disk(resDisk.Disk):
             return False
         if "devpath does not exist" in states or \
            "unable to find a devpath for md" in states:
-            self.status_log(buff, "warn")
             return False
         return True
 
