@@ -323,4 +323,22 @@ class Disk(resDisk.Disk):
         self.log.debug("found devs %s held by md %s" % (devs, self.uuid))
         return devs
 
-
+    def sync_resync(self):
+        faultydev = None
+        buff = self.detail()
+        if "Raid Level : raid1" not in buff:
+            self.log.error("Feature only supported on RAID1 mdadm devices")
+            raise ex.excError()
+        for line in buff.split("\n"):
+            line = line.strip()
+            if "faulty" in line:
+                faultydev = line.split()[-1]
+        if self.is_up():
+            if faultydev is not None:
+                cmd = [self.mdadm, "--re-add", self.devpath(), faultydev]
+                ret, out, err = self.vcall(cmd, warn_to_info=True)
+                if ret != 0:
+                    self.log.error("Failed to re-add %s to array %s"%(faultydev, self.devpath()))
+                    raise ex.excError()
+            else:
+                self.log.error("No obvious faulty device found to re-add to mdadm device %s"%self.devpath())

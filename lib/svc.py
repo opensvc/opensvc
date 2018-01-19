@@ -2801,6 +2801,7 @@ class Svc(Crypt, ExtConfig):
         self.sub_set_action("sync.evasnap", "sync_resync")
         self.sub_set_action("sync.necismsnap", "sync_resync")
         self.sub_set_action("sync.dcssnap", "sync_resync")
+        self.sub_set_action("disk.md", "sync_resync")
 
     def sync_break(self):
         self.sub_set_action("sync.netapp", "sync_break")
