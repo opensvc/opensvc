@@ -19,7 +19,18 @@ except:
     version = "dev"
 
 __ver = prog + " version " + version
-__usage = prog + " [ OPTIONS ]\n"
+__usage = prog + \
+    " [ OPTIONS ]\n" \
+    "\n" \
+    "Flags:\n" \
+    "  O  up\n" \
+    "  o  stdby up\n" \
+    "  X  down\n" \
+    "  x  stdby down\n" \
+    "  !  warn\n" \
+    "  P  unprovisioned\n" \
+    "  *  frozen\n" \
+    "  ^  leader node or service placement non-optimal"
 parser = optparse.OptionParser(version=__ver, usage=__usage)
 parser.add_option("--color", default="auto", action="store", dest="color",
                   help="colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize")
