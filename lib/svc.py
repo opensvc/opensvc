@@ -1178,12 +1178,6 @@ class Svc(Crypt, ExtConfig):
                     _rsets.append(rsets[_type][_t])
         return _rsets
 
-    def has_resourceset(self, _type, strict=False):
-        """
-        Return True if the service has a resource set of the specified type.
-        """
-        return len(self.get_resourcesets(_type, strict=strict)) > 0
-
     def all_set_action(self, action=None, tags=None):
         """
         Execute an action on all resources all resource sets.
@@ -1200,9 +1194,17 @@ class Svc(Crypt, ExtConfig):
             _type = [_type]
         rsets = []
         for __type in _type:
+            _rsets = []
             for rset in self.get_resourcesets(__type, strict=strict):
-                if rset not in rsets:
-                    rsets.append(rset)
+                if rset not in rsets and rset not in _rsets:
+                    _rsets.append(rset)
+
+            if action in ["start", "startstandby", "provision"] or \
+                self.type.startswith("sync"):
+                _rsets.sort()
+            else:
+                _rsets.sort(reverse=True)
+            rsets += _rsets
         self.set_action(rsets, action=action, tags=tags, xtags=xtags)
 
     def need_snap_trigger(self, rsets, action):
@@ -1290,12 +1292,6 @@ class Svc(Crypt, ExtConfig):
         do_snap_trigger("pre")
         aborted = do_trigger("pre")
         do_snap_trigger("post")
-
-        if action in ["start", "startstandby", "provision"] or \
-           self.type.startswith("sync"):
-            rsets.sort()
-        else:
-            rsets.sort(reverse=True)
 
         last = None
         for rset in rsets:
@@ -3938,7 +3934,7 @@ class Svc(Crypt, ExtConfig):
             self.daemon_service_action(["startfs", "--master"], nodename=dst)
             self._migrate()
         except:
-            if self.has_resourceset(['disk.scsireserv']):
+            if len(self.get_resources('disk.scsireserv')) > 0:
                 self.log.error("scsi reservations were dropped. you have to "
                                "acquire them now using the 'prstart' action "
                                "either on source node or destination node, "
