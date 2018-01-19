@@ -186,17 +186,23 @@ class Drbd(Res.Resource):
             self.status_log(str(e))
             return rcStatus.WARN
         self.status_log(str(roles[0]), "info")
-        (ret, out, err) = self.call(self.drbdadm_cmd('dstate'))
+        ret, out, err = self.call(self.drbdadm_cmd('dstate'))
         if ret != 0:
             self.status_log("drbdadm dstate %s failed"%self.res)
             return rcStatus.WARN
         out = out.strip()
         if out == "UpToDate/UpToDate":
-            return rcStatus.UP
+            pass
         elif out == "Unconfigured":
             return rcStatus.DOWN
-        self.status_log("unexpected drbd resource %s state: %s"%(self.res, out))
-        return rcStatus.WARN
+        else:
+            self.status_log("unexpected drbd resource %s state: %s"%(self.res, out))
+        if roles[0] == "Primary":
+            return rcStatus.UP
+        elif roles[0] == "Secondary" and self.standby:
+            return rcStatus.STDBY_UP
+        else:
+            return rcStatus.WARN
 
 if __name__ == "__main__":
     help(Drbd)
