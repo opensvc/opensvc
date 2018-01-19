@@ -267,8 +267,13 @@ class OsvcThread(threading.Thread):
         unset_lazy(self, "maintenance_grace_period")
         unset_lazy(self, "rejoin_grace_period")
         unset_lazy(self, "ready_period")
-        if hasattr(self, "reconfigure"):
+        if not hasattr(self, "reconfigure"):
+            return
+        try:
             getattr(self, "reconfigure")()
+        except Exception as exc:
+            self.log.error("reconfigure error: %s", str(exc))
+            self.stop()
 
     @staticmethod
     def get_service(svcname):

@@ -23,9 +23,10 @@ class HbRelay(Hb, Crypt):
         data = Hb.status(self, **kwargs)
         data.stats = Storage(self.stats)
         data.config = {
-            "relay": self.relay,
             "timeout": self.timeout,
         }
+        if hasattr(self, "relay"):
+            data.config["relay"] = self.relay
         return data
 
     def configure(self):
