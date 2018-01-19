@@ -308,6 +308,7 @@ ACTIONS_DO_MASTER = [
     "freeze",
     "run",
     "thaw",
+    "toc",
 ]
 
 ACTIONS_DO_MASTER_AND_SLAVE = [
@@ -4380,7 +4381,6 @@ class Svc(Crypt, ExtConfig):
         The freezestop monitor action.
         """
         self.freeze()
-        self.options.force = True
         self.stop()
 
     def freeze(self):
