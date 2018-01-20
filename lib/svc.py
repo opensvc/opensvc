@@ -3007,12 +3007,8 @@ class Svc(Crypt, ExtConfig):
             "sync.btrfs",
             "sync.docker",
             "sync.dds",
-            "sync.rsync",
-            "sync.zfs",
-            "sync.btrfs",
-            "sync.docker",
-            "sync.dds",
         ]
+        self.sub_set_action(rtypes, "sync_nodes")
         self.sub_set_action(rtypes, "sync_drp")
         self.remote_postsync()
 
