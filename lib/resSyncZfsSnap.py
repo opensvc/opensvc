@@ -60,13 +60,9 @@ class syncZfsSnap(resSync.Sync):
             raise ex.excError(str(e))
 
     def list_snaps(self, dataset):
-        cmd = ["zfs", "list", "-H", "-t", "snapshot", "-o", "name"]
+        cmd = ["zfs", "list", "-r", "-H", "-t", "snapshot", "-o", "name"]
         out, err, ret = justcall(cmd)
-        snaps = []
-        for line in out.splitlines():
-            if line.startswith(dataset+"@"):
-                snaps.append(line)
-        return snaps
+        return out.splitlines()
 
     def remove_snap(self, dataset):
         cursnaps = self.list_snaps(dataset)
