@@ -6,12 +6,16 @@ import sys
 """
 """
 
-def dataset_exists(device, type):
-    """return Dataset(device).exists(type)"""
-    return Dataset(device).exists(type)
+def dataset_exists(device, dstype):
+    """
+    Return True if the data exists.
+    """
+    return Dataset(device).exists(dstype)
 
 def zfs_getprop(dataset='undef_ds', propname='undef_prop'):
-    "return zfs dataset property propname value"
+    """
+    Return the dataset property <propname> value
+    """
     cmd = [rcEnv.syspaths.zfs, 'get', '-Hp', '-o', 'value', propname, dataset]
     (stdout, stderr, retcode) = justcall(cmd)
     if retcode == 0 :
@@ -20,7 +24,9 @@ def zfs_getprop(dataset='undef_ds', propname='undef_prop'):
         return ""
 
 def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val'):
-    "set zfs dataset property propname to value propval"
+    """
+    Set the dataset property <propname> to value <propval>.
+    """
     if zfs_getprop(dataset, propname) == propval :
         return True
     cmd = [rcEnv.syspaths.zfs, 'set', propname + '='+ propval, dataset]
@@ -32,9 +38,12 @@ def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val'):
         return False
 
 def a2pool_dataset(s):
-    """return (pool,dataset) from mount point
-       example: a2pool_dataset('/') => ('rpool','rpool/ROOT/opensolaris-b134')
-                same with a2pool_dataset('rpool/ROOT/opensolaris-b134')
+    """
+    Return the (pool, dataset) tuple from a mount point.
+
+    Examples:
+    * / => ('rpool','rpool/ROOT/opensolaris-b134')
+    * rpool/ROOT/opensolaris-b134 => ('rpool','rpool/ROOT/opensolaris-b134')
     """
     if len(s) == 0:
         return ("", "")
@@ -51,7 +60,9 @@ def a2pool_dataset(s):
     return (x[0], ss)
 
 class Dataset(object):
-    """Define Dataset Class"""
+    """
+    A class exposing usual ops on a zfs dataset.
+    """
     log = None
     def __init__(self, name, log=None):
         self.name = name
@@ -75,8 +86,10 @@ class Dataset(object):
             return "Failed to list info for dataset: %s" % (self.name)
 
     def exists(self, type="all"):
-        """return True if dataset exists else return False
-        if type is provided, also verify dataset type"""
+        """
+        Return True if the dataset exists else return False.
+        If type is set, also verify the dataset type.
+        """
         out, err, ret = justcall(["zfs", "get", "-H", "-o", "value", "type", self.name])
         if ret == 0 and type == "all":
             return True
@@ -85,8 +98,24 @@ class Dataset(object):
         else:
             return False
 
-    def create(self, option = None):
-        "create dataset with options"
+    def rename(self, name=None, option=None):
+        """
+        Rename the dataset.
+        """
+        if option is None:
+            cmd = [rcEnv.syspaths.zfs, 'rename', self.name, name]
+        else:
+            cmd = [rcEnv.syspaths.zfs, 'rename'] + option + [self.name, name]
+        ret, _, _ = vcall(cmd, log=self.log)
+        if ret == 0:
+            return True
+        else:
+            return False
+
+    def create(self, option=None):
+        """
+        Create the dataset with options.
+        """
         if option is None:
             cmd = [rcEnv.syspaths.zfs, 'create', self.name]
         else:
@@ -98,7 +127,9 @@ class Dataset(object):
             return False
 
     def destroy(self, options=[]):
-        """destroy dataset"""
+        """
+        Destroy the dataset.
+        """
         if not self.exists():
             return True
         cmd = [rcEnv.syspaths.zfs, 'destroy'] + options + [self.name]
@@ -109,9 +140,8 @@ class Dataset(object):
             return False
 
     def getprop(self, propname):
-        """get a dataset propertie value of dataset
-        If success return propperty value
-        else return ''
+        """
+        Return a dataset propertie value or '' on error.
         """
         cmd = [rcEnv.syspaths.zfs, 'get', '-Hp', '-o', 'value', propname, self.name]
         out, _, ret = justcall(cmd)
@@ -121,8 +151,9 @@ class Dataset(object):
             return ""
 
     def setprop(self, propname, propval, err_to_warn=False, err_to_info=False):
-        """set Dataset property value
-        Return True is success else return False
+        """
+        Set Dataset property value.
+        Return True is success else return False.
         """
         cmd = [rcEnv.syspaths.zfs, 'set', propname + '='+ propval, self.name]
         ret, out, err = vcall(cmd, log=self.log,
@@ -134,9 +165,11 @@ class Dataset(object):
             return False
 
     def verify_prop(self, nv_pairs={}, err_to_warn=False, err_to_info=False):
-        """for name, val from nv_pairs dict,
+        """
+        For name, val from nv_pairs dict,
         if zfs name property value of dataset differ from val
-        then zfs set name=value on dataset object"""
+        then zfs set name=value on dataset object.
+        """
         for name in nv_pairs.keys():
             if self.getprop(name) != nv_pairs[name]:
                 self.setprop(propname=name, propval=nv_pairs[name],
@@ -144,9 +177,10 @@ class Dataset(object):
                             err_to_info=err_to_info)
 
     def snapshot(self, snapname=None, recursive=False):
-        """snapshot dataset
-        return snapshot dataset object
-        Return False if failure
+        """
+        Snapshot the dataset.
+        Return the snapshot dataset object.
+        Return False on error.
         """
         if snapname is None:
             raise ex.excError("snapname should be defined")
@@ -162,9 +196,10 @@ class Dataset(object):
             return False
 
     def clone(self, name, option=None):
-        """clone dataset with options
-        return clone object
-        return False if failure
+        """
+        Clone the dataset with options
+        Return the clone dataset object.
+        Return False on failure.
         """
         if option is None:
             cmd = [rcEnv.syspaths.zfs, 'clone', self.name, name]
@@ -175,46 +210,4 @@ class Dataset(object):
             return Dataset(name)
         else:
             return False
-
-if __name__ == "__main__":
-    dsname="rpool/toto"
-    ds = Dataset(dsname)
-    if ds.create(option=["-o", "mountpoint=none"]) is False:
-        print("========== Failed")
-    else:
-        print(ds)
-
-    ds.verify_prop({'mountpoint':'/tmp/mnt', 'refquota':(10*1024*1024).__str__(),})
-
-    print("show type,refquota,mountpoint")
-    for p in ('type', 'refquota', 'mountpoint'):
-        print('%s value: %s'%(p, ds.getprop(p)))
-    print(ds)
-
-    val = ds.setprop('opensvc:name', 'Example')
-    print(ds.__str__(["-Ho", "opensvc:name"]))
-
-    val = ds.getprop('opensvc:name')
-    print("val Value=",val)
-
-    for sname in ["foo" , "bar"]:
-        s = ds.snapshot(sname)
-        if s is False:
-            print("========== Failed")
-        else:
-            print(s)
-            c=s.clone(dsname + "/clone_"+ sname)
-            if c is False:
-                print("========== Failed")
-            else:
-                print(c)
-                c.destroy()
-
-            if s.destroy() is False:
-                print("========== Failed")
-
-    if ds.exists:
-        print("Destroy dataset", ds.name)
-        if ds.destroy() is False:
-            print("Failed to create snapshot")
 
