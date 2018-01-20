@@ -326,19 +326,27 @@ class Disk(resDisk.Disk):
     def sync_resync(self):
         faultydev = None
         buff = self.detail()
+        removed = buff.count("removed")
+        if removed == 0:
+            self.log.info("skip: no removed device")
+            return
         if "Raid Level : raid1" not in buff:
-            self.log.error("Feature only supported on RAID1 mdadm devices")
-            raise ex.excError()
+            self.log.info("skip: non-raid1 md")
+            return
+        if not self.is_up():
+            self.log.info("skip: non-up md")
+            return
+        devpath = self.devpath()
         for line in buff.split("\n"):
             line = line.strip()
             if "faulty" in line:
                 faultydev = line.split()[-1]
-        if self.is_up():
-            if faultydev is not None:
-                cmd = [self.mdadm, "--re-add", self.devpath(), faultydev]
+                cmd = [self.mdadm, "--re-add", devpath, faultydev]
                 ret, out, err = self.vcall(cmd, warn_to_info=True)
                 if ret != 0:
-                    self.log.error("Failed to re-add %s to array %s"%(faultydev, self.devpath()))
-                    raise ex.excError()
-            else:
-                self.log.error("No obvious faulty device found to re-add to mdadm device %s"%self.devpath())
+                    raise ex.excError("failed to re-add %s to %s"%(faultydev, devpath))
+                added += 1
+        if removed > added:
+            self.log.error("no faulty device found to re-add to %s remaining "
+                           "%d removed legs"% (devpath, removed - added))
+
