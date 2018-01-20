@@ -503,7 +503,7 @@ class syncSymSrdfS(resSync.Sync):
         self.suspend()
 
     # SRDF swap
-    def syncswap(self):
+    def sync_swap(self):
         self.swap()
 
     def sync_break(self):

@@ -22,7 +22,7 @@ class syncNexenta(resSync.Sync):
             return False
         return True
 
-    def syncswap(self):
+    def sync_swap(self):
         # only available from CLI ?
         pass
 

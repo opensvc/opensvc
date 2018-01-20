@@ -2764,11 +2764,11 @@ class Svc(Crypt, ExtConfig):
             self.sub_set_action(rtype, "sync_drp")
         self.remote_postsync()
 
-    def syncswap(self):
-        self.sub_set_action("sync.netapp", "syncswap")
-        self.sub_set_action("sync.symsrdfs", "syncswap")
-        self.sub_set_action("sync.hp3par", "syncswap")
-        self.sub_set_action("sync.nexenta", "syncswap")
+    def sync_swap(self):
+        self.sub_set_action("sync.netapp", "sync_swap")
+        self.sub_set_action("sync.symsrdfs", "sync_swap")
+        self.sub_set_action("sync.hp3par", "sync_swap")
+        self.sub_set_action("sync.nexenta", "sync_swap")
 
     def sync_revert(self):
         self.sub_set_action("sync.hp3par", "sync_revert")

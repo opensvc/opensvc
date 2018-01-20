@@ -92,7 +92,7 @@ class syncNetapp(resSync.Sync):
         if ret != 0:
             raise ex.excError
 
-    def syncswap(self):
+    def sync_swap(self):
         master = self.master()
         slave = self.slave()
         s = self.snapmirror_status(self.local())
@@ -246,7 +246,7 @@ class syncNetapp(resSync.Sync):
                     raise ex.excError
             self.sync_break()
         if rcEnv.node_env == "PRD":
-            self.syncswap()
+            self.sync_swap()
 
     def stop(self):
         pass

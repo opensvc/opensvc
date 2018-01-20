@@ -1131,6 +1131,7 @@ DEPRECATED_ACTIONS = [
     "syncupdate",
     "syncresume",
     "syncrevert",
+    "syncswap",
     "syncverify",
 ]
 
@@ -1164,6 +1165,7 @@ ACTIONS_TRANSLATIONS = {
     "syncresync": "sync_resync",
     "syncrevert": "sync_revert",
     "syncsplit": "sync_split",
+    "syncswap": "sync_swap",
     "syncupdate": "sync_update",
     "syncverify": "sync_verify",
 }

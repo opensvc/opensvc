@@ -100,7 +100,7 @@ class syncHp3par(resSync.Sync):
     def sync_resync(self):
         self.sync_update()
 
-    def syncswap(self):
+    def sync_swap(self):
         data = self.showrcopy()
         if data['rcg']['Role'] == 'Primary':
             self.log.error("rcopy group %s role is Primary. refuse to swap")
