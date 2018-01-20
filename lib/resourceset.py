@@ -235,6 +235,7 @@ class ResourceSet(object):
                 self.parallel = False
 
         resources = self.action_resources(action, tags, xtags)
+        barrier = None
 
         if not self.svc.options.dry_run and \
            self.parallel and len(resources) > 1 and \
@@ -249,6 +250,12 @@ class ResourceSet(object):
                 proc.start()
                 resource.log.info("action %s started in child process %d"%(action, proc.pid))
                 procs[resource.rid] = proc
+                if self.svc.options.upto and resource.rid == self.svc.options.upto:
+                    barrier = "reached 'up to %s' barrier" % resource.rid
+                    break
+                if self.svc.options.downto and resource.rid == self.svc.options.downto:
+                    barrier = "reached 'down to %s' barrier" % resource.rid
+                    break
             for proc in procs.values():
                 proc.join()
             err = []
@@ -291,6 +298,15 @@ class ResourceSet(object):
                         # prevent re-logging
                         exc.value = ""
                     raise exc
+                if self.svc.options.upto and resource.rid == self.svc.options.upto:
+                    barrier = "reached 'up to %s' barrier" % resource.rid
+                    break
+                if self.svc.options.downto and resource.rid == self.svc.options.downto:
+                    barrier = "reached 'down to %s' barrier" % resource.rid
+                    break
+
+        if barrier:
+            raise ex.excEndAction(barrier)
 
     def action_job(self, resource, action):
         """

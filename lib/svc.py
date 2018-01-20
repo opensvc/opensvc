@@ -1206,7 +1206,7 @@ class Svc(Crypt, ExtConfig):
             else:
                 _rsets.sort(reverse=True)
             rsets += _rsets
-        self.set_action(rsets, action=action, tags=tags, xtags=xtags)
+        self.set_action(rsets, _type=_type, action=action, tags=tags, xtags=xtags)
 
     def need_snap_trigger(self, rsets, action):
         """
@@ -1231,7 +1231,7 @@ class Svc(Crypt, ExtConfig):
         """
         action_triggers(self, trigger, action, **kwargs)
 
-    def set_action(self, rsets=None, action=None, tags=None, xtags=None):
+    def set_action(self, rsets=None, _type=None, action=None, tags=None, xtags=None):
         """
         Call the action on all sets sorted resources.
         If the sets define a pre_snap trigger run that before the action.
@@ -1297,9 +1297,13 @@ class Svc(Crypt, ExtConfig):
         last = None
         for rset in rsets:
             # upto / downto break
-            current = rset.type.split(".")[0]
+            current = rset.type.split(".")[0].split(":")[0]
             if last and current != last and (self.options.upto == last or self.options.downto == last):
-                self.log.info("reached %s barrier" % self.options.upto if self.options.upto else self.options.downto)
+                if self.options.upto:
+                    barrier = "up to %s" % self.options.upto
+                else:
+                    barrier = "down to %s" % self.options.downto
+                self.log.info("reached '%s' barrier" % barrier)
                 break
             last = current
             if rset in aborted:
@@ -1948,8 +1952,7 @@ class Svc(Crypt, ExtConfig):
         Freeze all process of the process groups of the service.
         """
         if self.command_is_scoped():
-            self.sub_set_action('app', '_pg_freeze')
-            self.sub_set_action('container', '_pg_freeze')
+            self.sub_set_action(["app", "container"], "_pg_freeze")
         else:
             self._pg_freeze()
             for resource in self.get_resources(["app", "container"]):
@@ -1960,8 +1963,7 @@ class Svc(Crypt, ExtConfig):
         Thaw all process of the process groups of the service.
         """
         if self.command_is_scoped():
-            self.sub_set_action('app', '_pg_thaw')
-            self.sub_set_action('container', '_pg_thaw')
+            self.sub_set_action(["app", "container"], "_pg_thaw")
         else:
             self._pg_thaw()
             for resource in self.get_resources(["app", "container"]):
@@ -1972,8 +1974,7 @@ class Svc(Crypt, ExtConfig):
         Kill all process of the process groups of the service.
         """
         if self.command_is_scoped():
-            self.sub_set_action('app', '_pg_kill')
-            self.sub_set_action('container', '_pg_kill')
+            self.sub_set_action(["app", "container"], "_pg_kill")
         else:
             self._pg_kill()
             for resource in self.get_resources(["app", "container"]):
@@ -2745,8 +2746,7 @@ class Svc(Crypt, ExtConfig):
         if not self.can_sync(rtypes, 'nodes'):
             return
         self.presync()
-        for rtype in rtypes:
-            self.sub_set_action(rtype, "sync_nodes")
+        self.sub_set_action(rtypes, "sync_nodes")
         self.remote_postsync()
 
     def sync_drp(self):
@@ -2760,29 +2760,40 @@ class Svc(Crypt, ExtConfig):
         if not self.can_sync(rtypes, 'drpnodes'):
             return
         self.presync()
-        for rtype in rtypes:
-            self.sub_set_action(rtype, "sync_drp")
+        self.sub_set_action(rtypes, "sync_drp")
         self.remote_postsync()
 
     def sync_swap(self):
-        self.sub_set_action("sync.netapp", "sync_swap")
-        self.sub_set_action("sync.symsrdfs", "sync_swap")
-        self.sub_set_action("sync.hp3par", "sync_swap")
-        self.sub_set_action("sync.nexenta", "sync_swap")
+        rtypes = [
+            "sync.netapp",
+            "sync.symsrdfs",
+            "sync.hp3par",
+            "sync.nexenta",
+        ]
+        self.sub_set_action(rtypes, "sync_swap")
 
     def sync_revert(self):
-        self.sub_set_action("sync.hp3par", "sync_revert")
+        rtypes = [
+            "sync.hp3par",
+        ]
+        self.sub_set_action(rtypes, "sync_revert")
 
     def sync_resume(self):
-        self.sub_set_action("sync.netapp", "sync_resume")
-        self.sub_set_action("sync.symsrdfs", "sync_resume")
-        self.sub_set_action("sync.hp3par", "sync_resume")
-        self.sub_set_action("sync.dcsckpt", "sync_resume")
-        self.sub_set_action("sync.nexenta", "sync_resume")
+        rtypes = [
+            "sync.netapp",
+            "sync.symsrdfs",
+            "sync.hp3par",
+            "sync.dcsckpt",
+            "sync.nexenta",
+        ]
+        self.sub_set_action(rtypes, "sync_resume")
 
     def sync_quiesce(self):
-        self.sub_set_action("sync.netapp", "sync_quiesce")
-        self.sub_set_action("sync.nexenta", "sync_quiesce")
+        rtypes = [
+            "sync.netapp",
+            "sync.nexenta",
+        ]
+        self.sub_set_action(rtypes, "sync_quiesce")
 
     def resync(self):
         self.stop()
@@ -2790,60 +2801,84 @@ class Svc(Crypt, ExtConfig):
         self.start()
 
     def sync_resync(self):
-        self.sub_set_action("sync.netapp", "sync_resync")
-        self.sub_set_action("sync.nexenta", "sync_resync")
-        self.sub_set_action("sync.radossnap", "sync_resync")
-        self.sub_set_action("sync.radosclone", "sync_resync")
-        self.sub_set_action("sync.dds", "sync_resync")
-        self.sub_set_action("sync.symclone", "sync_resync")
-        self.sub_set_action("sync.symsnap", "sync_resync")
-        self.sub_set_action("sync.ibmdssnap", "sync_resync")
-        self.sub_set_action("sync.evasnap", "sync_resync")
-        self.sub_set_action("sync.necismsnap", "sync_resync")
-        self.sub_set_action("sync.dcssnap", "sync_resync")
-        self.sub_set_action("disk.md", "sync_resync")
+        rtypes = [
+            "sync.netapp",
+            "sync.nexenta",
+            "sync.radossnap",
+            "sync.radosclone",
+            "sync.dds",
+            "sync.symclone",
+            "sync.symsnap",
+            "sync.ibmdssnap",
+            "sync.evasnap",
+            "sync.necismsnap",
+            "sync.dcssnap",
+            "disk.md",
+        ]
+        self.sub_set_action(rtypes, "sync_resync")
 
     def sync_break(self):
-        self.sub_set_action("sync.netapp", "sync_break")
-        self.sub_set_action("sync.nexenta", "sync_break")
-        self.sub_set_action("sync.hp3par", "sync_break")
-        self.sub_set_action("sync.dcsckpt", "sync_break")
-        self.sub_set_action("sync.symclone", "sync_break")
-        self.sub_set_action("sync.symsnap", "sync_break")
+        rtypes = [
+            "sync.netapp",
+            "sync.nexenta",
+            "sync.hp3par",
+            "sync.dcsckpt",
+            "sync.symclone",
+            "sync.symsnap",
+        ]
+        self.sub_set_action(rtypes, "sync_break")
 
     def sync_update(self):
-        self.sub_set_action("sync.netapp", "sync_update")
-        self.sub_set_action("sync.hp3par", "sync_update")
-        self.sub_set_action("sync.hp3parsnap", "sync_update")
-        self.sub_set_action("sync.nexenta", "sync_update")
-        self.sub_set_action("sync.dcsckpt", "sync_update")
-        self.sub_set_action("sync.dds", "sync_update")
-        self.sub_set_action("sync.btrfssnap", "sync_update")
-        self.sub_set_action("sync.zfssnap", "sync_update")
-        self.sub_set_action("sync.s3", "sync_update")
-        self.sub_set_action("sync.symclone", "sync_update")
-        self.sub_set_action("sync.symsnap", "sync_update")
-        self.sub_set_action("sync.ibmdssnap", "sync_update")
+        rtypes = [
+            "sync.netapp",
+            "sync.nexenta",
+            "sync.hp3par",
+            "sync.hp3parsnap",
+            "sync.dcsckpt",
+            "sync.dds",
+            "sync.btrfssnap",
+            "sync.zfssnap",
+            "sync.s3",
+            "sync.symclone",
+            "sync.symsnap",
+            "sync.ibmdssnap",
+        ]
+        self.sub_set_action(rtypes, "sync_update")
 
     def sync_full(self):
-        self.sub_set_action("sync.dds", "sync_full")
-        self.sub_set_action("sync.zfs", "sync_full")
-        self.sub_set_action("sync.btrfs", "sync_full")
-        self.sub_set_action("sync.s3", "sync_full")
+        rtypes = [
+            "sync.dds",
+            "sync.zfs",
+            "sync.btrfs",
+            "sync.s3",
+        ]
+        self.sub_set_action(rtypes, "sync_full")
 
     def sync_restore(self):
-        self.sub_set_action("sync.s3", "sync_restore")
-        self.sub_set_action("sync.symclone", "sync_restore")
-        self.sub_set_action("sync.symsnap", "sync_restore")
+        rtypes = [
+            "sync.s3",
+            "sync.symclone",
+            "sync.symsnap",
+        ]
+        self.sub_set_action(rtypes, "sync_restore")
 
     def sync_split(self):
-        self.sub_set_action("sync.symsrdfs", "sync_split")
+        rtypes = [
+            "sync.symsrdfs",
+        ]
+        self.sub_set_action(rtypes, "sync_split")
 
     def sync_establish(self):
-        self.sub_set_action("sync.symsrdfs", "sync_establish")
+        rtypes = [
+            "sync.symsrdfs",
+        ]
+        self.sub_set_action(rtypes, "sync_establish")
 
     def sync_verify(self):
-        self.sub_set_action("sync.dds", "sync_verify")
+        rtypes = [
+            "sync.dds",
+        ]
+        self.sub_set_action(rtypes, "sync_verify")
 
     def print_config(self):
         """
@@ -2966,16 +3001,19 @@ class Svc(Crypt, ExtConfig):
             return
         self.sync_update()
         self.presync()
-        self.sub_set_action("sync.rsync", "sync_nodes")
-        self.sub_set_action("sync.zfs", "sync_nodes")
-        self.sub_set_action("sync.btrfs", "sync_nodes")
-        self.sub_set_action("sync.docker", "sync_nodes")
-        self.sub_set_action("sync.dds", "sync_nodes")
-        self.sub_set_action("sync.rsync", "sync_drp")
-        self.sub_set_action("sync.zfs", "sync_drp")
-        self.sub_set_action("sync.btrfs", "sync_drp")
-        self.sub_set_action("sync.docker", "sync_drp")
-        self.sub_set_action("sync.dds", "sync_drp")
+        rtypes = [
+            "sync.rsync",
+            "sync.zfs",
+            "sync.btrfs",
+            "sync.docker",
+            "sync.dds",
+            "sync.rsync",
+            "sync.zfs",
+            "sync.btrfs",
+            "sync.docker",
+            "sync.dds",
+        ]
+        self.sub_set_action(rtypes, "sync_drp")
         self.remote_postsync()
 
     def service_status(self):
@@ -3713,10 +3751,7 @@ class Svc(Crypt, ExtConfig):
                 self.log.error("unsupported action %s", action)
                 err = 1
         except ex.excEndAction as exc:
-            msg = "'%s' action ended by last resource" % action
-            if len(str(exc)) > 0:
-                msg += ": %s" % str(exc)
-            self.log.info(msg)
+            self.log.info(exc)
             err = 0
         except ex.excAbortAction as exc:
             msg = "'%s' action aborted by last resource" % action
@@ -3885,10 +3920,13 @@ class Svc(Crypt, ExtConfig):
         """
         Call the migrate action on all relevant resources.
         """
-        self.sub_set_action("container.ovm", "_migrate")
-        self.sub_set_action("container.hpvm", "_migrate")
-        self.sub_set_action("container.esx", "_migrate")
-        self.sub_set_action("container.lxd", "_migrate")
+        rtypes = [
+            "container.ovm",
+            "container.hpvm",
+            "container.esx",
+            "container.lxd",
+        ]
+        self.sub_set_action(rtypes, "_migrate")
 
     def destination_node_sanity_checks(self, destination_node=None):
         """

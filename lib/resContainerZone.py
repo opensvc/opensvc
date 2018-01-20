@@ -408,10 +408,11 @@ class Zone(resContainer.Container):
         self.svc.sub_set_action("ip", "start", tags=set([self.name]))
         if not 'noaction' in self.tags:
             self.boot()
-        self.svc.sub_set_action("disk.scsireserv", "start", tags=set([self.name]))
-        self.svc.sub_set_action("disk.zpool", "start", tags=set([self.name]))
-        self.svc.sub_set_action("disk.raw", "start", tags=set([self.name]))
-        self.svc.sub_set_action("fs", "start", tags=set([self.name]))
+        self.svc.sub_set_action([
+            "disk.scsireserv",
+            "disk.zpool",
+            "disk.raw",
+            "fs"], "start", tags=set([self.name]))
 
     def _stop(self):
         if not 'noaction' in self.tags:
@@ -421,28 +422,31 @@ class Zone(resContainer.Container):
 
     def stop(self):
         self.export_zone_cfg()
-        self.svc.sub_set_action("fs", "stop", tags=set([self.name]))
-        self.svc.sub_set_action("disk.raw", "stop", tags=set([self.name]))
-        self.svc.sub_set_action("disk.zpool", "stop", tags=set([self.name]))
-        self.svc.sub_set_action("disk.scsireserv", "stop", tags=set([self.name]))
-        self.svc.sub_set_action("ip", "stop", tags=set([self.name]))
+        self.svc.sub_set_action([
+            "fs",
+            "disk.raw",
+            "disk.zpool",
+            "disk.scsireserv",
+            "ip"], "stop", tags=set([self.name]))
         self._stop()
 
     def provision(self):
         if not 'noaction' in self.tags:
             resContainer.Container.provision()
-        #self.svc.sub_set_action("ip", "provision", tags=set([self.name]))
-        self.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.name]))
-        self.svc.sub_set_action("disk.zpool", "provision", tags=set([self.name]))
-        self.svc.sub_set_action("disk.raw", "provision", tags=set([self.name]))
-        self.svc.sub_set_action("fs", "provision", tags=set([self.name]))
+        self.svc.sub_set_action([
+            #"ip",
+            "disk.scsireserv",
+            "disk.zpool",
+            "disk.raw",
+            "fs"], "provision", tags=set([self.name]))
 
     def unprovision(self):
-        self.svc.sub_set_action("fs", "unprovision", tags=set([self.name]))
-        self.svc.sub_set_action("disk.raw", "unprovision", tags=set([self.name]))
-        self.svc.sub_set_action("disk.zpool", "unprovision", tags=set([self.name]))
-        self.svc.sub_set_action("disk.scsireserv", "unprovision", tags=set([self.name]))
-        self.svc.sub_set_action("ip", "unprovision", tags=set([self.name]))
+        self.svc.sub_set_action([
+            "fs",
+            "disk.raw",
+            "disk.zpool",
+            "disk.scsireserv",
+            "ip"], "unprovision", tags=set([self.name]))
         if not 'noaction' in self.tags:
             resContainer.Container.unprovision()
 
