@@ -68,13 +68,13 @@ class ExtConfig(object):
         Delete an option in the service configuration file specified section.
         """
         lines = self._read_cf().splitlines()
-        lines = self.__unset(lines, section, option)
+        lines = self.unset_line(lines, section, option)
         try:
             self._write_cf(lines)
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
 
-    def __unset(self, lines, section, option):
+    def unset_line(self, lines, section, option):
         section = "[%s]" % section
         need_write = False
         in_section = False
@@ -295,7 +295,7 @@ class ExtConfig(object):
             if change is None:
                 continue
             section, option, value = change
-            lines = self.__set(lines, section, option, value)
+            lines = self.set_line(lines, section, option, value)
             changed = True
         if not changed:
             # all changes were None
@@ -305,7 +305,7 @@ class ExtConfig(object):
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
 
-    def __set(self, lines, section, option, value):
+    def set_line(self, lines, section, option, value):
         """
         Set <option> to <value> in <section> of the configuration file.
         """

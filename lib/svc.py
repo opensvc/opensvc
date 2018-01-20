@@ -4117,10 +4117,10 @@ class Svc(Crypt, ExtConfig):
 
             if disable:
                 self.log.info("set %s.disable = true", rid)
-                lines = self.__set(lines, rid, "disable", "true")
+                lines = self.set_line(lines, rid, "disable", "true")
             elif self.config.has_option(rid, "disable"):
                 self.log.info("remove %s.disable", rid)
-                lines = self.__unset(lines, rid, "disable")
+                lines = self.unset_line(lines, rid, "disable")
 
             #
             # if we set <section>.disable = <bool>,
@@ -4136,7 +4136,7 @@ class Svc(Crypt, ExtConfig):
                 if value == True:
                     continue
                 self.log.info("remove %s.%s = false", rid, option)
-                lines = self.__unset(lines, rid, option)
+                lines = self.unset_line(lines, rid, option)
 
 
         unset_lazy(self, "disabled")
