@@ -1,6 +1,7 @@
 import provisioning
 from rcUtilities import justcall, which
 from converters import convert_size
+from rcUtilities import bdecode
 from rcUtilitiesLinux import label_to_dev
 from rcGlobalEnv import rcEnv
 from subprocess import *
@@ -156,6 +157,8 @@ class Prov(provisioning.Prov):
         p1 = Popen(["yes"], stdout=PIPE, preexec_fn=restore_signals)
         p2 = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=p1.stdout, close_fds=True)
         out, err = p2.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if p2.returncode != 0:
             raise ex.excError(err)
         if hasattr(self.r, "fullname"):
