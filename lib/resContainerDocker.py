@@ -344,8 +344,8 @@ class Docker(resContainer.Container):
         return False
 
     def _stop(self):
-        self.svc.dockerlib.docker_start()
-        self.status()
+        if not self.svc.dockerlib.docker_running():
+            return
         resContainer.Container.stop(self)
         self.svc.dockerlib.get_running_instance_ids(refresh=True)
 
