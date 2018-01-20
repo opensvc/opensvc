@@ -160,10 +160,7 @@ class SyncZfs(resSync.Sync):
 
     def zfs_send_incremental(self, node):
         if not self.snap_exists(self.src_snap_sent, node):
-            if dataset_exists(self.src_snap_sent_old, "snapshot"):
-                Dataset(self.src_snap_sent_old).rename(self.src_snap_sent)
-            else:
-                return self.zfs_send_initial(node)
+            return self.zfs_send_initial(node)
         if self.recursive:
             send_cmd = [rcEnv.syspaths.zfs, "send", "-R", "-I",
                         self.src_snap_sent, self.src_snap_tosend]
@@ -187,10 +184,6 @@ class SyncZfs(resSync.Sync):
             out = bdecode(buff[0])
             err = bdecode(buff[1])
             if p2.returncode != 0:
-                if retry and self.dst_snap_sent_old in err or self.dst_snap_tosend_old:
-                    self.force_remove_snap(self.dst_snap_sent_old, node)
-                    self.force_remove_snap(self.dst_snap_tosend_old, node)
-                    return do_it(retry=False)
                 if err is not None and len(err) > 0:
                     self.log.error(err)
                 raise ex.excError("sync update failed")
@@ -223,10 +216,6 @@ class SyncZfs(resSync.Sync):
             out = bdecode(buff[0])
             err = bdecode(buff[1])
             if p2.returncode != 0:
-                if retry and self.dst_snap_sent_old in err or self.dst_snap_tosend_old:
-                    self.force_remove_snap(self.dst_snap_sent_old, node)
-                    self.force_remove_snap(self.dst_snap_tosend_old, node)
-                    return do_it(retry=False)
                 if err is not None and len(err) > 0:
                     self.log.error(err)
                 raise ex.excError("full sync failed")
@@ -294,8 +283,17 @@ class SyncZfs(resSync.Sync):
         self.pre_sync_check_flex_primary()
 
         self.get_info()
+
+        if self.snap_exists(self.src_snap_sent_old):
+            self.log.info("migrate local sent snap name")
+            self.rename_snap(self.src_snap_sent_old, self.src_snap_sent)
+            for node in self.targets:
+                self.log.info("migrate sent snap name on node %s", node)
+                self.rename_snap(self.dst_snap_sent_old, self.dst_snap_sent, node=node)
+
         if not self.snap_exists(self.src_snap_tosend):
             self.create_snap(self.src_snap_tosend)
+
         if self.snap_exists(self.src_snap_sent):
             for n in self.targets:
                 self.remove_snap(self.dst_snap_tosend, n)
