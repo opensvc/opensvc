@@ -165,11 +165,12 @@ class Monitor(shared.OsvcThread, Crypt):
             },
         }
         resp = self.daemon_send(request, nodename=nodename)
+        status = resp.get("status", 1)
         if status == 2:
             # peer is deleting this service
             self.log.info(resp.get("error", ""))
             return
-        if resp.get("status", 1) != 0:
+        elif status != 0:
             self.log.error("unable to fetch service %s config from node %s: "
                            "received %s", svcname, nodename, resp)
             return
@@ -790,6 +791,12 @@ class Monitor(shared.OsvcThread, Crypt):
         elif smon.global_expect == "aborted" and \
              smon.local_expect not in (None, "started"):
             self.set_smon(svc.svcname, local_expect="unset")
+        elif smon.global_expect == "placed":
+            if instance["monitor"].get("placement") != "leader":
+                if instance.avail not in STOPPED_STATES:
+                    self.service_stop(svc.svcname)
+            elif shared.AGG[svc.svcname].avail in STOPPED_STATES:
+                self.set_smon(svc.svcname, global_expect="started")
 
     def service_orchestrator_auto_grace(self, svc):
         """
@@ -1563,6 +1570,9 @@ class Monitor(shared.OsvcThread, Crypt):
              self.get_agg_aborted(svcname):
             self.log.info("service %s action aborted", svcname)
             self.set_smon(svcname, global_expect="unset")
+        elif smon.global_expect == "placed" and \
+             shared.AGG[svcname].placement in ("optiomal", "n/a"):
+            self.set_smon(svcname, global_expect="unset")
 
     def set_smon_l_expect_from_status(self, data, svcname):
         if svcname not in data:
@@ -1712,46 +1722,46 @@ class Monitor(shared.OsvcThread, Crypt):
                 return True
             else:
                 return False
-        if global_expect == "shutdown":
+        elif global_expect == "shutdown":
             return not self.get_agg_shutdown(svcname)
-        if global_expect == "started":
+        elif global_expect == "started":
             status = shared.AGG[svcname].avail
             local_frozen = instance.get("frozen", False)
             if status not in STARTED_STATES or local_frozen:
                 return True
             else:
                 return False
-        if global_expect == "frozen":
+        elif global_expect == "frozen":
             frozen = shared.AGG[svcname].frozen
             if frozen != "frozen":
                 return True
             else:
                 return False
-        if global_expect == "thawed":
+        elif global_expect == "thawed":
             frozen = shared.AGG[svcname].frozen
             if frozen != "thawed":
                  return True
             else:
                 return False
-        if global_expect == "provisioned":
+        elif global_expect == "provisioned":
             provisioned = shared.AGG[svcname].provisioned
             if provisioned is not True:
                 return True
             else:
                 return False
-        if global_expect == "unprovisioned":
+        elif global_expect == "unprovisioned":
             provisioned = shared.AGG[svcname].provisioned
             if provisioned is not False:
                 return True
             else:
                 return False
-        if global_expect == "deleted":
+        elif global_expect == "deleted":
             deleted = self.get_agg_deleted(svcname)
             if deleted is False:
                 return True
             else:
                 return False
-        if global_expect == "purged":
+        elif global_expect == "purged":
             provisioned = shared.AGG[svcname].provisioned
             deleted = self.get_agg_deleted(svcname)
             purged = self.get_agg_purged(provisioned, deleted)
@@ -1759,9 +1769,15 @@ class Monitor(shared.OsvcThread, Crypt):
                 return True
             else:
                 return False
-        if global_expect == "aborted":
+        elif global_expect == "aborted":
             aborted = self.get_agg_aborted(svcname)
             if aborted is False:
+                return True
+            else:
+                return False
+        elif global_expect == "placed":
+            placement = shared.AGG[svcname].placement
+            if placement == "non-optimal":
                 return True
             else:
                 return False
