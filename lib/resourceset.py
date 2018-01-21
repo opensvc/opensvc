@@ -66,35 +66,55 @@ class ResourceSet(object):
         for resource in self.resources:
             yield(resource)
 
-    def pre_action(self, action):
+    def pre_action(self, action, **kwargs):
         """
         Call the pre_action of each resource driver in the resource set.
         """
-        if len(self.resources) == 0:
+        tags = kwargs.get("tags", set())
+        xtags = kwargs.get("xtags", set())
+        xtypes = kwargs.get("xtypes")
+        types = kwargs.get("types")
+        resources = self.action_resources(action, tags, xtags, xtypes, types)
+        if len(resources) == 0:
             return
         types_done = []
-        for resource in self.resources:
+        types_aborted = []
+        for resource in resources:
             if resource.type in types_done:
                 continue
             types_done.append(resource.type)
             if not hasattr(resource, "pre_action"):
                 continue
-            resource.pre_action(action)
+            try:
+                resource.pre_action(action)
+            except ex.excAbortAction:
+                types_aborted.append(resource.type)
+        return types_aborted
 
-    def post_action(self, action):
+    def post_action(self, action, **kwargs):
         """
         Call the post_action of each resource driver in the resource set.
         """
-        if len(self.resources) == 0:
+        tags = kwargs.get("tags", set())
+        xtags = kwargs.get("xtags", set())
+        xtypes = kwargs.get("xtypes")
+        types = kwargs.get("types")
+        resources = self.action_resources(action, tags, xtags, xtypes, types)
+        if len(resources) == 0:
             return
         types_done = []
-        for resource in self.resources:
+        types_aborted = []
+        for resource in resources:
             if resource.type in types_done:
                 continue
             types_done.append(resource.type)
             if not hasattr(resource, "post_action"):
                 continue
-            resource.post_action(action)
+            try:
+                resource.post_action(action)
+            except ex.excAbortAction:
+                types_aborted.append(resource.type)
+        return types_aborted
 
     def purge_status_last(self):
         """
@@ -178,7 +198,7 @@ class ResourceSet(object):
             resources.sort(reverse=True)
         return resources
 
-    def action_resources(self, action, tags, xtags):
+    def action_resources(self, action, tags, xtags, xtypes, types):
         """
         Return resources to execute the action on.
         """
@@ -209,6 +229,9 @@ class ResourceSet(object):
         self.log.debug("resources after 'disable' filter: %s",
                        ','.join([res.rid for res in resources]))
 
+        resources = [res for res in resources if types is None or res.type in types]
+        resources = [res for res in resources if xtypes is None or res.type not in xtypes]
+
         if action == "startstandby":
             # filter out resource not in standby mode
             resources = [res for res in resources if res.standby]
@@ -223,6 +246,8 @@ class ResourceSet(object):
         """
         tags = kwargs.get("tags", set())
         xtags = kwargs.get("xtags", set())
+        xtypes = kwargs.get("xtypes")
+        types = kwargs.get("types")
 
         if self.parallel:
             # verify we can actually do parallel processing, fallback to serialized
@@ -234,7 +259,7 @@ class ResourceSet(object):
             except:
                 self.parallel = False
 
-        resources = self.action_resources(action, tags, xtags)
+        resources = self.action_resources(action, tags, xtags, xtypes, types)
         barrier = None
 
         if not self.svc.options.dry_run and \

@@ -1252,7 +1252,6 @@ class Svc(Crypt, ExtConfig):
             If a trigger raises,
             * excError, stop looping over the resources and propagate up
               to the caller.
-            * excAbortAction, continue looping over the resources
             * any other exception, save the traceback in the debug log
               and stop looping over the resources and raise an excError
             """
@@ -1262,12 +1261,9 @@ class Svc(Crypt, ExtConfig):
                     break
                 try:
                     rset.log.debug("start %s %s_action", rset.type, when)
-                    getattr(rset, when + "_action")(action)
+                    aborted += getattr(rset, when + "_action")(action, types=_type, tags=tags, xtags=xtags)
                 except ex.excError:
                     raise
-                except ex.excAbortAction:
-                    aborted.append(rset)
-                    continue
                 except:
                     self.save_exc()
                     raise ex.excError
@@ -1306,11 +1302,8 @@ class Svc(Crypt, ExtConfig):
                 self.log.info("reached '%s' barrier" % barrier)
                 break
             last = current
-            if rset in aborted:
-                rset.log.debug("skip action: aborted by pre action")
-                continue
             self.log.debug('set_action: action=%s rset=%s', action, rset.type)
-            rset.action(action, tags=tags, xtags=xtags)
+            rset.action(action, types=_type, tags=tags, xtags=xtags, xtypes=aborted)
 
         do_trigger("post")
 
