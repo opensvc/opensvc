@@ -76,7 +76,7 @@ class ResourceSet(object):
         types = kwargs.get("types")
         resources = self.action_resources(action, tags, xtags, xtypes, types)
         if len(resources) == 0:
-            return
+            return []
         types_done = []
         types_aborted = []
         for resource in resources:
@@ -101,7 +101,7 @@ class ResourceSet(object):
         types = kwargs.get("types")
         resources = self.action_resources(action, tags, xtags, xtypes, types)
         if len(resources) == 0:
-            return
+            return []
         types_done = []
         types_aborted = []
         for resource in resources:
