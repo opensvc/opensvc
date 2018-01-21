@@ -72,6 +72,7 @@ class Prov(provisioning.Prov):
         else:
             self.r.log.info("set %s.uuid@%s = %s", self.r.rid, rcEnv.nodename, uuid)
             self.r.svc._set(self.r.rid, "uuid@"+rcEnv.nodename, uuid)
+        self.r.svc.node.unset_lazy("devtree")
 
     def get_real_uuid(self, name):
         buff = self.r.detail()
@@ -92,4 +93,5 @@ class Prov(provisioning.Prov):
         else:
             self.r.log.info("reset %s.uuid@%s", self.r.rid, rcEnv.nodename)
             self.r.svc._set(self.r.rid, "uuid@"+rcEnv.nodename, "")
+        self.r.svc.node.unset_lazy("devtree")
 

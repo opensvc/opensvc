@@ -24,6 +24,7 @@ class Prov(provisioning.Prov):
 
         self.r.log.info("unlink %s" % self.path)
         os.unlink(self.path)
+        self.r.svc.node.unset_lazy("devtree")
 
     def provisioner(self):
         try:
@@ -43,3 +44,4 @@ class Prov(provisioning.Prov):
                 f.write('\0')
         except Exception as e:
             raise ex.excError("failed to create %s: %s"% (self.path, str(e)))
+        self.r.svc.node.unset_lazy("devtree")

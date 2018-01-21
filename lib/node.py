@@ -3858,3 +3858,9 @@ class Node(Crypt, ExtConfig):
         tree.load({self.options.id: nets[self.options.id]}, title=rcEnv.nodename)
         print(tree)
 
+    def unset_lazy(self, prop):
+        """
+        Expose the unset_lazy(self, ...) utility function as a method,
+        so Node() users don't have to import it from rcUtilities.
+        """
+        unset_lazy(self, prop)

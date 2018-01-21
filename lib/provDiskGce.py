@@ -12,7 +12,7 @@ class Prov(provisioning.Prov):
         self.r.log.info("provisioned")
         self.r.get_disks(refresh=True)
         self.r.start()
-        return True
+        self.r.svc.node.unset_lazy("devtree")
 
     def _provisioner(self, name):
         disk_names = self.r.get_disk_names()
@@ -69,7 +69,7 @@ class Prov(provisioning.Prov):
         for name in self.r.names:
             self._unprovisioner(name)
         self.r.log.info("unprovisioned")
-        return True
+        self.r.svc.node.unset_lazy("devtree")
 
     def _unprovisioner(self, name):
         disk_names = self.r.get_disk_names()

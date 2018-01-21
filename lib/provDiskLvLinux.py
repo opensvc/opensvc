@@ -103,6 +103,7 @@ class Prov(provisioning.Prov):
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
+        self.r.svc.node.unset_lazy("devtree")
 
     def provisioner(self):
         if not which('vgdisplay'):
@@ -194,4 +195,5 @@ class Prov(provisioning.Prov):
             self.r.log.error("timed out waiting for %s to appear"%dev)
             raise ex.excError
 
+        self.r.svc.node.unset_lazy("devtree")
 

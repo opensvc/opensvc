@@ -58,4 +58,4 @@ class Prov(provisioning.Prov):
             raise ex.excError
 
         self.r.log.info("provisioned")
-        return True
+        self.r.svc.node.unset_lazy("devtree")

@@ -31,6 +31,7 @@ class Prov(provisioning.Prov):
         self.r.clear_cache("vg.lvs.attr")
         self.r.clear_cache("vg.tags")
         self.r.clear_cache("vg.pvs")
+        self.r.svc.node.unset_lazy("devtree")
 
     def has_pv(self, pv):
         cmd = [rcEnv.syspaths.pvscan, "--cache", pv]
@@ -113,3 +114,4 @@ class Prov(provisioning.Prov):
         self.r.clear_cache("vg.lvs.attr")
         self.r.clear_cache("vg.tags")
         self.r.clear_cache("vg.pvs")
+        self.r.svc.node.unset_lazy("devtree")

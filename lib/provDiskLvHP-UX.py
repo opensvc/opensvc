@@ -41,5 +41,6 @@ class Prov(provisioning.Prov):
         if ret != 0:
             raise ex.excError
 
+        self.r.svc.node.unset_lazy("devtree")
 
 

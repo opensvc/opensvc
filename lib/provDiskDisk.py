@@ -36,6 +36,7 @@ class Prov(provisioning.Prov):
         self.r.svc.config.set(self.r.rid, "disk_id", self.r.disk_id)
         self.r.svc.write_config()
         self.r.log.info("disk %s provisioned" % self.r.disk_id)
+        self.r.svc.node.unset_lazy("devtree")
 
     def unprovision(self):
         handler = "/services/self.r/disks"
@@ -52,4 +53,5 @@ class Prov(provisioning.Prov):
         self.r.svc.config.set(self.r.rid, "disk_id", "")
         self.r.svc.write_config()
         self.r.log.info("unprovisioned")
+        self.r.svc.node.unset_lazy("devtree")
 

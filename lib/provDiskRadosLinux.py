@@ -11,7 +11,7 @@ class Prov(provisioning.Prov):
             self.provisioner_one(image)
         self.r.log.info("provisioned")
         self.r.start()
-        return True
+        self.r.svc.node.unset_lazy("devtree")
 
     def provisioner_one(self, image):
         if self.r.exists(image):
@@ -31,5 +31,5 @@ class Prov(provisioning.Prov):
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
-
+        self.r.svc.node.unset_lazy("devtree")
 

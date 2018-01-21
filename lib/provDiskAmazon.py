@@ -15,7 +15,7 @@ class Prov(provisioning.Prov):
         self.r.volumes = self.volumes_done
         self.r.log.info("provisioned")
         self.r.start()
-        return True
+        self.r.svc.node.unset_lazy("devtree")
 
     def _provisioner(self, volume):
         if not volume.startswith("<") and not volume.endswith(">"):
@@ -46,5 +46,6 @@ class Prov(provisioning.Prov):
         data = self.r.aws(cmd)
         self.r.wait_avail(data["VolumeId"])
         self.volumes_done.append(data["VolumeId"])
+        self.r.svc.node.unset_lazy("devtree")
 
 
