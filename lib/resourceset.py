@@ -229,8 +229,14 @@ class ResourceSet(object):
         self.log.debug("resources after 'disable' filter: %s",
                        ','.join([res.rid for res in resources]))
 
-        resources = [res for res in resources if types is None or res.type in types]
-        resources = [res for res in resources if xtypes is None or res.type not in xtypes]
+        resources = [res for res in resources if \
+                     types is None or \
+                     res.type in types or \
+                     res.type.split(".")[0] in types]
+        resources = [res for res in resources if \
+                     xtypes is None or \
+                     (res.type not in xtypes and \
+                      res.type.split(".")[0] not in xtypes)]
 
         if action == "startstandby":
             # filter out resource not in standby mode
