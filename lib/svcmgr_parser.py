@@ -1168,6 +1168,7 @@ ACTIONS_TRANSLATIONS = {
     "syncswap": "sync_swap",
     "syncupdate": "sync_update",
     "syncverify": "sync_verify",
+    "unfreeze": "thaw",
 }
 
 def add_rid(options, new_rids):
