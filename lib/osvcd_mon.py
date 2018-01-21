@@ -165,6 +165,10 @@ class Monitor(shared.OsvcThread, Crypt):
             },
         }
         resp = self.daemon_send(request, nodename=nodename)
+        if status == 2:
+            # peer is deleting this service
+            self.log.info(resp.get("error", ""))
+            return
         if resp.get("status", 1) != 0:
             self.log.error("unable to fetch service %s config from node %s: "
                            "received %s", svcname, nodename, resp)

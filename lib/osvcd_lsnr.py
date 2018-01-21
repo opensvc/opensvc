@@ -264,9 +264,11 @@ class Listener(shared.OsvcThread, Crypt):
         svcname = kwargs.get("svcname")
         if not svcname:
             return {"error": "no svcname specified", "status": 1}
+        if shared.SMON_DATA.get(svcname, {}).get("status") in ("purging", "deleting"):
+            return {"error": "delete in progress", "status": 2}
         fpath = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
         if not os.path.exists(fpath):
-            return {"error": "%s does not exist" % fpath, "status": 1}
+            return {"error": "%s does not exist" % fpath, "status": 3}
         with codecs.open(fpath, "r", "utf8") as filep:
             buff = filep.read()
         self.log.info("serve service %s config to %s", svcname, nodename)
