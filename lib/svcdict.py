@@ -3775,7 +3775,7 @@ class KeyDict(KeywordStore):
                   candidates=(True, False),
                   default=True,
                   convert="boolean",
-                  text="Set to false to skip the resource on provision and unprovision actions. Warning: provisioning implies destructive operations like formating."
+                  text="Set to false to skip the resource on provision and unprovision actions. Warning: provisioning implies destructive operations like formating. Unprovisioning does not keep a copy of the service data."
                 )
         def kw_shared(resource):
             return Keyword(
@@ -3786,7 +3786,7 @@ class KeyDict(KeywordStore):
                   candidates=(True, False),
                   default=False,
                   convert="boolean",
-                  text="Set to True to skip the resource on provision and unprovision actions if the action has already been done by a peer. Shared resources, like vg built on SAN disks must be provisioned once."
+                  text="Set to True to skip the resource on provision and unprovision actions if the action has already been done by a peer. Shared resources, like vg built on SAN disks must be provisioned once. All resources depending on a shared resource must also be flagged as shared."
                 )
         def kw_encap(resource):
             return Keyword(
