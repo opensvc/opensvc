@@ -1153,11 +1153,16 @@ class Monitor(shared.OsvcThread, Crypt):
         has_up = False
         placement = "optimal"
         for instance in self.get_service_instances(svcname).values():
-            if "avail" not in instance:
+            try:
+                leader = instance["monitor"].get("placement") == "leader"
+                avail = instance["avail"]
+            except KeyError:
                 continue
-            if instance["avail"] == "up":
+            if avail == "up":
                 has_up = True
-            elif instance["monitor"].get("placement") == "leader":
+                if not leader:
+                    placement = "non-optimal"
+            elif leader:
                 placement = "non-optimal"
         if not has_up:
             return "n/a"
