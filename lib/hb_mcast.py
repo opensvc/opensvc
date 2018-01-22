@@ -207,6 +207,7 @@ class HbMcastRx(HbMcast):
             shared.CLUSTER_DATA[nodename] = data
         self.set_last(nodename)
         self.set_beating(nodename)
+        self.set_peers_beating()
 
 
 
