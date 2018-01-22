@@ -52,29 +52,31 @@ ACTION_NO_ASYNC = [
 
 ACTION_TGT_STATE = {
     "abort": "aborted",
-    "start": "started",
-    "stop": "stopped",
-    "freeze": "frozen",
-    "thaw": "thawed",
-    "provision": "provisioned",
-    "unprovision": "unprovisioned",
     "delete": "deleted",
+    "freeze": "frozen",
+    "giveback": "placed",
+    "provision": "provisioned",
     "purge": "purged",
     "shutdown": "shutdown",
+    "start": "started",
+    "stop": "stopped",
+    "thaw": "thawed",
+    "unprovision": "unprovisioned",
 }
 
 ACTION_PROGRESS = {
     "abort": "aborting",
-    "start": "starting",
-    "stop": "stopping",
-    "freeze": "freezing",
-    "thaw": "thawing",
-    "provision": "provisioning",
-    "unprovision": "unprovisioning",
     "delete": "deleting",
+    "freeze": "freezing",
+    "giveback": "placing",
+    "provision": "provisioning",
     "purge": "purging",
     "shutdown": "shutting",
+    "start": "starting",
+    "stop": "stopping",
+    "thaw": "thawing",
     "toc": "tocing",
+    "unprovision": "unprovisioning",
 }
 
 TOP_STATUS_GROUPS = [
@@ -3986,24 +3988,9 @@ class Svc(Crypt, ExtConfig):
 
     def giveback(self):
         """
-        Service move to best node.
+        Optimize service placement.
         """
-        data = self.node._daemon_status(refresh=True)
-        if self.placement_optimal(data):
-            self.log.info("placement is already optimal")
-            return
-        self.svcunlock()
-        self.clear()
-        self.node.async_action("thaw", wait=True, timeout=self.options.time)
-        for nodename, _data in data.get("monitor", {}).get("nodes", {}).items():
-            __data = _data.get("services", {}).get("status", {}).get(self.svcname, {})
-            if __data.get("monitor", {}).get("placement") != "leader" and \
-               __data.get("avail") == "up":
-                self.daemon_service_action(["stop"], nodename=nodename)
-                self._clear(nodename=nodename)
-        self.daemon_mon_action("thaw", wait=True)
-        if self.orchestrate == "no":
-            self.daemon_mon_action("start")
+        pass
 
     def switch(self):
         """
