@@ -152,7 +152,6 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
 
     if options.config is None and options.template is None:
         data = getattr(svcBuilder, action)(svcnames, options.resource,
-                                           interactive=options.interactive,
                                            provision=options.provision)
     else:
         data = {"rid": [], "ret": 0}

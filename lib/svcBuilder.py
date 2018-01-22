@@ -2262,7 +2262,7 @@ def build_services(status=None, svcnames=None, create_instance=False,
         services[svc.svcname] = svc
     return [s for _, s in sorted(services.items())], errors
 
-def create(svcname, resources=[], interactive=False, provision=False):
+def create(svcname, resources=[], provision=False):
     if not isinstance(svcname, list):
         print("ouch, svcname should be a list object", file=sys.stderr)
         return {"ret": 1}
@@ -2350,14 +2350,6 @@ def create(svcname, resources=[], interactive=False, provision=False):
         for section, d in sections.items():
             sections[section].update(keys.update(section, d))
     except (MissKeyNoDefault, KeyInvalidValue):
-        if not interactive:
-            return {"ret": 1}
-
-    try:
-        if interactive:
-            defaults, sections = keys.form(defaults, sections)
-    except KeyboardInterrupt:
-        sys.stderr.write("Abort\n")
         return {"ret": 1}
 
     conf = rcConfigParser.RawConfigParser(defaults)

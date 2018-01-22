@@ -823,7 +823,6 @@ ACTIONS = {
                    "file.",
             "options": ACTION_OPTS + [
                 OPT.disable_rollback,
-                OPT.interactive,
                 OPT.provision,
                 OPT.resource,
             ],

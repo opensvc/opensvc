@@ -1,16 +1,19 @@
-import sys
+"""
+The module implementing Keyword, Section and KeywordStore classes,
+used to declared node and service configuration keywords and their
+properties.
+"""
+from __future__ import print_function
 import os
-from rcGlobalEnv import rcEnv
 from textwrap import TextWrapper
 
-if sys.version_info[0] >= 3:
-    raw_input = input
+from rcGlobalEnv import rcEnv
 
 class MissKeyNoDefault(Exception):
-     pass
+    pass
 
 class KeyInvalidValue(Exception):
-     pass
+    pass
 
 class Keyword(object):
     def __init__(self, section, keyword,
@@ -32,7 +35,7 @@ class Keyword(object):
                  provisioning=False):
         self.section = section
         self.keyword = keyword
-        if rtype is None or type(rtype) == list:
+        if rtype is None or isinstance(rtype, list):
             self.rtype = rtype
         else:
             self.rtype = [rtype]
@@ -63,10 +66,7 @@ class Keyword(object):
         if self.keyword in self.top.deprecated_keywords:
             return True
         if self.rtype is None:
-            if self.section+"."+self.keyword in self.top.deprecated_keywords:
-                return True
-            else:
-                return False
+            return self.section+"."+self.keyword in self.top.deprecated_keywords
         for rtype in self.rtype:
             if self.section+"."+rtype+"."+self.keyword in self.top.deprecated_keywords:
                 return True
@@ -86,12 +86,12 @@ class Keyword(object):
     def template_text(self):
         wrapper = TextWrapper(subsequent_indent="#%18s"%"", width=78)
 
-        depends = " && ".join(map(lambda d: "%s in %s"%(d[0], d[1]), self.depends))
+        depends = " && ".join(["%s in %s"%(d[0], d[1]) for d in self.depends])
         if depends == "":
             depends = None
 
-        if type(self.candidates) in (list, tuple, set):
-            candidates = " | ".join(map(lambda x: str(x), self.candidates))
+        if isinstance(self.candidates, (list, tuple, set)):
+            candidates = " | ".join([str(x) for x in self.candidates])
         else:
             candidates = str(self.candidates)
         if not self.strict_candidates:
@@ -129,12 +129,12 @@ class Keyword(object):
         return s
 
     def template_rst(self, section=None):
-        depends = " && ".join(map(lambda d: "%s in %s"%(d[0], d[1]), self.depends))
+        depends = " && ".join(["%s in %s"%(d[0], d[1]) for d in self.depends])
         if depends == "":
             depends = None
 
-        if type(self.candidates) in (list, tuple, set):
-            candidates = " | ".join(map(lambda x: str(x), self.candidates))
+        if isinstance(self.candidates, (list, tuple, set)):
+            candidates = " | ".join([str(x) for x in self.candidates])
         else:
             candidates = str(self.candidates)
         if not self.strict_candidates:
@@ -169,107 +169,6 @@ class Keyword(object):
         s += '\n'
         return s
 
-    def __str__(self):
-        if self.deprecated():
-            return ''
-
-        wrapper = TextWrapper(subsequent_indent="%16s"%"", width=78)
-
-        depends = ""
-        for d in self.depends:
-            depends += "%s in %s\n"%(d[0], d[1])
-        if depends == "":
-            depends = None
-
-        if type(self.candidates) in (list, tuple, set):
-            candidates = " | ".join(map(lambda x: str(x), self.candidates))
-        else:
-            candidates = str(self.candidates)
-        if not self.strict_candidates:
-            candidates += " ..."
-
-        s = ''
-        s += "------------------------------------------------------------------------------\n"
-        s += "section:        %s\n"%self.section
-        s += "keyword:        %s\n"%self.keyword
-        s += "------------------------------------------------------------------------------\n"
-        s += "  required:     %s\n"%str(self.required)
-        s += "  provisioning: %s\n"%str(self.provisioning)
-        s += "  default:      %s\n"%str(self.default)
-        s += "  candidates:   %s\n"%candidates
-        s += "  depends:      %s\n"%depends
-        s += "  scopable:     %s\n"%str(self.at)
-        if self.text:
-            s += wrapper.fill("  help:         "+self.text)
-        if self.at:
-            s += "\n\nPrefix the value with '@<node> ', '@nodes ', '@drpnodes ', '@flex_primary', '@drp_flex_primary' or '@encapnodes '\n"
-            s += "to specify a scope-specific value.\n"
-            s += "You will be prompted for new values until you submit an empty value.\n"
-        s += "\n"
-        return s
-
-    def form(self, d):
-        if self.deprecated():
-            return
-
-        # skip this form if dependencies are not met
-        for d_keyword, d_value in self.depends:
-            if d is None:
-                return d
-            if d_keyword not in d:
-                return d
-            if d[d_keyword] not in d_value:
-                return d
-
-        # print() the form
-        print(self)
-
-        # if we got a json seed, use its values as default
-        # else use the Keyword object default
-        if d and self.keyword in d:
-            default = d[self.keyword]
-        elif self.default is not None:
-            default = self.default
-        else:
-            default = None
-
-        if default is not None:
-            default_prompt = " [%s] "%str(default)
-        else:
-            default_prompt = ""
-
-        req_satisfied = False
-        while True:
-            try:
-                val = raw_input(self.keyword+default_prompt+"> ")
-            except EOFError:
-                break
-            if len(val) == 0:
-                if req_satisfied:
-                    return d
-                if default is None and self.required:
-                    print("value required")
-                    continue
-                # keyword is optional, leave dictionary untouched
-                return d
-            elif self.at and val[0] == '@':
-                l = val.split()
-                if len(l) < 2:
-                    print("invalid value")
-                    continue
-                val = ' '.join(l[1:])
-                d[self.keyword+l[0]] = val
-                req_satisfied = True
-            else:
-                d[self.keyword] = val
-                req_satisfied = True
-            if self.at:
-                # loop for more key@<scope> = values
-                print("More '%s' ? <enter> to step to the next parameter."%self.keyword)
-                continue
-            else:
-                return d
-
 class Section(object):
     def __init__(self, section, top=None):
         self.section = section
@@ -281,12 +180,6 @@ class Section(object):
             return self
         self.keywords.append(o)
         return self
-
-    def __str__(self):
-        s = ''
-        for keyword in sorted(self.keywords):
-            s += str(keyword)
-        return s
 
     def template(self, fmt="text"):
         k = self.getkey("type")
@@ -387,7 +280,7 @@ class Section(object):
             l = keyword.split('@')
             if len(l) != 2:
                 return
-            keyword, node = l
+            keyword, _ = l
         if rtype:
             fkey = ".".join((self.section, rtype, keyword))
             if fkey in self.top.deprecated_keywords:
@@ -415,6 +308,7 @@ class Section(object):
 class KeywordStore(dict):
     def __init__(self, provision=False, deprecated_keywords={}, deprecated_sections={},
                  template_prefix="template.", base_sections=[], has_default_section=True):
+        dict.__init__(self)
         self.sections = {}
         self.deprecated_sections = deprecated_sections
         self.deprecated_keywords = deprecated_keywords
@@ -428,7 +322,7 @@ class KeywordStore(dict):
             return self
         o.top = self
         if o.section not in self.sections:
-             self.sections[o.section] = Section(o.section, top=self)
+            self.sections[o.section] = Section(o.section, top=self)
         self.sections[o.section] += o
         return self
 
@@ -441,22 +335,26 @@ class KeywordStore(dict):
             return Section(k)
         return self.sections[str(key)]
 
-    def __str__(self):
-        s = ''
-        for section in self.sections:
-            s += str(self.sections[section])
-        return s
-
     def print_templates(self, fmt="text"):
-        for section in sorted(self.sections.keys()):
+        """
+        Print templates in the spectified format (text by default, or rst).
+        """
+        for section in sorted(self.sections):
             print(self.sections[section].template(fmt=fmt))
 
     def required_keys(self, section, rtype=None):
+        """
+        Return the list of required keywords in the section for the resource
+        type specified by <rtype>.
+        """
         if section not in self.sections:
             return []
         return [k for k in sorted(self.sections[section].getkeys(rtype)) if k.required is True]
 
     def purge_keywords_from_dict(self, d, section):
+        """
+        Remove unknown keywords from a section.
+        """
         if section == "env":
             return d
         if 'type' in d:
@@ -464,7 +362,7 @@ class KeywordStore(dict):
         else:
             rtype = None
         delete_keywords = []
-        for keyword, value in d.items():
+        for keyword in d:
             key = self.sections[section].getkey(keyword)
             if key is None and rtype is not None:
                 key = self.sections[section].getkey(keyword, rtype)
@@ -479,9 +377,10 @@ class KeywordStore(dict):
         return d
 
     def update(self, rid, d):
-        """ Given a resource dictionary, spot missing required keys
-            and provide a new dictionary to merge populated by default
-            values
+        """
+        Given a resource dictionary, spot missing required keys
+        and provide a new dictionary to merge populated by default
+        values.
         """
         import copy
         completion = copy.copy(d)
@@ -498,9 +397,9 @@ class KeywordStore(dict):
                 return {}
             section = l[0]
             if 'type' in d:
-                 rtype = d['type']
+                rtype = d['type']
             elif self[section].getkey('type') is not None and \
-                  self[section].getkey('type').default is not None:
+                 self[section].getkey('type').default is not None:
                 rtype = self[section].getkey('type').default
             else:
                 rtype = None
@@ -527,7 +426,7 @@ class KeywordStore(dict):
 
             if key.keyword in d:
                 continue
-            if key.keyword in map(lambda x: x.split('@')[0], d.keys()):
+            if key.keyword in [x.split('@')[0] for x in d]:
                 continue
             if key.default is None:
                 raise MissKeyNoDefault("No default value for required key '%s' in section '%s'"%(key.keyword, rid))
@@ -538,74 +437,3 @@ class KeywordStore(dict):
         completion = self.purge_keywords_from_dict(completion, section)
 
         return completion
-
-    def form_sections(self, sections):
-        wrapper = TextWrapper(subsequent_indent="%18s"%"", width=78)
-        candidates = set(self.sections.keys()) - set(['DEFAULT'])
-
-        print("------------------------------------------------------------------------------")
-        print("Choose a resource type to add or a resource to edit.")
-        print("Enter 'quit' to finish the creation.")
-        print("------------------------------------------------------------------------------")
-        print(wrapper.fill("resource types: "+', '.join(candidates)))
-        print(wrapper.fill("resource ids:   "+', '.join(sections.keys())))
-        print
-        return raw_input("resource type or id> ")
-
-    def free_resource_index(self, section, sections):
-        indices = []
-        for s in sections:
-            l = s.split('#')
-            if len(l) != 2:
-                continue
-            sname, sindex = l
-            if section != sname:
-                continue
-            try:
-                indices.append(int(sindex))
-            except:
-                continue
-        i = 0
-        while True:
-            if i not in indices:
-                return i
-            i += 1
-
-    def form(self, defaults, sections):
-        for key in sorted(self.DEFAULT.getkeys()):
-            defaults = key.form(defaults)
-        while True:
-            try:
-                section = self.form_sections(sections)
-            except EOFError:
-                break
-            if section == "quit":
-                break
-            if '#' in section:
-                rid = section
-                section = section.split('#')[0]
-            else:
-                index = self.free_resource_index(section, sections)
-                rid = '#'.join((section, str(index)))
-            if section not in self.sections:
-                 print("unsupported resource type")
-                 continue
-            for key in sorted(self.sections[section].getkeys()):
-                if rid not in sections:
-                    sections[rid] = {}
-                sections[rid] = key.form(sections[rid])
-            if 'type' in sections[rid]:
-                specific_keys = self.sections[section].getkeys(rtype=sections[rid]['type'])
-                if len(specific_keys) > 0:
-                    print("\nKeywords specific to the '%s' driver\n"%sections[rid]['type'])
-                for key in sorted(specific_keys):
-                    if rid not in sections:
-                        sections[rid] = {}
-                    sections[rid] = key.form(sections[rid])
-
-            # purge the provisioning keywords
-            sections[rid] = self.purge_keywords_from_dict(sections[rid], section)
-
-        return defaults, sections
-
-
