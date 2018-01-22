@@ -510,9 +510,9 @@ class Ip(Res.Resource):
                 else:
                     baseaddr = intf.ipaddr
                 network = str(ipaddress.IPv4Interface(baseaddr).network.network_address)
-            except ValueError:
-                self.log.info("skip allocate: ipdev has no configured address "
-                              "and network is not set")
+            except (ValueError, IndexError):
+                self.log.info("skip allocate: ipdev %s has no configured address "
+                              "and network is not set", self.ipdev)
                 return
 
         post_data = {
