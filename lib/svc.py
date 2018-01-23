@@ -3702,12 +3702,6 @@ class Svc(Crypt, ExtConfig):
                 ', '.join(TOPOLOGIES),
             ))
 
-        try:
-            self.validate_local_action(action)
-        except ex.excError as exc:
-            self.log.error(exc)
-            return 1
-
         err = 0
         waitlock = convert_duration(options.waitlock)
         if waitlock < 0:
@@ -3781,22 +3775,6 @@ class Svc(Crypt, ExtConfig):
         if action.startswith("sync"):
             progress = "syncing"
         return progress
-
-    def validate_local_action(self, action):
-        if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
-            return
-        if action in ("freeze", "thaw"):
-            return
-        progress = self.action_progress(action)
-        if progress is None:
-            return
-        data = self.get_smon_data()
-        if data is not None and rcEnv.nodename in data["instances"]:
-            status = data["instances"][rcEnv.nodename].get("status", "unknown")
-            if action == "start" and status == "ready":
-                return
-            if status != "idle" and not " failed" in status:
-                raise ex.excError("instance in %s state" % status)
 
     def notify_action(self, action):
         if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
