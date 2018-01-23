@@ -2971,7 +2971,7 @@ class KeywordDiskMdShared(Keyword):
                   self,
                   section="disk",
                   keyword="shared",
-                  candidates=(True, False),
+                  candidates=(True, False, "true", "false"),
                   at=True,
                   rtype="md",
                   text="Trigger additional checks on the passive nodes. If not specified, the shared parameter defaults to True if no multiple nodes and drpnodes are defined and no md section parameter use scoping."
