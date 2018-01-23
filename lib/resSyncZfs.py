@@ -18,7 +18,6 @@ class SyncZfs(resSync.Sync):
                  target=None,
                  src=None,
                  dst=None,
-                 sender=None,
                  recursive = True,
                  snap_size=0,
                  **kwargs):
@@ -29,7 +28,6 @@ class SyncZfs(resSync.Sync):
 
         self.label = "zfs of %s to %s"%(src, ",".join(target))
         self.target = target
-        self.sender = sender
         self.recursive = recursive
         self.src = src
         self.dst = dst
@@ -40,7 +38,6 @@ class SyncZfs(resSync.Sync):
         data = [
           ["src", self.src],
           ["dst", self.dst],
-          ["sender", self.sender if self.sender else ""],
           ["target", " ".join(self.target) if self.target else ""],
           ["recursive", str(self.recursive).lower()],
         ]
@@ -122,9 +119,10 @@ class SyncZfs(resSync.Sync):
 
     def get_peersenders(self):
         self.peersenders = set()
-        if 'nodes' == self.sender:
-            self.peersenders |= self.svc.nodes
-            self.peersenders -= set([rcEnv.nodename])
+        if rcEnv.nodename not in self.svc.nodes or self.target != ["drpnodes"]:
+            return
+        self.peersenders |= self.svc.nodes
+        self.peersenders -= set([rcEnv.nodename])
 
     def get_targets(self):
         self.targets = set()
@@ -398,8 +396,8 @@ class SyncZfs(resSync.Sync):
         self.set_statefile()
         self._push_statefile(node)
         self.get_peersenders()
-        for s in self.peersenders:
-            self._push_statefile(s)
+        for node in self.peersenders:
+            self._push_statefile(node)
 
     def parse_statefile(self, out, node=None):
         self.set_statefile()
