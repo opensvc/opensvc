@@ -1150,9 +1150,13 @@ class Monitor(shared.OsvcThread, Crypt):
             return 'up'
 
     def get_agg_placement(self, svcname):
+        instances = [instance for instance in self.get_service_instances(svcname).values() \
+                     if not instance.get("frozen")]
+        if len(instances) < 2:
+            return "optimal"
         has_up = False
         placement = "optimal"
-        for instance in self.get_service_instances(svcname).values():
+        for instance in instances:
             try:
                 leader = instance["monitor"].get("placement") == "leader"
                 avail = instance["avail"]
