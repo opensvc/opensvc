@@ -107,8 +107,8 @@ class syncSymSrdfS(resSync.Sync):
             self.do_dgimport(self.dgfile_rdf_name)
 
     def presync(self):
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
-        if self.svc.options.force or s['overall'].status == rcStatus.UP:
+        s = self.svc.group_status(excluded_groups=set(["sync"]))
+        if self.svc.options.force or s['avail'].status == rcStatus.UP:
             self.do_rdf_dgexport()
             self.do_local_dgexport()
             self.do_dg_wwn_map()
