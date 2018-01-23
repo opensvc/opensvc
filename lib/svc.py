@@ -1742,7 +1742,7 @@ class Svc(Crypt, ExtConfig):
                 encap_notice = instance_notice(
                     overall=edata.overall,
                     frozen=edata.frozen,
-                    constraints=edata.constraints,
+                    constraints=edata.get("constraints", True),
                     provisioned=edata.provisioned,
                     monitor=edata.monitor,
                 )
