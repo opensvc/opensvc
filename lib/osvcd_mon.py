@@ -1894,5 +1894,5 @@ class Monitor(shared.OsvcThread, Crypt):
                 except:
                     continue
                 if frozen:
-                    svc.freeze()
+                    svc.freezer.freeze()
 
