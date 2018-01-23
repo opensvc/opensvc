@@ -879,6 +879,7 @@ class KeywordConstraints(Keyword):
                   self,
                   section="DEFAULT",
                   keyword="constraints",
+                  at=True,
                   depends=[("orchestrate", "ha")],
                   order=16,
                   example="$(\"{nodename}\"==\"n2.opensvc.com\")",
