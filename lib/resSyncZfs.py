@@ -138,8 +138,22 @@ class SyncZfs(resSync.Sync):
         self.get_dst_info()
 
     def sync_nodes(self):
-        """alias to sync_update"""
-        self.sync_update()
+        """
+        Run sync_update if the target contains only nodes.
+        """
+        if self.target == ["nodes"]:
+            self.sync_update()
+        else:
+            self.log.warning("skip: target also has drp nodes.")
+
+    def sync_drp(self):
+        """
+        Run sync_update if the target contains only drpnodes.
+        """
+        if self.target == ["drpnodes"]:
+            self.sync_update()
+        else:
+            self.log.warning("skip: target is not only drp nodes.")
 
     def sync_full(self):
         """

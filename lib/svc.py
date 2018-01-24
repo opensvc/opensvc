@@ -2832,6 +2832,7 @@ class Svc(Crypt, ExtConfig):
             "sync.dcsckpt",
             "sync.dds",
             "sync.btrfssnap",
+            "sync.zfs",
             "sync.zfssnap",
             "sync.s3",
             "sync.symclone",
@@ -2998,7 +2999,6 @@ class Svc(Crypt, ExtConfig):
         self.presync()
         rtypes = [
             "sync.rsync",
-            "sync.zfs",
             "sync.btrfs",
             "sync.docker",
             "sync.dds",
