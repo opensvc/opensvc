@@ -699,6 +699,8 @@ class Monitor(shared.OsvcThread, Crypt):
                               svc.flex_max_nodes, instance.avail)
                 self.set_smon(svc.svcname, "ready")
             elif n_up > svc.flex_max_nodes:
+                if instance is None:
+                    return
                 if instance.avail not in STARTED_STATES:
                     return
                 n_to_stop = n_up - svc.flex_max_nodes
