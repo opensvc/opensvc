@@ -10,6 +10,8 @@ SOURCES_D=$OSVC/tmp/SOURCES
 BUILDROOT_D=$OSVC/tmp/BUILDROOT
 SPEC=$SPEC_D/opensvc.spec
 
+mkdir -p $OSVC/tmp/SRPMS/noarch $OSVC/tmp/RPMS/noarch $OSVC/tmp/BUILD || exit 1
+
 [ ! -d $SPEC_D ] && {
 	mkdir -p $SPEC_D || exit 1
 }
