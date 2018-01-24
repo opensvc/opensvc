@@ -95,9 +95,12 @@ class DockerLib(object):
             except IndexError:
                 self.docker_data_dir = None
 
-        self.docker_cmd = [self.docker_exe]
-        if self.docker_socket:
-            self.docker_cmd += ['-H', self.docker_socket]
+        try:
+            self.docker_cmd = [self.docker_exe]
+            if self.docker_socket:
+                self.docker_cmd += ['-H', self.docker_socket]
+        except:
+            self.docker_cmd = None
 
     def get_ps(self, refresh=False):
         """
@@ -301,6 +304,10 @@ class DockerLib(object):
         """
         The output of "docker info".
         """
+        try:
+            self.docker_exe
+        except ex.excInitError:
+            return ""
         cmd = [self.docker_exe, "info"]
         return justcall(cmd)[0]
 
@@ -309,7 +316,10 @@ class DockerLib(object):
         """
         The docker version.
         """
-        cmd = [self.docker_exe, "--version"]
+        try:
+            cmd = [self.docker_exe, "--version"]
+        except ex.excInitError:
+            return "0"
         out = justcall(cmd)[0]
         elements = out.split()
         if len(elements) < 3:
@@ -320,6 +330,10 @@ class DockerLib(object):
         """
         Return True if the docker version is at least <version>.
         """
+        try:
+            cmd = [self.docker_exe, "--version"]
+        except ex.excInitError:
+            return False
         if V(self.docker_version) >= V(version):
             return True
         return False
@@ -502,6 +516,10 @@ class DockerLib(object):
         """
         Return the "docker inspect" data dict.
         """
+        try:
+            self.docker_exe
+        except ex.excInitError:
+            return {}
         if container_id is None:
             raise IndexError("container id is None")
         elif isinstance(container_id, list):

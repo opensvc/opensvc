@@ -475,6 +475,11 @@ class Docker(resContainer.Container):
                             "instead of '%s'"%(running_image_id, run_image_id))
 
     def _status(self, verbose=False):
+        try:
+            self.svc.dockerlib.docker_exe
+        except ex.excInitError as exc:
+            self.status_log(str(exc), "warn")
+            return rcStatus.DOWN
         if not self.svc.dockerlib.docker_running():
             self.status_log("docker daemon is not running", "info")
             return rcStatus.DOWN
