@@ -298,6 +298,7 @@ class Docker(resContainer.Container):
         """
         return os.path.join(
             os.sep,
+            "opensvc",
             self.svc.svcname,
             self.rset.rid.replace(":", "."),
             self.rid.replace("#", ".")

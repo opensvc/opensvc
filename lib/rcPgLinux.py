@@ -207,7 +207,7 @@ def get_cgroup_path(o, t, create=True):
     if hasattr(o, "type") and o.type == "container.lxc" and hasattr(o, "name"):
         cgp = os.path.join(cgroup_mntpt, "lxc", o.name)
     else:
-        elements = [cgroup_mntpt, svcname]
+        elements = [cgroup_mntpt, "opensvc", svcname]
         if hasattr(o, "rset") and o.rset is not None:
             elements.append(o.rset.rid.replace(":", "."))
         if hasattr(o, "rid") and o.rid is not None:
