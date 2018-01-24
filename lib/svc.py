@@ -4717,6 +4717,20 @@ class Svc(Crypt, ExtConfig):
             timeout = convert_duration(timeout)
         if nodename is None:
             nodename = self.options.node
+        if nodename not in self.node.cluster_nodes:
+            try:
+                secret = self.node.conf_get("cluster", "secret", impersonate=nodename)
+            except:
+                raise ex.excError("unknown cluster secret to communicate with node %s" % nodename)
+            try:
+                cluster_name = self.node.conf_get("cluster", "name", impersonate=nodename)
+            except:
+                raise ex.excError("unknown cluster name to communicate with node %s" % nodename)
+        else:
+            secret = self.cluster_key
+            cluster_name = None
+
+
         options = {
             "svcname": self.svcname,
             "cmd": cmd,
@@ -4731,6 +4745,8 @@ class Svc(Crypt, ExtConfig):
                 nodename=nodename,
                 silent=True,
                 timeout=timeout,
+                secret=secret,
+                cluster_name=cluster_name,
             )
         except Exception as exc:
             self.log.error("service action on node %s failed: %s",
