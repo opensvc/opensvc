@@ -186,6 +186,10 @@ class HbDisk(Hb, Crypt):
                 if buff[0] != "\0":
                     continue
                 self.peer_config[rcEnv.nodename].slot = slot
+                try:
+                    nodename = bytes(rcEnv.nodename, "utf-8")
+                except TypeError:
+                    nodename = rcEnv.nodename
                 self.meta_write_slot(slot, rcEnv.nodename, fo=fo)
                 self.log.info("allocated slot %d", slot)
             break
@@ -314,6 +318,7 @@ class HbDiskRx(HbDisk):
                 with shared.CLUSTER_DATA_LOCK:
                     shared.CLUSTER_DATA[nodename] = _data
                 self.stats.beats += 1
+                self.stats.bytes += len(slot_data)
                 self.set_last(nodename)
             except Exception as exc:
                 self.stats.errors += 1
