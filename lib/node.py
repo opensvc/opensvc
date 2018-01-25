@@ -1588,7 +1588,7 @@ class Node(Crypt, ExtConfig):
             except ex.excError:
                 pass
         if blocking_trigger:
-            self.log.info("execute blocking trigger %s", trigger)
+            self.log.info("execute blocking trigger %s", blocking_trigger)
             try:
                 self.do_trigger(blocking_trigger)
             except ex.excError:
