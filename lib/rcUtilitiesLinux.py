@@ -19,14 +19,14 @@ def dev_to_paths(dev, log=None):
     if dev.startswith("/dev/sd"):
         return [dev]
     if not dev.startswith("/dev/dm-"):
-        raise ex.excError
+        return []
     name = os.path.basename(dev)
     cmd = ["dmsetup", "table", "-j", str(major("device-mapper")), "-m", dev[8:]]
     out, err, ret = justcall(cmd)
     if ret != 0:
-        raise ex.excError
+        raise ex.excError(err)
     if "multipath" not in out:
-        raise ex.excError
+        return []
     paths = ["/dev/"+os.path.basename(_name) for _name in glob.glob("/sys/block/%s/slaves/*" % name)]
     return paths
 
