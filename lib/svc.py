@@ -195,6 +195,8 @@ ACTIONS_NO_TRIGGER = [
     "presync",
     "postsync",
     "resource_monitor",
+    "set_provisioned",
+    "set_unprovisioned",
     "status",
 ]
 
@@ -211,6 +213,8 @@ ACTIONS_NO_LOCK = [
     "push_encap_config",
     "run",
     "status",
+    "set_provisioned",
+    "set_unprovisioned",
     "thaw",
     "toc",
     "validate_config",
@@ -308,6 +312,8 @@ STATUS_TYPES = [
 
 ACTIONS_DO_MASTER = [
     "freeze",
+    "set_provisioned",
+    "set_unprovisioned",
     "run",
     "thaw",
     "toc",
@@ -2615,6 +2621,12 @@ class Svc(Crypt, ExtConfig):
             # set by the daemon on the placement leaders.
             # return the service to standby if not a placement leader
             self.rollback()
+
+    def set_provisioned(self):
+        self.sub_set_action(START_GROUPS, "set_provisioned", xtags=set(["zone", "docker"]))
+
+    def set_unprovisioned(self):
+        self.sub_set_action(START_GROUPS, "set_unprovisioned", xtags=set(["zone", "docker"]))
 
     def abort_start(self):
         """

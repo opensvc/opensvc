@@ -521,6 +521,14 @@ ACTIONS = {
         "print_config_mtime": {
             "msg": "Display the service local configuration file modification time",
         },
+        "set_provisioned": {
+            "msg": "Set the resources as provisioned.",
+            "options": ACTION_OPTS,
+        },
+        "set_unprovisioned": {
+            "msg": "Set the resources as unprovisioned.",
+            "options": ACTION_OPTS,
+        },
         "freeze": {
             "msg": "Block orchestration on the service.",
             "options": ASYNC_ACTION_OPTS + [

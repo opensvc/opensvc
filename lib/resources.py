@@ -320,8 +320,10 @@ class Resource(object):
             "startstandby",
             "stop",
             "provision",
-            "unprovision",
             "run",
+            "set_unprovisioned",
+            "set_provisioned",
+            "unprovision",
         )
         if not self.skip:
             return False
@@ -986,6 +988,20 @@ class Resource(object):
         if not os.path.exists(self.provisioned_flag):
             return
         os.unlink(self.provisioned_flag)
+
+    def set_unprovisioned(self):
+        """
+        Exposed resource action to force the provisioned state to False in the cache file.
+        """
+        self.log.info("set unprovisioned")
+        self.write_is_provisioned_flag(False)
+
+    def set_provisioned(self):
+        """
+        Exposed resource action to force the provisioned state to True in the cache file.
+        """
+        self.log.info("set provisioned")
+        self.write_is_provisioned_flag(True)
 
     @lazy
     def prov(self):
