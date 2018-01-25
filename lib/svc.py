@@ -4171,6 +4171,8 @@ class Svc(Crypt, ExtConfig):
         patterns = [
             os.path.join(rcEnv.paths.pathlog, self.svcname+".log*"),
             os.path.join(rcEnv.paths.pathlog, self.svcname+".debug.log*"),
+            os.path.join(rcEnv.paths.pathlog, '.'+self.svcname+".log*"),
+            os.path.join(rcEnv.paths.pathlog, '.'+self.svcname+".debug.log*"),
             os.path.join(self.var_d, "frozen"),
         ]
         for pattern in patterns:
