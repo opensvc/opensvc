@@ -165,6 +165,23 @@ class Crypt(object):
         return nodes
 
     @lazy
+    def cluster_drpnodes(self):
+        """
+        Return the cluster drp nodes, read from cluster.drpnodes in the node
+        configuration. If not set, return an empty list.
+        """
+        nodes = []
+        if hasattr(self, "get_node"):
+            config = self.get_node().config
+        else:
+            config = self.config
+        try:
+            nodes = config.get("cluster", "drpnodes").split()
+        except Exception as exc:
+            pass
+        return nodes
+
+    @lazy
     def cluster_name(self):
         """
         Return the cluster name, read from cluster.name in the node

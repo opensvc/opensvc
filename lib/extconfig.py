@@ -403,6 +403,11 @@ class ExtConfig(object):
                     return " ".join(self.node.cluster_nodes)
                 else:
                     return " ".join(self.cluster_nodes)
+            if ref == "clusterdrpnodes":
+                if hasattr(self, "node"):
+                    return " ".join(self.node.cluster_drpnodes)
+                else:
+                    return " ".join(self.cluster_drpnodes)
             if ref == "svcmgr":
                 return rcEnv.paths.svcmgr
             if ref == "nodemgr":

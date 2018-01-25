@@ -858,7 +858,18 @@ class KeywordClusterNodes(Keyword):
                   keyword="nodes",
                   convert="list",
                   order=15,
-                  text="This list is fetched from the join command payload received from the joined node."
+                  text="This list is fetched from the join command payload received from the joined node. The service configuration {clusternodes} is resolved to this keyword value."
+                )
+
+class KeywordClusterDrpNodes(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="cluster",
+                  keyword="drpnodes",
+                  convert="list",
+                  order=15,
+                  text="This list is fetched from the join command payload received from the joined node. The service configuration {clusterdrpnodes} is resolved to this keyword value."
                 )
 
 class KeywordClusterQuorum(Keyword):
@@ -1175,6 +1186,7 @@ class KeyDict(KeywordStore):
         self += KeywordClusterName()
         self += KeywordClusterSecret()
         self += KeywordClusterNodes()
+        self += KeywordClusterDrpNodes()
         self += KeywordClusterQuorum()
         self += KeywordArbitratorName()
         self += KeywordArbitratorSecret()

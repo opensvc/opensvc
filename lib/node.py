@@ -3677,11 +3677,14 @@ class Node(Crypt, ExtConfig):
             raise ex.excError("join failed: no cluster.nodes in response")
         if not isinstance(cluster_nodes, list):
             raise ex.excError("join failed: cluster.nodes value is not a list")
+        cluster_drpnodes = data.get("cluster", {}).get("drpnodes")
         quorum = data.get("cluster", {}).get("quorum", False)
 
         self.config.set("cluster", "name", cluster_name)
         self.config.set("cluster", "nodes", " ".join(cluster_nodes))
         self.config.set("cluster", "secret", self.options.secret)
+        if isinstance(cluster_drpnodes, list) and len(cluster_drpnodes) > 0:
+            self.config.set("cluster", "drpnodes", " ".join(cluster_drpnodes))
         if quorum:
             self.config.set("cluster", "quorum", "true")
         elif self.config.has_option("cluster", "quorum"):
