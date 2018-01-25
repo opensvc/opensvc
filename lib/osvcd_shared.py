@@ -749,5 +749,5 @@ class OsvcThread(threading.Thread):
         return [nodename for nodename, _ in sorted(data, key=lambda x: x[1])]
 
     def placement_ranks_nodes_order(self, svc, candidates, silent=False):
-        return [nodename for nodename in svc.ordered_nodes if nodename in candidates]
+        return [nodename for nodename in svc.ordered_peers if nodename in candidates]
 

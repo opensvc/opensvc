@@ -562,6 +562,15 @@ class Svc(Crypt, ExtConfig):
             return []
 
     @lazy
+    def ordered_peers(self):
+        if rcEnv.nodename in self.nodes:
+            return self.ordered_nodes
+        elif rcEnv.nodename in self.drpnodes:
+            return self.ordered_drpnodes
+        else:
+            return []
+
+    @lazy
     def dockerlib(self):
         """
         Lazy allocator for the dockerlib object.
