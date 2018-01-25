@@ -2772,6 +2772,18 @@ class KeywordDiskScsireserv(Keyword):
                   text="If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
                 )
 
+class KeywordDiskPromoteRW(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  keyword="promote_rw",
+                  default=False,
+                  convert="boolean",
+                  candidates=(True, False),
+                  text="If set to 'true', OpenSVC will try to promote the base devices to read-write on start."
+                )
+
 class KeywordDiskNoPreemptAbort(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -2784,6 +2796,18 @@ class KeywordDiskNoPreemptAbort(Keyword):
                   default=False,
                   convert="boolean",
                   text="If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
+                )
+
+class KeywordFsPromoteRW(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="promote_rw",
+                  default=False,
+                  convert="boolean",
+                  candidates=(True, False),
+                  text="If set to 'true', OpenSVC will try to promote the base devices to read-write on start."
                 )
 
 class KeywordFsScsireserv(Keyword):
@@ -2810,6 +2834,18 @@ class KeywordFsNoPreemptAbort(Keyword):
                   default=False,
                   convert="boolean",
                   text="If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
+                )
+
+class KeywordContainerPromoteRW(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  keyword="promote_rw",
+                  default=False,
+                  convert="boolean",
+                  candidates=(True, False),
+                  text="If set to 'true', OpenSVC will try to promote the base devices to read-write on start."
                 )
 
 class KeywordContainerScsireserv(Keyword):
@@ -4550,7 +4586,9 @@ class KeyDict(KeywordStore):
         self += KeywordDiskSize()
         self += KeywordDiskImageFormat()
         self += KeywordDiskOptions()
+        self += KeywordDiskPromoteRW()
         self += KeywordDiskScsireserv()
+        self += KeywordDiskPromoteRW()
         self += KeywordDiskNoPreemptAbort()
         self += KeywordDiskPvs()
         self += KeywordZPoolName()
@@ -4566,7 +4604,9 @@ class KeyDict(KeywordStore):
         self += KeywordFsMkfsOpt()
         self += KeywordFsSnapSize()
         self += KeywordFsVg()
+        self += KeywordFsPromoteRW()
         self += KeywordFsScsireserv()
+        self += KeywordFsPromoteRW()
         self += KeywordFsNoPreemptAbort()
         self += KeywordFsSize()
         self += KeywordFsZfsSize()
@@ -4643,7 +4683,9 @@ class KeyDict(KeywordStore):
         self += KeywordStonith()
         self += KeywordContainerType()
         self += KeywordContainerZoneDeleteOnStop()
+        self += KeywordContainerPromoteRW()
         self += KeywordContainerScsireserv()
+        self += KeywordContainerPromoteRW()
         self += KeywordContainerNoPreemptAbort()
         self += KeywordContainerOrigin()
         self += KeywordContainerRcmd()

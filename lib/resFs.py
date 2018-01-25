@@ -72,6 +72,7 @@ class Mount(Res.Resource):
 
     def start(self):
         self.validate_dev()
+        self.promote_rw()
         self.create_mntpt()
 
     def validate_dev(self):

@@ -29,6 +29,7 @@ class Disk(Res.Resource):
         self.do_stop()
 
     def start(self):
+        self.promote_rw()
         self.do_start()
 
     def _status(self, verbose=False):

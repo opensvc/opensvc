@@ -38,6 +38,7 @@ class Resource(object):
                  standby=False,
                  skip_provision=False,
                  shared=False,
+                 promote_rw=False,
                  encap=False):
         if tags is None:
             tags = set()
@@ -56,6 +57,7 @@ class Resource(object):
         self.rstatus = None
         self.skip_provision = skip_provision
         self.shared = shared
+        self.need_promote_rw = promote_rw
         self.encap = encap or "encap" in self.tags
         self.sort_key = rid
         self.info_in_status = []
@@ -1087,4 +1089,14 @@ class Resource(object):
         if not self.shared or self.svc.options.disable_rollback:
             self.write_is_provisioned_flag(value)
         return value
+
+    def promote_rw(self):
+        if not self.need_promote_rw:
+            return
+        mod = __import__("rcUtilities"+rcEnv.sysname)
+        if not hasattr(mod, "promote_dev_rw"):
+            self.log.warning("promote_rw is not supported on this operating system")
+            return
+        for dev in self.base_devs():
+            getattr(mod, "promote_dev_rw")(dev, log=self.log)
 

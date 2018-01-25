@@ -84,6 +84,14 @@ def get_disabled(svc, section):
     except ex.OptNotFound as exc:
         return exc.default
 
+def get_promote_rw(svc, section):
+    try:
+        return svc.conf_get(section, 'promote_rw')
+    except ValueError as exc:
+        return False
+    except ex.OptNotFound as exc:
+        return exc.default
+
 def get_standby(svc, section):
     try:
         return svc.conf_get(section, 'standby')
@@ -108,6 +116,7 @@ def init_kwargs(svc, s):
         "restart": get_restart(svc, s),
         "shared": get_shared(svc, s),
         "encap": get_encap(svc, s),
+        "promote_rw": get_promote_rw(svc, s),
     }
 
 def standby_from_always_on(svc, section):

@@ -173,6 +173,7 @@ class Container(Res.Resource):
         return False
 
     def start(self):
+        self.promote_rw()
         self.getaddr()
         where = self.where_up()
         if where is not None:
