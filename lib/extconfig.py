@@ -752,6 +752,11 @@ class ExtConfig(object):
                 (o+"@flex_primary", nodename == self.flex_primary),
                 (o+"@drp_flex_primary", nodename == self.drp_flex_primary),
             ]
+        else:
+            candidates += [
+                (o+"@nodes", nodename in self.cluster_nodes),
+                (o+"@drpnodes", nodename in self.cluster_drpnodes),
+            ]
         candidates += [
             (o, True),
         ]

@@ -3363,7 +3363,19 @@ class Node(Crypt, ExtConfig):
         Fetch the daemon senders blacklist as a ping test, from either
         a peer or an arbitrator node, swiching between secrets as appropriate.
         """
-        if node not in self.cluster_nodes:
+        if node in self.cluster_nodes:
+            cluster_name = None
+            secret = None
+        elif node in self.cluster_drpnodes:
+            try:
+                secret = self.conf_get("cluster", "secret", impersonate=node)
+            except ex.OptNotFound:
+                raise ex.excError("unable to find the node %(node)s cluster secret. set cluster.secret@drpnodes or cluster.secret@%(node)s" % dict(node=node))
+            try:
+                cluster_name = self.conf_get("cluster", "name", impersonate=node)
+            except ex.OptNotFound:
+                raise ex.excError("unable to find the node %(node)s cluster name. set cluster.name@drpnodes or cluster.name@%(node)s" % dict(node=node))
+        else:
             secret = None
             for section in self.config.sections():
                 if not section.startswith("arbitrator#"):
@@ -3382,10 +3394,7 @@ class Node(Crypt, ExtConfig):
                     self.log.warning("missing 'secret' in configuration section %s" % section)
                     continue
             if secret is None:
-                raise ex.excError("unable to find a secret for node '%s': neither in cluster.nodes nor arbitrator#*.name" % node)
-        else:
-            cluster_name = None
-            secret = None
+                raise ex.excError("unable to find a secret for node '%s': neither in cluster.nodes, cluster.drpnodes nor arbitrator#*.name" % node)
         data = self.daemon_send(
             {"action": "daemon_blacklist_status"},
             nodename=node,
