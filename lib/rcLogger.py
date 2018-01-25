@@ -1,5 +1,6 @@
 import sys
 import os
+import gzip
 import errno
 import logging
 import logging.handlers
@@ -20,6 +21,16 @@ import re
 from rcColor import colorize, color
 
 DEFAULT_HANDLERS = ["file", "stream", "syslog"]
+
+def namer(name):
+    return name + ".gz"
+
+def rotator(source, dest):
+    with open(source, "rb") as sf:
+        data = sf.read()
+        with gzip.open(dest, "wb") as df:
+            df.write(data)
+    os.remove(source)
 
 class ColorStreamHandler(logging.StreamHandler):
     def __init__(self, stream=None):
@@ -120,6 +131,8 @@ def initLogger(name, handlers=None):
                                                                backupCount=1)
             filehandler.setFormatter(fileformatter)
             filehandler.setLevel(logging.INFO)
+            filehandler.rotator = rotator
+            filehandler.namer = namer
             log.addHandler(filehandler)
         except PermissionError:
             pass
@@ -201,13 +214,17 @@ def initLogger(name, handlers=None):
         try:
             fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             filehandler = logging.handlers.RotatingFileHandler(debuglogfile,
-                                                               maxBytes=3*5242880,
+                                                               maxBytes=2*5242880,
                                                                backupCount=1)
             filehandler.setFormatter(fileformatter)
             filehandler.setLevel(logging.DEBUG)
+            filehandler.rotator = rotator
+            filehandler.namer = namer
             log.addHandler(filehandler)
         except PermissionError:
             pass
 
     log.setLevel(logging.DEBUG)
     return log
+
+
