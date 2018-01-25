@@ -30,8 +30,13 @@ class Mount(Res.Resource):
         self.mount_options = mount_options
         self.snap_size = snap_size
         self.fsck_h = {}
-        self.testfile = os.path.join(mount_point, '.opensvc')
         self.netfs = ['nfs', 'nfs4', 'cifs', 'smbfs', '9pfs', 'gpfs', 'afs', 'ncpfs']
+
+    @lazy
+    def testfile(self):
+        if not self.mount_point:
+            return
+        return os.path.join(self.mount_point, '.opensvc')
 
     def set_fsck_h(self):
         """
@@ -153,6 +158,8 @@ class Mount(Res.Resource):
         return False
 
     def check_writable(self):
+        if self.testfile is None:
+            return True
         if not self.can_check_writable():
             return False
 

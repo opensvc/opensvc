@@ -842,7 +842,7 @@ def add_fs(svc, s):
     kwargs['device'] = svc.conf_get(s, 'dev')
     kwargs['mount_point'] = svc.conf_get(s, 'mnt')
 
-    if kwargs['mount_point'][-1] != "/" and kwargs['mount_point'][-1] == '/':
+    if kwargs['mount_point'] and kwargs['mount_point'][-1] != "/" and kwargs['mount_point'][-1] == '/':
         # Remove trailing / to not risk losing rsync src trailing / upon snap
         # mountpoint substitution.
         kwargs['mount_point'] = kwargs['mount_point'][0:-1]
