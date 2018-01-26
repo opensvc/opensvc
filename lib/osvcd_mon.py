@@ -1829,7 +1829,11 @@ class Monitor(shared.OsvcThread, Crypt):
                                 changed = True
                     if changed:
                         svc.purge_status_data_dump()
-                        svc.print_status_data_eval()
+                        try:
+                            svc.print_status_data_eval()
+                        except Exception:
+                            # can happen when deleting the service
+                            pass
 
     def service_provisioned(self, instance):
         return instance.get("provisioned")

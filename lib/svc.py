@@ -4313,6 +4313,17 @@ class Svc(Crypt, ExtConfig):
             self.unprovision()
 
         if not self.command_is_scoped():
+            if rcEnv.nodename in self.nodes:
+                self.set_multi([
+                   "nodes="+rcEnv.nodename,
+                   "drpnodes=",
+                ])
+            elif rcEnv.nodename in self.drpnodes:
+                self.set_multi([
+                   "drpnodes="+rcEnv.nodename,
+                   "nodes=",
+                ])
+            self.svcunlock()
             for peer in self.peers:
                 if peer == rcEnv.nodename:
                     continue

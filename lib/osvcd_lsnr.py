@@ -264,7 +264,8 @@ class Listener(shared.OsvcThread, Crypt):
         svcname = kwargs.get("svcname")
         if not svcname:
             return {"error": "no svcname specified", "status": 1}
-        if shared.SMON_DATA.get(svcname, {}).get("status") in ("purging", "deleting"):
+        if shared.SMON_DATA.get(svcname, {}).get("status") in ("purging", "deleting") or \
+           shared.SMON_DATA.get(svcname, {}).get("global_expect") in ("purged", "deleted"):
             return {"error": "delete in progress", "status": 2}
         fpath = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
         if not os.path.exists(fpath):
