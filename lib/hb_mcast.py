@@ -66,6 +66,7 @@ class HbMcast(Hb, Crypt):
             self.intf = "any"
             self.src_addr = "0.0.0.0"
             self.mreq = struct.pack("4sl", group, socket.INADDR_ANY)
+        self.max_handlers = len(self.cluster_nodes)
 
     def set_if(self):
         if self.intf == "any":
@@ -185,6 +186,10 @@ class HbMcastRx(HbMcast):
             self.stats.bytes += len(data)
         except socket.timeout:
             self.set_peers_beating()
+            return
+        if len(self.threads) >= self.max_handlers:
+            self.log.warning("drop message received from %s: too many running handlers (%d)",
+                             addr, self.max_handlers)
             return
         thr = threading.Thread(target=self.handle_client, args=(data, addr))
         thr.start()

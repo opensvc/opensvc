@@ -76,6 +76,7 @@ class HbUcast(Hb, Crypt):
             self.timeout = self.config.getint(self.name, "timeout")
         else:
             self.timeout = self.DEFAULT_UCAST_TIMEOUT
+        self.max_handlers = len(self.cluster_nodes)
 
 class HbUcastTx(HbUcast):
     """
@@ -184,6 +185,10 @@ class HbUcastRx(HbUcast):
             return
         finally:
             self.set_peers_beating()
+        if len(self.threads) >= self.max_handlers:
+            self.log.warning("drop message received from %s: too many running handlers (%d)",
+                             addr, self.max_handlers)
+            return
         thr = threading.Thread(target=self.handle_client, args=(conn, addr))
         thr.start()
         self.threads.append(thr)
