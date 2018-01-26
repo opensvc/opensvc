@@ -1829,6 +1829,7 @@ class Monitor(shared.OsvcThread, Crypt):
                                 changed = True
                     if changed:
                         svc.purge_status_data_dump()
+                        svc.print_status_data_eval()
 
     def service_provisioned(self, instance):
         return instance.get("provisioned")
