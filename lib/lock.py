@@ -1,5 +1,5 @@
 """
-Implemeent a node-wide locking mecanism.
+Implement a node-wide locking mecanism.
 File-based, lock with fnctl exclusive open when available.
 """
 
@@ -33,6 +33,15 @@ LOCK_EXCEPTIONS = (
     LockCreateError,
     LockAcquire,
 )
+
+def bencode(buff):
+    """
+    Try a bytes cast, which only work in python3.
+    """
+    try:
+        return bytes(buff, "utf-8")
+    except TypeError:
+        return buff
 
 @contextlib.contextmanager
 def cmlock(*args, **kwargs):
@@ -124,7 +133,7 @@ def lock_nowait(lockfile=None, intent=None):
         # drop our pid and intent in the lockfile, best effort
         try:
             os.ftruncate(lockfd, 0)
-            os.write(lockfd, json.dumps(data))
+            os.write(lockfd, bencode(json.dumps(data)))
             os.fsync(lockfd)
         except Exception:
             pass
