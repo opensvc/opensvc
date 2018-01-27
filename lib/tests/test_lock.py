@@ -14,7 +14,7 @@ class TestLock:
             import sys
             try:
                 sys.exit(inline_lock())
-            except lock.lockTimeout:
+            except lock.LockTimeout:
                 sys.exit(255)
 
         def proc_lock():

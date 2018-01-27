@@ -272,13 +272,13 @@ class Ip(Res.Resource):
 
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile, intent="startip")
-        except lock.lockTimeout as exc:
+        except lock.LockTimeout as exc:
             raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
-        except lock.lockNoLockFile:
+        except lock.LockNoLockFile:
             raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
-        except lock.lockCreateError:
+        except lock.LockCreateError:
             raise ex.excError("can not create lock file %s" % details)
-        except lock.lockAcquire as exc:
+        except lock.LockAcquire as exc:
             raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
         except ex.excSignal:
             raise ex.excError("interrupted by signal %s" % details)

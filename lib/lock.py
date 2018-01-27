@@ -1,37 +1,45 @@
+"""
+Implemeent a node-wide locking mecanism.
+File-based, lock with fnctl exclusive open when available.
+"""
+
 from __future__ import print_function
 import os
 import time
 import json
 import contextlib
 
-import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
-class lockTimeout(Exception):
+class LockTimeout(Exception):
     """ acquire lock timed out
     """
 
-class lockNoLockFile(Exception):
+class LockNoLockFile(Exception):
     """ no lockfile specified
     """
 
-class lockCreateError(Exception):
+class LockCreateError(Exception):
     """ could not create lockfile
     """
 
-class lockAcquire(Exception):
+class LockAcquire(Exception):
     """ could not acquire lock on lockfile
     """
 
 LOCK_EXCEPTIONS = (
-    lockTimeout,
-    lockNoLockFile,
-    lockCreateError,
-    lockAcquire,
+    LockTimeout,
+    LockNoLockFile,
+    LockCreateError,
+    LockAcquire,
 )
 
 @contextlib.contextmanager
 def cmlock(*args, **kwargs):
+    """
+    A context manager protecting a code path that can't run twice on the
+    same node.
+    """
     lockfd = None
     try:
         lockfd = lock(*args, **kwargs)
@@ -40,111 +48,109 @@ def cmlock(*args, **kwargs):
         unlock(lockfd)
 
 def lock(timeout=30, delay=1, lockfile=None, intent=None):
+    """
+    The lock acquire function.
+    """
     if timeout == 0 or delay == 0:
-        l = [0]
+        ticks = [0]
     else:
-        l = range(int(float(timeout)/float(delay)))
-    if len(l) == 0:
-        l = [0]
+        ticks = range(int(float(timeout)/float(delay)))
+    if len(ticks) == 0:
+        ticks = [0]
     err = ""
-    for i in l:
-        if i > 0:
+    for tick in ticks:
+        if tick > 0:
             time.sleep(delay)
         try:
-            fd = lock_nowait(lockfile, intent)
-            return fd
-        except lockAcquire as e:
-            err = str(e)
+            return lock_nowait(lockfile, intent)
+        except LockAcquire as exc:
+            err = str(exc)
         except Exception:
             raise
-    raise lockTimeout(err)
+    raise LockTimeout(err)
 
 def lock_nowait(lockfile=None, intent=None):
+    """
+    A lock acquire function variant without timeout not delay.
+    """
     if lockfile is None:
-        raise lockNoLockFile
+        raise LockNoLockFile
 
     data = {"pid": os.getpid(), "intent": intent}
-    dir = os.path.dirname(lockfile)
+    lockd = os.path.dirname(lockfile)
 
-    if not os.path.exists(dir):
-        os.makedirs(dir)
+    if not os.path.exists(lockd):
+        os.makedirs(lockd)
 
     try:
-        with open(lockfile, 'r') as fd:
-            buff = fd.read()
-        prev_data = json.loads(buff)
-        fd.close()
-        #print("lock data from file", lockfile, prev_data)
-        if type(prev_data) != dict or "pid" not in prev_data or "intent" not in prev_data:
+        with open(lockfile, 'r') as ofile:
+            prev_data = json.load(ofile)
+        if not isinstance(prev_data, dict) or "pid" not in prev_data or "intent" not in prev_data:
             prev_data = {"pid": 0, "intent": ""}
-            #print("lock data corrupted", lockfile, prev_data)
-    except Exception as e:
+    except Exception:
         prev_data = {"pid": 0, "intent": ""}
-        #print("error reading lockfile", lockfile, prev_data, str(e))
 
-    """ test if we already own the lock
-    """
+    # test if we already own the lock
     if prev_data["pid"] == os.getpid():
         return
 
     if os.path.isdir(lockfile):
-        raise lockCreateError("lockfile points to a directory")
+        raise LockCreateError("lockfile points to a directory")
 
     try:
         flags = os.O_RDWR|os.O_CREAT
         if rcEnv.sysname != 'Windows':
             flags |= os.O_SYNC
         lockfd = os.open(lockfile, flags, 0o644)
-    except Exception as e:
-        raise lockCreateError(str(e))
+    except Exception as exc:
+        raise LockCreateError(str(exc))
 
     try:
-        """ FD_CLOEXEC makes sure the lock is the held by processes
-            we fork from this process
-        """
+        # FD_CLOEXEC makes sure the lock is the held by processes
+        # we fork from this process
         if os.name == 'posix':
             import fcntl
             fcntl.flock(lockfd, fcntl.LOCK_EX|fcntl.LOCK_NB)
             flags = fcntl.fcntl(lockfd, fcntl.F_GETFD)
             flags |= fcntl.FD_CLOEXEC
 
-            """ acquire lock
-            """
+            # acquire lock
             fcntl.fcntl(lockfd, fcntl.F_SETFD, flags)
         elif os.name == 'nt':
             import msvcrt
             size = os.path.getsize(lockfile)
             msvcrt.locking(lockfd, msvcrt.LK_RLCK, size)
 
-        """ drop our pid and intent in the lockfile, best effort
-        """
-        fd = lockfd
+        # drop our pid and intent in the lockfile, best effort
         try:
             os.ftruncate(lockfd, 0)
             os.write(lockfd, json.dumps(data))
             os.fsync(lockfd)
-        except:
+        except Exception:
             pass
-        return fd
+        return lockfd
     except IOError:
-        raise lockAcquire("holder pid %(pid)d, holder intent '%(intent)s'" % prev_data)
+        raise LockAcquire("holder pid %(pid)d, holder intent '%(intent)s'" % prev_data)
     except:
         raise
 
 def unlock(lockfd):
+    """
+    The lock release function.
+    """
     if lockfd is None:
         return
     try:
         os.close(lockfd)
-    except:
-        """ already released by a parent process ?
-        """
+    except Exception:
+        # already released by a parent process ?
         pass
 
-if __name__ == "__main__":
+def main():
+    """
+    Expose the locking functions as a command line tool.
+    """
     import optparse
-    import time
-    import sys
 
     parser = optparse.OptionParser()
     parser.add_option("-f", "--file", default="/tmp/test.lock", action="store",
@@ -156,7 +162,7 @@ if __name__ == "__main__":
     parser.add_option("--timeout", default=1, action="store", type="int",
                       dest="timeout",
                       help="The time before failing to acquire the lock")
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
     try:
         with cmlock(timeout=options.timeout, delay=1, lockfile=options.file,
                     intent=options.intent):
@@ -165,7 +171,10 @@ if __name__ == "__main__":
                 time.sleep(options.time)
             except KeyboardInterrupt:
                 pass
-    except Exception as e:
-        print(e, file=sys.stderr)
-        sys.exit(1)
+    except Exception as exc:
+        print(exc, file=sys.stderr)
+        return 1
 
+if __name__ == "__main__":
+    import sys
+    sys.exit(main())

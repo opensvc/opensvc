@@ -332,16 +332,16 @@ class Disk(resDisk.Disk):
         lockfd = None
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
-        except lock.lockTimeout:
+        except lock.LockTimeout:
             self.log.error("timed out waiting for lock (%s)"%lockfile)
             raise ex.excError
-        except lock.lockNoLockFile:
+        except lock.LockNoLockFile:
             self.log.error("lock_nowait: set the 'lockfile' param")
             raise ex.excError
-        except lock.lockCreateError:
+        except lock.LockCreateError:
             self.log.error("can not create lock file %s"%lockfile)
             raise ex.excError
-        except lock.lockAcquire as e:
+        except lock.LockAcquire as e:
             self.log.warn("another action is currently running (pid=%s)"%e.pid)
             raise ex.excError
         except ex.excSignal:
