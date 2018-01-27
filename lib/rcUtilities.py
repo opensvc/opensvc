@@ -186,12 +186,18 @@ def unset_lazy(self, attr):
         delattr(self, attr_name)
 
 def bencode(buff):
+    """
+    Try a bytes cast, which only work in python3.
+    """
     try:
         return bytes(buff, "utf-8")
     except TypeError:
         return buff
 
 def bdecode(buff):
+    """
+    On python, convert bytes to string using utf-8 and ascii as a fallback
+    """
     if buff is None:
         return buff
     if sys.version_info[0] < 3:
