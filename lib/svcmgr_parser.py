@@ -495,6 +495,7 @@ ACTIONS = {
             "msg": "Display the service status, with a detailed view of the local "
                    "instance.\n\n"
                    "Resources Flags:\n"
+                   "* ``R``  Running\n"
                    "* ``M``  Monitored\n"
                    "* ``D``  Disabled\n"
                    "* ``O``  Optional\n"

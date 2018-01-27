@@ -1414,7 +1414,36 @@ class Svc(Crypt, ExtConfig):
             except:
                 pass
 
+        if not refresh:
+            data["running"] = self.get_running()
         return data
+
+    def get_running(self):
+        lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname)
+        running = []
+        running += [self._get_running(lockfile).get("rid")]
+        lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname+".sync")
+        running += [self._get_running(lockfile).get("rid")]
+        for task in self.get_resources("task"):
+            lockfile = os.path.join(task.var_d, "run.lock")
+            running += [self._get_running(lockfile).get("rid")]
+        return [rid for rid in running if rid]
+
+    def _get_running(self, lockfile):
+        try:
+            with lock.cmlock(lockfile=lockfile, timeout=0):
+                return {}
+        except Exception as exc:
+            # failing to open "w+", action in progress
+            try:
+                with open(lockfile, "r") as ofile:
+                    #ofile.seek(0)
+                    lock_data = json.load(ofile)
+                    return lock_data.get("progress", {})
+            except Exception:
+                pass
+            return {}
+        return lock.get_progress(self.lockfd)
 
     def print_status_data_eval(self, refresh=False):
         """
@@ -1432,6 +1461,7 @@ class Svc(Crypt, ExtConfig):
             "topology": self.topology,
             "provisioned": True,
         }
+        data["running"] = self.get_running()
         if self.topology == "flex":
             data.update({
                 "flex_min_nodes": self.flex_min_nodes,
@@ -1603,10 +1633,11 @@ class Svc(Crypt, ExtConfig):
         from rcColor import color, colorize, STATUS_COLOR
         from forest import Forest
 
-        def fmt_flags(resource):
+        def fmt_flags(resource, running):
             """
             Format resource flags as a vector of character.
 
+            R  Running
             M  Monitored
             D  Disabled
             O  Optional
@@ -1615,6 +1646,7 @@ class Svc(Crypt, ExtConfig):
             S  Standby
             """
             flags = ''
+            flags += "R" if resource["rid"] in running else '.'
             flags += 'M' if resource.get("monitor") else '.'
             flags += 'D' if resource.get("disable") else '.'
             flags += 'O' if resource.get("optional") else '.'
@@ -1653,7 +1685,7 @@ class Svc(Crypt, ExtConfig):
 
             return subsets
 
-        def add_subsets(subsets, node_nodename):
+        def add_subsets(subsets, node_nodename, running):
             for group in DEFAULT_STATUS_GROUPS:
                 subset_names = sorted(subsets[group])
                 for subset in subset_names:
@@ -1671,7 +1703,7 @@ class Svc(Crypt, ExtConfig):
                     else:
                         node_subset = node_nodename
                     for resource in sorted(subsets[group][subset], key=lambda x: x["rid"]):
-                        add_res_node(resource, node_subset)
+                        add_res_node(resource, node_subset, running=running)
 
         # discard disabled resources ?
         if self.options.show_disabled is not None:
@@ -1741,14 +1773,14 @@ class Svc(Crypt, ExtConfig):
                 print(exc)
                 ers[container.rid] = {}
 
-        def add_res_node(resource, parent, rid=None):
+        def add_res_node(resource, parent, rid=None, running=None):
             if discard_disabled and resource["disable"]:
                 return
             if rid is None:
                 rid = resource["rid"]
             node_res = parent.add_node()
             node_res.add_column(rid)
-            node_res.add_column(fmt_flags(resource))
+            node_res.add_column(fmt_flags(resource, running))
             node_res.add_column(resource["status"],
                                 STATUS_COLOR[resource["status"]])
             col = node_res.add_column(resource["label"])
@@ -1774,7 +1806,7 @@ class Svc(Crypt, ExtConfig):
             if rid not in ers or resource["status"] not in ("up", "stdby up"):
                 return
 
-            add_subsets(ers[rid], node_res)
+            add_subsets(ers[rid], node_res, running)
 
         def add_instances(node):
             if len(self.peers) < 1:
@@ -1869,7 +1901,7 @@ class Svc(Crypt, ExtConfig):
         node_nodename.add_column()
         node_nodename.add_column(data['avail'], STATUS_COLOR[data['avail']])
         node_nodename.add_column(notice, color.LIGHTBLUE)
-        add_subsets(subsets, node_nodename)
+        add_subsets(subsets, node_nodename, data["running"])
         add_parents(node_svcname)
         add_children(node_svcname)
 

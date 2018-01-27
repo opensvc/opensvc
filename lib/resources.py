@@ -10,6 +10,7 @@ import sys
 import time
 import json
 
+import lock
 import rcExceptions as ex
 import rcStatus
 from rcUtilities import lazy, clear_cache, call, vcall, lcall, set_lazy, \
@@ -372,7 +373,9 @@ class Resource(object):
         if not hasattr(self, action):
             self.log.debug('action: not applicable (not implemented)')
             return True
+
         try:
+            self.progress()
             self.do_action(action)
         except ex.excUndefined as exc:
             print(exc)
@@ -1099,4 +1102,7 @@ class Resource(object):
             return
         for dev in self.base_devs():
             getattr(mod, "promote_dev_rw")(dev, log=self.log)
+
+    def progress(self):
+        lock.progress(self.svc.lockfd, {"rid": self.rid})
 

@@ -5,6 +5,7 @@ File-based, lock with fnctl exclusive open when available.
 
 from __future__ import print_function
 import os
+import sys
 import time
 import json
 import contextlib
@@ -43,6 +44,23 @@ def bencode(buff):
     except TypeError:
         return buff
 
+def bdecode(buff):
+    """
+    On python, convert bytes to string using utf-8 and ascii as a fallback
+    """
+    if buff is None:
+        return buff
+    if sys.version_info[0] < 3:
+        return buff
+    if type(buff) == str:
+        return buff
+    else:
+        try:
+            return str(buff, "utf-8")
+        except:
+            return str(buff, "ascii")
+    return buff
+
 @contextlib.contextmanager
 def cmlock(*args, **kwargs):
     """
@@ -52,7 +70,7 @@ def cmlock(*args, **kwargs):
     lockfd = None
     try:
         lockfd = lock(*args, **kwargs)
-        yield
+        yield lockfd
     finally:
         unlock(lockfd)
 
@@ -154,6 +172,22 @@ def unlock(lockfd):
     except Exception:
         # already released by a parent process ?
         pass
+
+def progress(lockfd, data):
+    if lockfd is None:
+        return
+    try:
+        _lockfd = os.dup(lockfd)
+        with os.fdopen(_lockfd, "w+") as ofile:
+            ofile.seek(0)
+            lock_data = json.load(ofile)
+            lock_data["progress"] = data
+            ofile.seek(0)
+            json.dump(lock_data, ofile)
+            os.fsync(_lockfd)
+    except Exception as exc:
+        print(exc)
+        return
 
 def main():
     """
