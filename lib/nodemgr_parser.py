@@ -970,6 +970,10 @@ DEPRECATED_ACTIONS = [
     "json_schedule",
 ]
 
+ACTIONS_TRANSLATIONS = {
+    "unfreeze": "thaw",
+}
+
 class NodemgrOptParser(OptParser):
     """
     The nodemgr-specific options parser class
@@ -979,6 +983,7 @@ class NodemgrOptParser(OptParser):
         OptParser.__init__(self, args=args, prog=PROG, options=OPT,
                            actions=ACTIONS,
                            deprecated_actions=DEPRECATED_ACTIONS,
+                           actions_translations=ACTIONS_TRANSLATIONS,
                            global_options=GLOBAL_OPTS,
                            colorize=colorize, width=width,
                            formatter=formatter, indent=indent)
