@@ -207,7 +207,7 @@ class App(Resource):
         ]
         try:
             cmd = self.get_cmd("info")
-        except ex.excAbortAction:
+        except (ex.excAbortAction, AttributeError):
             return keyvals
 
         buff = self.run('info', cmd, dedicated_log=False, return_out=True)
