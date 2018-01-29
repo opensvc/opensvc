@@ -13,7 +13,6 @@ from rcUtilities import justcall, which, lazy, is_string, lcall
 from converters import convert_boolean
 from rcGlobalEnv import rcEnv
 from resources import Resource
-from resourceset import ResourceSet
 import rcStatus
 import rcExceptions as ex
 import lock

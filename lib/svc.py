@@ -427,8 +427,7 @@ class Svc(Crypt, ExtConfig):
             self.paths.cf = cf
         self.resources_by_id = {}
         self.encap_resources = {}
-        self.resourcesets = []
-        self.resourcesets_by_type = {}
+        self.resourcesets_by_id = {}
 
         self.ref_cache = {}
         self.encap_json_status_cache = {}
@@ -841,7 +840,7 @@ class Svc(Crypt, ExtConfig):
         """
         Purge all service resources on-disk status caches.
         """
-        for rset in self.resourcesets:
+        for rset in self.resourcesets_by_id.values():
             rset.purge_status_last()
 
     def get_subset_parallel(self, rtype):
@@ -964,10 +963,12 @@ class Svc(Crypt, ExtConfig):
         Svc += Resource
         """
         if hasattr(other, 'resources'):
-            # new ResourceSet or ResourceSet-derived class
-            self.resourcesets.append(other)
-            self.resourcesets_by_type[other.type] = other
-            other.svc = self
+            if other.rid in self.resourcesets_by_id:
+                self.resourcesets_by_id[other.rid] += other
+            else:
+                # new ResourceSet or ResourceSet-derived class
+                self.resourcesets_by_id[other.rid] = other
+                other.svc = self
             return self
 
         base_type = other.type.split(".")[0]
@@ -975,22 +976,18 @@ class Svc(Crypt, ExtConfig):
             # the resource wants to be added to a specific resourceset
             # for action grouping, parallel execution or sub-resource
             # triggers
-            rtype = "%s:%s" % (base_type, other.subset)
+            rset_id = "%s:%s" % (base_type, other.subset)
         else:
-            rtype = base_type
+            rset_id = base_type
 
-        if rtype in self.resourcesets_by_type:
+        if rset_id in self.resourcesets_by_id:
             # the resource set already exists. add resource or resourceset.
-            self.resourcesets_by_type[rtype] += other
+            self.resourcesets_by_id[rset_id] += other
         elif isinstance(other, Resource):
-            parallel = self.get_subset_parallel(rtype)
-            if hasattr(other, 'rset_class'):
-                rset = other.rset_class(type=rtype, resources=[other], parallel=parallel)
-            else:
-                rset = ResourceSet(type=rtype, resources=[other], parallel=parallel)
-            rset.rid = rtype
+            parallel = self.get_subset_parallel(rset_id)
+            rset = ResourceSet(rset_id, resources=[other], parallel=parallel)
             rset.svc = self
-            rset.pg_settings = self.get_pg_settings("subset#"+rtype)
+            rset.pg_settings = self.get_pg_settings("subset#"+rset_id)
             self.__iadd__(rset)
         else:
             self.log.debug("unexpected object addition to the service: %s",
@@ -1186,21 +1183,21 @@ class Svc(Crypt, ExtConfig):
         for _type in _types:
             rsets[_type] = {}
         for _type in _types:
-            for rset in self.resourcesets:
+            for rset in self.resourcesets_by_id.values():
                 if rset.has_resource_with_types([_type], strict=strict):
-                    rsets[_type][rset.type] = rset
+                    rsets[_type][rset.rid] = rset
         _rsets = []
         for _type in _types:
-            for _t in sorted(rsets[_type].keys()):
-                if rsets[_type][_t] not in _rsets:
-                    _rsets.append(rsets[_type][_t])
+            for rset_id, rset in sorted(rsets[_type].items()):
+                if rset not in _rsets:
+                    _rsets.append(rset)
         return _rsets
 
     def all_set_action(self, action=None, tags=None):
         """
         Execute an action on all resources all resource sets.
         """
-        self.set_action(self.resourcesets, action=action, tags=tags)
+        self.set_action(self.resourcesets_by_id.values(), action=action, tags=tags)
 
     def sub_set_action(self, _type=None, action=None, tags=None, xtags=None,
                        strict=False):
@@ -1277,7 +1274,7 @@ class Svc(Crypt, ExtConfig):
                 if action in ACTIONS_NO_TRIGGER or rset.all_skip(action):
                     break
                 try:
-                    rset.log.debug("start %s %s_action", rset.type, when)
+                    rset.log.debug("start %s %s_action", rset.rid, when)
                     aborted += getattr(rset, when + "_action")(action, types=_type, tags=tags, xtags=xtags)
                 except ex.excError:
                     raise
@@ -1310,7 +1307,7 @@ class Svc(Crypt, ExtConfig):
         last = None
         for rset in rsets:
             # upto / downto break
-            current = rset.type.split(".")[0].split(":")[0]
+            current = rset.rid.split(":")[0]
             if last and current != last and (self.options.upto == last or self.options.downto == last):
                 if self.options.upto:
                     barrier = "up to %s" % self.options.upto
@@ -1319,7 +1316,7 @@ class Svc(Crypt, ExtConfig):
                 self.log.info("reached '%s' barrier" % barrier)
                 break
             last = current
-            self.log.debug('set_action: action=%s rset=%s', action, rset.type)
+            self.log.debug('set_action: action=%s rset=%s', action, rset.rid)
             rset.action(action, types=_type, tags=tags, xtags=xtags, xtypes=aborted)
 
         do_trigger("post")
@@ -1328,11 +1325,7 @@ class Svc(Crypt, ExtConfig):
         """
         The Svc class print formatter.
         """
-        output = "Service %s available resources:" % self.svcname
-        for key in self.resourcesets_by_type:
-            output += " %s" % key
-        output += "\n"
-        for rset in self.resourcesets:
+        for rset in self.resourcesets_by_id.values():
             output += "  [%s]" % str(rset)
         return output
 
@@ -1910,12 +1903,12 @@ class Svc(Crypt, ExtConfig):
     def get_rset_status(self, groups, refresh=False):
         """
         Return the aggregated status of all resources of the specified resource
-        sets, as a dict of status indexed by resourceset type.
+        sets, as a dict of status indexed by resourceset id.
         """
         self.setup_environ()
         rsets_status = {}
         for rset in self.get_resourcesets(groups):
-            rsets_status[rset.type] = rset.status(refresh=refresh)
+            rsets_status[rset.rid] = rset.status(refresh=refresh)
         return rsets_status
 
     def resource_monitor(self):
@@ -2261,24 +2254,22 @@ class Svc(Crypt, ExtConfig):
                     group_status[group] = 'down'
                 else:
                     group_status[group] = 'n/a'
-            for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
-                group = rset.type.split('.')[0]
+            for resource in self.get_resources(groups):
+                group = resource.type.split('.')[0]
                 if group not in groups:
                     continue
-                for resource in rset.resources:
-                    if not self.encap and resource.encap:
-                        group_status['resources'][resource.rid] = {'status': 'down'}
+                if not self.encap and resource.encap:
+                    group_status['resources'][resource.rid] = {'status': 'down'}
 
             groups = set(["app", "sync"])
             for group in groups:
                 group_status[group] = 'n/a'
-            for rset in self.get_resourcesets(groups):
-                group = rset.type.split('.')[0]
+            for resource in self.get_resources(groups):
+                group = resource.type.split('.')[0]
                 if group not in groups:
                     continue
-                for resource in rset.resources:
-                    if not self.encap and resource.encap:
-                        group_status['resources'][resource.rid] = {'status': 'n/a'}
+                if not self.encap and resource.encap:
+                    group_status['resources'][resource.rid] = {'status': 'n/a'}
 
             return group_status
 
@@ -4283,7 +4274,7 @@ class Svc(Crypt, ExtConfig):
         if rid in self.encap_resources:
             del(self.encap_resources[rid])
         rs_to_delete = []
-        for rsidx, rset in enumerate(self.resourcesets):
+        for rset_id, rset in self.resourcesets_by_id.items():
             to_delete = []
             for idx, res in enumerate(rset.resources):
                 if res.rid == rid:
@@ -4292,11 +4283,9 @@ class Svc(Crypt, ExtConfig):
             for idx in to_delete:
                 del rset.resources[idx]
             if len(rset.resources) == 0:
-                rs_to_delete.append(rsidx)
-                if rset.type in self.resourcesets_by_type:
-                    del self.resourcesets_by_type[res.type]
-        for rsidx in rs_to_delete:
-            del self.resourcesets[rsidx]
+                rs_to_delete.append(rset_id)
+        for rset_id in rs_to_delete:
+            del self.resourcesets_by_id[rset_id]
 
     def _delete_resources_config(self, rids):
         """

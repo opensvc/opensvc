@@ -67,7 +67,7 @@ class TestSvc:
         Svc::action("update"), from dict
         """
         ret = self.svc.action("update", {
-            "resource": [{"rtype": "fs", "mnt": "/srv/{svcname}/foo", "dev": "/tmp", "type": "none", "mnt_opt": "bind"}],
+            "resource": [{"rtype": "fs", "mnt": "/srv/{svcname}/bar", "dev": "/tmp", "type": "none", "mnt_opt": "bind"}],
             "provision": True,
         })
         assert ret == 0

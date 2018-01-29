@@ -19,7 +19,7 @@ class ResourceSet(object):
     Example: ResourceSet("fs", [m1, m2])
     """
     def __init__(self,
-                 type=None,
+                 rid=None,
                  resources=None,
                  parallel=False,
                  optional=False,
@@ -27,7 +27,7 @@ class ResourceSet(object):
                  tags=None):
         self.parallel = parallel
         self.svc = None
-        self.type = type
+        self.rid = rid
         self.optional = optional
         self.disabled = disabled
         self.tags = tags
@@ -37,7 +37,7 @@ class ResourceSet(object):
                 self += resource
 
     def __lt__(self, other):
-        return self.type < other.type
+        return self.rid < other.rid
 
     def __iadd__(self, other):
         """
@@ -57,7 +57,7 @@ class ResourceSet(object):
         return self
 
     def __str__(self):
-        output = "resSet %s [" % str(self.type)
+        output = "resSet %s [" % str(self.rid)
         for resource in self.resources:
             output += " (%s)" % (resource.__str__())
         return "%s]" % output
@@ -192,7 +192,7 @@ class ResourceSet(object):
         To be implemented by child classes if desired.
         """
         if action in ["start", "startstandby", "provision"] or \
-           self.type.startswith("sync"):
+           self.rid.startswith("sync"):
             resources.sort()
         else:
             resources.sort(reverse=True)
@@ -370,7 +370,7 @@ class ResourceSet(object):
         name = ".".join((
             rcEnv.nodename,
             self.svc.svcname,
-            self.type
+            self.rid
         ))
         return logging.getLogger(name)
 
