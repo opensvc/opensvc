@@ -798,7 +798,8 @@ class Monitor(shared.OsvcThread, Crypt):
                 if instance.avail not in STOPPED_STATES:
                     self.service_stop(svc.svcname)
             elif self.non_leaders_stopped(svc) and \
-                 shared.AGG[svc.svcname].placement not in ("optimal", "n/a"):
+                 shared.AGG[svc.svcname].placement not in ("optimal", "n/a") and \
+                 instance.avail in STOPPED_STATES:
                 self.service_start(svc.svcname)
 
     def non_leaders_stopped(self, svc):
