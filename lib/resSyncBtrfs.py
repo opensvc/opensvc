@@ -51,6 +51,14 @@ class SyncBtrfs(resSync.Sync):
         self.dst_btrfs = {}
         self.src_btrfs = None
 
+    def _info(self):
+        data = [
+          ["src", self.src],
+          ["target", " ".join(self.target) if self.target else ""],
+        ]
+        data += self.stats_keys()
+        return data
+
     def init_src_btrfs(self):
         if self.src_btrfs is not None:
             return
@@ -189,8 +197,12 @@ class SyncBtrfs(resSync.Sync):
 
         self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
         p1 = Popen(send_cmd, stdout=PIPE)
-        p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE)
+        pi = Popen(["dd", "bs=4096"], stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
+        p2 = Popen(receive_cmd, stdin=pi.stdout, stdout=PIPE)
         buff = p2.communicate()
+        stats_buff = pi.communicate()[1]
+        stats = self.parse_dd(stats_buff)
+        self.update_stats(stats, target=node)
         if p2.returncode != 0:
             if buff[1] is not None and len(buff[1]) > 0:
                 self.log.error(buff[1])
@@ -211,8 +223,12 @@ class SyncBtrfs(resSync.Sync):
 
         self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
         p1 = Popen(send_cmd, stdout=PIPE)
-        p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE)
+        pi = Popen(["dd", "bs=4096"], stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
+        p2 = Popen(receive_cmd, stdin=pi.stdout, stdout=PIPE)
         buff = p2.communicate()
+        stats_buff = pi.communicate()[1]
+        stats = self.parse_dd(stats_buff)
+        self.update_stats(stats, target=node)
         if p2.returncode != 0:
             if buff[1] is not None and len(buff[1]) > 0:
                 self.log.error(buff[1])
@@ -342,6 +358,7 @@ class SyncBtrfs(resSync.Sync):
         self.write_statefile()
         for n in self.targets:
             self.push_statefile(n)
+        self.write_stats()
 
     def start(self):
         pass

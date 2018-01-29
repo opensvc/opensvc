@@ -41,6 +41,7 @@ class SyncZfs(resSync.Sync):
           ["target", " ".join(self.target) if self.target else ""],
           ["recursive", str(self.recursive).lower()],
         ]
+        data += self.stats_keys()
         return data
 
     def pre_action(self, action):
@@ -170,6 +171,24 @@ class SyncZfs(resSync.Sync):
             self.force_remove_snap(self.dst_snap_tosend, node)
             self.force_remove_snap(self.dst_snap_sent, node)
 
+    def do_it(self, send_cmd, receive_cmd, node):
+        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
+        p1 = Popen(send_cmd, stdout=PIPE)
+        pi = Popen(["dd", "bs=4096"], stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
+        p2 = Popen(receive_cmd, stdin=pi.stdout, stdout=PIPE, stderr=PIPE)
+        buff =  p2.communicate()
+        stats_buff = pi.communicate()[1]
+        stats = self.parse_dd(stats_buff)
+        self.update_stats(stats, target=node)
+        out = bdecode(buff[0])
+        err = bdecode(buff[1])
+        if p2.returncode != 0:
+            if err is not None and len(err) > 0:
+                self.log.error(err)
+            raise ex.excError("sync failed")
+        if out is not None and len(out) > 0:
+            self.log.info(out)
+
     def zfs_send_incremental(self, node):
         if not self.snap_exists(self.src_snap_sent, node):
             return self.zfs_send_initial(node)
@@ -187,22 +206,7 @@ class SyncZfs(resSync.Sync):
                 _receive_cmd.remove("-q")
             receive_cmd = _receive_cmd + [node] + receive_cmd
 
-        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
-
-        def do_it(retry=True):
-            p1 = Popen(send_cmd, stdout=PIPE)
-            p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
-            buff =  p2.communicate()
-            out = bdecode(buff[0])
-            err = bdecode(buff[1])
-            if p2.returncode != 0:
-                if err is not None and len(err) > 0:
-                    self.log.error(err)
-                raise ex.excError("sync update failed")
-            if out is not None and len(out) > 0:
-                self.log.info(out)
-
-        do_it()
+        self.do_it(send_cmd, receive_cmd, node)
 
     def zfs_send_initial(self, node=None):
         if self.recursive:
@@ -219,22 +223,7 @@ class SyncZfs(resSync.Sync):
                 _receive_cmd.remove("-q")
             receive_cmd = _receive_cmd + [node] + receive_cmd
 
-        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
-
-        def do_it(retry=True):
-            p1 = Popen(send_cmd, stdout=PIPE)
-            p2 = Popen(receive_cmd, stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
-            buff = p2.communicate()
-            out = bdecode(buff[0])
-            err = bdecode(buff[1])
-            if p2.returncode != 0:
-                if err is not None and len(err) > 0:
-                    self.log.error(err)
-                raise ex.excError("full sync failed")
-            if out is not None and len(out) > 0:
-                self.log.info(out)
-
-        do_it()
+        self.do_it(send_cmd, receive_cmd, node)
 
     def force_remove_snap(self, snap, node=None):
         try:
@@ -320,6 +309,7 @@ class SyncZfs(resSync.Sync):
         self.write_statefile()
         for n in self.targets:
             self.push_statefile(n)
+        self.write_stats()
 
     def can_sync(self, target=None):
         if not Dataset(self.src).exists():

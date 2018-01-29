@@ -3,7 +3,8 @@ import logging
 import glob
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, lazy, cache
+from rcUtilities import which, justcall, lazy, cache, bdecode
+from converters import convert_speed, convert_size
 import rcExceptions as ex
 import rcStatus
 import datetime
@@ -236,15 +237,30 @@ class Rsync(resSync.Sync):
             cmd = ['rsync'] + options + src
             cmd.append(dst)
             if self.rid.startswith("sync#i"):
-                (ret, out, err) = self.call(cmd)
+                ret, out, err = self.call(cmd)
             else:
-                (ret, out, err) = self.vcall(cmd)
+                ret, out, err = self.vcall(cmd)
             if ret != 0:
                 self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
                 continue
             self.sync_timestamp(node)
             self.svc.need_postsync |= set([node])
-        return
+            stats = self.parse_rsync(out)
+            self.update_stats(stats, target=node)
+
+        self.write_stats()
+
+    def parse_rsync(self, buff):
+        """
+        Extract normalized speed and transfered data size from the dd output
+        """
+        data = {"bytes": 0, "speed": 0}
+        for line in bdecode(buff).splitlines():
+            if line.startswith("Total bytes sent"):
+                data["bytes"] = int(line.split()[-1])
+            elif line.endswith("/sec"):
+                data["speed"] = int(convert_speed(line.split()[-2]+"/s"))
+        return data
 
     def pre_action(self, action):
         """Actions to do before resourceSet iterates through the resources to
@@ -461,6 +477,7 @@ class Rsync(resSync.Sync):
           ["target", " ".join(sorted(self.target))],
           ["options", " ".join(self.options)],
         ]
+        data += self.stats_keys()
         return data
 
     def __str__(self):

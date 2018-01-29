@@ -27,6 +27,13 @@ class SyncDocker(resSync.Sync):
         self.dst = "docker images"
         self.targets = set()
 
+    def _info(self):
+        data = [
+          ["target", " ".join(self.target) if self.target else ""],
+        ]
+        data += self.stats_keys()
+        return data
+
     def get_docker_data_dir_svc_fs(self):
         l = []
         for r in self.svc.get_resources("fs"):
@@ -110,6 +117,7 @@ class SyncDocker(resSync.Sync):
             missing = set(self.images) - set(remote_images)
             for image in missing:
                 self.save_load(node, image)
+        self.write_stats()
 
     def save_load(self, node, image):
         ruser = self.svc.node.get_ruser(node)
@@ -117,8 +125,12 @@ class SyncDocker(resSync.Sync):
         load_cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', rcEnv.paths.svcmgr, "-s", self.svc.svcname, "docker", "load"]
         self.log.info(' '.join(save_cmd) + " | " + ' '.join(load_cmd))
         p1 = Popen(save_cmd, stdout=PIPE)
-        p2 = Popen(load_cmd, stdin=p1.stdout, stdout=PIPE)
+        pi = Popen(["dd", "bs=4096"], stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
+        p2 = Popen(load_cmd, stdin=pi.stdout, stdout=PIPE)
         out, err = p2.communicate()
+        stats_buff = pi.communicate()[1]
+        stats = self.parse_dd(stats_buff)
+        self.update_stats(stats, target=node)
         if p2.returncode != 0:
             if err is not None and len(err) > 0:
                 self.log.error(err)

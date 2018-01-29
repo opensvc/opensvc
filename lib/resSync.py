@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 
 import rcExceptions as ex
 import resources as Res
@@ -8,6 +9,8 @@ import time
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcScheduler import *
+from rcUtilities import lazy, bdecode
+from converters import convert_speed, print_size
 
 class Sync(Res.Resource, Scheduler):
     default_optional = True
@@ -26,6 +29,12 @@ class Sync(Res.Resource, Scheduler):
             self.schedule = "03:59-05:59@121"
         else:
             self.schedule = schedule
+
+        self.stats = {
+            "bytes": 0,
+            "speed": 0,
+            "targets": {},
+        }
 
         Res.Resource.__init__(self, rid=rid, **kwargs)
 
@@ -147,3 +156,56 @@ class Sync(Res.Resource, Scheduler):
                 return rcStatus.NA
         return self.sync_status(**kwargs)
 
+    @lazy
+    def last_stats_file(self):
+        return os.path.join(self.var_d, "last_stats")
+
+    def parse_dd(self, buff):
+        """
+        Extract normalized speed and transfered data size from the dd output
+        """
+        data = {}
+        words = bdecode(buff).split()
+        if "bytes" in words:
+            data["bytes"] = int(words[words.index("bytes")-1])
+        if words[-1].endswith("/s"):
+            data["speed"] = int(convert_speed("".join(words[-2:])))
+        return data
+
+    def update_stats(self, data, target=None):
+        self.log.info("transfered %s at %s",
+            print_size(data["bytes"], unit="B"),
+            print_size(data["speed"], unit="B")+"/s"
+        )
+        # aggregate stats
+        self.stats["bytes"] += data["bytes"]
+        n_targets = len(self.stats["targets"])
+        self.stats["speed"] = (data["speed"]*n_targets+data["speed"])/(n_targets+1)
+        self.stats["targets"][target] = data
+
+    def load_stats(self):
+        try:
+            with open(self.last_stats_file, "r") as ofile:
+                return json.load(ofile)
+        except Exception:
+            return {}
+
+    def write_stats(self):
+        with open(self.last_stats_file, "w") as ofile:
+            json.dump(self.stats, ofile)
+        if len(self.stats["targets"]) < 2:
+            return
+        self.log.info("total transfered %s at %s to %d targets",
+            print_size(self.stats["bytes"], unit="B"),
+            print_size(self.stats["speed"], unit="B")+"/s",
+            len(self.stats["targets"])
+        )
+
+    def stats_keys(self):
+        stats = self.load_stats()
+        data = []
+        for key, val in stats.items():
+            if not isinstance(val, (int, float)):
+                continue
+            data.append([key, str(val)])
+        return data

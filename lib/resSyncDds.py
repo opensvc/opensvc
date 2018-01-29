@@ -144,7 +144,9 @@ class syncDds(resSync.Sync):
         self.log.info(' '.join(cmd1 + ["|"] + cmd2))
         p1 = Popen(cmd1, stdout=PIPE)
         p2 = Popen(cmd2, stdin=p1.stdout, stdout=PIPE)
-        p2.communicate()[0]
+        stats_buff = p2.communicate()[1]
+        stats = self.parse_dd(stats_buff)
+        self.update_stats(stats, target=node)
         if p2.returncode != 0:
             self.log.error("full sync failed")
             raise ex.excError
@@ -187,8 +189,12 @@ class syncDds(resSync.Sync):
         merge_cmd = rcEnv.rsh.split() + [node] + merge_cmd
         self.log.info(' '.join(extract_cmd + ["|"] + merge_cmd))
         p1 = Popen(extract_cmd, stdout=PIPE)
-        p2 = Popen(merge_cmd, stdin=p1.stdout, stdout=PIPE)
+        pi = Popen(["dd", "bs=4096"], stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
+        p2 = Popen(merge_cmd, stdin=pi.stdout, stdout=PIPE)
         buff = p2.communicate()
+        stats_buff = pi.communicate()[1]
+        stats = self.parse_dd(stats_buff)
+        self.update_stats(stats, target=node)
         if p2.returncode != 0:
             if buff[1] is not None and len(buff[1]) > 0:
                 self.log.error(buff[1])
@@ -279,6 +285,7 @@ class syncDds(resSync.Sync):
         self.write_statefile()
         for n in self.targets:
             self.push_statefile(n)
+        self.write_stats()
 
     def checksum(self, node, bdev, q=None):
         cmd = ['md5sum', bdev]
@@ -362,6 +369,14 @@ class syncDds(resSync.Sync):
             self.status_log("Last sync on %s older than %i minutes"%(last, self.sync_max_delay))
             return rcStatus.WARN
         return rcStatus.UP
+
+    def _info(self):
+        data = [
+          ["src", self.src],
+          ["target", " ".join(self.target) if self.target else ""],
+        ]
+        data += self.stats_keys()
+        return data
 
     def __init__(self,
                  rid=None,
