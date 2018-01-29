@@ -106,8 +106,8 @@ class Sync(Res.Resource, Scheduler):
         if self.svc.options.force:
             self.log.info("skip service up status check because --force is set")
         else:
-            s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
-            if s['overall'].status != rcStatus.UP:
+            s = self.svc.group_status(excluded_groups=set(["sync", "app"]))
+            if s['avail'].status != rcStatus.UP:
                 if self.svc.options.cron:
                     self.log.debug("won't sync this resource for a service not up")
                 else:
