@@ -261,7 +261,7 @@ class TestNodemgr:
 
     def test_162_nodemgr_prkey(self):
         """
-        Print persistent resevation key
+        Print persistent reservation key
         """
         ret = nodemgr.main(argv=["prkey"])
         assert ret == 0
