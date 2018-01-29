@@ -1116,6 +1116,16 @@ def log_file_info(path):
     string = "uid[%d] gid[%d] perms[%s] file[%s]" % (info.st_uid, info.st_gid, oct(info.st_mode & 777), path)
     logit(string)
 
+def clean_pyc():
+    logit("begin")
+    for fpath in glob.glob(os.path.join(pathlib, "*.pyc")):
+        try:
+            os.remove(fpath)
+        except:
+            msg = "issue met while trying to remove pyc file [%s]" % fpath
+            logit(msg)
+            pass
+
 def dump_install_content():
     logit("begin")
     if sysname == 'Windows':
@@ -1215,6 +1225,7 @@ try:
     convert_to_lsb()
     move_env_to_conf()
     move_var_files_19()
+    clean_pyc()
     dump_install_content()
     restart_daemon()
     logit("\nOpenSVC postinstall terminated\n",stdout=True)
