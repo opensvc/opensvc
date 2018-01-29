@@ -220,17 +220,31 @@ def convert_size(s, _to='', _round=1, default_unit=''):
     return size
 
 def print_size(size, unit="MB"):
-    mult = 1024
-    units = ['B', 'KB', 'MB', 'GB', 'TB', 'EB']
-    units_index = {'B':0, 'KB':1, 'MB':2, 'GB':3, 'TB':4, 'EB':5}
+    unit = unit.upper()
+    if unit.endswith("B"):
+        suffix = "B"
+        unit = unit.rstrip("B")
+    else:
+        suffix = ""
+    if unit.endswith("I"):
+        metric = "i"
+        mult = 1000
+        unit = unit.rstrip("I")
+    else:
+        metric = ""
+        mult = 1024
+    units = ['', 'K', 'M', 'G', 'T', 'E']
+    units_index = {'':0, 'K':1, 'M':2, 'G':3, 'T':4, 'E':5}
     size = float(size)
+    if unit not in units:
+        raise ValueError("unsupported unit: %s" % unit)
     for u in units[units_index[unit]:]:
         if size == 0:
             return "0"
         if size < mult:
-            return '%d%s' % (size, u.lower().rstrip("b"))
+            return '%d %s%s%s' % (size, u, metric, suffix)
         size = size/mult
-    return '%d%s' % (size, u.lower().rstrip("b"))
+    return '%d %s%s%s' % (size, u, metric, suffix)
 
 def convert_speed(s, _to='', _round=1, default_unit=''):
     try:
