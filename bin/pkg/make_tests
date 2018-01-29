@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# apt install python-nose-json python-nosehtmloutput python-nose-cov
-# apt install python3-nose-json python3-nosehtmloutput python3-nose-cov
+# apt install python-nose-json python-nosehtmloutput python-nose-cov python-requests
+# apt install python3-nose-json python3-nosehtmloutput python3-nose-cov python3-requests
 
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(which -- $0 || echo $0));pwd)"
 PYTHONPATH=$PATH_SCRIPT/../../lib
