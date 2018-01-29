@@ -180,13 +180,16 @@ def progress(lockfd, data):
         _lockfd = os.dup(lockfd)
         with os.fdopen(_lockfd, "w+") as ofile:
             ofile.seek(0)
-            lock_data = json.load(ofile)
+            try:
+                lock_data = json.load(ofile)
+            except ValueError as exc:
+                return
             lock_data["progress"] = data
+            ofile.truncate(0)
             ofile.seek(0)
             json.dump(lock_data, ofile)
             os.fsync(_lockfd)
     except Exception as exc:
-        print(exc)
         return
 
 def main():
