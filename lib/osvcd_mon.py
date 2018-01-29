@@ -797,8 +797,19 @@ class Monitor(shared.OsvcThread, Crypt):
             if instance["monitor"].get("placement") != "leader":
                 if instance.avail not in STOPPED_STATES:
                     self.service_stop(svc.svcname)
-            elif shared.AGG[svc.svcname].avail in STOPPED_STATES:
-                self.set_smon(svc.svcname, global_expect="started")
+            elif self.non_leaders_stopped(svc) and \
+                 shared.AGG[svc.svcname].placement not in ("optimal", "n/a"):
+                self.service_start(svc.svcname)
+
+    def non_leaders_stopped(self, svc):
+        for nodename, instance in self.get_service_instances(svc.svcname).items():
+            if instance["monitor"].get("placement") == "leader":
+                continue
+            if instance.get("avail") not in STOPPED_STATES:
+                self.log.info("service '%s' instance node '%s' is not stopped yet", 
+                              svc.svcname, nodename)
+                return False
+        return True
 
     def service_orchestrator_auto_grace(self, svc):
         """
@@ -1582,7 +1593,7 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.info("service %s action aborted", svcname)
             self.set_smon(svcname, global_expect="unset")
         elif smon.global_expect == "placed" and \
-             shared.AGG[svcname].placement in ("optiomal", "n/a"):
+             shared.AGG[svcname].placement in ("optimal", "n/a"):
             self.set_smon(svcname, global_expect="unset")
 
     def set_smon_l_expect_from_status(self, data, svcname):
