@@ -266,7 +266,7 @@ class HbDiskRx(HbDisk):
     """
     def __init__(self, name):
         HbDisk.__init__(self, name, role="rx")
-        self.last_updated = None
+        self.last_updated = {}
 
     def run(self):
         self.flags = os.O_RDWR
@@ -310,11 +310,12 @@ class HbDiskRx(HbDisk):
                                      "reserved slot", _nodename, nodename)
                     nodename = _nodename
                 updated = _data["updated"]
-                if self.last_updated is not None and self.last_updated == updated:
+                last_updated = self.last_updated.get(nodename)
+                if last_updated is not None and last_updated == updated:
                     # remote tx has not rewritten its slot
                     #self.log.info("node %s has not updated its slot", nodename)
                     continue
-                self.last_updated = updated
+                self.last_updated[nodename] = updated
                 with shared.CLUSTER_DATA_LOCK:
                     shared.CLUSTER_DATA[nodename] = _data
                 self.stats.beats += 1
