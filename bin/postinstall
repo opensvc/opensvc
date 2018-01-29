@@ -1118,7 +1118,7 @@ def log_file_info(path):
 
 def clean_pyc():
     logit("begin")
-    for fpath in glob.glob(os.path.join(pathlib, "*.pyc")):
+    for fpath in glob.glob(os.path.join(pathlib, "*.pyc")) + glob.glob(os.path.join(pathlib, "__pycache__/*.pyc")):
         try:
             os.remove(fpath)
         except:
