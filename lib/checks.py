@@ -1,5 +1,6 @@
 from __future__ import print_function
 from rcGlobalEnv import rcEnv
+from rcUtilities import mimport
 import os
 
 class check(object):
@@ -24,24 +25,25 @@ class checks(check):
 
     def __init__(self, svcs=[]):
         self.svcs = svcs
-        self.register('checkFsUsage')
-        self.register('checkFsInode')
-        self.register('checkVgUsage')
-        self.register('checkEth')
-        self.register('checkLag')
-        self.register('checkMpath')
-        self.register('checkMpathPowerpath')
-        self.register('checkZfsUsage')
-        self.register('checkRaidSmartArray')
-        self.register('checkRaidMegaRaid')
-        self.register('checkRaidSas2')
-        self.register('checkFmFmadm')
-        self.register('checkFmOpenManage')
-        self.register('checkMce')
-        self.register('checkZpool')
-        self.register('checkBtrfsDevStats')
-        self.register('checkAdvfsUsage')
-        self.register('checkNuma')
+        self.register('Fs', 'Usage')
+        self.register('Fs', 'Inode')
+        self.register('Vg', 'Usage')
+        self.register('Eth')
+        self.register('Lag')
+        self.register('Mpath')
+        self.register('Mpath', 'Powerpath')
+        self.register('Zfs', 'Usage')
+        self.register('Raid', 'Smart', 'Array')
+        self.register('Raid', 'Mega', 'Raid')
+        self.register('Raid', 'Sas2')
+        self.register('Fm', 'Fmadm')
+        self.register('Fm', 'Open', 'Manage')
+        self.register('Mce')
+        self.register('Zpool')
+        self.register('Btrfs', 'Dev', 'Stats')
+        self.register('Advfs', 'Usage')
+        self.register('Numa')
+        self.register('Sync')
         self.register_local_checkers()
 
     def __iadd__(self, c):
@@ -70,10 +72,11 @@ class checks(check):
                 print('Could not import check:', cname, file=sys.stderr)
                 print(e, file=sys.stderr)
 
-    def register(self, chk_name):
-        if not os.path.exists(os.path.join(rcEnv.paths.pathlib, chk_name+rcEnv.sysname+'.py')):
+    def register(self, *args):
+        try:
+            m = mimport("check", *args)
+        except ImportError:
             return
-        m = __import__(chk_name+rcEnv.sysname)
         self += m.check(svcs=self.svcs)
 
     def do_checks(self):
