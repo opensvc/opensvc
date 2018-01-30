@@ -257,9 +257,9 @@ class Rsync(resSync.Sync):
         data = {"bytes": 0, "speed": 0}
         for line in bdecode(buff).splitlines():
             if line.startswith("Total bytes sent"):
-                data["bytes"] = int(line.split()[-1])
+                data["bytes"] = int(line.split()[-1].replace(",",""))
             elif line.endswith("/sec"):
-                data["speed"] = int(convert_speed(line.split()[-2]+"/s"))
+                data["speed"] = int(convert_speed(line.split()[-2].replace(",","")+"/s"))
         return data
 
     def pre_action(self, action):
