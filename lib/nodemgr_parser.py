@@ -201,6 +201,11 @@ OPT = Storage({
              "specified user credentials instead of the node "
              "credentials. Prompted if necessary but not "
              "specified."),
+    "port": Option(
+        "--port", default=7,
+        action="store", dest="port",
+        help="A list of ports, comma separated, used as target of "
+             "the Wake-On-LAN packets."),
     "recover": Option(
         "--recover", default=False,
         action="store_true", dest="recover",
@@ -429,6 +434,7 @@ ACTIONS = {
             "options": [
                 OPT.broadcast,
                 OPT.mac,
+                OPT.port,
             ],
         },
         "collect_stats": {
