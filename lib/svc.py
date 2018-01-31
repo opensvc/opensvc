@@ -1381,18 +1381,21 @@ class Svc(Crypt, ExtConfig):
         possible and allowed by kwargs.
         """
         lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname + ".status")
-        with lock.cmlock(timeout=30, delay=1, lockfile=lockfile):
-            if not from_resource_status_cache and \
-               not refresh and \
-               os.path.exists(self.status_data_dump) and \
-               not self.status_data_dump_outdated():
-                try:
-                    with open(self.status_data_dump, 'r') as filep:
-                        data = json.load(filep)
-                except ValueError:
+        try:
+            with lock.cmlock(timeout=30, delay=1, lockfile=lockfile):
+                if not from_resource_status_cache and \
+                   not refresh and \
+                   os.path.exists(self.status_data_dump) and \
+                   not self.status_data_dump_outdated():
+                    try:
+                        with open(self.status_data_dump, 'r') as filep:
+                            data = json.load(filep)
+                    except ValueError:
+                        data = self.print_status_data_eval(refresh=refresh)
+                else:
                     data = self.print_status_data_eval(refresh=refresh)
-            else:
-                data = self.print_status_data_eval(refresh=refresh)
+        except lock.LOCK_EXCEPTIONS as exc:
+            raise ex.excAbortAction(str(exc))
 
         if mon_data:
             mon_data = self.get_smon_data()
