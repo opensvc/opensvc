@@ -1143,10 +1143,6 @@ class Monitor(shared.OsvcThread, Crypt):
             n_instances += 1
         astatus_s = set(astatus_l)
 
-        if "flex_max_nodes" not in instance:
-            # in transition from flex to failover
-            return "unknown"
-
         n_up = astatus_l.count("up")
         if n_instances == 0:
             return 'n/a'
@@ -1156,9 +1152,9 @@ class Monitor(shared.OsvcThread, Crypt):
             return 'down'
         elif 'warn' in astatus_l:
             return 'warn'
-        elif n_up > instance["flex_max_nodes"]:
+        elif n_up > instance.get("flex_max_nodes", n_instances):
             return 'warn'
-        elif n_up < instance["flex_min_nodes"]:
+        elif n_up < instance.get("flex_min_nodes", 1):
             return 'warn'
         else:
             return 'up'
