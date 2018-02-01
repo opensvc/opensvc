@@ -798,7 +798,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 if instance.avail not in STOPPED_STATES:
                     self.service_stop(svc.svcname)
             elif self.non_leaders_stopped(svc) and \
-                 shared.AGG[svc.svcname].placement not in ("optimal", "n/a") and \
+                 (shared.AGG[svc.svcname].placement not in ("optimal", "n/a") or shared.AGG[svc.svcname].avail != "up") and \
                  instance.avail in STOPPED_STATES:
                 self.service_start(svc.svcname)
 
@@ -1590,7 +1590,8 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.info("service %s action aborted", svcname)
             self.set_smon(svcname, global_expect="unset")
         elif smon.global_expect == "placed" and \
-             shared.AGG[svcname].placement in ("optimal", "n/a"):
+             shared.AGG[svcname].placement in ("optimal", "n/a") and \
+             shared.AGG[svcname].avail == "up":
             self.set_smon(svcname, global_expect="unset")
 
     def set_smon_l_expect_from_status(self, data, svcname):
