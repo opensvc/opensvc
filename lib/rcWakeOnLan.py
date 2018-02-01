@@ -10,7 +10,7 @@ class wolrequest(object):
     def __init__(self, macaddress, broadcast, udpport=7):
         self.mac = macaddress
         self.broadcast = broadcast
-        self.udpport = udpport
+        self.udpport = int(udpport)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 

@@ -1696,24 +1696,26 @@ class Node(Crypt, ExtConfig):
             return 1
         macs = self.options.mac.split(',')
         broadcasts = self.options.broadcast.split(',')
+        udpports = str(self.options.port).split(',')
         for brdcast in broadcasts:
             for mac in macs:
-                req = rcWakeOnLan.wolrequest(macaddress=mac, broadcast=brdcast)
-                if not req.check_broadcast():
-                    print("Error : skipping broadcast address <%s>, not in "
-                          "the expected format 123.123.123.123" % req.broadcast,
-                          file=sys.stderr)
-                    break
-                if not req.check_mac():
-                    print("Error : skipping mac address <%s>, not in the "
-                          "expected format 00:11:22:33:44:55" % req.mac,
-                          file=sys.stderr)
-                    continue
-                if req.send():
-                    print("Sent Wake On Lan packet to mac address <%s>"%req.mac)
-                else:
-                    print("Error while trying to send Wake On Lan packet to "
-                          "mac address <%s>" % req.mac, file=sys.stderr)
+                for port in udpports:
+                    req = rcWakeOnLan.wolrequest(macaddress=mac, broadcast=brdcast, udpport=port)
+                    if not req.check_broadcast():
+                        print("Error : skipping broadcast address <%s>, not in "
+                              "the expected format 123.123.123.123" % req.broadcast,
+                              file=sys.stderr)
+                        break
+                    if not req.check_mac():
+                        print("Error : skipping mac address <%s>, not in the "
+                              "expected format 00:11:22:33:44:55" % req.mac,
+                              file=sys.stderr)
+                        continue
+                    if req.send():
+                        print("Sent Wake On Lan packet to mac address <%s>"%req.mac)
+                    else:
+                        print("Error while trying to send Wake On Lan packet to "
+                              "mac address <%s>" % req.mac, file=sys.stderr)
 
     def allocate_rid(self, group, sections):
         """
