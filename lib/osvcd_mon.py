@@ -786,7 +786,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if svc.svcname in shared.SERVICES:
                 self.service_delete(svc.svcname)
         elif smon.global_expect == "purged" and \
-             self.leader_first(svc, provisioned=False, deleted=False):
+             self.leader_first(svc, provisioned=False, deleted=False, check_min_instances_reached=False):
             if svc.svcname in shared.SERVICES and \
                (not self.service_unprovisioned(instance) or instance is not None):
                 self.service_purge(svc.svcname)
@@ -895,7 +895,7 @@ class Monitor(shared.OsvcThread, Crypt):
         min_instances = set(svc.peers) & set(live_nodes)
         return len(instances) >= len(min_instances)
 
-    def leader_first(self, svc, provisioned=False, deleted=None):
+    def leader_first(self, svc, provisioned=False, deleted=None, check_min_instance_reached=True):
         """
         Return True if the peer selected for anteriority is found to have
         reached the target status, or if the local node is the one with
@@ -908,8 +908,9 @@ class Monitor(shared.OsvcThread, Crypt):
           whatever their frozen, constraints, and current provisioning
           state.
         """
-        if not self.min_instances_reached(svc):
-            self.log.info("delay leader-first action until all nodes have fetched the service config")
+        if check_min_instances_reached and not self.min_instances_reached(svc):
+            self.log.info("delay leader-first action on service '%s' until all "
+                          "nodes have fetched the service config", svc.svcname)
             return False
         instances = self.get_service_instances(svc.svcname, discard_empty=True)
         candidates = [nodename for (nodename, data) in instances.items() \
