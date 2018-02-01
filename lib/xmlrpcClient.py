@@ -277,7 +277,7 @@ class Collector(object):
             """
             if res is not None and dateprev is not None:
                 res = res.lower()
-                res = res.replace(rcEnv.nodename+'.'+svcname+'.','')
+                res = res.replace(rcEnv.nodename+'.'+svcname,'').lstrip(".")
                 vals.append([svcname,
                              res+' '+action,
                              rcEnv.nodename,
@@ -315,7 +315,7 @@ class Collector(object):
         """
         if dateprev is not None:
             res = res.lower()
-            res = res.replace(rcEnv.nodename+'.'+svcname+'.','')
+            res = res.replace(rcEnv.nodename+'.'+svcname,'').lstrip(".")
             vals.append([svcname,
                          res+' '+action,
                          rcEnv.nodename,
