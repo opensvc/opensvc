@@ -449,8 +449,9 @@ def call(argv,
         buff = tuple(map(lambda x: bdecode(x), buff))
         ret = process.returncode
         if ret == 0:
-            log.debug("store '%s' output in cache"%cmd)
-            rcEnv.call_cache[cmd] = buff
+            if cache:
+                log.debug("store '%s' output in cache"%cmd)
+                rcEnv.call_cache[cmd] = buff
         elif cmd in rcEnv.call_cache:
             log.debug("discard '%s' output from cache because ret!=0"%cmd)
             del rcEnv.call_cache[cmd]
