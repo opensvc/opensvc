@@ -149,7 +149,7 @@ class Listener(shared.OsvcThread, Crypt):
         passed as keyword args.
         """
         if not isinstance(data, dict):
-            return
+            return {"error": "invalid data format", "status": 1}
         if "action" not in data:
             return {"error": "action not specified", "status": 1}
         fname = "action_"+data["action"]
@@ -332,7 +332,7 @@ class Listener(shared.OsvcThread, Crypt):
     def action_leave(self, nodename, **kwargs):
         if nodename not in self.cluster_nodes:
             self.log.info("node %s already left", nodename)
-            return
+            return {"status": 0}
         ret = self.remove_cluster_node(nodename)
         result = {
             "status": ret,
