@@ -1494,6 +1494,8 @@ class Svc(Crypt, ExtConfig):
                     data["encap"][container.rid] = {"resources": {}}
                 if hasattr(container, "vm_hostname"):
                     data["encap"][container.rid]["hostname"] = container.vm_hostname
+        elif self.encap:
+            data['encap'] = True
 
         for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
             for resource in rset.resources:
@@ -2092,7 +2094,6 @@ class Svc(Crypt, ExtConfig):
         if container.pg_frozen():
             raise ex.excError("can't join a frozen container. abort encap "
                               "command.")
-        vmhostname = container.vm_hostname
         if cmd == ["start"] and container.booted:
             return '', '', 0
         if not self.has_encap_resources:

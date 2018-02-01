@@ -20,6 +20,7 @@ DEPRECATED_KEYWORDS = {
 
 # supported => deprecated
 REVERSE_DEPRECATED_KEYWORDS = {
+  "DEFAULT.topology": "cluster_type",
   "DEFAULT.env": "service_type",
   "DEFAULT.hard_affinity": "affinity",
   "DEFAULT.hard_anti_affinity": "anti_affinity",
@@ -524,7 +525,7 @@ class KeywordVmName(Keyword):
                   order=2,
                   rtype=rcEnv.vt_supported,
                   default_text="the service name",
-                  text="This need to be set if the virtual machine name is different from the service name."
+                  text="Set if the container hostname is different from the container name."
                 )
 
 class KeywordVmHostname(Keyword):
