@@ -570,7 +570,7 @@ class Node(Crypt, ExtConfig):
                     for rid in rids:
                         try:
                             _current = svc._get(rid+"."+_param, evaluate=True)
-                        except ex.excError:
+                        except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
                             continue
                         if matching(_current, op, value):
                             return True
