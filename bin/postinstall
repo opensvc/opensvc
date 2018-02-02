@@ -1197,6 +1197,7 @@ def convert_to_lsb():
             shutil.copy(p, pathvar)
 
 def restart_daemon():
+    logit("begin")
     flag = os.path.join(pathvar, "postinstall.restart")
     if not os.path.exists(flag):
         return
