@@ -964,6 +964,8 @@ class Monitor(shared.OsvcThread, Crypt):
             if nodename == rcEnv.nodename:
                 return peers
             instance = self.get_service_instance(svc.svcname, nodename)
+            if instance is None:
+                continue
             if instance["monitor"].get("status") == "ready":
                 peers.append(nodename)
         return peers
