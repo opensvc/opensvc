@@ -47,9 +47,6 @@ then
 	echo "daemon flagged for restart"
 	touch $FLAG
 
-        echo "freeze the node"
-        nodemgr freeze --wait
-        
-        echo "stop the daemon"
-        nodemgr daemon stop
+        echo "stop the daemon, leaving the node in agent upgrade mode"
+        OPENSVC_AGENT_UPGRADE=1 nodemgr daemon stop
 fi

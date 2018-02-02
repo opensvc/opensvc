@@ -1201,11 +1201,13 @@ def restart_daemon():
     if not os.path.exists(flag):
         return
     os.unlink(flag)
+    os.environ['OPENSVC_AGENT_UPGRADE']=1
     cmd = "%s/nodemgr daemon start" % pathbin
     logit(cmd, stdout=True)
     os.system(cmd)
     cmd = "%s/nodemgr daemon running" % pathbin
     os.system(cmd)
+    del os.environ['OPENSVC_AGENT_UPGRADE']
 
 try:
     move_var_files_in_subdirs()
