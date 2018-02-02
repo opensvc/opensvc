@@ -3465,6 +3465,8 @@ class Node(Crypt, ExtConfig):
         options = {}
         if self.options.thr_id:
             options["thr_id"] = self.options.thr_id
+        if os.environ.get("OPENSVC_AGENT_UPGRADE"):
+            options["upgrade"] = True
         data = self.daemon_send(
             {"action": "daemon_stop", "options": options},
             nodename=self.options.node,
@@ -3506,6 +3508,8 @@ class Node(Crypt, ExtConfig):
     def daemon_start_thread(self):
         options = {}
         options["thr_id"] = self.options.thr_id
+        if os.environ.get("OPENSVC_AGENT_UPGRADE"):
+            options["upgrade"] = True
         data = self.daemon_send(
             {"action": "daemon_start", "options": options},
             nodename=self.options.node,
@@ -3542,14 +3546,20 @@ class Node(Crypt, ExtConfig):
         service status is correctly reported.
         """
         os.system("systemctl reset-failed opensvc-agent")
+        if os.environ.get("OPENSVC_AGENT_UPGRADE"):
+            os.system("systemctl set-environment OPENSVC_AGENT_UPGRADE=1")
         os.system("systemctl start opensvc-agent")
+        os.system("systemctl unset-environment OPENSVC_AGENT_UPGRADE")
 
     def daemon_stop_systemd(self):
         """
         Do daemon stop through the systemd, so that the daemon is not restarted
         by systemd, and the systemd service status is correctly reported.
         """
+        if os.environ.get("OPENSVC_AGENT_UPGRADE"):
+            os.system("systemctl set-environment OPENSVC_AGENT_UPGRADE=1")
         os.system("systemctl stop opensvc-agent")
+        os.system("systemctl unset-environment OPENSVC_AGENT_UPGRADE")
 
     def daemon_restart_systemd(self):
         """

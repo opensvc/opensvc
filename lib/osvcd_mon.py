@@ -52,6 +52,13 @@ class Monitor(shared.OsvcThread, Crypt):
         self.startup = datetime.datetime.utcnow()
         self.rejoin_grace_period_expired = False
         self.shortloops = 0
+        self.unfreeze_when_all_nodes_joined = False
+
+        if os.environ.get("OPENSVC_AGENT_UPGRADE"):
+            if not self.freezer.node_frozen():
+                self.log.info("freeze node until the cluster is complete")
+                self.unfreeze_when_all_nodes_joined = True
+		self.freezer.node_freeze()
 
         try:
             while True:
@@ -479,15 +486,22 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def node_orchestrator(self):
         nmon = self.get_node_monitor()
+        node_frozen = self.freezer.node_frozen()
+        if self.unfreeze_when_all_nodes_joined and node_frozen and len(self.cluster_nodes) == len(shared.CLUSTER_DATA):
+            self.log.info("thaw node now the cluster is complete")
+            self.freezer.node_thaw()
+            node_frozen = False
         if nmon.status != "idle":
             return
         self.set_nmon_g_expect_from_status()
         if nmon.global_expect == "frozen":
-            if not self.freezer.node_frozen():
+            self.unfreeze_when_all_nodes_joined = False
+            if not node_frozen:
                 self.log.info("freeze node")
                 self.freezer.node_freeze()
         elif nmon.global_expect == "thawed":
-            if self.freezer.node_frozen():
+            self.unfreeze_when_all_nodes_joined = False
+            if node_frozen:
                 self.log.info("thaw node")
                 self.freezer.node_thaw()
 

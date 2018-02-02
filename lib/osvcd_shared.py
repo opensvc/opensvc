@@ -505,6 +505,8 @@ class OsvcThread(threading.Thread):
         return datetime.timedelta(seconds=seconds)
 
     def in_maintenance_grace_period(self, nmon):
+        if nmon.status == "upgrade":
+            return True
         if nmon.status == "maintenance" and \
            nmon.status_updated > datetime.datetime.utcnow() - datetime.timedelta(seconds=self.maintenance_grace_period):
             return True
@@ -558,8 +560,8 @@ class OsvcThread(threading.Thread):
             return
         if self.in_maintenance_grace_period(nmon):
             if change:
-                self.log.info("preserve node %s data in maintenance since %s (grace %s)",
-                              nodename, nmon.status_updated, self.maintenance_grace_period)
+                self.log.info("preserve node %s data in %s since %s (grace %s)",
+                              nodename, nmon.status, nmon.status_updated, self.maintenance_grace_period)
             return
         self.log.info("no rx thread still receive from node %s and maintenance "
                       "grace period expired. flush its data",
@@ -612,7 +614,7 @@ class OsvcThread(threading.Thread):
         """
         Return the list of service nodes meeting the following criteria:
         * we have valid service instance data (not unknown, has avail)
-        * the node is not in maintenance
+        * the node is not in maintenance or upgrade
         * the node is not frozen (default)
         * the service is not frozen (default)
         * the service instance is provisioned (default)
@@ -624,7 +626,7 @@ class OsvcThread(threading.Thread):
             for nodename, data in CLUSTER_DATA.items():
                 if data == "unknown":
                     continue
-                if data.get("monitor", {}).get("status") == "maintenance":
+                if data.get("monitor", {}).get("status") in ("maintenance", "upgrade"):
                     continue
                 if discard_frozen and data.get("frozen", False):
                     # node frozen

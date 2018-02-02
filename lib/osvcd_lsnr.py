@@ -216,8 +216,12 @@ class Listener(shared.OsvcThread, Crypt):
         thr_id = kwargs.get("thr_id")
         if not thr_id:
             self.log.info("stop daemon requested")
-            self.set_nmon(status="maintenance")
-            self.log.info("announce maintenance state")
+            if kwargs.get("upgrade"):
+                self.set_nmon(status="upgrade")
+                self.log.info("announce upgrade state")
+            else:
+                self.set_nmon(status="maintenance")
+                self.log.info("announce maintenance state")
             shared.wake_monitor()
             time.sleep(5)
             shared.DAEMON_STOP.set()
