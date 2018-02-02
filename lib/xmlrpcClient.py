@@ -244,7 +244,6 @@ class Collector(object):
 
     def end_action(self, svcname, action, begin, end, cron, alogfile):
         err = 'ok'
-        dateprev = None
         res = None
         res_err = None
         pid = None
@@ -265,6 +264,7 @@ class Collector(object):
                 'status',
                 'cron']
         vals = []
+        last = None
         for line in lines.split(';;EOL\n'):
             if line.count(';;') != 4:
                 continue
@@ -272,24 +272,12 @@ class Collector(object):
                 continue
             date = line.split(';;')[0]
 
-            """Push to database the previous line, so that begin and end
-            date are available.
-            """
-            if res is not None and dateprev is not None:
-                res = res.lower()
-                res = res.replace(rcEnv.nodename+'.'+svcname,'').lstrip(".")
-                vals.append([svcname,
-                             res+' '+action,
-                             rcEnv.nodename,
-                             pid,
-                             dateprev,
-                             date,
-                             msg,
-                             res_err,
-                             '1' if cron else '0'])
-
             res_err = 'ok'
-            (date, res, lvl, msg, pid) = line.split(';;')
+            date, res, lvl, msg, pid = line.split(';;')
+            res = res.lower().replace(rcEnv.nodename+'.'+svcname,'').replace(rcEnv.nodename, '').lstrip(".")
+            res_action = res + ' ' + action
+            res_action = res_action.strip()
+            date = date.split(",")[0]
 
             # database overflow protection
             trim_lim = 10000
@@ -309,22 +297,32 @@ class Collector(object):
                 err = 'warn'
             if lvl == 'WARNING' and res_err != 'err':
                 res_err = 'warn'
-            dateprev = date
 
-        """Push the last log entry, using 'end' as end date
-        """
-        if dateprev is not None:
-            res = res.lower()
-            res = res.replace(rcEnv.nodename+'.'+svcname,'').lstrip(".")
-            vals.append([svcname,
-                         res+' '+action,
-                         rcEnv.nodename,
-                         pid,
-                         dateprev,
-                         date,
-                         msg,
-                         res_err,
-                         '1' if cron else '0'])
+            try:
+                if last:
+                    if last[5] == date and last[3] == pid and last[1] == res_action and last[7] == res_err:
+                        last[6] += "\n"+msg
+                        continue
+                    else:
+                        vals.append(last)
+            except Exception as exc:
+                print(exc)
+                continue
+            
+            last = [
+                svcname,
+                res_action,
+                rcEnv.nodename,
+                pid,
+                date,
+                date,
+                msg,
+                res_err,
+                '1' if cron else '0'
+            ]
+
+        if last:
+            vals.append(last)
 
         if len(vals) > 0:
             args = [vars, vals]
