@@ -895,7 +895,7 @@ class Monitor(shared.OsvcThread, Crypt):
         min_instances = set(svc.peers) & set(live_nodes)
         return len(instances) >= len(min_instances)
 
-    def leader_first(self, svc, provisioned=False, deleted=None, check_min_instance_reached=True):
+    def leader_first(self, svc, provisioned=False, deleted=None, check_min_instances_reached=True):
         """
         Return True if the peer selected for anteriority is found to have
         reached the target status, or if the local node is the one with
