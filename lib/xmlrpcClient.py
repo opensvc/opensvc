@@ -315,7 +315,7 @@ class Collector(object):
                 rcEnv.nodename,
                 pid,
                 date,
-                date,
+                "",
                 msg,
                 res_err,
                 '1' if cron else '0'
