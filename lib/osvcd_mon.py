@@ -1926,10 +1926,15 @@ class Monitor(shared.OsvcThread, Crypt):
             for peer in svc.peers:
                 if peer == rcEnv.nodename:
                     continue
+                smon = self.get_service_monitor(svc.svcname)
+                if smon.global_expect == "thawed":
+                    continue
                 try:
                     frozen = shared.CLUSTER_DATA[peer]["services"]["status"][svc.svcname].get("frozen", False)
                 except:
                     continue
                 if frozen:
+                    self.log.info("merge service '%s' frozen state from node '%s'",
+                                  svc.svcname, peer)
                     svc.freezer.freeze()
 
