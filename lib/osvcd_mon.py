@@ -58,7 +58,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if not self.freezer.node_frozen():
                 self.log.info("freeze node until the cluster is complete")
                 self.unfreeze_when_all_nodes_joined = True
-		self.freezer.node_freeze()
+                self.freezer.node_freeze()
 
         try:
             while True:
