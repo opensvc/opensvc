@@ -3462,6 +3462,8 @@ class Node(Crypt, ExtConfig):
         """
         Tell the daemon to die or stop a specified thread.
         """
+        if not self._daemon_running():
+            return
         options = {}
         if self.options.thr_id:
             options["thr_id"] = self.options.thr_id
