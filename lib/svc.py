@@ -649,8 +649,8 @@ class Svc(Crypt, ExtConfig):
     def flex_min_nodes(self):
         try:
            val = self.conf_get('DEFAULT', 'flex_min_nodes')
-        except ex.OptNotFound:
-           return 1
+        except ex.OptNotFound as exc:
+           return exc.default
         if val < 0:
            val = 0
         nb_nodes = len(self.nodes|self.drpnodes)
@@ -660,7 +660,7 @@ class Svc(Crypt, ExtConfig):
 
     @lazy
     def flex_max_nodes(self):
-        nb_nodes = len(self.nodes|self.drpnodes)
+        nb_nodes = len(self.peers)
         try:
            val = self.conf_get('DEFAULT', 'flex_max_nodes')
         except ex.OptNotFound:
@@ -675,8 +675,8 @@ class Svc(Crypt, ExtConfig):
     def flex_cpu_low_threshold(self):
         try:
             val = self.conf_get('DEFAULT', 'flex_cpu_low_threshold')
-        except ex.OptNotFound:
-            return 10
+        except ex.OptNotFound as exc:
+            return exc.default
         if val < 0:
             return 0
         if val > 100:
@@ -687,8 +687,8 @@ class Svc(Crypt, ExtConfig):
     def flex_cpu_high_threshold(self):
         try:
             val = self.conf_get('DEFAULT', 'flex_cpu_high_threshold')
-        except ex.OptNotFound:
-            return 90
+        except ex.OptNotFound as exc:
+            return exc.default
         if val < self.flex_cpu_low_threshold:
             return self.flex_cpu_low_threshold
         if val > 100:
