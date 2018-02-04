@@ -3627,7 +3627,7 @@ def build(name, minimal=False, svcconf=None):
     try:
         svc.flex_cpu_low_threshold = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_cpu_low_threshold')
     except ex.OptNotFound:
-        svc.flex_cpu_low_threshold = 10
+        svc.flex_cpu_low_threshold = 0
     if svc.flex_cpu_low_threshold < 0:
         raise ex.excInitError("invalid flex_cpu_low_threshold '%d' (<0)."%svc.flex_cpu_low_threshold)
     if svc.flex_cpu_low_threshold > 100:
@@ -3636,7 +3636,7 @@ def build(name, minimal=False, svcconf=None):
     try:
         svc.flex_cpu_high_threshold = conf_get_int_scope(svc, conf, 'DEFAULT', 'flex_cpu_high_threshold')
     except ex.OptNotFound:
-        svc.flex_cpu_high_threshold = 90
+        svc.flex_cpu_high_threshold = 100
     if svc.flex_cpu_high_threshold < 0:
         raise ex.excInitError("invalid flex_cpu_high_threshold '%d' (<0)."%svc.flex_cpu_high_threshold)
     if svc.flex_cpu_high_threshold > 100:
