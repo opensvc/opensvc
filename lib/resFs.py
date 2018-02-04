@@ -212,7 +212,12 @@ class Mount(Res.Resource):
     def __lt__(self, other):
         """
         Order so that deepest mountpoint can be umount first.
+        If no ordering constraint, honor the rid order.
         """
+        smnt = os.path.dirname(self.mount_point)
+        omnt = os.path.dirname(other.mount_point)
+        if smnt == omnt:
+            return Res.Resource.__lt__(self, other)
         return self.mount_point < other.mount_point
 
     @lazy
