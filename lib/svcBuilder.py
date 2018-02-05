@@ -2139,10 +2139,6 @@ def build(name, minimal=False, svcconf=None, node=None):
     except ex.OptNotFound as exc:
         svc.show_disabled = True
 
-    # prune service whose service type does not match host mode
-    if svc.svc_env != 'PRD' and rcEnv.node_env == 'PRD':
-        raise ex.excInitError('not allowed to run on this node (svc env=%s node env=%s)' % (svc.svc_env, rcEnv.node_env))
-
     try:
         svc.comment = svc.conf_get('DEFAULT', 'comment')
     except ex.OptNotFound as exc:

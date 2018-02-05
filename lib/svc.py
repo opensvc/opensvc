@@ -147,12 +147,15 @@ ACTIONS_NO_STATUS_CHANGE = [
 ]
 
 ACTIONS_ALLOW_ON_INVALID_NODE = [
+    "abort",
+    "clear",
     "delete",
     "edit_config",
     "frozen",
     "get",
     "logs",
     "print_config",
+    "print_status",
     "set",
     "unset",
     "update",
@@ -3534,10 +3537,6 @@ class Svc(Crypt, ExtConfig):
         if self.node is None:
             self.node = node.Node()
 
-        if self.svc_env != 'PRD' and rcEnv.node_env == 'PRD':
-            self.log.error("Abort action for non PRD service on PRD node")
-            return 1
-
         if action not in ACTIONS_NO_STATUS_CHANGE and \
            'compliance' not in action and \
            'collector' not in action and \
@@ -4629,6 +4628,8 @@ class Svc(Crypt, ExtConfig):
         """
         if action in ACTIONS_ALLOW_ON_INVALID_NODE:
             return
+        if self.svc_env != 'PRD' and rcEnv.node_env == 'PRD':
+            raise ex.excError('not allowed to run on this node (svc env=%s node env=%s)' % (self.svc_env, rcEnv.node_env))
         if self.type in rcEnv.vt_cloud:
             return
         if rcEnv.nodename in self.nodes:
