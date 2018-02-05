@@ -5,7 +5,7 @@ import datetime
 from stat import *
 
 def listpkg_dummy():
-    print("pushpkg supported on this system")
+    print("pushpkg not supported on this system")
     return []
 
 def listpkg_rpm():
