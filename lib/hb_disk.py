@@ -39,6 +39,7 @@ class HbDisk(Hb, Crypt):
         return data
 
     def configure(self):
+        self.dev = None
         self.stats = Storage({
             "beats": 0,
             "bytes": 0,
@@ -70,24 +71,31 @@ class HbDisk(Hb, Crypt):
             self.timeout = self.DEFAULT_DISK_TIMEOUT
 
         try:
-            self.dev = self.config.get(self.name, "dev")
+            new_dev = self.config.get(self.name, "dev")
         except Exception:
             raise ex.excAbortAction("no %s.dev is not set in node.conf" % self.name)
 
-        if not os.path.exists(self.dev):
-            raise ex.excAbortAction("no %s does not exist" % self.dev)
+        if not os.path.exists(new_dev):
+            raise ex.excAbortAction("no %s does not exist" % new_dev)
 
-        self.dev = os.path.realpath(self.dev)
-        statinfo = os.stat(self.dev)
+        new_dev = os.path.realpath(new_dev)
+        new_flags = os.O_RDWR
+        statinfo = os.stat(new_dev)
         if rcEnv.sysname == "Linux":
             if stat.S_ISBLK(statinfo.st_mode):
                 self.log.info("using directio")
-                self.flags |= os.O_DIRECT | os.O_SYNC | os.O_DSYNC
+                new_flags |= os.O_DIRECT | os.O_SYNC | os.O_DSYNC
             else:
-                raise ex.excAbortAction("%s must be a block device" % self.dev)
+                raise ex.excAbortAction("%s must be a block device" % new_dev)
         else:
             if not stat.S_ISCHR(statinfo.st_mode):
-                raise ex.excAbortAction("%s must be a char device" % self.dev)
+                raise ex.excAbortAction("%s must be a char device" % new_dev)
+
+        if new_dev != self.dev:
+            self.dev = new_dev
+            self.flags = new_flags
+            self.peer_config = {}
+            self.log.info("set dev=%s", self.dev)
 
         with self.hb_fo() as fo:
             self.load_peer_config(fo=fo)
@@ -206,7 +214,6 @@ class HbDiskTx(HbDisk):
         HbDisk._configure(self)
 
     def run(self):
-        self.flags = os.O_RDWR
         try:
             self.configure()
             if self.peer_config[rcEnv.nodename].slot < 0:
@@ -236,12 +243,12 @@ class HbDiskTx(HbDisk):
             self._do(fo)
 
     def _do(self, fo):
+        self.reload_config()
         if rcEnv.nodename not in self.peer_config:
             return
         slot = self.peer_config[rcEnv.nodename].slot
         if slot < 0:
             return
-        self.reload_config()
         message, message_bytes = self.get_message()
         if message is None:
             return
@@ -269,14 +276,12 @@ class HbDiskRx(HbDisk):
         self.last_updated = {}
 
     def run(self):
-        self.flags = os.O_RDWR
         try:
             self.configure()
         except ex.excAbortAction as exc:
             self.log.error(exc)
             self.stop()
             sys.exit(1)
-        self.log.info("reading on %s", self.dev)
 
         while True:
             self.do()
@@ -291,7 +296,6 @@ class HbDiskRx(HbDisk):
 
     def _do(self, fo):
         self.reload_config()
-        self.load_peer_config(verbose=False, fo=fo)
         for nodename, data in self.peer_config.items():
             if nodename == rcEnv.nodename:
                 continue
