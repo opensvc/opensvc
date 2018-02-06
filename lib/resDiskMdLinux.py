@@ -132,6 +132,8 @@ class Disk(resDisk.Disk):
         return "/dev/md/"+self.uuid
 
     def exposed_devs(self):
+        if self.uuid == "" or self.uuid is None:
+            return set()
         try:
             return set([os.path.realpath(self.md_devpath())])
         except:
