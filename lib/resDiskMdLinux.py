@@ -305,7 +305,7 @@ class Disk(resDisk.Disk):
                 l = map(lambda x: os.path.realpath(x), l)
                 paths = set()
                 for dev in l:
-                    _paths |= dev_to_paths(dev)
+                    _paths = dev_to_paths(dev)
                     if set([dev]) != _paths:
                         paths |= _paths
                     devs.add(dev)
