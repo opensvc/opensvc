@@ -296,9 +296,15 @@ class Disk(resDisk.Disk):
             if inblock and "devices=" in line:
                 l = line.split("devices=")[-1].split(",")
                 l = map(lambda x: os.path.realpath(x), l)
+                paths = set()
                 for dev in l:
-                    devs |= set(dev_to_paths(dev))
+                    _paths |= dev_to_paths(dev)
+                    if set([dev]) != _paths:
+                        paths |= _paths
+                    devs.add(dev)
                 break
+        # discard paths from the list (mdadm shows both mpaths and paths)
+        devs -= paths
 
         self.log.debug("found devs %s held by md %s" % (devs, self.uuid))
         return devs
