@@ -1,7 +1,7 @@
 [Unit]
 Description=OpenSVC Agent
 Documentation=http://docs.opensvc.com/ file:/usr/share/doc/opensvc/
-After=network.target network-online.target time-sync.target
+After=network.target network-online.target time-sync.target multi-user.target
 
 [Service]
 Type=forking
