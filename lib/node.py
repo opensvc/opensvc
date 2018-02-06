@@ -3702,6 +3702,9 @@ class Node(Crypt, ExtConfig):
         cluster_name = data.get("cluster", {}).get("name")
         if cluster_name is None:
             raise ex.excError("join failed: no cluster.name in response")
+        cluster_id = data.get("cluster", {}).get("id")
+        if cluster_id is None:
+            raise ex.excError("join failed: no cluster.id in response")
         cluster_nodes = data.get("cluster", {}).get("nodes")
         if cluster_nodes is None:
             raise ex.excError("join failed: no cluster.nodes in response")
@@ -3716,6 +3719,7 @@ class Node(Crypt, ExtConfig):
             self.config.set("node", "env", peer_env)
 
         self.config.set("cluster", "name", cluster_name)
+        self.config.set("cluster", "id", cluster_id)
         self.config.set("cluster", "nodes", " ".join(cluster_nodes))
         self.config.set("cluster", "secret", self.options.secret)
         if isinstance(cluster_drpnodes, list) and len(cluster_drpnodes) > 0:

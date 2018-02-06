@@ -151,7 +151,7 @@ class Crypt(object):
         else:
             nodes = [rcEnv.nodename]
 
-        if hasattr(self, "node"):
+        if hasattr(self, "get_node"):
             node = self.get_node()
         elif hasattr(self, "write_config"):
             node = self
@@ -237,6 +237,33 @@ class Crypt(object):
         node.config.set("cluster", "secret", key)
         node.write_config()
         return self.prepare_key(key)
+
+    @lazy
+    def cluster_id(self):
+        """
+        Return the cluster id read from cluster.id in the node configuration.
+        If not already set generate and store a random one.
+        """
+        if hasattr(self, "get_node"):
+            # svc
+            node = self.get_node()
+        elif hasattr(self, "write_config"):
+            # node
+            node = self
+        else:
+            from osvcd_shared import NODE
+            node = NODE
+        try:
+            return node.config.get("cluster", "id")
+        except Exception as exc:
+            pass
+        import uuid
+        cluster_id = str(uuid.uuid1())
+        if not node.config.has_section("cluster"):
+            node.config.add_section("cluster")
+        node.config.set("cluster", "id", cluster_id)
+        node.write_config()
+        return cluster_id
 
     @staticmethod
     def prepare_key(key):

@@ -188,13 +188,17 @@ class Listener(shared.OsvcThread, Crypt):
         """
         return {"status": 0, "data": self.get_blacklist()}
 
-    @staticmethod
-    def action_daemon_status(nodename, **kwargs):
+    def action_daemon_status(self, nodename, **kwargs):
         """
         Return a hash indexed by thead id, containing the status data
         structure of each thread.
         """
-        data = {}
+        data = {
+            "cluster": {
+                "name": self.cluster_name,
+                "id": self.cluster_id,
+            }
+        }
         with shared.THREADS_LOCK:
             for thr_id, thread in shared.THREADS.items():
                 data[thr_id] = thread.status(**kwargs)
@@ -368,6 +372,7 @@ class Listener(shared.OsvcThread, Crypt):
                 "cluster": {
                     "nodes": new_nodes,
                     "drpnodes": self.cluster_drpnodes,
+                    "id": self.cluster_id,
                     "name": self.cluster_name,
                     "quorum": self.quorum,
                 },

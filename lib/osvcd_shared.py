@@ -262,6 +262,7 @@ class OsvcThread(threading.Thread):
         unset_lazy(self, "arbitrators")
         unset_lazy(self, "cluster_name")
         unset_lazy(self, "cluster_key")
+        unset_lazy(self, "cluster_id")
         unset_lazy(self, "cluster_nodes")
         unset_lazy(self, "sorted_cluster_nodes")
         unset_lazy(self, "maintenance_grace_period")
