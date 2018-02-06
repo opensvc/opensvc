@@ -3703,6 +3703,11 @@ class Node(Crypt, ExtConfig):
         cluster_drpnodes = data.get("cluster", {}).get("drpnodes")
         quorum = data.get("cluster", {}).get("quorum", False)
 
+        peer_env = data.get("node", {}).get("env")
+        if peer_env and peer_env != rcEnv.node_env:
+            self.log.info("update node.env %s => %s", rcEnv.node_env, peer_env)
+            self.config.set("node", "env", peer_env)
+
         self.config.set("cluster", "name", cluster_name)
         self.config.set("cluster", "nodes", " ".join(cluster_nodes))
         self.config.set("cluster", "secret", self.options.secret)

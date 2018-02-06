@@ -362,6 +362,9 @@ class Listener(shared.OsvcThread, Crypt):
         result = {
             "status": 0,
             "data": {
+                "node": {
+                    "env": rcEnv.node_env,
+                },
                 "cluster": {
                     "nodes": new_nodes,
                     "drpnodes": self.cluster_drpnodes,
