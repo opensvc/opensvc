@@ -441,18 +441,23 @@ class Crypt(object):
                 port = rcEnv.listener_port
         return addr, port
 
-    def recv_message(self, sock, cluster_name=None, secret=None):
+    def recv_message(self, sock, cluster_name=None, secret=None, use_select=True):
         """
         Receive, decrypt and return a message from a socket.
         """
         sock.setblocking(0)
         chunks = []
         while True:
-            ready = select.select([sock], [], [], 60)
-            if ready[0]:
-                chunk = sock.recv(4096)
+            if use_select:
+                ready = select.select([sock], [], [sock], 60)
+                if ready[0]:
+                    chunk = sock.recv(4096)
+                else:
+                    break
+                if ready[2]:
+                    break
             else:
-                break
+                chunk = sock.recv(4096)
             if chunk:
                 chunks.append(chunk)
             if not chunk or chunk.endswith(b"\x00"):
@@ -533,7 +538,6 @@ class Crypt(object):
         Send a request to the daemon running on nodename and yield the results
         fetched if with_result is set.
         """
-        import select
         if nodenames is None:
             nodenames = [rcEnv.nodename]
 
@@ -555,12 +559,16 @@ class Crypt(object):
 
         try:
             while True:
-                ready_to_read = select.select(socks, [], [], 1)[0]
+                ready_to_read, _, exceptionals = select.select(socks, [], socks, 1)
                 for sock in ready_to_read:
-                    data = self.recv_message(sock, cluster_name=cluster_name, secret=secret)
+                    data = self.recv_message(sock, cluster_name=cluster_name, secret=secret, use_select=False)
                     if data is None:
                         continue
                     yield data
+                for sock in exceptionals:
+                    socks.remove(sock)
+                if len(socks) == 0:
+                    break
         finally:
             for sock in socks:
                 sock.close()
