@@ -10,6 +10,7 @@ import sys
 import threading
 import zlib
 import time
+import select
 
 import pyaes
 import rcExceptions as ex
@@ -444,9 +445,14 @@ class Crypt(object):
         """
         Receive, decrypt and return a message from a socket.
         """
+        sock.setblocking(0)
         chunks = []
         while True:
-            chunk = sock.recv(4096)
+            ready = select.select([sock], [], [], 60)
+            if ready[0]:
+                chunk = sock.recv(4096)
+            else:
+                break
             if chunk:
                 chunks.append(chunk)
             if not chunk or chunk.endswith(b"\x00"):
