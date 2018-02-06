@@ -66,7 +66,7 @@ class HbMcast(Hb, Crypt):
             self.intf = "any"
             self.src_addr = "0.0.0.0"
             self.mreq = struct.pack("4sl", group, socket.INADDR_ANY)
-        self.max_handlers = len(self.cluster_nodes)
+        self.max_handlers = len(self.cluster_nodes) * 4
 
     def set_if(self):
         if self.intf == "any":

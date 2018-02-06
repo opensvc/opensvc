@@ -76,7 +76,7 @@ class HbUcast(Hb, Crypt):
             self.timeout = self.config.getint(self.name, "timeout")
         else:
             self.timeout = self.DEFAULT_UCAST_TIMEOUT
-        self.max_handlers = len(self.cluster_nodes)
+        self.max_handlers = len(self.cluster_nodes) * 4
 
 class HbUcastTx(HbUcast):
     """
