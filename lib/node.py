@@ -3066,10 +3066,13 @@ class Node(Crypt, ExtConfig):
                 status += colorize("!", color.BROWN)
             if data["placement"] == "non-optimal":
                 status += colorize("^", color.RED)
+            info = topology
+            if data["orchestrate"]:
+                info += "/" + data["orchestrate"]
             line = [
                 " "+colorize(prefix+svcname, color.BOLD),
                 status,
-                topology,
+                info,
                 "|",
             ]
             for nodename in nodenames:
@@ -3291,6 +3294,7 @@ class Node(Crypt, ExtConfig):
                 if svcname not in services:
                     services[svcname] = Storage({
                         "topology": _data.get("topology", ""),
+                        "orchestrate": _data.get("orchestrate"),
                         "avail": Status(),
                         "overall": "",
                         "nodes": {}

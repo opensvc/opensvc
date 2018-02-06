@@ -76,7 +76,7 @@ class HbDisk(Hb, Crypt):
             raise ex.excAbortAction("no %s.dev is not set in node.conf" % self.name)
 
         if not os.path.exists(new_dev):
-            raise ex.excAbortAction("no %s does not exist" % new_dev)
+            raise ex.excAbortAction("%s does not exist" % new_dev)
 
         new_dev = os.path.realpath(new_dev)
         new_flags = os.O_RDWR

@@ -1477,6 +1477,8 @@ class Svc(Crypt, ExtConfig):
             data["parents"] = self.parents
         if len(self.children) > 0:
             data["children"] = self.children
+        if self.orchestrate != "no":
+            data["orchestrate"] = self.orchestrate
 
         containers = self.get_resources('container')
         if len(containers) > 0:
