@@ -1,6 +1,6 @@
 [Unit]
 Description=OpenSVC Agent
-Documentation=http://docs.opensvc.com/ file:/usr/share/doc/opensvc/
+Documentation=http://docs.opensvc.com/ file:/usr/share/doc/opensvc/ man:nodemgr(1) man:svcmgr(1) man:svcmon(1)
 After=network.target network-online.target time-sync.target multi-user.target
 
 [Service]
