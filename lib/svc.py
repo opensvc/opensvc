@@ -2138,6 +2138,8 @@ class Svc(Crypt, ExtConfig):
             options.append('--dry-run')
         if self.options.force:
             options.append('--force')
+        if self.options.local:
+            options.append('--local')
         if self.options.disable_rollback:
             options.append('--disable-rollback')
         if self.options.rid:
