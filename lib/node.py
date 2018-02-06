@@ -3231,7 +3231,7 @@ class Node(Crypt, ExtConfig):
             list_print(data)
 
         def load_threads():
-            for key in sorted(list(data.keys())):
+            for key in sorted([key for key in data if key != "cluster"]):
                 if key.startswith("hb#"):
                     load_hb(key, data[key])
                 elif key == "listener":
