@@ -296,6 +296,7 @@ class Disk(resDisk.Disk):
         if len(lines) < 2:
             return set()
         inblock = False
+        paths = set()
         for line in lines:
             if "UUID="+self.uuid in line:
                 inblock = True
@@ -303,7 +304,6 @@ class Disk(resDisk.Disk):
             if inblock and "devices=" in line:
                 l = line.split("devices=")[-1].split(",")
                 l = map(lambda x: os.path.realpath(x), l)
-                paths = set()
                 for dev in l:
                     _paths = set(dev_to_paths(dev))
                     if set([dev]) != _paths:
