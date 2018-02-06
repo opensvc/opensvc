@@ -3135,7 +3135,10 @@ class Node(Crypt, ExtConfig):
             if "addr" in _data["config"] and "port" in _data["config"]:
                 config = _data["config"]["addr"]+":"+str(_data["config"]["port"])
             elif "dev" in _data["config"]:
-                config = os.path.basename(_data["config"]["dev"])
+                if _data["config"]["dev"]:
+                    config = os.path.basename(_data["config"]["dev"])
+                else:
+                    config = ""
             elif "relay" in _data["config"]:
                 config = _data["config"]["relay"]
             else:
