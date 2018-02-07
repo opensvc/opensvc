@@ -37,6 +37,7 @@ class Hb(shared.OsvcThread):
                 _data = self.peers.get(nodename, Storage({
                     "last": 0,
                     "beating": False,
+                    "success": True,
                 }))
             data.peers[nodename] = {
                 "last": datetime.datetime.utcfromtimestamp(_data.last)\
@@ -45,16 +46,28 @@ class Hb(shared.OsvcThread):
             }
         return data
 
-    def set_last(self, nodename="*"):
+    def set_last(self, nodename="*", success=True):
         if nodename not in self.peers:
             self.peers[nodename] = Storage({
                 "last": 0,
                 "beating": False,
+                "success": True,
             })
-        self.peers[nodename].last = time.time()
-        if not self.peers[nodename].beating:
-            self.log.info("node %s hb status stale => beating", nodename)
-        self.peers[nodename].beating = True
+        if success:
+            self.peers[nodename].last = time.time()
+            if not self.peers[nodename].beating:
+                self.log.info("node %s hb status stale => beating", nodename)
+            self.peers[nodename].beating = True
+        self.peers[nodename].success = success
+
+    def get_last(self, nodename="*"):
+        if nodename in self.peers:
+            return self.peers[nodename]
+        return Storage({
+            "last": 0,
+            "beating": False,
+            "success": True,
+        })
 
     def is_beating(self, nodename="*"):
         return self.peers.get(nodename, {"beating": False})["beating"]
@@ -69,6 +82,7 @@ class Hb(shared.OsvcThread):
             self.peers[nodename] = Storage({
                 "last": 0,
                 "beating": False,
+                "success": True,
             })
         if now > self.peers[nodename].last + self.timeout:
             beating = False

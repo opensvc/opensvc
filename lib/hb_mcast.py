@@ -133,10 +133,14 @@ class HbMcastTx(HbMcast):
             self.stats.bytes += message_bytes
         except socket.timeout as exc:
             self.stats.errors += 1
-            self.log.warning("send timeout")
+            if self.get_last().success:
+                self.log.warning("send timeout")
+            self.set_last(success=False)
         except socket.error as exc:
             self.stats.errors += 1
-            self.log.warning("send error: %s", exc)
+            if self.get_last().success:
+                self.log.warning("send error: %s", exc)
+            self.set_last(success=False)
         finally:
             self.set_beating()
 

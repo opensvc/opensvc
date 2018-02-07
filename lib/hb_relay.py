@@ -112,8 +112,9 @@ class HbRelayTx(HbRelay):
             #self.log.info("written to %s slot %s", self.dev, slot)
         except Exception as exc:
             self.stats.errors += 1
-            self.log.error("send to relay error: %s", exc)
-            return
+            if self.get_last().success:
+                self.log.error("send to relay error: %s", exc)
+            self.set_last(success=False)
         finally:
             self.set_beating()
 
@@ -187,9 +188,10 @@ class HbRelayRx(HbRelay):
                 self.set_last(nodename)
             except Exception as exc:
                 self.stats.errors += 1
-                self.log.error("read from relay %s slot %s error: %s", self.relay,
-                               nodename, str(exc))
-                return
+                if self.get_last(nodename).success:
+                    self.log.error("read from relay %s slot %s error: %s", self.relay,
+                                   nodename, str(exc))
+                self.set_last(nodename, success=False)
             finally:
                 self.set_beating(nodename)
 
