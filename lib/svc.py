@@ -50,35 +50,58 @@ ACTION_NO_ASYNC = [
     "logs",
 ]
 
-ACTION_TGT_STATE = {
-    "abort": "aborted",
-    "delete": "deleted",
-    "freeze": "frozen",
-    "giveback": "placed",
-    "provision": "provisioned",
-    "purge": "purged",
-    "scale": "scaled",
-    "shutdown": "shutdown",
-    "start": "started",
-    "stop": "stopped",
-    "thaw": "thawed",
-    "unprovision": "unprovisioned",
-}
-
-ACTION_PROGRESS = {
-    "abort": "aborting",
-    "delete": "deleting",
-    "freeze": "freezing",
-    "giveback": "placing",
-    "provision": "provisioning",
-    "purge": "purging",
-    "shutdown": "shutting",
-    "scale": "scaling",
-    "start": "starting",
-    "stop": "stopping",
-    "thaw": "thawing",
-    "toc": "tocing",
-    "unprovision": "unprovisioning",
+ACTION_ASYNC = {
+    "abort": {
+        "target": "aborted",
+        "progress": "aborting",
+    },
+    "delete": {
+        "target": "deleted",
+        "progress": "deleting",
+    },
+    "freeze": {
+        "target": "frozen",
+        "progress": "freezing",
+    },
+    "giveback": {
+        "target": "placed",
+        "progress": "placing",
+    },
+    "provision": {
+        "target": "provisioned",
+        "progress": "provisioning",
+    },
+    "purge": {
+        "target": "purged",
+        "progress": "purging",
+    },
+    "scale": {
+        "target": "scaled",
+        "progress": "scaling",
+    },
+    "shutdown": {
+        "target": "shutdown",
+        "progress": "shutting",
+    },
+    "start": {
+        "target": "started",
+        "progress": "starting",
+    },
+    "stop": {
+        "target": "stopped",
+        "progress": "stopping",
+    },
+    "toc": {
+        "progress": "tocing",
+    },
+    "thaw": {
+        "target": "thawed",
+        "progress": "thawing",
+    },
+    "unprovision": {
+        "target": "unprovisioned",
+        "progress": "unprovisioning",
+    },
 }
 
 TOP_STATUS_GROUPS = [
@@ -107,15 +130,6 @@ CONFIG_DEFAULTS = {
     'resinfo_schedule': '@60',
     'no_schedule': '',
 }
-
-ACTIONS_ASYNC = [
-    "abort",
-    "freeze",
-    "scale",
-    "start",
-    "stop",
-    "thaw",
-]
 
 ACTIONS_NO_STATUS_CHANGE = [
     "abort",
@@ -2522,7 +2536,9 @@ class Svc(Crypt, ExtConfig):
         if self.options.local or self.options.slave or self.options.slaves or \
            self.options.master:
             return
-        if action not in ACTION_TGT_STATE:
+        if action not in ACTION_ASYNC:
+            return
+        if "target" not in ACTION_ASYNC[action]:
             return
         if self.command_is_scoped():
             return
@@ -2533,7 +2549,7 @@ class Svc(Crypt, ExtConfig):
         if svcname is None:
             svcname = self.svcname
         self.validate_mon_action(action)
-        global_expect = ACTION_TGT_STATE[action]
+        global_expect = ACTION_ASYNC[action]["target"]
         if action == "delete" and self.options.unprovision:
             global_expect = "purged"
             action = "purge"
@@ -3842,7 +3858,9 @@ class Svc(Crypt, ExtConfig):
         return err
 
     def action_progress(self, action):
-        progress = ACTION_PROGRESS.get(action)
+        progress = ACTION_ASYNC.get(action, {}).get("progress")
+        if progress is None:
+            return
         if action.startswith("sync"):
             progress = "syncing"
         return progress
