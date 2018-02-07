@@ -360,9 +360,24 @@ def activate_systemd(launcher):
     logit("begin")
     systemdsvc = 'opensvc-agent.service'
 
+    # remove unit file from /etc/systemd/system
+    olddst = os.path.join('/etc/systemd/system/', systemdsvc)
+    if os.path.exists(olddst):
+        logit("found unit file in /etc/systemd/system",stdout=False)
+        logit("disabling old systemd unit file",stdout=False)
+        cmd = ['systemctl', '-q', 'disable', systemdsvc]
+        ret = os.system(' '.join(cmd))
+        if ret > 0:
+            logit("issue met while trying to disable old systemd unit file",stderr=True)
+        logit("removing old systemd unit file",stdout=False)
+        cmd = ['rm', '-f', olddst]
+        ret = os.system(' '.join(cmd))
+        if ret > 0:
+            logit("issue met while trying to remove old systemd unit file",stderr=True)
+
     # populate systemd tree with opensvc unit file
     src = os.path.join(pathini, 'systemd.opensvc-agent.service')
-    dst = os.path.join('/etc/systemd/system/', systemdsvc)
+    dst = os.path.join('/usr/lib/systemd/system/', systemdsvc)
     logit("installing systemd unit file",stdout=True)
     try:
         shutil.copyfile(src, dst)
@@ -381,7 +396,7 @@ def activate_systemd(launcher):
         try:
             os.symlink(launcher, systemd_call)
         except:
-            logit("issue met while trying to create %s symlink" % system_call,stderr=True)
+            logit("issue met while trying to create %s symlink" % systemd_call,stderr=True)
 
     # set systemd call as ExecStart and ExecStop
     os.system("sed -i 's@/usr/share/opensvc/bin/init/opensvc.init@"+systemd_call+"@' "+dst)
