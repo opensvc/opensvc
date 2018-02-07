@@ -132,6 +132,8 @@ class Disk(resDisk.Disk):
         return "/dev/md/"+self.uuid
 
     def exposed_devs(self):
+        if self.uuid == "" or self.uuid is None:
+            return set()
         try:
             return set([os.path.realpath(self.md_devpath())])
         except:
@@ -261,7 +263,12 @@ class Disk(resDisk.Disk):
     @fcache
     def sub_devs(self):
         if self.uuid == "" or self.uuid is None:
-            return set()
+            # try to get the info from the config so pr co-resource can reserv
+            # during provision
+            try:
+                return set([os.path.realpath(dev) for dev in self.conf_get("devs").split()])
+            except ex.OptNotFound:
+                return set()
         try:
             devpath = self.md_devpath()
         except ex.excError as e:
@@ -289,6 +296,7 @@ class Disk(resDisk.Disk):
         if len(lines) < 2:
             return set()
         inblock = False
+        paths = set()
         for line in lines:
             if "UUID="+self.uuid in line:
                 inblock = True
@@ -297,8 +305,13 @@ class Disk(resDisk.Disk):
                 l = line.split("devices=")[-1].split(",")
                 l = map(lambda x: os.path.realpath(x), l)
                 for dev in l:
-                    devs |= set(dev_to_paths(dev))
+                    _paths = set(dev_to_paths(dev))
+                    if set([dev]) != _paths:
+                        paths |= _paths
+                    devs.add(dev)
                 break
+        # discard paths from the list (mdadm shows both mpaths and paths)
+        devs -= paths
 
         self.log.debug("found devs %s held by md %s" % (devs, self.uuid))
         return devs

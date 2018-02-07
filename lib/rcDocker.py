@@ -423,6 +423,8 @@ class DockerLib(object):
         """
         The hash of docker images, indexed by image id.
         """
+        if self.docker_cmd is None:
+            return {}
         cmd = self.docker_cmd + ['images', '--no-trunc']
         results = justcall(cmd)
         if results[2] != 0:
@@ -619,6 +621,8 @@ class DockerLib(object):
         """
         The docker daemon startup command, adapted to the docker version.
         """
+        if self.docker_cmd is None:
+            return []
         if self.docker_min_version("17.05"):
             cmd = [
                 self.dockerd_exe,
@@ -671,6 +675,8 @@ class DockerLib(object):
         """
         if not self.docker_daemon_private:
             return
+        if self.docker_cmd is None:
+            raise ex.excError("docker executable not found")
         import lock
         lockfile = os.path.join(rcEnv.paths.pathlock, self.svc.svcname+'.docker_start')
         try:

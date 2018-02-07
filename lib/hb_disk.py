@@ -261,9 +261,10 @@ class HbDiskTx(HbDisk):
             #self.log.info("written to %s slot %s", self.dev, slot)
         except Exception as exc:
             self.stats.errors += 1
-            self.log.error("write to %s slot %d error: %s", self.dev,
-                           self.peer_config[rcEnv.nodename]["slot"], exc)
-            return
+            if self.get_last().success:
+                self.log.error("write to %s slot %d error: %s", self.dev,
+                               self.peer_config[rcEnv.nodename]["slot"], exc)
+            self.set_last(success=False)
         finally:
             self.set_beating()
 
@@ -327,9 +328,10 @@ class HbDiskRx(HbDisk):
                 self.set_last(nodename)
             except Exception as exc:
                 self.stats.errors += 1
-                self.log.error("read from %s slot %d (%s) error: %s", self.dev,
-                               data.slot, nodename, str(exc))
-                return
+                if self.get_last(nodename).success:
+                    self.log.error("read from %s slot %d (%s) error: %s", self.dev,
+                                   data.slot, nodename, str(exc))
+                self.set_last(nodename, success=False)
             finally:
                 self.set_beating(nodename)
 

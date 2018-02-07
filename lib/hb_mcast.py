@@ -66,7 +66,7 @@ class HbMcast(Hb, Crypt):
             self.intf = "any"
             self.src_addr = "0.0.0.0"
             self.mreq = struct.pack("4sl", group, socket.INADDR_ANY)
-        self.max_handlers = len(self.cluster_nodes)
+        self.max_handlers = len(self.cluster_nodes) * 4
 
     def set_if(self):
         if self.intf == "any":
@@ -133,10 +133,14 @@ class HbMcastTx(HbMcast):
             self.stats.bytes += message_bytes
         except socket.timeout as exc:
             self.stats.errors += 1
-            self.log.warning("send timeout")
+            if self.get_last().success:
+                self.log.warning("send timeout")
+            self.set_last(success=False)
         except socket.error as exc:
             self.stats.errors += 1
-            self.log.warning("send error: %s", exc)
+            if self.get_last().success:
+                self.log.warning("send error: %s", exc)
+            self.set_last(success=False)
         finally:
             self.set_beating()
 

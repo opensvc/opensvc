@@ -76,7 +76,7 @@ class HbUcast(Hb, Crypt):
             self.timeout = self.config.getint(self.name, "timeout")
         else:
             self.timeout = self.DEFAULT_UCAST_TIMEOUT
-        self.max_handlers = len(self.cluster_nodes)
+        self.max_handlers = len(self.cluster_nodes) * 4
 
 class HbUcastTx(HbUcast):
     """
@@ -121,7 +121,7 @@ class HbUcastTx(HbUcast):
         try:
             #self.log.info("sending to %s:%s", config.addr, config.port)
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2)
+            sock.settimeout(1)
             sock.bind((self.peer_config[rcEnv.nodename].addr, 0))
             sock.connect((config.addr, config.port))
             sock.sendall(message)
@@ -130,13 +130,16 @@ class HbUcastTx(HbUcast):
             self.stats.bytes += message_bytes
         except socket.timeout as exc:
             self.stats.errors += 1
-            self.log.warning("send to %s (%s:%d) timeout", nodename,
-                             config.addr, config.port)
+            if self.get_last(nodename).success:
+                self.log.warning("send to %s (%s:%d) timeout", nodename,
+                                 config.addr, config.port)
+            self.set_last(nodename, success=False)
         except socket.error as exc:
             self.stats.errors += 1
-            self.log.error("send to %s (%s:%d) error: %s", nodename,
-                           config.addr, config.port, str(exc))
-            return
+            if self.get_last(nodename).success:
+                self.log.warning("send to %s (%s:%d) error: %s", nodename,
+                               config.addr, config.port, str(exc))
+            self.set_last(nodename, success=False)
         finally:
             self.set_beating(nodename)
             sock.close()

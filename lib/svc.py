@@ -921,13 +921,23 @@ class Svc(Crypt, ExtConfig):
 
         try:
             kwargs['tags'] = self.conf_get(pr_rid, "tags")
-        except ex.OptNotFound as exc:
+        except ex.OptNotFound:
             kwargs['tags'] = resource.tags
 
         try:
             kwargs['subset'] = self.conf_get(pr_rid, "subset")
-        except ex.OptNotFound as exc:
+        except ex.OptNotFound:
             kwargs['subset'] = resource.subset
+
+        try:
+            kwargs['shared'] = self.conf_get(pr_rid, "shared")
+        except ex.OptNotFound:
+            kwargs['shared'] = resource.shared
+
+        try:
+            kwargs['standby'] = self.conf_get(pr_rid, "standby")
+        except ex.OptNotFound:
+            kwargs['standby'] = resource.standby
 
         kwargs['rid'] = resource.rid
         kwargs['peer_resource'] = resource
@@ -2138,6 +2148,8 @@ class Svc(Crypt, ExtConfig):
             options.append('--dry-run')
         if self.options.force:
             options.append('--force')
+        if self.options.local:
+            options.append('--local')
         if self.options.disable_rollback:
             options.append('--disable-rollback')
         if self.options.rid:

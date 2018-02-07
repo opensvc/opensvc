@@ -232,7 +232,7 @@ class OsvcThread(threading.Thread):
         for idx in sorted(done, reverse=True):
             del self.threads[idx]
         if len(self.threads) > 2:
-            self.log.info("threads queue length %d", len(self.threads))
+            self.log.debug("threads queue length %d", len(self.threads))
 
     @lazy
     def freezer(self):

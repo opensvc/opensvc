@@ -1337,6 +1337,8 @@ class Node(Crypt, ExtConfig):
         if result["next_sched"]:
             print("next reboot slot:",
                   result["next_sched"].strftime("%a %Y-%m-%d %H:%M"))
+        elif result["minutes"] is None:
+            print("next reboot slot: none")
         else:
             print("next reboot slot: none in the next %d days" % (result["minutes"]/144))
 
@@ -3231,7 +3233,7 @@ class Node(Crypt, ExtConfig):
             list_print(data)
 
         def load_threads():
-            for key in sorted(list(data.keys())):
+            for key in sorted([key for key in data if key != "cluster"]):
                 if key.startswith("hb#"):
                     load_hb(key, data[key])
                 elif key == "listener":

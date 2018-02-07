@@ -8,6 +8,7 @@ import logging
 import threading
 import codecs
 import time
+import select
 from subprocess import Popen, PIPE
 
 import osvcd_shared as shared
@@ -106,8 +107,17 @@ class Listener(shared.OsvcThread, Crypt):
     def _handle_client(self, conn, addr):
         chunks = []
         buff_size = 4096
+        conn.setblocking(0)
         while True:
-            chunk = conn.recv(buff_size)
+            ready = select.select([conn], [], [conn], 6)
+            if ready[0]:
+                chunk = conn.recv(buff_size)
+            else:
+                self.log.warning("timeout waiting for data from client %s", addr[0])
+                break
+            if ready[2]:
+                self.log.debug("exceptional condition on socket with client %s", addr[0])
+                break
             self.stats.sessions.rx += len(chunk)
             self.stats.sessions.clients[addr[0]].rx += len(chunk)
             if chunk:
@@ -510,6 +520,7 @@ class Listener(shared.OsvcThread, Crypt):
                 "status": 1,
             }
         logfile = os.path.join(rcEnv.paths.pathlog, svcname+".log")
+        skip = 0
         if backlog > 0:
             fsize = os.path.getsize(logfile)
             if backlog > fsize:
