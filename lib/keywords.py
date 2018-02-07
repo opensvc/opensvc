@@ -5,6 +5,7 @@ properties.
 """
 from __future__ import print_function
 import os
+import copy
 from textwrap import TextWrapper
 
 from rcGlobalEnv import rcEnv
@@ -61,6 +62,11 @@ class Keyword(object):
 
     def __lt__(self, o):
         return self.order < o.order
+
+    def __getattribute__(self, attr):
+        if attr == "default":
+            return copy.copy(object.__getattribute__(self, attr))
+        return object.__getattribute__(self, attr)
 
     def deprecated(self):
         if self.keyword in self.top.deprecated_keywords:

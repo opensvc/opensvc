@@ -302,6 +302,9 @@ class Listener(shared.OsvcThread, Crypt):
         return {"status": 0}
 
     def get_service_slaves(self, svcname):
+        """
+        Recursive lookup of service slaves.
+        """
         slaves = set()
         for nodename in shared.CLUSTER_DATA:
             try:
@@ -325,7 +328,9 @@ class Listener(shared.OsvcThread, Crypt):
         global_expect = kwargs.get("global_expect")
         reset_retries = kwargs.get("reset_retries", False)
         stonith = kwargs.get("stonith")
-        svcnames = set([svcname]) | self.get_service_slaves(svcname)
+        svcnames = set([svcname])
+        if global_expect != "scaled":
+            svcnames |= self.get_service_slaves(svcname)
         for svcname in svcnames:
             self.set_smon(
                 svcname, status=status,

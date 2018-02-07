@@ -57,6 +57,7 @@ ACTION_TGT_STATE = {
     "giveback": "placed",
     "provision": "provisioned",
     "purge": "purged",
+    "scale": "scaled",
     "shutdown": "shutdown",
     "start": "started",
     "stop": "stopped",
@@ -72,6 +73,7 @@ ACTION_PROGRESS = {
     "provision": "provisioning",
     "purge": "purging",
     "shutdown": "shutting",
+    "scale": "scaling",
     "start": "starting",
     "stop": "stopping",
     "thaw": "thawing",
@@ -97,6 +99,7 @@ DEFAULT_STATUS_GROUPS = [
 ]
 
 CONFIG_DEFAULTS = {
+    'sync#i0_schedule': '@60',
     'sync_schedule': '04:00-06:00@121',
     'comp_schedule': '00:00-06:00@361',
     'status_schedule': '@9',
@@ -108,6 +111,7 @@ CONFIG_DEFAULTS = {
 ACTIONS_ASYNC = [
     "abort",
     "freeze",
+    "scale",
     "start",
     "stop",
     "thaw",
@@ -450,6 +454,7 @@ class Svc(Crypt, ExtConfig):
         # set by the builder
         self.conf = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
         self.comment = ""
+        self.scale_target = 0
         self.orchestrate = "ha"
         self.topology = "failover"
         self.placement = "nodes order"
@@ -615,6 +620,8 @@ class Svc(Crypt, ExtConfig):
 
     @lazy
     def enslave_children(self):
+        if self.scale_target:
+            return True
         try:
             return self.conf_get("DEFAULT", "enslave_children")
         except ex.OptNotFound as exc:
@@ -806,10 +813,12 @@ class Svc(Crypt, ExtConfig):
 
         syncs = []
         for resource in self.get_resources("sync"):
+            schedule_option = "sync_schedule" if resource.rid != "sync#i0" \
+                              else "sync#i0_schedule"
             syncs += [SchedOpts(
                 resource.rid,
                 fname="last_syncall_"+resource.rid,
-                schedule_option="sync_schedule"
+                schedule_option=schedule_option
             )]
         if len(syncs) > 0:
             self.sched.scheduler_actions["sync_all"] = syncs
@@ -3047,7 +3056,8 @@ class Svc(Crypt, ExtConfig):
             for resource in self.get_resources(rtype):
                 try:
                     ret |= resource.can_sync(target)
-                except ex.excError:
+                    self.log.debug("resource %s can sync: %s" % (resource.rid, str(ret)))
+                except ex.excError as exc:
                     return False
                 if ret:
                     return True

@@ -712,6 +712,11 @@ ACTIONS = {
                 OPT.subsets,
             ],
         },
+        "scale": {
+            "msg": "Create-provision or delete-unprovision instances to meet "
+                   "service scale target.",
+            "options": DAEMON_OPTS,
+        },
         "switch": {
             "msg": "Stop the running failover service instance and start the "
                    "instance on the peer node specified by :opt:`--to "

@@ -828,7 +828,20 @@ class KeywordTopology(Keyword):
                   order=15,
                   default="failover",
                   candidates=["failover", "flex"],
-                  text="failover: the service is allowed to be up on one node at a time. allactive: the service must be up on all nodes. flex: the service can be up on n out of m nodes (n <= m), n/m must be in the [flex_min_nodes, flex_max_nodes] range."
+                  text="failover: the service is allowed to be up on one node at a time. flex: the service can be up on n out of m nodes (n <= m), n/m must be in the [flex_min_nodes, flex_max_nodes] range."
+                )
+
+class KeywordScale(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="scale",
+                  at=True,
+                  order=15,
+                  convert="integer",
+                  default=0,
+                  text="If set to more than 0, create and provision <scale> enslaved child services named <n>.<svcname>."
                 )
 
 class KeywordOrchestrate(Keyword):
@@ -4450,6 +4463,7 @@ class KeyDict(KeywordStore):
         self += KeywordSoftAntiAffinity()
         self += KeywordShowDisabled()
         self += KeywordTopology()
+        self += KeywordScale()
         self += KeywordOrchestrate()
         self += KeywordPlacement()
         self += KeywordConstraints()

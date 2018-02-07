@@ -70,15 +70,15 @@ def _main(node, argv=None):
     node.check_privs(argv)
     rcColor.use_color = options.color
 
-    if options.parm_svcs:
-        expanded_svcs = node.svcs_selector(options.parm_svcs)
-    else:
-        expanded_svcs = None
-
-    node.options.update({
-        "color": options.color,
-    })
     while True:
+        if options.parm_svcs:
+            expanded_svcs = node.svcs_selector(options.parm_svcs)
+        else:
+            expanded_svcs = None
+
+        node.options.update({
+            "color": options.color,
+        })
         if options.watch:
             preamble = "\033[H\033[J" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
         else:

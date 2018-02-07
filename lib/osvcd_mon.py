@@ -12,6 +12,8 @@ import hashlib
 import json
 import tempfile
 import shutil
+import re
+import threading
 from subprocess import Popen, PIPE
 
 import osvcd_shared as shared
@@ -364,6 +366,24 @@ class Monitor(shared.OsvcThread, Crypt):
             on_error_args=[svcname],
             on_error_kwargs={"status": "unprovision failed"},
         )
+
+    def service_create_provision_from(self, svcname, svc):
+        cmd = ["create", "--config", svc.paths.cf]
+        proc = self.service_command(svcname, cmd)
+        out, err = proc.communicate()
+        if proc.returncode != 0:
+            self.set_smon(svcname, "create failed")
+        cmd = ["unset", "--kw", "scale"]
+        proc = self.service_command(svcname, cmd)
+        out, err = proc.communicate()
+        if proc.returncode != 0:
+            self.set_smon(svcname, "create failed")
+        cmd = ["thaw"]
+        proc = self.service_command(svcname, cmd)
+        out, err = proc.communicate()
+        if proc.returncode != 0:
+            self.set_smon(svcname, "thaw failed")
+        self.set_smon(svcname, global_expect="provisioned")
 
     def service_freeze(self, svcname):
         self.set_smon(svcname, "freezing")
@@ -815,6 +835,38 @@ class Monitor(shared.OsvcThread, Crypt):
                  (shared.AGG[svc.svcname].placement not in ("optimal", "n/a") or shared.AGG[svc.svcname].avail != "up") and \
                  instance.avail in STOPPED_STATES:
                 self.service_start(svc.svcname)
+        elif smon.global_expect == "scaled":
+            candidates = self.placement_candidates(
+                svc, discard_frozen=False,
+                discard_unprovisioned=False,
+                discard_constraints_violation=False,
+                discard_start_failed=False
+            )
+            if not self.placement_leader(svc, candidates):
+                return
+            if svc.svcname not in shared.SERVICES:
+                self.set_smon(svc.svcname, global_expect="unset", status="idle")
+                return
+            scale_target = shared.SERVICES[svc.svcname].scale_target
+            if scale_target == 0:
+                self.set_smon(svc.svcname, global_expect="unset", status="idle")
+                return
+            thr = threading.Thread(target=self.scaling_worker, args=(svc, scale_target))
+            thr.start()
+            self.threads.append(thr)
+
+    def scaling_worker(self, svc, scale_target):
+            self.set_smon(svc.svcname, status="scaling")
+            for idx in range(scale_target):
+                svcname = str(idx)+"."+svc.svcname
+                if svcname not in shared.SERVICES:
+                    self.service_create_provision_from(svcname, svc)
+            for svcname in shared.SERVICES:
+                if re.match("[0-9]+\."+svc.svcname, svcname):
+                    idx = int(svcname.split(".")[0])
+                    if idx >= scale_target:
+                        self.set_smon(svcname, global_expect="purged")
+            self.set_smon(svc.svcname, global_expect="unset", status="idle")
 
     def non_leaders_stopped(self, svc):
         for nodename, instance in self.get_service_instances(svc.svcname).items():
@@ -1442,8 +1494,12 @@ class Monitor(shared.OsvcThread, Crypt):
             try:
                 mtime = os.path.getmtime(fpath)
             except Exception:
-                # preserve previous status data if any (an action might be running)
-                mtime = 0
+                if shared.SMON_DATA.get(svcname, {}).get("status") == "idle":
+                    # no status.json and idle: force a refresh
+                    mtime = last_mtime + 1
+                else:
+                    # preserve previous status data if any (an action is running)
+                    mtime = 0
             if mtime > last_mtime + 0.0001:
                 try:
                     with open(fpath, 'r') as filep:
