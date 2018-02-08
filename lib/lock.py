@@ -157,8 +157,10 @@ def lock_nowait(lockfile=None, intent=None):
             pass
         return lockfd
     except IOError:
+        os.close(lockfd)
         raise LockAcquire("holder pid %(pid)d, holder intent '%(intent)s'" % prev_data)
     except:
+        os.close(lockfd)
         raise
 
 def unlock(lockfd):
@@ -189,6 +191,7 @@ def progress(lockfd, data):
             ofile.seek(0)
             json.dump(lock_data, ofile)
             os.fsync(_lockfd)
+        os.close(_lockfd)
     except Exception as exc:
         return
 
