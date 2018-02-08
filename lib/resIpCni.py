@@ -66,6 +66,15 @@ class Ip(Res.Ip):
             label += " %s" % " ".join(self.expose)
         return label
 
+    def status_info(self):
+        data = Res.Ip.status_info(self)
+        intf = self.get_ipdev()
+        if intf and len(intf.ipaddr) > 0:
+            data["ipaddr"] = intf.ipaddr[0]
+        elif intf and len(intf.ip6addr) > 0:
+            data["ipaddr"] = intf.ip6addr[0]
+        return data
+
     def arp_announce(self):
         """ disable the generic arping. We do that in the guest namespace.
         """
