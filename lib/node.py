@@ -3068,9 +3068,12 @@ class Node(Crypt, ExtConfig):
                 status += colorize("!", color.BROWN)
             if data["placement"] == "non-optimal":
                 status += colorize("^", color.RED)
-            info = topology
-            if data["orchestrate"]:
-                info += "/" + data["orchestrate"]
+            if data.get("scale") is not None:
+                info = "scaler"
+            else:
+                info = topology
+                if data["orchestrate"]:
+                    info += "/" + data["orchestrate"]
             line = [
                 " "+colorize(prefix+svcname, color.BOLD),
                 status,
@@ -3297,6 +3300,7 @@ class Node(Crypt, ExtConfig):
                     services[svcname] = Storage({
                         "topology": _data.get("topology", ""),
                         "orchestrate": _data.get("orchestrate"),
+                        "scale": _data.get("scale"),
                         "avail": "undef",
                         "overall": "",
                         "nodes": {},
