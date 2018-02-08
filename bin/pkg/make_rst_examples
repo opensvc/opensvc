@@ -42,6 +42,7 @@ def generate_examples(fmt="text"):
                             if key_prov.required:
                                 s += "\t" + key_prov.keyword + " = " + key_prov.example + "\n"
                                 u += " --kw " + section + "#0." + key_prov.keyword + "=" + key_prov.example
+                    u += "\n\n"
                     with open(fpath, "w") as f:
                         f.write(s)
                         f.write(u)
