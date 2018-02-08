@@ -248,7 +248,12 @@ class Collector(object):
         res_err = None
         pid = None
         msg = None
-        lines = open(alogfile, 'r').read()
+        with open(alogfile, 'r') as ofile:
+            lines = ofile.read()
+        try:
+            os.unlink(alogfile)
+        except Exception:
+            pass
         pids = set()
 
         """Example logfile line:

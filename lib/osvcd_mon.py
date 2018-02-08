@@ -185,9 +185,9 @@ class Monitor(shared.OsvcThread, Crypt):
             return
         with tempfile.NamedTemporaryFile(dir=rcEnv.paths.pathtmp, delete=False) as filep:
             tmpfpath = filep.name
-        with codecs.open(tmpfpath, "w", "utf-8") as filep:
-            filep.write(resp["data"])
         try:
+            with codecs.open(tmpfpath, "w", "utf-8") as filep:
+                filep.write(resp["data"])
             with shared.SERVICES_LOCK:
                 if svcname in shared.SERVICES:
                     svc = shared.SERVICES[svcname]
