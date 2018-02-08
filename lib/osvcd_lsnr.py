@@ -314,7 +314,7 @@ class Listener(shared.OsvcThread, Crypt):
                 continue
             if not data.get("enslave_children"):
                 continue
-            _slaves = set(data.get("children")) - slaves
+            _slaves = set(data.get("children", [])) - slaves
             slaves |= _slaves
             for slave in _slaves:
                 slaves |= self.get_service_slaves(slave)
