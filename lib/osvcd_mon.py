@@ -376,6 +376,14 @@ class Monitor(shared.OsvcThread, Crypt):
             on_error_kwargs={"status": "unprovision failed"},
         )
 
+    def wait_global_expect_unset(self, svcname, timeout):
+        for step in range(timeout):
+            global_expect = shared.SMON_DATA.get(svcname, {}).get("global_expect")
+            if global_expect is None:
+                return True
+            time.sleep(1)
+        return False
+
     def service_create_provision_from(self, svcname, svc):
         cmd = ["create", "--config", svc.paths.cf]
         proc = self.service_command(svcname, cmd)
@@ -387,11 +395,11 @@ class Monitor(shared.OsvcThread, Crypt):
         out, err = proc.communicate()
         if proc.returncode != 0:
             self.set_smon(svcname, "create failed")
-        cmd = ["thaw"]
-        proc = self.service_command(svcname, cmd)
-        out, err = proc.communicate()
-        if proc.returncode != 0:
-            self.set_smon(svcname, "thaw failed")
+            return
+        self.set_smon(svcname, global_expect="thawed")
+        if not self.wait_global_expect_unset(svcname, 60):
+            self.set_smon(svcname, "thaw failed", global_expect="unset")
+            return
         self.set_smon(svcname, global_expect="provisioned")
 
     def service_freeze(self, svcname):
