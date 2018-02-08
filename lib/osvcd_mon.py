@@ -518,6 +518,7 @@ class Monitor(shared.OsvcThread, Crypt):
             self.service_start_resources(svc.svcname, rids)
 
     def node_orchestrator(self):
+        self.orchestrator_auto_grace()
         nmon = self.get_node_monitor()
         node_frozen = self.freezer.node_frozen()
         if self.unfreeze_when_all_nodes_joined and node_frozen and len(self.cluster_nodes) == len(shared.CLUSTER_DATA):
@@ -581,7 +582,7 @@ class Monitor(shared.OsvcThread, Crypt):
             #self.log.info("service %s orchestrator out (agg avail status %s)",
             #              svc.svcname, status)
             return
-        if self.service_orchestrator_auto_grace(svc):
+        if not self.rejoin_grace_period_expired or len(svc.peers) == 1:
             return
         if svc.hard_anti_affinity:
             intersection = set(self.get_local_svcnames()) & set(svc.hard_anti_affinity)
@@ -896,7 +897,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 return False
         return True
 
-    def service_orchestrator_auto_grace(self, svc):
+    def orchestrator_auto_grace(self):
         """
         After daemon startup, wait for <rejoin_grace_period_expired> seconds
         before allowing service_orchestrator_auto() to proceed.
@@ -905,7 +906,8 @@ class Monitor(shared.OsvcThread, Crypt):
             return False
         if len(self.cluster_nodes) == 1:
             self.rejoin_grace_period_expired = True
-            self.duplog("info", "end of rejoin grace period: single node cluster", svcname="")
+            self.duplog("info", "end of rejoin grace period: single node cluster",
+                        nodename="")
             return False
         n_reachable = len(shared.CLUSTER_DATA.keys())
         if n_reachable > 1:
@@ -913,18 +915,17 @@ class Monitor(shared.OsvcThread, Crypt):
             if n_reachable < len(self.cluster_nodes):
                 self.freezer.node_freeze()
                 self.duplog("info", "end of rejoin grace period: now rejoined "
-                            "but frozen (cluster incomplete)", svcname="")
+                            "but frozen (cluster incomplete)", nodename="")
             else:
-                self.duplog("info", "end of rejoin grace period: now rejoined", svcname="")
+                self.duplog("info", "end of rejoin grace period: now rejoined",
+                            nodename="")
             return False
         now = datetime.datetime.utcnow()
         if now > self.startup + datetime.timedelta(seconds=self.rejoin_grace_period):
             self.rejoin_grace_period_expired = True
-            self.duplog("info", "rejoin grace period expired", svcname="")
+            self.duplog("info", "rejoin grace period expired", nodename="")
             return False
-        if len(svc.peers) == 1:
-            return False
-        self.duplog("info", "in rejoin grace period", svcname="")
+        self.duplog("info", "in rejoin grace period", nodename="")
         return True
 
     def children_down(self, svc):
