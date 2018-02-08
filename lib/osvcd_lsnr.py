@@ -288,10 +288,11 @@ class Listener(shared.OsvcThread, Crypt):
         fpath = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
         if not os.path.exists(fpath):
             return {"error": "%s does not exist" % fpath, "status": 3}
+        mtime = os.path.getmtime(fpath)
         with codecs.open(fpath, "r", "utf8") as filep:
             buff = filep.read()
         self.log.info("serve service %s config to %s", svcname, nodename)
-        return {"status": 0, "data": buff}
+        return {"status": 0, "data": buff, "mtime": mtime}
 
     def action_clear(self, nodename, **kwargs):
         svcname = kwargs.get("svcname")

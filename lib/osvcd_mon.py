@@ -205,6 +205,9 @@ class Monitor(shared.OsvcThread, Crypt):
             if results["errors"] == 0:
                 dst = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
                 shutil.copy(filep.name, dst)
+                mtime = resp.get("mtime")
+                if mtime:
+                    os.utime(dst, (mtime, mtime))
             else:
                 self.log.error("the service %s config fetched from node %s is "
                                "not valid", svcname, nodename)
