@@ -4908,3 +4908,10 @@ class Svc(Crypt, ExtConfig):
     def pg_settings(self):
         return self.get_pg_settings("DEFAULT")
 
+    @lazy
+    def slave_num(self):
+        try:
+            return int(self.svcname.split(".")[0])
+        except ValueError:
+            return 0
+

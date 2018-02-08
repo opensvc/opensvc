@@ -652,12 +652,14 @@ class OsvcThread(threading.Thread):
     def placement_ranks(self, svc, candidates=None):
         if candidates is None:
             candidates = self.placement_candidates(svc)
-        if svc.placement == "load avg":
-            return self.placement_ranks_load_avg(svc, candidates)
-        elif svc.placement == "nodes order":
+        if svc.placement == "nodes order":
             return self.placement_ranks_nodes_order(svc, candidates)
+        elif svc.placement == "shift":
+            return self.placement_ranks_shift(svc, candidates)
         elif svc.placement == "spread":
             return self.placement_ranks_spread(svc, candidates)
+        elif svc.placement == "load avg":
+            return self.placement_ranks_load_avg(svc, candidates)
         else:
             return [rcEnv.nodename]
 
@@ -753,4 +755,10 @@ class OsvcThread(threading.Thread):
 
     def placement_ranks_nodes_order(self, svc, candidates, silent=False):
         return [nodename for nodename in svc.ordered_peers if nodename in candidates]
+
+    def placement_ranks_shift(self, svc, candidates, silent=False):
+        ranks = self.placement_ranks_nodes_order(svc, candidates, silent=silent) * 2
+        idx = svc.slave_num % len(candidates)
+        return ranks[idx:idx+len(candidates)]
+
 
