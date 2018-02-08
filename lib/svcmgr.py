@@ -45,19 +45,12 @@ def get_minimal(action, options):
     """
     Return True if the services can be built with minimal parsing
     """
-    if action in ("set", "unset"):
-        return True
     if action == "ls" and not options.status:
         return True
     if action == "get" and not options.eval:
         return True
     if action == "edit_config":
         return True
-    if action == "delete":
-        if options.unprovision:
-            return False
-        else:
-            return True
     if action.startswith("print_config"):
         return True
     if action.startswith("json_config"):

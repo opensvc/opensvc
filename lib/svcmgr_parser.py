@@ -335,7 +335,8 @@ OPT = Storage({
     "to": Option(
         "--to", default=None,
         action="store", dest="parm_destination_node",
-        help="The remote node to start or migrate the service to."),
+        help="The remote node to start or migrate the service to. Or the "
+             "target number of instance to scale to."),
     "unprovision": Option(
         "--unprovision", default=False,
         action="store_true", dest="unprovision",
@@ -715,7 +716,9 @@ ACTIONS = {
         "scale": {
             "msg": "Create-provision or delete-unprovision instances to meet "
                    "service scale target.",
-            "options": DAEMON_OPTS,
+            "options": DAEMON_OPTS + [
+                OPT.to
+            ],
         },
         "switch": {
             "msg": "Stop the running failover service instance and start the "

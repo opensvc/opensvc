@@ -75,10 +75,6 @@ ACTION_ASYNC = {
         "target": "purged",
         "progress": "purging",
     },
-    "scale": {
-        "target": "scaled",
-        "progress": "scaling",
-    },
     "shutdown": {
         "target": "shutdown",
         "progress": "shutting",
@@ -1361,6 +1357,7 @@ class Svc(Crypt, ExtConfig):
         """
         The Svc class print formatter.
         """
+        output = self.svcname
         for rset in self.resourcesets_by_id.values():
             output += "  [%s]" % str(rset)
         return output
@@ -1475,7 +1472,7 @@ class Svc(Crypt, ExtConfig):
             except Exception:
                 pass
             return {}
-        return lock.get_progress(self.lockfd)
+        return {}
 
     def print_status_data_eval(self, refresh=False):
         """
@@ -1611,6 +1608,7 @@ class Svc(Crypt, ExtConfig):
     def update_status_data(self):
         if self.options.minimal:
             return
+        self.log.debug("update status dump")
         data = self.print_status_data(from_resource_status_cache=True)
         self.write_status_data(data)
 
@@ -1962,7 +1960,6 @@ class Svc(Crypt, ExtConfig):
         for resource in self.get_resources():
             if resource.monitor:
                 resource.status(refresh=True)
-        self.update_status_data()
 
     def reboot(self):
         """
@@ -2262,7 +2259,7 @@ class Svc(Crypt, ExtConfig):
 
     @lazy
     def encap_groups(self):
-        from svcDict import DEPRECATED_SECTIONS
+        from svcdict import DEPRECATED_SECTIONS
         egroups = set()
         for rid in self.encap_resources:
             egroup = rid.split('#')[0]
@@ -4058,6 +4055,17 @@ class Svc(Crypt, ExtConfig):
         Optimize service placement.
         """
         pass
+
+    def scale(self):
+        """
+        Set the scale keyword.
+        """
+        try:
+            value = int(self.options.destination_node)
+            assert value > 0
+        except Exception:
+            raise ex.excError("invalid scale target: set '--to <n>' where n>0")
+        self._set("DEFAULT", "scale", str(value))
 
     def switch(self):
         """

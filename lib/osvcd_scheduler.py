@@ -125,7 +125,12 @@ class Scheduler(shared.OsvcThread):
                 cmd = [rcEnv.paths.nodemgr, action, "--cron"]
                 sig = ":".join(["node", action])
                 run += self.queue_action(cmd, delay, sig)
-        for svc in shared.SERVICES.values():
+        for svcname in list(shared.SERVICES.keys()):
+            try:
+                svc = shared.SERVICES[svcname]
+            except KeyError:
+                # deleted during previous iterations
+                continue
             svc.options.cron = True
             try:
                 provisioned = shared.AGG[svc.svcname].provisioned

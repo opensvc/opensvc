@@ -1,6 +1,6 @@
 
 
-svcmgr="abort clear collector compliance create delete disable dns docker edit enable freeze frozen get giveback logs ls migrate pg postsync presync print provision prstatus pull push resource restart resync run set shutdown start startstandby status stop switch sync takeover thaw toc unprovision unset update validate"
+svcmgr="abort clear collector compliance create delete disable dns docker edit enable freeze frozen get giveback logs ls migrate pg postsync presync print provision prstatus pull push resource restart resync run scale set shutdown start startstandby status stop switch sync takeover thaw toc unprovision unset update validate"
 svcmgr_collector="ack alerts asset checks create disks events list log networks show tag untag"
 svcmgr_collector_ack="action unavailability"
 svcmgr_collector_create="tag"
@@ -101,6 +101,7 @@ svcmgr_freeze="--color --daemon --debug --env --local --master --node --slave --
 svcmgr_abort="--color --daemon --debug --env --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_resync="--color --daemon --debug --disable-rollback --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_pg_freeze="--color --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
+svcmgr_scale="--color --daemon --debug --env --local --node --status --to --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_presync="--color --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_sync_split="--color --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_pg_kill="--color --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
@@ -206,7 +207,7 @@ nodemgr_scanscsi="--color --debug --format --hba --lun --target -h --help"
 nodemgr_unschedule_reboot="--color --debug --format -h --help"
 nodemgr_ping="--color --debug --format --node -h --help"
 nodemgr_reboot="--color --debug --format -h --help"
-nodemgr_wol="--broadcast --color --debug --format --mac -h --help"
+nodemgr_wol="--broadcast --color --debug --format --mac --port -h --help"
 nodemgr_collect_stats="--color --cron --debug --format -h --help"
 nodemgr_thaw="--color --debug --format --local --node --time --wait -h --help"
 nodemgr_schedule_reboot_status="--color --debug --format -h --help"
@@ -251,7 +252,7 @@ nodemgr_collector_ack_action="--author --color --comment --debug --format -h --h
 nodemgr_collector_alerts="--color --debug --format -h --help"
 nodemgr_collector_asset="--color --debug --format -h --help"
 
-opts_with_arg=( "--add" "--api" "--app" "--author" "--backlog" "--begin" "--broadcast" "--color" "--comment" "--config" "--dev" "--downto" "--duration" "--end" "--env" "--format" "--hba" "--id" "--index" "--kw" "--like" "--lun" "--mac" "--message" "--module" "--moduleset" "--node" "--object" "--param" "--password" "--remove" "--resource" "--rid" "--ruleset" "--ruleset-date" "--secret" "--service" "--slave" "--stats-dir" "--status" "--subsets" "--symcli-db-file" "--tag" "--tags" "--target" "--template" "--thread-id" "--time" "--to" "--upto" "--user" "--value" "--waitlock" "-s" )
+opts_with_arg=( "--add" "--api" "--app" "--author" "--backlog" "--begin" "--broadcast" "--color" "--comment" "--config" "--dev" "--downto" "--duration" "--end" "--env" "--format" "--hba" "--id" "--index" "--kw" "--like" "--lun" "--mac" "--message" "--module" "--moduleset" "--node" "--object" "--param" "--password" "--port" "--remove" "--resource" "--rid" "--ruleset" "--ruleset-date" "--secret" "--service" "--slave" "--stats-dir" "--status" "--subsets" "--symcli-db-file" "--tag" "--tags" "--target" "--template" "--thread-id" "--time" "--to" "--upto" "--user" "--value" "--waitlock" "-s" )
 
 
 

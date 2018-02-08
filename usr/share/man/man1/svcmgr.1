@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-01\-27
+.TH SVCMGR 1 2018\-02\-08
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -3875,7 +3875,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --to=PARM_DESTINATION_NODE
-The remote node to start or migrate the service to.
+The remote node to start or migrate the service to. Or the target number of instance to scale to.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -6519,6 +6519,101 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 Show this help message and exit.
 
 .RE
+\fBsvcmgr scale\fP
+.RS
+
+Create-provision or delete-unprovision instances to meet service scale target.
+
+
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --to=PARM_DESTINATION_NODE
+The remote node to start or migrate the service to. Or the target number of instance to scale to.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B -c, --cluster
+Execute the action on all cluster nodes. Aggregate the json outputs.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --daemon
+A flag inhibiting the daemonization. Set by the daemonization routine.
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
 \fBsvcmgr set provisioned\fP
 .RS
 
@@ -7461,7 +7556,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --to=PARM_DESTINATION_NODE
-The remote node to start or migrate the service to.
+The remote node to start or migrate the service to. Or the target number of instance to scale to.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:

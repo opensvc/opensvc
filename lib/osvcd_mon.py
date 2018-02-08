@@ -212,6 +212,13 @@ class Monitor(shared.OsvcThread, Crypt):
         finally:
             os.unlink(tmpfpath)
         shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
+        try:
+            shared.SERVICES[svcname].purge_status_data_dump()
+            shared.SERVICES[svcname].print_status_data_eval()
+        except Exception:
+            # can happen when deleting the service
+            pass
+
         self.log.info("the service %s config fetched from node %s is now "
                       "installed", svcname, nodename)
 
@@ -346,9 +353,8 @@ class Monitor(shared.OsvcThread, Crypt):
         proc = self.service_command(svc.svcname, cmd)
         self.push_proc(
             proc=proc,
-            on_success="generic_callback",
+            on_success="service_thaw",
             on_success_args=[svc.svcname],
-            on_success_kwargs={"status": "idle"},
             on_error="generic_callback",
             on_error_args=[svc.svcname],
             on_error_kwargs={"status": "provision failed"},
@@ -425,6 +431,10 @@ class Monitor(shared.OsvcThread, Crypt):
         svcnames = [svcname for svcname in shared.SMON_DATA]
         self.get_agg_services()
         for svcname in svcnames:
+            if self.status_older_than_cf(svcname):
+                #self.log.info("%s status dump is older than its config file",
+                #              svcname)
+                continue
             svc = self.get_service(svcname)
             self.service_orchestrator(svcname, svc)
             self.resources_orchestrator(svcname, svc)
@@ -544,6 +554,10 @@ class Monitor(shared.OsvcThread, Crypt):
         else:
             self.service_orchestrator_auto(svc, smon, status)
 
+    @staticmethod
+    def scale_svcname(svcname, idx):
+        return str(idx)+"."+svcname
+
     def service_orchestrator_auto(self, svc, smon, status):
         """
         Automatic instance start decision.
@@ -578,6 +592,25 @@ class Monitor(shared.OsvcThread, Crypt):
                 #self.log.info("service %s orchestrator out (hard affinity with %s)",
                 #              svc.svcname, ','.join(intersection))
                 return
+        if svc.scale_target and smon.global_expect is None:
+            target_children = set([self.scale_svcname(svc.svcname, idx) for idx in range(svc.scale_target)])
+            current_children = set([svcname for svcname in shared.SERVICES \
+                                    if re.match("^[0-9]+\."+svc.svcname+"$", svcname)])
+            if target_children != current_children:
+                candidates = self.placement_candidates(
+                    svc, discard_frozen=False,
+                    discard_unprovisioned=False,
+                    discard_constraints_violation=False,
+                    discard_start_failed=False
+                )
+                if not self.placement_leader(svc, candidates):
+                    return
+                self.set_smon(svc.svcname, status="scaling")
+                thr = threading.Thread(target=self.scaling_worker, args=(svc,))
+                thr.start()
+                self.threads.append(thr)
+            return
+
         candidates = self.placement_candidates(svc)
         if candidates != [rcEnv.nodename]:
             # the local node is not the only candidate, we can apply soft
@@ -835,36 +868,16 @@ class Monitor(shared.OsvcThread, Crypt):
                  (shared.AGG[svc.svcname].placement not in ("optimal", "n/a") or shared.AGG[svc.svcname].avail != "up") and \
                  instance.avail in STOPPED_STATES:
                 self.service_start(svc.svcname)
-        elif smon.global_expect == "scaled":
-            candidates = self.placement_candidates(
-                svc, discard_frozen=False,
-                discard_unprovisioned=False,
-                discard_constraints_violation=False,
-                discard_start_failed=False
-            )
-            if not self.placement_leader(svc, candidates):
-                return
-            if svc.svcname not in shared.SERVICES:
-                self.set_smon(svc.svcname, global_expect="unset", status="idle")
-                return
-            scale_target = shared.SERVICES[svc.svcname].scale_target
-            if scale_target == 0:
-                self.set_smon(svc.svcname, global_expect="unset", status="idle")
-                return
-            thr = threading.Thread(target=self.scaling_worker, args=(svc, scale_target))
-            thr.start()
-            self.threads.append(thr)
 
-    def scaling_worker(self, svc, scale_target):
-            self.set_smon(svc.svcname, status="scaling")
-            for idx in range(scale_target):
-                svcname = str(idx)+"."+svc.svcname
+    def scaling_worker(self, svc):
+            for idx in range(svc.scale_target):
+                svcname = self.scale_svcname(svc.svcname, idx)
                 if svcname not in shared.SERVICES:
                     self.service_create_provision_from(svcname, svc)
             for svcname in shared.SERVICES:
-                if re.match("[0-9]+\."+svc.svcname, svcname):
+                if re.match("^[0-9]+\."+svc.svcname+"$", svcname):
                     idx = int(svcname.split(".")[0])
-                    if idx >= scale_target:
+                    if idx >= svc.scale_target:
                         self.set_smon(svcname, global_expect="purged")
             self.set_smon(svc.svcname, global_expect="unset", status="idle")
 
@@ -873,7 +886,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if instance["monitor"].get("placement") == "leader":
                 continue
             if instance.get("avail") not in STOPPED_STATES:
-                self.log.info("service '%s' instance node '%s' is not stopped yet", 
+                self.log.info("service '%s' instance node '%s' is not stopped yet",
                               svc.svcname, nodename)
                 return False
         return True
@@ -1176,7 +1189,7 @@ class Monitor(shared.OsvcThread, Crypt):
         for instance in self.get_service_instances(svcname).values():
             if not self.is_instance_shutdown(instance):
                 return False
-        return True 
+        return True
 
     def get_agg_avail_failover(self, svcname):
         astatus_l = []
@@ -1296,7 +1309,16 @@ class Monitor(shared.OsvcThread, Crypt):
             return False
         return True
 
+    #########################################################################
     #
+    # Convenience methods
+    #
+    #########################################################################
+    def status_older_than_cf(self, svcname):
+        status_age = shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("status", {}).get(svcname, {}).get("updated", "0")
+        config_age = shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("config", {}).get(svcname, {}).get("updated", "0")
+        return status_age < config_age
+
     def service_instances_frozen(self, svcname):
         """
         Return the nodenames with a frozen instance of the specified service.
@@ -1494,12 +1516,8 @@ class Monitor(shared.OsvcThread, Crypt):
             try:
                 mtime = os.path.getmtime(fpath)
             except Exception:
-                if shared.SMON_DATA.get(svcname, {}).get("status") == "idle":
-                    # no status.json and idle: force a refresh
-                    mtime = last_mtime + 1
-                else:
-                    # preserve previous status data if any (an action is running)
-                    mtime = 0
+                # preserve previous status data if any (an action may be running)
+                mtime = 0
             if mtime > last_mtime + 0.0001:
                 try:
                     with open(fpath, 'r') as filep:
@@ -1901,7 +1919,7 @@ class Monitor(shared.OsvcThread, Crypt):
                                 continue
                             elif local.mtime is None or remote.mtime > local.mtime + 0.00001:
                                 self.log.info("switch %s.%s provisioned flag to %s (merged from %s)",
-                                              svc.svcname, resource.rid, str(remote.state), 
+                                              svc.svcname, resource.rid, str(remote.state),
                                               nodename)
                                 resource.write_is_provisioned_flag(remote.state, remote.mtime)
                                 try:
