@@ -3129,7 +3129,7 @@ class Node(Crypt, ExtConfig):
             out.append(line)
             if not data["enslave_children"]:
                 return
-            for child in data["children"]:
+            for child in sorted(list(data["children"])):
                 load_svc(child, prefix=prefix+" ")
 
         def load_hb(key, _data):
@@ -3297,9 +3297,10 @@ class Node(Crypt, ExtConfig):
                     services[svcname] = Storage({
                         "topology": _data.get("topology", ""),
                         "orchestrate": _data.get("orchestrate"),
-                        "avail": Status(),
+                        "avail": "undef",
                         "overall": "",
-                        "nodes": {}
+                        "nodes": {},
+                        "children": set(),
                     })
                 enslave_children = _data.get("enslave_children")
                 children = _data.get("children", [])
@@ -3317,14 +3318,14 @@ class Node(Crypt, ExtConfig):
                     "placement": _data["monitor"].get("placement", ""),
                     "provisioned": _data.get("provisioned"),
                 }
-                services[svcname].children = children
+                services[svcname].children |= set(children)
                 services[svcname].enslave_children = enslave_children
         for svcname, _data in data["monitor"]["services"].items():
             if svcnames and svcname not in svcnames:
                 continue
             if svcname not in services:
                 services[svcname] = Storage({
-                    "avail": Status(),
+                    "avail": "undef",
                     "overall": "",
                     "nodes": {}
                 })
