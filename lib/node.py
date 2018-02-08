@@ -1378,8 +1378,8 @@ class Node(Crypt, ExtConfig):
         data = self.push_disks_data()
         if self.options.format is None:
             self.print_push_disks(data)
-            return
-        self.print_data(data)
+        else:
+            self.print_data(data)
         self.collector.call('push_disks', data)
 
     def print_push_disks(self, data):
