@@ -592,7 +592,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 #self.log.info("service %s orchestrator out (hard affinity with %s)",
                 #              svc.svcname, ','.join(intersection))
                 return
-        if svc.scale_target and smon.global_expect is None:
+        if svc.scale_target is not None and smon.global_expect is None:
             target_children = set([self.scale_svcname(svc.svcname, idx) for idx in range(svc.scale_target)])
             current_children = set([svcname for svcname in shared.SERVICES \
                                     if re.match("^[0-9]+\."+svc.svcname+"$", svcname)])
@@ -870,16 +870,18 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.service_start(svc.svcname)
 
     def scaling_worker(self, svc):
-            for idx in range(svc.scale_target):
-                svcname = self.scale_svcname(svc.svcname, idx)
-                if svcname not in shared.SERVICES:
-                    self.service_create_provision_from(svcname, svc)
-            for svcname in shared.SERVICES:
-                if re.match("^[0-9]+\."+svc.svcname+"$", svcname):
-                    idx = int(svcname.split(".")[0])
-                    if idx >= svc.scale_target:
-                        self.set_smon(svcname, global_expect="purged")
-            self.set_smon(svc.svcname, global_expect="unset", status="idle")
+        if svc.scale_target is None:
+            return
+        for idx in range(svc.scale_target):
+            svcname = self.scale_svcname(svc.svcname, idx)
+            if svcname not in shared.SERVICES:
+                self.service_create_provision_from(svcname, svc)
+        for svcname in shared.SERVICES:
+            if re.match("^[0-9]+\."+svc.svcname+"$", svcname):
+                idx = int(svcname.split(".")[0])
+                if idx >= svc.scale_target:
+                    self.set_smon(svcname, global_expect="purged")
+        self.set_smon(svc.svcname, global_expect="unset", status="idle")
 
     def non_leaders_stopped(self, svc):
         for nodename, instance in self.get_service_instances(svc.svcname).items():

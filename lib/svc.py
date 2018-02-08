@@ -464,7 +464,7 @@ class Svc(Crypt, ExtConfig):
         # set by the builder
         self.conf = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
         self.comment = ""
-        self.scale_target = 0
+        self.scale_target = None
         self.orchestrate = "ha"
         self.topology = "failover"
         self.placement = "nodes order"
@@ -630,7 +630,7 @@ class Svc(Crypt, ExtConfig):
 
     @lazy
     def enslave_children(self):
-        if self.scale_target:
+        if self.scale_target is not None:
             return True
         try:
             return self.conf_get("DEFAULT", "enslave_children")
@@ -4062,9 +4062,9 @@ class Svc(Crypt, ExtConfig):
         """
         try:
             value = int(self.options.destination_node)
-            assert value > 0
+            assert value >= 0
         except Exception:
-            raise ex.excError("invalid scale target: set '--to <n>' where n>0")
+            raise ex.excError("invalid scale target: set '--to <n>' where n>=0")
         self._set("DEFAULT", "scale", str(value))
 
     def switch(self):

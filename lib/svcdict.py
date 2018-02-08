@@ -840,8 +840,7 @@ class KeywordScale(Keyword):
                   at=True,
                   order=15,
                   convert="integer",
-                  default=0,
-                  text="If set to more than 0, create and provision <scale> enslaved child services named <n>.<svcname>."
+                  text="If set, create and provision <scale> enslaved child services named <n>.<svcname>."
                 )
 
 class KeywordOrchestrate(Keyword):
