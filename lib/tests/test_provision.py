@@ -205,7 +205,7 @@ class Test:
                                 "--kw", "docker_daemon_private=false",
                                 "--kw", "container#0.type=docker",
                                 "--kw", "container#0.run_image=alpine:latest",
-                                "--kw", "container#0.run_args=-it --net=none --rm",
+                                "--kw", "container#0.run_args=-it --net=none",
                                 "--kw", "container#0.run_command=/bin/sh",
                                ])
         assert ret == 0
@@ -255,7 +255,7 @@ class Test:
                                 "--kw", "docker_daemon_private=false",
                                 "--kw", "container#0.type=docker",
                                 "--kw", "container#0.run_image=alpine:latest",
-                                "--kw", "container#0.run_args=-it --net=none --rm",
+                                "--kw", "container#0.run_args=-it --net=none",
                                 "--kw", "container#0.run_command=/bin/sh",
                                 "--kw", "ip#0.type=docker",
                                 "--kw", "ip#0.ipname=172.17.172.17",
