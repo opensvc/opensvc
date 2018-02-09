@@ -3132,7 +3132,9 @@ class Node(Crypt, ExtConfig):
             out.append(line)
             if not data["enslave_children"]:
                 return
-            for child in sorted(list(data["children"])):
+
+            from distutils.version import LooseVersion
+            for child in sorted(list(data["children"]), key=LooseVersion):
                 load_svc(child, prefix=prefix+" ")
 
         def load_hb(key, _data):
