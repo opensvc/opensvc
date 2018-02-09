@@ -197,6 +197,7 @@ class CompObject(object):
                 data = json.loads(s)
             except ValueError:
                 perror("failed to concatenate '%s=%s' to rules list" % (k, str(self.get_env(k))))
+                continue
             if type(data) == list:
                 for d in data:
                     rules += [(k, d)]
