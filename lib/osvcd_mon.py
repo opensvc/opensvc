@@ -396,6 +396,12 @@ class Monitor(shared.OsvcThread, Crypt):
         if proc.returncode != 0:
             self.set_smon(svcname, "create failed")
             return
+        try:
+            ret = self.wait_service_config_consensus(svcname, svc.peers)
+        except Exception as exc:
+            self.log.exception(exc)
+            return
+
         self.set_smon(svcname, global_expect="thawed")
         if not self.wait_global_expect_change(svcname, "thawed", 60):
             self.set_smon(svcname, "thaw failed", global_expect="unset")
@@ -1442,6 +1448,41 @@ class Monitor(shared.OsvcThread, Crypt):
                 return shared.CLUSTER_DATA[rcEnv.nodename]["services"]["config"][svcname]
             except KeyError:
                 return
+
+    def wait_service_config_consensus(self, svcname, peers, timeout=60):
+        if len(peers) < 2:
+            return True
+        self.log.info("wait for service %s consensus on config amongst peers %s",
+                      svcname, ",".join(peers))
+        for _ in range(timeout):
+            if self.service_config_consensus(svcname, peers):
+                return True
+            time.sleep(1)
+        self.log.error("service %s couldn't reach config consensus in %d seconds",
+                       svcname, timeout)
+        return False
+
+    def service_config_consensus(self, svcname, peers):
+        if len(peers) < 2:
+            self.log.debug("%s auto consensus. peers: %s", svcname, peers)
+            return True
+        ref_csum = None
+        for peer in peers:
+            try:
+                csum = shared.CLUSTER_DATA[peer]["services"]["config"][svcname]["csum"]
+            except KeyError:
+                self.log.debug("service %s peer %s has no config cksum yet", svcname, peer)
+                return False
+            except Exception as exc:
+                self.log.exception(exc)
+                return False
+            if ref_csum is None:
+                ref_csum = csum
+            if ref_csum is not None and ref_csum != csum:
+                self.log.debug("service %s peer %s has a different config cksum", svcname, peer)
+                return False
+        self.log.info("service %s config consensus reached", svcname)
+        return True
 
     def get_services_config(self):
         config = {}
