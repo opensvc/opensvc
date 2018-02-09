@@ -167,6 +167,18 @@ class Docker(resContainer.Container):
         unset_lazy(self, "service_id")
         self.svc.dockerlib.get_running_service_ids(refresh=True)
 
+    def container_rm(self):
+        """
+        Remove the resource docker instance.
+        Only do if the dockerd is shared.
+        """
+        if self.docker_service or not self.svc.dockerlib.docker_daemon_private:
+            return
+        cmd = self.svc.dockerlib.docker_cmd + ['rm', self.container_name]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+
     def service_rm(self):
         """
         Remove the resource docker service.
@@ -323,8 +335,9 @@ class Docker(resContainer.Container):
         self.svc.sub_set_action("ip", "provision", tags=set([self.rid]))
 
     def unprovision(self):
-        resContainer.Container.unprovision(self)
         self.svc.sub_set_action("ip", "unprovision", tags=set([self.rid]))
+        resContainer.Container.unprovision(self)
+        self.container_rm()
 
     def start(self):
         self._start()
