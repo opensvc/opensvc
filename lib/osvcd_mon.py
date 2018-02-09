@@ -376,10 +376,10 @@ class Monitor(shared.OsvcThread, Crypt):
             on_error_kwargs={"status": "unprovision failed"},
         )
 
-    def wait_global_expect_unset(self, svcname, timeout):
+    def wait_global_expect_change(self, svcname, ref, timeout):
         for step in range(timeout):
             global_expect = shared.SMON_DATA.get(svcname, {}).get("global_expect")
-            if global_expect is None:
+            if global_expect != ref:
                 return True
             time.sleep(1)
         return False
@@ -396,11 +396,18 @@ class Monitor(shared.OsvcThread, Crypt):
         if proc.returncode != 0:
             self.set_smon(svcname, "create failed")
             return
+        try:
+            ret = self.wait_service_config_consensus(svcname, svc.peers)
+        except Exception as exc:
+            self.log.exception(exc)
+            return
+
         self.set_smon(svcname, global_expect="thawed")
-        if not self.wait_global_expect_unset(svcname, 60):
+        if not self.wait_global_expect_change(svcname, "thawed", 60):
             self.set_smon(svcname, "thaw failed", global_expect="unset")
             return
         self.set_smon(svcname, global_expect="provisioned")
+        self.wait_global_expect_change(svcname, "provisioned", 600)
 
     def service_freeze(self, svcname):
         self.set_smon(svcname, "freezing")
@@ -605,22 +612,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 #              svc.svcname, ','.join(intersection))
                 return
         if svc.scale_target is not None and smon.global_expect is None:
-            target_children = set([self.scale_svcname(svc.svcname, idx) for idx in range(svc.scale_target)])
-            current_children = set([svcname for svcname in shared.SERVICES \
-                                    if re.match("^[0-9]+\."+svc.svcname+"$", svcname)])
-            if target_children != current_children:
-                candidates = self.placement_candidates(
-                    svc, discard_frozen=False,
-                    discard_unprovisioned=False,
-                    discard_constraints_violation=False,
-                    discard_start_failed=False
-                )
-                if not self.placement_leader(svc, candidates):
-                    return
-                self.set_smon(svc.svcname, status="scaling")
-                thr = threading.Thread(target=self.scaling_worker, args=(svc,))
-                thr.start()
-                self.threads.append(thr)
+            self.service_orchestrator_scaler(svc)
             return
 
         candidates = self.placement_candidates(svc)
@@ -881,29 +873,50 @@ class Monitor(shared.OsvcThread, Crypt):
                  instance.avail in STOPPED_STATES:
                 self.service_start(svc.svcname)
 
-    def scaling_worker(self, svc):
-        if svc.scale_target is None:
+    def service_orchestrator_scaler(self, svc):
+        target_children = set([self.scale_svcname(svc.svcname, idx) for idx in range(svc.scale_target)])
+        current_children = set([svcname for svcname in shared.SERVICES \
+                                if re.match("^[0-9]+\."+svc.svcname+"$", svcname)])
+        if target_children == current_children:
             return
-        for idx in range(svc.scale_target):
-            svcname = self.scale_svcname(svc.svcname, idx)
-            if svcname not in shared.SERVICES:
-                self.service_create_provision_from(svcname, svc)
-        for svcname in shared.SERVICES:
-            if re.match("^[0-9]+\."+svc.svcname+"$", svcname):
-                idx = int(svcname.split(".")[0])
-                if idx >= svc.scale_target:
-                    self.set_smon(svcname, global_expect="purged")
-        self.set_smon(svc.svcname, global_expect="unset", status="idle")
+        candidates = self.placement_candidates(
+            svc, discard_frozen=False,
+            discard_unprovisioned=False,
+            discard_constraints_violation=False,
+            discard_start_failed=False
+        )
+        if self.placement_ranks(svc, candidates)[0] != rcEnv.nodename:
+            return
+        to_remove = sorted(list(current_children - target_children))
+        to_add = sorted(list(target_children - current_children))
+        delta = ""
+        if len(to_remove):
+            delta += " remove " + ",".join(to_remove)
+        if len(to_add):
+            delta += " add " + ",".join(to_add)
+        self.log.info("scale service %s: %s", svc.svcname, delta)
+        self.set_smon(svc.svcname, status="scaling")
+        thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, to_remove))
+        thr.start()
+        self.threads.append(thr)
 
-    def non_leaders_stopped(self, svc):
-        for nodename, instance in self.get_service_instances(svc.svcname).items():
-            if instance["monitor"].get("placement") == "leader":
+    def scaling_worker(self, svc, to_add, to_remove):
+        threads = []
+        for svcname in to_add:
+            if svcname in shared.SERVICES:
                 continue
-            if instance.get("avail") not in STOPPED_STATES:
-                self.log.info("service '%s' instance node '%s' is not stopped yet",
-                              svc.svcname, nodename)
-                return False
-        return True
+            thr = threading.Thread(target=self.service_create_provision_from, args=(svcname, svc,))
+            thr.start()
+            threads.append(thr)
+        for svcname in to_remove:
+            if svcname not in shared.SERVICES:
+                continue
+            self.set_smon(svcname, global_expect="purged")
+        for svcname in to_remove:
+            self.wait_global_expect_change(svcname, "purged", 600)
+        for thr in threads:
+            thr.join()
+        self.set_smon(svc.svcname, global_expect="unset", status="idle")
 
     def orchestrator_auto_grace(self):
         """
@@ -987,6 +1000,16 @@ class Monitor(shared.OsvcThread, Crypt):
         live_nodes = [nodename for nodename in shared.CLUSTER_DATA if shared.CLUSTER_DATA[nodename] is not None]
         min_instances = set(svc.peers) & set(live_nodes)
         return len(instances) >= len(min_instances)
+
+    def non_leaders_stopped(self, svc):
+        for nodename, instance in self.get_service_instances(svc.svcname).items():
+            if instance["monitor"].get("placement") == "leader":
+                continue
+            if instance.get("avail") not in STOPPED_STATES:
+                self.log.info("service '%s' instance node '%s' is not stopped yet",
+                              svc.svcname, nodename)
+                return False
+        return True
 
     def leader_first(self, svc, provisioned=False, deleted=None, check_min_instances_reached=True):
         """
@@ -1425,6 +1448,41 @@ class Monitor(shared.OsvcThread, Crypt):
                 return shared.CLUSTER_DATA[rcEnv.nodename]["services"]["config"][svcname]
             except KeyError:
                 return
+
+    def wait_service_config_consensus(self, svcname, peers, timeout=60):
+        if len(peers) < 2:
+            return True
+        self.log.info("wait for service %s consensus on config amongst peers %s",
+                      svcname, ",".join(peers))
+        for _ in range(timeout):
+            if self.service_config_consensus(svcname, peers):
+                return True
+            time.sleep(1)
+        self.log.error("service %s couldn't reach config consensus in %d seconds",
+                       svcname, timeout)
+        return False
+
+    def service_config_consensus(self, svcname, peers):
+        if len(peers) < 2:
+            self.log.debug("%s auto consensus. peers: %s", svcname, peers)
+            return True
+        ref_csum = None
+        for peer in peers:
+            try:
+                csum = shared.CLUSTER_DATA[peer]["services"]["config"][svcname]["csum"]
+            except KeyError:
+                self.log.debug("service %s peer %s has no config cksum yet", svcname, peer)
+                return False
+            except Exception as exc:
+                self.log.exception(exc)
+                return False
+            if ref_csum is None:
+                ref_csum = csum
+            if ref_csum is not None and ref_csum != csum:
+                self.log.debug("service %s peer %s has a different config cksum", svcname, peer)
+                return False
+        self.log.info("service %s config consensus reached", svcname)
+        return True
 
     def get_services_config(self):
         config = {}

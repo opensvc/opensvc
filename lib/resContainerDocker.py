@@ -350,6 +350,7 @@ class Docker(resContainer.Container):
             return
         resContainer.Container.stop(self)
         self.svc.dockerlib.get_running_instance_ids(refresh=True)
+        self.svc.dockerlib.docker_stop()
 
     def _info(self):
         """
