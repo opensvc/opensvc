@@ -258,10 +258,10 @@ class Test:
                                 "--kw", "container#0.run_args=-it --net=none --rm",
                                 "--kw", "container#0.run_command=/bin/sh",
                                 "--kw", "ip#0.type=docker",
-                                "--kw", "ip#0.ipname=128.3.2.1",
+                                "--kw", "ip#0.ipname=172.17.172.17",
                                 "--kw", "ip#0.ipdev=docker0",
-                                "--kw", "ip#0.network=128.3.2.0",
-                                "--kw", "ip#0.netmask=24",
+                                "--kw", "ip#0.network=172.17.0.0",
+                                "--kw", "ip#0.netmask=16",
                                 "--kw", "ip#0.container_rid=container#0",
                                ])
         assert ret == 0
