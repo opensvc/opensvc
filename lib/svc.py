@@ -646,10 +646,12 @@ class Svc(Crypt, ExtConfig):
                 data.left = 0
             else:
                 data.left = self.scale_target % data.width
-            if self.scale_target > 0:
-                data.slaves = (self.scale_target // data.width) + 1
+            if self.scale_target == 0:
+                data.slaves = 0
+            elif data.left == 0:
+                data.slaves = self.scale_target // data.width
             else:
-                data.slaves = self.scale_target
+                data.slaves = (self.scale_target // data.width) + 1
         else:
             data.width = 1
             data.left = 0
