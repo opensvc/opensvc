@@ -15,6 +15,7 @@ import shutil
 import re
 import threading
 from subprocess import Popen, PIPE
+from distutils.version import LooseVersion
 
 import osvcd_shared as shared
 import rcExceptions as ex
@@ -384,7 +385,17 @@ class Monitor(shared.OsvcThread, Crypt):
             time.sleep(1)
         return False
 
-    def service_create_provision_from(self, svcname, svc):
+    def service_set_flex_instances(self, svcname, instances):
+        cmd = [
+            "set",
+            "--kw", "flex_min_nodes=%d" % instances,
+            "--kw", "flex_max_nodes=%d" % instances,
+        ]
+        proc = self.service_command(svcname, cmd)
+        out, err = proc.communicate()
+        return proc.returncode
+
+    def service_create_provision_from(self, svcname, svc, instances=None):
         cmd = ["create", "--config", svc.paths.cf]
         proc = self.service_command(svcname, cmd)
         out, err = proc.communicate()
@@ -396,6 +407,11 @@ class Monitor(shared.OsvcThread, Crypt):
         if proc.returncode != 0:
             self.set_smon(svcname, "create failed")
             return
+        if svc.topology == "flex" and instances is not None:
+            ret = self.service_set_flex_instances(svcname, instances)
+            if ret != 0:
+                self.set_smon(svcname, "create failed")
+                return
         try:
             ret = self.wait_service_config_consensus(svcname, svc.peers)
         except Exception as exc:
@@ -874,11 +890,39 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.service_start(svc.svcname)
 
     def service_orchestrator_scaler(self, svc):
-        target_children = set([self.scale_svcname(svc.svcname, idx) for idx in range(svc.scale_target)])
+        if svc.topology == "flex":
+            width = len(svc.peers)
+            if width == 0:
+                return
+            left = svc.scale_target % width
+            if svc.scale_target > 0:
+                slaves = (svc.scale_target // width) + 1
+            else:
+                slaves = svc.scale_target
+        else:
+            width = 1
+            left = 0
+            slaves = svc.scale_target
+        target_children = set([self.scale_svcname(svc.svcname, idx) for idx in range(slaves)])
         current_children = set([svcname for svcname in shared.SERVICES \
                                 if re.match("^[0-9]+\."+svc.svcname+"$", svcname)])
         if target_children == current_children:
-            return
+            if svc.topology == "flex" and len(target_children) > 0:
+                for svcname in [self.scale_svcname(svc.svcname, idx) for idx in range(slaves-1)]:
+                    slave = shared.SERVICES[svcname]
+                    if slave.flex_min_nodes != width or slave.flex_max_nodes != width:
+                        ret = self.service_set_flex_instances(svcname, width)
+                        if ret != 0:
+                            self.set_smon(svcname, "set failed")
+                last_slave_name = self.scale_svcname(svc.svcname, slaves-1)
+                last_slave = shared.SERVICES[last_slave_name]
+                if left > 0 and last_slave.flex_min_nodes != left or last_slave.flex_max_nodes != left:
+                    ret = self.service_set_flex_instances(last_slave_name, left)
+                    if ret != 0:
+                        self.set_smon(svcname, "set failed")
+                return
+            else:
+                return
         candidates = self.placement_candidates(
             svc, discard_frozen=False,
             discard_unprovisioned=False,
@@ -887,13 +931,18 @@ class Monitor(shared.OsvcThread, Crypt):
         )
         if self.placement_ranks(svc, candidates)[0] != rcEnv.nodename:
             return
-        to_remove = sorted(list(current_children - target_children))
-        to_add = sorted(list(target_children - current_children))
+        to_remove = sorted(list(current_children - target_children), key=LooseVersion)
+        to_add = sorted(list(target_children - current_children), key=LooseVersion)
+        print(to_remove)
+        print(to_add)
+        if len(to_add) > 0:
+            to_add = [[svcname, width] for svcname in to_add]
+            to_add[-1][1] = left
         delta = ""
         if len(to_remove):
             delta += " remove " + ",".join(to_remove)
         if len(to_add):
-            delta += " add " + ",".join(to_add)
+            delta += " add " + ",".join([elem[0] for elem in to_add])
         self.log.info("scale service %s: %s", svc.svcname, delta)
         self.set_smon(svc.svcname, status="scaling")
         thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, to_remove))
@@ -902,10 +951,13 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def scaling_worker(self, svc, to_add, to_remove):
         threads = []
-        for svcname in to_add:
+        for svcname, instances in to_add:
             if svcname in shared.SERVICES:
                 continue
-            thr = threading.Thread(target=self.service_create_provision_from, args=(svcname, svc,))
+            thr = threading.Thread(
+                target=self.service_create_provision_from,
+                args=(svcname, svc, instances)
+            )
             thr.start()
             threads.append(thr)
         for svcname in to_remove:
