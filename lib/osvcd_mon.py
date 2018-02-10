@@ -906,7 +906,7 @@ class Monitor(shared.OsvcThread, Crypt):
                         self.set_smon(svcname, "set failed")
             last_slave_name = svc.scaler.children[-1]
             last_slave = shared.SERVICES[last_slave_name]
-            if svc.scaler.left > 0 and last_slave.flex_min_nodes != svc.scaler.left or last_slave.flex_max_nodes != svc.scaler.left:
+            if svc.scaler.left > 0 and (last_slave.flex_min_nodes != svc.scaler.left or last_slave.flex_max_nodes != svc.scaler.left):
                 ret = self.service_set_flex_instances(last_slave_name, svc.scaler.left)
                 if ret != 0:
                     self.set_smon(svcname, "set failed")
