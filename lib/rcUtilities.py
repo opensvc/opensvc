@@ -177,6 +177,14 @@ def set_lazy(self, attr, value):
     attr_name = '_lazy_' + attr
     setattr(self, attr_name, value)
 
+def unset_all_lazy(self):
+    """
+    Unset all lazy property hidden property, iow flush the cache
+    """
+    for attr in [attr for attr in self.__dict__]:
+        if attr.startswith("_lazy_"):
+            delattr(self, attr)
+
 def unset_lazy(self, attr):
     """
     Unset <attr> lazy property hidden property, iow flush the cache

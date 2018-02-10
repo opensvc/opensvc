@@ -6,7 +6,8 @@ import os
 
 import rcExceptions as ex
 from converters import *
-from rcUtilities import is_string, try_decode, read_cf, eval_expr, unset_lazy, lazy
+from rcUtilities import is_string, try_decode, read_cf, eval_expr, unset_lazy, \
+                        lazy, unset_all_lazy
 from rcGlobalEnv import rcEnv
 
 class ExtConfig(object):
@@ -73,6 +74,8 @@ class ExtConfig(object):
             self._write_cf(lines)
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
+        unset_all_lazy(self)
+        delattr(self, "ref_cache")
 
     def unset_line(self, lines, section, option):
         section = "[%s]" % section
@@ -304,6 +307,8 @@ class ExtConfig(object):
             self._write_cf(lines)
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
+        unset_all_lazy(self)
+        delattr(self, "ref_cache")
 
     def set_line(self, lines, section, option, value):
         """
