@@ -2058,27 +2058,9 @@ def build(name, minimal=False, svcconf=None, node=None):
         svc.parents = exc.default
 
     try:
-        svc.scale_target = svc.conf_get("DEFAULT", "scale")
-        if isinstance(svc.scale_target, int) and svc.scale_target < 0:
-            svc.scale_target = 0
-    except ex.OptNotFound as exc:
-        svc.scale_target = exc.default
-
-    try:
-        svc.children = svc.conf_get('DEFAULT', "children")
-    except ex.OptNotFound as exc:
-        svc.children = exc.default
-
-    try:
         svc.placement = svc.conf_get('DEFAULT', "placement")
     except ex.OptNotFound as exc:
         svc.placement = exc.default
-
-    if svc.scale_target is not None:
-        for i in range(svc.scale_target):
-            name = str(i)+"."+svc.svcname
-            if name not in svc.children:
-                svc.children.append(name)
 
     try:
         svc.orchestrate = svc.conf_get("DEFAULT", "orchestrate")

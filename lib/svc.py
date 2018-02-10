@@ -464,13 +464,11 @@ class Svc(Crypt, ExtConfig):
         # set by the builder
         self.conf = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
         self.comment = ""
-        self.scale_target = None
         self.orchestrate = "ha"
         self.topology = "failover"
         self.placement = "nodes order"
         self.stonith = False
         self.parents = []
-        self.children = []
         self.show_disabled = False
         self.svc_env = rcEnv.node_env
         self.nodes = set([rcEnv.nodename])
@@ -614,6 +612,54 @@ class Svc(Crypt, ExtConfig):
             return self.conf_get("DEFAULT", "disable")
         except ex.OptNotFound as exc:
             return exc.default
+
+    @lazy
+    def children(self):
+        try:
+            children = self.conf_get('DEFAULT', "children")
+        except ex.OptNotFound as exc:
+            children = exc.default
+        if self.scale_target is not None:
+            children += self.scaler.children
+        return children
+
+    @lazy
+    def scale_target(self):
+        try:
+            val = self.conf_get("DEFAULT", "scale")
+            if isinstance(val, int) and val < 0:
+                val = 0
+        except ex.OptNotFound as exc:
+            val = exc.default
+        return val
+
+    @lazy
+    def scaler(self):
+        if self.scale_target is None:
+            return
+        data = Storage({
+            "children": [],
+        })
+        if self.topology == "flex":
+            data.width = len(self.peers)
+            if data.width == 0:
+                data.left = 0
+            else:
+                data.left = self.scale_target % data.width
+            if self.scale_target > 0:
+                data.slaves = (self.scale_target // data.width) + 1
+            else:
+                data.slaves = self.scale_target
+        else:
+            data.width = 1
+            data.left = 0
+            data.slaves = self.scale_target
+
+        for idx in range(data.slaves):
+            name = str(idx) + "." + self.svcname
+            if name not in data.children:
+                data.children.append(name)
+        return data
 
     @lazy
     def constraints(self):

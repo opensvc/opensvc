@@ -890,39 +890,28 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.service_start(svc.svcname)
 
     def service_orchestrator_scaler(self, svc):
-        if svc.topology == "flex":
-            width = len(svc.peers)
-            if width == 0:
-                return
-            left = svc.scale_target % width
-            if svc.scale_target > 0:
-                slaves = (svc.scale_target // width) + 1
-            else:
-                slaves = svc.scale_target
-        else:
-            width = 1
-            left = 0
-            slaves = svc.scale_target
-        target_children = set([self.scale_svcname(svc.svcname, idx) for idx in range(slaves)])
+        target_children = set(svc.scaler.children)
         current_children = set([svcname for svcname in shared.SERVICES \
                                 if re.match("^[0-9]+\."+svc.svcname+"$", svcname)])
         if target_children == current_children:
-            if svc.topology == "flex" and len(target_children) > 0:
-                for svcname in [self.scale_svcname(svc.svcname, idx) for idx in range(slaves-1)]:
-                    slave = shared.SERVICES[svcname]
-                    if slave.flex_min_nodes != width or slave.flex_max_nodes != width:
-                        ret = self.service_set_flex_instances(svcname, width)
-                        if ret != 0:
-                            self.set_smon(svcname, "set failed")
-                last_slave_name = self.scale_svcname(svc.svcname, slaves-1)
-                last_slave = shared.SERVICES[last_slave_name]
-                if left > 0 and last_slave.flex_min_nodes != left or last_slave.flex_max_nodes != left:
-                    ret = self.service_set_flex_instances(last_slave_name, left)
+            # the slaves set is correct.
+            if svc.topology != "flex" or svc.scaler.slaves == 0:
+                return
+            # make sure each slave flex has min/max nodes set properly.
+            for svcname in svc.scaler.children[:-1]:
+                slave = shared.SERVICES[svcname]
+                if slave.flex_min_nodes != svc.scaler.width or slave.flex_max_nodes != svc.scaler.width:
+                    ret = self.service_set_flex_instances(svcname, svc.scaler.width)
                     if ret != 0:
                         self.set_smon(svcname, "set failed")
-                return
-            else:
-                return
+            last_slave_name = svc.scaler.children[-1]
+            last_slave = shared.SERVICES[last_slave_name]
+            if svc.scaler.left > 0 and last_slave.flex_min_nodes != svc.scaler.left or last_slave.flex_max_nodes != svc.scaler.left:
+                ret = self.service_set_flex_instances(last_slave_name, svc.scaler.left)
+                if ret != 0:
+                    self.set_smon(svcname, "set failed")
+            return
+
         candidates = self.placement_candidates(
             svc, discard_frozen=False,
             discard_unprovisioned=False,
@@ -933,11 +922,9 @@ class Monitor(shared.OsvcThread, Crypt):
             return
         to_remove = sorted(list(current_children - target_children), key=LooseVersion)
         to_add = sorted(list(target_children - current_children), key=LooseVersion)
-        print(to_remove)
-        print(to_add)
         if len(to_add) > 0:
-            to_add = [[svcname, width] for svcname in to_add]
-            to_add[-1][1] = left
+            to_add = [[svcname, svc.scaler.width] for svcname in to_add]
+            to_add[-1][1] = svc.scaler.left
         delta = ""
         if len(to_remove):
             delta += " remove " + ",".join(to_remove)
@@ -1200,7 +1187,8 @@ class Monitor(shared.OsvcThread, Crypt):
             avail = self.get_agg_avail_flex(svcname)
         else:
             avail = "unknown"
-        if instance.get("enslave_children"):
+        slaves = instance.get("children", [])
+        if slaves:
             avails = set([avail])
             for child in instance.get("children", []):
                 try:
@@ -1212,6 +1200,9 @@ class Monitor(shared.OsvcThread, Crypt):
             if len(avails) == 1:
                 return list(avails)[0]
             return "warn"
+        elif instance.get("scale") is not None:
+            # scaler without slaves
+            return "n/a"
         return avail
 
     def get_agg_overall(self, svcname):
