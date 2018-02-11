@@ -83,6 +83,8 @@ class Collector(shared.OsvcThread, Crypt):
     def send_containerinfo(self, svcname):
         if svcname not in shared.SERVICES:
             return
+        if not shared.SERVICES[svcname].has_encap_resources:
+            return
         self.log.info("send service %s container info", svcname)
         with shared.SERVICES_LOCK:
             shared.NODE.collector.call("push_containerinfo", shared.SERVICES[svcname])
