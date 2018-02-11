@@ -613,7 +613,7 @@ class Monitor(shared.OsvcThread, Crypt):
             #self.log.info("service %s orchestrator out (agg avail status %s)",
             #              svc.svcname, status)
             return
-        if not self.rejoin_grace_period_expired or len(svc.peers) == 1:
+        if not self.rejoin_grace_period_expired:
             return
         if svc.hard_anti_affinity:
             intersection = set(self.get_local_svcnames()) & set(svc.hard_anti_affinity)
