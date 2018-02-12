@@ -375,15 +375,27 @@ def activate_systemd(launcher):
         if ret > 0:
             logit("issue met while trying to remove old systemd unit file",stderr=True)
 
-    # populate systemd tree with opensvc unit file
-    src = os.path.join(pathini, 'systemd.opensvc-agent.service')
-    dst = os.path.join('/usr/lib/systemd/system/', systemdsvc)
-    logit("installing systemd unit file",stdout=True)
-    try:
-        shutil.copyfile(src, dst)
-        os.chmod(dst, p0644)
-    except:
-        logit("issue met while trying to install systemd unit file",stderr=True)
+    systemd_unit_path = [
+            '/usr/lib/systemd/system/',
+            '/lib/systemd/system/',
+        ]
+
+    installed = False
+    for path in systemd_unit_path:
+        if os.path.exists(os.path.dirname(path)):
+            # populate systemd tree with opensvc unit file
+            src = os.path.join(pathini, 'systemd.opensvc-agent.service')
+            dst = os.path.join(path, systemdsvc)
+            logit("installing systemd unit file in %s"%path,stdout=True)
+            try:
+                shutil.copyfile(src, dst)
+                os.chmod(dst, p0644)
+                installed = True
+            except:
+                logit("issue met while trying to install systemd unit file",stderr=True)
+
+    if installed is not True:
+        logit("issue met while trying to identify suitable systemd unit file location",stderr=True)
 
     # add symlink to resolve systemd service call
     systemd_call = os.path.join(pathini, "opensvc.init")
