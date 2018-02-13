@@ -3332,10 +3332,11 @@ class Node(Crypt, ExtConfig):
                     for idx in range(scale):
                         child = "%d.%s" % (idx, svcname)
                         slaves.append(child)
-                        if child not in slave_parents:
-                            slave_parents[child] = set([svcname])
-                        else:
-                            slave_parents[child] |= set([svcname])
+                for child in slaves:
+                    if child not in slave_parents:
+                        slave_parents[child] = set([svcname])
+                    else:
+                        slave_parents[child] |= set([svcname])
                 services[svcname].nodes[node] = {
                     "avail": _data.get("avail", "undef"),
                     "overall": _data.get("overall", "undef"),
