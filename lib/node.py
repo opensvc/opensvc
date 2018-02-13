@@ -330,6 +330,26 @@ class Node(Crypt, ExtConfig):
             return
         check_privs()
 
+    @lazy
+    def dns(self):
+        try:
+            return self.conf_get("cluster", "dns")
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    @lazy
+    def dnsnodes(self):
+        import socket
+        nodes = []
+        for ip in self.dns:
+            try:
+                node = socket.gethostbyaddr(ip)[0]
+            except Exception as exc:
+                node = None
+            if node in self.cluster_nodes:
+                nodes.append(node)
+        return nodes
+
     @staticmethod
     def split_url(url, default_app=None):
         """
@@ -3130,11 +3150,9 @@ class Node(Crypt, ExtConfig):
                 else:
                     line.append(colorize("?", color.RED))
             out.append(line)
-            if not data["enslave_children"]:
-                return
 
             from distutils.version import LooseVersion
-            for child in sorted(list(data["children"]), key=LooseVersion):
+            for child in sorted(list(data.get("slaves", [])), key=LooseVersion):
                 load_svc(child, prefix=prefix+" ")
 
         def load_hb(key, _data):
@@ -3306,12 +3324,14 @@ class Node(Crypt, ExtConfig):
                         "avail": "undef",
                         "overall": "",
                         "nodes": {},
-                        "children": set(),
+                        "slaves": set(),
                     })
-                enslave_children = _data.get("enslave_children")
-                children = _data.get("children", [])
-                if enslave_children:
-                    for child in children:
+                slaves = _data.get("slaves", [])
+                scale = _data.get("scale")
+                if scale:
+                    for idx in range(scale):
+                        child = "%d.%s" % (idx, svcname)
+                        slaves.append(child)
                         if child not in slave_parents:
                             slave_parents[child] = set([svcname])
                         else:
@@ -3324,8 +3344,7 @@ class Node(Crypt, ExtConfig):
                     "placement": _data["monitor"].get("placement", ""),
                     "provisioned": _data.get("provisioned"),
                 }
-                services[svcname].children |= set(children)
-                services[svcname].enslave_children = enslave_children
+                services[svcname].slaves |= set(slaves)
         for svcname, _data in data["monitor"]["services"].items():
             if svcnames and svcname not in svcnames:
                 continue

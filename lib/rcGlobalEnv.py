@@ -73,6 +73,8 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
     o.nodeconf = os.path.join(o.pathetc, "node.conf")
     o.authconf = os.path.join(o.pathetc, "auth.conf")
 
+    o.dnsuxsockd = os.path.join(o.pathvar, "dns")
+    o.dnsuxsock = os.path.join(o.dnsuxsockd, "pdns.sock")
     o.pathcomp = os.path.join(o.pathvar, "compliance")
     o.drp_path = os.path.join(o.pathvar, "cache")
 

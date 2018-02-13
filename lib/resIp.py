@@ -7,7 +7,7 @@ import os
 
 import resources as Res
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall, which, getaddr
+from rcUtilities import qcall, which, getaddr, lazy
 from converters import convert_duration
 import rcStatus
 import rcExceptions as ex
@@ -36,6 +36,14 @@ class Ip(Res.Resource):
         self.lockfd = None
         self.stacked_dev = None
         self.addr = None
+
+    @lazy
+    def dns_name_suffix(self):
+        try:
+            dns_name_suffix = self.svc.conf_get( self.rid, "dns_name_suffix").strip("'\"$#")
+        except ex.OptNotFound:
+            dns_name_suffix = None
+        return dns_name_suffix
 
     def set_label(self):
         """
@@ -396,10 +404,7 @@ class Ip(Res.Resource):
             self.log.debug("skip dns update: resource is not up")
             return
 
-        try:
-            dns_name_suffix = self.svc.conf_get( self.rid, "dns_name_suffix")
-        except ex.OptNotFound:
-            dns_name_suffix = None
+        if dns_name_suffix is None:
             self.log.debug("dns update: dns_name_suffix is not set")
 
         try:

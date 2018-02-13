@@ -840,7 +840,20 @@ class KeywordScale(Keyword):
                   at=True,
                   order=15,
                   convert="integer",
-                  text="If set, create and provision <scale> enslaved child services named <n>.<svcname>."
+                  text="If set, create and provision the necessary slave services, named <n>.<svcname>, to meet the target <scale> number of started instances."
+                )
+
+class KeywordScalerSlave(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="DEFAULT",
+                  keyword="scaler_slave",
+                  convert="boolean",
+                  default=False,
+                  at=True,
+                  order=15,
+                  text="Automatically set to true by the daemon monitor when creating new scaler slaves."
                 )
 
 class KeywordOrchestrate(Keyword):
@@ -993,18 +1006,17 @@ class KeywordChildren(Keyword):
                   text="List of services that must be 'avail down' before allowing this service to be stopped by the daemon monitor. Whitespace separated."
                 )
 
-class KeywordEnslaveChildren(Keyword):
+class KeywordSlaves(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
                   section="DEFAULT",
-                  keyword="enslave_children",
+                  keyword="slaves",
                   order=20,
                   at=True,
-                  default=False,
-                  convert="boolean",
-                  candidates=(True, False),
-                  text="If set to true, start and stop actions are propagated to the children."
+                  default=[],
+                  convert="list",
+                  text="List of services to propagate the start and stop actions to."
                 )
 
 class KeywordNodes(Keyword):
@@ -3202,7 +3214,7 @@ class KeywordLoopFile(Keyword):
                   at=True,
                   keyword="file",
                   required=True,
-                  text="The file hosting the disk image to map."
+                  text="The loopback device backing file full path."
                 )
 
 class KeywordSyncNetappFiler(Keyword):
@@ -4464,12 +4476,13 @@ class KeyDict(KeywordStore):
         self += KeywordShowDisabled()
         self += KeywordTopology()
         self += KeywordScale()
+        self += KeywordScalerSlave()
         self += KeywordOrchestrate()
         self += KeywordPlacement()
         self += KeywordConstraints()
         self += KeywordParents()
         self += KeywordChildren()
-        self += KeywordEnslaveChildren()
+        self += KeywordSlaves()
         self += KeywordFlexPrimary()
         self += KeywordDrpFlexPrimary()
         self += KeywordRollback()

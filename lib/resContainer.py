@@ -59,8 +59,7 @@ class Container(Res.Resource):
     def getaddr(self, cache_fallback=False):
         if hasattr(self, 'addr'):
             return
-        if len(self.vm_hostname) == 0:
-            # explicitely disabled (ex: docker)
+        if self.type == "container.docker":
             return
         try:
             self.log.debug("resolving %s" % self.vm_hostname)
@@ -137,7 +136,7 @@ class Container(Res.Resource):
         return
 
     def abort_start_ping(self):
-        if len(self.vm_hostname) == 0:
+        if self.type == "container.docker":
             # docker container for example
             return False
         try:

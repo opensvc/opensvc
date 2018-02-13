@@ -22,6 +22,7 @@ from osvcd_mon import Monitor
 from osvcd_lsnr import Listener
 from osvcd_scheduler import Scheduler
 from osvcd_collector import Collector
+from osvcd_dns import Dns
 from hb_ucast import HbUcastRx, HbUcastTx
 from hb_mcast import HbMcastRx, HbMcastTx
 from hb_disk import HbDiskRx, HbDiskTx
@@ -258,6 +259,10 @@ class Daemon(object):
         if self.need_start("monitor"):
             self.threads["monitor"] = Monitor()
             self.threads["monitor"].start()
+            changed = True
+        if shared.NODE.dns and self.need_start("dns"):
+            self.threads["dns"] = Dns()
+            self.threads["dns"].start()
             changed = True
 
         for hb_type, txc, rxc in HEARTBEATS:

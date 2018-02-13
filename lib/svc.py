@@ -619,9 +619,27 @@ class Svc(Crypt, ExtConfig):
             children = self.conf_get('DEFAULT', "children")
         except ex.OptNotFound as exc:
             children = exc.default
-        if self.scale_target is not None:
-            children += self.scaler.children
         return children
+
+    @lazy
+    def slaves(self):
+        try:
+            slaves = self.conf_get('DEFAULT', "slaves")
+        except ex.OptNotFound as exc:
+            slaves = exc.default
+        return slaves
+
+    @lazy
+    def children_and_slaves(self):
+        return self.children + self.slaves
+
+    @lazy
+    def scaler_slave(self):
+        try:
+            scaler_slave = self.conf_get('DEFAULT', "scaler_slave")
+        except ex.OptNotFound as exc:
+            scaler_slave = exc.default
+        return scaler_slave
 
     @lazy
     def scale_target(self):
@@ -675,15 +693,6 @@ class Svc(Crypt, ExtConfig):
             return True
         except ex.excError:
             return True
-
-    @lazy
-    def enslave_children(self):
-        if self.scale_target is not None:
-            return True
-        try:
-            return self.conf_get("DEFAULT", "enslave_children")
-        except ex.OptNotFound as exc:
-            return exc.default
 
     @lazy
     def hard_affinity(self):
@@ -1549,8 +1558,8 @@ class Svc(Crypt, ExtConfig):
             data["frozen"] = frozen
         if not self.constraints:
             data["constraints"] = self.constraints
-        if self.enslave_children:
-            data["enslave_children"] = self.enslave_children
+        if self.slaves:
+            data["slaves"] = self.slaves
         if len(self.parents) > 0:
             data["parents"] = self.parents
         if len(self.children) > 0:
@@ -1559,6 +1568,8 @@ class Svc(Crypt, ExtConfig):
             data["orchestrate"] = self.orchestrate
         if self.scale_target is not None:
             data["scale"] = self.scale_target
+        if self.scaler_slave:
+            data["scaler_slave"] = self.scaler_slave
 
         containers = self.get_resources('container')
         if len(containers) > 0:
@@ -1949,6 +1960,24 @@ class Svc(Crypt, ExtConfig):
             for child in self.children:
                 add_child(child, node_children)
 
+        def add_slaves(node):
+            if len(self.slaves) == 0:
+                return
+            node_slaves = node.add_node()
+            node_slaves.add_column("slaves")
+            for child in self.slaves:
+                add_child(child, node_slaves)
+
+        def add_scaler_children(node):
+            if self.scaler is None:
+                return
+            if len(self.scaler.children) == 0:
+                return
+            node_slaves = node.add_node()
+            node_slaves.add_column("scaler")
+            for child in self.scaler.children:
+                add_child(child, node_slaves)
+
         def add_child(svcname, node):
             node_child = node.add_node()
             node_child.add_column(svcname, color.BOLD)
@@ -1988,6 +2017,8 @@ class Svc(Crypt, ExtConfig):
         add_subsets(subsets, node_nodename, data["running"])
         add_parents(node_svcname)
         add_children(node_svcname)
+        add_scaler_children(node_svcname)
+        add_slaves(node_svcname)
 
         print(tree)
 

@@ -826,6 +826,19 @@ class KeywordSyslogPort(Keyword):
                   text="The syslog host to send logs to. If neither host nor port are specified and if /dev/log exists, the messages are posted to /dev/log."
                 )
 
+class KeywordClusterDns(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="cluster",
+                  keyword="dns",
+                  convert="list",
+                  default=[],
+                  at=True,
+                  order=15,
+                  text="The list of nodes to set as dns in the containers resolvers. If set, the search will also be set to <svcname>.<clustername> and <clustername>."
+                )
+
 class KeywordClusterId(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1195,6 +1208,7 @@ class KeyDict(KeywordStore):
         self += KeywordSyslogLevel()
         self += KeywordSyslogHost()
         self += KeywordSyslogPort()
+        self += KeywordClusterDns()
         self += KeywordClusterId()
         self += KeywordClusterName()
         self += KeywordClusterSecret()

@@ -73,6 +73,13 @@ class Ip(Res.Ip):
             data["ipaddr"] = intf.ipaddr[0]
         elif intf and len(intf.ip6addr) > 0:
             data["ipaddr"] = intf.ip6addr[0]
+        if self.container:
+            if self.container.vm_hostname != self.container.name:
+                data["hostname"] = self.container.vm_hostname
+            else:
+                data["hostname"] = self.container.name
+            if self.dns_name_suffix:
+                data["hostname"] += self.dns_name_suffix
         return data
 
     def arp_announce(self):

@@ -405,6 +405,11 @@ class ExtConfig(object):
                 return self.svcname
             if ref == "short_svcname" and hasattr(self, "svcname"):
                 return self.svcname.split(".")[0]
+            if ref == "clustername":
+                if hasattr(self, "node"):
+                    return self.node.clustername
+                else:
+                    return self.clustername
             if ref == "clusternodes":
                 if hasattr(self, "node"):
                     return " ".join(self.node.cluster_nodes)
@@ -415,6 +420,16 @@ class ExtConfig(object):
                     return " ".join(self.node.cluster_drpnodes)
                 else:
                     return " ".join(self.cluster_drpnodes)
+            if ref == "dns":
+                if hasattr(self, "node"):
+                    return " ".join(self.node.dns)
+                else:
+                    return " ".join(self.dns)
+            if ref == "dnsnodes":
+                if hasattr(self, "node"):
+                    return " ".join(self.node.dnsnodes)
+                else:
+                    return " ".join(self.dnsnodes)
             if ref == "svcmgr":
                 return rcEnv.paths.svcmgr
             if ref == "nodemgr":
@@ -423,6 +438,10 @@ class ExtConfig(object):
                 return rcEnv.paths.pathetc
             if ref == "var":
                 return rcEnv.paths.pathvar
+            if ref == "dnsuxsockd":
+                return rcEnv.paths.dnsuxsockd
+            if ref == "dnsuxsock":
+                return rcEnv.paths.dnsuxsock
 
             if "[" in ref and ref.endswith("]"):
                 i = ref.index("[")

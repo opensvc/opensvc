@@ -401,12 +401,21 @@ class Monitor(shared.OsvcThread, Crypt):
         out, err = proc.communicate()
         if proc.returncode != 0:
             self.set_smon(svcname, "create failed")
+
         cmd = ["unset", "--kw", "scale"]
         proc = self.service_command(svcname, cmd)
         out, err = proc.communicate()
         if proc.returncode != 0:
             self.set_smon(svcname, "create failed")
             return
+
+        cmd = ["set", "--kw", "scaler_slave=true"]
+        proc = self.service_command(svcname, cmd)
+        out, err = proc.communicate()
+        if proc.returncode != 0:
+            self.set_smon(svcname, "create failed")
+            return
+
         if svc.topology == "flex" and instances is not None:
             ret = self.service_set_flex_instances(svcname, instances)
             if ret != 0:
@@ -609,11 +618,14 @@ class Monitor(shared.OsvcThread, Crypt):
         if svc.frozen() or self.freezer.node_frozen():
             #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
             return
+        if not self.rejoin_grace_period_expired:
+            return
+        if svc.scale_target is not None and smon.global_expect is None:
+            self.service_orchestrator_scaler(svc)
+            return
         if status in (None, "undef", "n/a"):
             #self.log.info("service %s orchestrator out (agg avail status %s)",
             #              svc.svcname, status)
-            return
-        if not self.rejoin_grace_period_expired:
             return
         if svc.hard_anti_affinity:
             intersection = set(self.get_local_svcnames()) & set(svc.hard_anti_affinity)
@@ -627,9 +639,6 @@ class Monitor(shared.OsvcThread, Crypt):
                 #self.log.info("service %s orchestrator out (hard affinity with %s)",
                 #              svc.svcname, ','.join(intersection))
                 return
-        if svc.scale_target is not None and smon.global_expect is None:
-            self.service_orchestrator_scaler(svc)
-            return
 
         candidates = self.placement_candidates(svc)
         if candidates != [rcEnv.nodename]:
@@ -792,8 +801,9 @@ class Monitor(shared.OsvcThread, Crypt):
                     return
                 n_to_stop = n_up - svc.flex_max_nodes
                 to_stop = self.placement_ranks(svc, candidates=up_nodes)[-n_to_stop:]
-                self.log.info("%d nodes to stop to honor flex_max_nodes=%d. "
-                              "choose %s", n_to_stop, svc.flex_max_nodes,
+                self.log.info("%d nodes to stop to honor service %s "
+                              "flex_max_nodes=%d. choose %s",
+                              n_to_stop, svc.svcname, svc.flex_max_nodes,
                               ", ".join(to_stop))
                 if rcEnv.nodename not in to_stop:
                     return
@@ -990,9 +1000,9 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def children_down(self, svc):
         missing = []
-        if len(svc.children) == 0:
+        if len(svc.children_and_slaves) == 0:
             return True
-        for child in svc.children:
+        for child in svc.children_and_slaves:
             if child == svc.svcname:
                 continue
             try:
@@ -1188,9 +1198,10 @@ class Monitor(shared.OsvcThread, Crypt):
         else:
             avail = "unknown"
         slaves = instance.get("children", [])
+        slaves += instance.get("slaves", [])
         if slaves:
             avails = set([avail])
-            for child in instance.get("children", []):
+            for child in slaves:
                 try:
                     child_avail = shared.AGG[child]["avail"]
                 except KeyError:

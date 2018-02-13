@@ -105,7 +105,11 @@ class Docker(resContainer.Container):
         """
         Return an empty string, as we won't need that.
         """
-        return ""
+        try:
+            hostname = self.conf_get("hostname")
+        except ex.OptNotFound:
+            hostname = ""
+        return hostname
 
     def get_rootfs(self):
         """
@@ -302,6 +306,15 @@ class Docker(resContainer.Container):
         if self.svc.dockerlib.docker_min_version("1.7") and \
            not self.docker_service and self.svc.dockerlib.docker_daemon_private:
             args += ["--cgroup-parent", self._parent_cgroup_name()]
+        if self.svc.node.dns and "--dns" not in self.run_args:
+            for dns in self.svc.node.dns:
+                args += ["--dns", dns]
+            if self.svc.scaler_slave:
+                topsearch = self.svc.svcname[self.svc.svcname.index(".")+1:]
+            else:
+                topsearch = self.svc.svcname
+            for search in [topsearch+'.'+self.svc.cluster_name, self.svc.cluster_name]:
+                args += ["--dns-search", search]
         return args
 
     def _parent_cgroup_name(self):
