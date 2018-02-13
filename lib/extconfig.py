@@ -75,7 +75,8 @@ class ExtConfig(object):
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
         unset_all_lazy(self)
-        delattr(self, "ref_cache")
+        if hasattr(self, "ref_cache"):
+            delattr(self, "ref_cache")
 
     def unset_line(self, lines, section, option):
         section = "[%s]" % section
