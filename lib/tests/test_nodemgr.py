@@ -242,7 +242,7 @@ class TestNodemgr:
         try:
             out = StringIO()
             sys.stdout = out
-            ret = nodemgr.main(argv=["network", "ls", "--format", "json"])
+            ret = nodemgr.main(argv=["network", "ls", "--format", "json", "--color", "no"])
             output = out.getvalue().strip()
         finally:
             sys.stdout = _stdout
