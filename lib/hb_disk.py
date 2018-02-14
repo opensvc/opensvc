@@ -118,7 +118,10 @@ class HbDisk(Hb, Crypt):
             self.log.error("%s: %s", self.dev, exc)
         finally:
             # closing fo also closes fd
-            os.fsync(fd)
+            try:
+                os.fsync(fd)
+            except OSError as exc:
+                self.duplog("error", "%(exc)s", exc=str(exc), nodename="")
             fo.close()
 
     @staticmethod
