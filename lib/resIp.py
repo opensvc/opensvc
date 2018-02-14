@@ -4,6 +4,7 @@ Generic ip resource driver.
 from __future__ import unicode_literals
 
 import os
+import re
 
 import resources as Res
 from rcGlobalEnv import rcEnv
@@ -26,6 +27,7 @@ class Ip(Res.Resource):
                  mask=None,
                  gateway=None,
                  type="ip",
+                 expose=None,
                  **kwargs):
         Res.Resource.__init__(self, rid, type=type, **kwargs)
         self.ipdev = ipdev
@@ -36,6 +38,7 @@ class Ip(Res.Resource):
         self.lockfd = None
         self.stacked_dev = None
         self.addr = None
+        self.expose = expose
 
     @lazy
     def dns_name_suffix(self):
@@ -70,6 +73,8 @@ class Ip(Res.Resource):
         if self.mask is not None:
             from rcUtilities import to_cidr
             data["mask"] = to_cidr(self.mask)
+        if self.expose:
+            data["expose"] = self.expose
         return data
 
     def _info(self):
@@ -602,6 +607,34 @@ class Ip(Res.Resource):
 
         self.svc._unset(self.rid, "ipname")
         self.log.info("ip %s released", self.ipname)
+
+    def expose_data(self):
+        if self.expose is None:
+            return []
+        data = []
+        for expose in self.expose:
+            data.append(self.parse_expose(expose))
+        return data
+
+    def parse_expose(self, expose):
+        data = {}
+        words = expose.split(":")
+        if len(words) == 2:
+            try:
+                data["host_port"] = int(words[1])
+            except ValueError:
+                raise ex.excError("invalid host port format %s. expected integer" % words[1])
+        words = re.split("[-/]", words[0])
+        if len(words) != 2:
+            raise ex.excError("invalid expose format %s. expected <nsport>/<proto>[:<hostport>]" % expose)
+        try:
+            data["port"] = int(words[0])
+        except ValueError:
+            raise ex.excError("invalid expose port format %s. expected integer" % words[0])
+        if words[1] not in ("tcp", "udp"):
+            raise ex.excError("invalid expose protocol %s. expected tcp or udp" % words[1])
+        data["protocol"] = words[1]
+        return data
 
 
 

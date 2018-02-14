@@ -3,7 +3,6 @@ A CNI driver following the specs available at
 https://github.com/containernetworking/cni/blob/master/SPEC.md
 """
 import os
-import re
 import hashlib
 import json
 from subprocess import Popen, PIPE
@@ -41,9 +40,9 @@ class Ip(Res.Ip):
                         ipname=ipname,
                         ipdev=ipdev,
                         type="ip.cni",
+                        expose=expose,
                         **kwargs)
         self.network = network
-        self.expose = expose
         self.container_rid = container_rid
         if container_rid:
             self.tags = self.tags | set(["docker"])
@@ -285,35 +284,26 @@ class Ip(Res.Ip):
 
     def runtime_config(self):
         data = {}
-        if self.expose:
-            data["portMappings"] = self.expose_data()
+        expose_data = self.cni_expose_data()
+        if len(expose_data) > 0:
+            data["portMappings"] = expose_data
         return data
 
-    def expose_data(self):
-        data = []
-        for expose in self.expose:
-            data.append(self.parse_expose(expose))
-        return data
-
-    def parse_expose(self, expose):
-        data = {}
-        words = expose.split(":")
-        if len(words) != 2:
-            raise ex.excError("invalid expose format %s. expected <nsport>/<proto>:<hostport>" % expose)
-        try:
-            data["hostPort"] = int(words[1])
-        except ValueError:
-            raise ex.excError("invalid host port format %s. expected integer" % words[1])
-        words = re.split("[-/]", words[0])
-        if len(words) != 2:
-            raise ex.excError("invalid expose format %s. expected <nsport>/<proto>:<hostport>" % expose)
-        try:
-            data["containerPort"] = int(words[0])
-        except ValueError:
-            raise ex.excError("invalid ns port format %s. expected integer" % words[0])
-        if words[1] not in ("tcp", "udp"):
-            raise ex.excError("invalid expose protcol %s. expected tcp or udp" % words[1])
-        data["protocol"] = words[1]
+    def cni_expose_data(self):
+        """
+        Translate opensvc expose data in the format expected by cni.
+        """
+        data = self.expose_data()
+        _data = []
+        for expose in data:
+            if "host_port" not in expose:
+                continue
+            exdata = {
+                "containerPort": expose["port"],
+                "protocol": expose["protocol"],
+                "hostPort": expose["host_port"],
+            }
+            _data.append(exdata)
         return data
 
     def add_cni(self):

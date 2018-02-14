@@ -10,6 +10,7 @@ import time
 import select
 import shutil
 import json
+import re
 
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
@@ -256,7 +257,15 @@ class Dns(shared.OsvcThread, Crypt):
         return []
 
     def srv_record(self, parameters):
-        return []
+        qname = parameters.get("qname")
+        if not qname.endswith(self.suffix):
+            return []
+        return [{
+            "qtype": "SRV",
+            "qname": qname,
+            "content": content,
+            "ttl": 60
+        } for content in self.srv_records().get(qname, [])]
 
     def ptr_record(self, parameters):
         qname = parameters.get("qname")
@@ -336,6 +345,43 @@ class Dns(shared.OsvcThread, Crypt):
                         if name not in names:
                             names[name] = set()
                         names[name].add(addr)
+        return names
+
+    def srv_records(self):
+        names = {}
+        for nodename, node in shared.CLUSTER_DATA.items():
+            status = node.get("services", {}).get("status", {})
+            for svcname, svc in status.items():
+                app = svc.get("app", "default").lower()
+                scaler_slave = svc.get("scaler_slave")
+                if scaler_slave:
+                    _svcname = svcname[svcname.index(".")+1:]
+                else:
+                    _svcname = svcname
+                for rid, resource in status[svcname].get("resources", {}).items():
+                    addr = resource.get("info", {}).get("ipaddr")
+                    if addr is None:
+                        continue
+                    for expose in resource.get("info", {}).get("expose", []):
+                        try:
+                            port, proto = re.split("[/-]", expose.split(":")[0])
+                            port = int(port)
+                        except Exception as exc:
+                            continue
+                        try:
+                            serv = socket.getservbyport(port)
+                        except socket.error as exc:
+                            continue
+                        qname = "_%s._%s.%s.%s.svc.%s." % (serv, proto, _svcname, app, self.cluster_name)
+                        if qname not in names:
+                            names[qname] = set()
+                        content = "%(prio)d %(weight)d %(port)d %(target)s" % {
+                            "prio": 0,
+                            "weight": 10,
+                            "port": port,
+                            "target": addr,
+                        }
+                        names[qname].add(content)
         return names
 
     def svc_ips(self):
