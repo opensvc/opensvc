@@ -3310,54 +3310,55 @@ class Node(Crypt, ExtConfig):
 
         # init the services hash
         slave_parents = {}
-        for node in nodenames:
-            if node not in data["monitor"]["nodes"]:
-                continue
-            for svcname, _data in data["monitor"]["nodes"][node]["services"]["status"].items():
+        if "monitor" in data:
+            for node in nodenames:
+                if node not in data["monitor"]["nodes"]:
+                    continue
+                for svcname, _data in data["monitor"]["nodes"][node]["services"]["status"].items():
+                    if svcnames and svcname not in svcnames:
+                        continue
+                    if svcname not in services:
+                        services[svcname] = Storage({
+                            "topology": _data.get("topology", ""),
+                            "orchestrate": _data.get("orchestrate"),
+                            "scale": _data.get("scale"),
+                            "avail": "undef",
+                            "overall": "",
+                            "nodes": {},
+                            "slaves": set(),
+                        })
+                    slaves = _data.get("slaves", [])
+                    scale = _data.get("scale")
+                    if scale:
+                        for idx in range(scale):
+                            child = "%d.%s" % (idx, svcname)
+                            slaves.append(child)
+                    for child in slaves:
+                        if child not in slave_parents:
+                            slave_parents[child] = set([svcname])
+                        else:
+                            slave_parents[child] |= set([svcname])
+                    services[svcname].nodes[node] = {
+                        "avail": _data.get("avail", "undef"),
+                        "overall": _data.get("overall", "undef"),
+                        "frozen": _data.get("frozen", False),
+                        "mon": _data["monitor"].get("status", ""),
+                        "placement": _data["monitor"].get("placement", ""),
+                        "provisioned": _data.get("provisioned"),
+                    }
+                    services[svcname].slaves |= set(slaves)
+            for svcname, _data in data["monitor"]["services"].items():
                 if svcnames and svcname not in svcnames:
                     continue
                 if svcname not in services:
                     services[svcname] = Storage({
-                        "topology": _data.get("topology", ""),
-                        "orchestrate": _data.get("orchestrate"),
-                        "scale": _data.get("scale"),
                         "avail": "undef",
                         "overall": "",
-                        "nodes": {},
-                        "slaves": set(),
+                        "nodes": {}
                     })
-                slaves = _data.get("slaves", [])
-                scale = _data.get("scale")
-                if scale:
-                    for idx in range(scale):
-                        child = "%d.%s" % (idx, svcname)
-                        slaves.append(child)
-                for child in slaves:
-                    if child not in slave_parents:
-                        slave_parents[child] = set([svcname])
-                    else:
-                        slave_parents[child] |= set([svcname])
-                services[svcname].nodes[node] = {
-                    "avail": _data.get("avail", "undef"),
-                    "overall": _data.get("overall", "undef"),
-                    "frozen": _data.get("frozen", False),
-                    "mon": _data["monitor"].get("status", ""),
-                    "placement": _data["monitor"].get("placement", ""),
-                    "provisioned": _data.get("provisioned"),
-                }
-                services[svcname].slaves |= set(slaves)
-        for svcname, _data in data["monitor"]["services"].items():
-            if svcnames and svcname not in svcnames:
-                continue
-            if svcname not in services:
-                services[svcname] = Storage({
-                    "avail": "undef",
-                    "overall": "",
-                    "nodes": {}
-                })
-            services[svcname].avail = _data["avail"]
-            services[svcname].overall = _data["overall"]
-            services[svcname].placement = _data["placement"]
+                services[svcname].avail = _data["avail"]
+                services[svcname].overall = _data["overall"]
+                services[svcname].placement = _data["placement"]
 
         # load data in lists
         load_header("Threads")
