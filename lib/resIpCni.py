@@ -283,11 +283,15 @@ class Ip(Res.Ip):
         raise ex.excError("no type nor plugins in cni configuration %s" % self.cni_conf)
 
     def runtime_config(self):
-        data = {}
+        data = []
         expose_data = self.cni_expose_data()
-        if len(expose_data) > 0:
-            data["portMappings"] = expose_data
-        return data
+        for expose in expose_data:
+            if "host_port" not in expose:
+                continue
+            data.append(expose)
+        if len(data) > 0:
+            return {"portMappings": data}
+        return {}
 
     def cni_expose_data(self):
         """
