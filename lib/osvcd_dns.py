@@ -11,6 +11,7 @@ import select
 import shutil
 import json
 import re
+import hashlib
 
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
@@ -320,6 +321,10 @@ class Dns(shared.OsvcThread, Crypt):
                 names.add("%s.svc.%s." % (app, self.cluster_name))
         return names
 
+    @staticmethod
+    def unique_name(addr):
+        return hashlib.sha1(addr).hexdigest()
+
     def a_records(self):
         names = {}
         for nodename, node in shared.CLUSTER_DATA.items():
@@ -340,6 +345,10 @@ class Dns(shared.OsvcThread, Crypt):
                         continue
                     hostname = resource.get("info", {}).get("hostname")
                     names[qname].add(addr)
+                    rname = self.unique_name(addr) + "." + qname
+                    if rname not in names:
+                        names[rname] = set()
+                    names[rname].add(addr)
                     if hostname:
                         name = hostname + "." + qname
                         if name not in names:
@@ -373,13 +382,14 @@ class Dns(shared.OsvcThread, Crypt):
                         except socket.error as exc:
                             continue
                         qname = "_%s._%s.%s.%s.svc.%s." % (serv, proto, _svcname, app, self.cluster_name)
+                        target = "%s.%s.%s.svc.%s." % (self.unique_name(addr), _svcname, app, self.cluster_name)
                         if qname not in names:
                             names[qname] = set()
                         content = "%(prio)d %(weight)d %(port)d %(target)s" % {
                             "prio": 0,
                             "weight": 10,
                             "port": port,
-                            "target": addr,
+                            "target": target,
                         }
                         names[qname].add(content)
         return names
