@@ -294,8 +294,8 @@ class Dns(shared.OsvcThread, Crypt):
                     if addr != ref:
                         continue
                     if "hostname" in resource:
-                        names.append("%s.%s.%s.%s." % (hostname, svcname, app, self.cluster_name))
-                    names.append("%s.%s.%s." % (svcname, app, self.cluster_name))
+                        names.append("%s.%s.%s.svc.%s." % (hostname, svcname, app, self.cluster_name))
+                    names.append("%s.%s.svc.%s." % (svcname, app, self.cluster_name))
         return names
 
     def soa_records(self):
@@ -307,8 +307,8 @@ class Dns(shared.OsvcThread, Crypt):
                 if scaler_slave:
                     continue
                 app = svc.get("app", "default").lower()
-                names.add("%s.%s.%s." % (svcname, app, self.cluster_name))
-                names.add("%s.%s." % (app, self.cluster_name))
+                names.add("%s.%s.svc.%s." % (svcname, app, self.cluster_name))
+                names.add("%s.svc.%s." % (app, self.cluster_name))
         return names
 
     def a_records(self):
@@ -322,7 +322,7 @@ class Dns(shared.OsvcThread, Crypt):
                     _svcname = svcname[svcname.index(".")+1:]
                 else:
                     _svcname = svcname
-                qname = "%s.%s.%s." % (_svcname, app, self.cluster_name)
+                qname = "%s.%s.svc.%s." % (_svcname, app, self.cluster_name)
                 if qname not in names:
                     names[qname] = set()
                 for rid, resource in status[svcname].get("resources", {}).items():
