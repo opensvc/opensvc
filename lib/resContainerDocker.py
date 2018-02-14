@@ -309,11 +309,7 @@ class Docker(resContainer.Container):
         if self.svc.node.dns and "--dns" not in self.run_args:
             for dns in self.svc.node.dns:
                 args += ["--dns", dns]
-            if self.svc.scaler_slave:
-                topsearch = self.svc.svcname[self.svc.svcname.index(".")+1:]
-            else:
-                topsearch = self.svc.svcname
-            for search in [topsearch+'.'+self.svc.cluster_name, self.svc.cluster_name]:
+            for search in self.dns_search():
                 args += ["--dns-search", search]
         return args
 

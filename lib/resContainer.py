@@ -252,3 +252,16 @@ class Container(Res.Resource):
         if action not in ("stop", "start"):
             return
         self.svc.refresh_ip_status()
+
+    def dns_search(self):
+        if self.svc.scaler_slave:
+            _svcname = self.svc.svcname[self.svc.svcname.index(".")+1:]
+        else:
+            _svcname = self.svc.svcname
+        elems = (
+            "%s.%s.%s" % (_svcname, self.svc.app, self.svc.cluster_name),
+            "%s.%s" % (self.svc.app, self.svc.cluster_name),
+            self.svc.cluster_name,
+        )
+        return elems
+

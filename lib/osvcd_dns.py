@@ -48,6 +48,17 @@ class Dns(shared.OsvcThread, Crypt):
 
         self.suffix = ".%s." % self.cluster_name
         self.suffix_len = len(self.suffix)
+        self.soa_data = {
+            "origin": self.origin,
+            "contact": self.contact,
+            "serial": 1,
+            "refresh": 7200,
+            "retry": 3600,
+            "expire": 432000,
+            "minimum": 86400,
+        }
+        self.soa_content = "%(origin)s %(contact)s %(serial)d %(refresh)d " \
+                           "%(retry)d %(expire)d %(minimum)d" % self.soa_data
 
         self.stats = Storage({
             "sessions": Storage({
@@ -210,7 +221,7 @@ class Dns(shared.OsvcThread, Crypt):
 
     @lazy
     def origin(self):
-        return "dns."+self.cluster_name+"."
+        return "dns"+self.suffix
 
     @lazy
     def contact(self):
@@ -218,32 +229,20 @@ class Dns(shared.OsvcThread, Crypt):
 
     def soa_record(self, parameters):
         qname = parameters.get("qname")
-        if qname == self.cluster_name+'.':
-            _qname = qname
-        elif qname.endswith(PTR_SUFFIX):
-            if qname not in self.svc_soa_records_rev():
+        if qname.endswith(PTR_SUFFIX):
+            if qname not in self.soa_records_rev():
+                return []
+        elif qname.endswith(self.suffix):
+            if qname not in self.soa_records():
                 return []
         else:
-            if not qname.endswith(self.suffix):
-                return []
-            _qname = self.remove_suffix(qname)
-            if _qname not in shared.AGG:
-                return []
+            return []
 
-        soa_data = {
-            "origin": self.origin,
-            "contact": self.contact,
-            "serial": 1,
-            "refresh": 7200,
-            "retry": 3600,
-            "expire": 432000,
-            "minimum": 86400,
-        }
         data = [
             {
                 "qtype": "SOA",
                 "qname": qname,
-                "content":"%(origin)s %(contact)s %(serial)d %(refresh)d %(retry)d %(expire)d %(minimum)d" % soa_data,
+                "content": self.soa_content,
                 "ttl": 60,
                 "domain_id": -1
             }
@@ -261,79 +260,79 @@ class Dns(shared.OsvcThread, Crypt):
 
     def ptr_record(self, parameters):
         qname = parameters.get("qname")
-        names = self.svc_ptr_record(qname)
-        result = []
-
-        for name in names:
-            result.append({
-                "qtype": "PTR",
-                "qname": qname,
-                "content": name,
-                "ttl": 60
-            })
-        return result
+        return [{
+            "qtype": "PTR",
+            "qname": qname,
+            "content": name,
+            "ttl": 60
+        } for name in self.svc_ptr_record(qname)]
 
     def a_record(self, parameters):
         qname = parameters.get("qname")
         if not qname.endswith(self.suffix):
             return []
-        _qname = self.remove_suffix(qname)
-        
-        result = []
-        addrs = []
-
-        addrs += self.svc_a_record(_qname)
-
-        for addr in addrs:
-            result.append({
-                "qtype": "A",
-                "qname": qname,
-                "content": addr,
-                "ttl": 60
-            })
-        return result
-
-    def svc_a_record(self, qname):
-        return self.svc_names().get(qname, [])
+        return [{
+            "qtype": "A",
+            "qname": qname,
+            "content": addr,
+            "ttl": 60
+        } for addr in self.a_records().get(qname, [])]
 
     def svc_ptr_record(self, qname):
+        if not qname.endswith(PTR_SUFFIX):
+            return []
         names = []
         ref = ".".join(reversed(qname[:-PTR_SUFFIX_LEN].split(".")))
         for nodename, node in shared.CLUSTER_DATA.items():
             status = node.get("services", {}).get("status", {})
             for svcname, svc in status.items():
+                app = svc.get("app", "default").lower()
                 for rid, resource in status[svcname].get("resources", {}).items():
                     addr = resource.get("info", {}).get("ipaddr")
                     if addr is None:
                         continue
                     if addr != ref:
                         continue
-                    # add env ? app ?
                     if "hostname" in resource:
-                        names.append("%s.%s.%s." % (hostname, svcname, self.cluster_name))
-                    names.append("%s.%s." % (svcname, self.cluster_name))
+                        names.append("%s.%s.%s.%s." % (hostname, svcname, app, self.cluster_name))
+                    names.append("%s.%s.%s." % (svcname, app, self.cluster_name))
         return names
 
-    def svc_names(self):
-        names = {}
+    def soa_records(self):
+        names = set([self.suffix])
         for nodename, node in shared.CLUSTER_DATA.items():
             status = node.get("services", {}).get("status", {})
             for svcname, svc in status.items():
                 scaler_slave = svc.get("scaler_slave")
                 if scaler_slave:
+                    continue
+                app = svc.get("app", "default").lower()
+                names.add("%s.%s.%s." % (svcname, app, self.cluster_name))
+                names.add("%s.%s." % (app, self.cluster_name))
+        return names
+
+    def a_records(self):
+        names = {}
+        for nodename, node in shared.CLUSTER_DATA.items():
+            status = node.get("services", {}).get("status", {})
+            for svcname, svc in status.items():
+                app = svc.get("app", "default").lower()
+                scaler_slave = svc.get("scaler_slave")
+                if scaler_slave:
                     _svcname = svcname[svcname.index(".")+1:]
                 else:
                     _svcname = svcname
-                if _svcname not in names:
-                    names[_svcname] = set()
+                qname = "%s.%s.%s." % (_svcname, app, self.cluster_name)
+                if qname not in names:
+                    names[qname] = set()
                 for rid, resource in status[svcname].get("resources", {}).items():
                     addr = resource.get("info", {}).get("ipaddr")
                     if addr is None:
                         continue
                     hostname = resource.get("info", {}).get("hostname")
-                    names[_svcname].add(addr)
+                    names[qname].add(addr)
                     if hostname:
-                        name = hostname + "." + _svcname
+                        name = hostname + "." + qname
                         if name not in names:
                             names[name] = set()
                         names[name].add(addr)
@@ -351,7 +350,7 @@ class Dns(shared.OsvcThread, Crypt):
                     addrs.append(addr)
         return addrs
 
-    def svc_soa_records_rev(self):
+    def soa_records_rev(self):
         addrs = []
         for addr in set(self.svc_ips()):
             addrs.append(".".join(reversed(addr.split(".")[:-1]))+PTR_SUFFIX)

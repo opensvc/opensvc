@@ -779,8 +779,8 @@ class Svc(Crypt, ExtConfig):
         """
         try:
             return self.conf_get("DEFAULT", "app")
-        except ex.OptNotFound:
-            return ""
+        except ex.OptNotFound as exc:
+            return exc.default
 
     def get_node(self):
         if self.node is None:
@@ -1542,10 +1542,11 @@ class Svc(Crypt, ExtConfig):
         data = {
             "updated": datetime.datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "mtime": now,
-            "resources": {},
+            "app": self.app,
             "placement": self.placement,
             "topology": self.topology,
             "provisioned": True,
+            "resources": {},
         }
         data["running"] = self.get_running()
         if self.topology == "flex":
@@ -4141,6 +4142,8 @@ class Svc(Crypt, ExtConfig):
         """
         Set the scale keyword.
         """
+        if self.scale_target is None:
+            raise ex.excError("can't scale: not a scaler")
         try:
             value = int(self.options.destination_node)
             assert value >= 0

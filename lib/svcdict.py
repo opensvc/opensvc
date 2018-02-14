@@ -1081,7 +1081,7 @@ class KeywordApp(Keyword):
                   section="DEFAULT",
                   keyword="app",
                   order=24,
-                  default="DEFAULT",
+                  default="default",
                   text="Used to identify who is responsible for this service, who is billable and provides a most useful filtering key. Better keep it a short code."
                 )
 
