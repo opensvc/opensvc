@@ -1269,8 +1269,9 @@ def add_container_jail(svc, s):
     svc += r
 
 def add_mandatory_syncs(svc):
-    """Mandatory files to sync:
-    1/ to all nodes: service definition
+    """
+    Mandatory files to sync.
+    To all nodes, service definition and files contributed by resources.
     """
 
     def add_file(flist, fpath):
@@ -1279,28 +1280,38 @@ def add_mandatory_syncs(svc):
         flist.append(fpath)
         return flist
 
-    if len(svc.nodes|svc.drpnodes) > 1:
-        kwargs = {}
-        src = []
-        src = add_file(src, svc.paths.exe)
-        src = add_file(src, svc.paths.cf)
-        src = add_file(src, svc.paths.initd)
-        src = add_file(src, svc.paths.alt_initd)
-        dst = os.path.join("/")
-        exclude = ['--exclude=*.core']
-        kwargs['rid'] = "sync#i0"
-        kwargs['src'] = src
-        kwargs['dst'] = dst
-        kwargs['options'] = ['-R']+exclude
-        if svc.config.has_option(kwargs['rid'], 'options'):
-            kwargs['options'] += cmdline2list(svc.config.get(kwargs['rid'], 'options'))
-        kwargs['target'] = ["nodes", "drpnodes"]
-        kwargs['internal'] = True
-        kwargs['disabled'] = get_disabled(svc, kwargs['rid'])
-        kwargs['optional'] = get_optional(svc, kwargs['rid'])
-        kwargs.update(get_sync_args(svc, kwargs['rid']))
-        r = resSyncRsync.Rsync(**kwargs)
-        svc += r
+    target = set(["nodes", "drpnodes"])
+    if svc.scale_target is not None or len(svc.nodes) < 2 or \
+       len(svc.resources_by_id) == 0:
+        target.remove("nodes")
+    if rcEnv.nodename in svc.nodes and len(svc.drpnodes) == 0:
+        target.remove("drpnodes")
+    if rcEnv.nodename in svc.drpnodes and len(svc.drpnodes) < 2:
+        target.remove("drpnodes")
+    if len(target) == 0:
+        return
+
+    kwargs = {}
+    src = []
+    src = add_file(src, svc.paths.exe)
+    src = add_file(src, svc.paths.cf)
+    src = add_file(src, svc.paths.initd)
+    src = add_file(src, svc.paths.alt_initd)
+    dst = os.path.join("/")
+    exclude = ['--exclude=*.core']
+    kwargs['rid'] = "sync#i0"
+    kwargs['src'] = src
+    kwargs['dst'] = dst
+    kwargs['options'] = ['-R']+exclude
+    if svc.config.has_option(kwargs['rid'], 'options'):
+        kwargs['options'] += cmdline2list(svc.config.get(kwargs['rid'], 'options'))
+    kwargs['target'] = list(target)
+    kwargs['internal'] = True
+    kwargs['disabled'] = get_disabled(svc, kwargs['rid'])
+    kwargs['optional'] = get_optional(svc, kwargs['rid'])
+    kwargs.update(get_sync_args(svc, kwargs['rid']))
+    r = resSyncRsync.Rsync(**kwargs)
+    svc += r
 
 def add_sync_docker(svc, s):
     kwargs = {}
