@@ -208,17 +208,26 @@ class Daemon(object):
         """
         Send a stop notification to all threads, and wait for them to
         complete their shutdown.
+        Stop dns last, so the service is available as long as possible.
         """
         self.log.info("signal stop to all threads")
-        for thr in self.threads.values():
+        for thr_id, thr in self.threads.items():
+            if thr_id == "dns":
+                continue
             thr.stop()
         shared.wake_collector()
         shared.wake_scheduler()
         shared.wake_monitor()
         shared.wake_heartbeat_tx()
         for thr_id, thr in self.threads.items():
+            if thr_id == "dns":
+                continue
             self.log.info("waiting for %s to stop", thr_id)
             thr.join()
+        if "dns" in self.threads:
+            self.threads["dns"].stop()
+            self.log.info("waiting for dns to stop")
+            self.threads["dns"].join()
 
     def need_start(self, thr_id):
         """
@@ -244,6 +253,10 @@ class Daemon(object):
 
         # a thread can only be started once, allocate a new one if not alive.
         changed = False
+        if shared.NODE.dns and self.need_start("dns"):
+            self.threads["dns"] = Dns()
+            self.threads["dns"].start()
+            changed = True
         if self.need_start("listener"):
             self.threads["listener"] = Listener()
             self.threads["listener"].start()
@@ -259,10 +272,6 @@ class Daemon(object):
         if self.need_start("monitor"):
             self.threads["monitor"] = Monitor()
             self.threads["monitor"].start()
-            changed = True
-        if shared.NODE.dns and self.need_start("dns"):
-            self.threads["dns"] = Dns()
-            self.threads["dns"].start()
             changed = True
 
         for hb_type, txc, rxc in HEARTBEATS:

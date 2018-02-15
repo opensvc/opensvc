@@ -7,7 +7,6 @@ import socket
 import logging
 import threading
 import time
-import select
 import shutil
 import json
 import re
@@ -76,6 +75,7 @@ class Dns(shared.OsvcThread, Crypt):
             except Exception as exc:
                 self.log.exception(exc)
             if self.stopped():
+                self.log.info("stop event received (%d handler threads to join)", len(self.threads))
                 self.join_threads()
                 self.sock.close()
                 sys.exit(0)
@@ -100,8 +100,10 @@ class Dns(shared.OsvcThread, Crypt):
         thr = threading.Thread(target=self.handle_client, args=(conn,))
         thr.start()
         self.threads.append(thr)
+        conn.close()
 
     def handle_client(self, conn):
+        conn.settimeout(self.sock_tmo)
         cf = conn.makefile("r+b", bufsize=0)
         try:
             self._handle_client(conn, cf)
@@ -114,6 +116,7 @@ class Dns(shared.OsvcThread, Crypt):
                 conn.close()
             except socket.error:
                 pass
+        sys.exit(0)
 
     def _handle_client(self, conn, cf):
         chunks = []
@@ -121,6 +124,8 @@ class Dns(shared.OsvcThread, Crypt):
         while True:
             try:
                 data = cf.readline()
+            except socket.timeout as exc:
+                break
             except socket.error as exc:
                 self.log.info("%s", exc)
                 break
@@ -136,7 +141,7 @@ class Dns(shared.OsvcThread, Crypt):
                 data = None
     
             if self.stopped():
-                self.log.info("stop event received")
+                self.log.info("stop event received (handler thread)")
                 break
 
             if data is None or not isinstance(data, dict):
