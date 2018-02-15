@@ -631,7 +631,10 @@ class Svc(Crypt, ExtConfig):
 
     @lazy
     def children_and_slaves(self):
-        return self.children + self.slaves
+        data = self.children + self.slaves
+        if self.scaler is not None:
+            data += self.scaler.slaves
+        return data
 
     @lazy
     def scaler_slave(self):
@@ -656,7 +659,7 @@ class Svc(Crypt, ExtConfig):
         if self.scale_target is None:
             return
         data = Storage({
-            "children": [],
+            "slaves": [],
         })
         if self.topology == "flex":
             data.width = len(self.peers)
@@ -665,20 +668,20 @@ class Svc(Crypt, ExtConfig):
             else:
                 data.left = self.scale_target % data.width
             if self.scale_target == 0:
-                data.slaves = 0
+                data.slaves_count = 0
             elif data.left == 0:
-                data.slaves = self.scale_target // data.width
+                data.slaves_count = self.scale_target // data.width
             else:
-                data.slaves = (self.scale_target // data.width) + 1
+                data.slaves_count = (self.scale_target // data.width) + 1
         else:
             data.width = 1
             data.left = 0
-            data.slaves = self.scale_target
+            data.slaves_count = self.scale_target
 
-        for idx in range(data.slaves):
+        for idx in range(data.slaves_count):
             name = str(idx) + "." + self.svcname
-            if name not in data.children:
-                data.children.append(name)
+            if name not in data.slaves:
+                data.slaves.append(name)
         return data
 
     @lazy
@@ -1571,6 +1574,8 @@ class Svc(Crypt, ExtConfig):
             data["scale"] = self.scale_target
         if self.scaler_slave:
             data["scaler_slave"] = self.scaler_slave
+        if self.scaler is not None:
+            data["scaler_slaves"] = self.scaler.slaves
 
         containers = self.get_resources('container')
         if len(containers) > 0:
@@ -1969,14 +1974,14 @@ class Svc(Crypt, ExtConfig):
             for child in self.slaves:
                 add_child(child, node_slaves)
 
-        def add_scaler_children(node):
+        def add_scaler_slaves(node):
             if self.scaler is None:
                 return
-            if len(self.scaler.children) == 0:
+            if self.scaler.slaves_count == 0:
                 return
             node_slaves = node.add_node()
             node_slaves.add_column("scaler")
-            for child in self.scaler.children:
+            for child in self.scaler.slaves:
                 add_child(child, node_slaves)
 
         def add_child(svcname, node):
@@ -2018,7 +2023,7 @@ class Svc(Crypt, ExtConfig):
         add_subsets(subsets, node_nodename, data["running"])
         add_parents(node_svcname)
         add_children(node_svcname)
-        add_scaler_children(node_svcname)
+        add_scaler_slaves(node_svcname)
         add_slaves(node_svcname)
 
         print(tree)

@@ -900,21 +900,21 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.service_start(svc.svcname)
 
     def service_orchestrator_scaler(self, svc):
-        target_children = set(svc.scaler.children)
-        current_children = set([svcname for svcname in shared.SERVICES \
+        target_slaves = set(svc.scaler.slaves)
+        current_slaves = set([svcname for svcname in shared.SERVICES \
                                 if re.match("^[0-9]+\."+svc.svcname+"$", svcname)])
-        if target_children == current_children:
+        if target_slaves == current_slaves:
             # the slaves set is correct.
-            if svc.topology != "flex" or svc.scaler.slaves == 0:
+            if svc.topology != "flex" or svc.scaler.slaves_count == 0:
                 return
             # make sure each slave flex has min/max nodes set properly.
-            for svcname in svc.scaler.children[:-1]:
+            for svcname in svc.scaler.slaves[:-1]:
                 slave = shared.SERVICES[svcname]
                 if slave.flex_min_nodes != svc.scaler.width or slave.flex_max_nodes != svc.scaler.width:
                     ret = self.service_set_flex_instances(svcname, svc.scaler.width)
                     if ret != 0:
                         self.set_smon(svcname, "set failed")
-            last_slave_name = svc.scaler.children[-1]
+            last_slave_name = svc.scaler.slaves[-1]
             last_slave = shared.SERVICES[last_slave_name]
             if svc.scaler.left > 0 and (last_slave.flex_min_nodes != svc.scaler.left or last_slave.flex_max_nodes != svc.scaler.left):
                 ret = self.service_set_flex_instances(last_slave_name, svc.scaler.left)
@@ -930,8 +930,8 @@ class Monitor(shared.OsvcThread, Crypt):
         )
         if self.placement_ranks(svc, candidates)[0] != rcEnv.nodename:
             return
-        to_remove = sorted(list(current_children - target_children), key=LooseVersion)
-        to_add = sorted(list(target_children - current_children), key=LooseVersion)
+        to_remove = sorted(list(current_slaves - target_slaves), key=LooseVersion)
+        to_add = sorted(list(target_slaves - current_slaves), key=LooseVersion)
         if len(to_add) > 0:
             to_add = [[svcname, svc.scaler.width] for svcname in to_add]
             to_add[-1][1] = svc.scaler.left
@@ -1199,6 +1199,7 @@ class Monitor(shared.OsvcThread, Crypt):
             avail = "unknown"
         slaves = instance.get("children", [])
         slaves += instance.get("slaves", [])
+        slaves += instance.get("scaler_slaves", [])
         if slaves:
             avails = set([avail])
             for child in slaves:
@@ -1207,6 +1208,8 @@ class Monitor(shared.OsvcThread, Crypt):
                 except KeyError:
                     child_avail = "unknown"
                 avails.add(child_avail)
+            if avails == set(["n/a"]):
+                return "n/a"
             avails -= set(["n/a"])
             if len(avails) == 1:
                 return list(avails)[0]
