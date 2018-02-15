@@ -506,7 +506,7 @@ class OsvcThread(threading.Thread):
         return datetime.timedelta(seconds=seconds)
 
     def in_maintenance_grace_period(self, nmon):
-        if nmon.status == "upgrade":
+        if nmon.status in ("upgrade", "init"):
             return True
         if nmon.status == "maintenance" and \
            nmon.status_updated > datetime.datetime.utcnow() - datetime.timedelta(seconds=self.maintenance_grace_period):

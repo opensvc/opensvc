@@ -324,8 +324,7 @@ class HbDiskRx(HbDisk):
                     #self.log.info("node %s has not updated its slot", nodename)
                     continue
                 self.last_updated[nodename] = updated
-                with shared.CLUSTER_DATA_LOCK:
-                    shared.CLUSTER_DATA[nodename] = _data
+                self.store_rx_data(_data, nodename)
                 self.stats.beats += 1
                 self.stats.bytes += len(slot_data)
                 self.set_last(nodename)

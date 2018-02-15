@@ -50,6 +50,7 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
+        self.set_nmon("init")
         self.last_run = 0
         self.log.info("monitor started")
         self.startup = datetime.datetime.utcnow()
@@ -62,6 +63,10 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.log.info("freeze node until the cluster is complete")
                 self.unfreeze_when_all_nodes_joined = True
                 self.freezer.node_freeze()
+
+        # send a first message without service status, so the peers know
+        # we are in init state.
+        self.update_hb_data(first=True)
 
         try:
             while True:
@@ -467,6 +472,9 @@ class Monitor(shared.OsvcThread, Crypt):
     #
     #########################################################################
     def orchestrator(self):
+        if shared.NMON_DATA.status == "init":
+            return
+
         # node
         self.node_orchestrator()
 
@@ -1188,7 +1196,7 @@ class Monitor(shared.OsvcThread, Crypt):
         except IndexError:
             instance = Storage()
         if instance is None:
-            self.log.error("service %s has no instance", svcname)
+            self.log.debug("service %s has no instance", svcname)
             return "unknown"
         topology = instance.get("topology")
         if topology == "failover":
@@ -1693,6 +1701,8 @@ class Monitor(shared.OsvcThread, Crypt):
                 "resources": {},
             }
 
+        if shared.NMON_DATA.status == "init":
+            self.set_nmon(status="idle")
         return data
 
     #########################################################################
@@ -1836,7 +1846,7 @@ class Monitor(shared.OsvcThread, Crypt):
             # None < 0 == True
             return
 
-    def update_hb_data(self):
+    def update_hb_data(self, first=False):
         """
         Update the heartbeat payload we send to other nodes.
         Crypt it so the tx threads don't have to do it on their own.
@@ -1844,7 +1854,10 @@ class Monitor(shared.OsvcThread, Crypt):
         #self.log.info("update heartbeat data to send")
         load_avg = self.getloadavg()
         config = self.get_services_config()
-        status = self.get_services_status(config.keys())
+        if first:
+            status = {}
+        else:
+            status = self.get_services_status(config.keys())
 
         # purge deleted service instances
         for svcname in list(status.keys()):

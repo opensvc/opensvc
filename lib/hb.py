@@ -121,5 +121,18 @@ class Hb(shared.OsvcThread):
                 return None, 0
             return shared.HB_MSG, shared.HB_MSG_LEN
 
-
+    def store_rx_data(self, data, nodename):
+        node_status = data.get("monitor", {}).get("status")
+        if node_status in ("init", "maintenance", "upgrade"):
+            # preserve last service status
+            bak = shared.CLUSTER_DATA[nodename].get("services", {}).get("status", {})
+        else:
+            bak = None
+        with shared.CLUSTER_DATA_LOCK:
+            shared.CLUSTER_DATA[nodename] = data
+            if bak:
+                self.duplog("info", "reconduct last known instances status from "
+                            "node %(nodename)s in %(node_status)s state",
+                            nodename=nodename, node_status=node_status)
+                shared.CLUSTER_DATA[nodename]["services"]["status"] = bak
 

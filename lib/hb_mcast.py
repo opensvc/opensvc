@@ -211,9 +211,7 @@ class HbMcastRx(HbMcast):
             self.stats.errors += 1
             self.set_beating(nodename)
             return
-        #self.log.info("received data from %s %s", nodename, addr)
-        with shared.CLUSTER_DATA_LOCK:
-            shared.CLUSTER_DATA[nodename] = data
+        self.store_rx_data(data, nodename)
         self.set_last(nodename)
         self.set_beating(nodename)
         self.set_peers_beating()
