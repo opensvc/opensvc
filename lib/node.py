@@ -3265,6 +3265,8 @@ class Node(Crypt, ExtConfig):
                     load_thread(key, data[key])
 
         def load_metrics():
+            if "monitor" not in data:
+                return
             line = [
                 colorize(" 15m", color.BOLD),
                 "",
@@ -3276,6 +3278,8 @@ class Node(Crypt, ExtConfig):
             out.append(line)
 
         def load_node_state():
+            if "monitor" not in data:
+                return
             line = [
                 colorize(" state", color.BOLD),
                 "",
@@ -3294,6 +3298,8 @@ class Node(Crypt, ExtConfig):
             out.append(line)
 
         def load_node_compat():
+            if "monitor" not in data:
+                return
             if data["monitor"].get("compat") is True:
                 # no need to clutter if the situation is normal
                 return
