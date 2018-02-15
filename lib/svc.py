@@ -1422,6 +1422,12 @@ class Svc(Crypt, ExtConfig):
             output += "  [%s]" % str(rset)
         return output
 
+    def prstatus(self):
+        status = rcStatus.Status()
+        for resource in self.get_resources("disk.scsireserv"):
+            status += resource.status()
+        return int(status)
+
     def status(self):
         """
         Return the aggregate status a service.

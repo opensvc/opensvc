@@ -183,6 +183,9 @@ class Status(object):
             pass
         return str(self) == other
 
+    def __int__(self):
+        return self.status
+
     def __str__(self):
         return status_str(self.status)
 
