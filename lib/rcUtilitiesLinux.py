@@ -62,7 +62,7 @@ def dev_ready(dev, log=None):
 def wait_for_dev_ready(dev, log=None):
     delay = 1
     timeout = 5
-    for i in range(timeout/delay):
+    for i in range(timeout//delay):
         if dev_ready(dev, log=log):
             return
         if i == 0:
