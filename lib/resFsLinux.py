@@ -7,7 +7,7 @@ from stat import ST_MODE, ST_INO, S_ISREG, S_ISBLK, S_ISDIR
 from rcGlobalEnv import rcEnv
 import rcMountsLinux as rcMounts
 import resFs as Res
-from rcUtilities import qcall, protected_mount, getmount, justcall, lazy
+from rcUtilities import qcall, protected_mount, getmount, justcall, lazy, cache
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists, devs_to_disks, label_to_dev
 from rcLoopLinux import file_to_loop, loop_to_file
 import rcExceptions as ex
@@ -21,7 +21,6 @@ class Mount(Res.Mount):
         self.mounts = None
         Res.Mount.__init__(self, **kwargs)
         self.loopdevice = None
-        self.dm_major = None
 
     def set_fsck_h(self):
         # 0    - No errors
@@ -177,8 +176,7 @@ class Mount(Res.Mount):
                         return True
             elif S_ISBLK(mode):
                 # might be a mount using a /dev/dm-<minor> name too
-                dm_major = major('device-mapper')
-                if os.major(fstat.st_rdev) == dm_major:
+                if os.major(fstat.st_rdev) == self.dm_major:
                     dev = '/dev/dm-' + str(os.minor(fstat.st_rdev))
                     ret = self.mounts.has_mount(dev, self.mount_point)
                     if ret:
@@ -230,16 +228,59 @@ class Mount(Res.Mount):
 
         return dev
 
+    @cache("dmsetup.ls.multipath")
+    def dmsetup_ls_multipath(self):
+        cmd = [rcEnv.syspaths.dmsetup, "ls", "--target", "multipath"]
+        out, _, _ = justcall(cmd)
+        data = {}
+        for line in out.splitlines():
+            try:
+                name, devno = line.replace(", ", ":").split()
+            except Exception:
+                continue
+            data[name] = devno.strip("()")
+        return data
+
+    @lazy
+    def dmsetup_ls_multipath_rev(self):
+        data = {}
+        for k, v in self.dmsetup_ls_multipath().items():
+            data[v] = k
+        return data
+
+    @cache("dmsetup.status")
+    def dmsetup_status(self):
+        cmd = [rcEnv.syspaths.dmsetup, "status"]
+        out, _, _ = justcall(cmd)
+        data = {}
+        for line in out.splitlines():
+            v = line.split()
+            data[v[0]] = line[len(v[0]):].strip()
+        return data
+
+    @cache("dmsetup.table")
+    def dmsetup_table(self):
+        cmd = [rcEnv.syspaths.dmsetup, "table"]
+        out, _, _ = justcall(cmd)
+        data = {}
+        for line in out.splitlines():
+            v = line.split()
+            data[v[0]] = line[len(v[0]):].strip()
+        return data
+
+    @lazy
+    def dm_major(self):
+        try:
+            return major('device-mapper')
+        except:
+            return
+
     def mplist(self):
         dev = self.realdev()
         if dev is None:
             return set()
-
-        try:
-            self.dm_major = major('device-mapper')
-        except:
+        if self.dm_major is None:
             return set()
-
         return self._mplist([dev])
 
     @staticmethod
@@ -277,30 +318,20 @@ class Mount(Res.Mount):
         return mps
 
     def is_multipath(self, minor):
-        cmd = [
-            rcEnv.syspaths.dmsetup, '-j', str(self.dm_major),
-            '-m', str(minor),
-            'table'
-        ]
-        ret, buff, err = self.call(cmd, errlog=False, cache=True)
-        if ret != 0:
+        devno = "%d:%d" % (self.dm_major, minor)
+        if devno not in self.dmsetup_ls_multipath_rev:
             return False
-        elements = buff.split()
-        if len(elements) < 3:
+        name = self.dmsetup_ls_multipath_rev[devno]
+        dmsetup_table = self.dmsetup_table()
+        if name not in dmsetup_table:
             return False
-        if elements[2] != 'multipath':
-            return False
+        elements = dmsetup_table[name].split()
         if 'queue_if_no_path' not in elements:
             return False
-        cmd = [
-            rcEnv.syspaths.dmsetup, '-j', str(self.dm_major),
-            '-m', str(minor),
-            'status'
-        ]
-        ret, buff, err = self.call(cmd, errlog=False, cache=True)
-        if ret != 0:
+        dmsetup_status = self.dmsetup_status()
+        if name not in dmsetup_status:
             return False
-        elements = buff.split()
+        elements = dmsetup_status[name].split()
         if elements.count('A') > 1:
             return False
         return True
@@ -324,9 +355,7 @@ class Mount(Res.Mount):
         if dev.startswith("/dev/rbd") or dev.startswith("/dev/loop"):
             return set([dev])
 
-        try:
-            self.dm_major = major('device-mapper')
-        except:
+        if self.dm_major is None:
             return set([dev])
 
         try:
