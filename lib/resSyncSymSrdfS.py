@@ -231,8 +231,7 @@ class syncSymSrdfS(resSync.Sync):
     @lazy
     def rdf_query(self):
         cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
-               str(self.rdfg), 'query', '-output', 'xml_e',
-               '-i', '15', '-c', '4']
+               str(self.rdfg), 'query', '-output', 'xml_e']
         ret, out, err = self.call(cmd)
         if ret != 0:
             raise ex.excError("Failed to run command %s"% ' '.join(cmd))
@@ -296,7 +295,7 @@ class syncSymSrdfS(resSync.Sync):
 
     def get_rdfpairs_from_dg(self):
         cmd = ['symrdf', '-g', self.symdg, '-rdfg', str(self.rdfg), 'query',
-               '-output', 'xml_e', '-i', '15', '-c', '4']
+               '-output', 'xml_e']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
