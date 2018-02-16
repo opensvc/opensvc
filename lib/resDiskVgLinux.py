@@ -239,7 +239,7 @@ class Disk(resDisk.Disk):
                 pass
             if vgname not in data:
                 data[vgname] = []
-            data[vgname].append(pvname.strip())
+            data[vgname].append(os.path.realpath(pvname.strip()))
         return data
 
     def sub_devs(self):
