@@ -115,10 +115,10 @@ class syncSymSrdfS(resSync.Sync):
 
     def files_to_sync(self):
         return [
-	    self.dgfile_rdf_name,
-	    self.dgfile_local_name,
-	    self.wwn_map_fpath,
-	]
+            self.dgfile_rdf_name,
+            self.dgfile_local_name,
+            self.wwn_map_fpath,
+        ]
 
     @lazy
     def wwn_map_fpath(self):
@@ -146,8 +146,8 @@ class syncSymSrdfS(resSync.Sync):
             else:
                 mapping.append((local, remote))
         with open(self.wwn_map_fpath, 'w') as filep:
-             json.dump(mapping, filep)
-	     filep.write("\n")
+            json.dump(mapping, filep)
+            filep.write("\n")
 
     def do_local_dgexport(self, fpath=None):
         if fpath is None:
@@ -218,7 +218,7 @@ class syncSymSrdfS(resSync.Sync):
         return os.path.join(self.var_d, 'symrdf_' + self.symdg + '.dg.rdf')
 
     def flush_cache(self):
-	unset_lazy(self, "rdf_query")
+        unset_lazy(self, "rdf_query")
 
     def get_symdevs(self):
         for symdev in self.symdevs:
@@ -308,7 +308,7 @@ class syncSymSrdfS(resSync.Sync):
             source = pair.find('Source/dev_name').text
             target = pair.find('Target/dev_name').text
             self.rdfpairs[source] = target
-        print self.rdfpairs
+        self.log.debug("rdfpairs from dg %s", str(self.rdfpairs))
 
     def is_synchronous_mode(self):
         cmd = ['/usr/symcli/bin/symrdf', '-g', self.symdg, '-rdfg',
