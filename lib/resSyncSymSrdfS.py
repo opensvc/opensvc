@@ -289,7 +289,7 @@ class syncSymSrdfS(resSync.Sync):
             key = mode + "/" + state
             h[key] = None
         if len(h) == 1:
-            retmsg = h.keys()[0]
+            retmsg = list(h.keys())[0]
         else:
             retmsg = "mixed srdf pairs state"
         return retmsg
