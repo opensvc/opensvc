@@ -12,7 +12,7 @@ import rcExceptions as ex
 import rcIfconfigLinux as rcIfconfig
 import rcStatus
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, to_cidr, lazy, bencode
+from rcUtilities import which, justcall, to_cidr, lazy, bencode, bdecode
 
 CNI_VERSION = "0.2.0"
 PORTMAP_CONF = {
@@ -228,6 +228,7 @@ class Ip(Res.Ip):
         env.update(_env)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE, env=env)
         out, err = proc.communicate(input=bencode(json.dumps(data)))
+        out = bdecode(out)
         try:
             data = json.loads(out)
         except ValueError:
@@ -237,7 +238,8 @@ class Ip(Res.Ip):
             raise ex.excError(err)
         if "code" in data:
             raise ex.excError(data.get("msg", ""))
-        self.log.info(out)
+        for line in out.splitlines():
+            self.log.info(line)
         return data
 
     def log_cmd(self, _env, data, cmd):
