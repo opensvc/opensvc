@@ -137,11 +137,16 @@ class Collector(shared.OsvcThread, Crypt):
                 _data[key] = data[key]
 
         for nodename in data["nodes"]:
-            for svcname in list(data["nodes"][nodename]["services"]["status"].keys()):
-                if svcname not in data["nodes"][nodename]["services"]["config"]:
+            try:
+                instances_status = data["nodes"][nodename]["services"]["status"]
+                instances_config = data["nodes"][nodename]["services"]["config"]
+            except KeyError:
+                continue
+            for svcname in list(instances_status.keys()):
+                if svcname not in instances_config:
                     # deleted service instance
                     continue
-                if data["nodes"][nodename]["services"]["status"][svcname].get("encap") is True:
+                if instances_status[svcname].get("encap") is True:
                     continue
                 if nodename not in _data["nodes"]:
                     _data["nodes"][nodename] = {
@@ -150,8 +155,8 @@ class Collector(shared.OsvcThread, Crypt):
                             "status": {},
                         },
                     }
-                _data["nodes"][nodename]["services"]["status"][svcname] = data["nodes"][nodename]["services"]["status"][svcname]
-                _data["nodes"][nodename]["services"]["config"][svcname] = data["nodes"][nodename]["services"]["config"][svcname]
+                _data["nodes"][nodename]["services"]["status"][svcname] = instances_status[svcname]
+                _data["nodes"][nodename]["services"]["config"][svcname] = instances_config[svcname]
                 _data["services"][svcname] = data["services"][svcname]
         return _data
 

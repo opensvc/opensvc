@@ -338,6 +338,13 @@ class Node(Crypt, ExtConfig):
             return exc.default
 
     @lazy
+    def env(self):
+        try:
+            return self.conf_get("node", "env")
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    @lazy
     def dnsnodes(self):
         import socket
         nodes = []
@@ -3320,7 +3327,11 @@ class Node(Crypt, ExtConfig):
             for node in nodenames:
                 if node not in data["monitor"]["nodes"]:
                     continue
-                for svcname, _data in data["monitor"]["nodes"][node]["services"]["status"].items():
+                try:
+                    node_svc_status = data["monitor"]["nodes"][node]["services"]["status"]
+                except KeyError:
+                    continue
+                for svcname, _data in node_svc_status.items():
                     if svcnames and svcname not in svcnames:
                         continue
                     if svcname not in services:
