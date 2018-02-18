@@ -19,6 +19,7 @@ from distutils.version import LooseVersion
 
 import osvcd_shared as shared
 import rcExceptions as ex
+import json_delta
 from comm import Crypt
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode, purge_cache, fsum
@@ -39,14 +40,16 @@ class Monitor(shared.OsvcThread, Crypt):
     """
     The monitoring thread collecting local service states and taking decisions.
     """
-    monitor_period = 1
-    max_shortloops = 5
+    monitor_period = 0.5
+    max_shortloops = 30
     default_stdby_nb_restart = 2
 
     def __init__(self):
         shared.OsvcThread.__init__(self)
         self._shutdown = False
         self.compat = True
+        self.last_node_data = None
+        self.status_threads = {}
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
@@ -58,6 +61,13 @@ class Monitor(shared.OsvcThread, Crypt):
         self.shortloops = 0
         self.unfreeze_when_all_nodes_joined = False
 
+        shared.CLUSTER_DATA[rcEnv.nodename] = {
+            "compat": shared.COMPAT_VERSION,
+            "monitor": shared.NMON_DATA,
+            "load": {},
+            "services": {},
+        }
+
         if os.environ.get("OPENSVC_AGENT_UPGRADE"):
             if not self.freezer.node_frozen():
                 self.log.info("freeze node until the cluster is complete")
@@ -66,26 +76,37 @@ class Monitor(shared.OsvcThread, Crypt):
 
         # send a first message without service status, so the peers know
         # we are in init state.
-        self.update_hb_data(first=True)
+        self.update_hb_data()
 
         try:
             while True:
                 self.do()
                 if self.stopped():
+                    self.join_status_threads()
                     self.join_threads()
                     self.terminate_procs()
                     sys.exit(0)
         except Exception as exc:
             self.log.exception(exc)
 
+    def join_status_threads(self):
+        for thr in self.status_threads.values():
+            thr.join()
+
     def do(self):
         terminated = self.janitor_procs()
-        if terminated == 0 and self.shortloops < self.max_shortloops:
-            self.shortloops += 1
-            with shared.MON_TICKER:
-                shared.MON_TICKER.wait(self.monitor_period)
-        self.shortloops = 0
         self.janitor_threads()
+        if terminated == 0 and shared.MON_CHANGED is None and self.shortloops < self.max_shortloops:
+            self.shortloops += 1
+            if not shared.MON_CHANGED:
+                with shared.MON_TICKER:
+                    shared.MON_TICKER.wait(self.monitor_period)
+            return
+        if shared.MON_CHANGED is not None:
+            self.log.info("woken for: %s", shared.MON_CHANGED)
+            with shared.MON_TICKER:
+                self.unset_mon_changed()
+        self.shortloops = 0
         self.reload_config()
         self.merge_frozen()
         self.last_run = time.time()
@@ -93,21 +114,18 @@ class Monitor(shared.OsvcThread, Crypt):
             if len(self.procs) == 0:
                 self.stop()
         else:
+            self.update_cluster_data()
             self.merge_hb_data()
             self.orchestrator()
-            self.sync_services_conf()
         self.update_hb_data()
         shared.wake_collector()
-
-        with shared.MON_TICKER:
-            shared.MON_TICKER.wait(self.monitor_period)
 
     def shutdown(self):
         with shared.SERVICES_LOCK:
             for svc in shared.SERVICES.values():
                 self.service_shutdown(svc.svcname)
         self._shutdown = True
-        shared.wake_monitor()
+        shared.wake_monitor("service %s shutdown terminated" % svc.svcname)
 
     #########################################################################
     #
@@ -489,6 +507,7 @@ class Monitor(shared.OsvcThread, Crypt):
             svc = self.get_service(svcname)
             self.service_orchestrator(svcname, svc)
             self.resources_orchestrator(svcname, svc)
+        self.sync_services_conf()
 
     def resources_orchestrator(self, svcname, svc):
         if svc is None:
@@ -710,19 +729,19 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.set_smon(svc.svcname, status="idle")
                 return
         elif smon.status == "ready":
-            now = datetime.datetime.utcnow()
+            now = time.time()
             if smon.status_updated < (now - self.ready_period):
                 self.log.info("failover service %s status %s/ready for "
-                              "%s", svc.svcname, status,
+                              "%d seconds", svc.svcname, status,
                               now-smon.status_updated)
                 if smon.stonith and smon.stonith not in shared.CLUSTER_DATA:
                     # stale peer which previously ran the service
                     self.node_stonith(smon.stonith)
                 self.service_start(svc.svcname)
                 return
-            self.log.info("service %s will start in %s",
+            self.log.info("service %s will start in %d seconds",
                           svc.svcname,
-                          str(smon.status_updated+self.ready_period-now))
+                          smon.status_updated+self.ready_period-now)
         elif smon.status == "idle":
             if svc.orchestrate == "no" and smon.global_expect != "started":
                 return
@@ -778,14 +797,14 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.set_smon(svc.svcname, status="idle")
                 return
         if smon.status == "ready":
-            now = datetime.datetime.utcnow()
+            now = time.time()
             if smon.status_updated < (now - self.ready_period):
-                self.log.info("flex service %s status %s/ready for %s",
+                self.log.info("flex service %s status %s/ready for %d seconds",
                               svc.svcname, status, now-smon.status_updated)
                 self.service_start(svc.svcname)
             else:
-                self.log.info("service %s will start in %s", svc.svcname,
-                              str(smon.status_updated+self.ready_period-now))
+                self.log.info("service %s will start in %d seconds", svc.svcname,
+                              smon.status_updated+self.ready_period-now)
         elif smon.status == "idle":
             if svc.orchestrate == "no" and smon.global_expect != "started":
                 return
@@ -924,8 +943,12 @@ class Monitor(shared.OsvcThread, Crypt):
                         self.set_smon(svcname, "set failed")
             last_slave_name = svc.scaler.slaves[-1]
             last_slave = shared.SERVICES[last_slave_name]
-            if svc.scaler.left > 0 and (last_slave.flex_min_nodes != svc.scaler.left or last_slave.flex_max_nodes != svc.scaler.left):
-                ret = self.service_set_flex_instances(last_slave_name, svc.scaler.left)
+            if svc.scaler.left == 0:
+                remain = svc.scaler.width
+            else:
+                remain = svc.scaler.left
+            if last_slave.flex_min_nodes != remain or last_slave.flex_max_nodes != remain:
+                ret = self.service_set_flex_instances(last_slave_name, remain)
                 if ret != 0:
                     self.set_smon(svcname, "set failed")
             return
@@ -942,7 +965,8 @@ class Monitor(shared.OsvcThread, Crypt):
         to_add = sorted(list(target_slaves - current_slaves), key=LooseVersion)
         if len(to_add) > 0:
             to_add = [[svcname, svc.scaler.width] for svcname in to_add]
-            to_add[-1][1] = svc.scaler.left
+            if svc.scaler.left != 0:
+                to_add[-1][1] = svc.scaler.left
         delta = ""
         if len(to_remove):
             delta += " remove " + ",".join(to_remove)
@@ -1673,8 +1697,19 @@ class Monitor(shared.OsvcThread, Crypt):
                 if last_mtime > 0:
                     #self.log.info("service %s status preserved", svcname)
                     data[svcname] = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]
+                elif shared.NMON_DATA.status == "init":
+                    thr = threading.Thread(target=self.service_status_fallback, args=(svcname,))
+                    thr.start()
+                    self.status_threads[svcname] = thr
+                    data[svcname] = {}
                 else:
                     data[svcname] = self.service_status_fallback(svcname)
+
+            if svcname in self.status_threads:
+                thr = self.status_threads[svcname]
+                thr.join(0)
+                if not thr.is_alive():
+                    del self.status_threads[svcname]
 
             if not data[svcname]:
                 del data[svcname]
@@ -1686,8 +1721,7 @@ class Monitor(shared.OsvcThread, Crypt):
 
             # embed the updated smon data
             self.set_smon_l_expect_from_status(data, svcname)
-            data[svcname]["monitor"] = self.get_service_monitor(svcname,
-                                                                datestr=True)
+            data[svcname]["monitor"] = self.get_service_monitor(svcname)
 
             # forget the stonith target node if we run the service
             if data[svcname]["avail"] == "up" and "stonith" in data[svcname]["monitor"]:
@@ -1697,11 +1731,11 @@ class Monitor(shared.OsvcThread, Crypt):
         # emulate a status
         for svcname in set(shared.SMON_DATA.keys()) - set(svcnames):
             data[svcname] = {
-                "monitor": self.get_service_monitor(svcname, datestr=True),
+                "monitor": self.get_service_monitor(svcname),
                 "resources": {},
             }
 
-        if shared.NMON_DATA.status == "init":
+        if shared.NMON_DATA.status == "init" and len(self.status_threads) == 0:
             self.set_nmon(status="idle")
         return data
 
@@ -1846,51 +1880,72 @@ class Monitor(shared.OsvcThread, Crypt):
             # None < 0 == True
             return
 
-    def update_hb_data(self, first=False):
+    def update_cluster_data(self):
         """
-        Update the heartbeat payload we send to other nodes.
-        Crypt it so the tx threads don't have to do it on their own.
+        Rescan services config and status.
         """
-        #self.log.info("update heartbeat data to send")
-        load_avg = self.getloadavg()
-        config = self.get_services_config()
-        if first:
-            status = {}
-        else:
-            status = self.get_services_status(config.keys())
+        data = shared.CLUSTER_DATA[rcEnv.nodename]
+        data["load"]["15m"] = self.getloadavg()
+        data["frozen"] = self.freezer.node_frozen()
+        data["env"] = shared.NODE.env
+        data["services"]["config"] = self.get_services_config()
+        data["services"]["status"] = self.get_services_status(data["services"]["config"].keys())
 
         # purge deleted service instances
-        for svcname in list(status.keys()):
-            if svcname not in config:
+        for svcname in list(data["services"]["status"].keys()):
+            if svcname not in data["services"]["config"]:
                 self.log.debug("purge deleted service %s from status data", svcname)
-                del status[svcname]
+                del data["services"]["status"][svcname]
 
-        try:
-            with shared.CLUSTER_DATA_LOCK:
-                shared.CLUSTER_DATA[rcEnv.nodename] = {
-                    "frozen": self.freezer.node_frozen(),
-                    "compat": shared.COMPAT_VERSION,
-                    "env": rcEnv.node_env,
-                    "monitor": self.get_node_monitor(datestr=True),
-                    "updated": datetime.datetime.utcfromtimestamp(time.time())\
-                                                .strftime('%Y-%m-%dT%H:%M:%SZ'),
-                    "services": {
-                        "config": config,
-                        "status": status,
-                    },
-                    "load": {
-                        "15m": load_avg,
-                    },
-                }
-            with shared.HB_MSG_LOCK:
-                shared.HB_MSG = self.encrypt(shared.CLUSTER_DATA[rcEnv.nodename])
-                if shared.HB_MSG is None:
-                    shared.HB_MSG_LEN = 0
-                else:
-                    shared.HB_MSG_LEN = len(shared.HB_MSG)
-            shared.wake_heartbeat_tx()
-        except ValueError:
-            self.log.error("failed to refresh local cluster data: invalid json")
+    def update_hb_data(self):
+        """
+        Preapre the heartbeat data we send to other nodes.
+        """
+        now = time.time()
+
+        if len(shared.LOCAL_GEN) == 0:
+            return
+
+        if shared.MON_CHANGED is not None:
+            self.update_cluster_data()
+        data = shared.CLUSTER_DATA[rcEnv.nodename]
+
+        for key in ("updated", "gen"):
+            # exclude from the diff
+            try:
+                del data[key]
+            except KeyError:
+                pass
+
+        if self.last_node_data is not None:
+            diff = json_delta.diff(
+                self.last_node_data, data,
+                verbose=False, array_align=False, compare_lengths=False
+            )
+        else:
+            # first run
+            self.last_node_data = json.loads(json.dumps(data))
+            data["gen"] = self.get_gen(inc=True)
+            data["updated"] = now
+            return
+
+        if len(diff) == 0:
+            data["gen"] = self.get_gen(inc=False)
+            data["updated"] = now
+            return
+
+        self.last_node_data = json.loads(json.dumps(data))
+        data["gen"] = self.get_gen(inc=True)
+        data["updated"] = now
+        diff.append([["updated"], data["updated"]])
+        shared.GEN_DIFF[shared.GEN] = diff
+        self.purge_log()
+        with shared.HB_MSG_LOCK:
+             # reset the full status cache. get_message() will refill if
+             # needed.
+             shared.HB_MSG = None
+             shared.HB_MSG_LEN = 0
+        shared.wake_heartbeat_tx()
 
     def merge_hb_data(self):
         self.merge_hb_data_compat()

@@ -20,6 +20,18 @@ from converters import convert_duration, convert_boolean
 # disable orchestration if a peer announces a different compat version than ours
 COMPAT_VERSION = 5
 
+# current generation of the dataset on the local node
+GEN = 0
+
+# track the generation of the local dataset on peer nodes
+LOCAL_GEN = {}
+
+# track the generation of the peer datasets we merged
+REMOTE_GEN = {}
+
+# track the local dataset gen diffs pending merge by peers
+GEN_DIFF = {}
+
 DATEFMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 JSON_DATEFMT = "%Y-%m-%dT%H:%M:%SZ"
 MAX_MSG_SIZE = 1024 * 1024
@@ -56,9 +68,12 @@ SMON_DATA_LOCK = threading.RLock()
 # the local node monitor data, where the listener can set expected states
 NMON_DATA = Storage({
     "status": "idle",
-    "status_updated": datetime.datetime.utcnow(),
+    "status_updated": time.time(),
 })
 NMON_DATA_LOCK = threading.RLock()
+
+# a boolean flag used to signal the monitor it has to do the long loop asap
+MON_CHANGED = None
 
 # The per-threads configuration, stats and states store
 # The monitor thread states include cluster-wide aggregated data
@@ -82,11 +97,13 @@ def wake_heartbeat_tx():
     with HB_TX_TICKER:
         HB_TX_TICKER.notify_all()
 
-def wake_monitor():
+def wake_monitor(reason="unknown"):
     """
     Notify the monitor thread to do they periodic job immediatly
     """
+    global MON_CHANGED
     with MON_TICKER:
+        MON_CHANGED = reason
         MON_TICKER.notify_all()
 
 def wake_collector():
@@ -218,6 +235,7 @@ class OsvcThread(threading.Thread):
                                                  **data.on_error_kwargs)
         for idx in sorted(done, reverse=True):
             del self.procs[idx]
+        return len(done)
 
     def join_threads(self):
         for thr in self.threads:
@@ -307,7 +325,7 @@ class OsvcThread(threading.Thread):
                         status
                     )
                 NMON_DATA.status = status
-                NMON_DATA.status_updated = datetime.datetime.utcnow()
+                NMON_DATA.status_updated = time.time()
 
             if local_expect:
                 if local_expect == "unset":
@@ -333,7 +351,7 @@ class OsvcThread(threading.Thread):
                     )
                 NMON_DATA.global_expect = global_expect
 
-        wake_monitor()
+        wake_monitor(reason="node mon change")
 
     def set_smon(self, svcname, status=None, local_expect=None,
                  global_expect=None, reset_retries=False,
@@ -343,7 +361,7 @@ class OsvcThread(threading.Thread):
             if svcname not in SMON_DATA:
                 SMON_DATA[svcname] = Storage({
                     "status": "idle",
-                    "status_updated": datetime.datetime.utcnow(),
+                    "status_updated": time.time(),
                 })
             if status:
                 if status != SMON_DATA[svcname].status:
@@ -355,7 +373,7 @@ class OsvcThread(threading.Thread):
                         status
                     )
                 SMON_DATA[svcname].status = status
-                SMON_DATA[svcname].status_updated = datetime.datetime.utcnow()
+                SMON_DATA[svcname].status_updated = time.time()
 
             if local_expect:
                 if local_expect == "unset":
@@ -400,12 +418,11 @@ class OsvcThread(threading.Thread):
                         stonith
                     )
                 SMON_DATA[svcname].stonith = stonith
-        wake_monitor()
+        wake_monitor(reason="service %s mon change" % svcname)
 
-    def get_node_monitor(self, datestr=False, nodename=None):
+    def get_node_monitor(self, nodename=None):
         """
         Return the Monitor data of the node.
-        If datestr is set, convert datetimes to a json compatible string.
         """
         if nodename is None:
             with NMON_DATA_LOCK:
@@ -415,24 +432,17 @@ class OsvcThread(threading.Thread):
                 if nodename not in CLUSTER_DATA:
                     return
                 data = Storage(CLUSTER_DATA[nodename].get("monitor", {}))
-        if datestr and isinstance(data.status_updated, datetime.datetime):
-            data.status_updated = data.status_updated.strftime(DATEFMT)
-        elif not datestr and is_string(data.status_updated):
-            data.status_updated = datetime.datetime.strptime(data.status_updated, DATEFMT)
         return data
 
-    def get_service_monitor(self, svcname, datestr=False):
+    def get_service_monitor(self, svcname):
         """
         Return the Monitor data of a service.
-        If datestr is set, convert datetimes to a json compatible string.
         """
         with SMON_DATA_LOCK:
             if svcname not in SMON_DATA:
                 self.set_smon(svcname, "idle")
             data = Storage(SMON_DATA[svcname])
             data["placement"] = self.get_service_placement(svcname)
-            if datestr and isinstance(data.status_updated, datetime.datetime):
-                data.status_updated = data.status_updated.strftime(DATEFMT)
             return data
 
     def get_service_placement(self, svcname):
@@ -500,16 +510,15 @@ class OsvcThread(threading.Thread):
     @lazy
     def ready_period(self):
         if self.config.has_option("node", "ready_period"):
-            seconds = convert_duration(self.config.get("node", "ready_period"))
+            return convert_duration(self.config.get("node", "ready_period"))
         else:
-            seconds = 16
-        return datetime.timedelta(seconds=seconds)
+            return 16
 
     def in_maintenance_grace_period(self, nmon):
         if nmon.status in ("upgrade", "init"):
             return True
         if nmon.status == "maintenance" and \
-           nmon.status_updated > datetime.datetime.utcnow() - datetime.timedelta(seconds=self.maintenance_grace_period):
+           nmon.status_updated > time.time() - self.maintenance_grace_period:
             return True
         return False
 
@@ -561,8 +570,9 @@ class OsvcThread(threading.Thread):
             return
         if self.in_maintenance_grace_period(nmon):
             if change:
-                self.log.info("preserve node %s data in %s since %s (grace %s)",
-                              nodename, nmon.status, nmon.status_updated, self.maintenance_grace_period)
+                self.log.info("preserve node %s data in %s since %d (grace %s)",
+                              nodename, nmon.status, time.time()-nmon.status_updated,
+                              self.maintenance_grace_period)
             return
         self.log.info("no rx thread still receive from node %s and maintenance "
                       "grace period expired. flush its data",
@@ -572,6 +582,16 @@ class OsvcThread(threading.Thread):
                 del CLUSTER_DATA[nodename]
             except KeyError:
                 pass
+            try:
+                del LOCAL_GEN[nodename]
+            except KeyError:
+                pass
+            try:
+                # will ask for a full when the node comes back again
+                del REMOTE_GEN[nodename]
+            except KeyError:
+                pass
+        wake_monitor(reason="forget node %s data" % nodename)
         self.split_handler()
 
     def peer_down(self, nodename):
@@ -761,4 +781,52 @@ class OsvcThread(threading.Thread):
         idx = svc.slave_num % len(candidates)
         return ranks[idx:idx+len(candidates)]
 
+    def get_oldest_gen(self, nodename=None):
+        """
+        Get oldest generation of the local dataset on peers.
+        """
+        if nodename is None:
+             gens = LOCAL_GEN.values()
+             if len(gens) == 0:
+                 return 0, 0
+             gen = min(gens)
+             num = len(gens)
+             ##self.log.info("oldest gen is %d amongst %d nodes", gen, num)
+        else:
+             if nodename not in LOCAL_GEN:
+                 return 0, 0
+             gen = LOCAL_GEN.get(nodename, 0)
+             num = 1
+             ##self.log.info("gen on node %s is %d", nodename, gen)
+        return gen, num
+
+    def purge_log(self):
+        oldest, num = self.get_oldest_gen()
+        if num == 0:
+            # alone, truncate the log, we'll do a full
+            to_remove = [gen for gen in GEN_DIFF]
+        else:
+            to_remove = [gen for gen in GEN_DIFF if gen < oldest]
+        for gen in to_remove:
+            ##self.log.info("purge gen %d", gen)
+            del GEN_DIFF[gen]
+
+    @staticmethod
+    def set_mon_changed(reason="unknown"):
+        global MON_CHANGED
+        MON_CHANGED = reason
+
+    @staticmethod
+    def unset_mon_changed():
+        global MON_CHANGED
+        MON_CHANGED = None
+
+    @staticmethod
+    def get_gen(inc=False):
+        global GEN
+        if inc:
+           GEN += 1
+        gen = {rcEnv.nodename: GEN}
+        gen.update(REMOTE_GEN)
+        return gen
 

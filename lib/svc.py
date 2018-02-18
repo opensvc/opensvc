@@ -1673,6 +1673,7 @@ class Svc(Crypt, ExtConfig):
                 filep.flush()
                 os.fsync(filep)
             os.utime(self.status_data_dump, (-1, data["mtime"]))
+            self.wake_monitor()
         except Exception as exc:
             self.log.warning("failed to update %s: %s",
                              self.status_data_dump, str(exc))
@@ -4161,6 +4162,7 @@ class Svc(Crypt, ExtConfig):
         except Exception:
             raise ex.excError("invalid scale target: set '--to <n>' where n>=0")
         self._set("DEFAULT", "scale", str(value))
+        self.set_service_monitor()
 
     def switch(self):
         """
@@ -4895,6 +4897,21 @@ class Svc(Crypt, ExtConfig):
         )
         if data is None or data["status"] != 0:
             raise ex.excError("clear on node %s failed" % nodename)
+
+    def wake_monitor(self):
+        options = {
+            "svcname": self.svcname,
+        }
+        try:
+            data = self.daemon_send(
+                {"action": "wake_monitor", "options": options},
+                nodename=self.options.node,
+                silent=True,
+            )
+            if data and data["status"] != 0:
+                self.log.warning("wake monitor failed")
+        except Exception as exc:
+            self.log.warning("wake monitor failed: %s", str(exc))
 
     def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None, svcname=None):
         if svcname is None:

@@ -236,7 +236,6 @@ class Listener(shared.OsvcThread, Crypt):
             else:
                 self.set_nmon(status="maintenance")
                 self.log.info("announce maintenance state")
-            shared.wake_monitor()
             time.sleep(5)
             shared.DAEMON_STOP.set()
             return {"status": 0}
@@ -256,7 +255,7 @@ class Listener(shared.OsvcThread, Crypt):
             if thr_id == "scheduler":
                 shared.wake_scheduler()
             elif thr_id == "monitor":
-                shared.wake_monitor()
+                shared.wake_monitor("shutdown")
             elif thr_id.endswith("tx"):
                 shared.wake_heartbeat_tx()
             if kwargs.get("wait", False):
@@ -294,12 +293,16 @@ class Listener(shared.OsvcThread, Crypt):
         self.log.info("serve service %s config to %s", svcname, nodename)
         return {"status": 0, "data": buff, "mtime": mtime}
 
+    def action_wake_monitor(self, nodename, **kwargs):
+        svcname = kwargs.get("svcname", "<unspecified>")
+        shared.wake_monitor(reason="service %s notification" % svcname)
+        return {"status": 0}
+
     def action_clear(self, nodename, **kwargs):
         svcname = kwargs.get("svcname")
         if svcname is None:
             return {"error": "no svcname specified", "status": 1}
         self.set_smon(svcname, status="idle", reset_retries=True)
-        shared.wake_monitor()
         return {"status": 0}
 
     def get_service_slaves(self, svcname):
@@ -339,7 +342,6 @@ class Listener(shared.OsvcThread, Crypt):
                 reset_retries=reset_retries,
                 stonith=stonith,
             )
-        shared.wake_monitor()
         return {"status": 0}
 
     def action_set_node_monitor(self, nodename, **kwargs):
@@ -350,7 +352,6 @@ class Listener(shared.OsvcThread, Crypt):
             status=status,
             local_expect=local_expect, global_expect=global_expect,
         )
-        shared.wake_monitor()
         return {"status": 0}
 
     def action_leave(self, nodename, **kwargs):
