@@ -93,6 +93,18 @@ class Monitor(shared.OsvcThread, Crypt):
         for thr in self.status_threads.values():
             thr.join()
 
+    def set_next(self, timeout):
+        """
+        Set the shortloop counter to the value meaning the long loop will
+        be run at most in <timeout> seconds.
+        """
+        target = self.max_shortloops - (timeout // self.monitor_period)
+        if target < 0:
+            target = 0
+        elif target < self.shortloops:
+            return
+        self.shortloops = target
+
     def do(self):
         terminated_procs = self.janitor_procs()
         self.janitor_threads()
@@ -741,9 +753,10 @@ class Monitor(shared.OsvcThread, Crypt):
                     self.node_stonith(smon.stonith)
                 self.service_start(svc.svcname)
                 return
+            tmo = int(smon.status_updated + self.ready_period - now) + 1
             self.log.info("service %s will start in %d seconds",
-                          svc.svcname,
-                          smon.status_updated+self.ready_period-now)
+                          svc.svcname, tmo)
+            self.set_next(tmo)
         elif smon.status == "idle":
             if svc.orchestrate == "no" and smon.global_expect != "started":
                 return
@@ -805,8 +818,10 @@ class Monitor(shared.OsvcThread, Crypt):
                               svc.svcname, status, now-smon.status_updated)
                 self.service_start(svc.svcname)
             else:
-                self.log.info("service %s will start in %d seconds", svc.svcname,
-                              smon.status_updated+self.ready_period-now)
+                tmo = int(smon.status_updated + self.ready_period - now) + 1
+                self.log.info("service %s will start in %d seconds",
+                              svc.svcname, tmo)
+                self.set_next(tmo)
         elif smon.status == "idle":
             if svc.orchestrate == "no" and smon.global_expect != "started":
                 return
@@ -1607,7 +1622,7 @@ class Monitor(shared.OsvcThread, Crypt):
             else:
                 csum = last_config["csum"]
             if last_config is None:
-                self.log.info("purge %s status cache" % svcname)
+                self.log.debug("purge %s status cache" % svcname)
                 shared.SERVICES[svcname].purge_status_caches()
             with shared.SERVICES_LOCK:
                 scope = sorted(list(shared.SERVICES[svcname].nodes | shared.SERVICES[svcname].drpnodes))
