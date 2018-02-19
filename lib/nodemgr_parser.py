@@ -117,7 +117,7 @@ OPT = Storage({
         help="The position in the list pointed by --param where to add "
              "the new list element on a set action"),
     "insecure": Option(
-        "--insecure", default=False,
+        "--insecure", default=None,
         action="store_true", dest="insecure",
         help="Allow communications with a collector presenting an "
              "unverified SSL certificate."),
