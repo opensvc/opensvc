@@ -22,12 +22,12 @@ class Collector(shared.OsvcThread, Crypt):
         self.last_status = {}
 
         while True:
+            if self.stopped():
+                sys.exit(0)
             try:
                 self.do()
             except Exception as exc:
                 self.log.exception(exc)
-            if self.stopped():
-                sys.exit(0)
 
     def get_last_status(self, data):
         last_status = {}

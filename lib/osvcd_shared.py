@@ -73,7 +73,7 @@ NMON_DATA = Storage({
 NMON_DATA_LOCK = threading.RLock()
 
 # a boolean flag used to signal the monitor it has to do the long loop asap
-MON_CHANGED = None
+MON_CHANGED = []
 
 # The per-threads configuration, stats and states store
 # The monitor thread states include cluster-wide aggregated data
@@ -97,14 +97,15 @@ def wake_heartbeat_tx():
     with HB_TX_TICKER:
         HB_TX_TICKER.notify_all()
 
-def wake_monitor(reason="unknown"):
+def wake_monitor(reason="unknown", immediate=False):
     """
     Notify the monitor thread to do they periodic job immediatly
     """
     global MON_CHANGED
     with MON_TICKER:
-        MON_CHANGED = reason
-        MON_TICKER.notify_all()
+        MON_CHANGED.append(reason)
+        if immediate:
+            MON_TICKER.notify_all()
 
 def wake_collector():
     """
@@ -812,14 +813,13 @@ class OsvcThread(threading.Thread):
             del GEN_DIFF[gen]
 
     @staticmethod
-    def set_mon_changed(reason="unknown"):
-        global MON_CHANGED
-        MON_CHANGED = reason
+    def mon_changed():
+        return MON_CHANGED != []
 
     @staticmethod
     def unset_mon_changed():
         global MON_CHANGED
-        MON_CHANGED = None
+        MON_CHANGED = []
 
     @staticmethod
     def get_gen(inc=False):

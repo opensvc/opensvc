@@ -94,17 +94,19 @@ class Monitor(shared.OsvcThread, Crypt):
             thr.join()
 
     def do(self):
-        terminated = self.janitor_procs()
+        terminated_procs = self.janitor_procs()
         self.janitor_threads()
-        if terminated == 0 and shared.MON_CHANGED is None and self.shortloops < self.max_shortloops:
+        if terminated_procs == 0 and not self.mon_changed() and self.shortloops < self.max_shortloops:
             self.shortloops += 1
-            if not shared.MON_CHANGED:
+            if not self.mon_changed():
                 with shared.MON_TICKER:
                     shared.MON_TICKER.wait(self.monitor_period)
             return
-        if shared.MON_CHANGED is not None:
-            self.log.info("woken for: %s", shared.MON_CHANGED)
+        if self.mon_changed():
             with shared.MON_TICKER:
+                self.log.debug("woken for:")
+                for idx, reason in enumerate(shared.MON_CHANGED):
+                    self.log.debug("%d. %s", idx, reason)
                 self.unset_mon_changed()
         self.shortloops = 0
         self.reload_config()
@@ -1220,7 +1222,7 @@ class Monitor(shared.OsvcThread, Crypt):
         except IndexError:
             instance = Storage()
         if instance is None:
-            self.log.debug("service %s has no instance", svcname)
+            # during init for example
             return "unknown"
         topology = instance.get("topology")
         if topology == "failover":
@@ -1906,7 +1908,7 @@ class Monitor(shared.OsvcThread, Crypt):
         if len(shared.LOCAL_GEN) == 0:
             return
 
-        if shared.MON_CHANGED is not None:
+        if self.mon_changed():
             self.update_cluster_data()
         data = shared.CLUSTER_DATA[rcEnv.nodename]
 

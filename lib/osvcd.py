@@ -217,7 +217,7 @@ class Daemon(object):
             thr.stop()
         shared.wake_collector()
         shared.wake_scheduler()
-        shared.wake_monitor("stop threads")
+        shared.wake_monitor(reason="stop threads", immediate=True)
         shared.wake_heartbeat_tx()
         for thr_id, thr in self.threads.items():
             if thr_id == "dns":
@@ -347,7 +347,7 @@ class Daemon(object):
             # signal the node config change to threads
             for thr_id in self.threads:
                 self.threads[thr_id].notify_config_change()
-            shared.wake_monitor(reason="config change")
+            shared.wake_monitor(reason="config change", immediate=True)
 
             # signal the caller the config has changed
             return True
