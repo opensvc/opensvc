@@ -1,9 +1,14 @@
-import rcExceptions as ex
-import os
-import ConfigParser
-import tempfile
 import sys
+import os
+import tempfile
 from subprocess import *
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
+
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:

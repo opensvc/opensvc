@@ -1,8 +1,14 @@
 from __future__ import print_function
+
 import os
-import rcExceptions as ex
-import ConfigParser
 from subprocess import *
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
+
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
 

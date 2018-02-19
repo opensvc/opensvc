@@ -12,6 +12,8 @@ class TestImport:
         for fpath in glob.glob(mod_d+"/*.py"):
             if "Win" in fpath or "wmi" in fpath or "osvcd_win" in fpath:
                 continue
+            if "rcMd5" in fpath:
+                continue
             mod = os.path.basename(fpath).replace(".py", "")
             try:
                 __import__(mod)

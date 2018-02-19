@@ -3,10 +3,14 @@ from __future__ import print_function
 import logging
 import sys
 import os
-import ConfigParser
 import json
 import time
 from xml.etree.ElementTree import XML, fromstring
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage

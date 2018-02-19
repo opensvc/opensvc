@@ -1,10 +1,16 @@
 from __future__ import print_function
+
 import os
-import rcExceptions as ex
-import ConfigParser
-from subprocess import *
-from rcUtilities import which
 import tempfile
+from subprocess import *
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
+
+import rcExceptions as ex
+from rcUtilities import which
 from rcGlobalEnv import rcEnv
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:

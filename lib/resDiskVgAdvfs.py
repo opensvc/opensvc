@@ -1,11 +1,13 @@
-from rcGlobalEnv import rcEnv
+from __future__ import print_function
+
+import os
+import json
+import re
+
+import rcExceptions as ex
 import resDisk
 from rcUtilities import justcall
-import os
-import rcExceptions as ex
-import json
-
-import re
+from rcGlobalEnv import rcEnv
 
 class Disk(resDisk.Disk):
     def __init__(self,
@@ -95,4 +97,4 @@ class Disk(resDisk.Disk):
 
 if __name__ == "__main__":
     p=Disk(name="dom1")
-    print p._sub_devs()
+    print(p._sub_devs())

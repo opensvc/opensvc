@@ -1,11 +1,18 @@
+from __future__ import print_function
+
 import os
 import json
-import rcExceptions as ex
-import ConfigParser
 from subprocess import *
-from rcUtilities import justcall, which
 import time
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
+
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from rcUtilities import justcall, which
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin

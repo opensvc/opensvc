@@ -1,15 +1,24 @@
 from __future__ import print_function
+
+import sys
 import os
 import json
 import rcExceptions as ex
 from subprocess import *
 import time
-import urllib
-import urllib2
 from rcGlobalEnv import rcEnv
 from rcUtilities import cache, clear_cache, justcall, which
 import re
 import datetime
+
+if sys.version_info[0] < 3:
+    from urllib2 import Request, urlopen
+    from urllib2 import HTTPError
+    from urllib import urlencode
+else:
+    from urllib.request import Request, urlopen, build_opener
+    from urllib.error import HTTPError
+    from urllib.parse import urlencode
 
 try:
     import ConfigParser
@@ -143,13 +152,13 @@ class Hp3par(object):
           'uuid' : self.uuid,
         }
 
-        data = urllib.urlencode(values)
-        req = urllib2.Request(url, data, header)
+        data = urlencode(values)
+        req = Request(url, data, header)
 
         try:
-            f = urllib2.build_opener().open(req)
+            f = build_opener().open(req)
             response = f.read()
-            #response = urllib2.urlopen(req)
+            #response = urlopen(req)
         except Exception as e:
             return "", str(e)
 

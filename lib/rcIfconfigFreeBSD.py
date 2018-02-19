@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from subprocess import *
 
 import rcIfconfig
@@ -59,4 +61,4 @@ class ifconfig(rcIfconfig.ifconfig):
 
 if __name__ == "__main__":
     o = ifconfig()
-    print o
+    print(o)

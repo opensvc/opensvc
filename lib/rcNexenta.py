@@ -1,7 +1,14 @@
+import sys
 import json
-import urllib2
 import base64
 import os
+
+if sys.version_info[0] < 3:
+    from urllib2 import Request, urlopen
+    from urllib2 import HTTPError, URLError
+else:
+    from urllib.request import Request, urlopen
+    from urllib.error import HTTPError, URLError
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
@@ -55,13 +62,13 @@ class Nexenta(object):
         self.init()
         data = {"method": method, "params": params, "object": obj}
         data = json.dumps(data)
-        request = urllib2.Request(self.url, data)
+        request = Request(self.url, data)
         base64string = base64.encodestring('%s:%s' % (self.username, self.password))[:-1]
         request.add_header('Authorization', 'Basic %s' % base64string)
         request.add_header('Content-Type' , 'application/json')
         try:
-            response = urllib2.urlopen(request)
-        except urllib2.URLError:
+            response = urlopen(request)
+        except URLError:
             raise ex.excError("unreachable head %s"%self.head)
         response = json.loads(response.read())
         return response

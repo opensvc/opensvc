@@ -1,8 +1,13 @@
-from rcUtilities import justcall, which
-import rcExceptions as ex
 import os
-import ConfigParser
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
+
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from rcUtilities import justcall, which
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin

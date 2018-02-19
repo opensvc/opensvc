@@ -2,8 +2,12 @@ from __future__ import print_function
 
 import sys
 import os
-import ConfigParser
 import json
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage

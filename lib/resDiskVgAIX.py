@@ -206,14 +206,14 @@ class Disk(resDisk.Disk):
         with open(self.vgfile_name(), 'w') as f:
             f.write(s)
 
-	"""
-	root@host:/$ lspv
-	hdisk0          00078e0b282e417a                    rootvg          active
-	hdisk1          none                                None
-	hdisk2          00078e0bb1618c92                    tstvg           active
-	hdisk3          00078e0bb161b59e                    tstvg           active
-	hdisk4          none                                None
-	hdisk5          none                                None
+        """
+        root@host:/$ lspv
+        hdisk0          00078e0b282e417a                    rootvg          active
+        hdisk1          none                                None
+        hdisk2          00078e0bb1618c92                    tstvg           active
+        hdisk3          00078e0bb161b59e                    tstvg           active
+        hdisk4          none                                None
+        hdisk5          none                                None
 
         =>
 
@@ -223,7 +223,7 @@ class Disk(resDisk.Disk):
          {'hdisk': 'hdisk3', 'pvid': '00078e0bb161b59e', 'vg': 'testvg', 'state': 'active'},
          {'hdisk': 'hdisk4', 'pvid': 'none', 'vg': 'None'},
          {'hdisk': 'hdisk5', 'pvid': 'none', 'vg': 'None'}]
-	"""
+        """
 
     def sub_devs(self):
         if self.is_active():

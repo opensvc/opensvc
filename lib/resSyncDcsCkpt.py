@@ -180,7 +180,7 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
             with open(self.tsfile(), 'r') as f:
                 ts = datetime.datetime.strptime(f.read(),"%Y-%m-%d %H:%M:%S.%f\n")
         except:
-            ts = datetime.datetime(year=2000, month=01, day=01)
+            ts = datetime.datetime.fromtimestamp(0)
         return ts
 
     def __str__(self):

@@ -1,8 +1,14 @@
 from rcUtilities import justcall, which
-import rcExceptions as ex
+
 import os
-import ConfigParser
 import telnetlib
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
+
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:

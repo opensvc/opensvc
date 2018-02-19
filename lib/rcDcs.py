@@ -1,10 +1,17 @@
-from rcUtilities import justcall, which
-from xml.etree.ElementTree import XML, fromstring
-import rcExceptions as ex
+from __future__ import print_function
+
 import os
-import ConfigParser
 import uuid
+from xml.etree.ElementTree import XML, fromstring
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
+
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from rcUtilities import justcall, which
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin

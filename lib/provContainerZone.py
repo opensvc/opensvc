@@ -201,8 +201,8 @@ class Prov(provisioning.Prov):
 
             sysidcfg_file.write(contents)
             sysidcfg_file.close()
-        except Exception,e:
-            raise(ex.excError("exception from %s: %s during create_sysidcfg file" % (e.__class__.__name__, e.__str__())))
+        except Exception as exc:
+            raise ex.excError("exception from %s: %s during create_sysidcfg file" % (exc.__class__.__name__, exc.__str__()))
 
     def test_net_interface(self, intf):
         cmd = ['dladm', 'show-link', intf]

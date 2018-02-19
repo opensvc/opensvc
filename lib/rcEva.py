@@ -1,10 +1,16 @@
 from __future__ import print_function
-from rcUtilities import justcall, which
-from xml.etree.ElementTree import XML, fromstring
-import rcExceptions as ex
+
 import os
-import ConfigParser
+from xml.etree.ElementTree import XML, fromstring
+
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
+
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from rcUtilities import justcall, which
 
 def sssu(cmd, manager, username, password, array=None, sssubin=None):
     if sssubin is None:
