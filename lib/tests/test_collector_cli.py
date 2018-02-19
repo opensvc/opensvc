@@ -3,13 +3,19 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import os
 import sys
 import json
 import logging
-from StringIO import StringIO
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import nodemgr
 
+os.environ["PYTHONHTTPSVERIFY"] = "0"
 CONFIG = "--config=/root/.opensvc-cli"
 UNICODE_STRING = "bêh"
 #logging.disable(logging.CRITICAL)

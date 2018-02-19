@@ -8,7 +8,12 @@ import sys
 import json
 import socket
 import logging
-from StringIO import StringIO
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 from rcUtilities import try_decode
 
 import svcmgr

@@ -6,7 +6,11 @@ from __future__ import unicode_literals
 import sys
 import json
 import logging
-from StringIO import StringIO
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import nodemgr
 
