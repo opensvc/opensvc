@@ -306,11 +306,20 @@ class Docker(resContainer.Container):
         if self.svc.dockerlib.docker_min_version("1.7") and \
            not self.docker_service and self.svc.dockerlib.docker_daemon_private:
             args += ["--cgroup-parent", self._parent_cgroup_name()]
-        if self.svc.node.dns and "--dns" not in self.run_args:
+
+        def dns_opts():
+            if not self.svc.node.dns or "--dns" in self.run_args:
+                return []
+            if "--net=container:" in self.run_args or "--net container:" in self.run_args:
+                return []
+            l = []
             for dns in self.svc.node.dns:
-                args += ["--dns", dns]
+                l += ["--dns", dns]
             for search in self.dns_search():
-                args += ["--dns-search", search]
+                l += ["--dns-search", search]
+            return l
+
+        args += dns_opts()
         return args
 
     def _parent_cgroup_name(self):
