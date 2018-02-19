@@ -14,13 +14,18 @@ import hashlib
 
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
-from rcUtilities import lazy
+from rcUtilities import lazy, bdecode
 from comm import Crypt
 
 PTR_SUFFIX = ".in-addr.arpa."
 PTR_SUFFIX_LEN = 14
 PTR6_SUFFIX = ".ip6.arpa."
 PTR6_SUFFIX_LEN = 10
+
+if sys.version_info[0] < 3:
+    MAKEFILE_KWARGS = {"bufsize": 0}
+else:
+    MAKEFILE_KWARGS = {"buffering": None}
 
 class Dns(shared.OsvcThread, Crypt):
     sock_tmo = 1.0
@@ -100,44 +105,52 @@ class Dns(shared.OsvcThread, Crypt):
         thr = threading.Thread(target=self.handle_client, args=(conn,))
         thr.start()
         self.threads.append(thr)
-        conn.close()
 
     def handle_client(self, conn):
         conn.settimeout(self.sock_tmo)
-        cf = conn.makefile("r+b", bufsize=0)
+        cr = conn.makefile("r", **MAKEFILE_KWARGS)
+        cw = conn.makefile("w", **MAKEFILE_KWARGS)
         try:
-            self._handle_client(conn, cf)
+            self._handle_client(conn, cr, cw)
+        except Exception as exc:
+            self.log.exception(exc)
         finally:
             try:
-                cf.close()
+                cr.close()
+            except socket.error:
+                pass
+            try:
+                cw.close()
             except socket.error:
                 pass
             try:
                 conn.close()
             except socket.error:
                 pass
-        sys.exit(0)
+            sys.exit(0)
 
-    def _handle_client(self, conn, cf):
+    def _handle_client(self, conn, cr, cw):
         chunks = []
         buff_size = 4096
         while True:
             try:
-                data = cf.readline()
+                data = cr.readline()
             except socket.timeout as exc:
                 break
             except socket.error as exc:
                 self.log.info("%s", exc)
                 break
             if len(data) == 0:
-                self.log.info("no more data")
+                #self.log.info("no more data")
                 break
 
-            self.log.info("received %s", data)
+            self.log.debug("received %s", data)
     
             try:
+                data = bdecode(data)
                 data = json.loads(data)
-            except Exception:
+            except Exception as exc:
+                self.log.error(exc)
                 data = None
     
             if self.stopped():
@@ -150,9 +163,9 @@ class Dns(shared.OsvcThread, Crypt):
             result = self.router(data)
             if result is not None:
                 message = json.dumps(result) + "\n"
-                cf.write(message)
-                cf.flush()
-                self.log.info("replied %s", message)
+                cw.write(message)
+                cw.flush()
+                self.log.debug("replied %s", message)
                 message_len = len(message)
                 self.stats.sessions.tx += message_len
 
@@ -328,7 +341,7 @@ class Dns(shared.OsvcThread, Crypt):
 
     @staticmethod
     def unique_name(addr):
-        return hashlib.sha1(addr).hexdigest()
+        return hashlib.sha1(addr.encode("ascii")).hexdigest()
 
     def a_records(self):
         names = {}
