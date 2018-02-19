@@ -346,7 +346,8 @@ class Docker(resContainer.Container):
     def unprovision(self):
         self.svc.sub_set_action("ip", "unprovision", tags=set([self.rid]))
         resContainer.Container.unprovision(self)
-        self.container_rm()
+        if not self.svc.dockerlib.docker_daemon_private:
+            self.container_rm()
 
     def start(self):
         self._start()
