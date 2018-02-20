@@ -91,6 +91,10 @@ OPT = Storage({
         "--filterset", default="",
         action="store", dest="filterset",
         help="Specify a filterset to limit collector extractions."),
+    "follow": Option(
+        "--follow", default=False,
+        action="store_true", dest="follow",
+        help="Follow the logs as they come. Use crtl-c to interrupt."),
     "force": Option(
         "--force", default=False,
         action="store_true", dest="force",
@@ -345,7 +349,9 @@ ACTIONS = {
         "logs": {
             "msg": "Display of the nodemgr and daemon logs.",
             "options": [
-                OPT.nopager,
+                OPT.follow,
+                OPT.local,
+                OPT.node,
             ]
         },
         "ping": {

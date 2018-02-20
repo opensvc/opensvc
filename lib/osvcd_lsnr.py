@@ -515,18 +515,35 @@ class Listener(shared.OsvcThread, Crypt):
                    A negative value means send the whole file.
                    The 0 value means follow the file.
         """
-        conn = kwargs.get("conn")
         svcname = kwargs.get("svcname")
+        if svcname is None:
+            return {
+                "status": 1,
+            }
+        debug = "debug." if kwargs.get("debug") else ""
+        logfile = os.path.join(rcEnv.paths.pathlog, svcname+".%slog"%debug)
+        self._action_logs(nodename, logfile, "service %s" % svcname, **kwargs)
+
+    def action_node_logs(self, nodename, **kwargs):
+        """
+        Send node logs.
+        kwargs:
+        * conn: the connexion socket to the requester
+        * backlog: the number of bytes to send from the tail default is 10k.
+                   A negative value means send the whole file.
+                   The 0 value means follow the file.
+        """
+        debug = "debug." if kwargs.get("debug") else ""
+        logfile = os.path.join(rcEnv.paths.pathlog, "node.%slog"%debug)
+        self._action_logs(nodename, logfile, "node", **kwargs)
+
+    def _action_logs(self, nodename, logfile, obj, **kwargs):
+        conn = kwargs.get("conn")
         backlog = kwargs.get("backlog")
         if backlog is None:
             backlog = 1024 * 10
         else:
             backlog = convert_size(backlog, _to='B')
-        if svcname is None:
-            return {
-                "status": 1,
-            }
-        logfile = os.path.join(rcEnv.paths.pathlog, svcname+".log")
         skip = 0
         if backlog > 0:
             fsize = os.path.getsize(logfile)
@@ -538,7 +555,7 @@ class Listener(shared.OsvcThread, Crypt):
         with open(logfile, "r") as ofile:
             if backlog > 0:
                 self.log.info("send %s log to node %s, backlog %d",
-                              svcname, nodename, backlog)
+                              obj, nodename, backlog)
                 try:
                     ofile.seek(skip)
                 except Exception as exc:
@@ -546,11 +563,11 @@ class Listener(shared.OsvcThread, Crypt):
                     ofile.seek(0)
             elif backlog < 0:
                 self.log.info("send %s log to node %s, whole file",
-                              svcname, nodename)
+                              obj, nodename)
                 ofile.seek(0)
             else:
                 self.log.info("follow %s log for node %s",
-                              svcname, nodename)
+                              obj, nodename)
                 ofile.seek(0, 2)
             lines = []
             msg_size = 0
@@ -586,7 +603,7 @@ class Listener(shared.OsvcThread, Crypt):
                                 loops = 0
                             except Exception as exc:
                                 self.log.info("stop following %s log for node %s: %s",
-                                              svcname, nodename, exc)
+                                              obj, nodename, exc)
                                 break
                         time.sleep(0.1)
                         lines = []

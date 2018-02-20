@@ -2757,64 +2757,40 @@ class Node(Crypt, ExtConfig):
         except Exception as exc:
             self.log.debug(str(exc))
 
-    def logs(self):
-        """
-        logs node action entrypoint.
-        Read the node.log file, colorize its content and print.
-        """
-        if self.options.debug:
-            logfile = os.path.join(rcEnv.paths.pathlog, "node.debug.log")
-        else:
-            logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
-        if not os.path.exists(logfile):
-            return
-        from rcColor import color, colorize
-
-        def highlighter(line):
-            """
-            Colorize interesting parts to help readability
-            """
-            line = line.rstrip("\n")
-            elements = line.split(" - ")
-
-            if len(elements) < 3 or elements[2] not in ("DEBUG", "INFO", "WARNING", "ERROR"):
-                # this is a log line continuation (command output for ex.)
-                return line
-
-            if len(elements[1]) > rcLogger.namelen:
-                elements[1] = "*"+elements[1][-(rcLogger.namelen-1):]
-            elements[1] = rcLogger.namefmt % elements[1]
-            elements[1] = colorize(elements[1], color.BOLD)
-            elements[2] = "%-7s" % elements[2]
-            elements[2] = elements[2].replace("ERROR", colorize("ERROR", color.RED))
-            elements[2] = elements[2].replace("WARNING", colorize("WARNING", color.BROWN))
-            elements[2] = elements[2].replace("INFO", colorize("INFO", color.LIGHTBLUE))
-            return " ".join(elements)
-
-        pipe = sys.stdout
-        if not self.options.nopager:
-            try:
-                pipe = os.popen('TERM=xterm less -R', 'w')
-            except:
-                pass
-
+    def logs(self, nodename=None):
         try:
-            for _logfile in [logfile+".1", logfile]:
-                if not os.path.exists(_logfile):
-                    continue
-                with open(_logfile, "r") as ofile:
-                    for line in ofile.readlines():
-                        line = highlighter(line)
-                        if line:
-                            pipe.write(line+'\n')
-        except BrokenPipeError:
-            try:
-                sys.stdout = os.fdopen(1)
-            except (AttributeError, OSError, IOError):
-                pass
-        finally:
-            if pipe != sys.stdout:
-                pipe.close()
+            self._logs(nodename=nodename)
+        except ex.excSignal:
+            return
+        except (OSError, IOError) as exc:
+            if exc.errno == 32:
+                # broken pipe
+                return
+
+    def _logs(self, nodename=None):
+        if nodename is None:
+            nodename = self.options.node
+        if self.options.local:
+            nodes = [rcEnv.nodename]
+        elif self.options.node:
+            nodes = [self.options.node]
+        else:
+            nodes = self.cluster_nodes
+        from rcColor import colorize_log_line
+        lines = []
+        for nodename in nodes:
+            lines += self.daemon_backlogs(nodename)
+            for line in sorted(lines):
+                line = colorize_log_line(line)
+                if line:
+                    print(line)
+        if not self.options.follow:
+            return
+        for line in self.daemon_logs(nodes):
+            line = colorize_log_line(line)
+            if line:
+                print(line)
+
 
     @formatter
     def print_config_data(self, src_config=None):
@@ -3948,6 +3924,34 @@ class Node(Crypt, ExtConfig):
             for line in data["err"].splitlines():
                print(line, file=sys.stderr)
         return data["ret"]
+
+    def daemon_backlogs(self, nodename):
+        options = {
+            "debug": self.options.debug,
+            "backlog": self.options.backlog,
+        }
+        for lines in self.daemon_get_stream(
+            {"action": "node_logs", "options": options},
+            nodename=nodename,
+        ):
+            if lines is None:
+                break
+            for line in lines:
+                yield line
+
+    def daemon_logs(self, nodes=None):
+        options = {
+            "debug": self.options.debug,
+            "backlog": 0,
+        }
+        for lines in self.daemon_get_streams(
+            {"action": "node_logs", "options": options},
+            nodenames=nodes,
+        ):
+            if lines is None:
+                break
+            for line in lines:
+                yield line
 
     def network_data(self):
         import glob
