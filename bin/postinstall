@@ -249,7 +249,7 @@ def install_cron_unix():
 
     if not new:
         logit("empty crontab found. skipping purge.",stderr=False)
-        if os.stat(root_crontab).st_size == 0:
+        if os.path.exists(root_crontab) and os.stat(root_crontab).st_size == 0:
             logit("removing crontab %s"%root_crontab)
             os.unlink(root_crontab)
         return False
