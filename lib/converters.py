@@ -240,12 +240,15 @@ def print_size(size, unit="MB", compact=False):
         raise ValueError("unsupported unit: %s" % unit)
     sep = "" if compact else " "
     suffix = "" if compact else suffix
+    roundup = False
     for u in units[units_index[unit]:]:
         if size == 0:
             return "0"
         u = u.lower() if compact else u
-        if size < mult:
-            return '%d%s%s%s%s' % (size, sep, u, metric, suffix)
+        if size < 0.95 * mult:
+            return '%d%s%s%s%s' % (size+1 if roundup else size, sep, u, metric, suffix)
+        elif size < mult:
+            roundup = True
         size = size/mult
     return '%d%s%s%s%s' % (size, sep, u, metric, suffix)
 
