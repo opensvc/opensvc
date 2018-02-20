@@ -378,6 +378,7 @@ class Dns(shared.OsvcThread, Crypt):
         names = {}
         for nodename, node in shared.CLUSTER_DATA.items():
             status = node.get("services", {}).get("status", {})
+            weight = node.get("stats", {}).get("score", 10)
             for svcname, svc in status.items():
                 app = svc.get("app", "default").lower()
                 scaler_slave = svc.get("scaler_slave")
@@ -405,7 +406,7 @@ class Dns(shared.OsvcThread, Crypt):
                             names[qname] = set()
                         content = "%(prio)d %(weight)d %(port)d %(target)s" % {
                             "prio": 0,
-                            "weight": 10,
+                            "weight": weight,
                             "port": port,
                             "target": target,
                         }
