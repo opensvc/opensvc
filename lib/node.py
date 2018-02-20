@@ -3999,10 +3999,10 @@ class Node(Crypt, ExtConfig):
         """
         Higher scoring nodes get best placement ranking.
         """
-        score = 100 / min(data.get("load_15m", 1), 1)
+        score = 100 / max(data.get("load_15m", 1), 1)
         score += 100 + data.get("mem_avail", 0)
-        score += 100 + 2 * data.get("swap_avail", 0)
-        return int(score // 6)
+        score += 2 * (100 + data.get("swap_avail", 0))
+        return int(score // 7)
 
     def stats_meminfo(self):
         """
