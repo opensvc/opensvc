@@ -219,7 +219,7 @@ def convert_size(s, _to='', _round=1, default_unit=''):
         size = (size // _round) * _round
     return size
 
-def print_size(size, unit="MB"):
+def print_size(size, unit="MB", compact=False):
     unit = unit.upper()
     if unit.endswith("B"):
         suffix = "B"
@@ -238,13 +238,16 @@ def print_size(size, unit="MB"):
     size = float(size)
     if unit not in units:
         raise ValueError("unsupported unit: %s" % unit)
+    sep = "" if compact else " "
+    suffix = "" if compact else suffix
     for u in units[units_index[unit]:]:
         if size == 0:
             return "0"
+        u = u.lower() if compact else u
         if size < mult:
-            return '%d %s%s%s' % (size, u, metric, suffix)
+            return '%d%s%s%s%s' % (size, sep, u, metric, suffix)
         size = size/mult
-    return '%d %s%s%s' % (size, u, metric, suffix)
+    return '%d%s%s%s%s' % (size, sep, u, metric, suffix)
 
 def convert_speed(s, _to='', _round=1, default_unit=''):
     try:
