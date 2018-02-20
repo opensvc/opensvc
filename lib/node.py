@@ -3037,6 +3037,7 @@ class Node(Crypt, ExtConfig):
         if data is None or data.get("status", 0) != 0:
             return
 
+        from converters import print_size
         from rcColor import format_json, colorize, color, unicons
         if self.options.format == "json":
             format_json(data)
@@ -3272,16 +3273,42 @@ class Node(Crypt, ExtConfig):
                     load_thread(key, data[key])
 
         def load_metrics():
+            load_loadavg()
+            load_free_total("mem")
+            load_free_total("swap")
+
+        def load_loadavg():
             if "monitor" not in data:
                 return
             line = [
-                colorize(" 15m", color.BOLD),
+                colorize(" load 15m", color.BOLD),
                 "",
                 "",
                 "|",
             ]
             for nodename in nodenames:
-                line.append(str(data["monitor"]["nodes"].get(nodename, {}).get("load", {}).get("15m", "")))
+                line.append(str(data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get("load_15m", "")))
+            out.append(line)
+
+        def load_free_total(key):
+            if "monitor" not in data:
+                return
+            line = [
+                colorize(" "+key, color.BOLD),
+                "",
+                "",
+                "|",
+            ]
+            for nodename in nodenames:
+                avail = data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get(key+"_avail")
+                total = data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get(key+"_total")
+                if avail is None or total is None:
+                    line.append("")
+                    continue
+                usage = 100 - avail
+                total = print_size(total, unit="MB", compact=True)
+                cell = "%d%% %s" % (usage, total)
+                line.append(cell)
             out.append(line)
 
         def load_node_state():
@@ -3953,3 +3980,15 @@ class Node(Crypt, ExtConfig):
         so Node() users don't have to import it from rcUtilities.
         """
         unset_lazy(self, prop)
+
+    def stats(self):
+        data = {
+            "load_15m": round(os.getloadavg()[2], 1),
+        }
+        try:
+            data["load_15m"] = round(os.getloadavg()[2], 1)
+        except:
+            # None < 0 == True
+            pass
+        return data
+

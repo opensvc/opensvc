@@ -1890,19 +1890,12 @@ class Monitor(shared.OsvcThread, Crypt):
                               shared.SMON_DATA[svcname].local_expect, "started")
                 shared.SMON_DATA[svcname].local_expect = "started"
 
-    def getloadavg(self):
-        try:
-            return round(os.getloadavg()[2], 1)
-        except:
-            # None < 0 == True
-            return
-
     def update_cluster_data(self):
         """
         Rescan services config and status.
         """
         data = shared.CLUSTER_DATA[rcEnv.nodename]
-        data["load"]["15m"] = self.getloadavg()
+        data["stats"] = shared.NODE.stats()
         data["frozen"] = self.freezer.node_frozen()
         data["env"] = shared.NODE.env
         data["services"]["config"] = self.get_services_config()

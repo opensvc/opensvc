@@ -768,6 +768,10 @@ class OsvcThread(threading.Thread):
                 if nodename not in candidates:
                     continue
                 try:
+                    load = CLUSTER_DATA[nodename]["stats"]["load_15m"]
+                except KeyError:
+                    pass
+                try:
                     load = CLUSTER_DATA[nodename]["load"]["15m"]
                 except KeyError:
                     continue

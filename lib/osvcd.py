@@ -15,8 +15,7 @@ import rcLogger
 import osvcd_shared as shared
 from rcConfigParser import RawConfigParser
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, unset_lazy
-from node import Node
+from rcUtilities import lazy, unset_lazy, ximport
 
 from osvcd_mon import Monitor
 from osvcd_lsnr import Listener
@@ -27,6 +26,8 @@ from hb_ucast import HbUcastRx, HbUcastTx
 from hb_mcast import HbMcastRx, HbMcastTx
 from hb_disk import HbDiskRx, HbDiskTx
 from hb_relay import HbRelayRx, HbRelayTx
+
+node_mod = ximport('node')
 
 DAEMON_TICKER = threading.Condition()
 DAEMON_INTERVAL = 2
@@ -335,7 +336,7 @@ class Daemon(object):
             with shared.NODE_LOCK:
                 if shared.NODE:
                     shared.NODE.close()
-                shared.NODE = Node()
+                shared.NODE = node_mod.Node()
             unset_lazy(self, "config")
             unset_lazy(self, "config_hbs")
             if self.last_config_mtime:
