@@ -28,10 +28,19 @@ class DockerLib(object):
         self.docker_info_done = False
 
         try:
+            self.docker_data_dir = \
+                self.svc.conf_get('DEFAULT', 'docker_data_dir')
+        except ex.OptNotFound as exc:
+            self.docker_data_dir = exc.default
+
+        try:
             self.docker_daemon_private = \
                 self.svc.conf_get('DEFAULT', 'docker_daemon_private')
         except ex.OptNotFound:
-            self.docker_daemon_private = True
+            if self.docker_data_dir:
+                self.docker_daemon_private = True
+            else:
+                self.docker_daemon_private = False
         if rcEnv.sysname != "Linux":
             self.docker_daemon_private = False
 
@@ -46,12 +55,6 @@ class DockerLib(object):
                 self.svc.conf_get('DEFAULT', 'dockerd_exe')
         except ex.OptNotFound as exc:
             self.dockerd_exe_init = exc.default
-
-        try:
-            self.docker_data_dir = \
-                self.svc.conf_get('DEFAULT', 'docker_data_dir')
-        except ex.OptNotFound as exc:
-            self.docker_data_dir = exc.default
 
         try:
             self.docker_daemon_args = \

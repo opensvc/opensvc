@@ -245,7 +245,7 @@ class KeywordDockerDataDir(Keyword):
                   keyword="docker_data_dir",
                   at=True,
                   order=12,
-                  text="If the service has docker-type container resources and docker_daemon_private is set to True, the service handles the startup of a private docker daemon. Its socket is <pathvar>/services/<svcname>/docker.sock, and its data directory must be specified using this parameter. This organization is necessary to enable service relocalization.",
+                  text="If the service has docker-type container resources and this keyword is set, the service starts a service-private docker daemon. Its socket is <pathvar>/services/<svcname>/docker.sock, and its data directory is specified by this keyword. This organization is necessary to enable stateful service relocalization.",
                   example="/srv/svc1/data/docker"
                 )
 
