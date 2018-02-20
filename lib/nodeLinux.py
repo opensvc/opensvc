@@ -31,11 +31,3 @@ class Node(node.Node):
         data["swap_avail"] = 100 * raw_data["SwapFree"] // raw_data["SwapTotal"]
         return data
 
-    def stats(self):
-        """
-        Aggregate node stats from available sources.
-        """
-        data = node.Node.stats(self)
-        data.update(self.stats_meminfo())
-        return data
-

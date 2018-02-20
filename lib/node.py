@@ -3273,15 +3273,29 @@ class Node(Crypt, ExtConfig):
                     load_thread(key, data[key])
 
         def load_metrics():
+            load_score()
             load_loadavg()
             load_free_total("mem")
             load_free_total("swap")
+
+        def load_score():
+            if "monitor" not in data:
+                return
+            line = [
+                colorize(" score", color.BOLD),
+                "",
+                "",
+                "|",
+            ]
+            for nodename in nodenames:
+                line.append(str(data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get("score", "")))
+            out.append(line)
 
         def load_loadavg():
             if "monitor" not in data:
                 return
             line = [
-                colorize(" load 15m", color.BOLD),
+                colorize("  load 15m", color.BOLD),
                 "",
                 "",
                 "|",
@@ -3294,7 +3308,7 @@ class Node(Crypt, ExtConfig):
             if "monitor" not in data:
                 return
             line = [
-                colorize(" "+key, color.BOLD),
+                colorize("  "+key, color.BOLD),
                 "",
                 "",
                 "|",
@@ -3981,14 +3995,29 @@ class Node(Crypt, ExtConfig):
         """
         unset_lazy(self, prop)
 
+    def score(self, data):
+        """
+        Higher scoring nodes get best placement ranking.
+        """
+        score = 100 / min(data.get("load_15m", 1), 1)
+        score += 100 + data.get("mem_avail", 0)
+        score += 100 + 2 * data.get("swap_avail", 0)
+        return int(score // 6)
+
+    def stats_meminfo(self):
+        """
+        OS-specific implementations
+        """
+        pass
+
     def stats(self):
-        data = {
-            "load_15m": round(os.getloadavg()[2], 1),
-        }
+        data = {}
         try:
             data["load_15m"] = round(os.getloadavg()[2], 1)
         except:
             # None < 0 == True
             pass
+        data.update(self.stats_meminfo())
+        data["score"] = self.score(data)
         return data
 

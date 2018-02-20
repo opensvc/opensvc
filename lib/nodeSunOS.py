@@ -48,11 +48,3 @@ class Node(node.Node):
         data["mem_avail"] = 100 * int(raw_data["unix:0:system_pages:availrmem"]) // int(raw_data["unix:0:system_pages:physmem"])
         return data
 
-    def stats(self):
-        """
-        Aggregate node stats from available sources.
-        """
-        data = node.Node.stats(self)
-        data.update(self.stats_meminfo())
-        return data
-
