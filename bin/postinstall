@@ -191,15 +191,6 @@ def install_cron_unix():
     """install opensvc cron jobs
     """
 
-    nodemgr = os.path.join(pathsbin, 'nodemgr')
-    ce = [{
-           'sched': "* * * * *",
-           'reset_sched': True,
-           'user': "",
-           'cmd': "[ -x "+nodemgr+" ] && "+nodemgr+" schedulers >/dev/null 2>&1",
-           'marker': nodemgr + ' schedulers',
-           'ok': False
-    }]
     remove_entries = [
       'bin/nodemgr schedulers',
       'bin/nodemgr compliance check',
@@ -236,9 +227,6 @@ def install_cron_unix():
             if not root_crontab:
                 root_crontab = loc
                 logit("identifying <%s> as root crontab"%root_crontab)
-                if root_crontab == '/etc/cron.d/opensvc':
-                    logit("assigning root:root as crontab owner")
-                    ce[0]['user'] = "root"
             elif os.path.exists(loc):
                 logit("adding <%s> to purge table"%loc)
                 purge.append(loc)
@@ -246,9 +234,6 @@ def install_cron_unix():
     if not root_crontab:
         logit("no root crontab found in usual locations <%s>"%str(root_crontab_locs),stderr=True)
         return False
-
-    ce[0]['full'] = ' '.join([ce[0]['sched'], ce[0]['user'], ce[0]['cmd']])
-    logit("osvcagt crontab entry <%s>"%ce[0]['full'])
 
     new = False
     if os.path.exists(root_crontab):
@@ -262,36 +247,11 @@ def install_cron_unix():
             import traceback
             traceback.print_exc()
 
-        i = -1
-        for line in new:
-            i += 1
-            for c in ce:
-                if c['full'] is None:
-                    continue
-                if line.find(c['marker']) != -1:
-                    if line.strip().startswith("#"):
-                        continue
-                    if c['ok']:
-                        new[i] = ""
-                        continue
-                    if c['reset_sched']:
-                        sched = c['sched']
-                    else:
-                        sched = ' '.join(line.split()[:5])
-                    new[i] = ' '.join([sched, c['user'], c['cmd']])+'\n'
-                    c['ok'] = True
-        for c in ce:
-            if c['full'] is not None and not c['ok']:
-                new.append(c['full']+'\n')
-    else:
-        new = []
-        for c in ce:
-            if c['full'] is not None and not c['ok']:
-                new.append(c['full']+'\n')
-        logit("no crontab <%s>. building new content <%s>"%(root_crontab,new))
-
     if not new:
-        logit("problem preparing the new crontab",stderr=True)
+        logit("empty crontab found. skipping purge.",stderr=False)
+        if os.stat(root_crontab).st_size == 0:
+            logit("removing crontab %s"%root_crontab)
+            os.unlink(root_crontab)
         return False
 
     i = -1
@@ -347,6 +307,7 @@ def install_cron_unix():
         if os.path.exists(f):
             logit("removing %s"%f)
             os.unlink(f)
+
 
 def activate_chkconfig(svc):
     logit("begin")
