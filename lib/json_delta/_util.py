@@ -61,8 +61,8 @@ def licit_starts(start_chars='{}[]"-0123456789tfn \t\n\r'):
     ``start_chars`` must be an iterable of valid beginnings.
 
     '''
-    bom_attr_name = lambda e: 'BOM_{}'.format(e.upper().replace('_', '', 1))
-    out = {getattr(codecs, bom_attr_name(k)): k[:6] for k in ENCODINGS}
+    bom_attr_name = lambda e: 'BOM_%s' % e.upper().replace('_', '', 1)
+    out = dict((getattr(codecs, bom_attr_name(k)), k[:6]) for k in ENCODINGS)
     out[codecs.BOM_UTF8] = 'utf_8_sig'
     for encoding, start in itertools.product(ENCODINGS, start_chars):
         start = start.encode(encoding)

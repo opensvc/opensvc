@@ -167,7 +167,7 @@ def curry_functions(local_ns):
     :func:`_commafy_last`.
 
     '''
-    dict_subset = lambda keys: {k: local_ns[k] for k in keys}
+    dict_subset = lambda keys: dict((k, local_ns[k]) for k in keys)
     acm_subset = dict_subset(('indent', 'left_lines', 'right_lines'))
     adm_subset = dict_subset(('indent', 'left_lines', 'right_lines'))
     adm_subset.update({'left': None, 'right': None})

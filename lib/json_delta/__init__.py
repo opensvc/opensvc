@@ -87,9 +87,9 @@ def _check_diff_parms(parms):
     Output is a dict suitable for ``**`` passing to :func:`_diff.diff`.
 
     '''
-    options = {k: parms[k] for k in ('array_align', 'compare_lengths',
+    options = dict((k, parms[k]) for k in ('array_align', 'compare_lengths',
                                      'common_key_threshold')
-               if parms[k] is not None}
+               if parms[k] is not None)
     if parms['minimal'] is None:
         return options
 
