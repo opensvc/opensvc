@@ -9,7 +9,7 @@ import resContainer
 import rcExceptions as ex
 import rcStatus
 from rcUtilitiesLinux import check_ping
-from rcUtilities import justcall, lazy, unset_lazy
+from rcUtilities import justcall, lazy
 from rcGlobalEnv import rcEnv
 
 os.environ['LANG'] = 'C'
@@ -155,7 +155,7 @@ class Docker(resContainer.Container):
         return out, err, ret
 
     def service_create(self):
-        unset_lazy(self, "service_id")
+        self.unset_lazy("service_id")
         if self.service_id is not None:
             return
         if self.swarm_node_role() not in ("leader", "reachable"):
@@ -168,7 +168,7 @@ class Docker(resContainer.Container):
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError(err)
-        unset_lazy(self, "service_id")
+        self.unset_lazy("service_id")
         self.svc.dockerlib.get_running_service_ids(refresh=True)
 
     def container_rm(self):
@@ -187,7 +187,7 @@ class Docker(resContainer.Container):
         """
         Remove the resource docker service.
         """
-        unset_lazy(self, "service_id")
+        self.unset_lazy("service_id")
         if self.service_id is None:
             self.log.info("skip: service already removed")
             return
@@ -197,7 +197,7 @@ class Docker(resContainer.Container):
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError(err)
-        unset_lazy(self, "service_id")
+        self.unset_lazy("service_id")
         self.svc.dockerlib.get_running_service_ids(refresh=True)
 
     def docker(self, action):
@@ -211,7 +211,7 @@ class Docker(resContainer.Container):
                 return
             else:
                 if self.container_id is None:
-                    unset_lazy(self, "container_id")
+                    self.unset_lazy("container_id")
                 if self.container_id is None:
                     cmd += ['run', '-d', '--name='+self.container_name]
                     cmd += self._add_run_args()
@@ -240,7 +240,7 @@ class Docker(resContainer.Container):
             raise ex.excError
 
         if action == 'start':
-            unset_lazy(self, "container_id")
+            self.unset_lazy("container_id")
             self.svc.dockerlib.get_running_instance_ids(refresh=True)
         elif action in ("stop", "kill"):
             self.svc.dockerlib.docker_stop()
@@ -429,7 +429,7 @@ class Docker(resContainer.Container):
 
     def service_running_instances(self, refresh=False):
         if refresh:
-            unset_lazy(self, "service_ps")
+            self.unset_lazy("service_ps")
         instances = []
         for inst in self.service_ps:
             if inst["Status"]["State"] != "running":

@@ -14,7 +14,7 @@ import lock
 import rcExceptions as ex
 import rcStatus
 from rcUtilities import lazy, clear_cache, call, vcall, lcall, set_lazy, \
-                        action_triggers, mimport
+                        action_triggers, mimport, unset_lazy
 from rcGlobalEnv import rcEnv
 import rcColor
 
@@ -1105,4 +1105,11 @@ class Resource(object):
 
     def progress(self):
         lock.progress(self.svc.lockfd, {"rid": self.rid})
+
+    def unset_lazy(prop):
+        """
+        Expose the self.unset_lazy(...) utility function as a method,
+        so Node() users don't have to import it from rcUtilities.
+        """
+        unset_lazy(self, prop)
 

@@ -3,7 +3,7 @@ import logging
 import json
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, lazy, unset_lazy
+from rcUtilities import which, lazy
 from xml.etree.ElementTree import ElementTree, XML
 
 import rcExceptions as ex
@@ -218,7 +218,7 @@ class syncSymSrdfS(resSync.Sync):
         return os.path.join(self.var_d, 'symrdf_' + self.symdg + '.dg.rdf')
 
     def flush_cache(self):
-        unset_lazy(self, "rdf_query")
+        self.unset_lazy("rdf_query")
 
     def get_symdevs(self):
         for symdev in self.symdevs:

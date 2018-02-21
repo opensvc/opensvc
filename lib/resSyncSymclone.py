@@ -2,7 +2,7 @@ import os
 import logging
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, lazy, unset_lazy
+from rcUtilities import which, justcall, lazy
 import rcExceptions as ex
 import rcStatus
 import time
@@ -59,7 +59,7 @@ class syncSymclone(resSync.Sync):
         return active_pairs
 
     def is_active(self):
-        unset_lazy(self, "active_pairs")
+        self.unset_lazy("active_pairs")
         if len(self.active_pairs) == len(self.pairs):
             return True
         return False
@@ -116,7 +116,7 @@ class syncSymclone(resSync.Sync):
             self.log.info("symclone target devices are already active")
             return
         self.wait_for_activable()
-        unset_lazy(self, "last")
+        self.unset_lazy("last")
         cmd = self.symclone_cmd() + ['-noprompt', 'activate', '-i', '20', '-c', '30']
         if self.consistent:
             cmd.append("-consistent")
@@ -151,14 +151,14 @@ class syncSymclone(resSync.Sync):
             raise ex.excError
 
     def restore(self):
-        unset_lazy(self, "last")
+        self.unset_lazy("last")
         cmd = self.symclone_cmd() + ['-noprompt', 'restore']
         (ret, out, err) = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
             raise ex.excError(err)
 
     def terminate_restore(self):
-        unset_lazy(self, "last")
+        self.unset_lazy("last")
         cmd = self.symclone_cmd() + ['-noprompt', 'terminate', '-restored']
         (ret, out, err) = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
@@ -205,7 +205,7 @@ class syncSymclone(resSync.Sync):
 
     @lazy
     def last(self):
-        unset_lazy(self, "showdevs_etree")
+        self.unset_lazy("showdevs_etree")
         _last = None
         for pair in self.pairs:
             src, dst = self.split_pair(pair)

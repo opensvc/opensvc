@@ -1,5 +1,5 @@
 import provisioning
-from rcUtilities import justcall, which, protected_dir, unset_lazy
+from rcUtilities import justcall, which, protected_dir
 from rcGlobalEnv import rcEnv
 import os
 import rcExceptions as ex
@@ -131,8 +131,8 @@ class Prov(provisioning.Prov):
             raise ex.excError("no mkfs method implemented")
 
     def provisioner(self):
-        unset_lazy(self.r, "device")
-        unset_lazy(self.r, "label")
+        self.r.unset_lazy("device")
+        self.r.unset_lazy("label")
         if "bind" in self.r.mount_options:
             return
         self.provisioner_fs()

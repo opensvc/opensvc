@@ -3,7 +3,7 @@ import tempfile
 import os
 import time
 import rcExceptions as ex
-from rcUtilities import which, justcall, lazy, unset_lazy
+from rcUtilities import which, justcall, lazy
 from rcBtrfs import Btrfs
 
 class Prov(provFs.Prov):
@@ -65,7 +65,7 @@ class Prov(provFs.Prov):
             raw_label = self.raw_label
         self.r.svc.config.set(self.r.rid, "dev", "LABEL="+raw_label)
         self.r.svc.write_config()
-        unset_lazy(self.r, "device")
+        self.r.unset_lazy("device")
         self.wait_label(label)
 
     def wait_label(self, label):

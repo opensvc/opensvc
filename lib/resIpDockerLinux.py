@@ -5,7 +5,7 @@ import rcIfconfigLinux as rcIfconfig
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import check_ping
-from rcUtilities import which, justcall, to_cidr, lazy, unset_lazy
+from rcUtilities import which, justcall, to_cidr, lazy
 
 class Ip(Res.Ip):
     def __init__(self,
@@ -129,7 +129,7 @@ class Ip(Res.Ip):
         return False
 
     def _status(self, verbose=False):
-        unset_lazy(self, "sandboxkey")
+        self.unset_lazy("sandboxkey")
         if self.container_running_elsewhere():
             self.status_log("%s is hosted by another host" % self.container_rid, "info")
             return rcStatus.NA
@@ -143,7 +143,7 @@ class Ip(Res.Ip):
         return ret
 
     def startip_cmd(self):
-        unset_lazy(self, "sandboxkey")
+        self.unset_lazy("sandboxkey")
         if self.container.docker_service and \
            self._status() != rcStatus.STDBY_DOWN:
             return 0, "", ""
@@ -369,6 +369,6 @@ class Ip(Res.Ip):
             raise ex.excContinueAction("netmask is not set")
         cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]
         ret, out, err = self.vcall(cmd)
-        unset_lazy(self, "sandboxkey")
+        self.unset_lazy("sandboxkey")
         return ret, out, err
 

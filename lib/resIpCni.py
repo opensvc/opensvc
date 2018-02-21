@@ -12,7 +12,7 @@ import rcExceptions as ex
 import rcIfconfigLinux as rcIfconfig
 import rcStatus
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, to_cidr, lazy, bencode, bdecode, unset_lazy
+from rcUtilities import which, justcall, to_cidr, lazy, bencode, bdecode
 
 CNI_VERSION = "0.2.0"
 PORTMAP_CONF = {
@@ -378,16 +378,16 @@ class Ip(Res.Ip):
             result = self.cni_cmd(_env, data)
 
     def start(self):
-        unset_lazy(self, "container_pid")
-        unset_lazy(self, "container_sandboxkey")
+        self.unset_lazy("container_pid")
+        self.unset_lazy("container_sandboxkey")
         self.add_netns()
         self.add_cni()
 
     def stop(self):
         self.del_cni()
         self.del_netns()
-        unset_lazy(self, "container_pid")
-        unset_lazy(self, "container_sandboxkey")
+        self.unset_lazy("container_pid")
+        self.unset_lazy("container_sandboxkey")
 
     def _status(self, verbose=False):
         try:

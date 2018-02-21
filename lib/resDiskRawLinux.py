@@ -4,7 +4,7 @@ import rcStatus
 import re
 import rcExceptions as ex
 from rcGlobalEnv import *
-from rcUtilities import justcall, cache, lazy, unset_lazy
+from rcUtilities import justcall, cache, lazy
 from rcUtilitiesLinux import devs_to_disks
 
 class Disk(resDiskRaw.Disk):
@@ -219,9 +219,9 @@ class Disk(resDiskRaw.Disk):
     def clear_caches(self):
         self.clear_cache("raw.list")
         self.clear_cache("raw.rdevs_t")
-        unset_lazy(self, "devs_t")
-        unset_lazy(self, "rdevs_t")
-        unset_lazy(self, "raws")
+        self.unset_lazy("devs_t")
+        self.unset_lazy("rdevs_t")
+        self.unset_lazy("raws")
 
     def do_stop_char_devices(self):
         if not self.create_char_devices:

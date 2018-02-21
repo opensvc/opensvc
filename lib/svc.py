@@ -4325,7 +4325,7 @@ class Svc(Crypt, ExtConfig):
                 lines = self.unset_line(lines, rid, option)
 
 
-        unset_lazy(self, "disabled")
+        self.unset_lazy("disabled")
 
         # update the resource objects disable prop
         for rid in rids:
@@ -4343,7 +4343,7 @@ class Svc(Crypt, ExtConfig):
             self._write_cf(lines)
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
-        unset_lazy(self, "config")
+        self.unset_lazy("config")
 
     def enable(self):
         """
@@ -4469,7 +4469,7 @@ class Svc(Crypt, ExtConfig):
         except (IOError, OSError):
             raise ex.excError("failed to rewrite %s" % self.paths.cf)
 
-        unset_lazy(self, "config")
+        self.unset_lazy("config")
 
     def delete(self):
         """
@@ -5028,4 +5028,11 @@ class Svc(Crypt, ExtConfig):
             return int(self.svcname.split(".")[0])
         except ValueError:
             return 0
+
+    def unset_lazy(self, prop):
+        """
+        Expose the unset_lazy(self, ...) utility function as a method,
+        so Node() users don't have to import it from rcUtilities.
+        """
+        unset_lazy(self, prop)
 

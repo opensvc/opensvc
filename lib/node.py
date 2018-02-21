@@ -3725,7 +3725,7 @@ class Node(Crypt, ExtConfig):
             self.config.remove_section("cluster")
 
         self.write_config()
-        unset_lazy(self, "cluster_nodes")
+        self.unset_lazy("cluster_nodes")
 
         # leave node frozen if initially frozen or we failed joining all nodes
         if initially_frozen:
@@ -3953,6 +3953,12 @@ class Node(Crypt, ExtConfig):
             for line in lines:
                 yield line
 
+
+    ##########################################################################
+    #
+    # Network actions
+    #
+    ##########################################################################
     def network_data(self):
         import glob
         import re
@@ -3992,13 +3998,11 @@ class Node(Crypt, ExtConfig):
         tree.load({self.options.id: nets[self.options.id]}, title=rcEnv.nodename)
         print(tree)
 
-    def unset_lazy(self, prop):
-        """
-        Expose the unset_lazy(self, ...) utility function as a method,
-        so Node() users don't have to import it from rcUtilities.
-        """
-        unset_lazy(self, prop)
-
+    ##########################################################################
+    #
+    # Node stats
+    #
+    ##########################################################################
     def score(self, data):
         """
         Higher scoring nodes get best placement ranking.
@@ -4024,4 +4028,12 @@ class Node(Crypt, ExtConfig):
         data.update(self.stats_meminfo())
         data["score"] = self.score(data)
         return data
+
+    def unset_lazy(self, prop):
+        """
+        Expose the unset_lazy(self, ...) utility function as a method,
+        so Node() users don't have to import it from rcUtilities.
+        """
+        unset_lazy(self, prop)
+
 
