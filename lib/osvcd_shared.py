@@ -679,6 +679,8 @@ class OsvcThread(threading.Thread):
             return self.placement_ranks_shift(svc, candidates)
         elif svc.placement == "spread":
             return self.placement_ranks_spread(svc, candidates)
+        elif svc.placement == "score":
+            return self.placement_ranks_score(svc, candidates)
         elif svc.placement == "load avg":
             return self.placement_ranks_load_avg(svc, candidates)
         else:
@@ -760,6 +762,19 @@ class OsvcThread(threading.Thread):
             h.update(s.encode())
             return h.digest()
         return [nodename for nodename in sorted(candidates, key=lambda x: fn(svc.svcname+x))]
+
+    def placement_ranks_score(self, svc, candidates, silent=False):
+        data = []
+        with CLUSTER_DATA_LOCK:
+            for nodename in CLUSTER_DATA:
+                if nodename not in candidates:
+                    continue
+                try:
+                    load = CLUSTER_DATA[nodename]["stats"]["score"]
+                except KeyError:
+                    pass
+                data.append((nodename, load))
+        return [nodename for nodename, _ in sorted(data, key=lambda x: -x[1])]
 
     def placement_ranks_load_avg(self, svc, candidates, silent=False):
         data = []

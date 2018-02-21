@@ -892,12 +892,13 @@ class KeywordPlacement(Keyword):
                   keyword="placement",
                   order=16,
                   default="nodes order",
-                  candidates=["nodes order", "load avg", "shift", "spread"],
+                  candidates=["nodes order", "load avg", "shift", "spread", "score"],
                   text="Set a service instances placement policy:\n\n"
                        "* nodes order: the left-most available node is allowed to start a service instance when necessary.\n"
-                       "* load avg: the least loaded node.\n"
+                       "* load avg: the least loaded node takes precedences.\n"
                        "* shift: shift the nodes order ranking by the service prefix converter to an integer.\n"
-                       "* spread: a spread policy tends to perfect leveling with many services.\n",
+                       "* spread: a spread policy tends to perfect leveling with many services.\n"
+                       "* score: the highest scoring node takes precedence (the score is a composite indice of load, mem and swap).\n",
                 )
 
 class KeywordConstraints(Keyword):
