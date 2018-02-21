@@ -3073,7 +3073,7 @@ class Node(Crypt, ExtConfig):
             if data["placement"] == "non-optimal":
                 status += colorize("^", color.RED)
             if data.get("scale") is not None:
-                info = "scaler"
+                info = "scaler/%d" % data.get("scale")
             else:
                 info = topology
                 if data["orchestrate"]:
