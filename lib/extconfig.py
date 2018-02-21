@@ -616,7 +616,9 @@ class ExtConfig(object):
                     rtype = None
                     fkey = ".".join((section, o))
 
-        deprecated_keyword = self.kwdict.REVERSE_DEPRECATED_KEYWORDS.get(fkey)
+        deprecated_keywords = self.kwdict.REVERSE_DEPRECATED_KEYWORDS.get(fkey)
+        if deprecated_keywords is not None and not isinstance(deprecated_keywords, list):
+            deprecated_keywords = [deprecated_keywords]
 
         # 1st try: supported keyword
         try:
@@ -625,23 +627,27 @@ class ExtConfig(object):
                                   use_default=use_default, config=config,
                                   section=section, rtype=rtype)
         except ex.RequiredOptNotFound:
-            if deprecated_keyword is None:
+            if deprecated_keywords is None:
                 if verbose:
                     self.log.error("%s.%s is mandatory" % (s, o))
                 raise
         except ex.OptNotFound:
-            if deprecated_keyword is None:
+            if deprecated_keywords is None:
                 raise
 
         # 2nd try: deprecated keyword
-        try:
-            return self._conf_get(s, deprecated_keyword, t=t, scope=scope,
-                                  impersonate=impersonate,
-                                  use_default=use_default, config=config,
-                                  section=section, rtype=rtype)
-        except ex.RequiredOptNotFound:
+        exc = None
+        for deprecated_keyword in deprecated_keywords:
+            try:
+                return self._conf_get(s, deprecated_keyword, t=t, scope=scope,
+                                      impersonate=impersonate,
+                                      use_default=use_default, config=config,
+                                      section=section, rtype=rtype)
+            except ex.RequiredOptNotFound as exc:
+                pass
+        if exc:
             self.log.error("%s.%s is mandatory" % (s, o))
-            raise
+            raise exc
 
     def _conf_get(self, s, o, t=None, scope=None, impersonate=None,
                  use_default=True, config=None, section=None, rtype=None):
