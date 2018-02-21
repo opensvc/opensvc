@@ -2354,7 +2354,7 @@ class Cli(object):
         self.user = self.set_option("user")
         self.password = self.set_option("password")
         self.api = self.set_option("api")
-        self.format = self.set_option("format")
+        self.format = self.set_option("format", "json")
         self.insecure = self.set_option("insecure", False)
         self.auth = (self.user, self.password)
 
