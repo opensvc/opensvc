@@ -54,7 +54,6 @@ class Monitor(shared.OsvcThread, Crypt):
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
         self.set_nmon("init")
-        self.last_run = 0
         self.log.info("monitor started")
         self.startup = datetime.datetime.utcnow()
         self.rejoin_grace_period_expired = False
@@ -105,6 +104,14 @@ class Monitor(shared.OsvcThread, Crypt):
             return
         self.shortloops = target
 
+    def reconfigure(self):
+        """
+        The node config references may have changed, update the services objects.
+        """
+        with shared.SERVICES_LOCK:
+            for svcname in shared.SERVICES:
+                 shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
+
     def do(self):
         terminated_procs = self.janitor_procs()
         self.janitor_threads()
@@ -123,7 +130,6 @@ class Monitor(shared.OsvcThread, Crypt):
         self.shortloops = 0
         self.reload_config()
         self.merge_frozen()
-        self.last_run = time.time()
         if self._shutdown:
             if len(self.procs) == 0:
                 self.stop()
