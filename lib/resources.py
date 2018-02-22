@@ -1106,7 +1106,7 @@ class Resource(object):
     def progress(self):
         lock.progress(self.svc.lockfd, {"rid": self.rid})
 
-    def unset_lazy(prop):
+    def unset_lazy(self, prop):
         """
         Expose the self.unset_lazy(...) utility function as a method,
         so Node() users don't have to import it from rcUtilities.
