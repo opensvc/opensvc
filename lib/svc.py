@@ -1854,6 +1854,8 @@ class Svc(Crypt, ExtConfig):
                     notice.append(colorize(mon_status, color.RED))
                 if monitor.get("local_expect") not in ("", None):
                     notice.append(colorize(monitor.get("local_expect", ""), color.LIGHTBLUE))
+                if monitor.get("global_expect") not in ("", None):
+                    notice.append(colorize(">"+monitor.get("global_expect", ""), color.LIGHTBLUE))
             else:
                 notice.append(colorize("daemon down", color.RED))
             return ", ".join(notice)
@@ -3560,7 +3562,7 @@ class Svc(Crypt, ExtConfig):
 
         return options
 
-    def options_to_rids(self, options):
+    def options_to_rids(self, options, action):
         """
         Return the list of rids to apply an action to, from the command
         line options passed as <options>.
@@ -3592,6 +3594,7 @@ class Svc(Crypt, ExtConfig):
 
         if len(self.resources_by_id.keys()) > 0:
             rids = set(self.all_rids())
+            unsupported_rids = set(rid) - rids
 
             # --rid
             retained_rids = self.expand_rids(rid)
@@ -3607,6 +3610,11 @@ class Svc(Crypt, ExtConfig):
             retained_rids = self.expand_tags(tags)
             if retained_rids is not None:
                 rids &= retained_rids
+
+            # for delete, retain rids not in the built resources
+            # (resources no longer supported)
+            if action == "delete":
+                rids |= unsupported_rids
 
             rids = list(rids)
             self.log.debug("rids retained after expansions intersection: %s",
@@ -3646,7 +3654,7 @@ class Svc(Crypt, ExtConfig):
         """
 
         try:
-            self.action_rid_before_depends = self.options_to_rids(options)
+            self.action_rid_before_depends = self.options_to_rids(options, action)
         except ex.excAbortAction as exc:
             self.log.error(exc)
             return 1
