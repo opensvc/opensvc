@@ -210,6 +210,12 @@ class OptParser(object):
                 data.add(words[0])
         return data
 
+    def actions_all(self):
+        data = []
+        for section in self.actions:
+            data += list(self.actions[section].keys())
+        return data
+
     def develop_action(self, args):
         """
         From "ed conf" return "edit_config"
@@ -229,6 +235,9 @@ class OptParser(object):
             else:
                 # ambiguous
                 return "_".join(developed_args+args[idx:])
+        developed_action = "_".join(developed_args)
+        if developed_action in self.actions_all():
+            return developed_action
         while True:
             data = self.actions_next_words("_".join(developed_args))
             if len(data) == 0:
