@@ -164,7 +164,7 @@ class HbRelayRx(HbRelay):
             if nodename == rcEnv.nodename:
                 continue
             try:
-                slot_data = self.receive(nodename)
+                updated, slot_data = self.receive(nodename)
                 _nodename, _data = self.decrypt(slot_data)
                 if _nodename is None:
                     # invalid crypt
@@ -175,7 +175,6 @@ class HbRelayRx(HbRelay):
                     self.log.warning("node %s has written its data in node %s "
                                      "reserved slot", _nodename, nodename)
                     nodename = _nodename
-                updated = _data["updated"]
                 last_updated = self.last_updated.get(nodename)
                 if last_updated is not None and last_updated == updated:
                     # remote tx has not rewritten its slot
@@ -208,11 +207,11 @@ class HbRelayRx(HbRelay):
             raise ex.excError("return status not 0")
         if resp.get("data") is None:
             raise ex.excError("no data in response")
+        if resp.get("updated") is None:
+            raise ex.excError("no 'updated' key in response")
         try:
             # python3
-            return bytes(resp["data"], "ascii")
+            return resp.get("updated"), bytes(resp["data"], "ascii")
         except TypeError:
-            return resp["data"]
-
-
+            return resp.get("updated"), resp["data"]
 

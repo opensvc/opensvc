@@ -174,7 +174,10 @@ class Listener(shared.OsvcThread, Crypt):
     def action_relay_tx(self, nodename, **kwargs):
         if not hasattr(self, "relay_data"):
             self.relay_data = {}
-        self.relay_data[nodename] = kwargs.get("msg")
+        self.relay_data[nodename] = {
+            "msg": kwargs.get("msg"),
+            "updated": time.time(),
+        }
         return {"status": 0}
 
     def action_relay_rx(self, nodename, **kwargs):
@@ -183,7 +186,11 @@ class Listener(shared.OsvcThread, Crypt):
         _nodename = kwargs.get("slot")
         if _nodename not in self.relay_data:
             return {"status": 1, "error": "no data"}
-        return {"status": 0, "data": self.relay_data[_nodename]}
+        return {
+            "status": 0,
+            "data": self.relay_data[_nodename]["msg"],
+            "updated": self.relay_data[_nodename]["updated"],
+        }
 
     def action_daemon_blacklist_clear(self, nodename, **kwargs):
         """
