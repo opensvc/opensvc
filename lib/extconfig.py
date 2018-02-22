@@ -548,7 +548,7 @@ class ExtConfig(object):
             m = re.search(r'{\w*[\w#][\w\.\[\]]*}', s)
             if m is None:
                 return s
-            ref = m.group(0).strip("{}")
+            ref = m.group(0).strip("{}").lower()
             val = self.handle_reference(ref, scope=scope,
                                         impersonate=impersonate,
                                         config=config)
@@ -573,7 +573,6 @@ class ExtConfig(object):
             s = s[:m.start()] + str(val) + s[m.end():]
 
     def handle_references(self, s, scope=False, impersonate=None, config=None):
-        s = s.lower()
         key = (s, scope, impersonate)
         if hasattr(self, "ref_cache") and self.ref_cache is not None \
            and key in self.ref_cache:
