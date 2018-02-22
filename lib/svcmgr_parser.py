@@ -367,12 +367,12 @@ OPT = Storage({
              "the service action lock."),
 })
 
-SVCMGR_OPTS = [
+SVC_SELECT_OPTS = [
     OPT.service,
     OPT.status,
 ]
 
-GLOBAL_OPTS = SVCMGR_OPTS + [
+GLOBAL_OPTS = SVC_SELECT_OPTS + [
     OPT.cluster,
     OPT.color,
     OPT.daemon,
@@ -1211,7 +1211,7 @@ class SvcmgrOptParser(OptParser):
                            deprecated_actions=DEPRECATED_ACTIONS,
                            actions_translations=ACTIONS_TRANSLATIONS,
                            global_options=GLOBAL_OPTS,
-                           svcmgr_options=SVCMGR_OPTS,
+                           svc_select_options=SVC_SELECT_OPTS,
                            colorize=colorize, width=width,
                            formatter=formatter, indent=indent)
 

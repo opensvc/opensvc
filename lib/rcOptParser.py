@@ -64,7 +64,7 @@ class OptParser(object):
 
     def __init__(self, args=None, prog="", options=None, actions=None,
                  deprecated_actions=None, actions_translations=None,
-                 global_options=None, svcmgr_options=None, colorize=True,
+                 global_options=None, svc_select_options=None, colorize=True,
                  width=None, formatter=None, indent=6):
         self.parser = None
         self.args = args
@@ -74,7 +74,7 @@ class OptParser(object):
         self.deprecated_actions = deprecated_actions if deprecated_actions else []
         self.actions_translations = actions_translations if actions_translations else {}
         self.global_options = global_options if global_options else []
-        self.svcmgr_options = svcmgr_options if svcmgr_options else []
+        self.svc_select_options = svc_select_options if svc_select_options else []
         self.colorize = colorize
         self.width = term_width() if width is None else width
 
@@ -114,7 +114,7 @@ class OptParser(object):
         for option in self.actions[section][action].get("options", []):
             parser.add_option(option)
         for option in self.global_options:
-            if self.svclink() and option in self.svcmgr_options:
+            if self.svclink() and option in self.svc_select_options:
                 continue
             parser.add_option(option)
         desc += self.subsequent_indent + parser.format_option_help()
@@ -188,6 +188,57 @@ class OptParser(object):
         """
         return os.environ.get("OSVC_SERVICE_LINK", False)
 
+    def actions_next_words(self, base=""):
+        """
+        From actions ["do_this", "do_that", "or_do_that"]:
+        base="do"    => set([this, that, do])
+        base="or_do" => set([that])
+        """
+        data = set()
+        if base == "":
+            prefix = base
+        else:
+            prefix = base + "_"
+        prefix_len = len(prefix)
+        for section in self.actions:
+            for action in self.actions[section]:
+                if base != "" and not action.startswith(base+'_'):
+                    continue
+                words = action[prefix_len:].split("_")
+                if len(words) == 0:
+                    continue
+                data.add(words[0])
+        return data
+
+    def develop_action(self, args):
+        """
+        From "ed conf" return "edit_config"
+        """
+        developed_args = []
+        for idx, arg in enumerate(args):
+            data = self.actions_next_words("_".join(developed_args))
+            if arg in data:
+                developed_args.append(arg)
+                continue
+            matching = [word for word in data if word.startswith(arg)]
+            if len(matching) == 1:
+                developed_args.append(matching[0])
+                continue
+            elif len(matching) == 0 and idx > 0:
+                break
+            else:
+                # ambiguous
+                return "_".join(developed_args+args[idx:])
+        while True:
+            data = self.actions_next_words("_".join(developed_args))
+            if len(data) == 0:
+                break
+            if len(data) == 1:
+                developed_args.append(list(data)[0])
+                continue
+            break
+        return "_".join(developed_args)
+
     def get_action_from_args(self, args, options):
         """
         Check if the parsed command args list has at least one element to be
@@ -200,10 +251,7 @@ class OptParser(object):
             else:
                 self.print_short_help()
 
-        action = '_'.join(args)
-
-        if action.startswith("collector_cli"):
-            action = "collector_cli"
+        action = self.develop_action(args)
 
         if action in self.actions_translations:
             data = self.actions_translations[action]
@@ -239,7 +287,7 @@ class OptParser(object):
         )
 
         for option in self.options.values():
-            if self.svclink() and option in self.svcmgr_options:
+            if self.svclink() and option in self.svc_select_options:
                 continue
             self.parser.add_option(option)
 
@@ -288,7 +336,7 @@ class OptParser(object):
                 continue
             action_options = section_data[action].get("options", [])
         for option in action_options + self.global_options:
-            if self.svclink() and option in self.svcmgr_options:
+            if self.svclink() and option in self.svc_select_options:
                 continue
             parser.add_option(option)
         options_discarded, args_discarded = parser.parse_args(self.args, optparse.Values())
