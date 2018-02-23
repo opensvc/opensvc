@@ -124,7 +124,7 @@ class HbUcastTx(HbUcast):
             sock.settimeout(1)
             sock.bind((self.peer_config[rcEnv.nodename].addr, 0))
             sock.connect((config.addr, config.port))
-            sock.sendall(message)
+            sock.sendall((message+"\0").encode())
             self.set_last(nodename)
             self.stats.beats += 1
             self.stats.bytes += message_bytes

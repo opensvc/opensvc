@@ -122,7 +122,7 @@ class HbRelayTx(HbRelay):
         request = {
             "action": "relay_tx",
             "options": {
-                "msg": message[:-1].decode("ascii"),
+                "msg": message,
             },
         }
         resp = self.daemon_send(request, cluster_name="join", nodename=self.relay, secret=self.secret)
@@ -165,7 +165,7 @@ class HbRelayRx(HbRelay):
                 continue
             try:
                 updated, slot_data = self.receive(nodename)
-                _nodename, _data = self.decrypt(slot_data)
+                _nodename, _data = self.decrypt(slot_data, sender_id=self.relay)
                 if _nodename is None:
                     # invalid crypt
                     #self.log.warning("can't decrypt data in node %s slot",
@@ -202,13 +202,13 @@ class HbRelayRx(HbRelay):
         }
         resp = self.daemon_send(request, cluster_name="join", nodename=self.relay, secret=self.secret)
         if resp is None:
-            raise ex.excError("not responding")
+            raise ex.excError("no response reading relay slot %s" % nodename)
         if resp.get("status", 1) != 0:
-            raise ex.excError("return status not 0")
+            raise ex.excError("return status not 0 reading relay slot %s" % nodename)
         if resp.get("data") is None:
-            raise ex.excError("no data in response")
+            raise ex.excError("no data in response reading relay slot %s" % nodename)
         if resp.get("updated") is None:
-            raise ex.excError("no 'updated' key in response")
+            raise ex.excError("no 'updated' key in response reading relay slot %s" % nodename)
         try:
             # python3
             return resp.get("updated"), bytes(resp["data"], "ascii")

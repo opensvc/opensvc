@@ -127,7 +127,7 @@ class HbMcastTx(HbMcast):
 
         #self.log.info("sending to %s:%s", self.addr, self.port)
         try:
-            sent = self.sock.sendto(message, self.group)
+            sent = self.sock.sendto((message+"\0").encode(), self.group)
             self.set_last()
             self.stats.beats += 1
             self.stats.bytes += message_bytes

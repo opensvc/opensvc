@@ -128,7 +128,7 @@ class Hb(shared.OsvcThread):
                 "gen": gen,
                 "monitor": self.get_node_monitor(),
                 "updated": time.time(), # for hb and relay readers
-            })
+            }, encode=False)
             return message, len(message)
         if begin == 0 or begin > shared.GEN:
             self.log.debug("send full node data to %s", nodename if nodename else "*")
@@ -141,7 +141,7 @@ class Hb(shared.OsvcThread):
             if shared.HB_MSG is not None:
                 return shared.HB_MSG, shared.HB_MSG_LEN
             with shared.HB_MSG_LOCK:
-                shared.HB_MSG = self.encrypt(shared.CLUSTER_DATA[rcEnv.nodename])
+                shared.HB_MSG = self.encrypt(shared.CLUSTER_DATA[rcEnv.nodename], encode=False)
                 if shared.HB_MSG is None:
                     shared.HB_MSG_LEN = 0
                 else:
@@ -159,7 +159,7 @@ class Hb(shared.OsvcThread):
                 "deltas": data,
                 "gen": self.get_gen(),
                 "updated": time.time(), # for hb and relay readers
-            })
+            }, encode=False)
             return message, len(message)
 
     def store_rx_data(self, data, nodename):
@@ -179,7 +179,14 @@ class Hb(shared.OsvcThread):
             with shared.CLUSTER_DATA_LOCK:
                 for gen in gens:
                     #self.log.debug("merge node %s gen %d (%d diffs)", nodename, gen, len(deltas[str(gen)]))
-                    json_delta.patch(shared.CLUSTER_DATA[nodename], deltas[str(gen)])
+                    try:
+                        json_delta.patch(shared.CLUSTER_DATA[nodename], deltas[str(gen)])
+                    except Exception as exc:
+                        self.log.warning("failed to apply node %s dataset gen %d patch: %s. "
+                                         "ask for a full: %s", nodename, gen, deltas[str(gen)], exc)
+                        shared.REMOTE_GEN[nodename] = 0
+                        shared.LOCAL_GEN[nodename] = data.get("gen", {}).get(rcEnv.nodename, 0)
+                        return
                 shared.REMOTE_GEN[nodename] = gen
                 shared.LOCAL_GEN[nodename] = data.get("gen", {}).get(rcEnv.nodename, 0)
                 self.log.debug("patch node %s dataset to gen %d, peer has gen %d of our dataset",
