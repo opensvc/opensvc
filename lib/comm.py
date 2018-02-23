@@ -290,10 +290,11 @@ class Crypt(object):
         try:
             message = json.loads(message)
         except ValueError:
-            if len(message) > 40:
+            message_len = len(message)
+            if message_len > 40:
                 self.log.error("misformatted encrypted message from %s: %s",
                                sender_id, message[:30]+"..."+message[-10:])
-            else:
+            elif message_len > 0:
                 self.log.error("misformatted encrypted message from %s",
                                sender_id)
             return None, None
