@@ -290,9 +290,12 @@ class Crypt(object):
         try:
             message = json.loads(message)
         except ValueError:
-            if len(message) > 0:
+            if len(message) > 40:
                 self.log.error("misformatted encrypted message from %s: %s",
-                               sender_id, repr(message))
+                               sender_id, message[:30]+"..."+message[-10:])
+            else:
+                self.log.error("misformatted encrypted message from %s",
+                               sender_id)
             return None, None
         if cluster_name != "join" and \
            message.get("clustername") not in (cluster_name, "join"):
@@ -323,7 +326,7 @@ class Crypt(object):
         except ValueError as exc:
             return nodename, data
 
-    def encrypt(self, data, cluster_name=None, secret=None):
+    def encrypt(self, data, cluster_name=None, secret=None, encode=True):
         """
         Encrypt and return data in a wrapping structure.
         """
@@ -346,7 +349,9 @@ class Crypt(object):
                 )
             ),
         }
-        return (json.dumps(message)+'\0').encode()
+        if encode:
+            return (json.dumps(message)+'\0').encode()
+        return json.dumps(message)
 
     def blacklisted(self, sender_id):
         """
@@ -466,6 +471,8 @@ class Crypt(object):
             data = b"".join(chunks)
         else:
             data = "".join(chunks)
+        if len(data) == 0:
+            return
         nodename, data = self.decrypt(data, cluster_name=cluster_name,
                                       secret=secret)
         return data
