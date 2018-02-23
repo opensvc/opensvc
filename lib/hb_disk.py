@@ -7,6 +7,8 @@ import mmap
 import stat
 import errno
 import contextlib
+import json
+import time
 
 import osvcd_shared as shared
 import rcExceptions as ex
@@ -201,7 +203,7 @@ class HbDisk(Hb, Crypt):
                     nodename = bytes(rcEnv.nodename, "utf-8")
                 except TypeError:
                     nodename = rcEnv.nodename
-                self.meta_write_slot(slot, rcEnv.nodename, fo=fo)
+                self.meta_write_slot(slot, nodename, fo=fo)
                 self.log.info("allocated slot %d", slot)
             break
 
@@ -256,8 +258,12 @@ class HbDiskTx(HbDisk):
         if message is None:
             return
 
+        data = (json.dumps({
+            "msg": message.decode().rstrip(),
+            "updated": time.time(),
+        })+'\0').encode()
         try:
-            self.write_slot(slot, message, fo=fo)
+            self.write_slot(slot, data, fo=fo)
             self.set_last()
             self.stats.beats += 1
             self.stats.bytes += message_bytes
@@ -306,8 +312,8 @@ class HbDiskRx(HbDisk):
             if data.slot < 0:
                 continue
             try:
-                slot_data = self.read_slot(data.slot, fo=fo)
-                _nodename, _data = self.decrypt(slot_data)
+                slot_data = json.loads(self.read_slot(data.slot, fo=fo))
+                _nodename, _data = self.decrypt(slot_data["msg"])
                 if _nodename is None:
                     # invalid crypt
                     #self.log.warning("can't decrypt data in node %s slot",
@@ -317,7 +323,7 @@ class HbDiskRx(HbDisk):
                     self.log.warning("node %s has written its data in node %s "
                                      "reserved slot", _nodename, nodename)
                     nodename = _nodename
-                updated = _data["updated"]
+                updated = slot_data["updated"]
                 last_updated = self.last_updated.get(nodename)
                 if last_updated is not None and last_updated == updated:
                     # remote tx has not rewritten its slot
