@@ -55,6 +55,30 @@ class KeywordNodeUuid(Keyword):
                   text="The auth token provided by the collector on 'nodemgr register'."
                 )
 
+class KeywordNodeMinAvailMem(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="node",
+                  keyword="min_avail_mem",
+                  order=15,
+                  default="10%",
+                  convert="size",
+                  text="The minimum required available memory to allow orchestration."
+                )
+
+class KeywordNodeMinAvailSwap(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="node",
+                  keyword="min_avail_swap",
+                  order=15,
+                  default="10%",
+                  convert="size",
+                  text="The minimum required available swap to allow orchestration."
+                )
+
 class KeywordNodeEnv(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -1142,6 +1166,8 @@ class KeyDict(KeywordStore):
            has_default_section=False,
         )
 
+        self += KeywordNodeMinAvailMem()
+        self += KeywordNodeMinAvailSwap()
         self += KeywordNodeUuid()
         self += KeywordNodeEnv()
         self += KeywordNodeAssetEnv()

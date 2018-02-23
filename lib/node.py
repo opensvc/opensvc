@@ -344,6 +344,32 @@ class Node(Crypt, ExtConfig):
         except ex.OptNotFound as exc:
             return exc.default
 
+    def get_min_avail(self, keyword, metric, limit=100):
+        try:
+            val = self.conf_get("node", keyword)
+        except ex.OptNotFound as exc:
+            val = exc.default
+        if str(val).endswith("%"):
+            val = int(val.rstrip("%"))
+        else:
+            total = self.stats().get(metric) # mb
+            val = val // 1024 // 1024 # b > mb
+            if total is None:
+                return
+            val = int(val/total*100)
+            if val > limit:
+                # unreasonable
+                val = limit
+        return val
+
+    @lazy
+    def min_avail_mem(self):
+        return self.get_min_avail("min_avail_mem", "mem_total", 50)
+
+    @lazy
+    def min_avail_swap(self):
+        return self.get_min_avail("min_avail_swap", "swap_total", 100)
+
     @lazy
     def dnsnodes(self):
         import socket
@@ -3305,12 +3331,18 @@ class Node(Crypt, ExtConfig):
             for nodename in nodenames:
                 avail = data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get(key+"_avail")
                 total = data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get(key+"_total")
+                limit = 100 - data["monitor"]["nodes"].get(nodename, {}).get("min_avail_"+key, 0)
                 if avail is None or total is None:
                     line.append("")
                     continue
                 usage = 100 - avail
                 total = print_size(total, unit="MB", compact=True)
-                cell = "%d%% %s" % (usage, total)
+                if limit:
+                    cell = "%d/%d%%:%s" % (usage, limit, total)
+                else:
+                    cell = "%d%%:%s" % (usage, total)
+                if usage > limit:
+                    cell = colorize(cell, color.RED)
                 line.append(cell)
             out.append(line)
 
@@ -3979,6 +4011,7 @@ class Node(Crypt, ExtConfig):
                 self.log.warning("wake monitor failed")
         except Exception as exc:
             self.log.warning("wake monitor failed: %s", str(exc))
+
 
     ##########################################################################
     #
