@@ -969,6 +969,9 @@ class Node(Crypt, ExtConfig):
         else:
             ret = getattr(self, action)()
 
+        if action in REMOTE_ACTIONS and os.environ.get("OSVC_ACTION_ORIGIN") != "daemon":
+            self.wake_monitor()
+
         if ret is None:
             ret = 0
         elif isinstance(ret, bool):
@@ -3953,6 +3956,18 @@ class Node(Crypt, ExtConfig):
             for line in lines:
                 yield line
 
+    def wake_monitor(self):
+        options = {}
+        try:
+            data = self.daemon_send(
+                {"action": "wake_monitor", "options": options},
+                nodename=self.options.node,
+                silent=True,
+            )
+            if data and data["status"] != 0:
+                self.log.warning("wake monitor failed")
+        except Exception as exc:
+            self.log.warning("wake monitor failed: %s", str(exc))
 
     ##########################################################################
     #
