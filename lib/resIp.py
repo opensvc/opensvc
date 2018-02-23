@@ -43,7 +43,7 @@ class Ip(Res.Resource):
     @lazy
     def dns_name_suffix(self):
         try:
-            dns_name_suffix = self.svc.conf_get( self.rid, "dns_name_suffix").strip("'\"$#")
+            dns_name_suffix = self.svc.conf_get(self.rid, "dns_name_suffix").strip("'\"$#")
         except ex.OptNotFound:
             dns_name_suffix = None
         return dns_name_suffix
@@ -409,7 +409,7 @@ class Ip(Res.Resource):
             self.log.debug("skip dns update: resource is not up")
             return
 
-        if dns_name_suffix is None:
+        if self.dns_name_suffix is None:
             self.log.debug("dns update: dns_name_suffix is not set")
 
         try:
@@ -422,8 +422,8 @@ class Ip(Res.Resource):
             "content": self.addr,
         }
 
-        if dns_name_suffix:
-            post_data["name"] = dns_name_suffix
+        if self.dns_name_suffix:
+            post_data["name"] = self.dns_name_suffix
 
         try:
             data = self.svc.node.collector_rest_post(
@@ -529,9 +529,9 @@ class Ip(Res.Resource):
             "network": network,
         }
 
-        try:
-            post_data["name"] = self.svc.conf_get(self.rid, "dns_name_suffix")
-        except ex.OptNotFound:
+        if self.dns_name_suffix:
+            post_data["name"] = self.dns_name_suffix
+        else:
             self.log.debug("allocate: dns_name_suffix is not set")
 
         try:
@@ -585,9 +585,9 @@ class Ip(Res.Resource):
 
         post_data = {}
 
-        try:
-            post_data["name"] = self.svc.conf_get(self.rid, "dns_name_suffix")
-        except ex.OptNotFound:
+        if self.dns_name_suffix:
+            post_data["name"] = self.dns_name_suffix
+        else:
             self.log.debug("allocate: dns_name_suffix is not set")
 
         try:
