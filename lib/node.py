@@ -3114,6 +3114,15 @@ class Node(Crypt, ExtConfig):
                         smon = ""
                     else:
                         smon = " " + smon
+                    # global expect
+                    if smon == "":
+                        global_expect = data["nodes"][nodename]["global_expect"]
+                        if global_expect:
+                            global_expect = " >" + str(global_expect)
+                        else:
+                            global_expect = ""
+                    else:
+                        global_expect = ""
                     # leader
                     if data["nodes"][nodename]["placement"] == "leader":
                         leader = colorize("^", color.LIGHTBLUE)
@@ -3131,6 +3140,7 @@ class Node(Crypt, ExtConfig):
                     val.append(frozen_icon)
                     val.append(provisioned)
                     val.append(smon)
+                    val.append(global_expect)
                     line.append("".join(val))
                 elif nodename not in nodes | drpnodes:
                     line.append("")
@@ -3380,6 +3390,7 @@ class Node(Crypt, ExtConfig):
                         "overall": _data.get("overall", "undef"),
                         "frozen": _data.get("frozen", False),
                         "mon": _data["monitor"].get("status", ""),
+                        "global_expect": _data["monitor"].get("global_expect"),
                         "placement": _data["monitor"].get("placement", ""),
                         "provisioned": _data.get("provisioned"),
                     }
