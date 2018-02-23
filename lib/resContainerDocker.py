@@ -287,6 +287,15 @@ class Docker(resContainer.Container):
         if self.run_args is None:
             return []
         args = shlex.split(self.run_args)
+
+        # drop user specified --name. we set ours already
+        for aname in ("-n", "--name"):
+            if aname in args:
+                idx = args.index(aname)
+                del args[idx]
+                if len(args) >= idx and not args[idx].startswith("-"):
+                    del args[idx]
+
         for arg, pos in enumerate(args):
             if arg != '-p':
                 continue
