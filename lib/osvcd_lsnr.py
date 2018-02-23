@@ -17,6 +17,9 @@ from rcUtilities import bdecode, drop_option
 from converters import convert_size
 from comm import Crypt
 
+RELAY_DATA = {}
+RELAY_LOCK = threading.RLock()
+
 class Listener(shared.OsvcThread, Crypt):
     sock_tmo = 1.0
 
@@ -172,25 +175,23 @@ class Listener(shared.OsvcThread, Crypt):
         return getattr(self, fname)(nodename, conn=conn, **options)
 
     def action_relay_tx(self, nodename, **kwargs):
-        if not hasattr(self, "relay_data"):
-            self.relay_data = {}
-        self.relay_data[nodename] = {
-            "msg": kwargs.get("msg"),
-            "updated": time.time(),
-        }
+        with RELAY_LOCK:
+            RELAY_DATA[nodename] = {
+                "msg": kwargs.get("msg"),
+                "updated": time.time(),
+            }
         return {"status": 0}
 
     def action_relay_rx(self, nodename, **kwargs):
-        if not hasattr(self, "relay_data"):
-            return {"status": 1, "error": "no data"}
         _nodename = kwargs.get("slot")
-        if _nodename not in self.relay_data:
-            return {"status": 1, "error": "no data"}
-        return {
-            "status": 0,
-            "data": self.relay_data[_nodename]["msg"],
-            "updated": self.relay_data[_nodename]["updated"],
-        }
+        with RELAY_LOCK:
+            if _nodename not in RELAY_DATA:
+                return {"status": 1, "error": "no data"}
+            return {
+                "status": 0,
+                "data": RELAY_DATA[_nodename]["msg"],
+                "updated": RELAY_DATA[_nodename]["updated"],
+            }
 
     def action_daemon_blacklist_clear(self, nodename, **kwargs):
         """
