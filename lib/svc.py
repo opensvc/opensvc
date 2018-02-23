@@ -4851,6 +4851,7 @@ class Svc(Crypt, ExtConfig):
         options = {
             "svcname": self.svcname,
             "backlog": self.options.backlog,
+            "debug": self.options.debug,
         }
         for lines in self.daemon_get_stream(
             {"action": "service_logs", "options": options},
