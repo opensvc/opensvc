@@ -17,6 +17,12 @@ class Scheduler(shared.OsvcThread):
     delayed = {}
     running = set()
 
+    def max_tasks(self):
+        if self.node_overloaded():
+            return 2
+        else:
+            return 6
+
     def status(self, **kwargs):
         data = shared.OsvcThread.status(self, **kwargs)
         data["running"] = len(self.running)
@@ -47,20 +53,25 @@ class Scheduler(shared.OsvcThread):
 
     def do(self):
         self.reload_config()
-        self.run_scheduler()
-        for _ in range(self.interval):
-            with shared.SCHED_TICKER:
-                shared.SCHED_TICKER.wait(1)
-            self.janitor_procs()
+        last = time.time()
+        done = 0
+        while True:
+            now = time.time()
+            if done == 0:
+                with shared.SCHED_TICKER:
+                    shared.SCHED_TICKER.wait(1)
             if self.stopped():
                 break
+            self.dequeue_actions()
+            if last + self.interval < now:
+                last = time.time()
+                self.run_scheduler()
+            done = self.janitor_procs()
 
     def drop_running(self, sig):
         self.running -= set([sig])
 
     def exec_action(self, sig, cmd):
-        if sig in self.running:
-            self.log.debug("drop already running action '%s'", " ".join(cmd))
         kwargs = dict(stdout=self.devnull, stderr=self.devnull,
                       stdin=self.devnull, close_fds=True)
         try:
@@ -75,12 +86,12 @@ class Scheduler(shared.OsvcThread):
                        on_error_args=[sig])
 
     def queue_action(self, cmd, delay, sig):
-        if delay == 0:
-            self.log.debug("immediate exec of action '%s'" % ' '.join(cmd))
-            self.exec_action(sig, cmd)
-            return [sig]
         if sig in self.delayed:
-            self.log.debug("drop already queued delayed action '%s'", " ".join(cmd))
+            self.log.debug("drop already queued action '%s'", " ".join(cmd))
+            self.log.debug("drop already queued sig '%s'", sig)
+            return []
+        if sig in self.running:
+            self.log.debug("drop already running action '%s'", " ".join(cmd))
             return []
         now = datetime.datetime.utcnow()
         exp = now + datetime.timedelta(seconds=delay)
@@ -89,23 +100,23 @@ class Scheduler(shared.OsvcThread):
             "expire": exp,
             "cmd": cmd,
         }
-        self.log.debug("queued action '%s' delayed until %s" % (' '.join(cmd), exp))
+        if delay == 0:
+            self.log.debug("queued action '%s' for run asap" % ' '.join(cmd))
+        else:
+            self.log.debug("queued action '%s' delayed until %s" % (' '.join(cmd), exp))
         return []
-
-    def dequeue_action(self, sig, data, now):
-        if now < data["expire"]:
-            return False
-        self.log.info("dequeue action '%s' queued at %s" % (data["cmd"], data["queued"]))
-        self.exec_action(sig, data["cmd"])
-        return True
 
     def dequeue_actions(self):
         now = datetime.datetime.utcnow()
         dequeued = []
-        for sig, data in self.delayed.items():
-            ret = self.dequeue_action(sig, data, now)
-            if ret:
-                dequeued.append(sig)
+        to_run = [sig for sig, task in self.delayed.items() if task["expire"] < now]
+        to_run = sorted(to_run, key=lambda sig: self.delayed[sig]["queued"])
+        for sig in to_run[:self.max_tasks()]:
+            self.log.info("dequeue action '%s' queued at %s",
+                          " ".join(self.delayed[sig]["cmd"]),
+                          self.delayed[sig]["queued"])
+            self.exec_action(sig, self.delayed[sig]["cmd"])
+            dequeued.append(sig)
         for sig in dequeued:
             del self.delayed[sig]
 
@@ -114,7 +125,6 @@ class Scheduler(shared.OsvcThread):
         nonprov = []
         run = []
 
-        self.dequeue_actions()
         if shared.NODE:
             shared.NODE.options.cron = True
             for action in shared.NODE.sched.scheduler_actions:
@@ -148,11 +158,11 @@ class Scheduler(shared.OsvcThread):
                 try:
                     rids, delay = data
                     rids = ','.join(rids)
-                    sig = ":".join(["svc", action, rids])
+                    sig = ":".join(["svc", svc.svcname, action, rids])
                     cmd += ["--rid", rids]
                 except TypeError:
                     delay = data
-                    sig = ":".join(["svc", action])
+                    sig = ":".join(["svc", svc.svcname, action])
                 run += self.queue_action(cmd, delay, sig)
 
         # log a scheduler loop digest

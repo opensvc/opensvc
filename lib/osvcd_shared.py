@@ -849,3 +849,16 @@ class OsvcThread(threading.Thread):
         gen.update(REMOTE_GEN)
         return gen
 
+    def node_overloaded(self, nodename=None):
+        if nodename is None:
+            nodename = rcEnv.nodename
+        node_data = CLUSTER_DATA.get(nodename)
+        if node_data is None:
+            return False
+        for key in ("mem", "swap"):
+            limit = node_data.get("min_avail_"+key, 0)
+            val = node_data.get("stats", {}).get(key+"_avail", 0)
+            if val < limit:
+                return True
+        return False
+

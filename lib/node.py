@@ -3222,6 +3222,23 @@ class Node(Crypt, ExtConfig):
                 _data["config"]["addr"]+":"+str(_data["config"]["port"]),
             ))
 
+        def load_scheduler(key, _data):
+            if _data["state"] == "running":
+                state = colorize(_data["state"], color.GREEN)
+            else:
+                state = colorize(_data["state"], color.RED)
+            status = ""
+            if _data.get("running"):
+                status += "%d run " % _data.get("running")
+            delayed = len(_data.get("delayed", []))
+            if delayed:
+                status += "%d wait" % delayed
+            out.append((
+                " "+colorize(key, color.BOLD),
+                state,
+                status,
+            ))
+
         def load_thread(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
@@ -3282,6 +3299,8 @@ class Node(Crypt, ExtConfig):
             for key in sorted([key for key in data if key != "cluster"]):
                 if key.startswith("hb#"):
                     load_hb(key, data[key])
+                elif key == "scheduler":
+                    load_scheduler(key, data[key])
                 elif key == "listener":
                     load_listener(key, data[key])
                 else:
