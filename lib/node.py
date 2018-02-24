@@ -3102,7 +3102,7 @@ class Node(Crypt, ExtConfig):
             if data["placement"] == "non-optimal":
                 status += colorize("^", color.RED)
             if data.get("scale") is not None:
-                info = "scaler/%d" % data.get("scale")
+                info = "scaler/%d/%d" % (data["n_up"], data.get("scale"))
             else:
                 info = topology
                 if data["orchestrate"]:
@@ -3424,6 +3424,7 @@ class Node(Crypt, ExtConfig):
                             "overall": "",
                             "nodes": {},
                             "slaves": set(),
+                            "n_up": 0,
                         })
                     slaves = _data.get("slaves", [])
                     scale = _data.get("scale")
@@ -3431,6 +3432,8 @@ class Node(Crypt, ExtConfig):
                         for idx in range(scale):
                             child = "%d.%s" % (idx, svcname)
                             slaves.append(child)
+                            if node_svc_status.get(child, {}).get("avail") == "up":
+                                services[svcname].n_up += 1
                     for child in slaves:
                         if child not in slave_parents:
                             slave_parents[child] = set([svcname])
