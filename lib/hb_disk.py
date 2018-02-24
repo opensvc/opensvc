@@ -203,7 +203,7 @@ class HbDisk(Hb, Crypt):
                     nodename = bytes(rcEnv.nodename, "utf-8")
                 except TypeError:
                     nodename = rcEnv.nodename
-                self.meta_write_slot(slot, rcEnv.nodename, fo=fo)
+                self.meta_write_slot(slot, nodename, fo=fo)
                 self.log.info("allocated slot %d", slot)
             break
 
