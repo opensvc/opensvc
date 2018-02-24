@@ -43,6 +43,7 @@ class Monitor(shared.OsvcThread, Crypt):
     monitor_period = 0.5
     max_shortloops = 30
     default_stdby_nb_restart = 2
+    max_transitions = 2
 
     def __init__(self):
         shared.OsvcThread.__init__(self)
@@ -63,7 +64,6 @@ class Monitor(shared.OsvcThread, Crypt):
         shared.CLUSTER_DATA[rcEnv.nodename] = {
             "compat": shared.COMPAT_VERSION,
             "monitor": shared.NMON_DATA,
-            "load": {},
             "services": {},
         }
 
@@ -88,7 +88,18 @@ class Monitor(shared.OsvcThread, Crypt):
         except Exception as exc:
             self.log.exception(exc)
 
+    def transition_count(self):
+        count = 0
+        for svcname, data in shared.SMON_DATA.items():
+            if data.status and data.status.endswith("ing"):
+                count += 1
+        return count
+
     def join_status_threads(self):
+        """
+        Initial service status eval is done is thread.
+        Join those still not terminated.
+        """
         for thr in self.status_threads.values():
             thr.join()
 
@@ -520,6 +531,12 @@ class Monitor(shared.OsvcThread, Crypt):
         svcnames = [svcname for svcname in shared.SMON_DATA]
         self.get_agg_services()
         for svcname in svcnames:
+            transitions = self.transition_count()
+            if transitions > self.max_transitions:
+                self.log.info("delay service orchestration: %d/%d transitions "
+                              "already in progress", transitions,
+                              self.max_transitions)
+                break
             if self.status_older_than_cf(svcname):
                 #self.log.info("%s status dump is older than its config file",
                 #              svcname)
@@ -986,6 +1003,8 @@ class Monitor(shared.OsvcThread, Crypt):
             return
         to_remove = sorted(list(current_slaves - target_slaves), key=LooseVersion)
         to_add = sorted(list(target_slaves - current_slaves), key=LooseVersion)
+        if len(to_remove) + len(to_add) == 0:
+            return
         if len(to_add) > 0:
             to_add = [[svcname, svc.scaler.width] for svcname in to_add]
             if svc.scaler.left != 0:
@@ -1904,6 +1923,8 @@ class Monitor(shared.OsvcThread, Crypt):
         data["stats"] = shared.NODE.stats()
         data["frozen"] = self.freezer.node_frozen()
         data["env"] = shared.NODE.env
+        data["min_avail_mem"] = shared.NODE.min_avail_mem
+        data["min_avail_swap"] = shared.NODE.min_avail_swap
         data["services"]["config"] = self.get_services_config()
         data["services"]["status"] = self.get_services_status(data["services"]["config"].keys())
 
