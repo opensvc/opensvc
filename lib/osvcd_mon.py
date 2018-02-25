@@ -867,7 +867,11 @@ class Monitor(shared.OsvcThread, Crypt):
                 if instance.avail not in STARTED_STATES:
                     return
                 n_to_stop = n_up - svc.flex_max_nodes
-                to_stop = self.placement_ranks(svc, candidates=up_nodes)[-n_to_stop:]
+                overloaded_up_nodes = self.overloaded_up_service_instances(svc.svcname)
+                to_stop = self.placement_ranks(svc, candidates=overloaded_up_nodes)[-n_to_stop:]
+                n_to_stop -= len(to_stop)
+                if n_to_stop > 0:
+                    to_stop += self.placement_ranks(svc, candidates=set(up_nodes)-set(overloaded_up_nodes))[-n_to_stop:]
                 self.log.info("%d nodes to stop to honor service %s "
                               "flex_max_nodes=%d. choose %s",
                               n_to_stop, svc.svcname, svc.flex_max_nodes,
@@ -1189,10 +1193,13 @@ class Monitor(shared.OsvcThread, Crypt):
         instance = self.get_service_instance(svc.svcname, top)
         if instance is None and deleted:
             return True
-        if provisioned and instance["provisioned"]:
+        if instance["provisioned"] is provisioned:
             return True
         self.log.info("delay leader-first action on service %s", svc.svcname)
         return False
+
+    def overloaded_up_service_instances(self, svcname):
+        return [nodename for nodename in self.up_service_instances(svcname) if self.node_overloaded(nodename)]
 
     def up_service_instances(self, svcname):
         nodenames = []
