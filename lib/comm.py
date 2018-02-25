@@ -489,7 +489,7 @@ class Crypt(object):
         addr, port = self.get_listener_info(nodename)
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(6.2)
+            sock.settimeout(0.2)
             sock.connect((addr, port))
             message = self.encrypt(data, cluster_name=cluster_name,
                                    secret=secret)
@@ -504,8 +504,7 @@ class Crypt(object):
                     except socket.timeout:
                         if timeout > 0 and elapsed > timeout:
                             return {"status": 1, "err": "timeout"}
-                        time.sleep(0.1)
-                        elapsed += 0.1
+                        elapsed += 0.2
         except socket.error as exc:
             if not silent:
                 self.log.error("daemon send to %s:%d error: %s", addr, port, str(exc))
