@@ -423,7 +423,7 @@ class KeywordNodeReadyPeriod(Keyword):
                   keyword="ready_period",
                   convert="duration",
                   order=15,
-                  default=16,
+                  default=5,
                   text="A duration expression, like 10s, defining how long the daemon monitor waits before starting a service instance in ready state. A peer node can preempt the start during this period. The default is 16s. Usually set to allow at least a couple of heartbeats to be received."
                 )
 

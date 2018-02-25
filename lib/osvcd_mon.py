@@ -43,7 +43,6 @@ class Monitor(shared.OsvcThread, Crypt):
     monitor_period = 0.5
     max_shortloops = 30
     default_stdby_nb_restart = 2
-    max_transitions = 2
 
     def __init__(self):
         shared.OsvcThread.__init__(self)
@@ -91,7 +90,7 @@ class Monitor(shared.OsvcThread, Crypt):
     def transition_count(self):
         count = 0
         for svcname, data in shared.SMON_DATA.items():
-            if data.status and data.status.endswith("ing"):
+            if data.status and data.status != "scaling" and data.status.endswith("ing"):
                 count += 1
         return count
 
@@ -403,6 +402,7 @@ class Monitor(shared.OsvcThread, Crypt):
     def service_provision(self, svc):
         self.set_smon(svc.svcname, "provisioning")
         candidates = self.placement_candidates(svc, discard_frozen=False,
+                                               discard_overloaded=False,
                                                discard_unprovisioned=False,
                                                discard_constraints_violation=False)
         cmd = ["provision"]
@@ -532,10 +532,10 @@ class Monitor(shared.OsvcThread, Crypt):
         self.get_agg_services()
         for svcname in svcnames:
             transitions = self.transition_count()
-            if transitions > self.max_transitions:
+            if transitions > shared.NODE.max_parallel:
                 self.log.info("delay service orchestration: %d/%d transitions "
                               "already in progress", transitions,
-                              self.max_transitions)
+                              shared.NODE.max_parallel)
                 break
             if self.status_older_than_cf(svcname):
                 #self.log.info("%s status dump is older than its config file",
@@ -950,7 +950,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if svc.svcname in shared.SERVICES:
                 self.service_delete(svc.svcname)
         elif smon.global_expect == "purged" and \
-             self.leader_first(svc, provisioned=False, deleted=False, check_min_instances_reached=False):
+             self.leader_first(svc, provisioned=False, deleted=True, check_min_instances_reached=False):
             if svc.svcname in shared.SERVICES and \
                (not self.service_unprovisioned(instance) or instance is not None):
                 self.service_purge(svc.svcname)
@@ -967,26 +967,40 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.service_start(svc.svcname)
 
     def service_orchestrator_scaler(self, svc):
-        target_slaves = set(svc.scaler.slaves)
+        peer = self.peer_transitioning(svc)
+        if peer:
+            return
+        candidates = self.placement_candidates(svc, discard_preserved=False)
+        width = len(candidates)
+        if width == 0:
+            left = 0
+            slaves_count = 0
+        else:
+            left = svc.scale_target % width
+            slaves_count = svc.scale_target // width
+            if left:
+                slaves_count += 1
+        target_slaves_list = [str(idx)+"."+svc.svcname for idx in range(slaves_count)]
+        target_slaves= set(target_slaves_list)
         current_slaves = set([svcname for svcname in shared.SERVICES \
                                 if re.match("^[0-9]+\."+svc.svcname+"$", svcname)])
-        if target_slaves == current_slaves:
+        if slaves_count > 0 and target_slaves == current_slaves:
             # the slaves set is correct.
-            if svc.topology != "flex" or svc.scaler.slaves_count == 0:
+            if svc.topology != "flex" or slaves_count == 0:
                 return
             # make sure each slave flex has min/max nodes set properly.
-            for svcname in svc.scaler.slaves[:-1]:
+            for svcname in target_slaves_list[:-1]:
                 slave = shared.SERVICES[svcname]
-                if slave.flex_min_nodes != svc.scaler.width or slave.flex_max_nodes != svc.scaler.width:
-                    ret = self.service_set_flex_instances(svcname, svc.scaler.width)
+                if slave.flex_min_nodes != width or slave.flex_max_nodes != width:
+                    ret = self.service_set_flex_instances(svcname, width)
                     if ret != 0:
                         self.set_smon(svcname, "set failed")
-            last_slave_name = svc.scaler.slaves[-1]
+            last_slave_name = target_slaves_list[-1]
             last_slave = shared.SERVICES[last_slave_name]
-            if svc.scaler.left == 0:
-                remain = svc.scaler.width
+            if left == 0:
+                remain = width
             else:
-                remain = svc.scaler.left
+                remain = left
             if last_slave.flex_min_nodes != remain or last_slave.flex_max_nodes != remain:
                 ret = self.service_set_flex_instances(last_slave_name, remain)
                 if ret != 0:
@@ -995,20 +1009,22 @@ class Monitor(shared.OsvcThread, Crypt):
 
         candidates = self.placement_candidates(
             svc, discard_frozen=False,
+            discard_overloaded=False,
             discard_unprovisioned=False,
             discard_constraints_violation=False,
             discard_start_failed=False
         )
         if self.placement_ranks(svc, candidates)[0] != rcEnv.nodename:
+            # not natural leader
             return
         to_remove = sorted(list(current_slaves - target_slaves), key=LooseVersion)
         to_add = sorted(list(target_slaves - current_slaves), key=LooseVersion)
         if len(to_remove) + len(to_add) == 0:
             return
         if len(to_add) > 0:
-            to_add = [[svcname, svc.scaler.width] for svcname in to_add]
-            if svc.scaler.left != 0:
-                to_add[-1][1] = svc.scaler.left
+            to_add = [[svcname, width] for svcname in to_add]
+            if left != 0:
+                to_add[-1][1] = left
         delta = ""
         if len(to_remove):
             delta += " remove " + ",".join(to_remove)
@@ -1144,11 +1160,11 @@ class Monitor(shared.OsvcThread, Crypt):
 
         * choose the placement top node amongst node with a up instance
         * if none, choose the placement top node amongst all nodes,
-          whatever their frozen, constraints, and current provisioning
-          state.
+          whatever their frozen, and current provisioning state. Still
+          honor the constraints and overload discards.
         """
         if check_min_instances_reached and not self.min_instances_reached(svc):
-            self.log.info("delay leader-first action on service '%s' until all "
+            self.log.info("delay leader-first action on service %s until all "
                           "nodes have fetched the service config", svc.svcname)
             return False
         instances = self.get_service_instances(svc.svcname, discard_empty=True)
@@ -1157,23 +1173,25 @@ class Monitor(shared.OsvcThread, Crypt):
         if len(candidates) == 0:
             self.log.info("service %s has no up instance, relax candidates "
                           "constraints", svc.svcname)
-            candidates = self.placement_candidates(svc, discard_frozen=False,
-                                                   discard_unprovisioned=False)
+            candidates = self.placement_candidates(
+                svc, discard_frozen=False,
+                discard_unprovisioned=False,
+            )
         try:
             top = self.placement_ranks(svc, candidates=candidates)[0]
             self.log.info("elected %s as the first node to take action on "
                           "service %s", top, svc.svcname)
         except IndexError:
             self.log.error("service %s placement ranks list is empty", svc.svcname)
-            return False
+            return True
         if top == rcEnv.nodename:
             return True
         instance = self.get_service_instance(svc.svcname, top)
-        if instance is None:
+        if instance is None and deleted:
             return True
-        if instance["provisioned"] is provisioned:
+        if provisioned and instance["provisioned"]:
             return True
-        self.log.info("delay leader-first action")
+        self.log.info("delay leader-first action on service %s", svc.svcname)
         return False
 
     def up_service_instances(self, svcname):
@@ -1932,7 +1950,10 @@ class Monitor(shared.OsvcThread, Crypt):
         for svcname in list(data["services"]["status"].keys()):
             if svcname not in data["services"]["config"]:
                 self.log.debug("purge deleted service %s from status data", svcname)
-                del data["services"]["status"][svcname]
+                try:
+                    del data["services"]["status"][svcname]
+                except KeyError:
+                    pass
 
     def update_hb_data(self):
         """
@@ -2209,6 +2230,7 @@ class Monitor(shared.OsvcThread, Crypt):
         with shared.CLUSTER_DATA_LOCK:
             data.nodes = dict(shared.CLUSTER_DATA)
         data["compat"] = self.compat
+        data["transitions"] = self.transition_count()
         data["frozen"] = self.get_clu_agg_frozen()
         data["services"] = self.get_agg_services()
         return data

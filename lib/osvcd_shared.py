@@ -513,7 +513,7 @@ class OsvcThread(threading.Thread):
         if self.config.has_option("node", "ready_period"):
             return convert_duration(self.config.get("node", "ready_period"))
         else:
-            return 16
+            return 5
 
     def in_maintenance_grace_period(self, nmon):
         if nmon.status in ("upgrade", "init"):
@@ -630,14 +630,17 @@ class OsvcThread(threading.Thread):
     #
     #########################################################################
     def placement_candidates(self, svc, discard_frozen=True,
+                             discard_overloaded=True,
+                             discard_preserved=True,
                              discard_unprovisioned=True,
                              discard_constraints_violation=True,
                              discard_start_failed=True):
         """
         Return the list of service nodes meeting the following criteria:
         * we have valid service instance data (not unknown, has avail)
-        * the node is not in maintenance or upgrade
+        * the node is not in maintenance, init or upgrade (default)
         * the node is not frozen (default)
+        * the node is not overloaded (default)
         * the service is not frozen (default)
         * the service instance is provisioned (default)
         * the service instance smon status is not "start failed" (default)
@@ -648,7 +651,7 @@ class OsvcThread(threading.Thread):
             for nodename, data in CLUSTER_DATA.items():
                 if data == "unknown":
                     continue
-                if data.get("monitor", {}).get("status") in ("maintenance", "upgrade"):
+                if discard_preserved and data.get("monitor", {}).get("status") in ("maintenance", "upgrade", "init"):
                     continue
                 if discard_frozen and data.get("frozen", False):
                     # node frozen
@@ -666,6 +669,8 @@ class OsvcThread(threading.Thread):
                 if discard_unprovisioned and instance.provisioned is False:
                     continue
                 if discard_constraints_violation and not instance.get("constraints", True):
+                    continue
+                if discard_overloaded and self.node_overloaded(nodename):
                     continue
                 candidates.append(nodename)
         return candidates
@@ -798,8 +803,12 @@ class OsvcThread(threading.Thread):
 
     def placement_ranks_shift(self, svc, candidates, silent=False):
         ranks = self.placement_ranks_nodes_order(svc, candidates, silent=silent) * 2
-        idx = svc.slave_num % len(candidates)
-        return ranks[idx:idx+len(candidates)]
+        n_candidates = len(candidates)
+        if n_candidates == 0:
+            idx = 0
+        else:
+            idx = svc.slave_num % n_candidates
+        return ranks[idx:idx+n_candidates]
 
     def get_oldest_gen(self, nodename=None):
         """
@@ -861,4 +870,3 @@ class OsvcThread(threading.Thread):
             if val < limit:
                 return True
         return False
-
