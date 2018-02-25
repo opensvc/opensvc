@@ -371,6 +371,19 @@ class Node(Crypt, ExtConfig):
         return self.get_min_avail("min_avail_swap", "swap_total", 100)
 
     @lazy
+    def max_parallel(self):
+        try:
+            return self.conf_get("node", "max_parallel")
+        except ex.OptNotFound as exc:
+            return self.default_max_parallel()
+
+    def default_max_parallel(self):
+        nr = int(self.asset.get_cpu_threads()["value"])
+        if nr == 0:
+            nr = int(self.asset.get_cpu_cores()["value"])
+        return max(2, nr//2)
+
+    @lazy
     def dnsnodes(self):
         import socket
         nodes = []
@@ -2377,10 +2390,6 @@ class Node(Crypt, ExtConfig):
                 set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
             data.procs = {}
             data.svcs = {}
-            try:
-                max_parallel = int(self._get("node.max_parallel"))
-            except:
-                max_parallel = 10
 
         def running():
             count = 0
@@ -2391,7 +2400,7 @@ class Node(Crypt, ExtConfig):
 
         for svc in self.svcs:
             if self.can_parallel(action, options):
-                while running() >= max_parallel:
+                while running() >= self.max_parallel:
                     time.sleep(1)
                 data.svcs[svc.svcname] = svc
                 data.procs[svc.svcname] = Process(
@@ -3211,6 +3220,22 @@ class Node(Crypt, ExtConfig):
                 line.append(status)
             out.append(line)
 
+        def load_monitor(key, _data):
+            if _data["state"] == "running":
+                state = colorize(_data["state"], color.GREEN)
+            else:
+                state = colorize(_data["state"], color.RED)
+            transitions = _data.get("transitions", 0)
+            if transitions:
+                status = "%d transition" % transitions
+            else:
+                status = ""
+            out.append((
+                " "+colorize(key, color.BOLD),
+                state,
+                status,
+            ))
+
         def load_listener(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
@@ -3299,6 +3324,8 @@ class Node(Crypt, ExtConfig):
             for key in sorted([key for key in data if key != "cluster"]):
                 if key.startswith("hb#"):
                     load_hb(key, data[key])
+                elif key == "monitor":
+                    load_monitor(key, data[key])
                 elif key == "scheduler":
                     load_scheduler(key, data[key])
                 elif key == "listener":
