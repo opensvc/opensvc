@@ -974,6 +974,11 @@ class Monitor(shared.OsvcThread, Crypt):
         peer = self.peer_transitioning(svc)
         if peer:
             return
+        current_slaves = set([svcname for svcname in shared.SERVICES \
+                                if re.match("^[0-9]+\."+svc.svcname+"$", svcname)])
+        n_up = self.up_services_instances_count(current_slaves)
+        if n_up == svc.scale_target:
+            return
         candidates = self.placement_candidates(svc, discard_preserved=False)
         width = len(candidates)
         if width == 0:
@@ -986,8 +991,6 @@ class Monitor(shared.OsvcThread, Crypt):
                 slaves_count += 1
         target_slaves_list = [str(idx)+"."+svc.svcname for idx in range(slaves_count)]
         target_slaves= set(target_slaves_list)
-        current_slaves = set([svcname for svcname in shared.SERVICES \
-                                if re.match("^[0-9]+\."+svc.svcname+"$", svcname)])
         if slaves_count > 0 and target_slaves == current_slaves:
             # the slaves set is correct.
             if svc.topology != "flex" or slaves_count == 0:
@@ -995,10 +998,17 @@ class Monitor(shared.OsvcThread, Crypt):
             # make sure each slave flex has min/max nodes set properly.
             for svcname in target_slaves_list[:-1]:
                 slave = shared.SERVICES[svcname]
-                if slave.flex_min_nodes != width or slave.flex_max_nodes != width:
-                    ret = self.service_set_flex_instances(svcname, width)
-                    if ret != 0:
-                        self.set_smon(svcname, "set failed")
+                if slave.flex_min_nodes == width and slave.flex_max_nodes == width:
+                    continue
+                if slave.flex_max_nodes > width and n_up <= svc.scale_target:
+                    # avoid going under target
+                    continue
+                ret = self.service_set_flex_instances(svcname, width)
+                if ret != 0:
+                    self.set_smon(svcname, "set failed")
+                else:
+                    if slave.flex_max_nodes > width:
+                        n_up += width - slave.flex_max_nodes
             last_slave_name = target_slaves_list[-1]
             last_slave = shared.SERVICES[last_slave_name]
             if left == 0:
@@ -1200,6 +1210,12 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def overloaded_up_service_instances(self, svcname):
         return [nodename for nodename in self.up_service_instances(svcname) if self.node_overloaded(nodename)]
+
+    def up_services_instances_count(self, svcnames):
+        count = 0
+        for svcname in svcnames:
+            count += len(self.up_service_instances(svcname))
+        return count
 
     def up_service_instances(self, svcname):
         nodenames = []
