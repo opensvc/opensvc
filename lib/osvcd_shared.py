@@ -8,7 +8,7 @@ import datetime
 import time
 import codecs
 import hashlib
-from subprocess import Popen
+from subprocess import Popen, PIPE
 
 import rcExceptions as ex
 from rcConfigParser import RawConfigParser
@@ -464,7 +464,7 @@ class OsvcThread(threading.Thread):
         proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
         return proc
 
-    def service_command(self, svcname, cmd):
+    def service_command(self, svcname, cmd, stdin=None):
         """
         A generic svcmgr command Popen wrapper.
         """
@@ -472,7 +472,13 @@ class OsvcThread(threading.Thread):
         env["OSVC_ACTION_ORIGIN"] = "daemon"
         cmd = [rcEnv.paths.svcmgr, '-s', svcname, "--local"] + cmd
         self.log.info("execute: %s", " ".join(cmd))
-        proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True, env=env)
+        if stdin is not None:
+            _stdin = PIPE
+        else:
+            _stdin = None
+        proc = Popen(cmd, stdout=None, stderr=None, stdin=_stdin, close_fds=True, env=env)
+        if stdin:
+            proc.stdin.write(stdin.encode())
         return proc
 
     def add_cluster_node(self, nodename):

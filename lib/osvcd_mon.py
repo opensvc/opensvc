@@ -453,32 +453,22 @@ class Monitor(shared.OsvcThread, Crypt):
         out, err = proc.communicate()
         return proc.returncode
 
-    def service_create_provision_from(self, svcname, svc, instances=None):
-        cmd = ["create", "--config", svc.paths.cf]
-        proc = self.service_command(svcname, cmd)
-        out, err = proc.communicate()
-        if proc.returncode != 0:
-            self.set_smon(svcname, "create failed")
-
-        cmd = ["unset", "--kw", "scale"]
-        proc = self.service_command(svcname, cmd)
-        out, err = proc.communicate()
-        if proc.returncode != 0:
-            self.set_smon(svcname, "create failed")
-            return
-
-        cmd = ["set", "--kw", "scaler_slave=true"]
-        proc = self.service_command(svcname, cmd)
-        out, err = proc.communicate()
-        if proc.returncode != 0:
-            self.set_smon(svcname, "create failed")
-            return
-
+    def service_create_scaler_slave(self, svcname, svc, instances=None):
+        data = svc.print_config_data()
+        data["DEFAULT"]["scaler_slave"] = "true"
         if svc.topology == "flex" and instances is not None:
-            ret = self.service_set_flex_instances(svcname, instances)
-            if ret != 0:
-                self.set_smon(svcname, "create failed")
-                return
+            data["DEFAULT"]["flex_min_nodes"] = instances
+            data["DEFAULT"]["flex_max_nodes"] = instances
+        try:
+            del data["DEFAULT"]["scale"]
+        except KeyError:
+            pass
+        cmd = ["create"]
+        proc = self.service_command(svcname, cmd, stdin=json.dumps(data))
+        out, err = proc.communicate()
+        if proc.returncode != 0:
+            self.set_smon(svcname, "create failed")
+
         try:
             ret = self.wait_service_config_consensus(svcname, svc.peers)
         except Exception as exc:
@@ -1060,7 +1050,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if svcname in shared.SERVICES:
                 continue
             thr = threading.Thread(
-                target=self.service_create_provision_from,
+                target=self.service_create_scaler_slave,
                 args=(svcname, svc, instances)
             )
             thr.start()
