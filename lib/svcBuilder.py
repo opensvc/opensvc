@@ -2373,6 +2373,9 @@ def create(svcname, resources=[], provision=False):
                 continue
             conf.set(section, key, val)
 
+    from freezer import Freezer
+    Freezer(svcname).freeze()
+
     conf.write(f)
 
     initdir = svcname+'.dir'
@@ -2380,15 +2383,18 @@ def create(svcname, resources=[], provision=False):
     if not os.path.exists(svcinitdir):
         os.makedirs(svcinitdir)
     fix_app_link(svcname)
-    fix_exe_link(rcEnv.paths.svcmgr, svcname)
+    fix_exe_link(svcname)
     return {"ret": 0, "rid": sections.keys()}
 
 def fix_app_link(svcname):
+    """
+    Create the <svcname>.d -> <svcname>.dir symlink
+    """
+    if os.name != 'posix':
+        return
     os.chdir(rcEnv.paths.pathetc)
     src = svcname+'.d'
     dst = svcname+'.dir'
-    if os.name != 'posix':
-        return
     try:
         os.readlink(src)
     except:
@@ -2396,18 +2402,18 @@ def fix_app_link(svcname):
             os.makedirs(dst)
         os.symlink(dst, src)
 
-def fix_exe_link(dst, src):
+def fix_exe_link(svcname):
+    """
+    Create the <svcname> -> svcmgr symlink
+    """
     if os.name != 'posix':
         return
-    from freezer import Freezer
     os.chdir(rcEnv.paths.pathetc)
     try:
-        p = os.readlink(src)
+        p = os.readlink(svcname)
     except:
-        Freezer(src).freeze()
-        os.symlink(dst, src)
-        p = dst
-    if p != dst:
-        os.unlink(src)
-        Freezer(src).freeze()
-        os.symlink(dst, src)
+        os.symlink(rcEnv.paths.svcmgr, svcname)
+        p = rcEnv.paths.svcmgr
+    if p != rcEnv.paths.svcmgr:
+        os.unlink(svcname)
+        os.symlink(rcEnv.paths.svcmgr, svcname)

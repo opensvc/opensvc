@@ -24,6 +24,7 @@ from comm import Crypt
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode, purge_cache, fsum
 from svcBuilder import build, fix_app_link, fix_exe_link
+from freezer import Freezer
 
 STARTED_STATES = [
     "n/a",
@@ -173,8 +174,9 @@ class Monitor(shared.OsvcThread, Crypt):
             with shared.SERVICES_LOCK:
                 if svcname not in shared.SERVICES:
                     new_service = True
-            instance = self.get_service_instance(svcname, rcEnv.nodename)
-            if instance:
+            instances = self.get_service_instances(svcname, rcEnv.nodename)
+            for instance in instances:
+                # block config file exchange while any instance is being deleted
                 global_expect = instance.get("monitor", {}).get("global_expect")
                 if global_expect in ("purged", "deleted"):
                     continue
@@ -211,9 +213,11 @@ class Monitor(shared.OsvcThread, Crypt):
                     return
             self.log.info("node %s has the most recent service %s config",
                           ref_nodename, svcname)
+            if new_service:
+                Freezer(svcname).freeze()
             self.fetch_service_config(svcname, ref_nodename)
             if new_service:
-                fix_exe_link(rcEnv.paths.svcmgr, svcname)
+                fix_exe_link(svcname)
                 fix_app_link(svcname)
 
     def fetch_service_config(self, svcname, nodename):

@@ -2739,6 +2739,11 @@ class Node(Crypt, ExtConfig):
         if fpath is not None and template is not None:
             raise ex.excError("--config and --template can't both be specified")
 
+        # freeze before the installing the config so the daemon never
+        # has a chance to consider the new service unfrozen and take undue
+        # action before we have the change to modify the service config
+        Freezer(svcname).freeze()
+
         if template is not None:
             if "://" in template:
                 self.install_svc_conf_from_uri(svcname, template)
@@ -2765,7 +2770,6 @@ class Node(Crypt, ExtConfig):
         # install svcmgr link
         svcmgr_l = os.path.join(rcEnv.paths.pathetc, svcname)
         if not os.path.exists(svcmgr_l):
-            Freezer(svcname).freeze()
             os.symlink(rcEnv.paths.svcmgr, svcmgr_l)
         elif os.path.realpath(rcEnv.paths.svcmgr) != os.path.realpath(svcmgr_l):
             os.unlink(svcmgr_l)
