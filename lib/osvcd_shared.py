@@ -790,11 +790,10 @@ class OsvcThread(threading.Thread):
                 try:
                     load = CLUSTER_DATA[nodename]["stats"]["load_15m"]
                 except KeyError:
-                    pass
-                try:
-                    load = CLUSTER_DATA[nodename]["load"]["15m"]
-                except KeyError:
-                    continue
+                    try:
+                        load = CLUSTER_DATA[nodename]["load"]["15m"]
+                    except KeyError:
+                        continue
                 data.append((nodename, load))
         return [nodename for nodename, _ in sorted(data, key=lambda x: x[1])]
 
