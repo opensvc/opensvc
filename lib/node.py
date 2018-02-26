@@ -2722,6 +2722,27 @@ class Node(Crypt, ExtConfig):
         if dst_cf != src_cf:
             shutil.copy2(src_cf, dst_cf)
 
+    @staticmethod
+    def install_svc_conf_from_data(svcname, data):
+        """
+        Installs a service configuration file from section, keys and values
+        fed from a data structure.
+        """
+        fpath = os.path.join(rcEnv.paths.pathetc, svcname+'.conf')
+        config = rcConfigParser.RawConfigParser()
+
+        for section_name, section in data.items():
+            if section_name != "DEFAULT":
+                config.add_section(section_name)
+            for key, value in section.items():
+                config.set(section_name, key, value)
+        try:
+            with open(fpath, 'w') as ofile:
+                config.write(ofile)
+        except:
+            print("failed to write %s"%fpath, file=sys.stderr)
+            raise Exception()
+
     def install_service(self, svcname, fpath=None, template=None):
         """
         Pick a collector's template, arbitrary uri, or local file service
@@ -2733,7 +2754,19 @@ class Node(Crypt, ExtConfig):
                 raise ex.excError("only one service must be specified")
             svcname = svcname[0]
 
-        if fpath is None and template is None:
+        import select
+        data = None
+        if sys.stdin and not sys.stdin.isatty():
+            feed = ""
+            for line in sys.stdin.readlines():
+                feed += line
+            if feed:
+                try:
+                    data = json.loads("".join(feed))
+                except ValueError:
+                    raise ex.excError("invalid json feed")
+
+        if fpath is None and template is None and data is None:
             return
 
         if fpath is not None and template is not None:
@@ -2744,20 +2777,27 @@ class Node(Crypt, ExtConfig):
         # action before we have the change to modify the service config
         Freezer(svcname).freeze()
 
-        if template is not None:
+        if data is not None:
+            self.install_svc_conf_from_data(svcname, data)
+        elif template is not None:
             if "://" in template:
                 self.install_svc_conf_from_uri(svcname, template)
             elif os.path.exists(template):
                 self.install_svc_conf_from_file(svcname, template)
             else:
                 self.install_svc_conf_from_templ(svcname, template)
-        else:
+        elif fpath is not None:
             if "://" in fpath:
                 self.install_svc_conf_from_uri(svcname, fpath)
             else:
                 self.install_svc_conf_from_file(svcname, fpath)
+        else:
+            # announce nothing was done
+            return 2
 
         self.install_service_files(svcname)
+        self.wake_monitor()
+        return 0
 
     @staticmethod
     def install_service_files(svcname):

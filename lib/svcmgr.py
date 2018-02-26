@@ -137,13 +137,14 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
     """
     ret = 0
     try:
-        node.install_service(svcnames, fpath=options.config,
-                             template=options.template)
+        ret = node.install_service(svcnames, fpath=options.config,
+                                   template=options.template)
     except Exception as exc:
         print(str(exc), file=sys.stderr)
-        ret = 1
+        return 1
 
-    if options.config is None and options.template is None:
+    if ret == 2:
+        # install_service() reports it did nothing
         data = getattr(svcBuilder, action)(svcnames, options.resource,
                                            provision=options.provision)
     else:
