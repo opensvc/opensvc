@@ -1129,7 +1129,7 @@ class Svc(Crypt, ExtConfig):
             raise ex.excError("service has already been asked to reach the "
                               "%s global state" % global_expect)
 
-        data = self.node._daemon_status(refresh=True)
+        data = self.node._daemon_status()
         if self.svcname not in data["monitor"]["services"]:
             return
         if action in ("start", "stop"):
@@ -2664,24 +2664,27 @@ class Svc(Crypt, ExtConfig):
         prev_global_expect_set = set()
         for _ in range(timeout):
             data = self.node._daemon_status(refresh=True)
-            if data is None:
+            if data is None or "monitor" not in data:
                 # interrupted, daemon died
                 time.sleep(1)
                 continue
-            global_expect_set = []
+            global_expect_set = set()
+            inprogress = []
             for nodename in data["monitor"]["nodes"]:
                 try:
                     _data = data["monitor"]["nodes"][nodename]["services"]["status"][svcname]
                 except (KeyError, TypeError) as exc:
                     continue
+                if _data["monitor"].get("global_expect") is not None:
+                    inprogress.append(nodename)
                 if _data["monitor"].get("global_expect") in (global_expect, "n/a"):
-                    global_expect_set.append(nodename)
+                    global_expect_set.add(nodename)
             if prev_global_expect_set != global_expect_set:
-                for nodename in set(global_expect_set) - prev_global_expect_set:
+                for nodename in global_expect_set - prev_global_expect_set:
                     self.log.info(" work starting on %s", nodename)
-                for nodename in prev_global_expect_set - set(global_expect_set):
+                for nodename in prev_global_expect_set - global_expect_set:
                     self.log.info(" work over on %s", nodename)
-            if not global_expect_set:
+            if not inprogress and not global_expect_set:
                 if svcname not in data["monitor"]["services"]:
                     return
                 self.log.info("final status: avail=%s overall=%s frozen=%s",
