@@ -527,9 +527,10 @@ class Monitor(shared.OsvcThread, Crypt):
         for svcname in svcnames:
             transitions = self.transition_count()
             if transitions > shared.NODE.max_parallel:
-                self.log.info("delay service orchestration: %d/%d transitions "
-                              "already in progress", transitions,
-                              shared.NODE.max_parallel)
+                self.duplog("info", "delay services orchestration: "
+                            "%(transitions)d/%(max)d transitions already "
+                            "in progress", transitions=transitions,
+                            max=shared.NODE.max_parallel)
                 break
             if self.status_older_than_cf(svcname):
                 #self.log.info("%s status dump is older than its config file",
@@ -1067,16 +1068,16 @@ class Monitor(shared.OsvcThread, Crypt):
         excess = -missing
         for slavename in sorted(current_slaves, key=LooseVersion, reverse=True):
             slave = shared.SERVICES[slavename]
-            n_up = len(self.up_service_instances(slavename))
-            if n_up > excess:
-                width = n_up - excess
+            n_slots = slave.flex_min_nodes
+            if n_slots > excess:
+                width = n_slots - excess
                 ret = self.service_set_flex_instances(slavename, width)
                 if ret != 0:
                     self.set_smon(slavename, "set failed")
                 break
             else:
                 to_remove.append(slavename)
-                excess -= n_up
+                excess -= n_slots
         if len(to_remove) == 0:
             return
         delta = "delete " + ",".join(to_remove)
