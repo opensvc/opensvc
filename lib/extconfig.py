@@ -1060,7 +1060,6 @@ class ExtConfig(object):
         with codecs.open(fpath, "w", "utf8") as ofile:
             ofile.write(buff)
             ofile.flush()
-            os.fsync(ofile)
         shutil.move(fpath, self.paths.cf)
 
     def print_config_data(self, src_config=None):

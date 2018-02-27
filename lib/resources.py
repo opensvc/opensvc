@@ -446,7 +446,6 @@ class Resource(object):
             return rcStatus.NA
 
         if self.rstatus is not None and not refresh:
-            self.write_status()
             return self.rstatus
 
         last_status = self.load_status_last()
@@ -551,7 +550,6 @@ class Resource(object):
         with open(self.fpath_status_last, 'w') as ofile:
             ofile.write(status_str)
             ofile.flush()
-            os.fsync(ofile)
 
     def write_status_history(self):
         """
@@ -976,7 +974,6 @@ class Resource(object):
                 try:
                     json.dump(value, filep)
                     filep.flush()
-                    os.fsync(filep)
                 except ValueError:
                     return
         except Exception:

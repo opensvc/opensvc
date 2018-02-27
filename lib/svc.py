@@ -1671,7 +1671,6 @@ class Svc(Crypt, ExtConfig):
             with open(self.status_data_dump, "w") as filep:
                 json.dump(data, filep)
                 filep.flush()
-                os.fsync(filep)
             os.utime(self.status_data_dump, (-1, data["mtime"]))
             self.wake_monitor()
         except Exception as exc:
@@ -2334,7 +2333,6 @@ class Svc(Crypt, ExtConfig):
             with open(path, 'w') as ofile:
                 ofile.write(json.dumps(data))
                 ofile.flush()
-                os.fsync(ofile)
         except (IOError, OSError, ValueError):
             os.unlink(path)
 
@@ -4218,7 +4216,6 @@ class Svc(Crypt, ExtConfig):
             with open(fname, "w") as tmpfile:
                 self.config.write(tmpfile)
                 tmpfile.flush()
-                os.fsync(tmpfile)
             shutil.move(fname, self.paths.cf)
         except (OSError, IOError) as exc:
             print("failed to write new %s (%s)" % (self.paths.cf, str(exc)),
@@ -4651,7 +4648,6 @@ class Svc(Crypt, ExtConfig):
         with codecs.open(self.paths.cf, "w", "utf8") as ofile:
             ofile.write(buff)
             ofile.flush()
-            os.fsync(ofile)
         self.log.info("%s pulled", self.paths.cf)
         self.node.install_service_files(self.svcname)
 
