@@ -476,7 +476,7 @@ class Monitor(shared.OsvcThread, Crypt):
             return
 
         self.set_smon(svcname, global_expect="thawed")
-        if not self.wait_global_expect_change(svcname, "thawed", 60):
+        if not self.wait_global_expect_change(svcname, "thawed", 600):
             self.set_smon(svcname, "thaw failed", global_expect="unset")
             return
         self.set_smon(svcname, global_expect="provisioned")
@@ -543,7 +543,7 @@ class Monitor(shared.OsvcThread, Crypt):
     def resources_orchestrator(self, svcname, svc):
         if svc is None:
             return
-        if svc.frozen() or self.freezer.node_frozen():
+        if self.service_frozen(svcname) or self.freezer.node_frozen():
             #self.log.info("resource %s orchestrator out (frozen)", svc.svcname)
             return
         if svc.disabled:
@@ -673,7 +673,7 @@ class Monitor(shared.OsvcThread, Crypt):
             return
         if svc.topology == "failover" and smon.local_expect == "started":
             return
-        if svc.frozen() or self.freezer.node_frozen():
+        if self.service_frozen(svc.svcname) or self.freezer.node_frozen():
             #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
             return
         if not self.rejoin_grace_period_expired:
@@ -749,7 +749,7 @@ class Monitor(shared.OsvcThread, Crypt):
                               "ready", peer, svc.svcname)
                 self.set_smon(svc.svcname, "idle")
                 return
-            peer = self.peer_transitioning(svc)
+            peer = self.peer_transitioning(svc.svcname)
             if peer:
                 self.log.info("abort 'ready' because node %s is already "
                               "acting on service %s", peer, svc.svcname)
@@ -811,14 +811,14 @@ class Monitor(shared.OsvcThread, Crypt):
         n_missing = svc.flex_min_nodes - n_up
 
         if smon.status in ("ready", "wait parents"):
-            if (n_up - 1) >= svc.flex_min_nodes:
+            if n_up > svc.flex_min_nodes:
                 self.log.info("flex service %s instance count reached "
                               "required minimum while we were ready",
                               svc.svcname)
                 self.set_smon(svc.svcname, "idle")
                 return
             better_peers = self.better_peers_ready(svc);
-            if len(better_peers) >= n_missing:
+            if n_missing > 0 and len(better_peers) >= n_missing:
                 self.log.info("abort 'ready' because nodes %s have a better "
                               "placement score for service %s and are also "
                               "ready", ','.join(better_peers), svc.svcname)
@@ -885,11 +885,11 @@ class Monitor(shared.OsvcThread, Crypt):
         """
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
         if smon.global_expect == "frozen":
-            if not svc.frozen():
+            if self.service_frozen(svc.svcname) is False:
                 self.log.info("freeze service %s", svc.svcname)
                 self.service_freeze(svc.svcname)
         elif smon.global_expect == "thawed":
-            if svc.frozen():
+            if self.service_frozen(svc.svcname):
                 self.log.info("thaw service %s", svc.svcname)
                 self.service_thaw(svc.svcname)
         elif smon.global_expect == "shutdown":
@@ -899,7 +899,7 @@ class Monitor(shared.OsvcThread, Crypt):
             elif smon.status == "wait children":
                 self.set_smon(svc.svcname, status="idle")
 
-            if not svc.frozen():
+            if not self.service_frozen(svc.svcname):
                 self.log.info("freeze service %s", svc.svcname)
                 self.service_freeze(svc.svcname)
             elif not self.is_instance_shutdown(instance):
@@ -918,7 +918,7 @@ class Monitor(shared.OsvcThread, Crypt):
             elif smon.status == "wait children":
                 self.set_smon(svc.svcname, status="idle")
 
-            if not svc.frozen():
+            if not self.service_frozen(svc.svcname):
                 self.log.info("freeze service %s", svc.svcname)
                 self.service_freeze(svc.svcname)
             elif instance.avail not in STOPPED_STATES:
@@ -931,7 +931,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 else:
                     self.service_stop(svc.svcname)
         elif smon.global_expect == "started":
-            if svc.frozen():
+            if self.service_frozen(svc.svcname):
                 self.log.info("thaw service %s", svc.svcname)
                 self.service_thaw(svc.svcname)
             elif status not in STARTED_STATES:
@@ -965,56 +965,12 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.service_start(svc.svcname)
 
     def service_orchestrator_scaler(self, svc):
-        peer = self.peer_transitioning(svc)
+        smon = self.get_service_monitor(svc.svcname)
+        if smon.status != "idle":
+            return
+        peer = self.peer_transitioning(svc.svcname)
         if peer:
             return
-        current_slaves = set([svcname for svcname in shared.SERVICES \
-                                if re.match("^[0-9]+\."+svc.svcname+"$", svcname)])
-        n_up = self.up_services_instances_count(current_slaves)
-        if n_up == svc.scale_target:
-            return
-        candidates = self.placement_candidates(svc, discard_preserved=False)
-        width = len(candidates)
-        if width == 0:
-            left = 0
-            slaves_count = 0
-        else:
-            left = svc.scale_target % width
-            slaves_count = svc.scale_target // width
-            if left:
-                slaves_count += 1
-        target_slaves_list = [str(idx)+"."+svc.svcname for idx in range(slaves_count)]
-        target_slaves= set(target_slaves_list)
-        if slaves_count > 0 and target_slaves == current_slaves:
-            # the slaves set is correct.
-            if svc.topology != "flex" or slaves_count == 0:
-                return
-            # make sure each slave flex has min/max nodes set properly.
-            for svcname in target_slaves_list[:-1]:
-                slave = shared.SERVICES[svcname]
-                if slave.flex_min_nodes == width and slave.flex_max_nodes == width:
-                    continue
-                if slave.flex_max_nodes > width and n_up <= svc.scale_target:
-                    # avoid going under target
-                    continue
-                ret = self.service_set_flex_instances(svcname, width)
-                if ret != 0:
-                    self.set_smon(svcname, "set failed")
-                else:
-                    if slave.flex_max_nodes > width:
-                        n_up += width - slave.flex_max_nodes
-            last_slave_name = target_slaves_list[-1]
-            last_slave = shared.SERVICES[last_slave_name]
-            if left == 0:
-                remain = width
-            else:
-                remain = left
-            if last_slave.flex_min_nodes != remain or last_slave.flex_max_nodes != remain:
-                ret = self.service_set_flex_instances(last_slave_name, remain)
-                if ret != 0:
-                    self.set_smon(svcname, "set failed")
-            return
-
         candidates = self.placement_candidates(
             svc, discard_frozen=False,
             discard_overloaded=False,
@@ -1025,22 +981,136 @@ class Monitor(shared.OsvcThread, Crypt):
         if self.placement_ranks(svc, candidates)[0] != rcEnv.nodename:
             # not natural leader
             return
-        to_remove = sorted(list(current_slaves - target_slaves), key=LooseVersion)
-        to_add = sorted(list(target_slaves - current_slaves), key=LooseVersion)
-        if len(to_remove) + len(to_add) == 0:
+        current_slaves = [svcname for svcname in shared.SERVICES \
+                          if re.match("^[0-9]+\."+svc.svcname+"$", svcname)]
+        n_slots = self.scaler_slots(current_slaves)
+        if n_slots == svc.scale_target:
             return
-        if len(to_add) > 0:
-            to_add = [[svcname, width] for svcname in to_add]
-            if left != 0:
-                to_add[-1][1] = left
-        delta = ""
-        if len(to_remove):
-            delta += " remove " + ",".join(to_remove)
-        if len(to_add):
-            delta += " add " + ",".join([elem[0] for elem in to_add])
+        missing = svc.scale_target - n_slots
+        self.log.info("service %s scale delta %d on target %d", svc.svcname,
+                      missing, svc.scale_target)
+        if missing > 0:
+            self.service_orchestrator_scaler_up(svc, missing, current_slaves)
+        else:
+            self.service_orchestrator_scaler_down(svc, missing, current_slaves)
+
+    def service_orchestrator_scaler_up(self, svc, missing, current_slaves):
+        if svc.topology == "flex":
+            self.service_orchestrator_scaler_up_flex(svc, missing, current_slaves)
+        else:
+            self.service_orchestrator_scaler_up_failover(svc, missing, current_slaves)
+
+    def service_orchestrator_scaler_down(self, svc, missing, current_slaves):
+        if svc.topology == "flex":
+            self.service_orchestrator_scaler_down_flex(svc, missing, current_slaves)
+        else:
+            self.service_orchestrator_scaler_down_failover(svc, missing, current_slaves)
+
+    def service_orchestrator_scaler_up_flex(self, svc, missing, current_slaves):
+        candidates = self.placement_candidates(svc, discard_preserved=False)
+        width = len(candidates)
+        if width == 0:
+            return
+
+        # start fill-up the current slaves that might have holes due to
+        # previous scaling while some nodes where overloaded
+        n_current_slaves = len(current_slaves)
+        current_slaves = sorted(current_slaves, key=LooseVersion)
+        for slavename in current_slaves:
+            slave = shared.SERVICES[slavename]
+            if slave.flex_max_nodes >= width:
+                continue
+            remain = width - slave.flex_max_nodes
+            if remain > missing:
+                pad = remain - missing
+                new_width = slave.flex_max_nodes + pad
+            else:
+                pad = remain
+                new_width = width
+            ret = self.service_set_flex_instances(slavename, new_width)
+            if ret != 0:
+                self.set_smon(slavename, "set failed")
+            else:
+                missing -= pad
+
+        left = missing % width
+        slaves_count = missing // width
+        if left:
+            slaves_count += 1
+
+        if slaves_count == 0:
+            return
+
+        to_add = []
+
+        # create services in holes first
+        for slavename in [str(idx)+"."+svc.svcname for idx in range(n_current_slaves)]:
+            if slavename in current_slaves:
+                continue
+            to_add.append([slavename, width])
+            slaves_count -= 1
+            if slaves_count == 0:
+                break
+
+        to_add += [[str(n_current_slaves+idx)+"."+svc.svcname, width] for idx in range(slaves_count)]
+        if left != 0:
+            to_add[-1][1] = left
+        delta = "add " + ",".join([elem[0] for elem in to_add])
         self.log.info("scale service %s: %s", svc.svcname, delta)
         self.set_smon(svc.svcname, status="scaling")
-        thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, to_remove))
+        thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, []))
+        thr.start()
+        self.threads.append(thr)
+
+    def service_orchestrator_scaler_down_flex(self, svc, missing, current_slaves):
+        to_remove = []
+        excess = -missing
+        for slavename in sorted(current_slaves, key=LooseVersion, reverse=True):
+            slave = shared.SERVICES[slavename]
+            n_up = len(self.up_service_instances(slavename))
+            if n_up > excess:
+                width = n_up - excess
+                ret = self.service_set_flex_instances(slavename, width)
+                if ret != 0:
+                    self.set_smon(slavename, "set failed")
+                break
+            else:
+                to_remove.append(slavename)
+                excess -= n_up
+        if len(to_remove) == 0:
+            return
+        delta = "delete " + ",".join(to_remove)
+        self.log.info("scale service %s: %s", svc.svcname, delta)
+        self.set_smon(svc.svcname, status="scaling")
+        thr = threading.Thread(target=self.scaling_worker, args=(svc, [], to_remove))
+        thr.start()
+        self.threads.append(thr)
+
+    def service_orchestrator_scaler_up_failover(self, svc, missing, current_slaves):
+        slaves_count = missing
+        n_current_slaves = len(current_slaves)
+        new_slaves_list = [str(n_current_slaves+idx)+"."+svc.svcname for idx in range(slaves_count)]
+
+        to_add = sorted(new_slaves_list, key=LooseVersion)
+        to_add = [[svcname, None] for svcname in to_add]
+        delta = "add " + ",".join([elem[0] for elem in to_add])
+        self.log.info("scale service %s: %s", svc.svcname, delta)
+        self.set_smon(svc.svcname, status="scaling")
+        thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, []))
+        thr.start()
+        self.threads.append(thr)
+
+    def service_orchestrator_scaler_down_failover(self, svc, missing, current_slaves):
+        slaves_count = -missing
+        n_current_slaves = len(current_slaves)
+        slaves_list = [str(n_current_slaves-1-idx)+"."+svc.svcname for idx in range(slaves_count)]
+
+        to_remove = sorted(slaves_list, key=LooseVersion)
+        to_remove = [svcname for svcname in to_remove]
+        delta = "delete " + ",".join([elem[0] for elem in to_remove])
+        self.log.info("scale service %s: %s", svc.svcname, delta)
+        self.set_smon(svc.svcname, status="scaling")
+        thr = threading.Thread(target=self.scaling_worker, args=(svc, [], to_remove))
         thr.start()
         self.threads.append(thr)
 
@@ -1060,9 +1130,16 @@ class Monitor(shared.OsvcThread, Crypt):
                 continue
             self.set_smon(svcname, global_expect="purged")
         for svcname in to_remove:
-            self.wait_global_expect_change(svcname, "purged", 600)
-        for thr in threads:
-            thr.join()
+            self.wait_global_expect_change(svcname, "purged", 300)
+        while True:
+            for thr in threads:
+                thr.join(0)
+            if any(thr.is_alive() for thr in threads):
+                time.sleep(1)
+                if self.stopped():
+                    break
+                continue
+            break
         self.set_smon(svc.svcname, global_expect="unset", status="idle")
 
     def orchestrator_auto_grace(self):
@@ -1205,10 +1282,14 @@ class Monitor(shared.OsvcThread, Crypt):
     def overloaded_up_service_instances(self, svcname):
         return [nodename for nodename in self.up_service_instances(svcname) if self.node_overloaded(nodename)]
 
-    def up_services_instances_count(self, svcnames):
+    def scaler_slots(self, svcnames):
         count = 0
         for svcname in svcnames:
-            count += len(self.up_service_instances(svcname))
+            svc = shared.SERVICES[svcname]
+            if svc.topology == "flex":
+                count += svc.flex_min_nodes
+            else:
+                count += 1
         return count
 
     def up_service_instances(self, svcname):
@@ -1220,12 +1301,12 @@ class Monitor(shared.OsvcThread, Crypt):
                 nodenames.append(nodename)
         return nodenames
 
-    def peer_transitioning(self, svc):
+    def peer_transitioning(self, svcname):
         """
         Return the nodename of the first peer with the service in a transition
         state.
         """
-        for nodename, instance in self.get_service_instances(svc.svcname).items():
+        for nodename, instance in self.get_service_instances(svcname).items():
             if nodename == rcEnv.nodename:
                 continue
             if instance["monitor"]["status"].endswith("ing"):
@@ -1702,6 +1783,10 @@ class Monitor(shared.OsvcThread, Crypt):
                         del shared.SMON_DATA[svcname]
                     except KeyError:
                         pass
+                    try:
+                        del shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]
+                    except KeyError:
+                        pass
         return config
 
     def get_last_svc_status_mtime(self, svcname):
@@ -2064,8 +2149,8 @@ class Monitor(shared.OsvcThread, Crypt):
                    (global_expect == "thawed" and local_frozen):
                     self.log.info("node %s wants local node %s", nodename, global_expect)
                     self.set_nmon(global_expect=global_expect)
-                else:
-                    self.log.info("node %s wants local node %s, already is", nodename, global_expect)
+                #else:
+                #    self.log.info("node %s wants local node %s, already is", nodename, global_expect)
 
             # merge every service monitors
             for svcname, instance in shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"].items():
@@ -2092,8 +2177,8 @@ class Monitor(shared.OsvcThread, Crypt):
                     if self.accept_g_expect(svcname, instance, global_expect):
                         self.log.info("node %s wants service %s %s", nodename, svcname, global_expect)
                         self.set_smon(svcname, global_expect=global_expect)
-                    else:
-                        self.log.info("node %s wants service %s %s, already is", nodename, svcname, global_expect)
+                    #else:
+                    #    self.log.info("node %s wants service %s %s, already is", nodename, svcname, global_expect)
 
     def accept_g_expect(self, svcname, instance, global_expect):
         if svcname not in shared.AGG:
@@ -2254,7 +2339,7 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def merge_frozen(self):
         """
-        This method is only called during the grace period.
+        This method is only called during the rejoin grace period.
 
         It freezes the local services instances for services that have
         a live remote instance frozen. This prevents a node
@@ -2268,7 +2353,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 continue
             if len(svc.peers) < 2:
                 continue
-            if svc.frozen():
+            if self.service_frozen(svc.svcname):
                 continue
             for peer in svc.peers:
                 if peer == rcEnv.nodename:
@@ -2284,4 +2369,10 @@ class Monitor(shared.OsvcThread, Crypt):
                     self.log.info("merge service '%s' frozen state from node '%s'",
                                   svc.svcname, peer)
                     svc.freezer.freeze()
+
+    def service_frozen(self, svcname):
+        try:
+            return shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]["frozen"]
+        except:
+            return
 

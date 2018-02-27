@@ -3504,8 +3504,9 @@ class Node(Crypt, ExtConfig):
                     slaves = _data.get("slaves", [])
                     scale = _data.get("scale")
                     if scale:
-                        for idx in range(scale):
-                            child = "%d.%s" % (idx, svcname)
+                        for child in data["monitor"]["services"]:
+                            if re.match("^[0-9]+."+svcname+"$", child) is None:
+                                continue
                             slaves.append(child)
                             if node_svc_status.get(child, {}).get("avail") == "up":
                                 services[svcname].n_up += 1
