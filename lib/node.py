@@ -3160,6 +3160,8 @@ class Node(Crypt, ExtConfig):
                 info = topology
                 if data["orchestrate"]:
                     info += "/" + data["orchestrate"]
+                if topology == "flex":
+                    info += "/%d/%d" % (data["flex_min_nodes"], data["flex_max_nodes"])
             line = [
                 " "+colorize(prefix+svcname, color.BOLD),
                 status,
@@ -3197,7 +3199,7 @@ class Node(Crypt, ExtConfig):
                     if smon == "":
                         global_expect = data["nodes"][nodename]["global_expect"]
                         if global_expect:
-                            global_expect = " >" + str(global_expect)
+                            global_expect = colorize(" >" + str(global_expect), color.LIGHTBLUE)
                         else:
                             global_expect = ""
                     else:
@@ -3490,6 +3492,8 @@ class Node(Crypt, ExtConfig):
                         services[svcname] = Storage({
                             "topology": _data.get("topology", ""),
                             "orchestrate": _data.get("orchestrate"),
+                            "flex_min_nodes": _data.get("flex_min_nodes"),
+                            "flex_max_nodes": _data.get("flex_max_nodes"),
                             "scale": _data.get("scale"),
                             "avail": "undef",
                             "overall": "",
