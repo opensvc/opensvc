@@ -453,8 +453,7 @@ class Monitor(shared.OsvcThread, Crypt):
         out, err = proc.communicate()
         return proc.returncode
 
-    def service_create_scaler_slave(self, svcname, svc, instances=None):
-        data = svc.print_config_data()
+    def service_create_scaler_slave(self, svcname, svc, data, instances=None):
         data["DEFAULT"]["scaler_slave"] = "true"
         if svc.topology == "flex" and instances is not None:
             data["DEFAULT"]["flex_min_nodes"] = instances
@@ -1120,9 +1119,10 @@ class Monitor(shared.OsvcThread, Crypt):
         for svcname, instances in to_add:
             if svcname in shared.SERVICES:
                 continue
+            data = svc.print_config_data()
             thr = threading.Thread(
                 target=self.service_create_scaler_slave,
-                args=(svcname, svc, instances)
+                args=(svcname, svc, data, instances)
             )
             thr.start()
             threads.append(thr)
