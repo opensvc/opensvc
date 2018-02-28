@@ -56,7 +56,10 @@ DEFAULT_STATUS_GROUPS = [
 
 REMOTE_ACTIONS = [
     "freeze",
+    "reboot",
+    "shutdown",
     "thaw",
+    "updatepkg",
 ]
 
 ACTIONS_NO_PARALLEL = [
@@ -3006,7 +3009,8 @@ class Node(Crypt, ExtConfig):
         if self.options.node is not None and self.options.node != "" and \
            action in REMOTE_ACTIONS:
             cmd = self.prepare_async_cmd()
-            ret = self.daemon_node_action(cmd)
+            sync = action not in ("reboot", "shutdown")
+            ret = self.daemon_node_action(cmd, sync=sync)
             if ret == 0:
                 raise ex.excAbortAction()
             else:

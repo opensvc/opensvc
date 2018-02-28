@@ -32,6 +32,11 @@ OPT = Storage({
         "--author", default=None,
         action="store", dest="author",
         help="The acker name to log when acknowledging action log errors"),
+    "backlog": Option(
+        "--backlog", default=None,
+        action="store", dest="backlog",
+        help="A size expression limiting the volume of data fetched "
+             "from the log file tail. Default is 10k."),
     "begin": Option(
         "--begin", default=None,
         action="store", dest="begin",
@@ -312,12 +317,12 @@ GLOBAL_OPTS = [
 ]
 
 ASYNC_OPTS = [
-    OPT.local,
     OPT.time,
     OPT.wait,
 ]
 
 DAEMON_OPTS = [
+    OPT.local,
     OPT.node,
 ]
 
@@ -349,6 +354,7 @@ ACTIONS = {
         "logs": {
             "msg": "Display of the nodemgr and daemon logs.",
             "options": [
+                OPT.backlog,
                 OPT.follow,
                 OPT.local,
                 OPT.node,
@@ -363,9 +369,11 @@ ACTIONS = {
         },
         "shutdown": {
             "msg": "Shutdown the node to powered off state.",
+            "options": DAEMON_OPTS,
         },
         "reboot": {
             "msg": "Reboot the node.",
+            "options": DAEMON_OPTS,
         },
         "schedule_reboot_status": {
             "msg": "Tell if the node is scheduled for reboot.",
@@ -385,11 +393,13 @@ ACTIONS = {
         "updatepkg": {
             "msg": "Upgrade the opensvc agent version. the packages must be "
                    "available behind the node.repo/packages url.",
+            "options": DAEMON_OPTS,
         },
         "updatecomp": {
             "msg": "Upgrade the opensvc compliance modules. The modules must "
                    "be available as a tarball behind the :kw:`node.repocomp` "
                    "url.",
+            "options": DAEMON_OPTS,
         },
         "scanscsi": {
             "msg": "Scan the scsi hosts in search of new disks.",
