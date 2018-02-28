@@ -162,7 +162,7 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
         print(exc, file=sys.stderr)
         ret = 1
 
-    if len(node.svcs) == 1 and (options.config or options.template):
+    if len(node.svcs) == 1 and action == "create":
         node.svcs[0].setenv(options.env, options.interactive)
         # setenv changed the service config file
         # we need to rebuild again
@@ -173,10 +173,7 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
             ret = 1
 
     if options.provision:
-        if len(node.svcs) == 1 and ( \
-            options.config or \
-            options.template \
-           ):
+        if len(node.svcs) == 1 and action in ("create", "pull"):
             node.svcs[0].action("provision", options)
 
     if ret != 0:
