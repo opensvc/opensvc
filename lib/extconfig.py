@@ -396,53 +396,6 @@ class ExtConfig(object):
     #
     #########################################################################
     def handle_reference(self, ref, scope=False, impersonate=None, config=None):
-            # hardcoded references
-            if ref == "nodename":
-                return rcEnv.nodename
-            if ref == "short_nodename":
-                return rcEnv.nodename.split(".")[0]
-            if ref == "svcname" and hasattr(self, "svcname"):
-                return self.svcname
-            if ref == "short_svcname" and hasattr(self, "svcname"):
-                return self.svcname.split(".")[0]
-            if ref == "clustername":
-                if hasattr(self, "node"):
-                    return self.node.clustername
-                else:
-                    return self.clustername
-            if ref == "clusternodes":
-                if hasattr(self, "node"):
-                    return " ".join(self.node.cluster_nodes)
-                else:
-                    return " ".join(self.cluster_nodes)
-            if ref == "clusterdrpnodes":
-                if hasattr(self, "node"):
-                    return " ".join(self.node.cluster_drpnodes)
-                else:
-                    return " ".join(self.cluster_drpnodes)
-            if ref == "dns":
-                if hasattr(self, "node"):
-                    return " ".join(self.node.dns)
-                else:
-                    return " ".join(self.dns)
-            if ref == "dnsnodes":
-                if hasattr(self, "node"):
-                    return " ".join(self.node.dnsnodes)
-                else:
-                    return " ".join(self.dnsnodes)
-            if ref == "svcmgr":
-                return rcEnv.paths.svcmgr
-            if ref == "nodemgr":
-                return rcEnv.paths.nodemgr
-            if ref == "etc":
-                return rcEnv.paths.pathetc
-            if ref == "var":
-                return rcEnv.paths.pathvar
-            if ref == "dnsuxsockd":
-                return rcEnv.paths.dnsuxsockd
-            if ref == "dnsuxsock":
-                return rcEnv.paths.dnsuxsock
-
             if "[" in ref and ref.endswith("]"):
                 i = ref.index("[")
                 index = ref[i+1:-1]
@@ -452,34 +405,91 @@ class ExtConfig(object):
             else:
                 index = None
 
-            # use DEFAULT as the implicit section
-            n_dots = ref.count(".")
-            if n_dots == 0 and self.has_default_section:
-                _section = "DEFAULT"
-                _v = ref
-            elif n_dots == 1:
-                _section, _v = ref.split(".")
-            else:
-                raise ex.excError("%s: reference can have only one dot" % ref)
-
-            if len(_section) == 0:
-                raise ex.excError("%s: reference section can not be empty" % ref)
-            if len(_v) == 0:
-                raise ex.excError("%s: reference option can not be empty" % ref)
-
-            if _v[0] == "#":
+            if ref[0] == "#":
                 return_length = True
-                _v = _v[1:]
+                _ref = ref[1:]
             else:
                 return_length = False
+                _ref = ref
 
-            val = self._handle_reference(ref, _section, _v, scope=scope,
-                                         impersonate=impersonate,
-                                         config=config)
+            # hardcoded references
+            if _ref == "nodename":
+                val = rcEnv.nodename
+            elif _ref == "short_nodename":
+                val = rcEnv.nodename.split(".")[0]
+            elif _ref == "svcname" and hasattr(self, "svcname"):
+                val = self.svcname
+            elif _ref == "short_svcname" and hasattr(self, "svcname"):
+                val = self.svcname.split(".")[0]
+            elif _ref == "clustername":
+                if hasattr(self, "node"):
+                    val = self.node.clustername
+                else:
+                    val = self.clustername
+            elif _ref == "clusternodes":
+                if hasattr(self, "node"):
+                    val = " ".join(self.node.cluster_nodes)
+                else:
+                    val = " ".join(self.cluster_nodes)
+            elif _ref == "clusterdrpnodes":
+                if hasattr(self, "node"):
+                    val = " ".join(self.node.cluster_drpnodes)
+                else:
+                    val = " ".join(self.cluster_drpnodes)
+            elif _ref == "dns":
+                if hasattr(self, "node"):
+                    val = " ".join(self.node.dns)
+                else:
+                    val = " ".join(self.dns)
+            elif _ref == "dnsnodes":
+                if hasattr(self, "node"):
+                    val = " ".join(self.node.dnsnodes)
+                else:
+                    val = " ".join(self.dnsnodes)
+            elif _ref == "svcmgr":
+                val = rcEnv.paths.svcmgr
+            elif _ref == "nodemgr":
+                val = rcEnv.paths.nodemgr
+            elif _ref == "etc":
+                val = rcEnv.paths.pathetc
+            elif _ref == "var":
+                val = rcEnv.paths.pathvar
+            elif _ref == "dnsuxsockd":
+                val = rcEnv.paths.dnsuxsockd
+            elif _ref == "dnsuxsock":
+                val = rcEnv.paths.dnsuxsock
+            else:
+                val = None
 
             if val is None:
-                # deferred
-                return
+                # use DEFAULT as the implicit section
+                n_dots = ref.count(".")
+                if n_dots == 0 and self.has_default_section:
+                    _section = "DEFAULT"
+                    _v = ref
+                elif n_dots == 1:
+                    _section, _v = ref.split(".")
+                else:
+                    raise ex.excError("%s: reference can have only one dot" % ref)
+
+                if len(_section) == 0:
+                    raise ex.excError("%s: reference section can not be empty" % ref)
+                if len(_v) == 0:
+                    raise ex.excError("%s: reference option can not be empty" % ref)
+
+                if _v[0] == "#":
+                    return_length = True
+                    _v = _v[1:]
+                else:
+                    return_length = False
+
+                val = self._handle_reference(ref, _section, _v, scope=scope,
+                                             impersonate=impersonate,
+                                             config=config)
+
+                if val is None:
+                    # deferred
+                    return
 
             if return_length or index is not None:
                 if is_string(val):
