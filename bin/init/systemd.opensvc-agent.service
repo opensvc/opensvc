@@ -1,7 +1,9 @@
 [Unit]
-Description=OpenSVC Agent
+Description=OpenSVC agent
 Documentation=http://docs.opensvc.com/ file:/usr/share/doc/opensvc/ man:nodemgr(1) man:svcmgr(1) man:svcmon(1)
 After=network.target network-online.target time-sync.target multi-user.target
+Before=opensvc-services.service
+Requires=opensvc-services.service
 
 [Service]
 Type=forking

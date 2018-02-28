@@ -1,13 +1,12 @@
 [Unit]
-Description=OpenSVC Agent and Services oneshot stopper
-Documentation=http://docs.opensvc.com/ file:/usr/share/doc/opensvc/
+Description=OpenSVC agent and services oneshot stopper
+Documentation=http://docs.opensvc.com/ file:/usr/share/doc/opensvc/ man:nodemgr(1) man:svcmgr(1) man:svcmon(1)
 After=opensvc-agent.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=true
 ExecStart=/usr/share/opensvc/bin/nodemgr pushasset
+ExecStart=/usr/share/opensvc/bin/svcmgr -s "*" startstandby
 ExecStop=/usr/share/opensvc/bin/nodemgr daemon shutdown
 
-[Install]
-WantedBy=multi-user.target
