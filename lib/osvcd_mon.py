@@ -1042,6 +1042,7 @@ class Monitor(shared.OsvcThread, Crypt):
             return
 
         to_add = []
+        max_burst = 3
 
         # create services in holes first
         for slavename in [str(idx)+"."+svc.svcname for idx in range(n_current_slaves)]:
@@ -1055,6 +1056,7 @@ class Monitor(shared.OsvcThread, Crypt):
         to_add += [[str(n_current_slaves+idx)+"."+svc.svcname, width] for idx in range(slaves_count)]
         if left != 0 and len(to_add):
             to_add[-1][1] = left
+        to_add = to_add[:max_burst]
         delta = "add " + ",".join([elem[0] for elem in to_add])
         self.log.info("scale service %s: %s", svc.svcname, delta)
         self.set_smon(svc.svcname, status="scaling")
