@@ -1053,7 +1053,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 break
 
         to_add += [[str(n_current_slaves+idx)+"."+svc.svcname, width] for idx in range(slaves_count)]
-        if left != 0:
+        if left != 0 and len(to_add):
             to_add[-1][1] = left
         delta = "add " + ",".join([elem[0] for elem in to_add])
         self.log.info("scale service %s: %s", svc.svcname, delta)
