@@ -89,6 +89,7 @@ $(cat $OSVC/bin/preuninstall)
 %attr(0755,-,-) %{_datadir}/opensvc/bin/init/opensvc.init.suse
 %{_datadir}/opensvc/bin/init/darwin.com.opensvc.svcmgr.plist
 %{_datadir}/opensvc/bin/init/systemd.opensvc-agent.service
+%{_datadir}/opensvc/bin/init/systemd.opensvc-services.service
 %{_datadir}/opensvc/bin/init/opensvc.agent.xml
 %{_datadir}/opensvc/bin/nodemgr
 %{_datadir}/opensvc/bin/svcmgr

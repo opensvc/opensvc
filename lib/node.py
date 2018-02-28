@@ -3630,34 +3630,7 @@ class Node(Crypt, ExtConfig):
             print("%s is not alive" % self.options.node)
         return ret
 
-    def systemd_restart(self):
-        if not which("systemctl"):
-            return False
-        out, err, ret = justcall(["runlevel"])
-        if ret != 0:
-            return False
-        last, current = out.split()
-        if current in ("0", "1", "6"):
-            return False
-        return True
-
     def daemon_shutdown(self):
-        if self.systemd_restart():
-            # called by "systemd restart opensvc-agent", which can be triggered
-            # * directly
-            # * via "nodemgr daemon restart"
-            # detect these case and don't stop the services
-            self.log.info("requalify shutdown as stop")
-            data = self._daemon_stop()
-            if data is None:
-                return
-            if data.get("status") == 0:
-                return
-            return data
-        self.log.info("really shutdown")
-        return self._daemon_shutdown()
-
-    def _daemon_shutdown(self):
         """
         Tell the daemon to shutdown all local service instances then die.
         """

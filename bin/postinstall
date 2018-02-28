@@ -319,8 +319,12 @@ def activate_chkconfig(svc):
 
 def activate_systemd(launcher):
     logit("begin")
-    systemdsvc = 'opensvc-agent.service'
+    systemdsvcs = ['opensvc-agent.service', 'opensvc-services.service']
 
+    for systemdsvc in systemdsvcs:
+        _activate_systemd(systemdsvc)
+
+def _activate_systemd(systemdsvc):
     # remove unit file from /etc/systemd/system
     olddst = os.path.join('/etc/systemd/system/', systemdsvc)
     if os.path.exists(olddst):
@@ -329,12 +333,12 @@ def activate_systemd(launcher):
         cmd = ['systemctl', '-q', 'disable', systemdsvc]
         ret = os.system(' '.join(cmd))
         if ret > 0:
-            logit("issue met while trying to disable old systemd unit file",stderr=True)
+            logit("issue met while trying to disable old %s systemd unit file"%systemdsvc,stderr=True)
         logit("removing old systemd unit file",stdout=False)
         cmd = ['rm', '-f', olddst]
         ret = os.system(' '.join(cmd))
         if ret > 0:
-            logit("issue met while trying to remove old systemd unit file",stderr=True)
+            logit("issue met while trying to remove old %s systemd unit file"%systemdsvc,stderr=True)
 
     systemd_unit_path = [
             '/usr/lib/systemd/system/',
@@ -345,34 +349,21 @@ def activate_systemd(launcher):
     for path in systemd_unit_path:
         if os.path.exists(os.path.dirname(path)):
             # populate systemd tree with opensvc unit file
-            src = os.path.join(pathini, 'systemd.opensvc-agent.service')
+            src = os.path.join(pathini, "systemd."+systemdsvc)
             dst = os.path.join(path, systemdsvc)
-            logit("installing systemd unit file in %s"%path,stdout=True)
+            logit("installing %s systemd unit file in %s"%(systemdsvc, path),stdout=True)
             try:
                 shutil.copyfile(src, dst)
                 os.chmod(dst, p0644)
                 installed = True
-            except:
-                logit("issue met while trying to install systemd unit file",stderr=True)
+            except Exception as exc:
+                logit("issue met while trying to install systemd unit file: %s"%str(exc),stderr=True)
 
     if installed is not True:
         logit("issue met while trying to identify suitable systemd unit file location",stderr=True)
 
-    # add symlink to resolve systemd service call
-    systemd_call = os.path.join(pathini, "opensvc.init")
-    if not os.path.islink(systemd_call):
-        if os.path.exists(systemd_call):
-            logit("removing %s"%systemd_call)
-            os.unlink(systemd_call)
-        msg = "create link %s -> %s"%(systemd_call, launcher)
-        logit(msg)
-        try:
-            os.symlink(launcher, systemd_call)
-        except:
-            logit("issue met while trying to create %s symlink" % systemd_call,stderr=True)
-
-    # set systemd call as ExecStart and ExecStop
-    os.system("sed -i 's@/usr/share/opensvc/bin/init/opensvc.init@"+systemd_call+"@' "+dst)
+    # reset paths in ExecStart and ExecStop
+    os.system("sed -i 's@/usr/share/opensvc/bin@"+pathbin+"@' "+dst)
 
     # reload systemd configuration
     logit("reloading systemd configuration",stdout=True)
