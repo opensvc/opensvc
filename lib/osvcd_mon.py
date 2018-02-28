@@ -1155,8 +1155,8 @@ class Monitor(shared.OsvcThread, Crypt):
             self.duplog("info", "end of rejoin grace period: single node cluster",
                         nodename="")
             return False
-        n_reachable = len(shared.CLUSTER_DATA.keys())
-        if n_reachable >= len(self.cluster_nodes):
+        n_idle = len([1 for node in shared.CLUSTER_DATA.values() if node.get("monitor", {}).get("status") == "idle"])
+        if n_idle >= len(self.cluster_nodes):
             self.rejoin_grace_period_expired = True
             self.duplog("info", "end of rejoin grace period: now rejoined",
                         nodename="")
