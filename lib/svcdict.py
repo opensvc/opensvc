@@ -2320,7 +2320,7 @@ class KeywordDiskType(Keyword):
                   at=True,
                   order=9,
                   default="vg",
-                  candidates=['disk', 'veritas', 'raw', 'rados', 'md', 'drbd', 'loop', 'zpool', 'pool', 'raw', 'vmdg', 'vdisk', 'lvm', 'vg', 'lv', 'amazon', 'gce'],
+                  candidates=["disk", "veritas", "raw", "rados", "md", "drbd", "loop", "zpool", "pool", "raw", "vmdg", "vdisk", "lvm", "vg", "lv", "amazon", "gce"],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
                 )
 
@@ -2569,7 +2569,7 @@ class KeywordDiskVgName(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  rtype=["lvm", "vg"],
+                  rtype=["lvm", "vg", "veritas"],
                   keyword="name",
                   order=10,
                   at=True,

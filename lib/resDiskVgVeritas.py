@@ -1,6 +1,8 @@
 import resDisk
 import re
-from rcUtilities import qcall
+
+import rcExceptions as ex
+from rcUtilities import qcall, which
 
 class Disk(resDisk.Disk):
     """ basic Veritas Volume group resource
@@ -12,13 +14,15 @@ class Disk(resDisk.Disk):
         resDisk.Disk.__init__(self,
                               rid=rid,
                               name=name,
-                              type='disk.vg',
+                              type='disk.veritas',
                               **kwargs)
         self.label = "vg "+str(name)
 
     def has_it(self):
         """Returns True if the vg is present
         """
+        if not which("vxdg"):
+            raise ex.excError("vxdg command not found")
         ret = qcall( [ 'vxdg', 'list', self.name ] )
         if ret == 0 :
             return True
@@ -28,6 +32,9 @@ class Disk(resDisk.Disk):
     def is_up(self):
         """Returns True if the vg is present and not disabled
         """
+        if not which("vxdg"):
+            self.status_log("vxdg command not found")
+            return False
         if not self.has_it():
             return False
         cmd = [ 'vxprint', '-ng', self.name ]
@@ -80,6 +87,8 @@ class Disk(resDisk.Disk):
         if len(self.sub_devs_cache) > 0 :
             return self.sub_devs_cache
 
+        if not which("vxdisk"):
+            return set()
         devs = set()
         cmd = [ 'vxdisk', '-g', self.name, '-q', 'list' ]
         (ret, out, err) = self.call(cmd, errlog=False)
