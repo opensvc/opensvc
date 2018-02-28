@@ -2754,7 +2754,6 @@ class Node(Crypt, ExtConfig):
                 raise ex.excError("only one service must be specified")
             svcname = svcname[0]
 
-        import select
         data = None
         if sys.stdin and not sys.stdin.isatty():
             feed = ""
@@ -2766,9 +2765,6 @@ class Node(Crypt, ExtConfig):
                 except ValueError:
                     raise ex.excError("invalid json feed")
 
-        if fpath is None and template is None and data is None:
-            return
-
         if fpath is not None and template is not None:
             raise ex.excError("--config and --template can't both be specified")
 
@@ -2777,6 +2773,7 @@ class Node(Crypt, ExtConfig):
         # action before we have the change to modify the service config
         Freezer(svcname).freeze()
 
+        ret = 0
         if data is not None:
             self.install_svc_conf_from_data(svcname, data)
         elif template is not None:
@@ -2792,12 +2789,11 @@ class Node(Crypt, ExtConfig):
             else:
                 self.install_svc_conf_from_file(svcname, fpath)
         else:
-            # announce nothing was done
-            return 2
+            ret = 2
 
         self.install_service_files(svcname)
         self.wake_monitor()
-        return 0
+        return ret
 
     @staticmethod
     def install_service_files(svcname):
