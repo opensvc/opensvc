@@ -1285,7 +1285,8 @@ class Monitor(shared.OsvcThread, Crypt):
         for svcname in svcnames:
             svc = shared.SERVICES[svcname]
             if svc.topology == "flex":
-                count += svc.flex_min_nodes
+                width = len([1 for nodename in svc.peers if nodename in shared.CLUSTER_DATA])
+                count += min(width, svc.flex_min_nodes)
             else:
                 count += 1
         return count
@@ -1713,10 +1714,13 @@ class Monitor(shared.OsvcThread, Crypt):
             return True
         ref_csum = None
         for peer in peers:
+            if peer not in shared.CLUSTER_DATA:
+                # discard unreachable nodes from the consensus
+                continue
             try:
                 csum = shared.CLUSTER_DATA[peer]["services"]["config"][svcname]["csum"]
             except KeyError:
-                self.log.debug("service %s peer %s has no config cksum yet", svcname, peer)
+                #self.log.debug("service %s peer %s has no config cksum yet", svcname, peer)
                 return False
             except Exception as exc:
                 self.log.exception(exc)
@@ -1724,7 +1728,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if ref_csum is None:
                 ref_csum = csum
             if ref_csum is not None and ref_csum != csum:
-                self.log.debug("service %s peer %s has a different config cksum", svcname, peer)
+                #self.log.debug("service %s peer %s has a different config cksum", svcname, peer)
                 return False
         self.log.info("service %s config consensus reached", svcname)
         return True
