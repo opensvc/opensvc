@@ -457,16 +457,16 @@ class Crypt(object):
             if use_select:
                 ready = select.select([sock], [], [sock], 60)
                 if ready[0]:
-                    chunk = sock.recv(4096)
+                    chunk = sock.recv(1)
                 else:
                     break
                 if ready[2]:
                     break
             else:
-                chunk = sock.recv(4096)
+                chunk = sock.recv(1)
             if chunk:
                 chunks.append(chunk)
-            if not chunk or chunk.endswith(b"\x00"):
+            if not chunk or chunk == b"\x00":
                 break
         if sys.version_info[0] >= 3:
             data = b"".join(chunks)
