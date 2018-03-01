@@ -321,6 +321,8 @@ class Docker(resContainer.Container):
                 return []
             if "--net=container:" in self.run_args or "--net container:" in self.run_args:
                 return []
+            if "--net=host" in self.run_args or "--net host" in self.run_args:
+                return []
             l = []
             for dns in self.svc.node.dns:
                 l += ["--dns", dns]
