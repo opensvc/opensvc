@@ -334,6 +334,13 @@ ACTIONS = {
                 OPT.cron,
             ],
         },
+        "events": {
+            "msg": "Follow the daemon events",
+            "options": [
+                OPT.local,
+                OPT.node,
+            ]
+        },
         "frozen": {
             "msg": "Return 0 if the services are frozen node-wide, "
                    "preventing the daemon to orchestrate them. Return 1 "

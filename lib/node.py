@@ -2838,6 +2838,25 @@ class Node(Crypt, ExtConfig):
         except Exception as exc:
             self.log.debug(str(exc))
 
+    def events(self, nodename=None):
+        try:
+            self._events(nodename=nodename)
+        except ex.excSignal:
+            return
+        except (OSError, IOError) as exc:
+            if exc.errno == 32:
+                # broken pipe
+                return
+
+    def _events(self, nodename=None):
+        if self.options.node:
+            nodename = self.options.node
+        elif nodename is None:
+            nodename = rcEnv.nodename
+        from rcColor import format_json
+        for msg in self.daemon_events(nodename):
+            print(msg)
+
     def logs(self, nodename=None):
         try:
             self._logs(nodename=nodename)
@@ -4055,6 +4074,16 @@ class Node(Crypt, ExtConfig):
                 break
             for line in lines:
                 yield line
+
+    def daemon_events(self, nodename=None):
+        options = {}
+        for msg in self.daemon_get_streams(
+            {"action": "events", "options": options},
+            nodenames=[nodename],
+        ):
+            if msg is None:
+                break
+            yield msg
 
     def daemon_logs(self, nodes=None):
         options = {

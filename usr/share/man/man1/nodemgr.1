@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2018\-02\-28
+.TH NODEMGR 1 2018\-03\-01
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -1108,6 +1108,36 @@ Dequeue and execute actions from the collector's action queue for this node and 
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr events\fP
+.RS
+
+Follow the daemon events
+
+
+.TP
+.B --local
+Set to disable cluster-wide operations.
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
