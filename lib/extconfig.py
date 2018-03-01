@@ -423,9 +423,9 @@ class ExtConfig(object):
                 val = self.svcname.split(".")[0]
             elif _ref == "clustername":
                 if hasattr(self, "node"):
-                    val = self.node.clustername
+                    val = self.node.cluster_name
                 else:
-                    val = self.clustername
+                    val = self.cluster_name
             elif _ref == "clusternodes":
                 if hasattr(self, "node"):
                     val = " ".join(self.node.cluster_nodes)
