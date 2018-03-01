@@ -2103,6 +2103,11 @@ class Monitor(shared.OsvcThread, Crypt):
         data["updated"] = now
         diff.append([["updated"], data["updated"]])
         shared.GEN_DIFF[shared.GEN] = diff
+        shared.EVENT_Q.put({
+            "nodename": rcEnv.nodename,
+            "kind": "patch",
+            "deltas": [diff],
+        })
         self.purge_log()
         with shared.HB_MSG_LOCK:
              # reset the full status cache. get_message() will refill if

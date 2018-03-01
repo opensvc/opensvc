@@ -181,6 +181,11 @@ class Hb(shared.OsvcThread):
                     #self.log.debug("merge node %s gen %d (%d diffs)", nodename, gen, len(deltas[str(gen)]))
                     try:
                         json_delta.patch(shared.CLUSTER_DATA[nodename], deltas[str(gen)])
+                        shared.EVENT_Q.put({
+                            "nodename": nodename,
+                            "kind": "patch",
+                            "deltas": deltas[str(gen)],
+                        })
                     except Exception as exc:
                         self.log.warning("failed to apply node %s dataset gen %d patch: %s. "
                                          "ask for a full: %s", nodename, gen, deltas[str(gen)], exc)

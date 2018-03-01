@@ -10,6 +10,11 @@ import codecs
 import hashlib
 from subprocess import Popen, PIPE
 
+try:
+    import Queue as queue
+except ImportError:
+    import queue
+
 import rcExceptions as ex
 from rcConfigParser import RawConfigParser
 from rcUtilities import lazy, unset_lazy, is_string
@@ -19,6 +24,9 @@ from converters import convert_duration, convert_boolean
 
 # disable orchestration if a peer announces a different compat version than ours
 COMPAT_VERSION = 5
+
+# the event queue to feed to clients listening for changes
+EVENT_Q = queue.Queue()
 
 # current generation of the dataset on the local node
 GEN = 0

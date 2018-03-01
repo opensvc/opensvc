@@ -9,7 +9,13 @@ import threading
 import codecs
 import time
 import select
+import json
 from subprocess import Popen, PIPE
+
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
@@ -47,6 +53,7 @@ class Listener(shared.OsvcThread, Crypt):
             return
 
         self.log.info("listening on %s:%s", self.addr, self.port)
+        self.events_clients = []
 
         self.stats = Storage({
             "sessions": Storage({
@@ -82,6 +89,7 @@ class Listener(shared.OsvcThread, Crypt):
         self.reload_config()
         self.janitor_procs()
         self.janitor_threads()
+        self.janitor_events()
 
         try:
             conn, addr = self.sock.accept()
@@ -100,6 +108,27 @@ class Listener(shared.OsvcThread, Crypt):
         thr = threading.Thread(target=self.handle_client, args=(conn, addr))
         thr.start()
         self.threads.append(thr)
+
+    def janitor_events(self):
+        done = []
+        while True:
+            try:
+                event = shared.EVENT_Q.get(False, 0)
+            except queue.Empty:
+                break
+            msg = self.encrypt(event)
+            to_remove = []
+            for idx, conn in enumerate(self.events_clients):
+                try:
+                    conn.sendall(msg)
+                except socket.error as exc:
+                    to_remove.append(idx)
+            for idx in to_remove:
+                try:
+                    self.events_clients[idx].close()
+                except Exception:
+                    pass
+                del self.events_clients[idx]
 
     def handle_client(self, conn, addr):
         try:
@@ -512,6 +541,9 @@ class Listener(shared.OsvcThread, Crypt):
                 "status": 0,
             }
         return result
+
+    def action_events(self, nodename, **kwargs):
+        self.events_clients.append(kwargs.get("conn").dup())
 
     def action_service_logs(self, nodename, **kwargs):
         """
