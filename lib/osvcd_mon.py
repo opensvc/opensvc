@@ -2106,7 +2106,7 @@ class Monitor(shared.OsvcThread, Crypt):
         shared.EVENT_Q.put({
             "nodename": rcEnv.nodename,
             "kind": "patch",
-            "deltas": [diff],
+            "data": diff,
         })
         self.purge_log()
         with shared.HB_MSG_LOCK:
