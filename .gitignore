@@ -23,3 +23,4 @@ nohup.out
 .pydevproject
 bin/init/opensvc.init
 .coverage
+*.example

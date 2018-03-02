@@ -315,6 +315,8 @@ class Docker(resContainer.Container):
         if self.svc.dockerlib.docker_min_version("1.7") and \
            not self.docker_service and self.svc.dockerlib.docker_daemon_private:
             args += ["--cgroup-parent", self._parent_cgroup_name()]
+        if not self.svc.dockerlib.docker_min_version("1.13") and "--rm" in args:
+            del args[args.index("--rm")]
 
         def dns_opts():
             if not self.svc.node.dns or "--dns" in self.run_args:
