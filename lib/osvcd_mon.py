@@ -2323,12 +2323,13 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def get_agg_services(self):
         svcnames = set()
-        for nodename, data in shared.CLUSTER_DATA.items():
-            try:
-                for svcname in data["services"]["config"]:
-                    svcnames.add(svcname)
-            except KeyError:
-                continue
+        with shared.CLUSTER_DATA_LOCK:
+            for nodename, data in shared.CLUSTER_DATA.items():
+                try:
+                    for svcname in data["services"]["config"]:
+                        svcnames.add(svcname)
+                except KeyError:
+                    continue
         data = {}
         for svcname in svcnames:
             data[svcname] = self.get_agg(svcname)
