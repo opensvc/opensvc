@@ -345,6 +345,20 @@ def add_ip(svc, s):
     r = ip.Ip(**kwargs)
     svc += r
 
+def add_docker_vol(svc, s):
+    kwargs = init_kwargs(svc, s)
+    try:
+        kwargs['driver'] = svc.conf_get(s, 'driver')
+    except ex.OptNotFound as exc:
+        kwargs['driver'] = exc.default
+    try:
+        kwargs['options'] = svc.conf_get(s, 'options')
+    except ex.OptNotFound as exc:
+        kwargs['options'] = exc.default
+    m = __import__('resDiskDocker')
+    r = m.Disk(**kwargs)
+    svc += r
+
 def add_lv(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs['name'] = svc.conf_get(s, 'name')
@@ -585,6 +599,9 @@ def add_disk_compat(svc, s):
     if disk_type == 'Lv':
         add_lv(svc, s)
         return
+    if disk_type == 'Docker':
+        add_docker_vol(svc, s)
+        return
     if disk_type == 'Gce':
         add_disk_gce(svc, s)
         return
@@ -690,6 +707,9 @@ def add_disk(svc, s):
         return
     if disk_type == 'Lv':
         add_lv(svc, s)
+        return
+    if disk_type == 'Docker':
+        add_docker_vol(svc, s)
         return
     if disk_type == 'Md':
         add_md(svc, s)

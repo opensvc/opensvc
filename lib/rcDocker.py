@@ -538,6 +538,27 @@ class DockerLib(object):
             data = json.loads(out)
             return data[0]
 
+    def docker_volume_inspect(self, vol_id):
+        """
+        Return the "docker volume inspect" data dict.
+        """
+        try:
+            self.docker_exe
+        except ex.excInitError:
+            return {}
+        if vol_id is None:
+            raise IndexError("vol id is None")
+        elif isinstance(vol_id, list):
+            cmd = self.docker_cmd + ["volume", "inspect"] + vol_id
+            out = justcall(cmd)[0]
+            data = json.loads(out)
+            return data
+        else:
+            cmd = self.docker_cmd + ["volume", "inspect", vol_id]
+            out = justcall(cmd)[0]
+            data = json.loads(out)
+            return data[0]
+
     def docker_service_inspect(self, service_id):
         """
         Return the "docker service inspect" data dict.

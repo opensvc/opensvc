@@ -2320,8 +2320,36 @@ class KeywordDiskType(Keyword):
                   at=True,
                   order=9,
                   default="vg",
-                  candidates=["disk", "veritas", "raw", "rados", "md", "drbd", "loop", "zpool", "pool", "raw", "vmdg", "vdisk", "lvm", "vg", "lv", "amazon", "gce"],
+                  candidates=["disk", "veritas", "raw", "rados", "md", "drbd", "loop", "zpool", "pool", "raw", "vmdg", "vdisk", "lvm", "vg", "lv", "amazon", "gce", "docker"],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
+                )
+
+class KeywordDiskDockerDriver(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="docker",
+                  keyword="driver",
+                  default="local",
+                  order=10,
+                  at=True,
+                  text="The docker volume driver to use for the resource.",
+                  example="tmpfs"
+                )
+
+class KeywordDiskDockerOptions(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="disk",
+                  rtype="docker",
+                  keyword="options",
+                  order=10,
+                  at=True,
+                  convert="shlex",
+                  text="The docker volume create options to use for the resource. --label and --opt",
+                  example="--opt o=size=100m,uid=1000 --opt type=tmpfs --opt device=tmpfs"
                 )
 
 class KeywordDiskLvName(Keyword):
@@ -4599,6 +4627,8 @@ class KeyDict(KeywordStore):
         self += KeywordDiskMdChunk()
         self += KeywordDiskMdLayout()
         self += KeywordDiskMdSpares()
+        self += KeywordDiskDockerDriver()
+        self += KeywordDiskDockerOptions()
         self += KeywordDiskLvName()
         self += KeywordDiskLvVg()
         self += KeywordDiskLvSize()
