@@ -7,7 +7,7 @@ import datetime
 import json
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_exe, justcall, banner, is_string
+from rcUtilities import is_exe, justcall, banner, is_string, fcache
 from subprocess import *
 from rcColor import color, colorize, formatter
 
@@ -575,6 +575,7 @@ class Compliance(object):
                 a.append('  %s=%s'%(self.format_rule_var(var), val))
         return '\n'.join(a)
 
+    @fcache
     def get_comp_data(self):
         if self.svc:
             return self.node.collector.call('comp_get_svc_data',
