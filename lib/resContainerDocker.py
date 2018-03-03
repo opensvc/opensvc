@@ -39,7 +39,7 @@ class Docker(resContainer.Container):
         self.run_command = run_command
         self.run_args = run_args
         self.docker_service = docker_service
-        self.startup_timeout = 30
+        self.startup_timeout = 2
 
     @lazy
     def container_name(self):
