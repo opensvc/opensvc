@@ -345,20 +345,6 @@ def add_ip(svc, s):
     r = ip.Ip(**kwargs)
     svc += r
 
-def add_docker_vol(svc, s):
-    kwargs = init_kwargs(svc, s)
-    try:
-        kwargs['driver'] = svc.conf_get(s, 'driver')
-    except ex.OptNotFound as exc:
-        kwargs['driver'] = exc.default
-    try:
-        kwargs['options'] = svc.conf_get(s, 'options')
-    except ex.OptNotFound as exc:
-        kwargs['options'] = exc.default
-    m = __import__('resDiskDocker')
-    r = m.Disk(**kwargs)
-    svc += r
-
 def add_lv(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs['name'] = svc.conf_get(s, 'name')
@@ -804,6 +790,20 @@ def add_share_nfs(svc, s):
     r = m.Share(**kwargs)
     svc += r
 
+def add_fs_docker(svc, s):
+    kwargs = init_kwargs(svc, s)
+    try:
+        kwargs['driver'] = svc.conf_get(s, 'driver')
+    except ex.OptNotFound as exc:
+        kwargs['driver'] = exc.default
+    try:
+        kwargs['options'] = svc.conf_get(s, 'options')
+    except ex.OptNotFound as exc:
+        kwargs['options'] = exc.default
+    m = __import__('resFsDocker')
+    r = m.Fs(**kwargs)
+    svc += r
+
 def add_fs_directory(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs['path'] = svc.conf_get(s, 'path')
@@ -866,6 +866,10 @@ def add_fs(svc, s):
 
     if kwargs['fs_type'] == "directory":
         add_fs_directory(svc, s)
+        return
+
+    if kwargs['fs_type'] == "docker":
+        add_fs_docker(svc, s)
         return
 
     kwargs['device'] = svc.conf_get(s, 'dev')

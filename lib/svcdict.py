@@ -2320,15 +2320,15 @@ class KeywordDiskType(Keyword):
                   at=True,
                   order=9,
                   default="vg",
-                  candidates=["disk", "veritas", "raw", "rados", "md", "drbd", "loop", "zpool", "pool", "raw", "vmdg", "vdisk", "lvm", "vg", "lv", "amazon", "gce", "docker"],
+                  candidates=["disk", "veritas", "raw", "rados", "md", "drbd", "loop", "zpool", "pool", "raw", "vmdg", "vdisk", "lvm", "vg", "lv", "amazon", "gce"],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
                 )
 
-class KeywordDiskDockerDriver(Keyword):
+class KeywordFsDockerDriver(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="disk",
+                  section="fs",
                   rtype="docker",
                   keyword="driver",
                   default="local",
@@ -2338,11 +2338,11 @@ class KeywordDiskDockerDriver(Keyword):
                   example="tmpfs"
                 )
 
-class KeywordDiskDockerOptions(Keyword):
+class KeywordFsDockerOptions(Keyword):
     def __init__(self):
         Keyword.__init__(
                   self,
-                  section="disk",
+                  section="fs",
                   rtype="docker",
                   keyword="options",
                   order=10,
@@ -2350,6 +2350,20 @@ class KeywordDiskDockerOptions(Keyword):
                   convert="shlex",
                   text="The docker volume create options to use for the resource. --label and --opt",
                   example="--opt o=size=100m,uid=1000 --opt type=tmpfs --opt device=tmpfs"
+                )
+
+class KeywordFsPopulate(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="fs",
+                  keyword="populate",
+                  order=10,
+                  at=True,
+                  convert="list",
+                  provisioning=True,
+                  text="The list of rulesets providing files to install in the volume.",
+                  example="configmap.redis configmap.global"
                 )
 
 class KeywordDiskLvName(Keyword):
@@ -3150,7 +3164,7 @@ class KeywordFsType(Keyword):
                   at=True,
                   required=True,
                   strict_candidates=False,
-                  candidates=["directory", "zfs"]+rcEnv.fs_non_pooling,
+                  candidates=["directory", "zfs", "docker"]+rcEnv.fs_non_pooling,
                   text="The filesystem type or 'directory'. Used to determine the fsck command to use."
                 )
 
@@ -4627,8 +4641,9 @@ class KeyDict(KeywordStore):
         self += KeywordDiskMdChunk()
         self += KeywordDiskMdLayout()
         self += KeywordDiskMdSpares()
-        self += KeywordDiskDockerDriver()
-        self += KeywordDiskDockerOptions()
+        self += KeywordFsDockerDriver()
+        self += KeywordFsDockerOptions()
+        self += KeywordFsPopulate()
         self += KeywordDiskLvName()
         self += KeywordDiskLvVg()
         self += KeywordDiskLvSize()

@@ -254,7 +254,7 @@ def mimport(*args, **kwargs):
 
     try:
         return __import__(mod)
-    except ImportError:
+    except ImportError as exc:
         pass
 
     if kwargs.get("fallback", True) and len(args) > 1:

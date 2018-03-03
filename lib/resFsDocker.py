@@ -1,20 +1,19 @@
 import os
 import rcExceptions as ex
-import resDisk
+import resources
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 
-class Disk(resDisk.Disk):
+class Fs(resources.Resource):
     def __init__(self,
                  rid=None,
                  driver=None,
                  options=None,
                  **kwargs):
-        resDisk.Disk.__init__(self,
-                              rid=rid,
-                              name="",
-                              type='disk.docker',
-                              **kwargs)
+        resources.Resource.__init__(self,
+                                    rid=rid,
+                                    type='fs.docker',
+                                    **kwargs)
         self.driver = driver
         self.options = options
 
@@ -27,8 +26,13 @@ class Disk(resDisk.Disk):
           ["name", self.volname],
           ["driver", self.driver],
           ["options", self.options],
+          ["vol_path", self.vol_path],
         ]
         return data
+
+    @lazy
+    def vol_path(self):
+        return self.svc.dockerlib.docker_volume_inspect(self.volname).get("Mountpoint")
 
     def has_it(self):
         try:
@@ -48,6 +52,8 @@ class Disk(resDisk.Disk):
         return ".".join([self.svc.svcname, self.rid.replace("#", ".")])
 
     def create_vol(self):
+        if self.has_it():
+            return 0
         cmd = self.svc.dockerlib.docker_cmd + ["volume", "create", "--name", self.volname]
         if self.options:
             cmd += options
@@ -55,13 +61,10 @@ class Disk(resDisk.Disk):
         if ret != 0:
             raise ex.excError
 
-    def do_start(self):
-        if self.has_it():
-            self.log.info("%s is already created" % self.label)
-            return 0
+    def start(self):
         self.create_vol()
         self.can_rollback = True
 
-    def do_stop(self):
+    def stop(self):
         pass
 
