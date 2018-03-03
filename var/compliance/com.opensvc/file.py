@@ -212,14 +212,12 @@ class CompFiles(CompObject):
         target_md5 = data.get("md5")
         current_md5 = self.md5(f["path"])
         if target_md5 == current_md5:
-            pinfo("file %s md5 verified" % f["path"])
+            if verbose:
+                pinfo("file %s md5 verified" % f["path"])
             return RET_OK
         else:
-            perror("file %s content md5 differs from its reference" % f["path"])
-            if verbose and data["size"] < 1000000:
-                tmpfname = self.get_safe_file(f["ref"])
-                self.check_file_diff(f, tmpfname, verbose=verbose)
-                os.unlink(tmpfname)
+            if verbose:
+                perror("file %s content md5 differs from its reference" % f["path"])
             return RET_ERR
 
     def get_safe_file(self, uuid):
