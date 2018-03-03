@@ -622,6 +622,7 @@ class Monitor(shared.OsvcThread, Crypt):
         if self.unfreeze_when_all_nodes_joined and node_frozen and len(self.cluster_nodes) == len(shared.CLUSTER_DATA):
             self.log.info("thaw node now the cluster is complete")
             self.freezer.node_thaw()
+            self.unfreeze_when_all_nodes_joined = False
             node_frozen = False
         if nmon.status != "idle":
             return
