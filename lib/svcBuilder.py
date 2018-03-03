@@ -42,6 +42,12 @@ def get_provision(svc, section):
     except ex.OptNotFound as exc:
         return exc.default
 
+def get_unprovision(svc, section):
+    try:
+        return svc.conf_get(section, "unprovision")
+    except ex.OptNotFound as exc:
+        return exc.default
+
 def get_encap(svc, section):
     try:
         return svc.conf_get(section, "encap")
@@ -113,6 +119,7 @@ def init_kwargs(svc, s):
         "optional": get_optional(svc, s),
         "monitor": get_monitor(svc, s),
         "skip_provision": not get_provision(svc, s),
+        "skip_unprovision": not get_unprovision(svc, s),
         "restart": get_restart(svc, s),
         "shared": get_shared(svc, s),
         "encap": get_encap(svc, s),

@@ -38,6 +38,7 @@ class Resource(object):
                  tags=None,
                  standby=False,
                  skip_provision=False,
+                 skip_unprovision=False,
                  shared=False,
                  promote_rw=False,
                  encap=False):
@@ -57,6 +58,7 @@ class Resource(object):
         self.nb_restart = restart
         self.rstatus = None
         self.skip_provision = skip_provision
+        self.skip_unprovision = skip_unprovision
         self.shared = shared
         self.need_promote_rw = promote_rw
         self.encap = encap or "encap" in self.tags
@@ -1061,7 +1063,7 @@ class Resource(object):
         Unimplemented is_provisioned() trusts unprovisioner() to do the right
         thing.
         """
-        if self.skip_provision:
+        if self.skip_provision or self.skip_unprovision:
             self.log.info("unprovision skipped (configuration directive)")
             return
         if self.prov is None:

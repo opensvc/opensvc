@@ -3881,6 +3881,17 @@ class KeyDict(KeywordStore):
                   convert="boolean",
                   text="Set to false to skip the resource on provision and unprovision actions. Warning: provisioning implies destructive operations like formating. Unprovisioning does not keep a copy of the service data."
                 )
+        def kw_unprovision(resource):
+            return Keyword(
+                  section=resource,
+                  keyword="unprovision",
+                  generic=True,
+                  at=True,
+                  candidates=(True, False),
+                  default=True,
+                  convert="boolean",
+                  text="Set to false to skip the resource on unprovision actions. Warning: Unprovisioning does not keep a copy of the service data."
+                )
         def kw_shared(resource):
             return Keyword(
                   section=resource,
@@ -4427,6 +4438,7 @@ class KeyDict(KeywordStore):
             self += kw_always_on(r)
             self += kw_standby(r)
             self += kw_provision(r)
+            self += kw_unprovision(r)
             self += kw_shared(r)
             self += kw_encap(r)
 
