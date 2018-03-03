@@ -76,6 +76,7 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
     o.dnsuxsockd = os.path.join(o.pathvar, "dns")
     o.dnsuxsock = os.path.join(o.dnsuxsockd, "pdns.sock")
     o.pathcomp = os.path.join(o.pathvar, "compliance")
+    o.pathcomposvc = os.path.join(o.pathcomp, "com.opensvc")
     o.drp_path = os.path.join(o.pathvar, "cache")
 
     o.daemon_pid = os.path.join(o.pathvar, "osvcd.pid")
