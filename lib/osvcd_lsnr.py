@@ -9,7 +9,6 @@ import threading
 import codecs
 import time
 import select
-import json
 from subprocess import Popen, PIPE
 
 try:
@@ -29,8 +28,7 @@ RELAY_LOCK = threading.RLock()
 class Listener(shared.OsvcThread, Crypt):
     sock_tmo = 1.0
 
-    def run(self):
-        self.log = logging.getLogger(rcEnv.nodename+".osvcd.listener")
+    def setup_sock(self):
         try:
             self.port = self.config.getint("listener", "port")
         except Exception:
@@ -51,10 +49,33 @@ class Listener(shared.OsvcThread, Crypt):
         except socket.error as exc:
             self.log.error("bind %s:%d error: %s", self.addr, self.port, exc)
             return
-
         self.log.info("listening on %s:%s", self.addr, self.port)
-        self.events_clients = []
+        self.sockmap[self.sock.fileno()] = self.sock
 
+    def setup_sockux(self):
+        if not os.path.exists(rcEnv.paths.lsnruxsockd):
+            os.makedirs(rcEnv.paths.lsnruxsockd)
+        try:
+            if os.path.isdir(rcEnv.paths.lsnruxsock):
+                shutil.rmtree(rcEnv.paths.lsnruxsock)
+            else:
+                os.unlink(rcEnv.paths.lsnruxsock)
+        except Exception:
+            pass
+        try:
+            self.sockux = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.sockux.bind(rcEnv.paths.lsnruxsock)
+            self.sockux.listen(1)
+            self.sockux.settimeout(self.sock_tmo)
+        except socket.error as exc:
+            self.log.error("bind %s error: %s", rcEnv.paths.lsnruxsock, exc)
+            return
+        self.log.info("listening on %s", rcEnv.paths.dnsuxsock)
+        self.sockmap[self.sockux.fileno()] = self.sockux
+
+    def run(self):
+        self.log = logging.getLogger(rcEnv.nodename+".osvcd.listener")
+        self.events_clients = []
         self.stats = Storage({
             "sessions": Storage({
                 "accepted": 0,
@@ -65,6 +86,9 @@ class Listener(shared.OsvcThread, Crypt):
                 })
             }),
         })
+        self.sockmap = {}
+        self.setup_sock()
+        self.setup_sockux()
 
         while True:
             try:
@@ -91,23 +115,33 @@ class Listener(shared.OsvcThread, Crypt):
         self.janitor_threads()
         self.janitor_events()
 
-        try:
-            conn, addr = self.sock.accept()
-            self.stats.sessions.accepted += 1
-            if addr[0] not in self.stats.sessions.clients:
-                self.stats.sessions.clients[addr[0]] = Storage({
-                    "accepted": 0,
-                    "auth_validated": 0,
-                    "tx": 0,
-                    "rx": 0,
-                })
-            self.stats.sessions.clients[addr[0]].accepted += 1
-            #self.log.info("accept %s", str(addr))
-        except socket.timeout:
+        fds = select.select([self.sock.fileno(), self.sockux.fileno()], [], [], self.sock_tmo)
+        if self.sock_tmo and fds == ([], [], []):
             return
-        thr = threading.Thread(target=self.handle_client, args=(conn, addr))
-        thr.start()
-        self.threads.append(thr)
+        for fd in fds[0]:
+            sock = self.sockmap[fd]
+            try:
+                conn, addr = sock.accept()
+                self.stats.sessions.accepted += 1
+                if addr == "":
+                    addr = ["local"]
+                    encrypted = False
+                else:
+                    encrypted = True
+                if addr[0] not in self.stats.sessions.clients:
+                    self.stats.sessions.clients[addr[0]] = Storage({
+                        "accepted": 0,
+                        "auth_validated": 0,
+                        "tx": 0,
+                        "rx": 0,
+                    })
+                self.stats.sessions.clients[addr[0]].accepted += 1
+                #self.log.info("accept %s", str(addr))
+            except socket.timeout:
+                return
+            thr = threading.Thread(target=self.handle_client, args=(conn, addr, encrypted))
+            thr.start()
+            self.threads.append(thr)
 
     def janitor_events(self):
         done = []
@@ -116,27 +150,35 @@ class Listener(shared.OsvcThread, Crypt):
                 event = shared.EVENT_Q.get(False, 0)
             except queue.Empty:
                 break
-            msg = self.encrypt(event)
+            emsg = self.encrypt(event)
+            msg = self.msg_encode(event)
             to_remove = []
-            for idx, conn in enumerate(self.events_clients):
+            for idx, (conn, encrypted) in enumerate(self.events_clients):
+                if encrypted:
+                    _msg = emsg
+                else:
+                    _msg = msg
                 try:
-                    conn.sendall(msg)
+                    conn.sendall(_msg)
                 except socket.error as exc:
                     to_remove.append(idx)
             for idx in to_remove:
                 try:
-                    self.events_clients[idx].close()
+                    self.events_clients[idx][0].close()
                 except Exception:
                     pass
-                del self.events_clients[idx]
+                try:
+                    del self.events_clients[idx]
+                except IndexError:
+                    pass
 
-    def handle_client(self, conn, addr):
+    def handle_client(self, conn, addr, encrypted):
         try:
-            self._handle_client(conn, addr)
+            self._handle_client(conn, addr, encrypted)
         finally:
             conn.close()
 
-    def _handle_client(self, conn, addr):
+    def _handle_client(self, conn, addr, encrypted):
         chunks = []
         buff_size = 4096
         conn.setblocking(0)
@@ -162,7 +204,14 @@ class Listener(shared.OsvcThread, Crypt):
             data = "".join(chunks)
         del chunks
 
-        nodename, data = self.decrypt(data, sender_id=addr[0])
+        if encrypted:
+            nodename, data = self.decrypt(data, sender_id=addr[0])
+        else:
+            try:
+                data = self.msg_decode(data)
+            except ValueError:
+                pass
+            nodename = rcEnv.nodename
         #self.log.info("received %s from %s", str(data), nodename)
         self.stats.sessions.auth_validated += 1
         self.stats.sessions.clients[addr[0]].auth_validated += 1
@@ -171,9 +220,12 @@ class Listener(shared.OsvcThread, Crypt):
             p = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
             p.communicate()
         else:
-            result = self.router(nodename, data, conn)
+            result = self.router(nodename, data, conn, encrypted)
             if result:
-                message = self.encrypt(result)
+                if encrypted:
+                    message = self.encrypt(result)
+                else:
+                    message = self.msg_encode(result)
                 conn.sendall(message)
                 message_len = len(message)
                 self.stats.sessions.tx += message_len
@@ -184,7 +236,7 @@ class Listener(shared.OsvcThread, Crypt):
     # Actions
     #
     #########################################################################
-    def router(self, nodename, data, conn):
+    def router(self, nodename, data, conn, encrypted):
         """
         For a request data, extract the requested action and options,
         translate into a method name, and execute this method with options
@@ -201,7 +253,7 @@ class Listener(shared.OsvcThread, Crypt):
         options = {}
         for key, val in data.get("options", {}).items():
             options[str(key)] = val
-        return getattr(self, fname)(nodename, conn=conn, **options)
+        return getattr(self, fname)(nodename, conn=conn, encrypted=encrypted, **options)
 
     def action_relay_tx(self, nodename, **kwargs):
         with RELAY_LOCK:
@@ -543,7 +595,8 @@ class Listener(shared.OsvcThread, Crypt):
         return result
 
     def action_events(self, nodename, **kwargs):
-        self.events_clients.append(kwargs.get("conn").dup())
+        encrypted = kwargs.get("encrypted")
+        self.events_clients.append((kwargs.get("conn").dup(), encrypted))
 
     def action_service_logs(self, nodename, **kwargs):
         """
@@ -579,6 +632,7 @@ class Listener(shared.OsvcThread, Crypt):
 
     def _action_logs(self, nodename, logfile, obj, **kwargs):
         conn = kwargs.get("conn")
+        encrypted = kwargs.get("encrypted")
         backlog = kwargs.get("backlog")
         if backlog is None:
             backlog = 1024 * 10
@@ -624,7 +678,10 @@ class Listener(shared.OsvcThread, Crypt):
                 line_size = len(line)
                 if line_size == 0:
                     if msg_size > 0:
-                        message = self.encrypt(lines)
+                        if encrypted:
+                            message = self.encrypt(lines)
+                        else:
+                            message = self.msg_encode(lines)
                         try:
                             conn.sendall(message)
                         except Exception as exc:
@@ -652,7 +709,10 @@ class Listener(shared.OsvcThread, Crypt):
                 lines.append(line)
                 msg_size += line_size
                 if msg_size > shared.MAX_MSG_SIZE:
-                    message = self.encrypt(lines)
+                    if encrypted:
+                        message = self.encrypt(lines)
+                    else:
+                        message = self.msg_encode(lines)
                     conn.sendall(message)
                     msg_size = 0
                     lines = []

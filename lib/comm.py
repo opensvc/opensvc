@@ -276,6 +276,13 @@ class Crypt(object):
             key = key[:32]
         return key
 
+    def msg_encode(self, data):
+        return (json.dumps(data)+'\0').encode()
+
+    def msg_decode(self, message):
+        message = bdecode(message).rstrip("\0\x00")
+        return json.loads(message)
+
     def decrypt(self, message, cluster_name=None, secret=None, sender_id=None):
         """
         Validate the message meta, decrypt and return the data.
