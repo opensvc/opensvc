@@ -14,7 +14,7 @@ import select
 
 import pyaes
 import rcExceptions as ex
-from rcGlobalEnv import rcEnv
+from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import lazy, bdecode
 
 if sys.version_info[0] >= 3:
@@ -281,6 +281,8 @@ class Crypt(object):
 
     def msg_decode(self, message):
         message = bdecode(message).rstrip("\0\x00")
+        if len(message) == 0:
+            return
         return json.loads(message)
 
     def decrypt(self, message, cluster_name=None, secret=None, sender_id=None):
@@ -454,7 +456,7 @@ class Crypt(object):
                 port = rcEnv.listener_port
         return addr, port
 
-    def recv_message(self, sock, cluster_name=None, secret=None, use_select=True):
+    def recv_message(self, sock, cluster_name=None, secret=None, use_select=True, encrypted=True):
         """
         Receive, decrypt and return a message from a socket.
         """
@@ -481,8 +483,26 @@ class Crypt(object):
             data = "".join(chunks)
         if len(data) == 0:
             return
-        nodename, data = self.decrypt(data, cluster_name=cluster_name,
-                                      secret=secret)
+        if encrypted:
+            nodename, data = self.decrypt(data, cluster_name=cluster_name,
+                                          secret=secret)
+        else:
+            data = self.msg_decode(data)
+        return data
+
+    def socket_parms(self, nodename):
+        data = Storage()
+        if nodename == rcEnv.nodename:
+            data.af = socket.AF_UNIX
+            data.to = rcEnv.paths.lsnruxsock
+            data.to_s = rcEnv.paths.lsnruxsock
+            data.encrypted = False
+        else:
+            addr, port = self.get_listener_info(nodename)
+            data.af = socket.AF_INET
+            data.to = (addr, port)
+            data.to_s = "%s:%d" % (addr, port)
+            data.encrypted = True
         return data
 
     def daemon_send(self, data, nodename=None, with_result=True, silent=False,
@@ -493,13 +513,16 @@ class Crypt(object):
         """
         if nodename is None or nodename == "":
             nodename = rcEnv.nodename
-        addr, port = self.get_listener_info(nodename)
+        sp = self.socket_parms(nodename)
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock = socket.socket(sp.af, socket.SOCK_STREAM)
             sock.settimeout(0.2)
-            sock.connect((addr, port))
-            message = self.encrypt(data, cluster_name=cluster_name,
-                                   secret=secret)
+            sock.connect(sp.to)
+            if sp.encrypted:
+                message = self.encrypt(data, cluster_name=cluster_name,
+                                       secret=secret)
+            else:
+                message = self.msg_encode(data)
             if message is None:
                 return {"status": 1, "err": "failed to encrypt message"}
             sock.sendall(message)
@@ -507,14 +530,14 @@ class Crypt(object):
                 elapsed = 0
                 while True:
                     try:
-                        return self.recv_message(sock, cluster_name=cluster_name, secret=secret)
+                        return self.recv_message(sock, cluster_name=cluster_name, secret=secret, encrypted=sp.encrypted)
                     except socket.timeout:
                         if timeout > 0 and elapsed > timeout:
                             return {"status": 1, "err": "timeout"}
                         elapsed += 0.2
         except socket.error as exc:
             if not silent:
-                self.log.error("daemon send to %s:%d error: %s", addr, port, str(exc))
+                self.log.error("daemon send to %s error: %s", sp.to_s, str(exc))
             return {"status": 1}
         finally:
             sock.close()
@@ -528,21 +551,24 @@ class Crypt(object):
         """
         if nodename is None:
             nodename = rcEnv.nodename
-        addr, port = self.get_listener_info(nodename)
+        sp = self.socket_parms(nodename)
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock = socket.socket(sp.af, socket.SOCK_STREAM)
             sock.settimeout(6.2)
-            sock.connect((addr, port))
-            message = self.encrypt(data, cluster_name=cluster_name,
-                                   secret=secret)
+            sock.connect(sp.to)
+            if sp.encrypted:
+                message = self.encrypt(data, cluster_name=cluster_name,
+                                       secret=secret)
+            else:
+                message = self.msg_encode(data)
             if message is None:
                 return
             sock.sendall(message)
             while True:
-                data = self.recv_message(sock, cluster_name=cluster_name, secret=secret)
+                data = self.recv_message(sock, cluster_name=cluster_name, secret=secret, encrypted=sp.encrypted)
                 yield data
         except socket.error as exc:
-            self.log.error("daemon send to %s:%d error: %s", addr, port, str(exc))
+            self.log.error("daemon send to %s error: %s", sp.to_s, str(exc))
         finally:
             sock.close()
 
@@ -555,32 +581,35 @@ class Crypt(object):
         if nodenames is None:
             nodenames = [rcEnv.nodename]
 
-        socks = []
+        socks = {}
         for nodename in nodenames:
-            addr, port = self.get_listener_info(nodename)
+            sp = self.socket_parms(nodename)
             try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock = socket.socket(sp.af, socket.SOCK_STREAM)
                 sock.settimeout(6.2)
-                sock.connect((addr, port))
-                message = self.encrypt(data, cluster_name=cluster_name,
-                                       secret=secret)
+                sock.connect(sp.to)
+                if sp.encrypted:
+                    message = self.encrypt(data, cluster_name=cluster_name,
+                                           secret=secret)
+                else:
+                    message = self.msg_encode(data)
                 if message is None:
                     return
                 sock.sendall(message)
-                socks.append(sock)
+                socks[sock] = sp
             except socket.error as exc:
-                self.log.error("daemon send to %s:%d error: %s", addr, port, str(exc))
+                self.log.error("daemon send to %s error: %s", sp.to_s, str(exc))
 
         try:
             while True:
-                ready_to_read, _, exceptionals = select.select(socks, [], socks, 1)
+                ready_to_read, _, exceptionals = select.select(socks.keys(), [], socks, 1)
                 for sock in ready_to_read:
-                    data = self.recv_message(sock, cluster_name=cluster_name, secret=secret, use_select=False)
+                    data = self.recv_message(sock, cluster_name=cluster_name, secret=secret, use_select=False, encrypted=socks[sock].encrypted)
                     if data is None:
                         continue
                     yield data
                 for sock in exceptionals:
-                    socks.remove(sock)
+                    del socks[sock]
                 if len(socks) == 0:
                     break
         finally:
