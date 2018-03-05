@@ -120,12 +120,10 @@ class Hb(shared.OsvcThread):
             # we're alone for now. don't send a full status payload.
             # sent a presence announce payload instead.
             self.log.debug("ping node %s", nodename if nodename else "*")
-            gen = {rcEnv.nodename: shared.GEN}
-            gen.update(shared.REMOTE_GEN)
             message = self.encrypt({
                 "kind": "ping",
                 "compat": shared.COMPAT_VERSION,
-                "gen": gen,
+                "gen": self.get_gen(),
                 "monitor": self.get_node_monitor(),
                 "updated": time.time(), # for hb and relay readers
             }, encode=False)
@@ -166,52 +164,79 @@ class Hb(shared.OsvcThread):
         if data is None:
             self.log.info("drop corrupted hb data from %s", nodename)
         current_gen = shared.REMOTE_GEN.get(nodename, 0)
+        our_gen_on_peer = data.get("gen", {}).get(rcEnv.nodename, 0)
         kind = data.get("kind", "full")
+        change = False
         if kind == "patch":
-            deltas = data.get("deltas", [])
-            gens = sorted([int(gen) for gen in deltas if int(gen) > current_gen])
-            if len(gens) == 0:
-                #self.log.info("no more recent gen in received deltas")
-                return
             if nodename not in shared.CLUSTER_DATA:
                 # happens during init. drop the patch, a full will follow
                 shared.REMOTE_GEN[nodename] = 0
-                shared.LOCAL_GEN[nodename] = data.get("gen", {}).get(rcEnv.nodename, 0)
+                shared.LOCAL_GEN[nodename] = our_gen_on_peer
+                return
+            deltas = data.get("deltas", [])
+            gens = sorted([int(gen) for gen in deltas])
+            gens = [gen for gen in gens if gen > current_gen]
+            if len(gens) == 0:
+                #self.log.info("no more recent gen in received deltas")
+                if our_gen_on_peer > shared.LOCAL_GEN[nodename]:
+                    shared.LOCAL_GEN[nodename] = our_gen_on_peer
+                    shared.CLUSTER_DATA[nodename]["gen"][rcEnv.nodename] = our_gen_on_peer
                 return
             with shared.CLUSTER_DATA_LOCK:
                 for gen in gens:
                     #self.log.debug("merge node %s gen %d (%d diffs)", nodename, gen, len(deltas[str(gen)]))
-                    if gen != current_gen - 1:
+                    if gen - 1 != current_gen:
+                        self.log.warning("unsynchronized node %s dataset. local gen %d, received %d. "
+                                         "ask for a full.", nodename, current_gen, gen)
                         shared.REMOTE_GEN[nodename] = 0
-                        shared.LOCAL_GEN[nodename] = data.get("gen", {}).get(rcEnv.nodename, 0)
+                        shared.LOCAL_GEN[nodename] = our_gen_on_peer
+                        shared.CLUSTER_DATA[nodename]["gen"] = {
+                            nodename: gen,
+                            rcEnv.nodename: our_gen_on_peer,
+                        }
                         break
                     try:
                         json_delta.patch(shared.CLUSTER_DATA[nodename], deltas[str(gen)])
+                        current_gen = gen
                         shared.EVENT_Q.put({
                             "nodename": nodename,
                             "kind": "patch",
                             "data": deltas[str(gen)],
                         })
+                        shared.REMOTE_GEN[nodename] = gen
+                        shared.LOCAL_GEN[nodename] = our_gen_on_peer
+                        shared.CLUSTER_DATA[nodename]["gen"] = {
+                            nodename: gen,
+                            rcEnv.nodename: our_gen_on_peer,
+                        }
+                        self.log.debug("patch node %s dataset to gen %d, peer has gen %d of our dataset",
+                                       nodename, shared.REMOTE_GEN[nodename],
+                                       shared.LOCAL_GEN[nodename])
+                        change = True
                     except Exception as exc:
                         self.log.warning("failed to apply node %s dataset gen %d patch: %s. "
                                          "ask for a full: %s", nodename, gen, deltas[str(gen)], exc)
                         shared.REMOTE_GEN[nodename] = 0
-                        shared.LOCAL_GEN[nodename] = data.get("gen", {}).get(rcEnv.nodename, 0)
+                        shared.LOCAL_GEN[nodename] = our_gen_on_peer
+                        shared.CLUSTER_DATA[nodename]["gen"] = {
+                            nodename: gen,
+                            rcEnv.nodename: our_gen_on_peer,
+                        }
                         return
-                shared.REMOTE_GEN[nodename] = gen
-                shared.LOCAL_GEN[nodename] = data.get("gen", {}).get(rcEnv.nodename, 0)
-                self.log.debug("patch node %s dataset to gen %d, peer has gen %d of our dataset",
-                              nodename, shared.REMOTE_GEN[nodename],
-                              shared.LOCAL_GEN[nodename])
         elif kind == "ping":
             with shared.CLUSTER_DATA_LOCK:
                 shared.REMOTE_GEN[nodename] = 0
-                shared.LOCAL_GEN[nodename] = data.get("gen", {}).get(rcEnv.nodename, 0)
+                shared.LOCAL_GEN[nodename] = our_gen_on_peer
                 if nodename not in shared.CLUSTER_DATA:
                     shared.CLUSTER_DATA[nodename] = {}
+                shared.CLUSTER_DATA[nodename]["gen"] = {
+                    nodename: 0,
+                    rcEnv.nodename: our_gen_on_peer,
+                }
                 shared.CLUSTER_DATA[nodename]["monitor"] = data["monitor"]
                 self.log.debug("reset node %s dataset gen, peer has gen %d of our dataset",
                               nodename, shared.LOCAL_GEN[nodename])
+                change = True
         else:
             data_gen = data.get("gen", {}).get(nodename)
             if data_gen is not None and nodename in shared.LOCAL_GEN and data_gen == shared.LOCAL_GEN[nodename]:
@@ -227,12 +252,18 @@ class Hb(shared.OsvcThread):
             with shared.CLUSTER_DATA_LOCK:
                 shared.CLUSTER_DATA[nodename] = data
                 new_gen= data.get("gen", {}).get(nodename, 0)
-                shared.LOCAL_GEN[nodename] = data.get("gen", {}).get(rcEnv.nodename, 0)
+                shared.LOCAL_GEN[nodename] = our_gen_on_peer
                 if new_gen == shared.REMOTE_GEN.get(nodename):
                     return
                 shared.REMOTE_GEN[nodename] = new_gen
+                shared.CLUSTER_DATA[nodename]["gen"] = {
+                    nodename: new_gen,
+                    rcEnv.nodename: our_gen_on_peer,
+                }
                 self.log.debug("install node %s dataset gen %d, peer has gen %d of our dataset",
                               nodename, shared.REMOTE_GEN[nodename],
                               shared.LOCAL_GEN[nodename])
-        shared.wake_monitor("node %s %s dataset gen %d received through %s" % (nodename, kind, shared.REMOTE_GEN[nodename], self.name))
+                change = True
+        if change:
+            shared.wake_monitor("node %s %s dataset gen %d received through %s" % (nodename, kind, shared.REMOTE_GEN[nodename], self.name))
 
