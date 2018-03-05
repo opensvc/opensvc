@@ -8,6 +8,7 @@ kwargs = {}
 try:
     import ssl
     kwargs["context"] = ssl._create_unverified_context()
+    kwargs["allow_none"] = True
 except:
     pass
 
@@ -368,7 +369,6 @@ class Collector(object):
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.end_action(*args)
-        os.unlink(alogfile)
 
     def svcmon_update_combo(self, g_vars, g_vals, r_vars, r_vals):
         if 'svcmon_update_combo' in self.proxy_methods:
