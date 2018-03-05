@@ -175,10 +175,16 @@ class Hb(shared.OsvcThread):
                 return
             if nodename not in shared.CLUSTER_DATA:
                 # happens during init. drop the patch, a full will follow
+                shared.REMOTE_GEN[nodename] = 0
+                shared.LOCAL_GEN[nodename] = data.get("gen", {}).get(rcEnv.nodename, 0)
                 return
             with shared.CLUSTER_DATA_LOCK:
                 for gen in gens:
                     #self.log.debug("merge node %s gen %d (%d diffs)", nodename, gen, len(deltas[str(gen)]))
+                    if gen != current_gen - 1:
+                        shared.REMOTE_GEN[nodename] = 0
+                        shared.LOCAL_GEN[nodename] = data.get("gen", {}).get(rcEnv.nodename, 0)
+                        break
                     try:
                         json_delta.patch(shared.CLUSTER_DATA[nodename], deltas[str(gen)])
                         shared.EVENT_Q.put({
