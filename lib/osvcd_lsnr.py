@@ -123,7 +123,7 @@ class Listener(shared.OsvcThread, Crypt):
             try:
                 conn, addr = sock.accept()
                 self.stats.sessions.accepted += 1
-                if addr == "":
+                if len(addr) == 0:
                     addr = ["local"]
                     encrypted = False
                 else:
