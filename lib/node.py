@@ -3096,7 +3096,7 @@ class Node(Crypt, ExtConfig):
         )
         return data
 
-    def _daemon_status(self, silent=False, refresh=False):
+    def _daemon_status(self, silent=False, refresh=False, node=None):
         data = self.daemon_send(
             {
                 "action": "daemon_status",
@@ -3104,13 +3104,19 @@ class Node(Crypt, ExtConfig):
                     "refresh": refresh,
                 },
             },
-            nodename=self.options.node,
+            nodename=node,
             silent=silent,
         )
         return data
 
-    def daemon_status(self, svcnames=None, preamble=""):
-        data = self._daemon_status()
+    def daemon_status(self, svcnames=None, preamble="", node=None):
+        if node:
+            daemon_node = node
+        elif self.options.node:
+            daemon_node = self.options.node
+        else:
+            daemon_node = rcEnv.nodename
+        data = self._daemon_status(node=daemon_node)
         if data is None or data.get("status", 0) != 0:
             return
 
@@ -3134,10 +3140,6 @@ class Node(Crypt, ExtConfig):
         self.build_services(minimal=True)
         nodenames = get_nodes()
         services = {}
-        if self.options.node:
-            daemon_node = self.options.node
-        else:
-            daemon_node = rcEnv.nodename
 
         def load_header(title):
             line = [

@@ -32,11 +32,19 @@ __usage = prog + \
     "  *  frozen\n" \
     "  ^  leader node or service placement non-optimal"
 parser = optparse.OptionParser(version=__ver, usage=__usage)
-parser.add_option("--color", default="auto", action="store", dest="color",
-                  help="colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize")
-parser.add_option("-w", "--watch", default=False, action="store_true", dest="watch",
+parser.add_option("--color", default="auto",
+                  action="store", dest="color",
+                  help="colorize output. possible values are : auto=guess based "
+                       "on tty presence, always|yes=always colorize, never|no="
+                       "never colorize")
+parser.add_option("--node", default="", action="store", dest="node",
+                  help="The node to send a request to. If not specified the "
+                       "local node is targeted."),
+parser.add_option("-w", "--watch", default=False,
+                  action="store_true", dest="watch",
                   help="refresh the information every --interval.")
-parser.add_option("-i", "--interval", default=2, action="store", dest="interval", type="int",
+parser.add_option("-i", "--interval", default=2, action="store",
+                  dest="interval", type="int",
                   help="with --watch, set the refresh interval.")
 parser.add_option(
     "-s", "--service", default=None,
@@ -83,7 +91,7 @@ def _main(node, argv=None):
             preamble = "\033[H\033[J" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
         else:
             preamble = ""
-        node.daemon_status(svcnames=expanded_svcs, preamble=preamble)
+        node.daemon_status(svcnames=expanded_svcs, preamble=preamble, node=options.node)
         if not options.watch:
             break
         time.sleep(options.interval)
