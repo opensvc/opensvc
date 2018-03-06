@@ -243,6 +243,7 @@ class Docker(resContainer.Container):
             self.unset_lazy("container_id")
             self.svc.dockerlib.get_running_instance_ids(refresh=True)
         elif action in ("stop", "kill"):
+            self.unset_lazy("container_id")
             self.svc.dockerlib.docker_stop()
 
     def service_stop(self):
