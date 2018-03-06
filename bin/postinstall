@@ -1189,6 +1189,9 @@ def restart_daemon():
     os.system(cmd)
     del os.environ['OPENSVC_AGENT_UPGRADE']
 
+def init_secret():
+    os.system("%s/nodemgr ping --node 127.0.0.1" % pathbin)
+
 try:
     move_var_files_in_subdirs()
     move_usr_to_opt()
@@ -1210,6 +1213,7 @@ try:
     clean_pyc()
     dump_install_content()
     restart_daemon()
+    init_secret()
     logit("\nOpenSVC postinstall terminated\n",stdout=True)
 except:
     save_exc()

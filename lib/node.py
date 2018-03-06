@@ -3601,7 +3601,7 @@ class Node(Crypt, ExtConfig):
         Fetch the daemon senders blacklist as a ping test, from either
         a peer or an arbitrator node, swiching between secrets as appropriate.
         """
-        if node in self.cluster_nodes:
+        if node in self.cluster_nodes or node in (rcEnv.nodename, "127.0.0.1"):
             cluster_name = None
             secret = None
         elif node in self.cluster_drpnodes:
