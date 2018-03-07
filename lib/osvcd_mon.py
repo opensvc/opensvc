@@ -2123,7 +2123,7 @@ class Monitor(shared.OsvcThread, Crypt):
         self.merge_hb_data_provision()
 
     def merge_hb_data_compat(self):
-        compat = [data.get("compat") for data in shared.CLUSTER_DATA.values()]
+        compat = [data.get("compat") for data in shared.CLUSTER_DATA.values() if "compat" in data]
         new_compat = len(set(compat)) <= 1
         if self.compat != new_compat:
             if new_compat:
