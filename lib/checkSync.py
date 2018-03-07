@@ -21,7 +21,6 @@ class check(checks.check):
         return ''
 
     def do_check(self):
-        print("here")
         data = []
         for svc in self.svcs:
             for resource in svc.get_resources(SYNC_DRIVERS):
