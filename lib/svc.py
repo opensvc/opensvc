@@ -3067,7 +3067,8 @@ class Svc(Crypt, ExtConfig):
         Print the service configuration in the format specified by --format.
         """
         if self.options.format is not None:
-            return self.print_config_data()
+            return self.print_config_data(evaluate=self.options.eval,
+                                          impersonate=self.options.impersonate)
         from rcColor import print_color_config
         print_color_config(self.paths.cf)
 

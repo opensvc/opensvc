@@ -1072,7 +1072,7 @@ class ExtConfig(object):
             ofile.flush()
         shutil.move(fpath, self.paths.cf)
 
-    def print_config_data(self, src_config=None):
+    def print_config_data(self, src_config=None, evaluate=False, impersonate=None):
         """
         Return a simple dict (OrderedDict if possible), fed with the
         service configuration sections and keys
@@ -1106,6 +1106,20 @@ class ExtConfig(object):
             data[section] = tmpsection
         if src_config is None:
             unset_lazy(self, "config")
-        return data
-
+        if not evaluate:
+            return data
+        edata = {}
+        for section, _data in data.items():
+            edata[section] = {}
+            keys = []
+            for key in _data:
+                key = key.split("@")[0]
+                if key in edata[section]:
+                    continue
+                val = self.conf_get(section, key, impersonate=impersonate)
+                # ensure the data is json-exportable
+                if isinstance(val, set):
+                    val = list(val)
+                edata[section][key] = val
+        return edata
 

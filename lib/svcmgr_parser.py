@@ -136,6 +136,10 @@ OPT = Storage({
         "--id", default=0,
         action="store", dest="id", type="int",
         help="Specify an object id to act on"),
+    "impersonate": Option(
+        "--impersonate", default=None,
+        action="store",
+        help="Impersonate a peer node when evaluating keywords."),
     "index": Option(
         "--index", default=None,
         action="store", type="int",
@@ -812,6 +816,8 @@ ACTIONS = {
             "msg": "Display the service current configuration.",
             "options": [
                 OPT.format,
+                OPT.eval,
+                OPT.impersonate,
             ],
         },
         "edit_config": {
@@ -866,6 +872,7 @@ ACTIONS = {
                    "configuration keyword.",
             "options": ACTION_OPTS + [
                 OPT.eval,
+                OPT.impersonate,
                 OPT.param,
                 OPT.kw,
             ],

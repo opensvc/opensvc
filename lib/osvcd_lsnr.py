@@ -375,8 +375,10 @@ class Listener(shared.OsvcThread, Crypt):
 
     def _action_get_service_config_json(self, nodename, **kwargs):
         svcname = kwargs.get("svcname")
+        evaluate = kwargs.get("evaluate")
+        impersonate = kwargs.get("impersonate")
         try:
-            return shared.SERVICES[svcname].print_config_data()
+            return shared.SERVICES[svcname].print_config_data(evaluate=evaluate, impersonate=impersonate)
         except Exception:
             return {}
 
