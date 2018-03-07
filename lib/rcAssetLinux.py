@@ -167,6 +167,8 @@ class Asset(rcAsset.Asset):
                     return 'Oracle'
                 else:
                     return 'Red Hat'
+        if os.path.exists('/etc/alpine-release'):
+            return "Alpine"
         return 'Unknown'
 
     def _get_os_release_lsb(self):
@@ -211,6 +213,9 @@ class Asset(rcAsset.Asset):
                     if 'PATCHLEVEL' in line:
                         v += [line.split('=')[-1].replace('\n','').strip('" ')]
             return '.'.join(v)
+        if os.path.exists('/etc/alpine-release'):
+            with open('/etc/alpine-release') as f:
+                return f.read().strip()
         r = self._get_os_release_lsb()
         if r:
             return r
