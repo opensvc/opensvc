@@ -75,7 +75,7 @@ class TestUtilities:
         out, err, ret = justcall(["ls", "/foo"])
         assert is_string(out) == True
         assert is_string(err) == True
-        assert ret == 2
+        assert ret > 0
 
     def test_vcall(self):
         """
@@ -84,7 +84,7 @@ class TestUtilities:
         ret, out, err = vcall(["ls", "/foo"])
         assert is_string(out) == True
         assert is_string(err) == True
-        assert ret == 2
+        assert ret > 0
 
     def test_call(self):
         """
@@ -93,14 +93,14 @@ class TestUtilities:
         ret, out, err = call(["ls", "/foo"])
         assert is_string(out) == True
         assert is_string(err) == True
-        assert ret == 2
+        assert ret > 0
 
     def test_qcall(self):
         """
         qcall()
         """
         ret = qcall(["ls", "/foo"])
-        assert ret == 2
+        assert ret > 0
 
     def test_getmount(self):
         """
