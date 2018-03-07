@@ -51,6 +51,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         if hasattr(self, 'dm_h'):
             return self.dm_h
         self.dm_h = {}
+        self._dm_h = {}
         if not os.path.exists("/dev/mapper"):
             return self.dm_h
         try:
@@ -72,7 +73,6 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             self.dm_h[devpath.replace("/dev/mapper/", "")] = "dm-%d"%minor
 
         # reverse hash
-        self._dm_h = {}
         for mapname, devname in self.dm_h.items():
             self._dm_h[devname] = mapname
 
