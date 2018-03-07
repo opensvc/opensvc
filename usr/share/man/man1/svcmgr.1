@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-03\-01
+.TH SVCMGR 1 2018\-03\-07
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -10347,6 +10347,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .B --eval
 If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced.
 .TP
+.B --impersonate=IMPERSONATE
+Impersonate a peer node when evaluating keywords.
+.TP
 .B --param=PARAM
 An expression like '[<section>.]<keyword>' where
 
@@ -10470,6 +10473,12 @@ Display the service current configuration.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B --eval
+If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced.
+.TP
+.B --impersonate=IMPERSONATE
+Impersonate a peer node when evaluating keywords.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:

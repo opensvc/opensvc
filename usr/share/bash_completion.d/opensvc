@@ -28,12 +28,12 @@ svcmgr_validate="config"
 svcmgr_update="--color --daemon --debug --disable-rollback --dry-run --env --local --master --node --provision --resource --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_set="--add --color --daemon --debug --dry-run --env --index --kw --local --master --node --param --remove --rid --slave --slaves --status --subsets --tags --value --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_unset="--color --daemon --debug --dry-run --env --kw --local --master --node --param --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
-svcmgr_get="--color --daemon --debug --dry-run --env --eval --kw --local --master --node --param --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
+svcmgr_get="--color --daemon --debug --dry-run --env --eval --impersonate --kw --local --master --node --param --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_edit_config="--color --daemon --debug --discard --env --recover --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_delete="--color --daemon --debug --dry-run --env --local --master --node --rid --slave --slaves --status --subsets --tags --time --unprovision --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_validate_config="--color --daemon --debug --env --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_create="--color --config --daemon --debug --disable-rollback --dry-run --env --local --master --node --provision --resource --rid --slave --slaves --status --subsets --tags --template --waitlock -c --cluster -f --force -h --help -i --interactive -p --parallel -s --service"
-svcmgr_print_config="--color --daemon --debug --env --format --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_print_config="--color --daemon --debug --env --eval --format --impersonate --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_print_resinfo="--color --daemon --debug --env --format --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_compliance_fix="--attach --color --daemon --debug --env --module --moduleset --ruleset-date --status --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_compliance_list_moduleset="--color --daemon --debug --env --moduleset --status --waitlock -c --cluster -h --help -p --parallel -s --service"
@@ -253,7 +253,7 @@ nodemgr_collector_ack_action="--author --color --comment --debug --format -h --h
 nodemgr_collector_alerts="--color --debug --format -h --help"
 nodemgr_collector_asset="--color --debug --format -h --help"
 
-opts_with_arg=( "--add" "--api" "--app" "--author" "--backlog" "--begin" "--broadcast" "--color" "--comment" "--config" "--dev" "--downto" "--duration" "--end" "--env" "--format" "--hba" "--id" "--index" "--kw" "--like" "--lun" "--mac" "--message" "--module" "--moduleset" "--node" "--object" "--param" "--password" "--port" "--remove" "--resource" "--rid" "--ruleset" "--ruleset-date" "--secret" "--service" "--slave" "--stats-dir" "--status" "--subsets" "--symcli-db-file" "--tag" "--tags" "--target" "--template" "--thread-id" "--time" "--to" "--upto" "--user" "--value" "--waitlock" "-s" )
+opts_with_arg=( "--add" "--api" "--app" "--author" "--backlog" "--begin" "--broadcast" "--color" "--comment" "--config" "--dev" "--downto" "--duration" "--end" "--env" "--format" "--hba" "--id" "--impersonate" "--index" "--kw" "--like" "--lun" "--mac" "--message" "--module" "--moduleset" "--node" "--object" "--param" "--password" "--port" "--remove" "--resource" "--rid" "--ruleset" "--ruleset-date" "--secret" "--service" "--slave" "--stats-dir" "--status" "--subsets" "--symcli-db-file" "--tag" "--tags" "--target" "--template" "--thread-id" "--time" "--to" "--upto" "--user" "--value" "--waitlock" "-s" )
 
 
 

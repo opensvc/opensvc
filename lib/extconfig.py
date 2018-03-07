@@ -580,7 +580,11 @@ class ExtConfig(object):
                 val = eval_expr(expr)
             except TypeError as exc:
                 raise ex.excError("invalid expression: %s: %s" % (expr, str(exc)))
+            if m.start() == 0 and m.end() == len(s):
+                # preserve the expression type
+                return val
             s = s[:m.start()] + str(val) + s[m.end():]
+            return s
 
     def handle_references(self, s, scope=False, impersonate=None, config=None):
         key = (s, scope, impersonate)
