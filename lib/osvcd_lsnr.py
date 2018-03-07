@@ -367,6 +367,20 @@ class Listener(shared.OsvcThread, Crypt):
         return {"status": 0}
 
     def action_get_service_config(self, nodename, **kwargs):
+        fmt = kwargs.get("format")
+        if fmt == "json":
+            return self._action_get_service_config_json(nodename, **kwargs)
+        else:
+            return self._action_get_service_config_file(nodename, **kwargs)
+
+    def _action_get_service_config_json(self, nodename, **kwargs):
+        svcname = kwargs.get("svcname")
+        try:
+            return shared.SERVICES[svcname].print_config_data()
+        except Exception:
+            return {}
+
+    def _action_get_service_config_file(self, nodename, **kwargs):
         svcname = kwargs.get("svcname")
         if not svcname:
             return {"error": "no svcname specified", "status": 1}
