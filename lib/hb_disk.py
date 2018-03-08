@@ -134,7 +134,10 @@ class HbDisk(Hb, Crypt):
         offset = self.meta_slot_offset(slot)
         fo.seek(offset, os.SEEK_SET)
         fo.readinto(self.meta_slot_buff)
-        return bdecode(self.meta_slot_buff[:mmap.PAGESIZE])
+        try:
+            return bdecode(self.meta_slot_buff[:mmap.PAGESIZE])
+        except Exception as exc:
+            return None
 
     def meta_write_slot(self, slot, data, fo=None):
         if len(data) > mmap.PAGESIZE:
@@ -177,9 +180,12 @@ class HbDisk(Hb, Crypt):
                 })
         for slot in range(self.MAX_SLOTS):
             buff = self.meta_read_slot(slot, fo=fo)
-            if buff[0] == "\0":
+            if buff is None or buff[0] == "\0":
                 return
-            nodename = buff.strip("\0")
+            try:
+                nodename = buff[:buff.index("\0")]
+            except IndexError:
+                continue
             if nodename not in self.peer_config:
                 continue
             if self.peer_config[nodename].slot >= 0:
@@ -196,7 +202,7 @@ class HbDisk(Hb, Crypt):
         for slot in range(self.MAX_SLOTS):
             with self.hb_fo() as fo:
                 buff = self.meta_read_slot(slot, fo=fo)
-                if buff[0] != "\0":
+                if buff is None or buff[0] != "\0":
                     continue
                 self.peer_config[rcEnv.nodename].slot = slot
                 try:
