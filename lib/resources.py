@@ -64,6 +64,7 @@ class Resource(object):
         self.encap = encap or "encap" in self.tags
         self.sort_key = rid
         self.info_in_status = []
+        self.lockfd = None
         try:
             self.label = type
         except AttributeError:
@@ -1111,4 +1112,52 @@ class Resource(object):
         so Node() users don't have to import it from rcUtilities.
         """
         unset_lazy(self, prop)
+
+    def reslock(self, action=None, timeout=30, delay=1, suffix=None):
+        """
+        Acquire the resource action lock.
+        """
+        if self.lockfd is not None:
+            # already acquired
+            return
+
+        lockfile = os.path.join(rcEnv.paths.pathlock, self.svc.svcname+"."+self.rid)
+        if suffix is not None:
+            lockfile = ".".join((lockfile, suffix))
+
+        details = "(timeout %d, delay %d, action %s, lockfile %s)" % \
+                  (timeout, delay, action, lockfile)
+        self.log.debug("acquire resource lock %s", details)
+
+        try:
+            lockfd = lock.lock(
+                timeout=timeout,
+                delay=delay,
+                lockfile=lockfile,
+                intent=action
+            )
+        except lock.LockTimeout as exc:
+            raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
+        except lock.LockNoLockFile:
+            raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
+        except lock.LockCreateError:
+            raise ex.excError("can not create lock file %s" % details)
+        except lock.LockAcquire as exc:
+            raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
+        except ex.excSignal:
+            raise ex.excError("interrupted by signal %s" % details)
+        except Exception as exc:
+            self.save_exc()
+            raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
+
+        if lockfd is not None:
+            self.lockfd = lockfd
+
+    def resunlock(self):
+        """
+        Release the service action lock.
+        """
+        lock.unlock(self.lockfd)
+        self.lockfd = None
+
 

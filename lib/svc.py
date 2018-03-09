@@ -217,6 +217,10 @@ ACTIONS_NO_TRIGGER = [
     "status",
 ]
 
+ACTIONS_LOCK_COMPAT = {
+    "postsync": ["sync_all", "sync_nodes", "sync_drp", "sync_update", "sync_resync"],
+}
+
 ACTIONS_NO_LOCK = [
     "abort",
     "docker",
@@ -1190,6 +1194,27 @@ class Svc(Crypt, ExtConfig):
         details = "(timeout %d, delay %d, action %s, lockfile %s)" % \
                   (timeout, delay, action, lockfile)
         self.log.debug("acquire service lock %s", details)
+
+        # try an immmediate lock acquire and see if the running action is
+        # compatible
+        if action in ACTIONS_LOCK_COMPAT:
+            try:
+                lockfd = lock.lock(
+                    timeout=0,
+                    delay=delay,
+                    lockfile=lockfile,
+                    intent=action
+                )
+                if lockfd is not None:
+                    self.lockfd = lockfd
+                return
+            except lock.LockTimeout as exc:
+                if exc.intent in ACTIONS_LOCK_COMPAT[action]:
+                    return
+                # not compatible, continue with the normal acquire
+            except Exception:
+                pass
+
         try:
             lockfd = lock.lock(
                 timeout=timeout,
@@ -3896,11 +3921,22 @@ class Svc(Crypt, ExtConfig):
         if waitlock < 0:
             waitlock = self.lock_timeout
 
-        try:
-            self.svclock(action, timeout=waitlock)
-        except ex.excError as exc:
-            self.log.error(str(exc))
-            return 1
+        if action == "sync_all" and self.command_is_scoped():
+            for rid in self.action_rid:
+                resource = self.resources_by_id[rid]
+                if not resource.type.startswith("sync"):
+                    continue
+                try:
+                    resource.reslock(action=action, suffix="sync")
+                except ex.excError as exc:
+                    self.log.error(str(exc))
+                    return 1
+        else:
+            try:
+                self.svclock(action, timeout=waitlock)
+            except ex.excError as exc:
+                self.log.error(str(exc))
+                return 1
 
         psinfo = self.do_cluster_action(action, options=options)
 
@@ -3953,6 +3989,12 @@ class Svc(Crypt, ExtConfig):
                 self.update_status_data()
             self.clear_action(action, err)
             self.svcunlock()
+            if action == "sync_all" and self.command_is_scoped():
+                for rid in self.action_rid:
+                    resource = self.resources_by_id[rid]
+                    if not resource.type.startswith("sync"):
+                        continue
+                    resource.resunlock()
 
         if psinfo:
             self.join_cluster_action(**psinfo)
