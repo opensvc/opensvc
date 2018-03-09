@@ -39,6 +39,8 @@ class check(checks.check):
         except:
             l = []
         for disk in l:
+            if disk.driveinfo is None:
+                continue
             for drive in disk.driveinfo:
                 name = drive.name
                 n = drive.numberpaths
