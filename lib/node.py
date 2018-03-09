@@ -4230,7 +4230,9 @@ class Node(Crypt, ExtConfig):
         except:
             # None < 0 == True
             pass
-        data.update(self.stats_meminfo())
+        meminfo = self.stats_meminfo()
+        if meminfo is not None:
+            data.update(meminfo)
         data["score"] = self.score(data)
         return data
 

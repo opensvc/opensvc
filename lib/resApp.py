@@ -4,7 +4,6 @@ The module defining the App resource and RsetApps resourceset objects.
 from subprocess import Popen
 from datetime import datetime
 import os
-import pwd
 import time
 import stat
 import shlex
@@ -24,6 +23,7 @@ def run_as_popen_kwargs(fpath, limits):
     """
     if rcEnv.sysname == "Windows":
         return {}
+    import pwd
     try:
         fstat = os.stat(fpath)
     except Exception as exc:

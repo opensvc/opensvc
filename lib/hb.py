@@ -5,7 +5,6 @@ import logging
 import time
 import socket
 import datetime
-import fcntl
 import struct
 
 import json_delta
@@ -107,6 +106,7 @@ class Hb(shared.OsvcThread):
         except TypeError:
             ifname = str(ifname)
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        import fcntl
         info = fcntl.ioctl(
             s.fileno(),
             0x8915,  # SIOCGIFADDR

@@ -73,7 +73,7 @@ class Scheduler(shared.OsvcThread):
 
     def exec_action(self, sig, cmd):
         kwargs = dict(stdout=self.devnull, stderr=self.devnull,
-                      stdin=self.devnull, close_fds=True)
+                      stdin=self.devnull, close_fds=os.name!="nt")
         try:
             proc = Popen(cmd, **kwargs)
         except KeyboardInterrupt:

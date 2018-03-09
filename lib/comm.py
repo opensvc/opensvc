@@ -492,7 +492,7 @@ class Crypt(object):
 
     def socket_parms(self, nodename):
         data = Storage()
-        if nodename == rcEnv.nodename:
+        if nodename == rcEnv.nodename and os.name != "nt":
             data.af = socket.AF_UNIX
             data.to = rcEnv.paths.lsnruxsock
             data.to_s = rcEnv.paths.lsnruxsock

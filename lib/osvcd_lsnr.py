@@ -53,6 +53,8 @@ class Listener(shared.OsvcThread, Crypt):
         self.sockmap[self.sock.fileno()] = self.sock
 
     def setup_sockux(self):
+        if os.name == "nt":
+            return
         if not os.path.exists(rcEnv.paths.lsnruxsockd):
             os.makedirs(rcEnv.paths.lsnruxsockd)
         try:
@@ -115,7 +117,7 @@ class Listener(shared.OsvcThread, Crypt):
         self.janitor_threads()
         self.janitor_events()
 
-        fds = select.select([self.sock.fileno(), self.sockux.fileno()], [], [], self.sock_tmo)
+        fds = select.select([fno for fno in self.sockmap], [], [], self.sock_tmo)
         if self.sock_tmo and fds == ([], [], []):
             return
         for fd in fds[0]:
