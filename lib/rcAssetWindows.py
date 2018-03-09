@@ -158,5 +158,8 @@ class Asset(rcAsset.Asset):
         except:
             return
         last = last.strftime("%Y-%m-%d")
-        self.print_last_boot(last)
-        return last
+        return {
+            "title": "last_boot",
+            "value": last,
+            "source": "probe",
+        }
