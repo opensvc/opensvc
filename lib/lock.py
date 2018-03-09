@@ -12,10 +12,6 @@ import contextlib
 
 from rcGlobalEnv import rcEnv
 
-class LockTimeout(Exception):
-    """ acquire lock timed out
-    """
-
 class LockNoLockFile(Exception):
     """ no lockfile specified
     """
@@ -26,6 +22,20 @@ class LockCreateError(Exception):
 
 class LockAcquire(Exception):
     """ could not acquire lock on lockfile
+    """
+    def __init__(self, intent="", pid=0, progress=None):
+        Exception.__init__(self)
+        self.intent = intent
+        self.pid = pid
+        self.progress = progress
+    def __str__(self):
+        s = "holder pid %(pid)d, holder intent '%(intent)s'" % dict(pid=self.pid, intent=self.intent)
+        if self.progress:
+            s += ", progress '%s'" % str(self.progress)
+        return s
+
+class LockTimeout(LockAcquire):
+    """ acquire lock timed out
     """
 
 LOCK_EXCEPTIONS = (
@@ -84,17 +94,18 @@ def lock(timeout=30, delay=1, lockfile=None, intent=None):
         ticks = range(int(float(timeout)/float(delay)))
     if len(ticks) == 0:
         ticks = [0]
-    err = ""
+    err = {}
     for tick in ticks:
         if tick > 0:
             time.sleep(delay)
         try:
             return lock_nowait(lockfile, intent)
         except LockAcquire as exc:
-            err = str(exc)
+            err["intent"] = exc.intent
+            err["pid"] = exc.pid
         except Exception:
             raise
-    raise LockTimeout(err)
+    raise LockTimeout(**err)
 
 def lock_nowait(lockfile=None, intent=None):
     """
@@ -158,7 +169,7 @@ def lock_nowait(lockfile=None, intent=None):
         return lockfd
     except IOError:
         os.close(lockfd)
-        raise LockAcquire("holder pid %(pid)d, holder intent '%(intent)s'" % prev_data)
+        raise LockAcquire(**prev_data)
     except:
         os.close(lockfd)
         raise
