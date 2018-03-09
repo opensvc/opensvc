@@ -127,7 +127,7 @@ class Hb(shared.OsvcThread):
                 "monitor": self.get_node_monitor(),
                 "updated": time.time(), # for hb and relay readers
             }, encode=False)
-            return message, len(message)
+            return message, len(message) if message else 0
         if begin == 0 or begin > shared.GEN:
             self.log.debug("send full node data to %s", nodename if nodename else "*")
             try:
@@ -158,7 +158,7 @@ class Hb(shared.OsvcThread):
                 "gen": self.get_gen(),
                 "updated": time.time(), # for hb and relay readers
             }, encode=False)
-            return message, len(message)
+            return message, len(message) if message else 0
 
     def store_rx_data(self, data, nodename):
         if data is None:

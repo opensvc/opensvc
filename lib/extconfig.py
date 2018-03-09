@@ -458,6 +458,12 @@ class ExtConfig(object):
                 val = rcEnv.paths.dnsuxsockd
             elif _ref == "dnsuxsock":
                 val = rcEnv.paths.dnsuxsock
+            elif _ref.startswith("safe://"):
+                if hasattr(self, "node"):
+                    val = self.node.download_from_safe(_ref, svcname=self.svcname)
+                else:
+                    val = self.download_from_safe(_ref)
+                val = val.decode()
             else:
                 val = None
 
@@ -555,7 +561,7 @@ class ExtConfig(object):
         if not is_string(s):
             return s
         while True:
-            m = re.search(r'{\w*[\w#][\w\.\[\]]*}', s)
+            m = re.search(r'{\w*[\w#][\w\.\[\]:\/]*}', s)
             if m is None:
                 return s
             ref = m.group(0).strip("{}").lower()

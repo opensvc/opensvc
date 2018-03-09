@@ -263,8 +263,6 @@ class Asset(rcAsset.Asset):
         return 'Unknown'
 
     def _get_cpu_cores(self):
-        if self.container:
-            return 'n/a'
         try:
             with open('/proc/cpuinfo') as f:
                 lines = f.readlines()
@@ -297,8 +295,6 @@ class Asset(rcAsset.Asset):
         return str(n)
 
     def _get_cpu_dies_cpuinfo(self):
-        if self.container:
-            return 'n/a'
         try:
             with open('/proc/cpuinfo') as f:
                 lines = f.readlines()
@@ -314,8 +310,6 @@ class Asset(rcAsset.Asset):
         return str(n_dies)
 
     def _get_cpu_threads(self):
-        if self.container:
-            return 'n/a'
         try:
             with open('/proc/cpuinfo') as f:
                 lines = f.readlines()

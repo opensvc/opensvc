@@ -2487,9 +2487,53 @@ class Node(Crypt, ExtConfig):
         data["fmt"] = self.options.format
         if self.options.config:
             data["config"] = self.options.config
+        return self._collector_cli(data, self.options.extra_argv)
+
+    def _collector_cli(self, data, argv):
         from rcCollectorCli import Cli
         cli = Cli(**data)
-        return cli.run(argv=self.options.extra_argv)
+        return cli.run(argv=argv)
+
+    def download_from_safe(self, safe_id, svcname=None):
+        import base64
+        from rcUtilities import bdecode
+        if safe_id.startswith("safe://"):
+            safe_id = safe_id[7:].lstrip("/")
+        fpath = os.path.join(rcEnv.paths.safe, safe_id)
+        if os.path.exists(fpath):
+            with open(fpath, "r") as ofile:
+                buff = ofile.read()
+            return base64.urlsafe_b64decode(self.decrypt(buff)[1]["data"])
+        path = "/safe/%s/download" % safe_id
+        api = self.collector_api(svcname=svcname)
+        request = self.collector_request(path)
+        if api["url"].startswith("https"):
+            try:
+                import ssl
+                kwargs = {"context": ssl._create_unverified_context()}
+            except:
+                kwargs = {}
+        else:
+            raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
+        try:
+            f = urlopen(request, **kwargs)
+        except HTTPError as e:
+            try:
+                err = json.loads(e.read())["error"]
+                e = ex.excError(err)
+            except ValueError:
+                pass
+            raise e
+        buff = b""
+        for chunk in iter(lambda: f.read(4096), b""):
+            buff += chunk
+        data = {"data": bdecode(base64.urlsafe_b64encode(buff))}
+        if not os.path.exists(rcEnv.paths.safe):
+            os.makedirs(rcEnv.paths.safe)
+        with open(fpath, 'w') as df:
+            df.write(self.encrypt(data, encode=False))
+        f.close()
+        return buff
 
     def collector_api(self, svcname=None):
         """
