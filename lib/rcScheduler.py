@@ -226,7 +226,7 @@ class Scheduler(object):
         if not os.path.isdir(timestamp_d):
             os.makedirs(timestamp_d, 0o755)
         with open(timestamp_f, 'w') as ofile:
-            ofile.write(str(datetime.datetime.now())+'\n')
+            ofile.write(str(datetime.datetime.now())+os.linesep)
         return True
 
     def _skip_action_interval(self, last, interval, now=None):
@@ -360,7 +360,7 @@ class Scheduler(object):
         try:
             with open(timestamp_f, 'r') as ofile:
                 buff = ofile.read()
-            last = datetime.datetime.strptime(buff, "%Y-%m-%d %H:%M:%S.%f\n")
+            last = datetime.datetime.strptime(buff, "%Y-%m-%d %H:%M:%S.%f"+os.linesep)
             return last
         except (OSError, IOError, ValueError):
             return
@@ -950,13 +950,18 @@ class Scheduler(object):
         try:
             for tsfile in tsfiles:
                 if not success:
-                    fd = lock.lock(timeout=0, lockfile=tsfile)
+                    fd = lock.lock(timeout=0, lockfile=tsfile+".lock")
                     fds.append(fd)
                 self._timestamp(tsfile)
-        except Exception as exc:
+        except lock.LOCK_EXCEPTIONS:
             self.log.warning("a %s action is already in progess", action)
             for fd in fds:
                 lock.unlock(fd)
+            raise
+        except Exception as exc:
+            for fd in fds:
+                lock.unlock(fd)
+            raise ex.excError("error updating timestamp %s: %s"%(tsfile, exc))
         return fds
 
     def _is_croned(self):
