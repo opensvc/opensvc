@@ -7,6 +7,7 @@ import glob
 import sys
 import tempfile
 import inspect
+import time
 
 try:
     sysname, nodename, x, x, machine = os.uname()
@@ -110,10 +111,13 @@ def install_cron():
     else:
         return install_cron_unix()
 
-def install_cron_windows():
+def install_winservice():
+    if sysname != 'Windows':
+        return
     logit("begin")
-    logit("install OsvcSched service",stdout=True)
+    logit("install OpenSVC agent winservice",stdout=True)
     schedstop()
+    time.sleep(3)
     schedremove()
     schedinstall()
     schedstart()
@@ -144,7 +148,7 @@ def schedinstall():
 def schedcmd(_cmd):
     logit("begin")
     logit("_cmd %s"%_cmd)
-    rc = '"'+sys.executable+'" "'+os.path.join(pathlib, 'rcWinScheduler.py')+'"'
+    rc = '"'+sys.executable+'" "'+os.path.join(pathlib, 'osvcd_winservice.py')+'"'
     cmd = "@echo off\n"
     cmd += rc
     cmd += _cmd
@@ -1190,7 +1194,8 @@ def restart_daemon():
     del os.environ['OPENSVC_AGENT_UPGRADE']
 
 def init_secret():
-    os.system("%s/nodemgr ping --node 127.0.0.1" % pathbin)
+    time.sleep(1)
+    os.system("nodemgr ping --node 127.0.0.1")
 
 try:
     move_var_files_in_subdirs()
@@ -1212,6 +1217,7 @@ try:
     move_var_files_19()
     clean_pyc()
     dump_install_content()
+    install_winservice()
     restart_daemon()
     init_secret()
     logit("\nOpenSVC postinstall terminated\n",stdout=True)
