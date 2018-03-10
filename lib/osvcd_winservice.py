@@ -48,6 +48,7 @@ class OsvcAgent(win32serviceutil.ServiceFramework):
             servicemanager.PYS_SERVICE_STARTED,
             (self._svc_name_, '')
         )
+        os.chdir(os.path.join(os.path.dirname(__file__), ".."))
         daemon = Daemon()
 
         while True:
