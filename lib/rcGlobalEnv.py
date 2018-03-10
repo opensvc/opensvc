@@ -59,7 +59,7 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
         o.postinstall = os.path.join(o.pathbin, 'postinstall')
         o.preinstall = os.path.join(o.pathbin, 'preinstall')
 
-    if str(sysname).lower() == "windows":
+    if os.name == "nt":
         o.svcmgr = os.path.join(o.pathsvc, "svcmgr.cmd")
         o.nodemgr = os.path.join(o.pathsvc, "nodemgr.cmd")
         o.svcmon = os.path.join(o.pathsvc, "svcmon.cmd")

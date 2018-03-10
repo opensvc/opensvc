@@ -219,7 +219,7 @@ class Listener(shared.OsvcThread, Crypt):
         self.stats.sessions.clients[addr[0]].auth_validated += 1
         if data is None:
             cmd = [rcEnv.paths.nodemgr, 'dequeue_actions']
-            p = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
+            p = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=os.name!="nt")
             p.communicate()
         else:
             result = self.router(nodename, data, conn, encrypted)

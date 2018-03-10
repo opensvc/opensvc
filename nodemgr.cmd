@@ -1,3 +1,3 @@
 @echo off
 call osvcenv.cmd
-"%OSVCPYTHONEXEC%" "%OSVCROOT%\bin\nodemgr" %*
+"%OSVCPYTHONEXEC%" "%OSVCROOT%\lib\nodemgr.py" %*

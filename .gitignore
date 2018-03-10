@@ -24,3 +24,4 @@ nohup.out
 bin/init/opensvc.init
 .coverage
 *.example
+*.exe

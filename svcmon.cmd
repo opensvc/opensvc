@@ -1,3 +1,3 @@
 @echo off
 call osvcenv.cmd
-"%OSVCPYTHONEXEC%" "%OSVCROOT%\bin\svcmon" %*
+"%OSVCPYTHONEXEC%" "%OSVCROOT%\lib\svcmon.py" %*
