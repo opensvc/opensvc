@@ -16,6 +16,7 @@ import osvcd_shared as shared
 from rcConfigParser import RawConfigParser
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, unset_lazy, ximport
+from lock import lock, unlock
 
 from osvcd_mon import Monitor
 from osvcd_lsnr import Listener
@@ -173,37 +174,49 @@ class Daemon(object):
             raise ex.excAbortAction()
         return config
 
+    def lock(self):
+        try:
+            self.lockfd = lock(lockfile=rcEnv.paths.daemon_lock, timeout=0, delay=0)
+        except Exception:
+            self.log.error("a daemon is already running, and holding the daemon lock")
+            sys.exit(1)
+
+    def unlock(self):
+        if self.lockfd:
+            unlock(self.lockfd)
+
     def _run(self):
         """
         Acquire the osvcd lock, write the pid in a system-compatible pidfile,
         and start the daemon loop.
         """
-        from lock import lock, unlock
+        self.lock()
         try:
-            lockfd = lock(lockfile=rcEnv.paths.daemon_lock, timeout=0, delay=0)
-        except Exception:
-            self.log.error("a daemon is already running, and holding the daemon lock")
-            sys.exit(1)
-        try:
-            pid = str(os.getpid())+"\n"
-            with open(rcEnv.paths.daemon_pid, "w") as ofile:
-                ofile.write(pid)
-            self.__run()
+	    self.write_pid()
+            self.loop_forever()
         finally:
-            unlock(lockfd)
+            self.unlock()
 
-    def __run(self):
+    def write_pid(self):
+        pid = str(os.getpid())+"\n"
+        with open(rcEnv.paths.daemon_pid, "w") as ofile:
+            ofile.write(pid)
+
+    def loop_forever(self):
         """
         Loop over the daemon tasks until notified to stop.
         """
-        while True:
-            self.start_threads()
-            if shared.DAEMON_STOP.is_set():
-                self.stop_threads()
-                break
+        while self.loop():
             with DAEMON_TICKER:
                 DAEMON_TICKER.wait(DAEMON_INTERVAL)
         self.log.info("daemon graceful stop")
+
+    def loop(self):
+        self.start_threads()
+        if shared.DAEMON_STOP.is_set():
+            self.stop_threads()
+            return False
+        return True
 
     def stop_threads(self):
         """

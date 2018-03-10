@@ -43,15 +43,16 @@ class OsvcAgent(win32serviceutil.ServiceFramework):
         win32event.SetEvent(self.hWaitStop)
 
     def SvcDoRun(self):
-        servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,servicemanager.PYS_SERVICE_STARTED,(self._svc_name_, ''))
+        servicemanager.LogMsg(
+            servicemanager.EVENTLOG_INFORMATION_TYPE,
+            servicemanager.PYS_SERVICE_STARTED,
+            (self._svc_name_, '')
+        )
         daemon = Daemon()
-        daemon.run()
-
-        self.timeout = 60000
 
         while True:
             # Wait for service stop signal, if I timeout, loop again
-            rc = win32event.WaitForSingleObject(self.hWaitStop, self.timeout)
+            rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)
             # Check to see if self.hWaitStop happened
             if rc == win32event.WAIT_OBJECT_0:
                 # Stop signal encountered
@@ -60,7 +61,7 @@ class OsvcAgent(win32serviceutil.ServiceFramework):
                 break
             else:
                 #servicemanager.LogInfoMsg("%s - ALIVE"%self._svc_name_)
-                #self.SvcDoJob()
+                daemon.loop()
                 pass
 
 def ctrlHandler(ctrlType):
@@ -68,5 +69,5 @@ def ctrlHandler(ctrlType):
 
 if __name__ == '__main__':
     win32api.SetConsoleCtrlHandler(ctrlHandler, True)
-    win32serviceutil.HandleCommandLine(OsvcSched)
+    win32serviceutil.HandleCommandLine(OsvcAgent)
 
