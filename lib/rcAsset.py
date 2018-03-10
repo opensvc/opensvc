@@ -1,7 +1,9 @@
-from rcGlobalEnv import rcEnv
 import os
-from subprocess import *
 import datetime
+from subprocess import *
+
+import rcExceptions as ex
+from rcGlobalEnv import rcEnv
 from rcUtilities import try_decode, justcall, which
 from converters import print_size
 
@@ -420,54 +422,6 @@ class Asset(object):
             "source": source
         }
 
-    def get_node_env(self):
-        s = 'TST'
-        source = self.s_default
-        try:
-            if self.node.config.has_option('node', 'env'):
-                s = self.node.config.get('node', 'env')
-                source = self.s_config
-            elif self.node.config.has_option('node', 'host_mode'):
-                # compat
-                s = self.node.config.get('node', 'host_mode')
-                source = self.s_config
-        except:
-            pass
-        return {
-            "title": "environment",
-            "value": s,
-            "source": source
-        }
-
-    def get_sec_zone(self):
-        s = None
-        source = self.s_default
-        try:
-            s = self.node.config.get('node', 'sec_zone')
-            source = self.s_config
-        except:
-            pass
-        return {
-            "title": "security zone",
-            "value": s,
-            "source": source
-        }
-
-    def get_asset_env(self):
-        s = None
-        source = self.s_default
-        try:
-            s = self.node.config.get('node', 'asset_env')
-            s = try_decode(s)
-            source = self.s_config
-        except:
-            pass
-        return {
-            "title": "asset environment",
-            "value": s,
-            "source": source
-        }
-
     def get_version(self):
         s = self.node.agent_version()
         return {
@@ -490,95 +444,57 @@ class Asset(object):
             "source": source
         }
 
-    def get_loc_country(self):
-        s = None
-        source = self.s_default
+    def get_from_conf(self, section, kw, title):
         try:
-            s = self.node.config.get('node', 'loc_country')
+            s = self.node.conf_get(section, kw)
             source = self.s_config
-        except:
-            pass
+        except ex.OptNotFound as exc:
+            s = exc.default
+            source = self.s_default
+        return {
+            "title": title,
+            "value": s,
+            "source": source
+        }
+
+    def get_node_env(self):
+        return self.get_from_conf("node", "env", "environment")
+
+    def get_sec_zone(self):
+        return self.get_from_conf("node", "sec_zone", "security zone")
+
+    def get_asset_env(self):
+        return self.get_from_conf("node", "asset_env", "asset environment")
+
+    def get_loc_country(self):
+        return self.get_from_conf("node", "loc_country", "loc, country")
 
     def get_loc_city(self):
-        s = None
-        source = self.s_default
-        try:
-            s = self.node.config.get('node', 'loc_city')
-            source = self.s_config
-        except:
-            pass
+        return self.get_from_conf("node", "loc_city", "loc, city")
 
     def get_loc_addr(self):
-        s = None
-        source = self.s_default
-        try:
-            s = self.node.config.get('node', 'loc_addr')
-            source = self.s_config
-        except:
-            pass
+        return self.get_from_conf("node", "loc_addr", "loc, addr")
 
     def get_loc_building(self):
-        s = None
-        source = self.s_default
-        try:
-            s = self.node.config.get('node', 'loc_building')
-            source = self.s_config
-        except:
-            pass
+        return self.get_from_conf("node", "loc_building", "loc, building")
 
     def get_loc_floor(self):
-        s = None
-        source = self.s_default
-        try:
-            s = self.node.config.get('node', 'loc_floor')
-            source = self.s_config
-        except:
-            pass
+        return self.get_from_conf("node", "loc_floor", "loc, floor")
 
     def get_loc_room(self):
-        s = None
-        source = self.s_default
-        try:
-            s = self.node.config.get('node', 'loc_room')
-            source = self.s_config
-        except:
-            pass
+        return self.get_from_conf("node", "loc_room", "loc, room")
 
     def get_loc_rack(self):
-        s = None
-        source = self.s_default
-        try:
-            s = self.node.config.get('node', 'loc_rack')
-            source = self.s_config
-        except:
-            pass
+        return self.get_from_conf("node", "loc_rack", "loc, rack")
 
     def get_loc_zip(self):
-        s = None
-        source = self.s_default
-        try:
-            s = self.node.config.get('node', 'loc_zip')
-            source = self.s_config
-        except:
-            pass
+        return self.get_from_conf("node", "loc_zip", "loc, zip")
 
     def get_team_integ(self):
-        s = None
-        source = self.s_default
-        try:
-            s = self.node.config.get('node', 'team_integ')
-            source = self.s_config
-        except:
-            pass
+        return self.get_from_conf("node", "team_integ", "team, integ")
 
     def get_team_support(self):
-        s = None
-        source = self.s_default
-        try:
-            s = self.node.config.get('node', 'team_support')
-            source = self.s_config
-        except:
-            pass
+        return self.get_from_conf("node", "team_support", "team, support")
 
     def get_hba(self):
         try:
