@@ -202,9 +202,19 @@ class Listener(shared.OsvcThread, Crypt):
                 break
         if sys.version_info[0] >= 3:
             data = b"".join(chunks)
+            dequ = data == b"dequeue_actions"
         else:
             data = "".join(chunks)
+            dequ = data == "dequeue_actions"
         del chunks
+
+        if dequ:
+            self.log.info("%s", os.getcwd())
+            p = Popen([rcEnv.paths.nodemgr, 'dequeue_actions'],
+                      stdout=None, stderr=None, stdin=None,
+                      close_fds=os.name!="nt")
+            p.communicate()
+            return
 
         if encrypted:
             nodename, data = self.decrypt(data, sender_id=addr[0])
@@ -218,20 +228,17 @@ class Listener(shared.OsvcThread, Crypt):
         self.stats.sessions.auth_validated += 1
         self.stats.sessions.clients[addr[0]].auth_validated += 1
         if data is None:
-            cmd = [rcEnv.paths.nodemgr, 'dequeue_actions']
-            p = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=os.name!="nt")
-            p.communicate()
-        else:
-            result = self.router(nodename, data, conn, encrypted)
-            if result:
-                if encrypted:
-                    message = self.encrypt(result)
-                else:
-                    message = self.msg_encode(result)
-                conn.sendall(message)
-                message_len = len(message)
-                self.stats.sessions.tx += message_len
-                self.stats.sessions.clients[addr[0]].tx += message_len
+            return
+        result = self.router(nodename, data, conn, encrypted)
+        if result:
+            if encrypted:
+                message = self.encrypt(result)
+            else:
+                message = self.msg_encode(result)
+            conn.sendall(message)
+            message_len = len(message)
+            self.stats.sessions.tx += message_len
+            self.stats.sessions.clients[addr[0]].tx += message_len
 
     #########################################################################
     #
