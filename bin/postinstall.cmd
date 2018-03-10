@@ -1,4 +1,4 @@
-@echo off
+@echo on
 
 set OSVCROOT=%~1
 if %OSVCROOT:~-1%==\ set OSVCROOT=%OSVCROOT:~0,-1%
