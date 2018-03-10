@@ -74,7 +74,6 @@ def logit(msg, stdout=False, stderr=False):
     f = open(osvlog, 'a')
     f.write(content+'\n')
     f.close()
-    stdout = True
     if stdout:
         sys.stdout.write(msg+"\n")
     if stderr:
