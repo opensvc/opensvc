@@ -2097,8 +2097,14 @@ class CmdShow(Cmd):
 
 
 def validate_response(r):
-    if r.status_code == 403:
-        raise CliError("Unauthorized")
+    if r.status_code == 200:
+        return
+    try:
+        data = json.loads(r.content)
+        raise CliError("%d %s" % (r.status_code, data["error"]))
+    except (ValueError, KeyError):
+        pass
+    raise CliError(str(r))
 
 class CmdGet(Cmd):
     api_candidates = True
@@ -2346,7 +2352,7 @@ class Cli(object):
                 return command.cmd(line)
             except CliError as e:
                 print(str(e), file=sys.stderr)
-                return
+                return 1
         print("command not found:", line)
 
     def parse_options(self):
@@ -2471,11 +2477,12 @@ class Cli(object):
 
     def run(self, argv=None):
         if argv and len(argv) > 0:
-            self.dispatch_noninteractive(argv)
+            return self.dispatch_noninteractive(argv)
         else:
             self.input_loop()
 
 if __name__ == "__main__":
     cli = Cli()
-    cli.run()
+    ret = cli.run()
+    sys.exit(ret)
 
