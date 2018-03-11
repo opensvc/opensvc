@@ -825,6 +825,9 @@ class CmdSafe(Cmd):
             raise CliError("download failed")
 
         with open(options.to, 'wb') as f:
+            pass
+        os.chmod(options.to, 0o0600)
+        with open(options.to, 'wb') as f:
             for block in r.iter_content(1024):
                 print(".")
                 f.write(block)

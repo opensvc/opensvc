@@ -2531,6 +2531,9 @@ class Node(Crypt, ExtConfig):
         if not os.path.exists(rcEnv.paths.safe):
             os.makedirs(rcEnv.paths.safe)
         with open(fpath, 'w') as df:
+            pass
+        os.chmod(fpath, 0o0600)
+        with open(fpath, 'w') as df:
             df.write(self.encrypt(data, encode=False))
         f.close()
         return buff
