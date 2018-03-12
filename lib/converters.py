@@ -96,7 +96,7 @@ def convert_boolean(s):
         return False
     raise ValueError('convert boolean error: ' + s)
 
-def convert_duration(s, _to="s"):
+def convert_duration(s, _to="s", _from="s"):
     """
     Convert a string representation of a duration to seconds.
     Supported units (case insensitive):
@@ -124,12 +124,14 @@ def convert_duration(s, _to="s"):
         "s": 1,
     }
 
+    if _from not in units:
+        raise ValueError("convert duration error: unsupported input unit %s" % _from)
     if _to not in units:
         raise ValueError("convert duration error: unsupported target unit %s" % _to)
 
     try:
         s = int(s)
-        return s // units[_to]
+        return s * units[_from] // units[_to]
     except ValueError:
         pass
 

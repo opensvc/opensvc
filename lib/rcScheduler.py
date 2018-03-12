@@ -15,6 +15,7 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import is_string
 from rcColor import formatter
+from converters import convert_duration
 
 SCHED_FMT = "%s: %s"
 CALENDAR_NAMES = {
@@ -788,9 +789,9 @@ class Scheduler(object):
             tr_data = parse_timerange(elements[0])
             tr_data["probabilistic"] = probabilistic
             try:
-                tr_data["interval"] = int(elements[1])
-            except:
-                raise SchedSyntaxError("interval '%s' is not a number" % elements[1])
+                tr_data["interval"] = convert_duration(elements[1], _from="m")
+            except ValueError as exc:
+                raise SchedSyntaxError("interval '%s' is not a valid duration expression: %s" % (elements[1], exc))
             tr_list.append(tr_data)
         return tr_list
 

@@ -192,7 +192,7 @@ class Daemon(object):
         """
         self.lock()
         try:
-	    self.write_pid()
+            self.write_pid()
             self.loop_forever()
         finally:
             self.unlock()

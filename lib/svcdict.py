@@ -88,7 +88,7 @@ class KeywordCompSchedule(Keyword):
                   at=True,
                   order=11,
                   default="00:00-06:00@361",
-                  text="The service compliance run schedule. See usr/share/doc/template.node.conf for the schedule syntax."
+                  text="The service compliance run schedule. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordStatusSchedule(Keyword):
@@ -100,7 +100,7 @@ class KeywordStatusSchedule(Keyword):
                   at=True,
                   order=11,
                   default="@10",
-                  text="The service status evaluation schedule. See usr/share/doc/template.node.conf for the schedule syntax."
+                  text="The service status evaluation schedule. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordDefaultSyncSchedule(Keyword):
@@ -112,7 +112,7 @@ class KeywordDefaultSyncSchedule(Keyword):
                   at=True,
                   order=11,
                   default="04:00-06:00@121",
-                  text="The default sync resources schedule. See usr/share/doc/template.node.conf for the schedule syntax."
+                  text="The default sync resources schedule. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordDefaultAws(Keyword):
@@ -147,7 +147,7 @@ class KeywordResinfoSchedule(Keyword):
                   at=True,
                   order=11,
                   default="@60",
-                  text="The service resource info push schedule. See usr/share/doc/template.node.conf for the schedule syntax."
+                  text="The service resource info push schedule. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordMonitorSchedule(Keyword):
@@ -159,7 +159,7 @@ class KeywordMonitorSchedule(Keyword):
                   at=True,
                   order=11,
                   default="@1",
-                  text="The service resource monitor schedule. See usr/share/doc/template.node.conf for the schedule syntax."
+                  text="The service resource monitor schedule. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordPushSchedule(Keyword):
@@ -171,7 +171,7 @@ class KeywordPushSchedule(Keyword):
                   at=True,
                   order=11,
                   default="00:00-06:00@361",
-                  text="The service configuration emission to the collector schedule. See usr/share/doc/template.node.conf for the schedule syntax."
+                  text="The service configuration emission to the collector schedule. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordFlexPrimary(Keyword):

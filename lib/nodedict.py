@@ -434,7 +434,7 @@ class KeywordCenteraSchedule(Keyword):
                   section="centera",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'centera' node action."
+                  text="Schedule parameter for the 'centera' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordXtremioSchedule(Keyword):
@@ -444,7 +444,7 @@ class KeywordXtremioSchedule(Keyword):
                   section="xtremio",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushxtremio' node action."
+                  text="Schedule parameter for the 'pushxtremio' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordHp3parSchedule(Keyword):
@@ -454,7 +454,7 @@ class KeywordHp3parSchedule(Keyword):
                   section="hp3par",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushhp3par' node action."
+                  text="Schedule parameter for the 'pushhp3par' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordVnxSchedule(Keyword):
@@ -464,7 +464,7 @@ class KeywordVnxSchedule(Keyword):
                   section="vnx",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushvnx' node action."
+                  text="Schedule parameter for the 'pushvnx' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordFreenasSchedule(Keyword):
@@ -474,7 +474,7 @@ class KeywordFreenasSchedule(Keyword):
                   section="freenas",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushfreenas' node action."
+                  text="Schedule parameter for the 'pushfreenas' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordGceDisksSchedule(Keyword):
@@ -484,7 +484,7 @@ class KeywordGceDisksSchedule(Keyword):
                   section="gcedisks",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushgcedisks' node action."
+                  text="Schedule parameter for the 'pushgcedisks' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordDequeueActionsSchedule(Keyword):
@@ -494,7 +494,7 @@ class KeywordDequeueActionsSchedule(Keyword):
                   section="dequeue_actions",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'dequeue actions' node action."
+                  text="Schedule parameter for the 'dequeue actions' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordSysreportSchedule(Keyword):
@@ -505,7 +505,7 @@ class KeywordSysreportSchedule(Keyword):
                   keyword="schedule",
                   order=15,
                   default="00:00-06:00@361 mon-sun",
-                  text="Schedule parameter for the 'sysreport' node action, which check all modules and fix only modules flagged 'autofix'."
+                  text="Schedule parameter for the 'sysreport' node action, which check all modules and fix only modules flagged 'autofix'. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordComplianceSchedule(Keyword):
@@ -516,7 +516,7 @@ class KeywordComplianceSchedule(Keyword):
                   keyword="schedule",
                   order=15,
                   default="02:00-06:00@241 sun",
-                  text="Schedule parameter for the 'compliance auto' node action, which check all modules and fix only modules flagged 'autofix'."
+                  text="Schedule parameter for the 'compliance auto' node action, which check all modules and fix only modules flagged 'autofix'. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordComplianceAutoUpdate(Keyword):
@@ -539,7 +539,7 @@ class KeywordStatsSchedule(Keyword):
                   keyword="schedule",
                   order=15,
                   default="00:00-06:00@361 mon-sun",
-                  text="Schedule parameter for the 'pushstats' node action."
+                  text="Schedule parameter for the 'pushstats' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordStatsDisable(Keyword):
@@ -562,7 +562,7 @@ class KeywordChecksSchedule(Keyword):
                   keyword="schedule",
                   order=15,
                   default="00:00-06:00@361 mon-sun",
-                  text="Schedule parameter for the 'pushchecks' node action."
+                  text="Schedule parameter for the 'pushchecks' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordPackagesSchedule(Keyword):
@@ -573,7 +573,7 @@ class KeywordPackagesSchedule(Keyword):
                   keyword="schedule",
                   order=15,
                   default="00:00-06:00@361 mon-sun",
-                  text="Schedule parameter for the 'pushpkg' node action."
+                  text="Schedule parameter for the 'pushpkg' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordPatchesSchedule(Keyword):
@@ -584,7 +584,7 @@ class KeywordPatchesSchedule(Keyword):
                   keyword="schedule",
                   order=15,
                   default="00:00-06:00@361 mon-sun",
-                  text="Schedule parameter for the 'pushpatch' node action."
+                  text="Schedule parameter for the 'pushpatch' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordAssetSchedule(Keyword):
@@ -595,7 +595,7 @@ class KeywordAssetSchedule(Keyword):
                   keyword="schedule",
                   order=15,
                   default="00:00-06:00@361 mon-sun",
-                  text="Schedule parameter for the 'pushasset' node action."
+                  text="Schedule parameter for the 'pushasset' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordNsrSchedule(Keyword):
@@ -605,7 +605,7 @@ class KeywordNsrSchedule(Keyword):
                   section="nsr",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushnsr' node action."
+                  text="Schedule parameter for the 'pushnsr' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordDcsSchedule(Keyword):
@@ -615,7 +615,7 @@ class KeywordDcsSchedule(Keyword):
                   section="dcs",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushdcs' node action."
+                  text="Schedule parameter for the 'pushdcs' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordHdsSchedule(Keyword):
@@ -625,7 +625,7 @@ class KeywordHdsSchedule(Keyword):
                   section="hds",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushhds' node action."
+                  text="Schedule parameter for the 'pushhds' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordNecismSchedule(Keyword):
@@ -635,7 +635,7 @@ class KeywordNecismSchedule(Keyword):
                   section="necism",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushnecism' node action."
+                  text="Schedule parameter for the 'pushnecism' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordEvaSchedule(Keyword):
@@ -645,7 +645,7 @@ class KeywordEvaSchedule(Keyword):
                   section="eva",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pusheva' node action."
+                  text="Schedule parameter for the 'pusheva' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordIbmdsSchedule(Keyword):
@@ -655,7 +655,7 @@ class KeywordIbmdsSchedule(Keyword):
                   section="ibmds",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushibmds' node action."
+                  text="Schedule parameter for the 'pushibmds' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordIbmsvcSchedule(Keyword):
@@ -665,7 +665,7 @@ class KeywordIbmsvcSchedule(Keyword):
                   section="ibmsvc",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushibmsvc' node action."
+                  text="Schedule parameter for the 'pushibmsvc' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordVioserverSchedule(Keyword):
@@ -675,7 +675,7 @@ class KeywordVioserverSchedule(Keyword):
                   section="vioserver",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushvioserver' node action."
+                  text="Schedule parameter for the 'pushvioserver' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordBrocadeSchedule(Keyword):
@@ -685,7 +685,7 @@ class KeywordBrocadeSchedule(Keyword):
                   section="brocade",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushbrocade' node action."
+                  text="Schedule parameter for the 'pushbrocade' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordDisksSchedule(Keyword):
@@ -696,7 +696,7 @@ class KeywordDisksSchedule(Keyword):
                   keyword="schedule",
                   order=15,
                   default="00:00-06:00@361 mon-sun",
-                  text="Schedule parameter for the 'pushdisks' node action."
+                  text="Schedule parameter for the 'pushdisks' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordSymSchedule(Keyword):
@@ -706,7 +706,7 @@ class KeywordSymSchedule(Keyword):
                   section="sym",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'pushsym' node action."
+                  text="Schedule parameter for the 'pushsym' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordRotateRootPwSchedule(Keyword):
@@ -716,7 +716,7 @@ class KeywordRotateRootPwSchedule(Keyword):
                   section="rotate_root_pw",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'rotate root pw' node action."
+                  text="Schedule parameter for the 'rotate root pw' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordStatsCollectionSchedule(Keyword):
@@ -727,7 +727,7 @@ class KeywordStatsCollectionSchedule(Keyword):
                   keyword="schedule",
                   order=15,
                   default="@10",
-                  text="Schedule parameter for the 'collect stats' node action."
+                  text="Schedule parameter for the 'collect stats' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordRebootSchedule(Keyword):
@@ -737,7 +737,7 @@ class KeywordRebootSchedule(Keyword):
                   section="reboot",
                   keyword="schedule",
                   order=15,
-                  text="Schedule parameter for the 'auto reboot' node action."
+                  text="Schedule parameter for the 'auto reboot' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
 class KeywordRebootOnce(Keyword):
