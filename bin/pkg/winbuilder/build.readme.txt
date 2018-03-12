@@ -8,8 +8,8 @@ Goal :
 
 HowTo :
 -----
-=> install wix tools ( http://wixtoolset.org/ - known to work with 3.8 )
-=> install nsis ( http://nsis.sourceforge.net/ - known to work with 3.0a2 )
+=> install wix tools ( http://wixtoolset.org/ - known to work with 3.8, 3.11 )
+=> install nsis ( http://nsis.sourceforge.net/ - known to work with 3.0a2, 3.03 )
 => install Visual C++ 2010 x86 redist files, needed by nmake.exe ( http://www.microsoft.com/en-us/download/details.aspx?id=5555 )
 => check that kits/vcredist content is OK (expected content is Visual C++ 2008 x86 redist files, not the same file as previous point)
 => check that kits/winpython content is OK (expected content is a folder named "python" with a ready to use python distrib, cleaned winpython for example)
