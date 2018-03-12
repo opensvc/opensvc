@@ -23,9 +23,9 @@ PRJVERSION=$(OSVCMAKEVERSION)
 PRJRELEASE=$(OSVCMAKERELEASE)
 
 # Windows Service
-PRJSVCNAME=OsvcSched
-PRJSVCDISPLAYNAME=OpenSVC job scheduler
-PRJSVCDESC=Schedule the OpenSVC jobs
+PRJSVCNAME=OsvcAgent
+PRJSVCDISPLAYNAME=OpenSVC Agent
+PRJSVCDESC=Orchestration, HA, inventoring, monitoring, config mgmt
 PRJSVCPYEXECPATH=python\lib\site-packages\win32
 PRJSVCPYEXECBIN=PythonService.exe
 
@@ -77,6 +77,7 @@ copy:
         @xcopy "$(VCREDISTX86)" "$(OSVCNSIS)\tmp" /s /i /q
 		@echo =^> Copying Python distribution to build directory
 		@xcopy "$(PYTHON)" "$(OSVCPKGROOT)\python" /s /i /q
+		@del /s /q "$(OSVCPKGROOT)\python\*.pyc" 2>nul
 
 version:
 	    @echo =^> Generating version.py file in "$(OSVCPKGROOT)\lib\"
