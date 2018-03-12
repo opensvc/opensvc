@@ -11,8 +11,7 @@ Schedule Syntax
        <timerange> := <begin>:<end>@<interval>
           <begin> <end> := <hour>:<minute>
           <interval>
-            type: integer
-            unit: minutes
+            type: duration expression (default unit: minutes)
 
      <days> := <day>[-<day>][,<day>[-<day>]]
         <day> := <day_of_week>[:<day_of_month>]
@@ -54,13 +53,13 @@ Schedule Syntax
 Examples
 --------
 
-* schedule = 16:00-17:00@1 sat:last,tue-mon:last * %2+1,feb-apr
+* schedule = 16:00-17:00@1m sat:last,tue-mon:last * %2+1,feb-apr
 
   reads as "once a minute between 16:00 and 17:00 on last monday,
   tuesday and saturday of every even months plus february and
   april".
 
-* schedule = ["06:00-07:00@61 *:1,-1", "! * * * feb"]
+* schedule = ["06:00-07:00@1h *:1,-1", "! * * * feb"]
 
   reads as "once between 6 and 7am every first and last day of every
   month except february".
