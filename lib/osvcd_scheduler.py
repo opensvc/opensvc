@@ -113,7 +113,7 @@ class Scheduler(shared.OsvcThread):
         to_run = sorted(to_run, key=lambda sig: self.delayed[sig]["queued"])
         open_slots = max(self.max_tasks() - len(self.running), 0)
         for sig in to_run[:open_slots]:
-            self.log.info("dequeue action '%s' queued at %s",
+            self.log.info("run '%s' queued at %s",
                           " ".join(self.delayed[sig]["cmd"]),
                           self.delayed[sig]["queued"])
             self.exec_action(sig, self.delayed[sig]["cmd"])
