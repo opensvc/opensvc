@@ -296,12 +296,12 @@ class Collector(object):
             pids |= set([pid])
             if lvl is None or lvl == 'DEBUG':
                 continue
-            if lvl == 'ERROR':
+            elif lvl == 'ERROR':
                 err = 'err'
                 res_err = 'err'
-            if lvl == 'WARNING' and err != 'err':
+            elif lvl == 'WARNING' and err != 'err':
                 err = 'warn'
-            if lvl == 'WARNING' and res_err != 'err':
+            elif lvl == 'WARNING' and res_err != 'err':
                 res_err = 'warn'
 
             try:
