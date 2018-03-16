@@ -26,7 +26,7 @@ class check(checks.check):
         f.close()
         with open(tmpf, 'w') as f:
             f.write("rescan\n")
-        p = Popen(["diskpart", "/s", tmpf], stdout=PIPE, stderr=PIPE, stdin=None)
+        p = Popen(["diskpart", "/s", tmpf], stdout=PIPE, stderr=PIPE, stdin=None, shell=True)
         out, err = p.communicate()
         os.unlink(tmpf)
 

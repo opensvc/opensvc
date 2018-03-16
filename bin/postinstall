@@ -917,7 +917,7 @@ def install_pythonlink():
     if sysname == 'Windows':
         return install_pythonlink_windows()
     else:
-        return install_pythonlink_unix()
+        return
 
 
 def install_pythonlink_windows():
@@ -1209,6 +1209,7 @@ try:
     install_etc_path()
     install_bash_completion()
     move_host_mode()
+    install_pythonlink()
     nodeconf_params()
     purge_collector_api_cache()
     chmod_directories()
@@ -1217,7 +1218,6 @@ try:
     move_var_files_19()
     clean_pyc()
     dump_install_content()
-    install_winservice()
     restart_daemon()
     init_secret()
     logit("\nOpenSVC postinstall terminated\n",stdout=True)

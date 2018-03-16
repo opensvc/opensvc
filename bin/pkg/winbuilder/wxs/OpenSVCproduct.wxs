@@ -22,7 +22,7 @@
                                         <File Id="PythonService" Name="$(var.PRJSVCPYEXECBIN)" Source="$(var.OSVCPKGROOT)\$(var.PRJSVCPYEXECPATH)\$(var.PRJSVCPYEXECBIN)" KeyPath="yes" />
                                         <ServiceInstall Id="inst$(var.PRJSVCNAME)" Name="$(var.PRJSVCNAME)" Type="ownProcess" Start="auto" ErrorControl="normal" DisplayName="$(var.PRJSVCDISPLAYNAME)" Description="$(var.PRJSVCDESC)" Vital="yes" />
                                         <RegistryKey Root="HKLM" Key="SYSTEM\CurrentControlSet\Services\$(var.PRJSVCNAME)\PythonClass">
-                                            <RegistryValue Value="[INSTALLFOLDER]lib\rcWinScheduler.$(var.PRJSVCNAME)" Type="string" />
+                                            <RegistryValue Value="[INSTALLFOLDER]lib\osvcd_winservice.$(var.PRJSVCNAME)" Type="string" />
                                         </RegistryKey>
                                         <ServiceControl Id="sc_inst$(var.PRJSVCNAME)" Name="$(var.PRJSVCNAME)" Start="install" Remove="uninstall" Stop="both" Wait="no" />
                                     </Component>
