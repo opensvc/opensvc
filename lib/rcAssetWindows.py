@@ -2,12 +2,13 @@ import os
 import sys
 import platform
 import datetime
-from rcUtilities import justcall, which
+from rcUtilities import justcall, which, try_decode
 from rcUtilitiesWindows import get_registry_value
 import rcAsset
 import ctypes
 import wmi
 from rcDiskInfoWindows import diskInfo
+from converters import convert_size
 
 class MEMORYSTATUSEX(ctypes.Structure):
     _fields_ = [("dwLength", ctypes.c_uint),
@@ -163,3 +164,122 @@ class Asset(rcAsset.Asset):
             "value": last,
             "source": "probe",
         }
+
+    def get_hardware(self):
+        devs = []
+        devs += self.get_hardware_devs()
+        devs += self.get_hardware_mem()
+        return devs
+
+    def get_hardware_mem(self):
+        '''
+        Get-WmiObject -Class "win32_PhysicalMemory"
+		instance of Win32_PhysicalMemory
+        {
+        Attributes = 0;
+        BankLabel = "";
+        Capacity = "2147483648";
+        Caption = "Memoire physique";
+        ConfiguredClockSpeed = 0;
+        ConfiguredVoltage = 0;
+        CreationClassName = "Win32_PhysicalMemory";
+        Description = "Memoire physique";
+        DeviceLocator = "DIMM 0";
+        FormFactor = 8;
+        Manufacturer = "QEMU";
+        MaxVoltage = 0;
+        MemoryType = 9;
+        MinVoltage = 0;
+        Name = "Memoire physique";
+        SMBIOSMemoryType = 7;
+        Tag = "Physical Memory 0";
+        TypeDetail = 2;
+        };
+		'''
+        devs = []
+        dev = None
+        path = []
+        cla = []
+        desc = []
+        payload = self.w.WIN32_PhysicalMemory()
+        for a in payload:
+            path = []
+            cla = []
+            desc = []
+            dev = {
+                    "type": "mem",
+                    "path": "",
+                    "class": "",
+                    "description": "",
+                    "driver": "",
+                }
+            path.append(a.DeviceLocator)
+            if len(a.BankLabel) > 0:
+                path.append(a.BankLabel)
+            desc.append(a.Description)
+            desc.append(a.Manufacturer)
+            size = str(convert_size(a.Capacity, _to="GB"))+'GB'
+            cla.append(size)
+            if dev is not None:
+                dev["path"] = " ".join(path)
+                dev["class"] = " ".join(cla)
+                dev["description"] = " ".join(desc)
+                devs.append(dev)
+        return devs
+
+    def get_hardware_devs(self):
+        '''
+        Get-WmiObject -Class "Win32_PnpSignedDriver"
+		'''
+        devs = []
+        dev = None
+        path = []
+        cla = []
+        desc = []
+        payload = self.w.Win32_PnpSignedDriver()
+        for a in payload:
+            path = []
+            cla = []
+            desc = []
+            type = []
+            driver = []
+            dev = {
+                    "type": "",
+                    "path": "",
+                    "class": "",
+                    "description": "",
+                    "driver": "",
+                }
+            if a.Description is not None:
+                desc.append(a.Description)
+            if a.Manufacturer is not None:
+                desc.append(a.Manufacturer)
+            if len(desc) == 0:
+                desc.append(a.DeviceID)
+            if a.DeviceClass is not None:
+                cla.append(a.DeviceClass)
+            if a.Location is not None:
+                if 'PCI bus' in str(a.Location):
+                    type.append('pci')
+                    pciinfo = a.Location.split(',')
+                    pcibus = pciinfo[0].split(' ')[-1]
+                    device = pciinfo[1].split(' ')[-1]
+                    function = pciinfo[2].split(' ')[-1]
+                    string = str("%02d"%int(pcibus) + ':' + "%02d"%int(device) + '.' + function)
+                    path.append(string)
+                else:
+                    path.append(a.Location)
+            if a.DriverProviderName is not None:
+                driver.append(a.DriverProviderName)
+            if a.InfName is not None:
+                driver.append(a.InfName)
+            if a.DriverVersion is not None:
+                driver.append(a.DriverVersion)    
+            if dev is not None:
+                dev["path"] = " ".join(path)
+                dev["type"] = " ".join(type)
+                dev["class"] = " ".join(cla)
+                dev["driver"] = " ".join(driver)
+                dev["description"] = " ".join(desc)
+                devs.append(dev)
+        return devs
