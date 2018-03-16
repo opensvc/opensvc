@@ -26,7 +26,7 @@ class Node(node.Node):
         try:
             data["mem_avail"] = 100 * raw_data["MemAvailable"] // raw_data["MemTotal"]
         except KeyError:
-            data["mem_avail"] = 100 * (raw_data["MemFree"] + raw_data["Cached"] + raw_data("SReclaimable", 0)) // raw_data["MemTotal"]
+            data["mem_avail"] = 100 * (raw_data["MemFree"] + raw_data["Cached"] + raw_data.get("SReclaimable", 0)) // raw_data["MemTotal"]
         data["swap_total"] = raw_data["SwapTotal"] // 1024
         data["swap_avail"] = 100 * raw_data["SwapFree"] // raw_data["SwapTotal"]
         return data
