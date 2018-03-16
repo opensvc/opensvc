@@ -101,6 +101,7 @@ def colorize_json(s):
 
 def format_json(d):
     import json
+
     kwargs = {
       "sort_keys": True,
       "ensure_ascii": False,
@@ -109,10 +110,14 @@ def format_json(d):
     }
     if sys.version_info[0] < 3:
         kwargs["encoding"] = "utf8"
+    colorize_json(json.dumps(d, **kwargs))
     try:
         print(colorize_json(json.dumps(d, **kwargs)))
     except IOError:
         pass
+    except:
+        kwargs["ensure_ascii"] = True
+        print(colorize_json(json.dumps(d, **kwargs)))
 
 def format_table(d):
     from rcPrintTable import print_table_tabulate

@@ -390,8 +390,12 @@ class Forest(object):
         self.widths = widths
 
     def print(self):
-        print(forest(self.data, self.columns, separator=self.separator,
-                     widths=self.widths))
+        s = forest(self.data, self.columns, separator=self.separator,
+                   widths=self.widths)
+        try:
+            print(s)
+        except:
+            print(s.encode("utf8", errors="ignore"))
 
     def __str__(self):
         return forest(self.data, self.columns, separator=self.separator,
