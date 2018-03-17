@@ -383,6 +383,8 @@ class Resource(object):
         except ex.excUndefined as exc:
             print(exc)
             return False
+        except ex.excContinueAction as exc:
+            self.log.info(str(exc))
         except ex.excError as exc:
             if self.optional:
                 if len(str(exc)) > 0:
