@@ -2903,16 +2903,13 @@ class Svc(Crypt, ExtConfig):
         self.svcunlock()
         for nodename in self.need_postsync:
             self.daemon_service_action(['postsync', '--waitlock=3600'],
-                                       nodename=nodename, sync=False)
+                                       nodename=nodename, sync=False,
+                                       collect=False)
 
         self.need_postsync = set()
 
     def remote_action(self, nodename, action, waitlock=DEFAULT_WAITLOCK,
                       sync=False, verbose=True, action_mode=True, collect=True):
-        if self.options.cron:
-            # don't use async actions in the scheduler codepath
-            sync = True
-
         rcmd = []
         if self.options.debug:
             rcmd += ['--debug']
