@@ -1089,7 +1089,8 @@ class Resource(object):
         if not hasattr(self.prov, "is_provisioned"):
             return
         value = self.prov.is_provisioned()
-        if not self.shared or self.svc.options.disable_rollback:
+        if not self.shared or self.svc.options.disable_rollback or \
+           (self.shared and not refresh and value):
             self.write_is_provisioned_flag(value)
         return value
 

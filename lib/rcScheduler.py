@@ -725,6 +725,8 @@ class Scheduler(object):
         """
         begin_m = self._time_to_minutes(timerange['begin'])
         end_m = self._time_to_minutes(timerange['end'])
+        if begin_m > end_m:
+            return 24 * 60 - begin_m + end_m + 1
         return end_m - begin_m + 1
 
     def _sched_parse_timerange(self, spec, section=None):
@@ -747,11 +749,7 @@ class Scheduler(object):
                 raise SchedSyntaxError("only one ':' allowed in timerange '%s' end" % spec)
             begin_m = self._time_to_minutes(begin)
             end_m = self._time_to_minutes(end)
-            if begin_m > end_m:
-                tmp = end
-                end = begin
-                begin = tmp
-            elif begin_m == end_m:
+            if begin_m == end_m:
                 end_m += 10
                 end = "%02d:%02d" % (end_m // 60, end_m % 60)
             return {"begin": begin, "end": end}
