@@ -787,7 +787,7 @@ class Scheduler(object):
             tr_data = parse_timerange(elements[0])
             tr_data["probabilistic"] = probabilistic
             try:
-                tr_data["interval"] = convert_duration(elements[1], _from="m")
+                tr_data["interval"] = convert_duration(elements[1], _from="m", _to="m")
             except ValueError as exc:
                 raise SchedSyntaxError("interval '%s' is not a valid duration expression: %s" % (elements[1], exc))
             tr_list.append(tr_data)
