@@ -62,7 +62,7 @@ class KeywordNodeMinAvailMem(Keyword):
                   section="node",
                   keyword="min_avail_mem",
                   order=15,
-                  default="10%",
+                  default="2%",
                   convert="size",
                   text="The minimum required available memory to allow orchestration."
                 )
