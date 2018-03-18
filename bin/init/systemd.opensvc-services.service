@@ -7,6 +7,5 @@ After=opensvc-agent.service
 Type=oneshot
 RemainAfterExit=true
 ExecStart=/usr/share/opensvc/bin/nodemgr pushasset
-ExecStart=/usr/share/opensvc/bin/svcmgr -s "*" startstandby
 ExecStop=/usr/share/opensvc/bin/nodemgr daemon shutdown
 
