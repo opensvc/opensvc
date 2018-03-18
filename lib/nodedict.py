@@ -504,7 +504,7 @@ class KeywordSysreportSchedule(Keyword):
                   section="sysreport",
                   keyword="schedule",
                   order=15,
-                  default="00:00-06:00@361 mon-sun",
+                  default="00:00-06:00",
                   text="Schedule parameter for the 'sysreport' node action, which check all modules and fix only modules flagged 'autofix'. See usr/share/doc/schedule for the schedule syntax."
                 )
 
@@ -515,7 +515,7 @@ class KeywordComplianceSchedule(Keyword):
                   section="compliance",
                   keyword="schedule",
                   order=15,
-                  default="02:00-06:00@241 sun",
+                  default="02:00-06:00",
                   text="Schedule parameter for the 'compliance auto' node action, which check all modules and fix only modules flagged 'autofix'. See usr/share/doc/schedule for the schedule syntax."
                 )
 
@@ -538,7 +538,7 @@ class KeywordStatsSchedule(Keyword):
                   section="stats",
                   keyword="schedule",
                   order=15,
-                  default="00:00-06:00@361 mon-sun",
+                  default="00:00-06:00",
                   text="Schedule parameter for the 'pushstats' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
@@ -561,7 +561,7 @@ class KeywordChecksSchedule(Keyword):
                   section="checks",
                   keyword="schedule",
                   order=15,
-                  default="00:00-06:00@361 mon-sun",
+                  default="00:00-06:00",
                   text="Schedule parameter for the 'pushchecks' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
@@ -572,7 +572,7 @@ class KeywordPackagesSchedule(Keyword):
                   section="packages",
                   keyword="schedule",
                   order=15,
-                  default="00:00-06:00@361 mon-sun",
+                  default="00:00-06:00",
                   text="Schedule parameter for the 'pushpkg' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
@@ -583,7 +583,7 @@ class KeywordPatchesSchedule(Keyword):
                   section="patches",
                   keyword="schedule",
                   order=15,
-                  default="00:00-06:00@361 mon-sun",
+                  default="00:00-06:00",
                   text="Schedule parameter for the 'pushpatch' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
@@ -594,7 +594,7 @@ class KeywordAssetSchedule(Keyword):
                   section="asset",
                   keyword="schedule",
                   order=15,
-                  default="00:00-06:00@361 mon-sun",
+                  default="00:00-06:00",
                   text="Schedule parameter for the 'pushasset' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
@@ -695,7 +695,7 @@ class KeywordDisksSchedule(Keyword):
                   section="disks",
                   keyword="schedule",
                   order=15,
-                  default="00:00-06:00@361 mon-sun",
+                  default="00:00-06:00",
                   text="Schedule parameter for the 'pushdisks' node action. See usr/share/doc/schedule for the schedule syntax."
                 )
 
