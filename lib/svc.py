@@ -2766,7 +2766,8 @@ class Svc(Crypt, ExtConfig):
 
     @_slave_action
     def slave_startstandby(self):
-        self.encap_cmd(sys.argv[1:], verbose=True)
+        cmd = self.prepare_async_cmd()
+        self.encap_cmd(cmd, verbose=True)
 
     def start(self):
         self.abort_start()
@@ -2779,7 +2780,8 @@ class Svc(Crypt, ExtConfig):
 
     @_slave_action
     def slave_start(self):
-        self.encap_cmd(sys.argv[1:], verbose=True)
+        cmd = self.prepare_async_cmd()
+        self.encap_cmd(cmd, verbose=True)
 
     def rollback(self):
         self.sub_set_action(STOP_GROUPS, "rollback", xtags=set(["zone", "docker"]))
