@@ -372,10 +372,7 @@ class Scheduler(object):
         """
         if timerange["interval"] == 0:
             raise SchedNotAllowed("interval set to 0")
-        if fname is None:
-            # test mode
-            return
-        if last is None:
+        if fname and last is None:
             last = self.get_last(fname)
         if last is None:
             return
@@ -1167,7 +1164,7 @@ class Scheduler(object):
         converted = datetime.datetime.strptime(datetime_str, "%Y-%m-%d %H:%M")
         return converted
 
-    def test_schedule(self, schedule_s, date_s, expected):
+    def test_schedule(self, schedule_s, date_s, expected, last_s):
         """
         Test if <date_s> passes <schedule_s> constraints and compares with the
         expected boolean result <expected>.
@@ -1175,6 +1172,10 @@ class Scheduler(object):
         This method is used by the test_scheduler() testing function.
         """
         dtm = self._str_to_datetime(date_s)
+        if last_s:
+            last = self._str_to_datetime(last_s)
+        else:
+            last = None
 
         try:
             schedule = self.sched_get_schedule("dummy", "dummy", schedules=schedule_s)
@@ -1186,7 +1187,7 @@ class Scheduler(object):
                 print("failed : schedule syntax error %s (%s)" % (repr(schedule_s), str(exc)))
                 return False
         try:
-            delay = self.in_schedule(schedule, fname=None, now=dtm)
+            delay = self.in_schedule(schedule, fname=None, now=dtm, last=last)
             result = True
             result_s = ""
         except SchedSyntaxError as exc:
@@ -1207,8 +1208,8 @@ class Scheduler(object):
             check = "failed"
             ret = False
 
-        print("%s : test '%s' in schedule %-50s expected %s => result %s %s" % \
-              (check, date_s, repr(schedule_s), str(expected), str(result), result_s))
+        print("%s : now '%s' last %-18s in schedule %-50s expected %s => result %s %s" % \
+              (check, date_s, repr(last_s), repr(schedule_s), str(expected), str(result), result_s))
 
         return ret
 
