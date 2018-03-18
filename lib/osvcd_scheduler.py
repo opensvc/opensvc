@@ -21,7 +21,7 @@ class Scheduler(shared.OsvcThread):
         if self.node_overloaded():
             return 2
         else:
-            return 6
+            return shared.NODE.max_parallel
 
     def status(self, **kwargs):
         data = shared.OsvcThread.status(self, **kwargs)
