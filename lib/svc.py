@@ -2274,7 +2274,10 @@ class Svc(Crypt, ExtConfig):
 
         # make sure the container has an up-to-date service config
         if push_config:
-            self._push_encap_config(container)
+            try:
+                self._push_encap_config(container)
+            except ex.excError:
+                pass
 
         # now we known we'll execute a command in the slave, so purge the
         # encap cache
@@ -2321,6 +2324,8 @@ class Svc(Crypt, ExtConfig):
             print(out)
             if len(err) > 0:
                 print(err)
+        if ret == 255:
+            raise ex.excEncapUnjoignable
         if ret != 0:
             raise ex.excError("error from encap service command '%s': "
                               "%d\n%s\n%s"%(' '.join(cmd), ret, out, err))
