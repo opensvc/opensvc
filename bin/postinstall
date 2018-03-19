@@ -1196,7 +1196,10 @@ def restart_daemon():
 def init_secret():
     logit("begin")
     time.sleep(1)
-    cmd = "%s/nodemgr ping --node 127.0.0.1" % pathbin
+    if sysname == 'Windows':
+        cmd = "nodemgr ping --node 127.0.0.1"
+    else:
+        cmd =  "%s/nodemgr ping --node 127.0.0.1" % pathbin
     os.system(cmd)
 
 try:
