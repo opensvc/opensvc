@@ -1194,8 +1194,10 @@ def restart_daemon():
     del os.environ['OPENSVC_AGENT_UPGRADE']
 
 def init_secret():
+    logit("begin")
     time.sleep(1)
-    os.system("nodemgr ping --node 127.0.0.1")
+    cmd = "%s/nodemgr ping --node 127.0.0.1" % pathbin
+    os.system(cmd)
 
 try:
     move_var_files_in_subdirs()
