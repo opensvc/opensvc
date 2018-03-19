@@ -306,7 +306,7 @@ class Collector(object):
 
             try:
                 if last:
-                    if last[5] == date and last[3] == pid and last[1] == res_action and last[7] == res_err:
+                    if last[3] == pid and last[1] == res_action and last[7] == res_err:
                         last[6] += "\n"+msg
                         continue
                     else:
