@@ -153,6 +153,12 @@ class syncZfsSnap(resSync.Sync):
         self.remove_snap(dataset)
 
     def sync_update(self):
+        pass
+
+    def pre_action(self, action):
+        """
+        Do the snaps in pre_action so the zfs send/recv can replicate them asap
+        """
         for dataset in self.dataset:
             self._sync_update(dataset)
 
