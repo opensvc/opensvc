@@ -128,10 +128,11 @@ class SyncDocker(resSync.Sync):
         pi = Popen(["dd", "bs=4096"], stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
         p2 = Popen(load_cmd, stdin=pi.stdout, stdout=PIPE)
         out, err = p2.communicate()
-        stats_buff = pi.communicate()[1]
-        stats = self.parse_dd(stats_buff)
-        self.update_stats(stats, target=node)
-        if p2.returncode != 0:
+        if p2.returncode == 0:
+            stats_buff = pi.communicate()[1]
+            stats = self.parse_dd(stats_buff)
+            self.update_stats(stats, target=node)
+        else:
             if err is not None and len(err) > 0:
                 self.log.error(err)
             raise ex.excError("sync update failed")

@@ -192,10 +192,11 @@ class syncDds(resSync.Sync):
         pi = Popen(["dd", "bs=4096"], stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
         p2 = Popen(merge_cmd, stdin=pi.stdout, stdout=PIPE)
         buff = p2.communicate()
-        stats_buff = pi.communicate()[1]
-        stats = self.parse_dd(stats_buff)
-        self.update_stats(stats, target=node)
-        if p2.returncode != 0:
+        if p2.returncode == 0:
+            stats_buff = pi.communicate()[1]
+            stats = self.parse_dd(stats_buff)
+            self.update_stats(stats, target=node)
+        else:
             if buff[1] is not None and len(buff[1]) > 0:
                 self.log.error(buff[1])
             self.log.error("sync update failed")

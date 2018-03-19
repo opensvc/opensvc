@@ -177,9 +177,10 @@ class SyncZfs(resSync.Sync):
         pi = Popen(["dd", "bs=4096"], stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
         p2 = Popen(receive_cmd, stdin=pi.stdout, stdout=PIPE, stderr=PIPE)
         buff =  p2.communicate()
-        stats_buff = pi.communicate()[1]
-        stats = self.parse_dd(stats_buff)
-        self.update_stats(stats, target=node)
+        if p2.returncode == 0:
+            stats_buff = pi.communicate()[1]
+            stats = self.parse_dd(stats_buff)
+            self.update_stats(stats, target=node)
         out = bdecode(buff[0])
         err = bdecode(buff[1])
         if p2.returncode != 0:
