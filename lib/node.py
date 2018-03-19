@@ -2487,7 +2487,19 @@ class Node(Crypt, ExtConfig):
         data["fmt"] = self.options.format
         if self.options.config:
             data["config"] = self.options.config
-        return self._collector_cli(data, self.options.extra_argv)
+        argv = [word for word in self.options.extra_argv]
+        argv = drop_option("--refresh-api", argv, drop_value=False)
+        argv = drop_option("--insecure", argv, drop_value=False)
+        argv = drop_option("--save", argv, drop_value=False)
+        argv = drop_option("--help", argv, drop_value=False)
+        argv = drop_option("--debug", argv, drop_value=False)
+        argv = drop_option("--format", argv, drop_value=True)
+        argv = drop_option("--color", argv, drop_value=True)
+        argv = drop_option("--api", argv, drop_value=True)
+        argv = drop_option("--config", argv, drop_value=True)
+        argv = drop_option("--user", argv, drop_value=True)
+        argv = drop_option("--password", argv, drop_value=True)
+        return self._collector_cli(data, argv)
 
     def _collector_cli(self, data, argv):
         from rcCollectorCli import Cli
