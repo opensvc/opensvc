@@ -466,6 +466,21 @@ def activate_OSF1(launcher):
 
 def activate_SunOS(launcher):
     logit("begin")
+    if SolarisRootRelocate is True:
+        rc = "/etc/init.d/opensvc"
+        links = [os.environ["PKG_INSTALL_ROOT"] + "/etc/rc0.d/K00opensvc", os.environ["PKG_INSTALL_ROOT"] + "/etc/rc3.d/S99opensvc"]
+    else:
+        rc = "/etc/init.d/opensvc"
+        links = ["/etc/rc0.d/K00opensvc", "/etc/rc3.d/S99opensvc"]
+    logit("rc <%s>"%rc)
+    for l in links:
+        logit("link <%s>"%l)
+        if not os.path.islink(l):
+            if os.path.exists(l):
+                logit("removing %s"%l)
+                os.unlink(l)
+            logit("symlinking %s and %s"%(rc,l))
+            os.symlink(rc, l)
     return True
 
 def activate_FreeBSD(launcher):
