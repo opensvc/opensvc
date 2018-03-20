@@ -81,6 +81,20 @@ def logit(msg, stdout=False, stderr=False):
         sys.stderr.write("error ==> %s\n" % (msg))
 
 make_sure_path_exists(pathlog)
+
+if sysname == 'SunOS':
+    osvcfmri = 'svc:/site/application/opensvc:boot'
+    cmd = ['svcs', '-vl', osvcfmri]
+    ret = os.system(' '.join(cmd))
+    if ret == 0:
+	# Solaris install from IPS package with standard FMRI
+        logit("Solaris postinstall check for first run",stdout=False)
+	cmd = ['svcprop', '-p', 'boot/firstrun', osvcfmri, '|', 'grep', 'done']
+        ret = os.system(' '.join(cmd))
+	if ret == 0:
+	    logit("Solaris postinstall already executed. Exiting.",stdout=False)
+            sys.exit(0)
+
 logit("\nStarting OpenSVC postinstall\n",stdout=True)
 
 SolarisRootRelocate = False
@@ -1217,6 +1231,24 @@ def init_secret():
         cmd =  "%s/nodemgr ping --node 127.0.0.1" % pathbin
     os.system(cmd)
 
+def solaris_fmri_setprop():
+    logit("begin")
+    if sysname != 'SunOS':
+        logit("Only useful on SunOS",stdout=False)
+        return
+    else:
+        logit("issuing setprop on fmri",stdout=False)
+        osvcfmri = 'svc:/site/application/opensvc:boot'
+        cmd = ['svccfg', '-s', osvcfmri, 'setprop', 'boot/firstrun', '=', 'done']
+        ret = os.system(' '.join(cmd))
+        if ret == 0:
+	    # setprop ok, Solaris install from IPS package with standard FMRI
+            logit("setprop ok. now refreshing fmri",stdout=False)
+	    cmd = ['svccfg', '-s', osvcfmri, 'refresh']
+            ret = os.system(' '.join(cmd))
+	    if ret == 0:
+	        logit("fmri refresh successfully executed",stdout=False)
+
 try:
     move_var_files_in_subdirs()
     move_usr_to_opt()
@@ -1240,6 +1272,7 @@ try:
     dump_install_content()
     restart_daemon()
     init_secret()
+    solaris_fmri_setprop()
     logit("\nOpenSVC postinstall terminated\n",stdout=True)
 except:
     save_exc()
