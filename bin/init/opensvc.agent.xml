@@ -19,7 +19,7 @@
       <exec_method name='stop' type='method' exec='/usr/share/opensvc/bin/init/opensvc.init.SunOS stop' timeout_seconds='0'/>
       <exec_method name='refresh' type='method' exec=':true' timeout_seconds='60'/>
       <property_group name='boot' type='application'>
-        <propval name='firstrun' type='astring' value='done'/>
+        <propval name='firstrun' type='astring' value='todo'/>
       </property_group>
     </instance>
     <instance name='postinstall' enabled='true'>
