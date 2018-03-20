@@ -159,9 +159,10 @@ su root -c "PATH=\${PKG_INSTALL_ROOT}/usr/local/bin:$PATH:/usr/sfw/bin:/usr/loca
 EOF
 
 cp $CHROOT/usr/share/opensvc/bin/preinstall $REPODIR/preinstall
+cp $CHROOT/usr/share/opensvc/bin/preuninstall $REPODIR/preremove
 
 echo "----- Creating $PKGNAME build-$RELEASE ..."
-create_pkg -p $REPODIR/preinstall -P $REPODIR/postinstall $PKGNAME $CHROOT=$BASE 2> /dev/null <<EOF
+create_pkg -p $REPODIR/preinstall -P $REPODIR/postinstall -r $REPODIR/preremove $PKGNAME $CHROOT=$BASE 2> /dev/null <<EOF
 
 $SUMMARY
 $ARCH

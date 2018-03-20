@@ -1,5 +1,12 @@
 #!/bin/sh
 
+ARGS=$1
+
+if [ `uname` -eq 'SunOS' ]
+then
+	ARGS=0
+fi
+
 if [ -z "$OSVC_ROOT_PATH" ]
 then
 	FLAG=/var/lib/opensvc/postinstall.restart
@@ -12,7 +19,7 @@ fi
 nodemgr daemon running >/dev/null 2>&1
 RUNNING=$?
 
-if [ $1 -eq 0 ]
+if [ $ARGS -eq 0 ]
 then
 	# uninstall package
 	if [ $RUNNING -eq 0 ]
