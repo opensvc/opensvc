@@ -8,6 +8,7 @@ ARCH=${ARCH:-all}
 BASE=/
 IPSREV=$(echo $RELEASE|sed s/\.//)
 P=${PKGNAME}-$VERSION-$RELEASE.SunOS.pkg
+P5PNAME=${PKGNAME}-$VERSION-$RELEASE.SunOS.p5p
 IPSP=${PKGNAME}@$(uname -r),$(uname -r)-$VERSION.$IPSREV
 REPODIR=$(cd $(dirname $0);pwd)
 export REPODIR
@@ -112,4 +113,9 @@ let STEP=$STEP+1 ; NEW=opensvc-agent.p5m.gen.$STEP
 echo "----- STEP $STEP > building IPS package into $PWD/repository -----"
 pkgsend -s $PWD/repository/ publish -d $PWD $LAST
 
-[ -x $REPODIR/release_sunos_ips ] && $REPODIR/release_sunos_ips /tmp/$P $IPSP
+let STEP=$STEP+1 ; NEW=opensvc-agent.p5m.gen.$STEP
+echo "----- STEP $STEP > building IPS package archive from $PWD/repository -----"
+pkgrecv -s $PWD/repository -a -d $P5PNAME opensvc
+cp $P5PNAME /tmp/
+
+[ -x $REPODIR/release_sunos_ips ] && $REPODIR/release_sunos_ips /tmp/$P5PNAME $IPSP
