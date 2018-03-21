@@ -237,6 +237,7 @@ class Asset(rcAsset.Asset):
         cla = []
         desc = []
         payload = self.w.Win32_PnpSignedDriver()
+        unknowncpt = 0
         for a in payload:
             path = []
             cla = []
@@ -252,10 +253,18 @@ class Asset(rcAsset.Asset):
                 }
             if a.Description is not None:
                 desc.append(a.Description)
+            if a.Caption is not None:
+                desc.append(a.Caption)
+            if a.FriendlyName is not None:
+                desc.append(a.FriendlyName)
             if a.Manufacturer is not None:
                 desc.append(a.Manufacturer)
-            if len(desc) == 0:
+            if len(desc) == 0 and a.DeviceID is not None:
                 desc.append(a.DeviceID)
+                if 'XPS Document Writer' in a.DeviceID:
+                    type.append('xps printer')
+                if 'Print to PDF' in a.DeviceID:
+                    type.append('pdf printer')
             if a.DeviceClass is not None:
                 cla.append(a.DeviceClass)
             if a.Location is not None:
@@ -269,12 +278,21 @@ class Asset(rcAsset.Asset):
                     path.append(string)
                 else:
                     path.append(a.Location)
+            if a.PDO is not None and len(path) == 0:
+                path.append(a.PDO)
             if a.DriverProviderName is not None:
                 driver.append(a.DriverProviderName)
             if a.InfName is not None:
                 driver.append(a.InfName)
             if a.DriverVersion is not None:
-                driver.append(a.DriverVersion)    
+                driver.append(a.DriverVersion)
+            if len(type) == 0 and a.DeviceClass is not None:
+                type.append(a.DeviceClass.lower())
+            if len(type) == 0:
+                type.append("unknown [" + str(unknowncpt) + "]")
+                unknowncpt+=1
+            if len(path) == 0 and a.DeviceID is not None:
+                path.append(a.DeviceID)
             if dev is not None:
                 dev["path"] = " ".join(path)
                 dev["type"] = " ".join(type)
