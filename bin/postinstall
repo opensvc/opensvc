@@ -84,7 +84,7 @@ make_sure_path_exists(pathlog)
 
 if sysname == 'SunOS':
     osvcfmri = 'svc:/site/application/opensvc:boot'
-    cmd = ['svcs', '-vl', osvcfmri]
+    cmd = ['svcs', '-vl', osvcfmri, '2>/dev/null' ]
     ret = os.system(' '.join(cmd))
     if ret == 0:
 	# Solaris install from IPS package with standard FMRI
@@ -1239,7 +1239,7 @@ def solaris_fmri_setprop():
     else:
         logit("issuing setprop on fmri",stdout=False)
         osvcfmri = 'svc:/site/application/opensvc:boot'
-        cmd = ['svccfg', '-s', osvcfmri, 'setprop', 'boot/firstrun', '=', 'done']
+        cmd = ['svccfg', '-s', osvcfmri, 'setprop', 'boot/firstrun', '=', 'done', '2>/dev/null']
         ret = os.system(' '.join(cmd))
         if ret == 0:
 	    # setprop ok, Solaris install from IPS package with standard FMRI
