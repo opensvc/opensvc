@@ -13,12 +13,12 @@ class ifconfig(rcIfconfig.ifconfig):
         if ifconfig is not None:
             out = ifconfig
         else:
-            out = Popen(['/usr/sbin/ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
+            out = Popen(['/usr/sbin/ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0].decode()
         self.parse(out)
 
     def get_mcast(self):
         cmd = ['netstat', '-gn']
-        out = Popen(cmd, stdout=PIPE).communicate()[0]
+        out = Popen(cmd, stdout=PIPE).communicate()[0].decode()
         return self.parse_mcast(out)
 
     def parse_mcast(self, out):
