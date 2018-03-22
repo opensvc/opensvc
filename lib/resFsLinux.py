@@ -459,6 +459,12 @@ class Mount(Res.Mount):
                           "canmount=noauto %s)", self.label, self.device)
 
     def umount_zfs(self):
+        if zfs_getprop(self.device, 'mountpoint') == "legacy":
+            return self.umount_generic()
+        else:
+            return self.umount_zfs_native()
+
+    def umount_zfs_native(self):
         ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'umount', self.device], err_to_info=True)
         if ret != 0:
             ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'umount', '-f', self.device], err_to_info=True)
@@ -470,19 +476,27 @@ class Mount(Res.Mount):
            zfs_getprop(self.device, 'zoned') != 'off':
             if zfs_setprop(self.device, 'zoned', 'off'):
                 raise ex.excError
-        if zfs_getprop(self.device, 'mountpoint') != self.mount_point:
-            if not zfs_setprop(self.device, 'mountpoint', self.mount_point):
-                raise ex.excError
-
         try:
             os.unlink(self.mount_point+"/.opensvc")
         except:
             pass
+        if zfs_getprop(self.device, 'mountpoint') == "legacy":
+            return self.mount_generic()
+        else:
+            return self.mount_zfs_native()
+
+    def mount_zfs_native(self):
+        if zfs_getprop(self.device, 'mountpoint') != self.mount_point:
+            if not zfs_setprop(self.device, 'mountpoint', self.mount_point):
+                raise ex.excError
+            # the prop change has mounted the dataset
+            return
         ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'mount', self.device])
         if ret != 0:
             ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'mount', '-O', self.device])
             if ret != 0:
                 raise ex.excError
+        return ret, out, err
 
     def mount_generic(self):
         if self.fs_type != "":
