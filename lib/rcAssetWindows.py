@@ -216,8 +216,10 @@ class Asset(rcAsset.Asset):
             path.append(a.DeviceLocator)
             if len(a.BankLabel) > 0:
                 path.append(a.BankLabel)
-            desc.append(a.Description)
-            desc.append(a.Manufacturer)
+            if a.Description is not None:
+                desc.append(a.Description)
+            if a.Manufacturer is not None:
+                desc.append(a.Manufacturer)
             size = str(convert_size(a.Capacity, _to="GB"))+'GB'
             cla.append(size)
             if dev is not None:
