@@ -235,10 +235,17 @@ class Listener(shared.OsvcThread, Crypt):
                 message = self.encrypt(result)
             else:
                 message = self.msg_encode(result)
-            conn.sendall(message)
-            message_len = len(message)
-            self.stats.sessions.tx += message_len
-            self.stats.sessions.clients[addr[0]].tx += message_len
+            try:
+                conn.sendall(message)
+                message_len = len(message)
+                self.stats.sessions.tx += message_len
+                self.stats.sessions.clients[addr[0]].tx += message_len
+            except socket.error as exc:
+                if exc.errno == 32:
+                    # broken pipe
+                    self.log.info(exc)
+                else:
+                    self.log.warning(exc)
 
     #########################################################################
     #
