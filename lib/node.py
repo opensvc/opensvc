@@ -2830,10 +2830,11 @@ class Node(Crypt, ExtConfig):
         if fpath is not None and template is not None:
             raise ex.excError("--config and --template can't both be specified")
 
-        # freeze before the installing the config so the daemon never
-        # has a chance to consider the new service unfrozen and take undue
-        # action before we have the change to modify the service config
-        Freezer(svcname).freeze()
+        if not svcBuilder.exe_link_exists(svcname):
+            # freeze before the installing the config so the daemon never
+            # has a chance to consider the new service unfrozen and take undue
+            # action before we have the change to modify the service config
+            Freezer(svcname).freeze()
 
         ret = 0
         if data is not None:

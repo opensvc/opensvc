@@ -23,7 +23,7 @@ import json_delta
 from comm import Crypt
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode, purge_cache, fsum
-from svcBuilder import build, fix_app_link, fix_exe_link
+from svcBuilder import build, fix_exe_link
 from freezer import Freezer
 
 STARTED_STATES = [
@@ -218,7 +218,6 @@ class Monitor(shared.OsvcThread, Crypt):
             self.fetch_service_config(svcname, ref_nodename)
             if new_service:
                 fix_exe_link(svcname)
-                fix_app_link(svcname)
 
     def fetch_service_config(self, svcname, nodename):
         """

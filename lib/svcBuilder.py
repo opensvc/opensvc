@@ -2404,34 +2404,21 @@ def create(svcname, resources=[], provision=False):
                 continue
             conf.set(section, key, val)
 
-    from freezer import Freezer
-    Freezer(svcname).freeze()
-
     conf.write(f)
-
-    initdir = svcname+'.dir'
-    svcinitdir = os.path.join(rcEnv.paths.pathetc, initdir)
-    if not os.path.exists(svcinitdir):
-        os.makedirs(svcinitdir)
-    fix_app_link(svcname)
     fix_exe_link(svcname)
     return {"ret": 0, "rid": sections.keys()}
 
-def fix_app_link(svcname):
-    """
-    Create the <svcname>.d -> <svcname>.dir symlink
-    """
+def exe_link_exists(svcname):
     if os.name != 'posix':
-        return
-    os.chdir(rcEnv.paths.pathetc)
-    src = svcname+'.d'
-    dst = svcname+'.dir'
+        return False
     try:
-        os.readlink(src)
+        p = os.readlink(os.path.join(rcEnv.paths.pathetc, svcname))
+        if p == rcEnv.paths.svcmgr:
+            return True
+        else:
+            return False
     except:
-        if not os.path.exists(dst):
-            os.makedirs(dst)
-        os.symlink(dst, src)
+        return False
 
 def fix_exe_link(svcname):
     """
@@ -2439,6 +2426,9 @@ def fix_exe_link(svcname):
     """
     if os.name != 'posix':
         return
+    if not exe_link_exists(svcname):
+        from freezer import Freezer
+        Freezer(svcname).freeze()
     os.chdir(rcEnv.paths.pathetc)
     try:
         p = os.readlink(svcname)
