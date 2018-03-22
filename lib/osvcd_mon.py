@@ -965,6 +965,10 @@ class Monitor(shared.OsvcThread, Crypt):
                  instance.avail in STOPPED_STATES:
                 self.service_start(svc.svcname)
 
+    def scaler_current_slaves(self, svcname):
+        return [slave for slave in shared.SERVICES \
+                if re.match("^[0-9]+\."+svcname+"$", slave)]
+
     def service_orchestrator_scaler(self, svc):
         smon = self.get_service_monitor(svc.svcname)
         if smon.status != "idle":
@@ -982,8 +986,7 @@ class Monitor(shared.OsvcThread, Crypt):
         if self.placement_ranks(svc, candidates)[0] != rcEnv.nodename:
             # not natural leader
             return
-        current_slaves = [svcname for svcname in shared.SERVICES \
-                          if re.match("^[0-9]+\."+svc.svcname+"$", svcname)]
+        current_slaves = self.scaler_current_slaves(svc.svcname)
         n_slots = self.scaler_slots(current_slaves)
         if n_slots == svc.scale_target:
             return
@@ -1389,6 +1392,14 @@ class Monitor(shared.OsvcThread, Crypt):
             avail = self.get_agg_avail_flex(svcname)
         else:
             avail = "unknown"
+
+        if instance.get("scale") is not None:
+            n_up = 0
+            for slave in self.scaler_current_slaves(svcname):
+                n_up += len(self.up_service_instances(slave))
+            if n_up > 0 and n_up < instance.get("scale"):
+                return "warn"
+
         slaves = instance.get("children", [])
         slaves += instance.get("slaves", [])
         slaves += instance.get("scaler_slaves", [])
@@ -1488,16 +1499,16 @@ class Monitor(shared.OsvcThread, Crypt):
         astatus_s = set(astatus_l)
 
         n_up = astatus_l.count("up")
-        if n_instances == 0:
+        if n_up == 1:
+            return 'up'
+        elif n_instances == 0:
             return 'n/a'
         elif astatus_s == set(['n/a']):
             return 'n/a'
-        elif 'warn' in astatus_l:
-            return 'warn'
         elif n_up > 1:
             return 'warn'
-        elif n_up == 1:
-            return 'up'
+        elif 'warn' in astatus_l:
+            return 'warn'
         else:
             return 'down'
 
@@ -1518,11 +1529,11 @@ class Monitor(shared.OsvcThread, Crypt):
             return 'n/a'
         elif n_up == 0:
             return 'down'
-        elif 'warn' in astatus_l:
-            return 'warn'
         elif n_up > instance.get("flex_max_nodes", n_instances):
             return 'warn'
-        elif n_up < instance.get("flex_min_nodes", 1):
+        elif n_up < instance.get("flex_min_nodes", 1) and not instance.get("scaler_slave"):
+            # scaler slaves are allowed to go under-target: the scaler will pop more slices
+            # to reach the target. This is what happens when a node goes does.
             return 'warn'
         else:
             return 'up'
