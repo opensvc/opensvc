@@ -32,17 +32,17 @@ def get_solaris_version():
     cmd = ['uname', '-r']
     out, err, ret = justcall(cmd)
     if ret != 0:
-        return self.undef
+        return 0
     lines = out.split('\n')
     if len(lines) == 0:
-        return self.undef
+        return 0
     try:
         base, osver = lines[0].split('.')
         osver = int(osver)
-    except:
+    except ValueError:
         osver = 0
 
-    if osver >= '11':
+    if osver >= 11:
         cmd = ['uname', '-v']
         out, err, ret = justcall(cmd)
         if ret == 0:
