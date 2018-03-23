@@ -40,7 +40,8 @@ def update(fpath):
                 print("OpenSVC package was previously installed with pkgadd -G\n")
                 GlobalOnly = True
 
-    cmd = ['pkgrm', '-n', 'opensvc']
+    admin = gen_adminfile()
+    cmd = ['pkgrm', '-a', admin, '-n', 'opensvc']
     print(' '.join(cmd))
     p = Popen(cmd)
     p.communicate()
@@ -54,7 +55,6 @@ def update(fpath):
             opts = '-G'
         else:
             opts = ''
-    admin = gen_adminfile()
     opts += " -a %s " % admin
     cmd = 'pkgadd %s -d %s all' % (opts, fpath)
     print(cmd)
