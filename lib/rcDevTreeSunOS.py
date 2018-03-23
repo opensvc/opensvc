@@ -29,6 +29,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return
+        out = out.decode()
         for line in out.split("\n"):
             line = line.strip()
             if line.startswith('*'):
@@ -86,6 +87,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         """
         p = Popen(["format", "-e"], stdout=PIPE, stderr=PIPE, stdin=PIPE)
         out, err = p.communicate(input=None)
+        out = out.decode()
         for line in out.split("\n"):
             line = line.strip()
             if re.match(r"[0-9]+\. ", line) is None:
@@ -109,6 +111,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return
+        out = out.decode()
         lines = out.split('\n')
         lines.reverse()
 
@@ -148,6 +151,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return
+        out = out.decode()
         for line in out.split('\n'):
             l = line.split()
             if len(l) == 0:
@@ -160,6 +164,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return
+        out = out.decode()
         self.zpool_members[poolname] = []
         for line in out.split('\n'):
             l = line.split()
@@ -183,6 +188,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return
+        out = out.decode()
         lines = out.split('\n')
         lines = [l for l in lines if len(l) > 0]
         self.zpool_used[poolname] = self.read_size(lines[-1].split()[1])
@@ -193,6 +199,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return
+        out = out.decode()
         self.zpool_datasets[poolname] = []
         self.zpool_datasets_used[poolname] = 0
         for line in out.split('\n'):
@@ -214,6 +221,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         out, err = p.communicate()
         if p.returncode != 0:
             return
+        out = out.decode()
         for line in out.split('\n'):
             l = line.split()
             if len(l) == 0:
