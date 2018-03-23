@@ -48,7 +48,7 @@ def listpkg_legacy():
         l = line.split(':')
         if len(l) != 2:
             continue
-        l = map(lambda x: x.strip(), l)
+        l = [x.strip() for x in l]
         f = l[0]
         if f == "PKGINST":
             x = [rcEnv.nodename, l[1], "", "", "pkg", ""]
@@ -103,4 +103,4 @@ def listpatch():
     return lines
 
 if __name__ == "__main__" :
-    print(listpatch())
+    print(listpkg())
