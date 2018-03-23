@@ -1822,6 +1822,35 @@ class Node(Crypt, ExtConfig):
             raise ex.excError(data[0])
         return data
 
+    def snooze(self):
+        """
+        Snooze notifications on the node.
+        """
+        if self.options.duration is None:
+            print("set --duration", file=sys.stderr)
+            raise ex.excError
+        try:
+            data = self.collector_rest_post("/nodes/self/snooze", {
+                "duration": self.options.duration,
+            })
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(data["error"])
+        print(data.get("info", ""))
+
+    def unsnooze(self):
+        """
+        Unsnooze notifications on the node.
+        """
+        try:
+            data = self.collector_rest_post("/nodes/self/snooze")
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(data["error"])
+        print(data.get("info", ""))
+
     def register_as_node(self):
         """
         Returns a node registration unique id, authenticating to the

@@ -451,6 +451,16 @@ ACTIONS = {
                 OPT.node,
             ],
         },
+        "snooze": {
+            "msg": "Snooze alerts on the node for :opt:`--duration`",
+            "options": [
+                OPT.duration,
+            ],
+        },
+        "unsnooze": {
+            "msg": "Unsnooze alerts on the node",
+            "options": [],
+        },
         "wol": {
             "msg": "Forge and send a udp Wake-On-LAN packet to the mac addresses "
                    "specified by :opt:`--mac` and :opt:`--broadcast` arguments.",

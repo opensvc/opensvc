@@ -5095,3 +5095,33 @@ class Svc(Crypt, ExtConfig):
         """
         unset_lazy(self, prop)
 
+    def snooze(self):
+        """
+        Snooze notifications on the service.
+        """
+        if self.options.duration is None:
+            print("set --duration", file=sys.stderr)
+            raise ex.excError
+        try:
+            data = self.collector_rest_post("/services/self/snooze", {
+                "duration": self.options.duration,
+            })
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(data["error"])
+        print(data.get("info", ""))
+
+    def unsnooze(self):
+        """
+        Unsnooze notifications on the service.
+        """
+        try:
+            data = self.collector_rest_post("/services/self/snooze")
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(data["error"])
+        print(data.get("info", ""))
+
+

@@ -589,6 +589,16 @@ ACTIONS = {
             "msg": "Chain a local service instance  stop, sync_resync and start",
             "options": ACTION_OPTS + START_ACTION_OPTS,
         },
+        "snooze": {
+            "msg": "Snooze alerts on the node for :opt:`--duration`",
+            "options": [
+                OPT.duration,
+            ],
+        },
+        "unsnooze": {
+            "msg": "Unsnooze alerts on the node",
+            "options": [],
+        },
         "sync_nodes": {
             "msg": "Run the synchronization method of each local service instance sync resource, targetting the peer nodes.",
             "options": ACTION_OPTS,
