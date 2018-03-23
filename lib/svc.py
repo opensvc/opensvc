@@ -1919,7 +1919,7 @@ class Svc(Crypt, ExtConfig):
             node_res.add_column(resource["status"],
                                 STATUS_COLOR[resource["status"]])
             col = node_res.add_column(resource["label"])
-            if rid in ers and resource["status"] in ("up", "stdby up"):
+            if rid in ers and resource["status"] in ("up", "stdby up", "n/a"):
                 edata = Storage(data["encap"].get(rid))
                 encap_notice = instance_notice(
                     overall=edata.overall,
@@ -1938,7 +1938,7 @@ class Svc(Crypt, ExtConfig):
                     scolor = None
                 col.add_text(line, scolor)
 
-            if rid not in ers or resource["status"] not in ("up", "stdby up"):
+            if rid not in ers or resource["status"] not in ("up", "stdby up", "n/a"):
                 return
 
             add_subsets(ers[rid], node_res, running)
