@@ -823,7 +823,7 @@ class KeywordSyslogLevel(Keyword):
                   section="syslog",
                   keyword="level",
                   order=15,
-                  default="daemon",
+                  default="info",
                   candidates=["critical", "error", "warning", "info", "debug"],
                   text="The minimum message criticity to feed to syslog. Setting to critical actually disables the syslog logging, as the agent does not emit message at this level."
                 )
