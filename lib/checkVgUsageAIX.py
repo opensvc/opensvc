@@ -7,6 +7,8 @@ class check(checks.check):
     def find_svc(self, vgname):
         for svc in self.svcs:
             for resource in svc.get_resources('disk.vg'):
+                if not hasattr(resource, "name"):
+                    continue
                 if resource.name == vgname:
                     return svc.svcname
         return ''

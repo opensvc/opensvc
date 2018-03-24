@@ -7,6 +7,8 @@ class check(checks.check):
     def find_svc(self, mountpt):
         for svc in self.svcs:
             for resource in svc.get_resources('fs'):
+                if not hasattr(resource, "mount_point"):
+                    continue
                 if resource.mount_point == mountpt:
                     return svc.svcname
         return ''

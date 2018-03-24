@@ -28,6 +28,8 @@ class check(checks.check):
     def find_svc(self, pool):
         for svc in self.svcs:
             for res in svc.get_resources("disk.zpool"):
+                if not hasattr(res, "name"):
+                    continue
                 if res.name == pool:
                     return svc.svcname
         return ''

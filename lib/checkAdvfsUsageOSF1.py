@@ -14,6 +14,8 @@ class check(checks.check):
     def find_svc(self, name):
         for svc in self.svcs:
             for resource in svc.get_resources('pool'):
+                if not hasattr(resource, "poolname"):
+                    continue
                 if resource.poolname == name:
                     return svc.svcname
         return ''
