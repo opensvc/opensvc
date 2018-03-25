@@ -571,7 +571,9 @@ ACTIONS = {
          },
         "daemon_status": {
             "msg": "Display the daemon status.",
-            "options": DAEMON_OPTS,
+            "options": [
+                OPT.node,
+            ],
          },
         "daemon_start": {
             "msg": "Start the daemon or a daemon thread pointed by :opt:`--thread-id`.",
@@ -587,7 +589,8 @@ ACTIONS = {
          },
         "daemon_join": {
             "msg": "Join the cluster of the node specified by :opt:`--node <node>`, authenticating with :opt:`--secret <secret>`.",
-            "options": DAEMON_OPTS + [
+            "options": [
+                OPT.node,
                 OPT.secret,
             ],
          },
