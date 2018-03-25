@@ -39,6 +39,10 @@ class check(checks.check):
                 continue
             if l[5].endswith('/shm'):
                 continue
+            if l[5].startswith('/snap/'):
+                continue
+            if "/snapd/" in l[5]:
+                continue
             if "/graph/" in l[5]:
                 continue
             if "/aufs/mnt/" in l[5]:
