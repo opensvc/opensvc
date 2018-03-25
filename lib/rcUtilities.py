@@ -214,12 +214,7 @@ def bdecode(buff):
         return buff
     if type(buff) == str:
         return buff
-    else:
-        try:
-            return str(buff, "utf-8")
-        except:
-            return str(buff, "ascii")
-    return buff
+    return buff.decode("utf-8", errors="ignore")
 
 def is_string(s):
     """
