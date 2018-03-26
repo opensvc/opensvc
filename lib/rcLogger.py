@@ -56,22 +56,33 @@ class ColorStreamHandler(logging.StreamHandler):
 class LoggerHandler(logging.handlers.SysLogHandler):
     def __init__(self, facility=logging.handlers.SysLogHandler.LOG_USER):
         logging.Handler.__init__(self)
-        self.facility = facility
         self.formatter = None
+        self.facility = facility.upper()
 
     def close(self):
         pass
 
     def emit(self, record):
+        """
+        Emit a record.
+
+        The record is formatted, and then sent to the syslog server. If
+        exception information is present, it is NOT sent to the server.
+        """
         try:
-            msg = self.format(record)
-            cmd = ["logger", "-t", "", "-p", self.facility+"."+record.levelname.lower(), msg]
-            p = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
-            p.communicate()
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except:
+            import syslog
+            facility = syslog.__dict__["LOG_"+self.facility]
+            syslog.openlog(self.ident, 0, facility)
+        except Exception as exc:
             self.handleError(record)
+        try:
+            prio = self.priority_names[self.mapPriority(record.levelname)]
+            msg = self.format(record)
+            syslog.syslog(prio, msg)
+        except Exception as exc:
+            self.handleError(record)
+        finally:
+            syslog.closelog()
 
 def set_namelen(svcs=[], force=None):
     global namelen
@@ -198,13 +209,12 @@ def initLogger(name, handlers=None):
 
         syslogformatter = logging.Formatter("opensvc: %(name)s %(message)s")
         try:
-            sysloghandler = logging.handlers.SysLogHandler(address=address, facility=facility)
-        except Exception as e:
-            if e.errno == errno.ENOTSOCK:
-                # solaris /dev/log is a stream device
+            if rcEnv.sysname == "SunOS" and not isinstance(address, tuple):
                 sysloghandler = LoggerHandler(facility=facility)
             else:
-                sysloghandler = None
+                sysloghandler = logging.handlers.SysLogHandler(address=address, facility=facility)
+        except Exception as e:
+            sysloghandler = None
         if sysloghandler:
             sysloghandler.setLevel(lvl)
             sysloghandler.setFormatter(syslogformatter)
