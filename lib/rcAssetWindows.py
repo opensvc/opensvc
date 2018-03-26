@@ -9,6 +9,7 @@ import ctypes
 import wmi
 from rcDiskInfoWindows import diskInfo
 from converters import convert_size
+import pythoncom
 
 class MEMORYSTATUSEX(ctypes.Structure):
     _fields_ = [("dwLength", ctypes.c_uint),
@@ -29,6 +30,7 @@ class MEMORYSTATUSEX(ctypes.Structure):
 
 class Asset(rcAsset.Asset):
     def __init__(self, node):
+        pythoncom.CoInitialize()
         self.w = wmi.WMI()
         self.cpuinfo = self.w.Win32_Processor()
         rcAsset.Asset.__init__(self, node)
