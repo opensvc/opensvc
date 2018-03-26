@@ -4209,11 +4209,18 @@ class Node(Crypt, ExtConfig):
     # Network actions
     #
     ##########################################################################
+    @lazy
+    def cni_config(self):
+        try:
+            return self.conf_get("cni", "config").rstrip("/")
+        except ex.OptNotFound as exc:
+            return exc.default
+
     def network_data(self):
         import glob
         import re
         nets = {}
-        for net in glob.glob("/opt/cni/net.d/*.conf"):
+        for net in glob.glob(self.cni_config+"/*.conf"):
             try:
                 with open(net, "r") as ofile:
                     data = json.load(ofile)
