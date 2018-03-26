@@ -1804,7 +1804,7 @@ class Svc(Crypt, ExtConfig):
                 subsets[group] = {}
 
             for rid, resource in data["resources"].items():
-                if discard_disabled and resource["disable"]:
+                if discard_disabled and resource.get("disable", False):
                     continue
                 group = resource["type"].split(".", 1)[0]
                 if "subset" in resource:
@@ -1909,7 +1909,7 @@ class Svc(Crypt, ExtConfig):
                 ers[container.rid] = {}
 
         def add_res_node(resource, parent, rid=None, running=None):
-            if discard_disabled and resource["disable"]:
+            if discard_disabled and resource.get("disable", False):
                 return
             if rid is None:
                 rid = resource["rid"]
