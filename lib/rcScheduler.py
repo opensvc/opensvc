@@ -508,7 +508,10 @@ class Scheduler(object):
              hasattr(self.svc.resources_by_id[section], "default_schedule"):
             schedule_s = self.svc.resources_by_id[section].default_schedule
         elif option in self.config_defaults:
-            schedule_s = self.config_defaults[option]
+            if section == "sync#i0":
+                schedule_s = self.config_defaults["sync#i0_schedule"]
+            else:
+                schedule_s = self.config_defaults[option]
         else:
             raise SchedNoDefault
 
