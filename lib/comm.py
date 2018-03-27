@@ -456,39 +456,48 @@ class Crypt(object):
                 port = rcEnv.listener_port
         return addr, port
 
-    def recv_message(self, sock, cluster_name=None, secret=None, use_select=True, encrypted=True):
+    def recv_message(self, *args, **kwargs):
+        data = self.recv_messages(*args, **kwargs)
+        if data is None:
+            return
+        return data[0]
+
+    def recv_messages(self, sock, cluster_name=None, secret=None, use_select=True, encrypted=True, bufsize=4096):
         """
         Receive, decrypt and return a message from a socket.
         """
         sock.setblocking(0)
+        messages = []
         chunks = []
+        sep = b"\x00"
         while True:
             if use_select:
                 ready = select.select([sock], [], [sock], 60)
                 if ready[0]:
-                    chunk = sock.recv(1)
+                    chunk = sock.recv(bufsize)
                 else:
                     break
                 if ready[2]:
                     break
             else:
-                chunk = sock.recv(1)
-            if chunk:
-                chunks.append(chunk)
-            if not chunk or chunk == b"\x00":
+                chunk = sock.recv(bufsize)
+            if not chunk or chunk == sep:
                 break
+            chunks.append(chunk)
         if sys.version_info[0] >= 3:
             data = b"".join(chunks)
         else:
             data = "".join(chunks)
         if len(data) == 0:
             return
-        if encrypted:
-            nodename, data = self.decrypt(data, cluster_name=cluster_name,
-                                          secret=secret)
-        else:
-            data = self.msg_decode(data)
-        return data
+        for message in data.split(sep):
+            if encrypted:
+                nodename, message = self.decrypt(data, cluster_name=cluster_name,
+                                                 secret=secret)
+            else:
+                message = self.msg_decode(data)
+            messages.append(message)
+        return messages
 
     def socket_parms(self, nodename):
         data = Storage()
@@ -565,8 +574,11 @@ class Crypt(object):
                 return
             sock.sendall(message)
             while True:
-                data = self.recv_message(sock, cluster_name=cluster_name, secret=secret, encrypted=sp.encrypted)
-                yield data
+                data = self.recv_messages(sock, cluster_name=cluster_name, secret=secret, encrypted=sp.encrypted)
+                if data is None:
+                    return
+                for message in data:
+                    yield message
         except socket.error as exc:
             self.log.error("daemon send to %s error: %s", sp.to_s, str(exc))
         finally:
@@ -604,10 +616,11 @@ class Crypt(object):
             while True:
                 ready_to_read, _, exceptionals = select.select(socks.keys(), [], socks, 1)
                 for sock in ready_to_read:
-                    data = self.recv_message(sock, cluster_name=cluster_name, secret=secret, use_select=False, encrypted=socks[sock].encrypted)
+                    data = self.recv_messages(sock, cluster_name=cluster_name, secret=secret, use_select=False, encrypted=socks[sock].encrypted, bufsize=1)
                     if data is None:
                         continue
-                    yield data
+                    for message in data:
+                        yield message
                 for sock in exceptionals:
                     del socks[sock]
                 if len(socks) == 0:
