@@ -566,10 +566,11 @@ class Monitor(shared.OsvcThread, Crypt):
             if retries > nb_restart:
                 return False
             if retries >= nb_restart:
-                self.inc_smon_retries(svc.svcname, rid)
                 self.log.info("max retries (%d) reached for resource %s.%s",
                               nb_restart, svc.svcname, rid)
-                self.service_toc(svc.svcname)
+                self.inc_smon_retries(svc.svcname, rid)
+                if resource.get("monitor"):
+                    self.service_toc(svc.svcname)
                 return False
             self.inc_smon_retries(svc.svcname, rid)
             self.log.info("restart resource %s.%s, try %d/%d", svc.svcname, rid,
