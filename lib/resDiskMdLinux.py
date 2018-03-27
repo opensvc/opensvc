@@ -339,6 +339,7 @@ class Disk(resDisk.Disk):
     def sync_resync(self):
         faultydev = None
         buff = self.detail()
+        added = 0
         removed = buff.count("removed")
         if removed == 0:
             self.log.info("skip: no removed device")
