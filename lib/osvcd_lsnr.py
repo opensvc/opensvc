@@ -513,6 +513,7 @@ class Listener(shared.OsvcThread, Crypt):
                     "id": self.cluster_id,
                     "name": self.cluster_name,
                     "quorum": self.quorum,
+                    "dns": NODE.dns,
                 },
             },
         }
