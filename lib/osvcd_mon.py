@@ -555,8 +555,6 @@ class Monitor(shared.OsvcThread, Crypt):
             return
 
         def monitored_resource(svc, rid, resource):
-            if not resource.get("monitor"):
-                return False
             if resource.get("disable"):
                 return False
             if smon.local_expect != "started":

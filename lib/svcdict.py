@@ -3868,7 +3868,7 @@ class KeyDict(KeywordStore):
                   at=True,
                   default=0,
                   convert="integer",
-                  text="The agent will try to restart a resource n times before falling back to the monitor action. The resource must be monitored, the service and node not frozen, the resource not disabled and the service with a local expect set to 'started'."
+                  text="The agent will try to restart a resource n times before falling back to the monitor action. A resource restart is triggered if the resource is not disabled and its status is not up, and the node is not frozen, and the service instance is not frozen and its local expect is set to 'started'."
                 )
         def kw_provision(resource):
             return Keyword(
