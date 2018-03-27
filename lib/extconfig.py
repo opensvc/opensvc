@@ -511,7 +511,7 @@ class ExtConfig(object):
                     except IndexError:
                         if _v is not None and _v in ("exposed_devs", "sub_devs", "base_devs"):
                             return
-                        raise
+                        return ""
 
             return val
 
