@@ -454,6 +454,8 @@ class ExtConfig(object):
                 val = rcEnv.paths.pathetc
             elif _ref == "var":
                 val = rcEnv.paths.pathvar
+            elif _ref == "collector_api":
+                val = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api") if rcEnv.dbopensvc else ""
             elif _ref == "dnsuxsockd":
                 val = rcEnv.paths.dnsuxsockd
             elif _ref == "dnsuxsock":
@@ -467,6 +469,7 @@ class ExtConfig(object):
             else:
                 val = None
 
+            _v = None
             if val is None:
                 # use DEFAULT as the implicit section
                 n_dots = ref.count(".")
@@ -506,7 +509,7 @@ class ExtConfig(object):
                     try:
                         return val[index]
                     except IndexError:
-                        if _v in ("exposed_devs", "sub_devs", "base_devs"):
+                        if _v is not None and _v in ("exposed_devs", "sub_devs", "base_devs"):
                             return
                         raise
 
