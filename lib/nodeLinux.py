@@ -28,6 +28,9 @@ class Node(node.Node):
         except KeyError:
             data["mem_avail"] = 100 * (raw_data["MemFree"] + raw_data["Cached"] + raw_data.get("SReclaimable", 0)) // raw_data["MemTotal"]
         data["swap_total"] = raw_data["SwapTotal"] // 1024
-        data["swap_avail"] = 100 * raw_data["SwapFree"] // raw_data["SwapTotal"]
+        try:
+            data["swap_avail"] = 100 * raw_data["SwapFree"] // raw_data["SwapTotal"]
+        except:
+            data["swap_avail"] = 0
         return data
 
