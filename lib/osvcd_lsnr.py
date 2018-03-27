@@ -681,8 +681,8 @@ class Listener(shared.OsvcThread, Crypt):
 
         with open(logfile, "r") as ofile:
             if backlog > 0:
-                self.log.info("send %s log to node %s, backlog %d",
-                              obj, nodename, backlog)
+                self.log.debug("send %s log to node %s, backlog %d",
+                               obj, nodename, backlog)
                 try:
                     ofile.seek(skip)
                 except Exception as exc:
