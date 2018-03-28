@@ -18,6 +18,8 @@ except:
 
 import platform
 import re
+
+import extconfig
 from rcColor import colorize, color
 
 DEFAULT_HANDLERS = ["file", "stream", "syslog"]
@@ -31,6 +33,19 @@ def rotator(source, dest):
         with gzip.open(dest, "wb") as df:
             df.write(data)
     os.remove(source)
+
+class RedactingFormatter(object):
+    def __init__(self, orig_formatter):
+        self.orig_formatter = orig_formatter
+
+    def format(self, record):
+        msg = self.orig_formatter.format(record)
+        for pattern in extconfig.SECRETS:
+            msg = msg.replace(pattern, "xxxx")
+        return msg
+
+    def __getattr__(self, attr):
+        return getattr(self.orig_formatter, attr)
 
 class ColorStreamHandler(logging.StreamHandler):
     def __init__(self, stream=None):
@@ -140,7 +155,7 @@ def initLogger(name, handlers=None):
             filehandler = logging.handlers.RotatingFileHandler(logfile,
                                                                maxBytes=1*5242880,
                                                                backupCount=1)
-            filehandler.setFormatter(fileformatter)
+            filehandler.setFormatter(RedactingFormatter(fileformatter))
             filehandler.setLevel(logging.INFO)
             filehandler.rotator = rotator
             filehandler.namer = namer
@@ -151,7 +166,7 @@ def initLogger(name, handlers=None):
     if "stream" in handlers:
         streamformatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
         streamhandler = ColorStreamHandler()
-        streamhandler.setFormatter(streamformatter)
+        streamhandler.setFormatter(RedactingFormatter(streamformatter))
         log.addHandler(streamhandler)
 
         if '--debug' in sys.argv:
@@ -217,7 +232,7 @@ def initLogger(name, handlers=None):
             sysloghandler = None
         if sysloghandler:
             sysloghandler.setLevel(lvl)
-            sysloghandler.setFormatter(syslogformatter)
+            sysloghandler.setFormatter(RedactingFormatter(syslogformatter))
             log.addHandler(sysloghandler)
 
     if "file" in handlers:
@@ -226,7 +241,7 @@ def initLogger(name, handlers=None):
             filehandler = logging.handlers.RotatingFileHandler(debuglogfile,
                                                                maxBytes=2*5242880,
                                                                backupCount=1)
-            filehandler.setFormatter(fileformatter)
+            filehandler.setFormatter(RedactingFormatter(fileformatter))
             filehandler.setLevel(logging.DEBUG)
             filehandler.rotator = rotator
             filehandler.namer = namer
@@ -235,6 +250,7 @@ def initLogger(name, handlers=None):
             pass
 
     log.setLevel(logging.DEBUG)
+
     return log
 
 

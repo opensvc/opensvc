@@ -10,6 +10,8 @@ from rcUtilities import is_string, try_decode, read_cf, eval_expr, unset_lazy, \
                         lazy, unset_all_lazy
 from rcGlobalEnv import rcEnv
 
+SECRETS = []
+
 class ExtConfig(object):
     @lazy
     def has_default_section(self):
@@ -466,6 +468,7 @@ class ExtConfig(object):
                 else:
                     val = self.download_from_safe(_ref)
                 val = val.decode()
+                SECRETS.append(val)
             else:
                 val = None
 
