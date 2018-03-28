@@ -3868,7 +3868,7 @@ class KeyDict(KeywordStore):
                   at=True,
                   default=0,
                   convert="integer",
-                  text="The agent will try to restart a resource n times before falling back to the monitor action. A resource restart is triggered if the resource is not disabled and its status is not up, and the node is not frozen, and the service instance is not frozen and its local expect is set to 'started'."
+                  text="The agent will try to restart a resource n times before falling back to the monitor action. A resource restart is triggered if the resource is not disabled and its status is not up, and the node is not frozen, and the service instance is not frozen and its local expect is set to 'started'. If a resource has a restart set to a value >0, its status is evaluated at the frequency defined by :kw:`DEFAULT.monitor_schedule` instead of the frequency defined by :kw:`DEFAULT.status_schedule`."
                 )
         def kw_provision(resource):
             return Keyword(

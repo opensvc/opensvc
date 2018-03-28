@@ -2079,7 +2079,7 @@ class Svc(Crypt, ExtConfig):
         schedule.
         """
         for resource in self.get_resources():
-            if resource.monitor:
+            if resource.monitor or resource.nb_restart:
                 resource.status(refresh=True)
 
     def reboot(self):
