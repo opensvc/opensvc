@@ -2103,7 +2103,7 @@ def validate_response(r):
     if r.status_code == 200:
         return
     try:
-        data = json.loads(r.content)
+        data = json.loads(bdecode(r.content))
         raise CliError("%d %s" % (r.status_code, data["error"]))
     except (ValueError, KeyError):
         pass
