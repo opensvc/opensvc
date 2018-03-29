@@ -25,7 +25,11 @@ class Container(Res.Resource):
                               **kwargs)
         self.osvc_root_path = osvc_root_path
         self.sshbin = '/usr/bin/ssh'
-        self.name = name
+        try:
+            self.name = name
+        except AttributeError:
+            # label is a lazy prop of the child class
+            pass
         try:
             self.label = name
         except AttributeError:
