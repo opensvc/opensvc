@@ -790,6 +790,9 @@ class Monitor(shared.OsvcThread, Crypt):
                               "single node", svc.svcname, status)
                 self.service_start(svc.svcname)
                 return
+            peer = self.peer_transitioning(svc.svcname)
+            if peer:
+                return
             if not self.placement_leader(svc, candidates):
                 return
             self.log.info("failover service %s status %s", svc.svcname,
