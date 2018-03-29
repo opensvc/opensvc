@@ -574,7 +574,7 @@ class Crypt(object):
                 return
             sock.sendall(message)
             while True:
-                data = self.recv_messages(sock, cluster_name=cluster_name, secret=secret, encrypted=sp.encrypted)
+                data = self.recv_messages(sock, cluster_name=cluster_name, secret=secret, encrypted=sp.encrypted, bufsize=1)
                 if data is None:
                     return
                 for message in data:
