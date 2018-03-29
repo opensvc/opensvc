@@ -2292,7 +2292,7 @@ def build_services(status=None, svcnames=None, create_instance=False,
     for name in svcnames:
         try:
             svc = build(name, minimal=minimal, node=node)
-        except (ex.excError, ex.excInitError, ValueError) as e:
+        except (ex.excError, ex.excInitError, ValueError, rcConfigParser.ParsingError) as e:
             errors.append("%s: %s" % (name, str(e)))
             svclog = rcLogger.initLogger(rcEnv.nodename+"."+name, handlers=["file", "syslog"])
             svclog.error(str(e))
