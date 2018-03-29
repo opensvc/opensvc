@@ -1254,14 +1254,16 @@ class Svc(Crypt, ExtConfig):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-    def get_resource(self, rid):
+    def get_resource(self, rid, with_encap=False):
         """
         Return a resource object by id.
         Return None if the rid is not found.
         """
-        if rid not in self.resources_by_id:
-            return
-        return self.resources_by_id[rid]
+        if rid in self.resources_by_id:
+            return self.resources_by_id[rid]
+        if with_encap and rid in self.encap_resources:
+            return self.encap_resources[rid]
+        return
 
     def get_resources(self, _type=None, discard_disabled=True):
         """
@@ -1615,9 +1617,6 @@ class Svc(Crypt, ExtConfig):
             for container in containers:
                 if not self.has_encap_resources:
                     continue
-                if container.name is None or len(container.name) == 0:
-                    # docker case
-                    continue
                 try:
                     data['encap'][container.rid] = self.encap_json_status(container, refresh=refresh)
                     # merge container overall status, so we propagate encap alerts
@@ -1895,8 +1894,6 @@ class Svc(Crypt, ExtConfig):
         # encap resources
         ers = {}
         for container in self.get_resources('container'):
-            if container.type == "container.docker":
-                continue
             try:
                 ejs = data["encap"][container.rid]
                 ers[container.rid] = dispatch_resources(ejs)
@@ -2465,7 +2462,7 @@ class Svc(Crypt, ExtConfig):
         for group in groups:
             group_status[group] = 'n/a'
 
-        cmd = ['print', 'status', '--format', 'json']
+        cmd = ['print', 'status', '--format', 'json', '--color=no']
         if refresh:
             cmd.append('--refresh')
         try:

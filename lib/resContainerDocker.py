@@ -50,6 +50,10 @@ class Docker(resContainer.Container):
         return container_name.replace('#', '.')
 
     @lazy
+    def name(self):
+        return self.container_name
+
+    @lazy
     def service_name(self):
         """
         Format a docker compliant docker service name, ie without dots
@@ -85,6 +89,30 @@ class Docker(resContainer.Container):
 
     def __str__(self):
         return "%s name=%s" % (resources.Resource.__str__(self), self.name)
+
+    def rcmd(self, cmd):
+        cmd = self.svc.dockerlib.docker_cmd + ['exec', '-it', self.container_name] + cmd
+        return justcall(cmd)
+
+    def rcp_from(self, src, dst):
+        """
+        Copy <src> from the container's rootfs to <dst> in the host's fs.
+        """
+        cmd = self.svc.dockerlib.docker_cmd + ['cp', self.container_name+":"+src, dst]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+        return out, err, ret
+
+    def rcp(self, src, dst):
+        """
+        Copy <src> from the host's fs to the container's rootfs.
+        """
+        cmd = self.svc.dockerlib.docker_cmd + ['cp', src, self.container_name+":"+dst]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+        return out, err, ret
 
     def files_to_sync(self):
         """
@@ -125,34 +153,6 @@ class Docker(resContainer.Container):
         elif len(fpaths) != 1:
             raise ex.excError("too many candidates rootfs paths: %s" % ', '.join(fpaths))
         return fpaths[0]
-
-    def rcp_from(self, src, dst):
-        """
-        Copy <src> from the container's rootfs to <dst> in the host's fs.
-        """
-        rootfs = self.get_rootfs()
-        if len(rootfs) == 0:
-            raise ex.excError()
-        src = rootfs + src
-        cmd = ['cp', src, dst]
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s" % (' '.join(cmd), err))
-        return out, err, ret
-
-    def rcp(self, src, dst):
-        """
-        Copy <src> from the host's fs to the container's rootfs.
-        """
-        rootfs = self.get_rootfs()
-        if len(rootfs) == 0:
-            raise ex.excError()
-        dst = rootfs + dst
-        cmd = ['cp', src, dst]
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s" % (' '.join(cmd), err))
-        return out, err, ret
 
     def service_create(self):
         self.unset_lazy("service_id")
