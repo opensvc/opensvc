@@ -16,6 +16,8 @@ class Prov(provisioning.Prov):
     def check_fs(self):
         if not hasattr(self, "info"):
             return True
+        if self.mkfs_dev is None:
+            return True
         cmd = self.info + [self.mkfs_dev]
         out, err, ret = justcall(cmd)
         if ret == 0:
@@ -53,8 +55,11 @@ class Prov(provisioning.Prov):
             return False
         if self.r.fs_type in self.r.netfs:
             return True
-        self.get_mkfs_dev()
-        if not os.path.exists(self.dev) and not os.path.exists(self.mkfs_dev):
+        try:
+            self.get_mkfs_dev()
+        except ex.excError:
+            self.mkfs_dev = None
+        if not os.path.exists(self.dev) and (self.mkfs_dev is None or not os.path.exists(self.mkfs_dev)):
             return False
         return self.check_fs()
 
