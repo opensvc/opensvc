@@ -2362,7 +2362,7 @@ class KeywordFsPopulate(Keyword):
                   at=True,
                   convert="list",
                   provisioning=True,
-                  text="The list of rulesets providing files to install in the volume.",
+                  text="The list of modulesets providing files to install in the volume.",
                   example="configmap.redis configmap.global"
                 )
 
