@@ -4968,7 +4968,10 @@ class Svc(Crypt, ExtConfig):
                 silent=True,
             )
             if data and data["status"] != 0:
-                self.log.warning("wake monitor failed")
+                if "error" in data:
+                    self.log.warning("wake monitor failed: %s", data["error"])
+                else:
+                    self.log.warning("wake monitor failed")
         except Exception as exc:
             self.log.warning("wake monitor failed: %s", str(exc))
 

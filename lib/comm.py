@@ -547,7 +547,7 @@ class Crypt(object):
         except socket.error as exc:
             if not silent:
                 self.log.error("daemon send to %s error: %s", sp.to_s, str(exc))
-            return {"status": 1}
+            return {"status": 1, "error": str(exc)}
         finally:
             sock.close()
         return {"status": 0}
