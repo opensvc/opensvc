@@ -121,7 +121,10 @@ class Monitor(shared.OsvcThread, Crypt):
         """
         with shared.SERVICES_LOCK:
             for svcname in shared.SERVICES:
-                 shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
+                 try:
+                     shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
+                 except Exception as exc:
+                     continue
 
     def do(self):
         terminated_procs = self.janitor_procs()
@@ -271,7 +274,12 @@ class Monitor(shared.OsvcThread, Crypt):
                 return
         finally:
             os.unlink(tmpfpath)
-        shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
+        try:
+            shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
+        except Exception as exc:
+            self.log.error("unbuildable service %s fetched: %s", svcname, exc)
+            return
+
         try:
             shared.SERVICES[svcname].purge_status_data_dump()
             shared.SERVICES[svcname].print_status_data_eval()
@@ -473,10 +481,6 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.exception(exc)
             return
 
-        self.set_smon(svcname, global_expect="thawed")
-        if not self.wait_global_expect_change(svcname, "thawed", 600):
-            self.set_smon(svcname, "thaw failed", global_expect="unset")
-            return
         self.set_smon(svcname, global_expect="provisioned")
         self.wait_global_expect_change(svcname, "provisioned", 600)
 
