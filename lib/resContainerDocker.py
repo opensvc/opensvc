@@ -91,7 +91,7 @@ class Docker(resContainer.Container):
         return "%s name=%s" % (resources.Resource.__str__(self), self.name)
 
     def rcmd(self, cmd):
-        cmd = self.svc.dockerlib.docker_cmd + ['exec', '-it', self.container_name] + cmd
+        cmd = self.svc.dockerlib.docker_cmd + ['exec', '-t', self.container_name] + cmd
         return justcall(cmd)
 
     def rcp_from(self, src, dst):
