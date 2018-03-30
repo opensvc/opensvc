@@ -2831,7 +2831,7 @@ class Svc(Crypt, ExtConfig):
     def provision(self):
         self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone", "docker"]))
 
-        if not self.options.disable_rollback and len(svc.peers) > 1:
+        if not self.options.disable_rollback and len(self.peers) > 1:
             # set by the daemon on the placement leaders.
             # return the service to standby if not a placement leader
             self.rollback()
