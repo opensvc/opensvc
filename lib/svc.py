@@ -2775,7 +2775,7 @@ class Svc(Crypt, ExtConfig):
 
     @_master_action
     def master_startstandby(self):
-        self.sub_set_action(START_GROUPS, "startstandby", xtags=set(["zone"]))
+        self.sub_set_action(START_GROUPS, "startstandby", xtags=set(["zone", "docker"]))
 
     @_slave_action
     def slave_startstandby(self):
@@ -2789,7 +2789,7 @@ class Svc(Crypt, ExtConfig):
 
     @_master_action
     def master_start(self):
-        self.sub_set_action(START_GROUPS, "start", xtags=set(["zone"]))
+        self.sub_set_action(START_GROUPS, "start", xtags=set(["zone", "docker"]))
 
     @_slave_action
     def slave_start(self):
@@ -2797,7 +2797,7 @@ class Svc(Crypt, ExtConfig):
         self.encap_cmd(cmd, verbose=True)
 
     def rollback(self):
-        self.sub_set_action(STOP_GROUPS, "rollback", xtags=set(["zone"]))
+        self.sub_set_action(STOP_GROUPS, "rollback", xtags=set(["zone", "docker"]))
 
     def stop(self):
         self.slave_stop()
@@ -2805,7 +2805,7 @@ class Svc(Crypt, ExtConfig):
 
     @_master_action
     def master_stop(self):
-        self.sub_set_action(STOP_GROUPS, "stop", xtags=set(["zone"]))
+        self.sub_set_action(STOP_GROUPS, "stop", xtags=set(["zone", "docker"]))
 
     @_slave_action
     def slave_stop(self):
@@ -2818,14 +2818,14 @@ class Svc(Crypt, ExtConfig):
 
     @_master_action
     def master_shutdown(self):
-        self.sub_set_action(STOP_GROUPS, "shutdown", xtags=set(["zone"]))
+        self.sub_set_action(STOP_GROUPS, "shutdown", xtags=set(["zone", "docker"]))
 
     @_slave_action
     def slave_shutdown(self):
         self.encap_cmd(['shutdown'], verbose=True, error="continue")
 
     def unprovision(self):
-        self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone"]))
+        self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone", "docker"]))
 
     def provision(self):
         self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone"]))
@@ -2836,10 +2836,10 @@ class Svc(Crypt, ExtConfig):
             self.rollback()
 
     def set_provisioned(self):
-        self.sub_set_action(START_GROUPS, "set_provisioned", xtags=set(["zone"]))
+        self.sub_set_action(START_GROUPS, "set_provisioned", xtags=set(["zone", "docker"]))
 
     def set_unprovisioned(self):
-        self.sub_set_action(START_GROUPS, "set_unprovisioned", xtags=set(["zone"]))
+        self.sub_set_action(START_GROUPS, "set_unprovisioned", xtags=set(["zone", "docker"]))
 
     def abort_start(self):
         """
