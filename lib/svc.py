@@ -2829,7 +2829,7 @@ class Svc(Crypt, ExtConfig):
         self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone", "docker"]))
 
     def provision(self):
-        self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone"]))
+        self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone", "docker"]))
 
         if not self.options.disable_rollback and len(svc.peers) > 1:
             # set by the daemon on the placement leaders.
