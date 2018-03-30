@@ -333,6 +333,7 @@ STATUS_TYPES = [
 ]
 
 ACTIONS_DO_MASTER = [
+    "clear",
     "freeze",
     "set_provisioned",
     "set_unprovisioned",
