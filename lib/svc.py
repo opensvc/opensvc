@@ -2240,7 +2240,7 @@ class Svc(Crypt, ExtConfig):
                     self.log.warning("container %s is not joinable to execute "
                                      "action '%s'", container.name, ' '.join(cmd))
 
-    def _encap_cmd(self, cmd, container, verbose=False, push_config=True):
+    def _encap_cmd(self, cmd, container, verbose=False, push_config=True, fwd_options=True):
         """
         Execute a command in a service container.
         """
@@ -2276,39 +2276,47 @@ class Svc(Crypt, ExtConfig):
             except ex.excError:
                 pass
 
-        # now we known we'll execute a command in the slave, so purge the
-        # encap cache
-        self.purge_cache_encap_json_status(container.rid)
-
         # wait for the container multi-user state
         if cmd[0] in ["start"] and hasattr(container, "wait_multi_user"):
             container.wait_multi_user()
 
-        options = ['--daemon']
-        if self.options.dry_run:
-            options.append('--dry-run')
-        if self.options.force:
-            options.append('--force')
-        if self.options.local:
-            options.append('--local')
-        if self.options.disable_rollback:
-            options.append('--disable-rollback')
-        if self.options.rid:
-            options.append('--rid')
-            options.append(self.options.rid)
-        if self.options.tags:
-            options.append('--tags')
-            options.append(self.options.tags)
-        if self.options.subsets:
-            options.append('--subsets')
-            options.append(self.options.subsets)
+        if fwd_options:
+            options = ['--daemon']
+            if self.options.dry_run:
+                options.append('--dry-run')
+            if self.options.force:
+                options.append('--force')
+            if self.options.local and "status" not in cmd:
+                options.append('--local')
+            if self.options.disable_rollback:
+                options.append('--disable-rollback')
+            if self.options.rid:
+                options.append('--rid')
+                options.append(self.options.rid)
+            if self.options.tags:
+                options.append('--tags')
+                options.append(self.options.tags)
+            if self.options.subsets:
+                options.append('--subsets')
+                options.append(self.options.subsets)
+        else:
+            options = []
+
+        cmd = drop_option("--slaves", cmd, drop_value=False)
+        cmd = drop_option("--slave", cmd, drop_value=True)
 
         paths = get_osvc_paths(osvc_root_path=container.osvc_root_path,
                                sysname=container.guestos)
         cmd = [paths.svcmgr, '-s', self.svcname] + options + cmd
+        if verbose:
+            self.log.info(" ".join(cmd))
 
         if container is not None and hasattr(container, "rcmd"):
-            out, err, ret = container.rcmd(cmd)
+            try:
+                out, err, ret = container.rcmd(cmd)
+            except Exception as exc:
+                self.log.error(exc)
+                out, err, ret = "", "", 1
         elif hasattr(container, "runmethod"):
             cmd = container.runmethod + cmd
             out, err, ret = justcall(cmd, stdin=self.node.devnull)
@@ -2317,12 +2325,15 @@ class Svc(Crypt, ExtConfig):
                                          "resource %s"%container.rid)
 
         if verbose:
-            self.log.info('logs from %s child service:', container.name)
+            #self.log.info('logs from %s child service:', container.name)
             print(out)
             if len(err) > 0:
                 print(err)
         if ret == 255:
             raise ex.excEncapUnjoignable
+        if "print" not in cmd and "create" not in cmd:
+            self.log.info("refresh encap json status after action")
+            self.encap_json_status(container, refresh=True)
         if ret != 0:
             raise ex.excError("error from encap service command '%s': "
                               "%d\n%s\n%s"%(' '.join(cmd), ret, out, err))
@@ -2359,7 +2370,7 @@ class Svc(Crypt, ExtConfig):
             os.makedirs(directory)
         try:
             with open(path, 'w') as ofile:
-                ofile.write(json.dumps(data))
+                json.dump(data, ofile)
                 ofile.flush()
         except (IOError, OSError, ValueError):
             os.unlink(path)
@@ -2466,16 +2477,16 @@ class Svc(Crypt, ExtConfig):
         if refresh:
             cmd.append('--refresh')
         try:
-            results = self._encap_cmd(cmd, container)
-        except ex.excError:
+            results = self._encap_cmd(cmd, container, fwd_options=False)
+        except ex.excError as exc:
             return group_status
         except Exception as exc:
-            print(exc)
+            print(exc, file=sys.stderr)
             return group_status
 
         try:
             group_status = json.loads(results[0])
-        except:
+        except Exception:
             pass
 
         self.put_cache_encap_json_status(container.rid, group_status)
@@ -2764,7 +2775,7 @@ class Svc(Crypt, ExtConfig):
 
     @_master_action
     def master_startstandby(self):
-        self.sub_set_action(START_GROUPS, "startstandby", xtags=set(["zone", "docker"]))
+        self.sub_set_action(START_GROUPS, "startstandby", xtags=set(["zone"]))
 
     @_slave_action
     def slave_startstandby(self):
@@ -2778,7 +2789,7 @@ class Svc(Crypt, ExtConfig):
 
     @_master_action
     def master_start(self):
-        self.sub_set_action(START_GROUPS, "start", xtags=set(["zone", "docker"]))
+        self.sub_set_action(START_GROUPS, "start", xtags=set(["zone"]))
 
     @_slave_action
     def slave_start(self):
@@ -2786,7 +2797,7 @@ class Svc(Crypt, ExtConfig):
         self.encap_cmd(cmd, verbose=True)
 
     def rollback(self):
-        self.sub_set_action(STOP_GROUPS, "rollback", xtags=set(["zone", "docker"]))
+        self.sub_set_action(STOP_GROUPS, "rollback", xtags=set(["zone"]))
 
     def stop(self):
         self.slave_stop()
@@ -2794,7 +2805,7 @@ class Svc(Crypt, ExtConfig):
 
     @_master_action
     def master_stop(self):
-        self.sub_set_action(STOP_GROUPS, "stop", xtags=set(["zone", "docker"]))
+        self.sub_set_action(STOP_GROUPS, "stop", xtags=set(["zone"]))
 
     @_slave_action
     def slave_stop(self):
@@ -2807,17 +2818,17 @@ class Svc(Crypt, ExtConfig):
 
     @_master_action
     def master_shutdown(self):
-        self.sub_set_action(STOP_GROUPS, "shutdown", xtags=set(["zone", "docker"]))
+        self.sub_set_action(STOP_GROUPS, "shutdown", xtags=set(["zone"]))
 
     @_slave_action
     def slave_shutdown(self):
         self.encap_cmd(['shutdown'], verbose=True, error="continue")
 
     def unprovision(self):
-        self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone", "docker"]))
+        self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone"]))
 
     def provision(self):
-        self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone", "docker"]))
+        self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone"]))
 
         if not self.options.disable_rollback:
             # set by the daemon on the placement leaders.
@@ -2825,10 +2836,10 @@ class Svc(Crypt, ExtConfig):
             self.rollback()
 
     def set_provisioned(self):
-        self.sub_set_action(START_GROUPS, "set_provisioned", xtags=set(["zone", "docker"]))
+        self.sub_set_action(START_GROUPS, "set_provisioned", xtags=set(["zone"]))
 
     def set_unprovisioned(self):
-        self.sub_set_action(START_GROUPS, "set_unprovisioned", xtags=set(["zone", "docker"]))
+        self.sub_set_action(START_GROUPS, "set_unprovisioned", xtags=set(["zone"]))
 
     def abort_start(self):
         """
@@ -3355,7 +3366,7 @@ class Svc(Crypt, ExtConfig):
         """
         cmd = ['print', 'config', 'mtime']
         try:
-            cmd_results = self._encap_cmd(cmd, container, push_config=False)
+            cmd_results = self._encap_cmd(cmd, container, push_config=False, fwd_options=False)
             out = cmd_results[0]
             ret = cmd_results[2]
         except ex.excError:
@@ -3397,8 +3408,9 @@ class Svc(Crypt, ExtConfig):
         self.log.info("send %s to %s", self.paths.cf, container.name)
 
         cmd = ['create', '--config', encap_cf]
-        cmd_results = self._encap_cmd(cmd, container=container, push_config=False)
-        if cmd_results[2] != 0:
+        try:
+            cmd_results = self._encap_cmd(cmd, container=container, push_config=False, fwd_options=False)
+        except ex.excError:
             raise ex.excError("failed to create %s slave service" % container.name)
         self.log.info("create %s slave service", container.name)
 
@@ -4927,6 +4939,15 @@ class Svc(Crypt, ExtConfig):
         pass
 
     def clear(self):
+        self.master_clear()
+        self.slave_clear()
+
+    @_slave_action
+    def slave_clear(self):
+        self.encap_cmd(["clear"], verbose=True)
+
+    @_master_action
+    def master_clear(self):
         if self.options.local:
            self._clear()
         elif self.options.node:

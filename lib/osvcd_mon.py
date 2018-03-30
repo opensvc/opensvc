@@ -303,9 +303,12 @@ class Monitor(shared.OsvcThread, Crypt):
         proc = self.node_command(["stonith", "--node", node])
         self.push_proc(proc=proc)
 
-    def service_start_resources(self, svcname, rids):
+    def service_start_resources(self, svcname, rids, slave=None):
         self.set_smon(svcname, "restarting")
-        proc = self.service_command(svcname, ["start", "--rid", ",".join(rids)])
+        cmd = ["start", "--rid", ",".join(rids)]
+        if slave:
+            cmd += ["--slave", slave]
+        proc = self.service_command(svcname, cmd)
         self.push_proc(
             proc=proc,
             on_success="service_start_resources_on_success",
@@ -552,18 +555,13 @@ class Monitor(shared.OsvcThread, Crypt):
         if svc.disabled:
             #self.log.info("resource %s orchestrator out (disabled)", svc.svcname)
             return
-        try:
-            with shared.CLUSTER_DATA_LOCK:
-                resources = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]["resources"]
-        except KeyError:
-            return
 
         def monitored_resource(svc, rid, resource):
             if resource.get("disable"):
                 return False
             if smon.local_expect != "started":
                 return False
-            nb_restart = svc.get_resource(rid).nb_restart
+            nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
             if nb_restart == 0 and resource.get("standby"):
                 nb_restart = self.default_stdby_nb_restart
             retries = self.get_smon_retries(svc.svcname, rid)
@@ -584,7 +582,7 @@ class Monitor(shared.OsvcThread, Crypt):
         def stdby_resource(svc, rid, resource):
             if resource.get("standby") is not True:
                 return False
-            nb_restart = svc.get_resource(rid).nb_restart
+            nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
             if nb_restart < self.default_stdby_nb_restart:
                 nb_restart = self.default_stdby_nb_restart
             retries = self.get_smon_retries(svc.svcname, rid)
@@ -604,6 +602,15 @@ class Monitor(shared.OsvcThread, Crypt):
         if smon.status != "idle":
             return
 
+        try:
+            with shared.CLUSTER_DATA_LOCK:
+                instance = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]
+                if instance.get("encap") is True:
+                    return
+                resources = instance["resources"]
+        except KeyError:
+            return
+
         rids = []
         for rid, resource in resources.items():
             if resource["status"] not in ("warn", "down", "stdby down"):
@@ -616,6 +623,22 @@ class Monitor(shared.OsvcThread, Crypt):
 
         if len(rids) > 0:
             self.service_start_resources(svc.svcname, rids)
+
+        # same for encap resources
+        rids = []
+        for crid, cdata in instance.get("encap", {}).items():
+            resources = cdata.get("resources", [])
+            rids = []
+            for rid, resource in resources.items():
+                if resource["status"] not in ("warn", "down", "stdby down"):
+                    continue
+                if resource.get("provisioned", {}).get("state") is False:
+                    continue
+                if monitored_resource(svc, rid, resource) or stdby_resource(svc, rid, resource):
+                    rids.append(rid)
+                    continue
+            if len(rids) > 0:
+                self.service_start_resources(svc.svcname, rids, slave=crid)
 
     def node_orchestrator(self):
         self.orchestrator_auto_grace()

@@ -199,6 +199,7 @@ def add_resource(svc, restype, s):
             "tags": tags,
             "encap": encap,
             "subset": subset,
+            "nb_restart": get_restart(svc, s),
         })
         return
 

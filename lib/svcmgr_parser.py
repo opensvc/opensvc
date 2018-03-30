@@ -424,7 +424,10 @@ ACTIONS = {
                    "by --node. If --node is not specified, all nodes are "
                    "cleared. This command can be used to reactivate service "
                    "orchestration blocked by a failed status like ``start failed``.",
-            "options": DAEMON_OPTS,
+            "options": DAEMON_OPTS + [
+		    OPT.slave,
+		    OPT.slaves,
+            ],
         },
         "dns_update": {
             "msg": "Update the collector dns records for the service. The "
