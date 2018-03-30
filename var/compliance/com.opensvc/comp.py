@@ -247,6 +247,24 @@ class CompObject(object):
             except EndRecursion:
                 break
 
+        p = re.compile('%%SAFE:\w+%%', re.IGNORECASE)
+
+        def _subst_safe(v):
+            matches = p.findall(v)
+            if len(matches) == 0:
+                raise EndRecursion
+            for m in matches:
+                s = m.strip("%").upper().replace('SAFE:', '')
+                _v = self.collector_rest_get("/safe/%s/download" % s, load_json=False)
+                v = v.replace(m, _v)
+            return v
+
+        for i in range(max_recursion):
+            try:
+                v = _subst_safe(v)
+            except EndRecursion:
+                break
+
         return v
 
     def collector_api(self):
@@ -292,7 +310,7 @@ class CompObject(object):
         request.add_header("Authorization", "Basic %s" % base64string)
         return request
 
-    def collector_rest_get(self, path):
+    def collector_rest_get(self, path, load_json=True):
         api = self.collector_api()
         request = self.collector_request(path)
         if api["url"].startswith("https"):
@@ -312,8 +330,10 @@ class CompObject(object):
             except:
                 pass
             raise e
-        import json
-        data = json.loads(f.read())
+        if load_json:
+            data = json.loads(f.read())
+        else:
+            data = f.read()
         f.close()
         return data
 

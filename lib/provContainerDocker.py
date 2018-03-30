@@ -5,7 +5,7 @@ class Prov(provisioning.Prov):
         return False
 
     def start(self):
-        #self.r._start()
+        self.r._start()
         self.r.status(resfresh=True)
 
     def stop(self):
