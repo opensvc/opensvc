@@ -457,18 +457,24 @@ class ExtConfig(object):
             elif _ref == "var":
                 val = rcEnv.paths.pathvar
             elif _ref == "collector_api":
-                val = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api") if rcEnv.dbopensvc else ""
+                if rcEnv.dbopensvc:
+                    val = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api") if rcEnv.dbopensvc else ""
+                else:
+                    val = ""
             elif _ref == "dnsuxsockd":
                 val = rcEnv.paths.dnsuxsockd
             elif _ref == "dnsuxsock":
                 val = rcEnv.paths.dnsuxsock
             elif _ref.startswith("safe://"):
-                if hasattr(self, "node"):
-                    val = self.node.download_from_safe(_ref, svcname=self.svcname)
-                else:
-                    val = self.download_from_safe(_ref)
-                val = val.decode()
-                SECRETS.append(val)
+                try:
+                    if hasattr(self, "node"):
+                        val = self.node.download_from_safe(_ref, svcname=self.svcname)
+                    else:
+                        val = self.download_from_safe(_ref)
+                    val = val.decode()
+                    SECRETS.append(val)
+                except ex.excError as exc:
+                    val = ""
             else:
                 val = None
 

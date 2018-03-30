@@ -2586,6 +2586,8 @@ class Node(Crypt, ExtConfig):
         """
         if rcEnv.dbopensvc is None:
             raise ex.excError("node.dbopensvc is not set in node.conf")
+        elif rcEnv.dbopensvc_host == "none":
+            raise ex.excError("node.dbopensvc is set to 'none' in node.conf")
         data = {}
         if self.options.user is None:
             username, password = self.collector_auth_node()
