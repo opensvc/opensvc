@@ -2544,7 +2544,11 @@ class Node(Crypt, ExtConfig):
         if os.path.exists(fpath):
             with open(fpath, "r") as ofile:
                 buff = ofile.read()
-            return base64.urlsafe_b64decode(self.decrypt(buff)[1]["data"])
+            data = self.decrypt(buff)[1]["data"]
+            try:
+                return base64.urlsafe_b64decode(data)
+            except TypeError:
+                return base64.urlsafe_b64decode(data.encode())
         path = "/safe/%s/download" % safe_id
         api = self.collector_api(svcname=svcname)
         request = self.collector_request(path)
