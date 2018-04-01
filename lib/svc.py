@@ -1132,8 +1132,8 @@ class Svc(Crypt, ExtConfig):
                                   "" % (nodename, status))
         global_expect = data.get("service", {}).get("global_expect")
         if global_expect is not None:
-            raise ex.excError("service has already been asked to reach the "
-                              "%s global state" % global_expect)
+            raise ex.excAbortAction("service has already been asked to reach "
+                                    "the %s global state" % global_expect)
 
         data = self.node._daemon_status()
         if self.svcname not in data["monitor"]["services"]:
@@ -1141,9 +1141,9 @@ class Svc(Crypt, ExtConfig):
         if action in ("start", "stop"):
             avail = data["monitor"]["services"][self.svcname]["avail"]
             if action == "start" and avail == "up":
-                raise ex.excError("the service is already started.")
+                raise ex.excAbortAction("the service is already started.")
             elif action == "stop" and avail in ("down", "stdby down"):
-                raise ex.excError("the service is already stopped.")
+                raise ex.excAbortAction("the service is already stopped.")
             if avail in ("n/a", "undef"):
                 raise ex.excError("the service is in '%s' aggregated avail "
                                   "status. the daemons won't honor this "
@@ -3684,7 +3684,8 @@ class Svc(Crypt, ExtConfig):
         except ex.excError as exc:
             self.log.error(exc)
             return 1
-        except ex.excAbortAction:
+        except ex.excAbortAction as exc:
+            self.log.info(exc)
             return 0
         return self._action(action, options=options)
 
