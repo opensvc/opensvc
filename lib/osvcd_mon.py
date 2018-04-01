@@ -313,16 +313,38 @@ class Monitor(shared.OsvcThread, Crypt):
             proc=proc,
             on_success="service_start_resources_on_success",
             on_success_args=[svcname, rids],
+            on_success_kwargs={"slave": slave},
             on_error="generic_callback",
             on_error_args=[svcname],
             on_error_kwargs={"status": "idle"},
         )
 
-    def service_start_resources_on_success(self, svcname, rids):
+    def service_start_resources_on_success(self, svcname, rids, slave=None):
         self.set_smon(svcname, status="idle")
-        for rid in rids:
-            self.reset_smon_retries(svcname, rid)
         self.update_hb_data()
+        changed = False
+        for rid in rids:
+            instance = self.get_service_instance(svcname, rcEnv.nodename)
+            if instance is None:
+                self.reset_smon_retries(svcname, rid)
+                changed = True
+                continue
+            if slave is None:
+               res = instance.get("resources", {}).get(rid, {})
+               if res.get("status") not in ("up", "stdby up"):
+                   self.log.error("%s start returned success but resource is "
+                                  "still not up", rid)
+                   continue
+            else:
+               res = instance.get("encap", {}).get(slave, {}).get("resources", {}).get(rid, {})
+               if res.get("status") not in ("up", "stdby up"):
+                   self.log.error("%s start in container %s returned success "
+                                  "but resource is still not up", rid, slave)
+                   continue
+            changed = True
+            self.reset_smon_retries(svcname, rid)
+        if changed:
+            self.update_hb_data()
 
     def service_toc(self, svcname):
         proc = self.service_command(svcname, ["toc"])
