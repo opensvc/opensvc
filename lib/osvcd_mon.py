@@ -627,6 +627,8 @@ class Monitor(shared.OsvcThread, Crypt):
         # same for encap resources
         rids = []
         for crid, cdata in instance.get("encap", {}).items():
+            if cdata.get("frozen"):
+                continue
             resources = cdata.get("resources", [])
             rids = []
             for rid, resource in resources.items():
