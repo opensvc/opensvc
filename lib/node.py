@@ -2148,12 +2148,20 @@ class Node(Crypt, ExtConfig):
                 break
             regex = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|K|G]", re.UNICODE)
             data = []
+            reftime = time.time()
             for action in actions:
                 ret, out, err = self.dequeue_action(action)
                 out = regex.sub('', out)
                 err = regex.sub('', err)
                 data.append((action.get('id'), ret, out, err))
-            self.collector.call('collector_update_action_queue', data)
+                now = time.time()
+                if now > reftime + 2:
+                    # this action was long, update the collector now
+                    self.collector.call('collector_update_action_queue', data)
+                    reftime = time.time()
+                    data = []
+            if len(data) > 0:
+                self.collector.call('collector_update_action_queue', data)
 
     @staticmethod
     def dequeue_action(action):
