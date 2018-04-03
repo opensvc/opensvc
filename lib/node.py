@@ -557,7 +557,6 @@ class Node(Crypt, ExtConfig):
                 for svcname in self.__svcs_selector(_selector):
                     if svcname not in result:
                         result.append(svcname)
-        import re
         if len(result) == 0 and re.findall(r"[,\+\*=\^:~><]", selector) == []:
             raise ex.excError("service not found")
         return result
@@ -592,7 +591,6 @@ class Node(Crypt, ExtConfig):
         names.
         """
         import fnmatch
-        import re
 
         ops = r"(<=|>=|<|>|=|~|:)"
         negate = selector[0] == "!"
@@ -981,7 +979,12 @@ class Node(Crypt, ExtConfig):
             self.async_action(action)
         except ex.excAbortAction:
             return 0
-        return self._action(action, options)
+        from lock import LOCK_EXCEPTIONS
+        try:
+            return self._action(action, options)
+        except LOCK_EXCEPTIONS as exc:
+            self.log.warning(exc)
+            return 1
 
     @sched_action
     def _action(self, action, options=None):
@@ -1509,7 +1512,6 @@ class Node(Crypt, ExtConfig):
         if self.svcs is None:
             self.build_services()
 
-        import re
         di = __import__('rcDiskInfo'+rcEnv.sysname)
         data = {
             "disks": {},
@@ -2137,18 +2139,20 @@ class Node(Crypt, ExtConfig):
         The dequeue_actions node action entrypoint.
         Poll the collector action queue until emptied.
         """
-        actions = self.collector.call('collector_get_action_queue')
-        if actions is None:
-            return "unable to fetch actions scheduled by the collector"
-        import re
-        regex = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|K|G]", re.UNICODE)
-        data = []
-        for action in actions:
-            ret, out, err = self.dequeue_action(action)
-            out = regex.sub('', out)
-            err = regex.sub('', err)
-            data.append((action.get('id'), ret, out, err))
-        if len(actions) > 0:
+        while True:
+            actions = self.collector.call('collector_get_action_queue')
+            if actions is None:
+                raise ex.excError("unable to fetch actions scheduled by the collector")
+            n_actions = len(actions)
+            if n_actions == 0:
+                break
+            regex = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|K|G]", re.UNICODE)
+            data = []
+            for action in actions:
+                ret, out, err = self.dequeue_action(action)
+                out = regex.sub('', out)
+                err = regex.sub('', err)
+                data.append((action.get('id'), ret, out, err))
             self.collector.call('collector_update_action_queue', data)
 
     @staticmethod
@@ -3442,7 +3446,6 @@ class Node(Crypt, ExtConfig):
             def print_bytes(val):
                 print(val)
             def bare_len(val):
-                import re
                 ansi_escape = re.compile(r'\x1b[^m]*m')
                 val = ansi_escape.sub('', val)
                 val = bytes(val).decode("utf-8")
@@ -3452,7 +3455,6 @@ class Node(Crypt, ExtConfig):
             def print_bytes(val):
                 print(val.decode("utf-8"))
             def bare_len(val):
-                import re
                 ansi_escape = re.compile(b'\x1b[^m]*m')
                 val = ansi_escape.sub(b'', val)
                 val = bytes(val).decode("utf-8")
@@ -4250,7 +4252,6 @@ class Node(Crypt, ExtConfig):
 
     def network_data(self):
         import glob
-        import re
         nets = {}
         for net in glob.glob(self.cni_config+"/*.conf"):
             try:
