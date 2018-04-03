@@ -4102,7 +4102,7 @@ class Svc(Crypt, ExtConfig):
 
         # Provision a database entry to store action log later
         self.node.daemon_collector_xmlrpc("begin_action", self.svcname,
-                                          action, self.node.agent_version(),
+                                          action, self.node.agent_version,
                                           begin, self.options.cron)
 
         # Per action logfile to push to database at the end of the action

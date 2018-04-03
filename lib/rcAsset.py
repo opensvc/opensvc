@@ -423,7 +423,7 @@ class Asset(object):
         }
 
     def get_version(self):
-        s = self.node.agent_version()
+        s = self.node.agent_version
         return {
             "title": "agent version",
             "value": s,

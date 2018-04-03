@@ -284,7 +284,7 @@ class OptParser(object):
         except ImportError:
             try:
                 from node import Node
-                version = Node().agent_version()
+                version = Node().agent_version
             except IndexError:
                 version = "dev"
 

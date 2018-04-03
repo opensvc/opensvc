@@ -63,6 +63,7 @@ class Monitor(shared.OsvcThread, Crypt):
 
         shared.CLUSTER_DATA[rcEnv.nodename] = {
             "compat": shared.COMPAT_VERSION,
+            "agent": shared.NODE.agent_version,
             "monitor": shared.NMON_DATA,
             "services": {},
         }

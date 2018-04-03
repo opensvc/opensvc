@@ -3022,6 +3022,7 @@ class Node(Crypt, ExtConfig):
         from rcColor import print_color_config
         print_color_config(rcEnv.paths.authconf)
 
+    @lazy
     def agent_version(self):
         try:
             import version
@@ -3591,6 +3592,25 @@ class Node(Crypt, ExtConfig):
                 line.append(str(compat))
             out.append(line)
 
+        def load_node_version():
+            if "monitor" not in data:
+                return
+            line = [
+                colorize(" version", color.BOLD),
+                colorize("warn", color.BROWN),
+                "",
+                "|",
+            ]
+            versions = []
+            for nodename in nodenames:
+                agent = data["monitor"]["nodes"].get(nodename, {}).get("agent", "")
+                line.append(str(agent))
+                if agent is not '':
+                    versions.append(str(agent))
+            if len(set(versions)) > 1:
+                out.append(line)
+
+
         # init the services hash
         slave_parents = {}
         if "monitor" in data:
@@ -3661,6 +3681,7 @@ class Node(Crypt, ExtConfig):
         load_header("Nodes")
         load_metrics()
         load_node_compat()
+        load_node_version()
         load_node_state()
         out.append([])
         load_header("Services")
