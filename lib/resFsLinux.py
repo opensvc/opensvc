@@ -107,7 +107,9 @@ class Mount(Res.Mount):
 
     def is_up(self):
         if self.device is None:
-            return False
+            raise ex.excError("dev is not defined")
+        if self.mount_point is None:
+            raise ex.excError("mnt is not defined")
         self.mounts = rcMounts.Mounts()
         ret = self.mounts.has_mount(self.device, self.mount_point)
         if ret:
