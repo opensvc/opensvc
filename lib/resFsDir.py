@@ -32,7 +32,10 @@ class FsDir(Res.Resource):
 
     @lazy
     def label(self):
-        return "dir " + self.path
+        if self.path:
+            return "dir " + self.path
+        else:
+            return "dir"
 
     def start(self):
         self.create()
@@ -102,6 +105,9 @@ class FsDir(Res.Resource):
         return True
 
     def _status(self, verbose=False):
+        if self.path is None:
+            self.status_log("path is not defined", "error")
+            return rcStatus.UNDEF
         if not os.path.exists(self.path):
             self.log.debug("dir %s does not exist" % self.path)
             return rcStatus.DOWN
