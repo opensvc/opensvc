@@ -1930,7 +1930,7 @@ class Svc(Crypt, ExtConfig):
             for line in resource.get("log", []):
                 if line.startswith("warn:"):
                     scolor = STATUS_COLOR["warn"]
-                elif line.startswith("err:"):
+                elif line.startswith("error:"):
                     scolor = STATUS_COLOR["err"]
                 else:
                     scolor = None
