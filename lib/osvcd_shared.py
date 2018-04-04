@@ -29,7 +29,7 @@ COMPAT_VERSION = 5
 EVENT_Q = queue.Queue()
 
 # current generation of the dataset on the local node
-GEN = 0
+GEN = 1
 
 # track the generation of the local dataset on peer nodes
 LOCAL_GEN = {}
