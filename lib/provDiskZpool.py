@@ -12,7 +12,9 @@ class Prov(provisioning.Prov):
         if not self.r.is_up():
             self.r.start()
         cmd = ["zpool", "destroy", "-f", self.r.name]
-        self.r.vcall(cmd)
+        ret, _, _ = self.r.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
         self.r.svc.node.unset_lazy("devtree")
 
     def stop(self):
@@ -28,7 +30,8 @@ class Prov(provisioning.Prov):
 
         cmd = ["zpool", "create", "-m", "legacy", self.name] + self.vdev
         ret, _, _ = self.r.vcall(cmd)
-        if ret == 0:
-            self.r.can_rollback = True
+        if ret != 0:
+            raise ex.excError
+        self.r.can_rollback = True
         self.r.svc.node.unset_lazy("devtree")
 
