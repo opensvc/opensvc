@@ -248,7 +248,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
 
         for zfsname, size in self.zpool_datasets[poolname]:
             used = int(size*ratio)
-            d = self.add_dev(zfsname, used, "zfs")
+            d = self.add_dev(zfsname, used, "linear")
             d.set_devpath(zfsname)
             for m in self.zpool_members[poolname]:
                 member_ratio = 1.0 * m.size / self.zpool_size[poolname]
