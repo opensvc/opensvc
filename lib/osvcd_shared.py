@@ -554,22 +554,18 @@ class OsvcThread(threading.Thread):
             self.duplog("info", "cluster is split, ignore as the node is frozen",
                         msgid="quorum disabled")
             return
+        total = len(self.cluster_nodes) + len(self.arbitrators)
         live = len(CLUSTER_DATA)
-        total = len(self.cluster_nodes)
-        if live > total / 2:
-            self.duplog("info", "cluster is split, we have 1st ring quorum: "
-                        "%(live)d/%(total)d nodes", live=live, total=total)
-            return
         extra_votes = self.arbitrators_votes()
         n_extra_votes = len(extra_votes)
         if live + n_extra_votes > total / 2:
-            self.duplog("info", "cluster is split, we have 2nd ring quorum: "
-                        "%(live)d+%(avote)d/%(total)d nodes (%(a)s)",
+            self.duplog("info", "cluster is split, we have quorum: "
+                        "%(live)d+%(avote)d out of %(total)d votes (%(a)s)",
                         live=live, avote=n_extra_votes, total=total,
                         a=",".join(extra_votes))
             return
-        self.duplog("info", "cluster is split, we don't have 1st nor 2nd ring "
-                    "quorum: %(live)d+%(avote)d/%(total)d nodes (%(a)s)",
+        self.duplog("info", "cluster is split, we don't have quorum: "
+                    "%(live)d+%(avote)d/%(total)d votes (%(a)s)",
                     live=live, avote=arbitrator_vote, total=total,
                     a=arbitrator["name"])
         self.log.info("toc")
