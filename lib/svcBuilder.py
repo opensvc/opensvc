@@ -303,6 +303,11 @@ def add_ip(svc, s):
     except ex.OptNotFound as exc:
         zone = exc.default
 
+    try:
+        kwargs['expose'] = svc.conf_get(s, 'expose')
+    except ex.OptNotFound as exc:
+        kwargs['expose'] = exc.default
+
     if rtype == "docker":
         try:
             kwargs['container_rid'] = svc.conf_get(s, 'container_rid')
@@ -326,10 +331,6 @@ def add_ip(svc, s):
             kwargs['container_rid'] = svc.conf_get(s, 'container_rid')
         except ex.OptNotFound as exc:
             pass
-        try:
-            kwargs['expose'] = svc.conf_get(s, 'expose')
-        except ex.OptNotFound as exc:
-            kwargs['expose'] = exc.default
 
     if rtype == "crossbow":
         try:
