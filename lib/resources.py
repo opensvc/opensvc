@@ -951,8 +951,13 @@ class Resource(object):
         Return the resource provisioned state from the on-disk cache and its
         state change time as a dictionnary.
         """
+        try:
+            isprov = self.is_provisioned()
+        except Exception as exc:
+            self.status_log("provisioned: %s"%str(exc), "error")
+            isprov = False
         return {
-            "state": self.is_provisioned(),
+            "state": isprov,
             "mtime": self.provisioned_flag_mtime(),
         }
 
