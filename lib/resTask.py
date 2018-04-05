@@ -45,12 +45,14 @@ class Task(Res.Resource):
                  command=None,
                  user=None,
                  on_error=None,
+                 snooze=0,
                  confirmation=False,
                  **kwargs):
         Res.Resource.__init__(self, rid, type="task", **kwargs)
         self.command = command
         self.on_error = on_error
         self.user = user
+        self.snooze = snooze
         self.confirmation = confirmation
 
     def __str__(self):
@@ -114,6 +116,12 @@ class Task(Res.Resource):
             raise ex.excError("task is already running (maybe too long for the schedule)")
 
     def _run(self):
+        if self.snooze:
+            try:
+                data = self.svc._snooze(self.snooze)
+                self.log.info(data.get("info", ""))
+            except Exception as exc:
+                self.log.warning(exc)
         kwargs = {
           'blocking': True,
         }
@@ -126,6 +134,13 @@ class Task(Res.Resource):
                 kwargs["blocking"] = False
                 self.action_triggers("", "on_error", **kwargs)
             raise ex.excError
+
+        if self.snooze:
+            try:
+                data = self.svc._unsnooze()
+                self.log.info(data.get("info", ""))
+            except Exception as exc:
+                self.log.warning(exc)
 
     def _status(self, verbose=False):
         return rcStatus.NA

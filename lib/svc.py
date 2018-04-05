@@ -5125,6 +5125,17 @@ class Svc(Crypt, ExtConfig):
         if self.options.duration is None:
             print("set --duration", file=sys.stderr)
             raise ex.excError
+        data = self._snooze(self.options.duration)
+        print(data.get("info", ""))
+
+    def unsnooze(self):
+        data = self._unsnooze()
+        print(data.get("info", ""))
+
+    def _snooze(self, duration):
+        """
+        Snooze notifications on the service.
+        """
         try:
             data = self.collector_rest_post("/services/self/snooze", {
                 "duration": self.options.duration,
@@ -5133,9 +5144,9 @@ class Svc(Crypt, ExtConfig):
             raise ex.excError(str(exc))
         if "error" in data:
             raise ex.excError(data["error"])
-        print(data.get("info", ""))
+        return data
 
-    def unsnooze(self):
+    def _unsnooze(self):
         """
         Unsnooze notifications on the service.
         """
@@ -5145,6 +5156,6 @@ class Svc(Crypt, ExtConfig):
             raise ex.excError(str(exc))
         if "error" in data:
             raise ex.excError(data["error"])
-        print(data.get("info", ""))
+        return data
 
 

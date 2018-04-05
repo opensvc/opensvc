@@ -3780,6 +3780,20 @@ class KeywordTaskCommand(Keyword):
                   example="/srv/{svcname}/data/scripts/backup.sh"
                 )
 
+class KeywordTaskSnooze(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="task",
+                  keyword="snooze",
+                  at=True,
+                  order=1,
+                  default=0,
+                  convert="duration",
+                  text="Snooze the service before running the task, so if the command is known to cause a service status degradation the user can decide to snooze alarms for the duration set as value.",
+                  example="10m"
+                )
+
 class KeywordTaskConfirmation(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4806,6 +4820,7 @@ class KeyDict(KeywordStore):
         self += KeywordShareNfsOpts()
         self += KeywordTaskCommand()
         self += KeywordTaskConfirmation()
+        self += KeywordTaskSnooze()
         self += KeywordTaskOnError()
         self += KeywordTaskUser()
         self += KeywordTaskSchedule()
