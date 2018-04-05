@@ -42,8 +42,10 @@ class Monitor(shared.OsvcThread, Crypt):
     The monitoring thread collecting local service states and taking decisions.
     """
     monitor_period = 0.5
+    arbitrators_check_period = 60
     max_shortloops = 30
     default_stdby_nb_restart = 2
+    arbitrators_data = None
 
     def __init__(self):
         shared.OsvcThread.__init__(self)
@@ -2108,6 +2110,18 @@ class Monitor(shared.OsvcThread, Crypt):
                               shared.SMON_DATA[svcname].local_expect, "started")
                 shared.SMON_DATA[svcname].local_expect = "started"
 
+    def get_arbitrators_data(self):
+        if self.arbitrators_data is None or self.last_arbitrator_ping < time.time() - self.arbitrators_check_period:
+            votes = self.arbitrators_votes()
+            self.last_arbitrator_ping = time.time()
+            self.arbitrators_data = {}
+            for arbitrator in self.arbitrators:
+                self.arbitrators_data[arbitrator["id"]] = {
+                    "name": arbitrator["name"],
+                    "status": "up" if arbitrator["name"] in votes else "down"
+                }
+        return self.arbitrators_data
+
     def update_cluster_data(self):
         """
         Rescan services config and status.
@@ -2121,6 +2135,9 @@ class Monitor(shared.OsvcThread, Crypt):
         data["min_avail_swap"] = shared.NODE.min_avail_swap
         data["services"]["config"] = self.get_services_config()
         data["services"]["status"] = self.get_services_status(data["services"]["config"].keys())
+
+        if self.quorum:
+            data["arbitrators"] = self.get_arbitrators_data()
 
         # purge deleted service instances
         for svcname in list(data["services"]["status"].keys()):

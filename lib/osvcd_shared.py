@@ -537,6 +537,14 @@ class OsvcThread(threading.Thread):
             return True
         return False
 
+    def arbitrators_votes(self):
+        votes = []
+        for arbitrator in self.arbitrators:
+            ret = NODE._ping(arbitrator["name"])
+            if ret == 0:
+                votes.append(arbitrator["name"])
+        return votes
+
     def split_handler(self):
         if not self.quorum:
             self.duplog("info", "cluster is split, ignore as cluster.quorum is "
@@ -552,17 +560,13 @@ class OsvcThread(threading.Thread):
             self.duplog("info", "cluster is split, we have 1st ring quorum: "
                         "%(live)d/%(total)d nodes", live=live, total=total)
             return
-        arbitrator_vote = 0
-        for arbitrator in self.arbitrators:
-            ret = NODE._ping(arbitrator["name"])
-            if ret == 0:
-                arbitrator_vote = 1
-                break
-        if live + arbitrator_vote > total / 2:
+        extra_votes = self.arbitrators_votes()
+        n_extra_votes = len(extra_votes)
+        if live + n_votes > total / 2:
             self.duplog("info", "cluster is split, we have 2nd ring quorum: "
                         "%(live)d+%(avote)d/%(total)d nodes (%(a)s)",
-                        live=live, avote=arbitrator_vote, total=total,
-                        a=arbitrator["name"])
+                        live=live, avote=n_extra_votes, total=total,
+                        a=",".join(extra_votes))
             return
         self.duplog("info", "cluster is split, we don't have 1st nor 2nd ring "
                     "quorum: %(live)d+%(avote)d/%(total)d nodes (%(a)s)",

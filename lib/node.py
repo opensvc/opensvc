@@ -334,6 +334,13 @@ class Node(Crypt, ExtConfig):
         check_privs()
 
     @lazy
+    def quorum(self):
+        try:
+            return self.conf_get("cluster", "quorum")
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    @lazy
     def dns(self):
         try:
             return self.conf_get("cluster", "dns")
@@ -3643,6 +3650,32 @@ class Node(Crypt, ExtConfig):
             if len(set(versions)) > 1:
                 out.append(line)
 
+        def arbitrators():
+            if not self.quorum:
+                return
+            out.append([])
+            load_header("Arbitrators")
+            arbitrators = []
+            arbitrators_name = {}
+            for nodename, ndata in data["monitor"]["nodes"].items():
+                for aid, adata in ndata.get("arbitrators", {}).items():
+                     if aid not in arbitrators:
+                         arbitrators.append(aid)
+                         arbitrators_name[aid] = adata["name"]
+            for aid in arbitrators:
+                line = [
+                    colorize(" "+arbitrators_name[aid], color.BOLD),
+                    "",
+                    "",
+                    "|",
+                ]
+                for nodename in nodenames:
+                    status = data["monitor"]["nodes"].get(nodename, {}).get("arbitrators", {}).get(aid, {}).get("status", "undef")
+                    if status != "up":
+                        line[1] = colorize_status("warn", lpad=0)
+                    status = colorize_status(status, lpad=0).replace(status, unicons[status])
+                    line.append(status)
+                out.append(line)
 
         # init the services hash
         slave_parents = {}
@@ -3710,6 +3743,7 @@ class Node(Crypt, ExtConfig):
         # load data in lists
         load_header("Threads")
         load_threads()
+        arbitrators()
         out.append([])
         load_header("Nodes")
         load_metrics()

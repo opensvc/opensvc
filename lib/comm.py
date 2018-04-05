@@ -113,7 +113,9 @@ class Crypt(object):
             config = self.config
         arbitrators = []
         for section in config.sections():
-            data = {}
+            data = {
+                "id": section,
+            }
             if not section.startswith("arbitrator#"):
                 continue
             try:
