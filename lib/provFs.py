@@ -51,6 +51,8 @@ class Prov(provisioning.Prov):
             return
         if self.dev is None:
             return
+        if self.mnt is None:
+            return
         if not os.path.exists(self.mnt):
             return False
         if self.r.fs_type in self.r.netfs:
@@ -143,6 +145,8 @@ class Prov(provisioning.Prov):
         self.provisioner_fs()
 
     def purge_mountpoint(self):
+        if self.r.mount_point is None:
+            return
         if os.path.exists(self.r.mount_point) and not protected_dir(self.r.mount_point):
             self.r.log.info("rm -rf %s" % self.r.mount_point)
             try:
