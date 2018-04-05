@@ -562,7 +562,7 @@ class OsvcThread(threading.Thread):
             return
         extra_votes = self.arbitrators_votes()
         n_extra_votes = len(extra_votes)
-        if live + n_votes > total / 2:
+        if live + n_extra_votes > total / 2:
             self.duplog("info", "cluster is split, we have 2nd ring quorum: "
                         "%(live)d+%(avote)d/%(total)d nodes (%(a)s)",
                         live=live, avote=n_extra_votes, total=total,
