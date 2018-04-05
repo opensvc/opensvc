@@ -883,3 +883,13 @@ class OsvcThread(threading.Thread):
             if val < limit:
                 return True
         return False
+
+    def speaker(self):
+        for nodename in self.sorted_cluster_nodes:
+            if nodename in CLUSTER_DATA and CLUSTER_DATA[nodename] != "unknown":
+                break
+        if nodename == rcEnv.nodename:
+            return True
+        return False
+
+

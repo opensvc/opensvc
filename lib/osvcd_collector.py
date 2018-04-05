@@ -109,16 +109,6 @@ class Collector(shared.OsvcThread, Crypt):
         shared.NODE.collector.call("daemon_ping")
         self.last_comm = datetime.datetime.utcnow()
 
-    def speaker(self):
-        for nodename in self.sorted_cluster_nodes:
-            if nodename in shared.CLUSTER_DATA and shared.CLUSTER_DATA[nodename] != "unknown":
-                break
-        if nodename == rcEnv.nodename:
-            #self.log.debug("we are speaker", nodename)
-            return True
-        #self.log.debug("the speaker is %s", nodename)
-        return False
-
     def get_data(self):
         """
         Get a copy of the monitor thread, expunged from encap services,

@@ -2116,6 +2116,7 @@ class Monitor(shared.OsvcThread, Crypt):
         data["stats"] = shared.NODE.stats()
         data["frozen"] = self.freezer.node_frozen()
         data["env"] = shared.NODE.env
+        data["speaker"] = self.speaker()
         data["min_avail_mem"] = shared.NODE.min_avail_mem
         data["min_avail_swap"] = shared.NODE.min_avail_swap
         data["services"]["config"] = self.get_services_config()

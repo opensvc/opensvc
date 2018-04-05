@@ -3439,6 +3439,27 @@ class Node(Crypt, ExtConfig):
                 status,
             ))
 
+        def load_collector(key, _data):
+            if _data["state"] == "running":
+                state = colorize(_data["state"], color.GREEN)
+            else:
+                state = colorize(_data["state"], color.RED)
+            line = [
+                " "+colorize(key, color.BOLD),
+                state,
+                "",
+                "|",
+            ]
+            for nodename in nodenames:
+                speaker = data["monitor"].get("nodes", {}).get(nodename, {}).get("speaker")
+                if speaker:
+                    status = "up"
+                    status = colorize_status(status, lpad=0).replace(status, unicons[status])
+                else:
+                    status = ""
+                line.append(status)
+            out.append(line)
+
         def load_thread(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
@@ -3503,6 +3524,8 @@ class Node(Crypt, ExtConfig):
                     load_scheduler(key, data[key])
                 elif key == "listener":
                     load_listener(key, data[key])
+                elif key == "collector":
+                    load_collector(key, data[key])
                 else:
                     load_thread(key, data[key])
 
