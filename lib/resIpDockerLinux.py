@@ -166,6 +166,9 @@ class Ip(Res.Ip):
 
     def startip_cmd_dedicated(self):
         # assign interface to the nspid
+        nspid = self.get_nspid()
+        if nspid is None:
+            raise ex.excError("could not determine nspid")
         cmd = [rcEnv.syspaths.ip, "link", "set", self.ipdev, "netns", nspid, "name", self.guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
