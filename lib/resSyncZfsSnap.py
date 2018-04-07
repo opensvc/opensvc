@@ -159,8 +159,16 @@ class syncZfsSnap(resSync.Sync):
         """
         Do the snaps in pre_action so the zfs send/recv can replicate them asap
         """
-        for dataset in self.dataset:
-            self._sync_update(dataset)
+        if not hasattr(self, action):
+            return
+
+        resources = [r for r in self.rset.resources if \
+                     not r.skip and not r.is_disabled() and \
+                     r.type == self.type]
+
+        for resource in sorted(resources):
+            for dataset in resource.dataset:
+                resource._sync_update(dataset)
 
     def remove_snaps(self):
         for dataset in self.dataset:
