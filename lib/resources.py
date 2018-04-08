@@ -161,8 +161,12 @@ class Resource(object):
         """
         if self.rid+"pr" == other.rid:
             return False
-        if self.rid == other.rid+"pr":
+        elif self.rid == other.rid+"pr":
             return True
+        elif self.type == "sync.zfssnap" and other.type == "sync.zfs":
+            return True
+        elif self.type == "sync.zfs" and other.type == "sync.zfssnap":
+            return False
         return self.sort_key < other.sort_key
 
     def save_exc(self):
