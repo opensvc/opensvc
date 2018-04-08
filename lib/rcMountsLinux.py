@@ -17,7 +17,9 @@ class Mounts(rcMounts.Mounts):
             return True
         if i.dev in file_to_loop(dev):
             return True
-        if os.path.isdir(dev):
+        if dev.startswith(os.sep) and os.path.isdir(dev):
+            # zfs datasets <pool>/<ds> might match the isdir test because the
+            # daemon cwd is /, but we don't want them to be considered a match
             src_dir_dev = self.get_src_dir_dev(dev)
             if i.dev == src_dir_dev:
                 return True

@@ -158,7 +158,7 @@ class Mount(Res.Mount):
             if ret:
                 return True
 
-        if os.path.exists(self.device):
+        if self.device.startswith(os.sep) and os.path.exists(self.device):
             try:
                 fstat = os.stat(self.device)
                 mode = fstat[ST_MODE]
