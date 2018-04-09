@@ -1237,6 +1237,11 @@ def add_container_docker(svc, s):
     kwargs['run_image'] = svc.conf_get(s, 'run_image')
 
     try:
+        kwargs['name'] = svc.conf_get(s, 'name')
+    except ex.OptNotFound as exc:
+        pass
+
+    try:
         kwargs['run_command'] = svc.conf_get(s, 'run_command')
     except ex.OptNotFound as exc:
         pass

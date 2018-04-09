@@ -20,7 +20,8 @@ class Docker(resContainer.Container):
     """
     def __init__(self,
                  rid,
-                 run_image,
+                 name="",
+                 run_image=None,
                  run_command=None,
                  run_args=None,
                  docker_service=False,
@@ -34,7 +35,7 @@ class Docker(resContainer.Container):
                                         guestos=guestos,
                                         osvc_root_path=osvc_root_path,
                                         **kwargs)
-
+        self.user_defined_name = name
         self.run_image = run_image
         self.run_command = run_command
         self.run_args = run_args
@@ -46,6 +47,8 @@ class Docker(resContainer.Container):
         """
         Format a docker container name
         """
+        if self.user_defined_name:
+            return self.user_defined_name
         container_name = self.svc.svcname+'.'+self.rid
         return container_name.replace('#', '.')
 
