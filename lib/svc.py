@@ -1174,6 +1174,7 @@ class Svc(Crypt, ExtConfig):
         suffix = None
         if (action not in ACTION_NO_ASYNC and self.options.node is not None and self.options.node != "") or \
            action in ACTIONS_NO_LOCK or \
+           self.options.nolock or \
            action.startswith("collector") or \
            self.lockfd is not None:
             # explicitly blacklisted or

@@ -203,6 +203,10 @@ OPT = Storage({
         "--node", default="",
         action="store", dest="node",
         help="The node to send a request to. If not specified the local node is targeted."),
+    "nolock": Option(
+        "--nolock", default=False,
+        action="store_true", dest="nolock",
+        help="Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger."),
     "nopager": Option(
         "--no-pager", default=False,
         action="store_true", dest="nopager",
@@ -393,6 +397,7 @@ ACTION_OPTS = [
     OPT.local,
     OPT.master,
     OPT.node,
+    OPT.nolock,
     OPT.rid,
     OPT.slave,
     OPT.slaves,

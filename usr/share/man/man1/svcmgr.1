@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-03\-25
+.TH SVCMGR 1 2018\-04\-09
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -2797,6 +2797,12 @@ The node to send a request to. If not specified the local node is targeted.
 .B --local
 Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -3003,6 +3009,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -3516,6 +3525,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -3839,6 +3851,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -3978,6 +3993,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -4104,6 +4122,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -4232,6 +4253,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -4359,6 +4383,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -4485,6 +4512,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -5446,6 +5476,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -6021,6 +6054,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -6150,6 +6186,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -6281,6 +6320,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -6410,6 +6452,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -6636,6 +6681,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -6763,6 +6811,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -6889,6 +6940,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -7112,6 +7166,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -7250,6 +7307,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -7473,6 +7533,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -7608,6 +7671,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -7748,6 +7814,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -7878,6 +7947,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -8004,6 +8076,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -8132,6 +8207,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -8258,6 +8336,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -8386,6 +8467,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -8512,6 +8596,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -8640,6 +8727,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -8766,6 +8856,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -8894,6 +8987,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -9020,6 +9116,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -9148,6 +9247,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -9274,6 +9376,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -9402,6 +9507,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -9528,6 +9636,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -9772,6 +9883,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -9904,6 +10018,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -10120,6 +10237,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -10270,6 +10390,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -10492,6 +10615,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -10845,6 +10971,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -11019,6 +11148,9 @@ Limit the action scope to the master service resources.
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
 
@@ -11180,6 +11312,9 @@ Limit the action scope to the master service resources.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
