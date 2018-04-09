@@ -310,7 +310,7 @@ class Ip(Res.Ip):
                 "hostPort": expose["host_port"],
             }
             _data.append(exdata)
-        return data
+        return _data
 
     def add_cni(self):
         if not self.has_netns():
