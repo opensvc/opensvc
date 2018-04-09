@@ -288,7 +288,7 @@ class Ip(Res.Ip):
         data = []
         expose_data = self.cni_expose_data()
         for expose in expose_data:
-            if "host_port" not in expose:
+            if "hostPort" not in expose:
                 continue
             data.append(expose)
         if len(data) > 0:
