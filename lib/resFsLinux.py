@@ -58,18 +58,20 @@ class Mount(Res.Mount):
             device = dev_realpath
         return device
 
-    def umount_generic(self, mnt=None):
-        if mnt is None:
-            mnt = self.mount_point
+    def umount_generic(self, mnt):
         cmd = ['umount', mnt]
         return self.vcall(cmd, err_to_warn=True)
 
-    def try_umount(self, mnt=None):
+    def try_umount(self, dev=None, mnt=None, fs_type=None):
+        if dev is None:
+            dev = self.device
         if mnt is None:
             mnt = self.mount_point
+        if fs_type is None:
+            fs_type = self.fs_type
 
-        if self.fs_type == "zfs":
-            ret, out, err = self.umount_zfs()
+        if fs_type == "zfs":
+            ret, out, err = self.umount_zfs(dev, mnt)
         else:
             ret, out, err = self.umount_generic(mnt)
 
@@ -90,7 +92,7 @@ class Mount(Res.Mount):
         cmd = ['sync']
         ret, out, err = self.vcall(cmd)
 
-        if os.path.isdir(self.device):
+        if os.path.isdir(dev):
             fuser_opts = '-kv'
         else:
             fuser_opts = '-kmv'
@@ -462,16 +464,21 @@ class Mount(Res.Mount):
             self.log.info("%s should be set to canmount=noauto (zfs set "
                           "canmount=noauto %s)", self.label, self.device)
 
-    def umount_zfs(self):
-        if zfs_getprop(self.device, 'mountpoint') == "legacy":
-            return self.umount_generic()
+    def umount_zfs(self, dev, mnt):
+        mntprop = zfs_getprop(dev, 'mountpoint')
+        if mntprop == "legacy":
+            return self.umount_generic(mnt)
+        elif mntprop != mnt:
+            # docker data dir case, ex: dev=data/svc1 mnt=/srv/svc1/docker/zfs
+            # and mntprop=/srv/svc1
+            return self.umount_generic(mnt)
         else:
-            return self.umount_zfs_native()
+            return self.umount_zfs_native(mnt)
 
-    def umount_zfs_native(self):
-        ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'umount', self.device], err_to_info=True)
+    def umount_zfs_native(self, mnt):
+        ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'umount', mnt], err_to_info=True)
         if ret != 0:
-            ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'umount', '-f', self.device], err_to_info=True)
+            ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'umount', '-f', mnt], err_to_info=True)
         return ret, out, err
 
     def mount_zfs(self):
@@ -596,11 +603,11 @@ class Mount(Res.Mount):
     def remove_deeper_mounts(self):
         mounts = rcMounts.Mounts()
         mnt_realpath = os.path.realpath(self.mount_point)
-        for mount in mounts:
+        for mount in sorted(mounts, key=lambda x: x.mnt, reverse=True):
             _mnt_realpath = os.path.realpath(mount.mnt)
             if _mnt_realpath != mnt_realpath and \
                _mnt_realpath.startswith(mnt_realpath+"/"):
-                ret = self.try_umount(_mnt_realpath)
+                ret = self.try_umount(dev=mount.dev, mnt=_mnt_realpath, fs_type=mount.type)
                 if ret != 0:
                     break
 
