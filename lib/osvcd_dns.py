@@ -211,8 +211,8 @@ class Dns(shared.OsvcThread, Crypt):
         return ["0"]
 
     def action_lookup(self, parameters):
-        qtype = parameters.get("qtype")
-        qname = parameters.get("qname")
+        qtype = parameters.get("qtype").upper()
+        qname = parameters.get("qname").lower()
         #zone_id = parameters.get("zone-id")
 
         if qtype == "SOA":
@@ -248,7 +248,7 @@ class Dns(shared.OsvcThread, Crypt):
         return "contact@opensvc.com"
 
     def soa_record(self, parameters):
-        qname = parameters.get("qname")
+        qname = parameters.get("qname").lower()
         if qname.endswith(PTR_SUFFIX):
             if qname not in self.soa_records_rev():
                 return []
@@ -276,7 +276,7 @@ class Dns(shared.OsvcThread, Crypt):
         return []
 
     def srv_record(self, parameters):
-        qname = parameters.get("qname")
+        qname = parameters.get("qname").lower()
         if not qname.endswith(self.suffix):
             return []
         return [{
@@ -287,7 +287,7 @@ class Dns(shared.OsvcThread, Crypt):
         } for content in self.srv_records().get(qname, [])]
 
     def ptr_record(self, parameters):
-        qname = parameters.get("qname")
+        qname = parameters.get("qname").lower()
         return [{
             "qtype": "PTR",
             "qname": qname,
@@ -296,7 +296,7 @@ class Dns(shared.OsvcThread, Crypt):
         } for name in self.svc_ptr_record(qname)]
 
     def a_record(self, parameters):
-        qname = parameters.get("qname")
+        qname = parameters.get("qname").lower()
         if not qname.endswith(self.suffix):
             return []
         return [{
