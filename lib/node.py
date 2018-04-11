@@ -3006,9 +3006,12 @@ class Node(Crypt, ExtConfig):
                 print(line)
 
 
-    @formatter
-    def print_config_data(self, src_config=None):
-        return ExtConfig.print_config_data(self, src_config=src_config)
+    def print_config_data(self, src_config=None, evaluate=False, impersonate=None):
+        if src_config is None:
+            src_config = self.config
+        return ExtConfig.print_config_data(self, src_config=src_config,
+                                           evaluate=evaluate,
+                                           impersonate=impersonate)
 
     def print_devs(self):
         if self.options.reverse:
@@ -3018,6 +3021,7 @@ class Node(Crypt, ExtConfig):
             self.devtree.print_tree(devices=self.options.devices,
                                     verbose=self.options.verbose)
 
+    @formatter
     def print_config(self):
         """
         print_config node action entrypoint
@@ -3029,6 +3033,7 @@ class Node(Crypt, ExtConfig):
         from rcColor import print_color_config
         print_color_config(rcEnv.paths.nodeconf)
 
+    @formatter
     def print_authconfig(self):
         """
         print_authconfig node action entrypoint

@@ -382,6 +382,30 @@ class Listener(shared.OsvcThread, Crypt):
             shared.THREADS[thr_id].unstop()
         return {"status": 0}
 
+    def action_get_node_config(self, nodename, **kwargs):
+        fmt = kwargs.get("format")
+        if fmt == "json":
+            return self._action_get_node_config_json(nodename, **kwargs)
+        else:
+            return self._action_get_node_config_file(nodename, **kwargs)
+
+    def _action_get_node_config_json(self, nodename, **kwargs):
+        try:
+            return shared.NODE.print_config_data()
+        except Exception as exc:
+            import traceback
+            return {"status": "1", "error": str(exc), "traceback": traceback.format_exc()}
+
+    def _action_get_node_config_file(self, nodename, **kwargs):
+        fpath = os.path.join(rcEnv.paths.pathetc, "node.conf")
+        if not os.path.exists(fpath):
+            return {"error": "%s does not exist" % fpath, "status": 3}
+        mtime = os.path.getmtime(fpath)
+        with codecs.open(fpath, "r", "utf8") as filep:
+            buff = filep.read()
+        self.log.info("serve node config to %s", nodename)
+        return {"status": 0, "data": buff, "mtime": mtime}
+
     def action_get_service_config(self, nodename, **kwargs):
         fmt = kwargs.get("format")
         if fmt == "json":
@@ -395,8 +419,9 @@ class Listener(shared.OsvcThread, Crypt):
         impersonate = kwargs.get("impersonate")
         try:
             return shared.SERVICES[svcname].print_config_data(evaluate=evaluate, impersonate=impersonate)
-        except Exception:
-            return {}
+        except Exception as exc:
+            import traceback
+            return {"status": "1", "error": str(exc), "traceback": traceback.format_exc()}
 
     def _action_get_service_config_file(self, nodename, **kwargs):
         svcname = kwargs.get("svcname")
