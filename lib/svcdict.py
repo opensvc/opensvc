@@ -1758,7 +1758,7 @@ class KeywordSyncZfsTarget(Keyword):
                   rtype="zfs",
                   order=12,
                   required=True,
-                  candidates=['nodes', 'drpnodes'],
+                  candidates=['nodes', 'drpnodes', 'local'],
                   text="Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
                 )
 

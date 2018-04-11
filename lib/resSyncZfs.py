@@ -44,12 +44,18 @@ class SyncZfs(resSync.Sync):
         data += self.stats_keys()
         return data
 
+    def sanity_check(self):
+        if self.src_pool == self.dst_pool and 'local' in self.target:
+            self.log.error('zfs send/receive in same pool not allowed')
+            raise ex.excError
+
     def pre_action(self, action):
         """Prepare dataset snapshots
         Don't sync PRD services when running on !PRD node
         skip snapshot creation if delay_snap in tags
         delay_snap should be used for oracle archive datasets
         """
+        self.sanity_check()
         if not hasattr(self, action):
             return
         resources = [r for r in self.rset.resources if \
@@ -127,6 +133,13 @@ class SyncZfs(resSync.Sync):
 
     def get_targets(self):
         self.targets = set()
+        if len(self.target) > 1 and 'local' in self.target:
+            self.status_log("incompatible targets %s" % self.target, 'WARN')
+            self.targets = set()
+            return
+        if 'local' in self.target:
+            self.targets |= set([rcEnv.nodename])
+            return
         if 'nodes' in self.target:
             self.targets |= self.svc.nodes
         if 'drpnodes' in self.target:
@@ -142,7 +155,7 @@ class SyncZfs(resSync.Sync):
         """
         Run sync_update if the target contains only nodes.
         """
-        if self.target == ["nodes"]:
+        if self.target == ["nodes"] or self.target == ["local"]:
             self.sync_update()
         else:
             self.log.warning("skip: target also has drp nodes.")
@@ -201,7 +214,7 @@ class SyncZfs(resSync.Sync):
                         self.src_snap_sent, self.src_snap_tosend]
 
         receive_cmd = [rcEnv.syspaths.zfs, "receive", "-dF", self.dst_pool]
-        if node is not None:
+        if node is not None and 'local' not in self.target:
             _receive_cmd = rcEnv.rsh.strip(' -n').split()
             if "-q" in _receive_cmd:
                 _receive_cmd.remove("-q")
@@ -218,7 +231,7 @@ class SyncZfs(resSync.Sync):
                         self.src_snap_tosend]
 
         receive_cmd = [rcEnv.syspaths.zfs, "receive", "-dF", self.dst_pool]
-        if node is not None:
+        if node is not None and 'local' not in self.target:
             _receive_cmd = rcEnv.rsh.strip(' -n').split()
             if "-q" in _receive_cmd:
                 _receive_cmd.remove("-q")
@@ -295,7 +308,6 @@ class SyncZfs(resSync.Sync):
 
         if not self.snap_exists(self.src_snap_tosend):
             self.create_snap(self.src_snap_tosend)
-
         if self.snap_exists(self.src_snap_sent):
             for n in self.targets:
                 self.remove_snap(self.dst_snap_tosend, n)
