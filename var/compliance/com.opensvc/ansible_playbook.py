@@ -98,7 +98,7 @@ class AnsiblePlaybook(CompObject):
         elif 'fmt' in d and d['fmt'] != "":
             return self.write_fmt(d)
         else:
-            return self.download_url()
+            return self.download_url(d)
 
     def download_url(self, d):
         f = tempfile.NamedTemporaryFile()
