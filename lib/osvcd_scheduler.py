@@ -12,6 +12,11 @@ import osvcd_shared as shared
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
+ACTIONS_SKIP_ON_UNPROV = [
+    "sync_all",
+    "compliance_auto",
+]
+
 class Scheduler(shared.OsvcThread):
     interval = 60
     delayed = {}
@@ -147,10 +152,10 @@ class Scheduler(shared.OsvcThread):
                 provisioned = shared.AGG[svc.svcname].provisioned
             except KeyError:
                 continue
-            if provisioned is not True:
-                nonprov.append(svc.svcname)
-                continue
             for action in svc.sched.scheduler_actions:
+                if provisioned is not True and action in ACTIONS_SKIP_ON_UNPROV:
+                    nonprov.append(action+"@"+svc.svcname)
+                    continue
                 try:
                     data = svc.sched.validate_action(action)
                 except ex.excAbortAction:
