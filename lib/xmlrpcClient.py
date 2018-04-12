@@ -413,6 +413,7 @@ class Collector(object):
             return
 
         vars = ['svc_name',
+                'cluster_id',
                 'svc_topology',
                 'svc_flex_min_nodes',
                 'svc_flex_max_nodes',
@@ -428,6 +429,7 @@ class Collector(object):
                 'svc_ha']
 
         vals = [svc.svcname,
+                svc.node.cluster_id,
                 svc.topology,
                 svc.flex_min_nodes,
                 svc.flex_max_nodes,

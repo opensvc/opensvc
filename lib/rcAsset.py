@@ -430,6 +430,14 @@ class Asset(object):
             "source": self.s_probe
         }
 
+    def get_cluster_id(self):
+        s = self.node.cluster_id
+        return {
+            "title": "cluster id",
+            "value": s,
+            "source": self.s_probe
+        }
+
     def get_listener_port(self):
         s = str(rcEnv.listener_port)
         source = self.s_default
@@ -671,6 +679,7 @@ class Asset(object):
         self.data['node_env'] = self.get_node_env()
         self.data['enclosure'] = self.get_enclosure()
         self.data['listener_port'] = self.get_listener_port()
+        self.data['cluster_id'] = self.get_cluster_id()
         connect_to = self.get_connect_to()
         if connect_to is not None:
             self.data['connect_to'] = connect_to
