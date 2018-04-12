@@ -12,7 +12,8 @@ from comm import Crypt
 from rcGlobalEnv import rcEnv
 
 class Collector(shared.OsvcThread, Crypt):
-    interval = 300
+    update_interval = 300
+    ping_interval = 60
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.collector")
@@ -64,7 +65,7 @@ class Collector(shared.OsvcThread, Crypt):
         self.run_collector()
         self.unqueue_xmlrpc()
         with shared.COLLECTOR_TICKER:
-            shared.COLLECTOR_TICKER.wait(self.interval)
+            shared.COLLECTOR_TICKER.wait(self.update_interval)
 
     def unqueue_xmlrpc(self):
         while True:
@@ -168,7 +169,9 @@ class Collector(shared.OsvcThread, Crypt):
             last_status, last_status_changed = self.get_last_status(data)
             if last_status_changed != [] or self.last_comm is None:
                 self.send_daemon_status(data, last_status_changed)
-            elif self.last_comm <= datetime.datetime.utcnow() - datetime.timedelta(seconds=self.interval):
+            elif self.last_comm <= datetime.datetime.utcnow() - datetime.timedelta(seconds=self.ping_interval):
+                pass
+            elif self.last_comm <= datetime.datetime.utcnow() - datetime.timedelta(seconds=self.update_interval):
                 self.ping()
             self.last_status = last_status
 
