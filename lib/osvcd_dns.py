@@ -52,7 +52,7 @@ class Dns(shared.OsvcThread, Crypt):
 
         self.log.info("listening on %s", rcEnv.paths.dnsuxsock)
 
-        self.suffix = ".%s." % self.cluster_name
+        self.suffix = ".%s." % self.cluster_name.strip(".")
         self.suffix_len = len(self.suffix)
         self.soa_data = {
             "origin": self.origin,
@@ -207,7 +207,7 @@ class Dns(shared.OsvcThread, Crypt):
         if kind == "ALLOW-AXFR-FROM":
             return ["0.0.0.0/0", "AUTO-NS"]
         if kind == "PRESIGNED":
-            return ["1"]
+            return ["0"]
         return ["0"]
 
     def action_lookup(self, parameters):
@@ -236,6 +236,33 @@ class Dns(shared.OsvcThread, Crypt):
                    self.cname_record(parameters)
         return []
 
+    def action_list(self, parameters):
+        zonename = parameters.get("zonename").lower()
+        data = self.soa_record({"qname": zonename})
+        if len(data) == 0:
+            return data
+        for qname, contents in self.a_records().items():
+            if not qname.endswith(zonename):
+                continue
+            for content in contents:
+                data.append({
+                    "qtype": "A",
+                    "qname": qname,
+                    "content": content,
+                    "ttl": 60
+                })
+        for qname, contents in self.srv_records().items():
+            if not qname.endswith(zonename):
+                continue
+            for content in contents:
+                data.append({
+                    "qtype": "SRV",
+                    "qname": qname,
+                    "content": content,
+                    "ttl": 60
+                })
+        return data
+
     def remove_suffix(self, qname):
         return qname[:-self.suffix_len]
 
@@ -252,7 +279,7 @@ class Dns(shared.OsvcThread, Crypt):
         if qname.endswith(PTR_SUFFIX):
             if qname not in self.soa_records_rev():
                 return []
-        elif qname.endswith(self.suffix):
+        elif qname.endswith(self.cluster_name.strip(".")+"."):
             if qname not in self.soa_records():
                 return []
         else:
@@ -327,7 +354,7 @@ class Dns(shared.OsvcThread, Crypt):
         return names
 
     def soa_records(self):
-        names = set([self.suffix])
+        names = set([self.suffix.lstrip("."), "svc"+self.suffix])
         for nodename, node in shared.CLUSTER_DATA.items():
             status = node.get("services", {}).get("status", {})
             for svcname, svc in status.items():

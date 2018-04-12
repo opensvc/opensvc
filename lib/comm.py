@@ -195,7 +195,7 @@ class Crypt(object):
         else:
             config = self.config
         try:
-            return config.get("cluster", "name")
+            return config.get("cluster", "name").lower()
         except Exception as exc:
             pass
         if hasattr(self, "node"):
