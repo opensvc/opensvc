@@ -10,7 +10,6 @@ import time
 import shutil
 import json
 import re
-import hashlib
 
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
@@ -368,7 +367,7 @@ class Dns(shared.OsvcThread, Crypt):
 
     @staticmethod
     def unique_name(addr):
-        return hashlib.sha1(addr.encode("ascii")).hexdigest()
+        return addr.replace(".", "-").replace(":", "-")
 
     def a_records(self):
         names = {}
