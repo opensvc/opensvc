@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 
 data = {
-  "default_prefix": "OSVC_COMP_TAR_ARCHIVE_",
+  "default_prefix": "OSVC_COMP_TAR_",
   "example_value": """ 
 {
   "ref": "/some/path/to/file.tar",
-  "path": "/home/user/bin"
+  "path": "/home/user/bin",
+  "immutable": "true"
 }
   """,
   "description": """* Fetch a tar archive from a href
 * Verify tar archive is extracted on check action
 * Extract tar archive on fix action
+* Immutable boolean is used to know if extracted tar content can be modified on filesystem
 """,
   "form_definition": """
 Desc: |
@@ -27,9 +29,9 @@ Outputs:
 Inputs:
   -
     Id: ref
-    Label: Tar archive URL pointer
+    Label: Tar uri
     DisplayModeLabel: ref
-    LabelCss: loc
+    LabelCss: fa-map-marker
     Help: "Examples:
         /path/to/reference_file.tar
         safe://safe.uuid.8dc85529a2b13b4b.626172.tar
@@ -40,12 +42,21 @@ Inputs:
     Type: string
   -
     Id: path
-    Label: Path
+    Label: Install path
     DisplayModeLabel: path
-    LabelCss: action16
+    LabelCss: fa-map-marker
     Mandatory: Yes
     Help: path to install the tar reference content to.
     Type: string
+  -
+    Id: immutable
+    Label: Immutable
+    DisplayModeLabel: immutable
+    LabelCss: fa-lock
+    Mandatory: Yes
+    Help: "On : extracted tar archive must not be modified on filesystem
+           Off: extracted tar archive contents on filesystem can be modified"
+    Type: boolean
 """
 }
 
@@ -61,7 +72,7 @@ from comp import *
 class InitError(Exception):
     pass
 
-class TarArchive(CompObject):
+class Tar(CompObject):
     def __init__(self, prefix=None):
         CompObject.__init__(self, prefix=prefix, data=data)
 
@@ -113,19 +124,30 @@ class TarArchive(CompObject):
             raise ComplianceError("%s: %s" % (uuid, str(e)))
         return tmpfname
 
+    def check_output(self, d):
+        whitelist = ['Mod time differs', 'Size differs']
+        for line in d.splitlines():
+            if not any( k in line for k in whitelist ):
+                return RET_ERR
+        return RET_OK
+
     def fixable(self):
         return RET_NA
 
     def fix_tarball(self, rule, verbose=False):
         tmpfname = self.download(rule)
         path = rule["path"]
+        immutable = rule["immutable"]
         try:
-            return self._fix_tarball(rule, tmpfname, path, verbose=verbose)
+            return self._fix_tarball(rule, tmpfname, path, immutable, verbose=verbose)
         finally:
             os.unlink(tmpfname)
 
-    def _fix_tarball(self, rule, tmpfname, path, verbose=False):
-        cmd = ["tar", "-C", path, "--extract", "--file", tmpfname]
+    def _fix_tarball(self, rule, tmpfname, path, immutable, verbose=False):
+        opts = '--keep-newer-files'
+        if 'true' in immutable:
+            opts = '--overwrite'
+        cmd = ["tar", "-C", path, "--extract", "--file", tmpfname, opts]
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = proc.communicate()
         pinfo(out)
@@ -137,12 +159,13 @@ class TarArchive(CompObject):
     def check_tarball(self, rule, verbose=False):
         tmpfname = self.download(rule)
         path = rule["path"]
+        immutable = rule["immutable"]
         try:
-            return self._check_tarball(rule, tmpfname, path, verbose=verbose)
+            return self._check_tarball(rule, tmpfname, path, immutable, verbose=verbose)
         finally:
             os.unlink(tmpfname)
 
-    def _check_tarball(self, rule, tmpfname, path, verbose=False):
+    def _check_tarball(self, rule, tmpfname, path, immutable, verbose=False):
         cmd = ["tar", "-C", path, "--compare", "--file", tmpfname]
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = proc.communicate()
@@ -150,6 +173,9 @@ class TarArchive(CompObject):
         perror(err)
         if proc.returncode == 0:
             return RET_OK
+        else:
+            if 'false' in immutable:
+                return self.check_output(out)
         return RET_ERR
 
     def check(self):
@@ -165,5 +191,4 @@ class TarArchive(CompObject):
         return r
 
 if __name__ == "__main__":
-    main(TarArchive)
-
+    main(Tar)
