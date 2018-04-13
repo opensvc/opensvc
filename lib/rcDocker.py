@@ -687,8 +687,9 @@ class DockerLib(object):
         mntpts = []
         mntpt_res = {}
         for resource in self.svc.get_resources('fs'):
+            if resource.type == "fs.docker":
+                continue
             if not hasattr(resource, "mount_point"):
-                # fs.docker for example
                 continue
             mntpts.append(resource.mount_point)
             mntpt_res[resource.mount_point] = resource

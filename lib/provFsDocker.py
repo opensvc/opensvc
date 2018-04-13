@@ -18,6 +18,7 @@ class Prov(provisioning.Prov):
         return self.r.has_it()
 
     def provisioner(self):
+        self.r.svc.dockerlib.docker_start()
         self.r.create_vol()
         self.populate()
 
