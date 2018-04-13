@@ -30,6 +30,11 @@ class Fs(resources.Resource):
         ]
         return data
 
+    def on_add(self):
+        self.mount_point = self.svc.dockerlib.docker_data_dir
+        if self.mount_point is None:
+            self.mount_point = "/var/tmp"
+
     @lazy
     def vol_path(self):
         return self.svc.dockerlib.docker_volume_inspect(self.volname).get("Mountpoint")
