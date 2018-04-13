@@ -3,6 +3,7 @@ import rcExceptions as ex
 import resources
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
+import rcStatus
 
 class Fs(resources.Resource):
     def __init__(self,
@@ -20,6 +21,9 @@ class Fs(resources.Resource):
     @lazy
     def label(self):
         return "%s volume %s" % (self.driver, self.volname)
+
+    def _status(self, verbose=False):
+        return rcStatus.NA
 
     def _info(self):
         data = [
