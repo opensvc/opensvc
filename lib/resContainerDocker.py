@@ -179,7 +179,11 @@ class Docker(resContainer.Container):
         Remove the resource docker instance.
         Only do if the dockerd is shared.
         """
-        if self.docker_service or not self.svc.dockerlib.docker_daemon_private:
+        if self.docker_service:
+            return
+        self.unset_lazy("container_id")
+        if self.container_id is None:
+            self.log.info("container instance is already removed")
             return
         cmd = self.svc.dockerlib.docker_cmd + ['rm', self.container_name]
         ret, out, err = self.vcall(cmd)
@@ -372,8 +376,7 @@ class Docker(resContainer.Container):
     def unprovision(self):
         self.svc.sub_set_action("ip", "unprovision", tags=set([self.rid]))
         resContainer.Container.unprovision(self)
-        if not self.svc.dockerlib.docker_daemon_private:
-            self.container_rm()
+        self.container_rm()
 
     def start(self):
         self._start()
