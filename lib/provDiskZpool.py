@@ -9,6 +9,9 @@ class Prov(provisioning.Prov):
         return self.r.has_it()
 
     def unprovisioner(self):
+        if not self.r.has_it():
+            self.r.log.info("zpool %s already unprovisioned", self.r.name)
+            return
         if not self.r.is_up():
             self.r.start()
         cmd = ["zpool", "destroy", "-f", self.r.name]
