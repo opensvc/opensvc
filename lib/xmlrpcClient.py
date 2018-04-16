@@ -2,7 +2,7 @@ from __future__ import print_function
 import socket
 import sys
 import os
-socket.setdefaulttimeout(180)
+socket.setdefaulttimeout(5)
 
 kwargs = {}
 try:
@@ -86,10 +86,11 @@ def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
         _d = _e - _b
         log.info("call %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
         return buff
-    except Exception as e:
+    except Exception:
         _e = datetime.now()
         _d = _e - _b
         log.exception("call %s error after %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
+        raise
 
 class Collector(object):
     def call(self, *args, **kwargs):
@@ -156,8 +157,8 @@ class Collector(object):
             if self.proxy is None:
                 self.proxy = get_proxy(rcEnv.dbopensvc)
             self.proxy_methods = self.proxy.system.listMethods()
-        except Exception as e:
-            self.log.error(str(e))
+        except Exception as exc:
+            self.log.error("get dbopensvc methods: %s", exc)
             self.proxy = get_proxy("https://127.0.0.1/")
             self.proxy_methods = []
         self.log.debug("%d feed methods"%len(self.proxy_methods))
@@ -171,8 +172,8 @@ class Collector(object):
             if self.comp_proxy is None:
                 self.comp_proxy = get_proxy(rcEnv.dbcompliance)
             self.comp_proxy_methods = self.comp_proxy.system.listMethods()
-        except Exception as e:
-            self.log.error(str(e))
+        except Exception as exc:
+            self.log.error("get dbcompliance methods: %s", exc)
             self.comp_proxy = get_proxy("https://127.0.0.1/")
             self.comp_proxy_methods = []
         self.log.debug("%d compliance methods"%len(self.comp_proxy_methods))
@@ -201,15 +202,15 @@ class Collector(object):
             if len(a) == 0:
                 raise Exception
             dbcompliance_ip = a[0][-1][0]
-        except Exception as e:
-            self.log.error(str(e))
+        except Exception as exc:
+            self.log.error("init dbcompliance: %s", exc)
             self.log.error("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbcompliance_host)
 
         try:
             self.proxy = get_proxy(rcEnv.dbopensvc)
             self.get_methods_dbopensvc()
-        except Exception as e:
-            self.log.error(str(e))
+        except Exception as exc:
+            self.log.error("init dbopensvc: %s", exc)
             self.proxy = get_proxy("https://127.0.0.1/")
 
         if fn in self.comp_fns:

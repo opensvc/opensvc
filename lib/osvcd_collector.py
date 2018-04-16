@@ -64,8 +64,9 @@ class Collector(shared.OsvcThread, Crypt):
         self.init_collector()
         self.run_collector()
         self.unqueue_xmlrpc()
-        with shared.COLLECTOR_TICKER:
-            shared.COLLECTOR_TICKER.wait(self.update_interval)
+        if not self.stopped():
+            with shared.COLLECTOR_TICKER:
+                shared.COLLECTOR_TICKER.wait(self.update_interval)
 
     def unqueue_xmlrpc(self):
         while True:
