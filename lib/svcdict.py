@@ -1786,6 +1786,8 @@ class KeywordSyncZfsTags(Keyword):
                   rtype="zfs",
                   convert="set",
                   default=set(),
+                  default_text="",
+                  example="delay_snap",
                   at=True,
                   text="The zfs sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the sync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
                 )
@@ -1825,7 +1827,7 @@ class KeywordSyncRsyncTags(Keyword):
                   convert="set",
                   default=set(),
                   default_text="",
-                  example="foo bar",
+                  example="delay_snap",
                   at=True,
                   rtype="rsync",
                   text="The sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the rsync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
@@ -3876,6 +3878,8 @@ class KeyDict(KeywordStore):
                   at=True,
                   candidates=None,
                   default=set(),
+                  default_text="",
+                  example="encap noaction",
                   text="A list of tags. Arbitrary tags can be used to limit action scope to resources with a specific tag. Some tags can influence the driver behaviour. For example 'noaction' avoids any state changing action from the driver and implies optional=true, 'nostatus' forces the status to n/a."
                 )
         def kw_subset(resource):
