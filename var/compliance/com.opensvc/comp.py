@@ -291,6 +291,8 @@ class CompObject(object):
         data["url"] = config.get("node", "dbopensvc").replace("/feed/default/call/xmlrpc", "")
         data["url"] = data["url"].replace("/init/rest/api", "")
         data["url"] += "/init/rest/api"
+        if not data["url"].startswith("http"):
+            data["url"] = "https://%s" % data["url"]
         self.collector_api_cache = data
         return self.collector_api_cache
 

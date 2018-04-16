@@ -2621,6 +2621,8 @@ class Node(Crypt, ExtConfig):
         data["username"] = username
         data["password"] = password
         data["url"] = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
+        if not data["url"].startswith("http"):
+            data["url"] = "https://%s" % data["url"]
         return data
 
     def collector_auth_node(self):
