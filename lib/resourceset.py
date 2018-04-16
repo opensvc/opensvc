@@ -243,6 +243,13 @@ class ResourceSet(object):
             resources = [res for res in resources if res.standby]
 
         resources = self.sort_resources(resources, action)
+
+        if action == "provision":
+            # make sure scsi reservation are taken after their co-resource is
+            # provisioned, so the disk list to reserv will not be empty.
+            resources = [res for res in resources if res.type != "disk.scsireserv"] + \
+                        [res for res in resources if res.type == "disk.scsireserv"]
+
         return resources
 
     def action(self, action, **kwargs):
