@@ -144,8 +144,13 @@ class Tar(CompObject):
             os.unlink(tmpfname)
 
     def _fix_tarball(self, rule, tmpfname, path, immutable, verbose=False):
+        if not os.path.isdir(path):
+            try:
+                os.makedirs(path)
+            except Exception as e:
+                raise ex.excError("failed to create directory %s: %s"%(path, str(e)))
         opts = '--keep-newer-files'
-        if 'true' in immutable:
+        if immutable is True:
             opts = '--overwrite'
         cmd = ["tar", "-C", path, "--extract", "--file", tmpfname, opts]
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -174,7 +179,7 @@ class Tar(CompObject):
         if proc.returncode == 0:
             return RET_OK
         else:
-            if 'false' in immutable:
+            if immutable is False:
                 return self.check_output(out)
         return RET_ERR
 
