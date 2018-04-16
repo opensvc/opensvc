@@ -3876,7 +3876,7 @@ class KeyDict(KeywordStore):
                   at=True,
                   candidates=None,
                   default=set(),
-                  text="A list of tags. Arbitrary tags can be used to limit action scope to resources with a specific tag. Some tags can influence the driver behaviour. For example 'noaction' avoids any state changing action from the driver, 'nostatus' forces the status to n/a."
+                  text="A list of tags. Arbitrary tags can be used to limit action scope to resources with a specific tag. Some tags can influence the driver behaviour. For example 'noaction' avoids any state changing action from the driver and implies optional=true, 'nostatus' forces the status to n/a."
                 )
         def kw_subset(resource):
             return Keyword(
@@ -3973,7 +3973,7 @@ class KeyDict(KeywordStore):
                   candidates=(True, False),
                   default_text="True for task and sync, else False",
                   convert="boolean",
-                  text="Possible values are 'true' or 'false'. Actions on resource will be tried upon service startup and shutdown, but action failures will be logged and passed over. Useful for resources like dump filesystems for example."
+                  text="Action failures on optional resources are logged but do not stop the action sequence. Also the optional resource status is not aggregated to the instance 'availstatus', but aggregated to the 'overallstatus'. Resource tagged 'noaction' and sync resources are automatically considered optional. Useful for resources like dump filesystems for example."
                 )
         def kw_standby(resource):
             return Keyword(

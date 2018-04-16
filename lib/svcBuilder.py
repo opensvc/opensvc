@@ -25,6 +25,8 @@ def get_tags(svc, section):
     return s
 
 def get_optional(svc, section):
+    if "noaction" in get_tags(svc, section):
+        return True
     try:
         return svc.conf_get(section, "optional")
     except ex.OptNotFound:
