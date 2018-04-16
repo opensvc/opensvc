@@ -124,11 +124,17 @@ class Tar(CompObject):
             raise ComplianceError("%s: %s" % (uuid, str(e)))
         return tmpfname
 
-    def check_output(self, d):
-        whitelist = ['Mod time differs', 'Size differs']
-        for line in d.splitlines():
-            if not any( k in line for k in whitelist ):
-                return RET_ERR
+    def check_output(self, data, verbose=False):
+        lines = [line for line in data.splitlines() if \
+                 "Mod time differs" not in line and "Size differs" not in line]
+        nberr = len(lines)
+        if nberr:
+            if verbose:
+                for line in lines[:10]:
+                     perror(line)
+                if nberr > 10:
+                     perror("... %d total errors" % nberr)
+            return RET_ERR
         return RET_OK
 
     def fixable(self):
@@ -174,13 +180,13 @@ class Tar(CompObject):
         cmd = ["tar", "-C", path, "--compare", "--file", tmpfname]
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = proc.communicate()
-        pinfo(out)
-        perror(err)
         if proc.returncode == 0:
             return RET_OK
+        elif immutable is False:
+            return self.check_output(out+err, verbose=verbose)
         else:
-            if immutable is False:
-                return self.check_output(out)
+            pinfo(out)
+            perror(err)
         return RET_ERR
 
     def check(self):
