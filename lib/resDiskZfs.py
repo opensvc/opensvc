@@ -50,7 +50,7 @@ class Disk(resDisk.Disk):
         """
         if not which("zpool"):
             raise ex.excError("zpool command not found")
-        ret = qcall( [ 'zpool', 'list', self.name ] )
+        ret = qcall(['zpool', 'list', self.name])
         if ret == 0 :
             return True
         return False
@@ -61,7 +61,7 @@ class Disk(resDisk.Disk):
         if not self.has_it():
             return False
         cmd = [ 'zpool', 'list', '-H', '-o', 'health', self.name ]
-        (ret, out, err) = self.call(cmd)
+        ret, out, err = self.call(cmd)
         state = out.strip()
         if state == "ONLINE":
             return True
@@ -70,21 +70,44 @@ class Disk(resDisk.Disk):
             return True
         return False
 
+    def import_pool_no_cachefile(self, verbose=True):
+        cmd = ['zpool', 'import', '-f', '-o',
+               'cachefile='+os.path.join(rcEnv.paths.pathvar, 'zpool.cache'),
+               self.name]
+        if verbose:
+            return self.vcall(cmd, errlog=verbose)
+        else:
+            return self.call(cmd, errlog=verbose)
+
+    def import_pool_cachefile(self, verbose=True):
+        devzp = os.path.join(self.var_d, 'dev', 'dsk')
+        if not os.path.isdir(devzp):
+            return 1, "", ""
+        cmd = ['zpool', 'import', '-f', '-o',
+               'cachefile='+os.path.join(rcEnv.paths.pathvar, 'zpool.cache'),
+               '-d', devzp, self.name]
+        if verbose:
+            return self.vcall(cmd, errlog=verbose)
+        else:
+            return self.call(cmd, errlog=verbose)
+
+    def import_pool(self, verbose=True):
+        ret, _, _ = self.import_pool_cachefile(verbose=verbose)
+        if ret == 0:
+            return ret
+        if verbose:
+            self.log.info("import fallback without dev cache")
+        ret, _, _ = self.import_pool_no_cachefile(verbose=verbose)
+        self.can_rollback = True
+        return ret
+
     def do_start(self):
         if self.is_up():
             self.log.info("%s is already up" % self.name)
             return 0
-        devzp = os.path.join(self.var_d, 'dev', 'dsk')
-        if os.path.isdir(devzp):
-            cmd = [ 'zpool', 'import', '-f', '-o', 'cachefile='+os.path.join(rcEnv.paths.pathvar, 'zpool.cache'), '-d', devzp, self.name ]
-            (ret, out, err) = self.vcall(cmd)
-            if ret == 0:
-                return ret
-            else:
-                self.log.info("import %s: FallBack Long Way" %self.name)
-        cmd = [ 'zpool', 'import', '-f', '-o', 'cachefile='+os.path.join(rcEnv.paths.pathvar, 'zpool.cache'), self.name ]
-        (ret, out, err) = self.vcall(cmd)
-        self.can_rollback = True
+        ret = self.import_pool()
+        if ret == 0:
+            self.can_rollback = True
         return ret
 
     def do_stop(self):
@@ -207,14 +230,3 @@ class Disk(resDisk.Disk):
 
         return vdevs
 
-if __name__ == "__main__":
-    help(Disk)
-
-    # return cache if initialized
-    print("""p=Disk("svczfs1")""")
-    p=Disk("svczfs1")
-    print("show p", p)
-    print("""p.do_action("start")""")
-    p.do_action("start")
-    print("""p.do_action("stop")""")
-    p.do_action("stop")
