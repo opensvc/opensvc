@@ -220,6 +220,8 @@ class Docker(resContainer.Container):
                 if self.container_id is None:
                     self.unset_lazy("container_id")
                 if self.container_id is None:
+                    if self.svc.dockerlib.get_run_image_id(self) is None:
+                        self.svc.dockerlib.docker_login(self.run_image)
                     cmd += ['run', '-d', '--name='+self.container_name]
                     cmd += self._add_run_args()
                     cmd += [self.run_image]

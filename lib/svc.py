@@ -4619,12 +4619,7 @@ class Svc(Crypt, ExtConfig):
             for idx, arg in enumerate(argv):
                 if arg in ("%as_service%", "{as_service}"):
                     del argv[idx]
-                    argv[idx:idx] = ["-u", self.svcname+"@"+rcEnv.nodename]
-                    argv[idx:idx] = ["-p", self.node.config.get("node", "uuid")]
-                    if self.dockerlib.docker_min_version("1.12"):
-                        pass
-                    elif self.dockerlib.docker_min_version("1.10"):
-                        argv[idx:idx] = ["--email", self.svcname+"@"+rcEnv.nodename]
+                    argv[idx:idx] = self.dockerlib.login_as_service_args()
             for idx, arg in enumerate(argv):
                 if re.match(r'\{container#\w+\}', arg):
                     container_rid = arg.strip("{}")

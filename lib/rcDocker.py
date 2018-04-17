@@ -414,7 +414,26 @@ class DockerLib(object):
                 return elements[2]
         return run_image
 
+    def login_as_service_args(self):
+        args = ["-u", self.svc.svcname+"@"+rcEnv.nodename]
+        args += ["-p", self.svc.node.config.get("node", "uuid")]
+        if self.docker_min_version("1.12"):
+            pass
+        elif self.docker_min_version("1.10"):
+            args += ["--email", self.svc.svcname+"@"+rcEnv.nodename]
+        return args
+
+    def docker_login(self, ref):
+        if "/" not in ref:
+            return
+        reg = ref.split("/")[0]
+        if reg == "docker.io":
+            return
+        cmd = self.docker_cmd + ["login", reg] + self.login_as_service_args()
+        justcall(cmd)
+
     def docker_pull(self, ref):
+        self.docker_login()
         self.svc.log.info("pulling docker image %s" % ref)
         cmd = self.docker_cmd + ['pull', ref]
         results = justcall(cmd)
