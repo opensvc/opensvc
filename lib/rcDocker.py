@@ -433,7 +433,7 @@ class DockerLib(object):
         justcall(cmd)
 
     def docker_pull(self, ref):
-        self.docker_login()
+        self.docker_login(ref)
         self.svc.log.info("pulling docker image %s" % ref)
         cmd = self.docker_cmd + ['pull', ref]
         results = justcall(cmd)
