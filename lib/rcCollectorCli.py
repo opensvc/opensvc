@@ -755,6 +755,8 @@ class CmdSafe(Cmd):
                       help="The local file path or directory name to download.")
     parser.add_option("--name", default=None, action="store", dest="name",
                       help="The user-friendly name to attach to the upload.")
+    parser.add_option("--id", default=None, action="store", dest="id", type="int",
+                      help="An optional safe file integer id. If specified the safe id will point to the new uploaded version of the file. The previous version is still referenced by the same uuid.")
     candidates_path = {
       "--file": "/safe",
     }
@@ -791,11 +793,16 @@ class CmdSafe(Cmd):
         if not os.path.exists(options.file):
             raise CliError("%s file not found" % options.file)
 
+        if options.id is not None:
+            path = "/safe/%d/upload" % options.id
+        else:
+            path = "/safe/upload"
+
         files = {
           "file": (os.path.realpath(options.file), open(options.file, 'rb')),
         }
 
-        r = requests.post(self.cli.api+"/safe/upload", data=data, files=files, auth=self.cli.auth, verify=not self.cli.insecure)
+        r = requests.post(self.cli.api+path, data=data, files=files, auth=self.cli.auth, verify=not self.cli.insecure)
         validate_response(r)
         self.print_content(r.content)
 
