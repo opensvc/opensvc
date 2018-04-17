@@ -367,7 +367,12 @@ class CompObject(object):
     def collector_safe_uri_to_uuid(self, uuid):
         if uuid.startswith("safe://"):
             uuid = uuid.replace("safe://", "")
-        if not uuid.startswith("safe"):
+        try:
+            int(uuid)
+            isint = True
+        except ValueError:
+            isint = False
+        if not uuid.startswith("safe") and not isint:
             raise ComplianceError("malformed safe file uri: %s" % uuid)
         return uuid
 
