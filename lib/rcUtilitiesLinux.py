@@ -16,6 +16,7 @@ def udevadm_settle():
     justcall(cmd)
 
 def dev_to_paths(dev, log=None):
+    dev = os.path.realpath(dev)
     if dev.startswith("/dev/sd"):
         return [dev]
     if not dev.startswith("/dev/dm-"):

@@ -226,6 +226,14 @@ class Disk(resDisk.Disk):
                 else:
                     regex = re.compile('s[0-9]*$', re.UNICODE)
                     d = regex.sub('s2', d)
+            elif rcEnv.sysname == "Linux":
+                tdev = self.svc.node.devtree.get_dev_by_devpath(d)
+                if tdev is None:
+                    continue
+                for path in tdev.devpath:
+                    if "/dev/mapper/" in path or "by-id" in path:
+                        d = path
+                        break
             vdevs.add(d)
 
         return vdevs
