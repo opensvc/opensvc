@@ -71,8 +71,7 @@ class Fs(resources.Resource):
             raise ex.excError
 
     def start(self):
-        self.create_vol()
-        self.can_rollback = True
+        pass
 
     def stop(self):
         pass
