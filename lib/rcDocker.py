@@ -377,7 +377,7 @@ class DockerLib(object):
         out = justcall(cmd)[0]
         return out.replace('\n', ' ').split()
 
-    def get_run_image_id(self, resource, run_image=None):
+    def get_run_image_id(self, resource, run_image=None, pull=True):
         """
         Return the full docker image id
         """
@@ -391,11 +391,14 @@ class DockerLib(object):
         try:
             image_name, image_tag = run_image.split(':')
         except ValueError:
-            return
+            image_name = run_image
+            image_tag = "latest"
 
         if self.docker_min_version("1.13"):
             data = self.docker_image_inspect(run_image)
             if data is None:
+                if not pull:
+                    return
                 self.docker_pull(run_image)
                 data = self.docker_image_inspect(run_image)
             if data is None:

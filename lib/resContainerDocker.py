@@ -501,7 +501,7 @@ class Docker(resContainer.Container):
         if self.swarm_node_role() != "leader":
             return
         try:
-            run_image_id = self.svc.dockerlib.get_run_image_id(self)
+            run_image_id = self.svc.dockerlib.get_run_image_id(self, pull=False)
         except ValueError as exc:
             self.status_log(str(exc))
             return
@@ -511,13 +511,15 @@ class Docker(resContainer.Container):
             return
         running_image_id = inspect['Spec']['TaskTemplate']['ContainerSpec']['Image']
         running_image_id = self.svc.dockerlib.repotag_to_image_id(running_image_id)
-        if run_image_id and run_image_id != running_image_id:
+        if run_image_id is None:
+            self.status_log("image '%s' is not pulled yet."%(self.run_image))
+        elif run_image_id != running_image_id:
             self.status_log("the service is configured with image '%s' "
                             "instead of '%s'"%(running_image_id, run_image_id))
 
     def _status_container_image(self):
         try:
-            run_image_id = self.svc.dockerlib.get_run_image_id(self)
+            run_image_id = self.svc.dockerlib.get_run_image_id(self, pull=False)
         except ValueError as exc:
             self.status_log(str(exc))
             return
@@ -526,7 +528,9 @@ class Docker(resContainer.Container):
         except Exception:
             return
         running_image_id = inspect['Image']
-        if run_image_id and run_image_id != running_image_id:
+        if run_image_id is None:
+            self.status_log("image '%s' is not pulled yet."%(self.run_image))
+        elif run_image_id != running_image_id:
             self.status_log("the current container is based on image '%s' "
                             "instead of '%s'"%(running_image_id, run_image_id))
 
