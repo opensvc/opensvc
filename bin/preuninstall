@@ -2,7 +2,7 @@
 
 ARGS=$1
 
-if [ `uname` -eq 'SunOS' ]
+if [ `uname` = 'SunOS' ]
 then
 	ARGS=0
 fi
@@ -19,7 +19,7 @@ fi
 nodemgr daemon running >/dev/null 2>&1
 RUNNING=$?
 
-if [ $ARGS -eq 0 ]
+if [ "$ARGS" = '0' ]
 then
 	# uninstall package
 	if [ $RUNNING -eq 0 ]
