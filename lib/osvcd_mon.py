@@ -601,7 +601,13 @@ class Monitor(shared.OsvcThread, Crypt):
                               nb_restart, svc.svcname, rid)
                 self.inc_smon_retries(svc.svcname, rid)
                 if resource.get("monitor"):
-                    self.service_toc(svc.svcname)
+                    candidates = self.placement_candidates(svc)
+                    if candidates != [rcEnv.nodename] and len(candidates) > 0:
+                        self.service_toc(svc.svcname)
+                    else:
+                        self.log.info("would toc for service %s rid %s, but "
+                                      "no node is candidate for takeover.",
+                                      svc.svcname, rid)
                 return False
             self.inc_smon_retries(svc.svcname, rid)
             self.log.info("restart resource %s.%s, try %d/%d", svc.svcname, rid,
