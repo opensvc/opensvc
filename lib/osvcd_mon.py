@@ -643,6 +643,7 @@ class Monitor(shared.OsvcThread, Crypt):
         rids = []
         for rid, resource in resources.items():
             if resource["status"] not in ("warn", "down", "stdby down"):
+                self.reset_smon_retries(svc.svcname, rid)
                 continue
             if resource.get("provisioned", {}).get("state") is False:
                 continue
@@ -662,6 +663,7 @@ class Monitor(shared.OsvcThread, Crypt):
             rids = []
             for rid, resource in resources.items():
                 if resource["status"] not in ("warn", "down", "stdby down"):
+                    self.reset_smon_retries(svc.svcname, rid)
                     continue
                 if resource.get("provisioned", {}).get("state") is False:
                     continue
