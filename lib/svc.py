@@ -4578,7 +4578,7 @@ class Svc(Crypt, ExtConfig):
                         "--kw", "nodes-=" + rcEnv.nodename,
                         "--kw", "drpnodes-=" + rcEnv.nodename,
                         "--eval",
-                    ], nodename=peer, sync=False)
+                    ], nodename=peer, sync=True)
             self.delete_service_conf()
             self.delete_service_logs()
         else:
