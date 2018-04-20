@@ -400,7 +400,7 @@ class KeywordNodeMaintenanceGracePeriod(Keyword):
                   convert="duration",
                   order=15,
                   default=60,
-                  text="A duration expression, like 1h30m, defining how long the daemon retains a remote in-maintenance node data. As long as the remote node data are retained, the local daemon won't opt-in to takeover its running instances. This parameter should be adjusted to span the node reboot time, so the services have a chance to be restarted on the same node if their placement was optimal."
+                  text="A duration expression, like 1m30s, defining how long the daemon retains a remote in-maintenance node data. The maintenance state is announced to peers on daemon stop and daemon restart, but not on daemon shutdown. As long as the remote node data are retained, the local daemon won't opt-in to takeover its running instances. This parameter should be adjusted to span the daemon restart time."
                 )
 
 class KeywordNodeRejoinGracePeriod(Keyword):
@@ -412,7 +412,7 @@ class KeywordNodeRejoinGracePeriod(Keyword):
                   convert="duration",
                   order=15,
                   default=90,
-                  text="A duration expression, like 90m, defining how long the daemon restrains from taking start decisions if no heartbeat has been received from a peer since daemon startup."
+                  text="A duration expression, like 90m, defining how long the daemon restrains from taking start decisions if no heartbeat has been received from a peer since daemon startup. This should be adjusted to the maximum delay you can afford to give a chance to services to start on their placement leader after a simultaneous node reboot."
                 )
 
 class KeywordNodeReadyPeriod(Keyword):
