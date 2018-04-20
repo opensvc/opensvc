@@ -9,6 +9,7 @@ import threading
 import codecs
 import time
 import select
+import datetime
 from subprocess import Popen, PIPE
 
 try:
@@ -434,6 +435,9 @@ class Listener(shared.OsvcThread, Crypt):
         if not os.path.exists(fpath):
             return {"error": "%s does not exist" % fpath, "status": 3}
         mtime = os.path.getmtime(fpath)
+        updated = shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("config", {}).get(svcname, {}).get("updated")
+        if updated is None or datetime.datetime.utcfromtimestamp(mtime) > updated:
+            return {"error": "a new config is being digested", "status": 2}
         with codecs.open(fpath, "r", "utf8") as filep:
             buff = filep.read()
         self.log.info("serve service %s config to %s", svcname, nodename)
