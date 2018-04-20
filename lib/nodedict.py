@@ -424,7 +424,7 @@ class KeywordNodeReadyPeriod(Keyword):
                   convert="duration",
                   order=15,
                   default=5,
-                  text="A duration expression, like 10s, defining how long the daemon monitor waits before starting a service instance in ready state. A peer node can preempt the start during this period. The default is 16s. Usually set to allow at least a couple of heartbeats to be received."
+                  text="A duration expression, like 10s, defining how long the daemon monitor waits before starting a service instance in ready state. A peer node can preempt the start during this period. Usually set to allow at least a couple of heartbeats to be received."
                 )
 
 class KeywordCenteraSchedule(Keyword):
