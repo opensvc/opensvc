@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2018\-04\-09
+.TH NODEMGR 1 2018\-04\-20
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -1802,7 +1802,7 @@ Get the raw or evaluated value of a node configuration keyword.
 
 .TP
 .B --eval
-If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced.
+If set with the :cmd:`nodemgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced. If set with the :cmd:`nodemgr set` action, the current value is evaluated before mangling.
 .TP
 .B --param=PARAM
 An expression like '[<section>.]<keyword>' where
@@ -1944,6 +1944,12 @@ Set a service configuration parameter.
 
 
 .TP
+.B --add=ADD
+A list member to add to the value pointed by :opt:'--param'. If :opt:'--index' is set, insert the new element at the specified position in the list.
+.TP
+.B --eval
+If set with the :cmd:`nodemgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced. If set with the :cmd:`nodemgr set` action, the current value is evaluated before mangling.
+.TP
 .B --kw=KW
 An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
 
@@ -1971,6 +1977,9 @@ Examples:
   Preprend node3 to nodes
 
 .TP
+.B --index=INDEX
+The position in the list pointed by --param where to add the new list element on a set action
+.TP
 .B --param=PARAM
 An expression like '[<section>.]<keyword>' where
 
@@ -1979,17 +1988,11 @@ An expression like '[<section>.]<keyword>' where
   * a resource id
   * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
 .TP
-.B --value=VALUE
-The value to set for the keyword pointed by :opt:`--param`
-.TP
-.B --add=ADD
-A list member to add to the value pointed by :opt:'--param'. If :opt:'--index' is set, insert the new element at the specified position in the list.
-.TP
 .B --remove=REMOVE
 A list member to drop from the value pointed by :kw:`--param`.
 .TP
-.B --index=INDEX
-The position in the list pointed by --param where to add the new list element on a set action
+.B --value=VALUE
+The value to set for the keyword pointed by :opt:`--param`
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:

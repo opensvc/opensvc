@@ -172,12 +172,16 @@ class ExtConfig(object):
         if no section was specified, and set the value using the internal
         _set() method.
         """
-        if self.options.kw is not None:
-            return self.set_multi(self.options.kw)
+        if self.options.eval:
+            eval = self.options.eval
         else:
-            return self.set_mono()
+            eval = False
+        if self.options.kw is not None:
+            return self.set_multi(self.options.kw, eval=eval)
+        else:
+            return self.set_mono(eval=eval)
 
-    def set_multi(self, kws):
+    def set_multi(self, kws, eval=False):
         changes = []
         self.set_multi_cache = {}
         for kw in kws:
@@ -209,16 +213,16 @@ class ExtConfig(object):
                 if group in self.default_status_groups:
                     for rid in [rid for rid in self.config.sections() if rid.startswith(group+"#")]:
                         keyword = rid + keyword[keyword.index("."):]
-                        changes.append(self.set_mangle(keyword, op, value, index))
+                        changes.append(self.set_mangle(keyword, op, value, index, eval))
                 else:
                     # <section>.keyword[@<scope>]
-                    changes.append(self.set_mangle(keyword, op, value, index))
+                    changes.append(self.set_mangle(keyword, op, value, index, eval))
             else:
                 # <rid>.keyword[@<scope>]
-                changes.append(self.set_mangle(keyword, op, value, index))
+                changes.append(self.set_mangle(keyword, op, value, index, eval))
         self._set_multi(changes)
 
-    def set_mono(self):
+    def set_mono(self, eval=False):
         self.set_multi_cache = {}
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
@@ -246,25 +250,27 @@ class ExtConfig(object):
             if group in self.default_status_groups:
                 for rid in [rid for rid in self.config.sections() if rid.startswith(group+"#")]:
                     keyword = rid + keyword[keyword.index("."):]
-                    changes.append(self.set_mangle(keyword, op, value, index))
+                    changes.append(self.set_mangle(keyword, op, value, index, eval))
             else:
                 # <section>.keyword[@<scope>]
-                changes.append(self.set_mangle(keyword, op, value, index))
+                changes.append(self.set_mangle(keyword, op, value, index, eval))
         else:
             # <rid>.keyword[@<scope>]
-            changes.append(self.set_mangle(keyword, op, value, index))
+            changes.append(self.set_mangle(keyword, op, value, index, eval))
 
         self._set_multi(changes)
 
-    def set_mangle(self, keyword, op, value, index):
+    def set_mangle(self, keyword, op, value, index, eval):
         def list_value(keyword):
             import rcConfigParser
             if keyword in self.set_multi_cache:
                 return self.set_multi_cache[keyword].split()
             try:
-                _value = self._get(keyword, self.options.eval).split()
+                _value = self._get(keyword, eval).split()
             except (ex.excError, rcConfigParser.NoOptionError) as exc:
                 _value = []
+            except ex.OptNotFound as exc:
+                _value = exc.default
             return _value
 
         if op == "remove":
@@ -289,10 +295,10 @@ class ExtConfig(object):
             elements.insert(0, "DEFAULT")
         elif len(elements) != 2:
             raise ex.excError("malformed kw: format as 'section.key'")
-        return elements[0], elements[1], _value
+        return elements[0], elements[1], _value, eval
 
     def _set(self, section, option, value):
-        self._set_multi([[section, option, value]])
+        self._set_multi([[section, option, value, False]])
 
     def _set_multi(self, changes):
         changed = False
@@ -300,7 +306,7 @@ class ExtConfig(object):
         for change in changes:
             if change is None:
                 continue
-            section, option, value = change
+            section, option, value, eval = change
             lines = self.set_line(lines, section, option, value)
             changed = True
         if not changed:

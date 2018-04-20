@@ -90,8 +90,10 @@ OPT = Storage({
     "eval": Option(
         "--eval", default=False,
         action="store_true", dest="eval",
-        help="If set with the :cmd:`svcmgr get` action, the printed value of "
-             ":opt:`--param` is evaluated, scoped and dereferenced."),
+        help="If set with the :cmd:`nodemgr get` action, the printed value of "
+             ":opt:`--param` is evaluated, scoped and dereferenced. If set "
+             "with the :cmd:`nodemgr set` action, the current value is "
+             "evaluated before mangling."),
     "filterset": Option(
         "--filterset", default="",
         action="store", dest="filterset",
@@ -533,12 +535,13 @@ ACTIONS = {
         "set": {
             "msg": "Set a service configuration parameter.",
             "options": [
-                OPT.kw,
-                OPT.param,
-                OPT.value,
                 OPT.add,
-                OPT.remove,
+                OPT.eval,
+                OPT.kw,
                 OPT.index,
+                OPT.param,
+                OPT.remove,
+                OPT.value,
             ],
         },
         "unset": {

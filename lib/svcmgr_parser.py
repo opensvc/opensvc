@@ -109,7 +109,9 @@ OPT = Storage({
         "--eval", default=False,
         action="store_true", dest="eval",
         help="If set with the :cmd:`svcmgr get` action, the printed value of "
-             ":opt:`--param` is evaluated, scoped and dereferenced."),
+             ":opt:`--param` is evaluated, scoped and dereferenced. If set "
+             "with the :cmd:`svcmgr set` action, the current value is "
+             "evaluated before mangling."),
     "follow": Option(
         "--follow", default=False,
         action="store_true", dest="follow",
@@ -879,6 +881,7 @@ ACTIONS = {
             "options": ACTION_OPTS + [
                 OPT.kw,
                 OPT.add,
+                OPT.eval,
                 OPT.index,
                 OPT.param,
                 OPT.remove,

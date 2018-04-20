@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-04\-09
+.TH SVCMGR 1 2018\-04\-20
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -10646,7 +10646,7 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --eval
-If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced.
+If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced. If set with the :cmd:`svcmgr set` action, the current value is evaluated before mangling.
 .TP
 .B --impersonate=IMPERSONATE
 Impersonate a peer node when evaluating keywords.
@@ -10776,7 +10776,7 @@ Display the service current configuration.
 Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B --eval
-If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced.
+If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced. If set with the :cmd:`svcmgr set` action, the current value is evaluated before mangling.
 .TP
 .B --impersonate=IMPERSONATE
 Impersonate a peer node when evaluating keywords.
@@ -11029,6 +11029,9 @@ Examples:
 .TP
 .B --add=ADD
 A list member to add to the value pointed by :opt:'--param'. If :opt:'--index' is set, insert the new element at the specified position in the list.
+.TP
+.B --eval
+If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced. If set with the :cmd:`svcmgr set` action, the current value is evaluated before mangling.
 .TP
 .B --index=INDEX
 The position in the list pointed by --param where to add the new list element on a set action
