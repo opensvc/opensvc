@@ -42,7 +42,7 @@ class Prov(provisioning.Prov):
             layout = None
 
         # long md names cause a buffer overflow in mdadm
-        name = "/dev/md/"+self.r.svc.svcname.split(".")[0]+"."+self.r.rid.replace("#", ".")
+        name = self.r.devname()
         cmd = [self.r.mdadm, '--create', name, '--force', '--quiet',
                '--metadata=default']
         cmd += ['-n', str(len(devs)-spares)]

@@ -128,6 +128,9 @@ class Disk(resDisk.Disk):
                     return devname
         raise ex.excError("unable to find a devpath for md")
 
+    def devname(self):
+        return "/dev/md/"+self.svc.svcname.split(".")[0]+"."+self.rid.replace("#", ".")
+
     def devpath(self):
         return "/dev/disk/by-id/md-uuid-"+self.uuid
 
@@ -140,7 +143,7 @@ class Disk(resDisk.Disk):
             return set()
 
     def assemble(self):
-        cmd = [self.mdadm, "--assemble", self.devpath(), "-u", self.uuid]
+        cmd = [self.mdadm, "--assemble", self.devname(), "-u", self.uuid]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
         if ret == 2:
             self.log.info("no changes were made to the array")
