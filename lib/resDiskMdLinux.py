@@ -117,9 +117,9 @@ class Disk(resDisk.Disk):
         return [self.md_config_file_name()]
 
     def md_devpath(self):
-        l = glob.glob("/dev/disk/by-id/md-uuid-"+self.uuid)
-        if len(l) > 0:
-            return l[0]
+        devpath = self.devpath()
+        if os.path.exists(devpath):
+            return devpath
         out, err, ret = self.mdadm_scan()
         for line in out.splitlines():
             if self.uuid in line:
@@ -129,7 +129,7 @@ class Disk(resDisk.Disk):
         raise ex.excError("unable to find a devpath for md")
 
     def devpath(self):
-        return "/dev/md/"+self.uuid
+        return "/dev/disk/by-id/md-uuid-"+self.uuid
 
     def exposed_devs(self):
         if self.uuid == "" or self.uuid is None:
