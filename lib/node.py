@@ -2930,16 +2930,17 @@ class Node(Crypt, ExtConfig):
             os.unlink(svcmgr_l)
             os.symlink(rcEnv.paths.svcmgr, svcmgr_l)
 
-    def set_rlimit(self):
+    def set_rlimit(self, nofile=4096):
         """
         Set the operating system nofile rlimit to a sensible value for the
         number of services configured.
         """
-        nofile = 4096
-        if self.svcs and isinstance(self.svcs, list):
-            proportional_nofile = 64 * len(self.svcs)
-            if proportional_nofile > nofile:
-                nofile = proportional_nofile
+        #self.log.debug("len self.svcs <%s>", len(self.svcs))
+        import glob
+        n_conf = len(glob.glob(os.path.join(rcEnv.paths.pathetc, "*.conf")))
+        proportional_nofile = 64 * n_conf
+        if proportional_nofile > nofile:
+            nofile = proportional_nofile
 
         try:
             import resource

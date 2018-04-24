@@ -350,6 +350,7 @@ class Daemon(object):
                 if shared.NODE:
                     shared.NODE.close()
                 shared.NODE = node_mod.Node()
+                shared.NODE.set_rlimit()
             unset_lazy(self, "config")
             unset_lazy(self, "config_hbs")
             if self.last_config_mtime:
