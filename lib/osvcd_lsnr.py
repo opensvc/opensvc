@@ -245,7 +245,7 @@ class Listener(shared.OsvcThread, Crypt):
                             self.log.info(exc)
                         elif exc.errno == 11:
                             # EGAIN/EWOULDBLOCK
-                            self.log.warning("socket full. retry chunk send")
+                            #self.log.warning("socket full. retry chunk send")
                             time.sleep(0.05)
                             continue
                         else:
