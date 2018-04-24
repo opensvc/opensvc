@@ -236,6 +236,7 @@ def _main(node, argv=None):
     node.options.single_service = options.svcs is not None and \
                                   len(options.svcs) == 1
 
+    node.set_rlimit()
     build_kwargs = get_build_kwargs(optparser, options, action)
 
     if action != "create":
@@ -271,7 +272,6 @@ def _main(node, argv=None):
     if action == "create":
         return do_svc_create(node, svcnames, action, options, build_kwargs)
 
-    node.set_rlimit()
     ret = do_svcs_action(node, options, action, argv=argv)
 
     try:
