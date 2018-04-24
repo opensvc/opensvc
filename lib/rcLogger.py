@@ -87,7 +87,7 @@ class LoggerHandler(logging.handlers.SysLogHandler):
         try:
             import syslog
             facility = syslog.__dict__["LOG_"+self.facility]
-            syslog.openlog(self.ident, 0, facility)
+            syslog.openlog("opensvc", 0, facility)
         except Exception as exc:
             self.handleError(record)
         try:
@@ -222,7 +222,7 @@ def initLogger(name, handlers=None):
                 port = 514
             address = (host, port)
 
-        syslogformatter = logging.Formatter("opensvc: %(name)s %(message)s")
+        syslogformatter = logging.Formatter("%(name)s %(message)s")
         try:
             if rcEnv.sysname == "SunOS" and not isinstance(address, tuple):
                 sysloghandler = LoggerHandler(facility=facility)
