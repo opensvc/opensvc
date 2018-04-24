@@ -101,18 +101,14 @@ class Hb(shared.OsvcThread):
 
     @staticmethod
     def get_ip_address(ifname):
-        try:
-            ifname = bytes(ifname, "utf-8")
-        except TypeError:
-            ifname = str(ifname)
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        import fcntl
-        info = fcntl.ioctl(
-            s.fileno(),
-            0x8915,  # SIOCGIFADDR
-            struct.pack('256s', ifname[:15])
-        )
-        return socket.inet_ntoa(info[20:24])
+        mod = __import__("rcIfconfig"+rcEnv.sysname)
+        ifconfig = mod.ifconfig()
+        intf = ifconfig.interface(ifname)
+        if isinstance(intf.ipaddr, list):
+            addr = intf.ipaddr[0]
+        else:
+            addr = intf.ipaddr
+        return addr
 
     def get_message(self, nodename=None):
         begin, num = self.get_oldest_gen(nodename)

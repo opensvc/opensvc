@@ -80,7 +80,12 @@ class HbMcast(Hb, Crypt):
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, intf_b)
         except AttributeError:
             pass
-        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, self.mreq)
+        if self.src_addr != "0.0.0.0":
+            try:
+                self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(self.src_addr))
+                self.log.info("set mcast if: %s", self.src_addr)
+            except Exception as exc:
+                self.log.error("set mcast if: %s", exc)
 
 class HbMcastTx(HbMcast):
     """
@@ -94,16 +99,15 @@ class HbMcastTx(HbMcast):
             self.configure()
         except ex.excAbortAction:
             return
-
         try:
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
-            ttl = struct.pack('b', 32)
             self.addr = addrinfo[4][0]
-            self.group = (self.addr, self.port)
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.set_if()
+            ttl = struct.pack('b', 32)
             self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
             self.sock.settimeout(2)
+            self.group = (self.addr, self.port)
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
             return
