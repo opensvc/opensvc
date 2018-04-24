@@ -95,8 +95,8 @@ class Crypt(object):
         except IndexError:
             try:
                 locker.acquire()
-                ur = os.urandom(16 * 1024)
-                urandom += [ur[i:i + 16] for i in range(16, 1024 * 16, 16)]
+                ur = os.urandom(1024)
+                urandom += [ur[i:i + 16] for i in range(16, 1024, 16)]
                 return ur[0:16]
             finally:
                 locker.release()
