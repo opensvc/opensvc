@@ -464,7 +464,7 @@ class Crypt(object):
             return
         return data[0]
 
-    def recv_messages(self, sock, cluster_name=None, secret=None, use_select=True, encrypted=True, bufsize=4096):
+    def recv_messages(self, sock, cluster_name=None, secret=None, use_select=True, encrypted=True, bufsize=65536):
         """
         Receive, decrypt and return a message from a socket.
         """

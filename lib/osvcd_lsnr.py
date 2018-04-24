@@ -18,7 +18,7 @@ except ImportError:
 
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
-from rcUtilities import bdecode, drop_option
+from rcUtilities import bdecode, drop_option, chunker
 from converters import convert_size
 from comm import Crypt
 
@@ -235,17 +235,25 @@ class Listener(shared.OsvcThread, Crypt):
                 message = self.encrypt(result)
             else:
                 message = self.msg_encode(result)
-            try:
-                conn.sendall(message)
-                message_len = len(message)
-                self.stats.sessions.tx += message_len
-                self.stats.sessions.clients[addr[0]].tx += message_len
-            except socket.error as exc:
-                if exc.errno == 32:
-                    # broken pipe
-                    self.log.info(exc)
-                else:
-                    self.log.warning(exc)
+            for chunk in chunker(message, 64*1024):
+                while True:
+                    try:
+                        conn.sendall(chunk)
+                    except socket.error as exc:
+                        if exc.errno == 32:
+                            # broken pipe
+                            self.log.info(exc)
+                        elif exc.errno == 11:
+                            # EGAIN/EWOULDBLOCK
+                            self.log.warning("socket full. retry chunk send")
+                            time.sleep(0.05)
+                            continue
+                        else:
+                            self.log.warning(exc)
+                    break
+            message_len = len(message)
+            self.stats.sessions.tx += message_len
+            self.stats.sessions.clients[addr[0]].tx += message_len
 
     #########################################################################
     #

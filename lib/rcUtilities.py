@@ -1054,6 +1054,13 @@ def fsum(fpath):
     cksum = hashlib.md5(buff.encode("utf-8"))
     return cksum.hexdigest()
 
+def chunker(buff, n):
+    """
+    Yield successive n-sized chunks from buff
+    """
+    for i in range(0, len(buff), n):
+        yield buff[i:i+n]
+
 if __name__ == "__main__":
     #print("call(('id','-a'))")
     #(r,output,err)=call(("/usr/bin/id","-a"))
