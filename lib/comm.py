@@ -393,7 +393,7 @@ class Crypt(object):
             if sender_id in BLACKLIST:
                 BLACKLIST[sender_id] += 1
                 if count == BLACKLIST_THRESHOLD:
-                    self.log.warning("sender %s blacklisted")
+                    self.log.warning("sender %s blacklisted", sender_id)
             else:
                 BLACKLIST[sender_id] = 1
 
