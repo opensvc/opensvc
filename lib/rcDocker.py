@@ -432,7 +432,11 @@ class DockerLib(object):
         reg = ref.split("/")[0]
         if reg == "docker.io":
             return
-        cmd = self.docker_cmd + ["login", reg] + self.login_as_service_args()
+        try:
+            cmd = self.docker_cmd + ["login", reg] + self.login_as_service_args()
+        except Exception:
+            self.log.debug("skip registry login as service: node not registered")
+            return
         justcall(cmd)
 
     def docker_pull(self, ref):
