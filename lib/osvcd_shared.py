@@ -879,8 +879,9 @@ class OsvcThread(threading.Thread):
             return False
         for key in ("mem", "swap"):
             limit = node_data.get("min_avail_"+key, 0)
+            total = node_data.get("stats", {}).get(key+"_total", 0)
             val = node_data.get("stats", {}).get(key+"_avail", 0)
-            if val < limit:
+            if total > 0 and val < limit:
                 return True
         return False
 
