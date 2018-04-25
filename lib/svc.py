@@ -3740,7 +3740,8 @@ class Svc(Crypt, ExtConfig):
         self.setup_environ(action=action)
         self.setup_signal_handlers()
         self.set_skip_resources(keeprid=self.action_rid, xtags=options.xtags)
-        if action.startswith("print_") or \
+        if action == "status" or \
+           action.startswith("print_") or \
            action.startswith("collector") or \
            action.startswith("json_"):
             return self.do_print_action(action, options)
