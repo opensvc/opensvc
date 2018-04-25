@@ -1135,10 +1135,10 @@ class Svc(Crypt, ExtConfig):
             raise ex.excAbortAction("service has already been asked to reach "
                                     "the %s global state" % global_expect)
 
-        data = self.node._daemon_status()
-        if self.svcname not in data["monitor"]["services"]:
-            return
         if action in ("start", "stop"):
+            data = self.node._daemon_status()
+            if self.svcname not in data["monitor"]["services"]:
+                return
             avail = data["monitor"]["services"][self.svcname]["avail"]
             if action == "start" and avail == "up":
                 raise ex.excAbortAction("the service is already started.")
