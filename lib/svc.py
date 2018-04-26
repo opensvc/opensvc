@@ -2838,10 +2838,10 @@ class Svc(Crypt, ExtConfig):
             self.rollback()
 
     def set_provisioned(self):
-        self.sub_set_action(START_GROUPS, "set_provisioned", xtags=set(["zone", "docker"]))
+        self.sub_set_action(START_GROUPS, "set_provisioned")
 
     def set_unprovisioned(self):
-        self.sub_set_action(START_GROUPS, "set_unprovisioned", xtags=set(["zone", "docker"]))
+        self.sub_set_action(START_GROUPS, "set_unprovisioned")
 
     def abort_start(self):
         """
