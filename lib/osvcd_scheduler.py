@@ -141,6 +141,7 @@ class Scheduler(shared.OsvcThread):
                 cmd = [rcEnv.paths.nodemgr, action, "--cron"]
                 sig = ":".join(["node", action])
                 run += self.queue_action(cmd, delay, sig)
+        todo = {}
         for svcname in list(shared.SERVICES.keys()):
             try:
                 svc = shared.SERVICES[svcname]
@@ -160,16 +161,30 @@ class Scheduler(shared.OsvcThread):
                     data = svc.sched.validate_action(action)
                 except ex.excAbortAction:
                     continue
-                cmd = [rcEnv.paths.svcmgr, "-s", svc.svcname, action, "--cron", "--waitlock=5"]
+                if action not in todo:
+                    todo[action] = []
                 try:
                     rids, delay = data
+                    todo[action].append((svc.svcname, rids, delay))
+                except TypeError:
+                    delay = data
+                    todo[action].append((svc.svcname, None, delay))
+        for action, adata in todo.items():
+            merged = []
+            for svcname, rids, delay in adata:
+                if rids is not None or delay > 0:
+                    cmd = [rcEnv.paths.svcmgr, "-s", svc.svcname, action, "--cron", "--waitlock=5"]
                     rids = ','.join(rids)
                     sig = ":".join(["svc", svc.svcname, action, rids])
                     cmd += ["--rid", rids]
-                except TypeError:
-                    delay = data
-                    sig = ":".join(["svc", svc.svcname, action])
-                run += self.queue_action(cmd, delay, sig)
+                    run += self.queue_action(cmd, delay, sig)
+                else:
+                    merged.append(svcname)
+            if merged:
+                svcnames = ",".join(merged)
+                cmd = [rcEnv.paths.svcmgr, "-s", svcnames, action, "--cron", "--waitlock=5"]
+                sig = ":".join(["svc", svcnames, action])
+                run += self.queue_action(cmd, 0, sig)
 
         # log a scheduler loop digest
         msg = []
