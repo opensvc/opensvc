@@ -1061,6 +1061,17 @@ def chunker(buff, n):
     for i in range(0, len(buff), n):
         yield buff[i:i+n]
 
+def is_service(f):
+    if f is None:
+        return False
+    if os.sep not in f:
+        f = os.path.join(rcEnv.paths.pathetc, f)
+    if os.name != "nt" and os.path.realpath(f) != os.path.realpath(rcEnv.paths.svcmgr):
+        return False
+    if not os.path.exists(f + '.conf'):
+        return False
+    return True
+
 if __name__ == "__main__":
     #print("call(('id','-a'))")
     #(r,output,err)=call(("/usr/bin/id","-a"))

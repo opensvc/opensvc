@@ -10,7 +10,7 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
-from rcUtilities import cmdline2list, ximport, check_privs
+from rcUtilities import cmdline2list, ximport, check_privs, is_service
 
 if 'PATH' not in os.environ:
     os.environ['PATH'] = ""
@@ -2242,15 +2242,6 @@ def build(name, minimal=False, svcconf=None, node=None):
 
     svc.post_build()
     return svc
-
-def is_service(f):
-    if os.name == 'nt':
-        return True
-    if os.path.realpath(f) != os.path.realpath(rcEnv.paths.svcmgr):
-        return False
-    if not os.path.exists(f + '.conf'):
-        return False
-    return True
 
 def list_services():
     if not os.path.exists(rcEnv.paths.pathetc):
