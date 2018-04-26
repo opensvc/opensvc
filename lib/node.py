@@ -3265,7 +3265,6 @@ class Node(Crypt, ExtConfig):
             except:
                 return [rcEnv.nodename]
 
-        self.build_services(minimal=True)
         nodenames = get_nodes()
         services = {}
 
@@ -3290,13 +3289,7 @@ class Node(Crypt, ExtConfig):
                 topology = services[svcname].topology
             except KeyError:
                 topology = ""
-            try:
-                nodes = self.services[svcname].nodes
-                drpnodes = self.services[svcname].drpnodes
-            except KeyError:
-                nodes = set()
-                drpnodes = set()
-            if rcEnv.nodename in drpnodes:
+            if services[svcname].get("drp", False):
                 topology = "drp " + topology
             status = colorize_status(data["avail"], lpad=0)
             if data["overall"] == "warn":
@@ -3318,7 +3311,11 @@ class Node(Crypt, ExtConfig):
                 "|",
             ]
             for nodename in nodenames:
-                if nodename in data["nodes"]:
+                if nodename not in data["nodes"]:
+                    line.append("")
+                elif data["nodes"][nodename] is None:
+                    line.append(colorize("?", color.RED))
+                elif data["nodes"][nodename] is not None:
                     val = []
                     # frozen unicon
                     if data["nodes"][nodename]["frozen"]:
@@ -3372,10 +3369,6 @@ class Node(Crypt, ExtConfig):
                     val.append(smon)
                     val.append(global_expect)
                     line.append("".join(val))
-                elif nodename not in nodes | drpnodes:
-                    line.append("")
-                else:
-                    line.append(colorize("?", color.RED))
             out.append(line)
 
             from distutils.version import LooseVersion
@@ -3705,6 +3698,7 @@ class Node(Crypt, ExtConfig):
                         continue
                     if svcname not in services:
                         services[svcname] = Storage({
+                            "drp": _data.get("drp", False),
                             "topology": _data.get("topology", ""),
                             "orchestrate": _data.get("orchestrate"),
                             "flex_min_nodes": _data.get("flex_min_nodes"),
@@ -3740,6 +3734,12 @@ class Node(Crypt, ExtConfig):
                         "provisioned": _data.get("provisioned"),
                     }
                     services[svcname].slaves |= set(slaves)
+                for svcname, cnf in data["monitor"]["nodes"][node]["services"]["config"].items():
+                    if svcname not in services:
+                        continue
+                    for _node in cnf.get("scope", []):
+                        if _node not in services[svcname].nodes:
+                            services[svcname].nodes[_node] = None
             for svcname, _data in data["monitor"]["services"].items():
                 if svcnames and svcname not in svcnames:
                     continue

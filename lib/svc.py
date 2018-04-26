@@ -1612,6 +1612,8 @@ class Svc(Crypt, ExtConfig):
             data["scaler_slave"] = self.scaler_slave
         if self.scaler is not None:
             data["scaler_slaves"] = self.scaler.slaves
+        if rcEnv.nodename in self.drpnodes:
+            data["drp"] = True
 
         containers = self.get_resources('container')
         if len(containers) > 0:
