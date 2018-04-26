@@ -217,9 +217,7 @@ class Mount(Res.Resource):
         """
         smnt = os.path.dirname(self.mount_point)
         omnt = os.path.dirname(other.mount_point)
-        if smnt == omnt:
-            return smnt+self.rid < omnt+other.rid
-        return self.mount_point < other.mount_point
+        return (smnt, self.rid) < (omnt, other.rid)
 
     @lazy
     def prov(self):
