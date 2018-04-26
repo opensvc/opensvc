@@ -679,8 +679,7 @@ class Listener(shared.OsvcThread, Crypt):
             return {
                 "status": 1,
             }
-        debug = "debug." if kwargs.get("debug") else ""
-        logfile = os.path.join(rcEnv.paths.pathlog, svcname+".%slog"%debug)
+        logfile = os.path.join(rcEnv.paths.pathlog, svcname+".log")
         self._action_logs(nodename, logfile, "service %s" % svcname, **kwargs)
 
     def action_node_logs(self, nodename, **kwargs):
@@ -692,8 +691,7 @@ class Listener(shared.OsvcThread, Crypt):
                    A negative value means send the whole file.
                    The 0 value means follow the file.
         """
-        debug = "debug." if kwargs.get("debug") else ""
-        logfile = os.path.join(rcEnv.paths.pathlog, "node.%slog"%debug)
+        logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
         self._action_logs(nodename, logfile, "node", **kwargs)
 
     def _action_logs(self, nodename, logfile, obj, **kwargs):

@@ -66,7 +66,7 @@ OPT = Storage({
     "debug": Option(
         "--debug", default=False,
         action="store_true", dest="debug",
-        help="Increase stream log verbosity up to the debug level."),
+        help="Increase stream and file log verbosity up to the debug level."),
     "daemon": Option(
         "--daemon", default=False,
         action="store_true", dest="daemon",

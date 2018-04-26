@@ -137,14 +137,12 @@ def initLogger(name, handlers=None):
 
     if name == rcEnv.nodename:
         logfile = os.path.join(rcEnv.paths.pathlog, "node") + '.log'
-        debuglogfile = os.path.join(rcEnv.paths.pathlog, "node") + '.debug.log'
     else:
         if name.startswith(rcEnv.nodename):
             _name = name.replace(rcEnv.nodename+".", "", 1)
         else:
             _name = name
         logfile = os.path.join(rcEnv.paths.pathlog, _name) + '.log'
-        debuglogfile = os.path.join(rcEnv.paths.pathlog, _name) + '.debug.log'
     log = logging.getLogger(name)
     log.propagate = False
     log.handlers = []
@@ -160,6 +158,9 @@ def initLogger(name, handlers=None):
             filehandler.rotator = rotator
             filehandler.namer = namer
             log.addHandler(filehandler)
+
+            if '--debug' in sys.argv:
+                filehandler.setLevel(logging.DEBUG)
         except PermissionError:
             pass
 
@@ -234,20 +235,6 @@ def initLogger(name, handlers=None):
             sysloghandler.setLevel(lvl)
             sysloghandler.setFormatter(RedactingFormatter(syslogformatter))
             log.addHandler(sysloghandler)
-
-    if "file" in handlers:
-        try:
-            fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-            filehandler = logging.handlers.RotatingFileHandler(debuglogfile,
-                                                               maxBytes=2*5242880,
-                                                               backupCount=1)
-            filehandler.setFormatter(RedactingFormatter(fileformatter))
-            filehandler.setLevel(logging.DEBUG)
-            filehandler.rotator = rotator
-            filehandler.namer = namer
-            log.addHandler(filehandler)
-        except PermissionError:
-            pass
 
     log.setLevel(logging.DEBUG)
 

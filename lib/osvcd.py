@@ -407,6 +407,10 @@ def optparse():
     """
     parser = OptionParser()
     parser.add_option(
+        "--debug", action="store_true",
+        dest="debug"
+    )
+    parser.add_option(
         "-f", "--foreground", action="store_false",
         default=True, dest="daemon"
     )
