@@ -1144,7 +1144,10 @@ class ExtConfig(object):
                 key = key.split("@")[0]
                 if key in edata[section]:
                     continue
-                val = self.conf_get(section, key, impersonate=impersonate)
+                try:
+                    val = self.conf_get(section, key, impersonate=impersonate)
+                except ValueError:
+                    pass
                 # ensure the data is json-exportable
                 if isinstance(val, set):
                     val = list(val)
