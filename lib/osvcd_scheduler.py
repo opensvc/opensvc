@@ -183,6 +183,8 @@ class Scheduler(shared.OsvcThread):
             if merged:
                 svcnames = ",".join(merged)
                 cmd = [rcEnv.paths.svcmgr, "-s", svcnames, action, "--cron", "--waitlock=5"]
+                if len(merged) > 1:
+                    cmd.append("--parallel")
                 sig = ":".join(["svc", svcnames, action])
                 run += self.queue_action(cmd, 0, sig)
 
