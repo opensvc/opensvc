@@ -3265,7 +3265,7 @@ class Node(Crypt, ExtConfig):
             except:
                 return [rcEnv.nodename]
 
-        self.build_services(svcnames=svcnames, minimal=True)
+        self.build_services(minimal=True)
         nodenames = get_nodes()
         services = {}
 
