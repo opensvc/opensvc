@@ -10,7 +10,7 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
-from rcUtilities import cmdline2list, ximport, check_privs, is_service
+from rcUtilities import cmdline2list, ximport, check_privs, list_services
 
 if 'PATH' not in os.environ:
     os.environ['PATH'] = ""
@@ -2242,23 +2242,6 @@ def build(name, minimal=False, svcconf=None, node=None):
 
     svc.post_build()
     return svc
-
-def list_services():
-    if not os.path.exists(rcEnv.paths.pathetc):
-        print("create dir %s"%rcEnv.paths.pathetc)
-        os.makedirs(rcEnv.paths.pathetc)
-
-    s = glob.glob(os.path.join(rcEnv.paths.pathetc, '*.conf'))
-    s = [os.path.basename(x)[:-5] for x in s]
-
-    l = []
-    for name in s:
-        if len(s) == 0:
-            continue
-        if not is_service(os.path.join(rcEnv.paths.pathetc, name)):
-            continue
-        l.append(name)
-    return l
 
 def build_services(status=None, svcnames=None, create_instance=False,
                    minimal=False, node=None):

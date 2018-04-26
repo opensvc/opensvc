@@ -39,7 +39,8 @@ from rcScheduler import Scheduler, SchedOpts, sched_action
 from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         call, which, purge_cache_expired, read_cf, unset_lazy, \
-                        drop_option, is_string, try_decode, is_service
+                        drop_option, is_string, try_decode, is_service, \
+                        list_services
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfig
@@ -542,6 +543,8 @@ class Node(Crypt, ExtConfig):
         """
         if os.environ.get("OSVC_SERVICE_LINK"):
             return [os.environ.get("OSVC_SERVICE_LINK")]
+        if selector is None:
+            return list_services()
         if is_service(selector):
             return [selector]
         self.build_services(minimal=True)
@@ -3262,7 +3265,7 @@ class Node(Crypt, ExtConfig):
             except:
                 return [rcEnv.nodename]
 
-        self.build_services(minimal=True)
+        self.build_services(svcnames=svcnames, minimal=True)
         nodenames = get_nodes()
         services = {}
 

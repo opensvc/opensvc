@@ -1072,6 +1072,22 @@ def is_service(f):
         return False
     return True
 
+def list_services():
+    import glob
+    if not os.path.exists(rcEnv.paths.pathetc):
+        print("create dir %s"%rcEnv.paths.pathetc)
+        os.makedirs(rcEnv.paths.pathetc)
+    s = glob.glob(os.path.join(rcEnv.paths.pathetc, '*.conf'))
+    s = [os.path.basename(x)[:-5] for x in s]
+    l = []
+    for name in s:
+        if len(s) == 0:
+            continue
+        if not is_service(os.path.join(rcEnv.paths.pathetc, name)):
+            continue
+        l.append(name)
+    return l
+
 if __name__ == "__main__":
     #print("call(('id','-a'))")
     #(r,output,err)=call(("/usr/bin/id","-a"))
