@@ -20,6 +20,8 @@ import rcColor
 
 ALLOW_ACTION_WITH_NOACTION = [
     "presync",
+    "set_provisioned",
+    "set_unprovisioned",
 ]
 
 class Resource(object):
