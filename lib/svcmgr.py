@@ -49,6 +49,8 @@ def get_minimal(action, options):
         return True
     if action == "get" and not options.eval:
         return True
+    if action == "print_status" and not options.refresh:
+        return True
     if action == "edit_config":
         return True
     if action.startswith("print_config"):
