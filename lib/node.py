@@ -3618,7 +3618,12 @@ class Node(Crypt, ExtConfig):
                     frozen = frozen_icon = colorize(unicons["frozen"], color.BLUE)
                 else:
                     frozen = ""
-                line.append(str(nmon_state)+frozen)
+                global_expect = data["monitor"]["nodes"].get(nodename, {}).get("monitor", {}).get("global_expect")
+                if global_expect:
+                    global_expect = colorize(" >" + str(global_expect), color.LIGHTBLUE)
+                else:
+                    global_expect = ""
+                line.append(str(nmon_state)+frozen+global_expect)
             out.append(line)
 
         def load_node_compat():
