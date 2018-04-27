@@ -227,7 +227,7 @@ class TestNodemgr:
         """
         Print node logs
         """
-        ret = nodemgr.main(argv=["logs", "--no-pager"])
+        ret = nodemgr.main(argv=["logs"])
         assert ret == 0
 
     def test_151_nodemgr_network_ls(self):
