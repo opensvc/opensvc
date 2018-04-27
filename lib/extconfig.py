@@ -1146,6 +1146,8 @@ class ExtConfig(object):
                     continue
                 try:
                     val = self.conf_get(section, key, impersonate=impersonate)
+                except ex.OptNotFound:
+                    continue
                 except ValueError:
                     pass
                 # ensure the data is json-exportable
