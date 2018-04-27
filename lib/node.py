@@ -3734,12 +3734,16 @@ class Node(Crypt, ExtConfig):
                         "provisioned": _data.get("provisioned"),
                     }
                     services[svcname].slaves |= set(slaves)
-                for svcname, cnf in data["monitor"]["nodes"][node]["services"]["config"].items():
-                    if svcname not in services:
-                        continue
-                    for _node in cnf.get("scope", []):
-                        if _node not in services[svcname].nodes:
-                            services[svcname].nodes[_node] = None
+                try:
+                    # hint we have missing instances
+                    for svcname, cnf in data["monitor"]["nodes"][node]["services"]["config"].items():
+                        if svcname not in services:
+                            continue
+                        for _node in cnf.get("scope", []):
+                            if _node not in services[svcname].nodes:
+                                services[svcname].nodes[_node] = None
+                except KeyError:
+                    pass
             for svcname, _data in data["monitor"]["services"].items():
                 if svcnames and svcname not in svcnames:
                     continue
