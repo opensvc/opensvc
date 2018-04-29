@@ -1467,8 +1467,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if n_up > 0 and n_up < instance.get("scale"):
                 return "warn"
 
-        slaves = instance.get("children", [])
-        slaves += instance.get("slaves", [])
+        slaves = instance.get("slaves", [])
         slaves += instance.get("scaler_slaves", [])
         if slaves:
             avails = set([avail])
