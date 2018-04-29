@@ -149,6 +149,7 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
         # install_service() reports it did nothing
         data = getattr(svcBuilder, action)(svcnames, options.resource,
                                            provision=options.provision)
+        ret = 0
     else:
         data = {"rid": [], "ret": 0}
 
