@@ -2,6 +2,11 @@
 
 from __future__ import print_function
 
+import sys
+import os
+mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, mod_d)
+
 from rcUtilities import *
 
 class TestUtilities:

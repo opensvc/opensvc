@@ -1,5 +1,9 @@
-import glob
+import sys
 import os
+mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, mod_d)
+
+import glob
 
 class TestImport:
     def test_import(self):

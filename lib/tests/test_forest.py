@@ -1,3 +1,8 @@
+import sys
+import os
+mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, mod_d)
+
 from forest import Forest
 from rcColor import color
 
