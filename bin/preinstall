@@ -22,6 +22,7 @@ rm -f $FLAG
 
 # opensvc was not installed yet. just set the daemon start flag 
 type nodemgr >/dev/null 2>&1 || {
+        echo "adding opensvc daemon restart flag"
 	touch $FLAG
 	exit 0
 }

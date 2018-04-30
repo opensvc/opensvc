@@ -24,6 +24,7 @@ then
 	# uninstall package
 	if [ $RUNNING -eq 0 ]
 	then
+                echo "stopping opensvc daemon"
 		nodemgr daemon stop
 	fi
 	exit 0
