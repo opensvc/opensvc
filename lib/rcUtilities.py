@@ -347,6 +347,8 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
     logger.error.
     """
     start = time.time()
+    if "close_fds" not in kwargs:
+        kwargs["close_fds"] = close_fds
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE, **kwargs)
     log_level = {proc.stdout: outlvl, proc.stderr: errlvl}
     terminated = False
