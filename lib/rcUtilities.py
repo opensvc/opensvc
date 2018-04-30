@@ -356,7 +356,7 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
 
     def check_io():
         logged = 0
-        ready_to_read = select.select([proc.stdout, proc.stderr], [], [], 1000)[0]
+        ready_to_read = select.select([proc.stdout, proc.stderr], [], [], 0.5)[0]
         for io in ready_to_read:
             line = io.readline()
             if sys.version_info[0] < 3:
