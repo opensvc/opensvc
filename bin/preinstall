@@ -21,7 +21,7 @@ mkdir -p `dirname $FLAG` >/dev/null 2>&1
 rm -f $FLAG
 
 # opensvc was not installed yet. just set the daemon start flag 
-which nodemgr >/dev/null 2>&1 || {
+type nodemgr >/dev/null 2>&1 || {
 	touch $FLAG
 	exit 0
 }
