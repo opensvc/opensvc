@@ -5,6 +5,7 @@ import os
 import sys
 import logging
 import datetime
+import time
 
 import osvcd_shared as shared
 import rcExceptions as ex
@@ -13,7 +14,8 @@ from rcGlobalEnv import rcEnv
 
 class Collector(shared.OsvcThread, Crypt):
     update_interval = 300
-    ping_interval = 60
+    min_update_interval = 10
+    min_ping_interval = 60
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.collector")
@@ -21,6 +23,7 @@ class Collector(shared.OsvcThread, Crypt):
         self.last_comm = None
         self.last_config = {}
         self.last_status = {}
+        self.last_status_changed = []
 
         while True:
             if self.stopped():
@@ -29,6 +32,7 @@ class Collector(shared.OsvcThread, Crypt):
                 self.do()
             except Exception as exc:
                 self.log.exception(exc)
+                time.sleep(1)
 
     def get_last_status(self, data):
         last_status = {}
@@ -168,11 +172,18 @@ class Collector(shared.OsvcThread, Crypt):
 
         if self.speaker():
             last_status, last_status_changed = self.get_last_status(data)
-            if last_status_changed != [] or self.last_comm is None:
+            self.last_status_changed += last_status_changed
+            if self.last_comm is None:
                 self.send_daemon_status(data, last_status_changed)
-            elif self.last_comm <= datetime.datetime.utcnow() - datetime.timedelta(seconds=self.ping_interval):
-                pass
-            elif self.last_comm <= datetime.datetime.utcnow() - datetime.timedelta(seconds=self.update_interval):
+            elif self.last_status_changed != []:
+                if self.last_comm <= datetime.datetime.utcnow() - datetime.timedelta(seconds=self.min_update_interval):
+                    self.send_daemon_status(data, last_status_changed)
+                    self.last_status_changed = []
+                else:
+                    # avoid storming the collector with daemon status updates
+                    #self.log.debug("last daemon status too soon: %s", self.last_comm)
+                    pass
+            elif self.last_comm <= datetime.datetime.utcnow() - datetime.timedelta(seconds=self.min_ping_interval):
                 self.ping()
             self.last_status = last_status
 
