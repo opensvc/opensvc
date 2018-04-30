@@ -3690,7 +3690,10 @@ class Svc(Crypt, ExtConfig):
         except ex.excAbortAction as exc:
             self.log.info(exc)
             return 0
-        return self._action(action, options=options)
+        try:
+            return self._action(action, options=options)
+        except lock.LOCK_EXCEPTIONS as exc:
+            raise ex.excError(str(exc))
 
     @sched_action
     def _action(self, action, options=None):
