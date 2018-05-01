@@ -98,7 +98,7 @@ class Scheduler(shared.OsvcThread):
         else:
             cmd = [rcEnv.paths.svcmgr, "-s", svcname, action, "--waitlock=5"]
         if rids:
-            cmd += ["--rids", rids]
+            cmd += ["--rid", rids]
         cmd.append("--cron")
         return cmd
 
