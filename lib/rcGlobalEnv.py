@@ -105,7 +105,7 @@ class rcEnv:
     session_uuid = str(uuid.uuid4())
     initial_env = os.environ.copy()
     os.environ["OSVC_SESSION_UUID"] = session_uuid
-    node_env = "TST"
+    node_env = ""
 
     allowed_svc_envs = [
         'DEV',

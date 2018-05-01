@@ -30,6 +30,6 @@ def node_get_node_env():
 def discover_node():
     """Fill rcEnv class with information from node discovery
     """
-    if not hasattr(rcEnv, "node_env"):
+    if rcEnv.node_env == "":
         rcEnv.node_env = node_get_node_env()
 
