@@ -1682,7 +1682,8 @@ class Svc(Crypt, ExtConfig):
         h = hashlib.md5()
         def fn(h, val):
             if type(val) == dict:
-                for key, _val in val.items():
+                for key in sorted(val.keys()):
+                    _val = val[key]
                     if key in ("status_updated", "updated", "mtime"):
                         continue
                     h = fn(h, _val)
