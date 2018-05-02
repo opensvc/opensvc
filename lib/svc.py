@@ -1712,8 +1712,8 @@ class Svc(Crypt, ExtConfig):
         if self.options.minimal:
             return
         self.log.debug("update status dump")
-        data = self.print_status_data(from_resource_status_cache=True)
-        self.write_status_data(data)
+        # print_status_data() with from_resource_status_cache=True does a status.json write
+        self.print_status_data(from_resource_status_cache=True)
 
     def env_section_keys_evaluated(self):
         """
