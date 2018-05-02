@@ -1,8 +1,11 @@
-from rcUtilities import justcall, vcall
-from rcUtilitiesLinux import label_to_dev
 import sys
 import os
 import logging
+
+import rcExceptions as ex
+
+from rcUtilities import justcall, vcall
+from rcUtilitiesLinux import label_to_dev
 from rcGlobalEnv import rcEnv
 
 class InitError(Exception):
@@ -123,7 +126,7 @@ class Btrfs(object):
     def subvol_delete(self, subvol=[], recursive=False):
         opts = []
         if recursive:
-            opts.appendi('-R')
+            opts.append('-R')
 
         if isinstance(subvol, list):
             subvols = subvol
@@ -332,7 +335,7 @@ class Btrfs(object):
         cmd = ['btrfs', 'fi', 'label', mntpt]
         out, err, ret = self.justcall(cmd)
         if ret != 0:
-            raise excError("error running %s:\n"%' '.join(cmd)+err)
+            raise ex.excError("error running %s:\n"%' '.join(cmd)+err)
         return out.strip('\n')
 
     def is_mounted_subvol(self, path):
@@ -363,7 +366,7 @@ class Btrfs(object):
                 devid    2 size 5.00GB used 1.51GB path /dev/vdc
                 devid    1 size 5.00GB used 1.53GB path /dev/vdb
         """
-        cmd = ['btrfs', 'fi', 'show', path]
+        cmd = ['btrfs', 'fi', 'show', self.path]
         out, err, ret = self.justcall(cmd)
         if ret != 0:
             raise InitError("error running btrfs fi show:\n"+err)

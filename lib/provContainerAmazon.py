@@ -1,4 +1,5 @@
 import provisioning
+import rcExceptions as ex
 
 class Prov(provisioning.Prov):
     def provisioner(self):

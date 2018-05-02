@@ -31,7 +31,7 @@ class Prov(provFs.Prov):
         self.mount(mnt)
         try:
             btrfs = Btrfs(path=mnt)
-            return btrfs.has_subvol()
+            return btrfs.has_subvol(self.subvol)
         finally:
             self.cleanup(mnt)
 
