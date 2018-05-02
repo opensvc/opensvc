@@ -598,7 +598,8 @@ class Resource(object):
             return
         if (level, text) in self.status_logs:
             return
-        self.status_logs.append((level, text))
+        for line in text.splitlines():
+            self.status_logs.append((level, line))
 
     def status_logs_get(self, levels=None):
         """
