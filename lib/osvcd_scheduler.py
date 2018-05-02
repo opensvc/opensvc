@@ -107,10 +107,10 @@ class Scheduler(shared.OsvcThread):
             rids = ",".join(rids)
         sig = (action, delay, svcname, rids)
         if sig in self.delayed:
-            self.log.debug("drop already queued action '%s'", " ".join(cmd))
+            self.log.debug("drop already queued action '%s'", str(sig))
             return []
         if sig in self.running:
-            self.log.debug("drop already running action '%s'", " ".join(cmd))
+            self.log.debug("drop already running action '%s'", str(sig))
             return []
         now = datetime.datetime.utcnow()
         exp = now + datetime.timedelta(seconds=delay)
