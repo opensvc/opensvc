@@ -80,17 +80,28 @@ def logit(msg, stdout=False, stderr=False):
     if stderr:
         sys.stderr.write("error ==> %s\n" % (msg))
 
+def osrun(cmd, stdout=False, stderr=False):
+    ret = None
+    if sysname == 'Windows':
+        logit("cmd [%s]"%cmd, stdout, stderr)
+        os.system(cmd)
+    else:
+        ret = os.WEXITSTATUS(os.system(cmd))
+        logit("cmd [%s]  ret[%s]"%(cmd,ret), stdout, stderr)
+    if ret is not None:
+        return ret
+
 make_sure_path_exists(pathlog)
 
 if sysname == 'SunOS':
     osvcfmri = 'svc:/site/application/opensvc:boot'
     cmd = ['svcs', '-vl', osvcfmri, '2>/dev/null' ]
-    ret = os.system(' '.join(cmd))
+    ret = osrun(' '.join(cmd))
     if ret == 0:
 	# Solaris install from IPS package with standard FMRI
         logit("Solaris postinstall check for first run",stdout=False)
 	cmd = ['svcprop', '-p', 'boot/firstrun', osvcfmri, '|', 'grep', 'done']
-        ret = os.system(' '.join(cmd))
+        ret = osrun(' '.join(cmd))
 	if ret == 0:
 	    logit("Solaris postinstall already executed. Exiting.",stdout=False)
             sys.exit(0)
@@ -304,7 +315,7 @@ def install_cron_unix():
     if sysname in ("HP-UX", "SunOS") and root_crontab.find('/var/spool/') != -1:
         logit("crontab activation requested")
         cmd = ['crontab', root_crontab]
-        ret = os.system(' '.join(cmd))
+        ret = osrun(' '.join(cmd))
 
     for loc in purge:
         try:
@@ -330,7 +341,7 @@ def install_cron_unix():
 def activate_chkconfig(svc):
     logit("begin")
     cmd = ['chkconfig', '--add', svc]
-    ret = os.system(' '.join(cmd))
+    ret = osrun(' '.join(cmd))
     if ret > 0:
         return False
     return True
@@ -349,12 +360,12 @@ def _activate_systemd(systemdsvc):
         logit("found unit file in /etc/systemd/system",stdout=False)
         logit("disabling old systemd unit file",stdout=False)
         cmd = ['systemctl', '-q', 'disable', systemdsvc]
-        ret = os.system(' '.join(cmd))
+        ret = osrun(' '.join(cmd))
         if ret > 0:
             logit("issue met while trying to disable old %s systemd unit file"%systemdsvc,stderr=True)
         logit("removing old systemd unit file",stdout=False)
         cmd = ['rm', '-f', olddst]
-        ret = os.system(' '.join(cmd))
+        ret = osrun(' '.join(cmd))
         if ret > 0:
             logit("issue met while trying to remove old %s systemd unit file"%systemdsvc,stderr=True)
 
@@ -381,19 +392,19 @@ def _activate_systemd(systemdsvc):
         logit("issue met while trying to identify suitable systemd unit file location",stderr=True)
 
     # reset paths in ExecStart and ExecStop
-    os.system("sed -i 's@/usr/share/opensvc/bin@"+pathbin+"@' "+dst)
+    osrun("sed -i 's@/usr/share/opensvc/bin@"+pathbin+"@' "+dst)
 
     # reload systemd configuration
     logit("reloading systemd configuration",stdout=True)
     cmd = ['systemctl', '-q', 'daemon-reload']
-    ret = os.system(' '.join(cmd))
+    ret = osrun(' '.join(cmd))
     if ret > 0:
         logit("issue met during systemctl reload",stderr=True)
 
     # enable opensvc agent startup through systemd
     logit("enabling systemd configuration")
     cmd = ['systemctl', '-q', 'enable', systemdsvc]
-    ret = os.system(' '.join(cmd))
+    ret = osrun(' '.join(cmd))
     if ret > 0:
         logit("issue met during systemctl enable",stderr=True)
 
@@ -401,7 +412,7 @@ def _activate_systemd(systemdsvc):
 def systemd_mgmt():
     logit("begin")
     cmd = ['systemctl', '--version', '>>/dev/null', '2>&1']
-    ret = os.system(' '.join(cmd))
+    ret = osrun(' '.join(cmd))
     if ret > 0:
         return False
     return True
@@ -417,12 +428,12 @@ def activate_redhat(launcher):
 def activate_debian(launcher):
     logit("begin")
     cmd = ['update-rc.d', '-f', 'opensvc', 'remove']
-    ret = os.system(' '.join(cmd))
+    ret = osrun(' '.join(cmd))
     if ret > 0:
         logit("issue met while trying to remove opensvc rc launchers",stderr=True)
         return False
     cmd = ['update-rc.d', 'opensvc', 'defaults']
-    ret = os.system(' '.join(cmd))
+    ret = osrun(' '.join(cmd))
     if ret > 0:
         logit("issue met while trying to install opensvc rc launchers",stderr=True)
         return False
@@ -681,7 +692,7 @@ def gen_keys():
         return
     cmd = ['ssh-keygen', '-t', 'rsa', '-b', '2048', '-P', '""', '-f', priv]
     try:
-        ret = os.system(' '.join(cmd))
+        ret = osrun(' '.join(cmd))
     except:
         logit("Error while trying to generate ssh keys")
 
@@ -990,7 +1001,7 @@ def move_host_mode():
         shutil.move(hm, hm+'.old')
         return
     cmd = [nodemgr, 'set', '--param', 'node.host_mode', '--value', mode]
-    ret = os.system(' '.join(cmd))
+    ret = osrun(' '.join(cmd))
     if ret != 0:
         logit("failed to set host_mode in node.conf",stdout=True)
         return
@@ -1216,10 +1227,9 @@ def restart_daemon():
     os.unlink(flag)
     os.environ['OPENSVC_AGENT_UPGRADE']="1"
     cmd = "%s/nodemgr daemon start" % pathbin
-    logit(cmd, stdout=True)
-    os.system(cmd)
+    osrun(cmd, stdout=True)
     cmd = "%s/nodemgr daemon running" % pathbin
-    os.system(cmd)
+    osrun(cmd)
     del os.environ['OPENSVC_AGENT_UPGRADE']
 
 def init_secret():
@@ -1229,7 +1239,7 @@ def init_secret():
         cmd = "nodemgr ping --node 127.0.0.1"
     else:
         cmd =  "%s/nodemgr ping --node 127.0.0.1" % pathbin
-    os.system(cmd)
+    osrun(cmd)
 
 def solaris_fmri_setprop():
     logit("begin")
@@ -1240,12 +1250,12 @@ def solaris_fmri_setprop():
         logit("issuing setprop on fmri",stdout=False)
         osvcfmri = 'svc:/site/application/opensvc:boot'
         cmd = ['svccfg', '-s', osvcfmri, 'setprop', 'boot/firstrun', '=', 'done', '2>/dev/null']
-        ret = os.system(' '.join(cmd))
+        ret = osrun(' '.join(cmd))
         if ret == 0:
 	    # setprop ok, Solaris install from IPS package with standard FMRI
             logit("setprop ok. now refreshing fmri",stdout=False)
 	    cmd = ['svccfg', '-s', osvcfmri, 'refresh']
-            ret = os.system(' '.join(cmd))
+            ret = osrun(' '.join(cmd))
 	    if ret == 0:
 	        logit("fmri refresh successfully executed",stdout=False)
 
