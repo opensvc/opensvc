@@ -102,12 +102,12 @@ class Collector(shared.OsvcThread, Crypt):
         with shared.SERVICES_LOCK:
             shared.NODE.collector.call("push_config", shared.SERVICES[svcname])
 
-    def send_daemon_status(self, data, last_status_changed=None):
-        if last_status_changed:
-            self.log.info("send daemon status, changed: %s", ", ".join(last_status_changed))
+    def send_daemon_status(self, data):
+        if self.last_status_changed:
+            self.log.info("send daemon status, changed: %s", ", ".join(self.last_status_changed))
         else:
             self.log.info("send daemon status, resync")
-        shared.NODE.collector.call("push_daemon_status", data, last_status_changed)
+        shared.NODE.collector.call("push_daemon_status", data, self.last_status_changed)
         self.last_comm = datetime.datetime.utcnow()
 
     def ping(self):
@@ -174,10 +174,10 @@ class Collector(shared.OsvcThread, Crypt):
             last_status, last_status_changed = self.get_last_status(data)
             self.last_status_changed += last_status_changed
             if self.last_comm is None:
-                self.send_daemon_status(data, last_status_changed)
+                self.send_daemon_status(data)
             elif self.last_status_changed != []:
                 if self.last_comm <= datetime.datetime.utcnow() - datetime.timedelta(seconds=self.min_update_interval):
-                    self.send_daemon_status(data, last_status_changed)
+                    self.send_daemon_status(data)
                     self.last_status_changed = []
                 else:
                     # avoid storming the collector with daemon status updates
