@@ -616,7 +616,10 @@ class Node(Crypt, ExtConfig):
                 except ValueError:
                     return False
             if op == "=":
-                match = current == value
+                if current.lower() in ("true", "false"):
+                    match = current.lower() == value.lower()
+                else:
+                    match = current == value
             elif op == "~":
                 match = re.search(value, current)
             elif op == ">":
@@ -642,7 +645,7 @@ class Node(Crypt, ExtConfig):
                 else:
                     group = param
                     _param = None
-                rids = [section for section in svc.config.sections() if section.split('#')[0] == group]
+                rids = [section for section in svc.config.sections() if group == "" or section.split('#')[0] == group]
                 if op == ":" and len(rids) > 0 and _param is None:
                     return True
                 elif _param:
