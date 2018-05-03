@@ -1898,17 +1898,19 @@ class Svc(Crypt, ExtConfig):
 
         # encap resources
         ers = {}
-        for container in self.get_resources('container'):
+        for rid in data["resources"]:
+            if not rid.startswith("container"):
+                continue
             try:
-                ejs = data["encap"][container.rid]
-                ers[container.rid] = dispatch_resources(ejs)
+                ejs = data["encap"][rid]
+                ers[rid] = dispatch_resources(ejs)
             except KeyError:
                 continue
             except ex.excNotAvailable:
-                ers[container.rid] = {}
+                ers[rid] = {}
             except Exception as exc:
                 print(exc)
-                ers[container.rid] = {}
+                ers[rid] = {}
 
         def add_res_node(resource, parent, rid=None, running=None):
             if discard_disabled and resource.get("disable", False):
