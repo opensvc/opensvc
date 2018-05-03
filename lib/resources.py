@@ -546,9 +546,6 @@ class Resource(object):
                 else:
                     self.status_logs.append(("warn", line))
 
-        if hasattr(self, "set_label"):
-            self.set_label()
-
         return status
 
     def write_status_last(self):
