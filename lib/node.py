@@ -2984,7 +2984,7 @@ class Node(Crypt, ExtConfig):
                 for event in msg["data"]:
                     try:
                         key, val = event
-                        line = "  %s => %s" % (".".join(key), val)
+                        line = "  %s => %s" % (".".join(key), str(val))
                     except ValueError:
                         line = "  %s deleted" % ".".join(event[0])
                     print(line)
