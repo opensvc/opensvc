@@ -1684,7 +1684,7 @@ class Svc(Crypt, ExtConfig):
             if type(val) == dict:
                 for key in sorted(val.keys()):
                     _val = val[key]
-                    if key in ("status_updated", "updated", "mtime"):
+                    if key in ("status_updated", "updated", "mtime", "csum"):
                         continue
                     h = fn(h, _val)
             elif type(val) == list:
