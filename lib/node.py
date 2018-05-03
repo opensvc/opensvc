@@ -2981,8 +2981,12 @@ class Node(Crypt, ExtConfig):
                 sys.stdout.flush()
             else:
                 print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
-                for key, val in msg["data"]:
-                    line = "  %s => %s" % (".".join(key), val)
+                for event in msg["data"]:
+                    try:
+                        key, val = event
+                        line = "  %s => %s" % (".".join(key), val)
+                    except ValueError:
+                        line = "  %s deleted" % ".".join(event[0])
                     print(line)
                     sys.stdout.flush()
 
