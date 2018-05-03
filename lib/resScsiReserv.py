@@ -45,11 +45,11 @@ class ScsiReserv(Res.Resource):
         self.get_devs()
         if len(self.devs) == 0:
             self.label = 'preserv 0 scsi disk'
-        elif len(', '.join(self.devs)) > 248:
-            self.label = 'preserv '+', '.join(self.devs)[0:248]
+        elif len(', '.join(sorted(self.devs))) > 248:
+            self.label = 'preserv '+', '.join(sorted(self.devs))[0:248]
             self.label += " ..."
         else:
-            self.label = ', '.join(self.devs)
+            self.label = ', '.join(sorted(self.devs))
 
     def get_hostid(self):
         if self.hostid:
