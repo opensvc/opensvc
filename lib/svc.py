@@ -4900,6 +4900,7 @@ class Svc(Crypt, ExtConfig):
             line = colorize_log_line(line)
             if line:
                 print(line)
+                sys.stdout.flush()
 
     def placement_optimal(self, data=None):
         if data is None:

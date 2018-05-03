@@ -2978,6 +2978,7 @@ class Node(Crypt, ExtConfig):
         for msg in self.daemon_events(nodename):
             if self.options.format == "json":
                 print(msg)
+                sys.stdout.flush()
             else:
                 print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
                 for key, val in msg["data"]:
@@ -3018,6 +3019,7 @@ class Node(Crypt, ExtConfig):
             line = colorize_log_line(line)
             if line:
                 print(line)
+                sys.stdout.flush()
 
 
     def print_config_data(self, src_config=None, evaluate=False, impersonate=None):
