@@ -2414,6 +2414,8 @@ def fix_exe_link(svcname):
     """
     if os.name != 'posix':
         return
+    if not os.path.exists(os.path.join(rcEnv.paths.pathetc, svcname+".conf")):
+        return
     if not exe_link_exists(svcname):
         from freezer import Freezer
         Freezer(svcname).freeze()
