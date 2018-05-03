@@ -263,7 +263,7 @@ class Disk(resDisk.Disk):
             # all dst unlinked: report no error => down state
             r &= False
         elif len(self.dst_devs_not_found) > 0:
-            self.status_log("%s dst devs not found"%', '.join(self.dst_devs_not_found))
+            self.status_log("%s dst devs not found" % ', '.join(sorted(self.dst_devs_not_found)))
             r &= False
         for src, dst in self.devs_map.items():
             r &= self.has_it_dev_map(src, dst)
@@ -297,7 +297,7 @@ class Disk(resDisk.Disk):
                 "disk",
                 "hb"
             ]))
-            msg = "%s not found"%', '.join(self.devs_not_found)
+            msg = "%s not found" % ', '.join(sorted(self.devs_not_found))
             if str(status["avail"]) not in ("up", "n/a"):
                 self.status_log(msg, "info")
             else:
