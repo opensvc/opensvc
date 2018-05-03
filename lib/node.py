@@ -2983,7 +2983,7 @@ class Node(Crypt, ExtConfig):
                 print(msg)
                 sys.stdout.flush()
             else:
-                print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+                print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"), msg.get("nodename", ""))
                 for event in msg["data"]:
                     try:
                         key, val = event

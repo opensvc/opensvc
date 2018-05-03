@@ -2160,12 +2160,9 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def update_hb_data(self):
         """
-        Preapre the heartbeat data we send to other nodes.
+        Prepare the heartbeat data we send to other nodes.
         """
         now = time.time()
-
-        if len(shared.LOCAL_GEN) == 0:
-            return
 
         if self.mon_changed():
             self.update_cluster_data()
@@ -2199,12 +2196,18 @@ class Monitor(shared.OsvcThread, Crypt):
         data["gen"] = self.get_gen(inc=True)
         data["updated"] = now
         diff.append([["updated"], data["updated"]])
-        shared.GEN_DIFF[shared.GEN] = diff
+
         shared.EVENT_Q.put({
             "nodename": rcEnv.nodename,
             "kind": "patch",
             "data": diff,
         })
+
+        # don't store the diff if we have no peers
+        if len(shared.LOCAL_GEN) == 0:
+            return
+
+        shared.GEN_DIFF[shared.GEN] = diff
         self.purge_log()
         with shared.HB_MSG_LOCK:
              # reset the full status cache. get_message() will refill if
