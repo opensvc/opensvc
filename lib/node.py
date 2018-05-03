@@ -2975,9 +2975,15 @@ class Node(Crypt, ExtConfig):
             nodename = self.options.node
         elif nodename is None:
             nodename = rcEnv.nodename
-        from rcColor import format_json
         for msg in self.daemon_events(nodename):
-            print(msg)
+            if self.options.format == "json":
+                print(msg)
+            else:
+                print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+                for key, val in msg["data"]:
+                    line = "  %s => %s" % (".".join(key), val)
+                    print(line)
+                    sys.stdout.flush()
 
     def logs(self, nodename=None):
         try:
