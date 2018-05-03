@@ -521,7 +521,9 @@ class Resource(object):
         """
         try:
             with open(self.fpath_status_last, 'r') as ofile:
-                lines = ofile.read().splitlines()
+                data = json.load(ofile)
+        except ValueError:
+            return rcStatus.UNDEF
         except (OSError, IOError) as exc:
             if exc.errno != 2:
                 # not EEXISTS
@@ -529,22 +531,22 @@ class Resource(object):
             return rcStatus.UNDEF
 
         try:
-            status = rcStatus.Status(lines[0])
+            status = rcStatus.Status(data["status"])
         except (IndexError, AttributeError, ValueError) as exc:
             self.log.debug(exc)
             return rcStatus.UNDEF
 
-        self.status_logs = []
-        if len(lines) > 1:
-            for line in lines[1:]:
-                if line.startswith("info: "):
-                    self.status_logs.append(("info", line.replace("info: ", "", 1)))
-                elif line.startswith("warn: "):
-                    self.status_logs.append(("warn", line.replace("warn: ", "", 1)))
-                elif line.startswith("error: "):
-                    self.status_logs.append(("error", line.replace("error: ", "", 1)))
-                else:
-                    self.status_logs.append(("warn", line))
+        if hasattr(self, "set_label"):
+            if hasattr(self, "_lazy_label"):
+                attr = "_lazy_label"
+            else:
+                attr = "label"
+            try:
+                setattr(self, attr, data["label"])
+            except (IndexError, AttributeError, ValueError) as exc:
+                pass
+
+        self.status_logs = data.get("log", [])
 
         return status
 
@@ -552,14 +554,16 @@ class Resource(object):
         """
         Write the in-memory resource status to the on-disk cache.
         """
-        status_str = "%s\n" % rcStatus.Status(self.rstatus)
-        if len(self.status_logs) > 0:
-            status_str += '\n'.join([entry[0]+": "+entry[1] for entry in self.status_logs])+'\n'
+        data = {
+            "status": str(rcStatus.Status(self.rstatus)),
+            "label": self.label,
+            "log": self.status_logs,
+        }
         dpath = os.path.dirname(self.fpath_status_last)
         if not os.path.exists(dpath):
             os.makedirs(dpath, 0o0755)
         with open(self.fpath_status_last, 'w') as ofile:
-            ofile.write(status_str)
+            json.dump(data, ofile)
             ofile.flush()
 
     def write_status_history(self):
