@@ -162,7 +162,7 @@ def get_sync_args(svc, s):
 
     return kwargs
 
-def add_resources(svc, restype):
+def add_resources_group(svc, restype):
     for s in svc.config.sections():
         try:
             add_resource(svc, restype, s)
@@ -2049,7 +2049,7 @@ def setup_logging(svcnames):
     rcLogger.max_svcname_len = max_svcname_len
     rcLogger.initLogger(rcEnv.nodename)
 
-def build(name, minimal=False, svcconf=None, node=None):
+def build(name, svcconf=None, node=None):
     """build(name) is in charge of Svc creation
     it return None if service Name is not managed by local node
     else it return new Svc instance
@@ -2210,41 +2210,34 @@ def build(name, minimal=False, svcconf=None, node=None):
     except ex.OptNotFound as exc:
         svc.bwlimit = None
 
-    if minimal:
-        svc.options.minimal = True
-        return svc
-    if svc.scale_target is not None:
-        return svc
+    return svc
 
-    svc.options.minimal = False
-
+def add_resources(svc):
     #
     # instanciate resources
     #
-    add_resources(svc, 'container')
-    add_resources(svc, 'ip')
-    add_resources(svc, 'disk')
-    add_resources(svc, 'fs')
-    add_resources(svc, 'share')
-    add_resources(svc, 'app')
-    add_resources(svc, 'task')
+    add_resources_group(svc, 'container')
+    add_resources_group(svc, 'ip')
+    add_resources_group(svc, 'disk')
+    add_resources_group(svc, 'fs')
+    add_resources_group(svc, 'share')
+    add_resources_group(svc, 'app')
+    add_resources_group(svc, 'task')
 
     # deprecated, folded into "disk"
-    add_resources(svc, 'vdisk')
-    add_resources(svc, 'vmdg')
-    add_resources(svc, 'loop')
-    add_resources(svc, 'drbd')
-    add_resources(svc, 'vg')
-    add_resources(svc, 'pool')
+    add_resources_group(svc, 'vdisk')
+    add_resources_group(svc, 'vmdg')
+    add_resources_group(svc, 'loop')
+    add_resources_group(svc, 'drbd')
+    add_resources_group(svc, 'vg')
+    add_resources_group(svc, 'pool')
 
-    add_resources(svc, 'sync')
+    add_resources_group(svc, 'sync')
     add_mandatory_syncs(svc)
 
-    svc.post_build()
-    return svc
 
 def build_services(status=None, svcnames=None, create_instance=False,
-                   minimal=False, node=None):
+                   node=None):
     """
     Returns a list of all services of status matching the specified status.
     If no status is specified, returns all services.
@@ -2279,7 +2272,7 @@ def build_services(status=None, svcnames=None, create_instance=False,
 
     for name in svcnames:
         try:
-            svc = build(name, minimal=minimal, node=node)
+            svc = build(name, node=node)
         except (ex.excError, ex.excInitError, ValueError, rcConfigParser.ParsingError) as e:
             errors.append("%s: %s" % (name, str(e)))
             svclog = rcLogger.initLogger(rcEnv.nodename+"."+name, handlers=["file", "syslog"])

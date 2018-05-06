@@ -41,33 +41,12 @@ def get_docker_argv(argv=None):
     argv = argv[:pos+1]
     return argv, docker_argv
 
-def get_minimal(action, options):
-    """
-    Return True if the services can be built with minimal parsing
-    """
-    if action == "ls" and not options.status:
-        return True
-    if action == "get" and not options.eval:
-        return True
-    if action == "print_status" and not options.refresh:
-        return True
-    if action == "edit_config":
-        return True
-    if action.startswith("print_config"):
-        return True
-    if action.startswith("json_config"):
-        return True
-    if action.startswith("collector_"):
-        return True
-    return False
-
 def get_build_kwargs(optparser, options, action):
     """
     Return the service build function keyword arguments, deduced from
     parsed command line options.
     """
     build_kwargs = {}
-    build_kwargs["minimal"] = get_minimal(action, options)
 
     if len(set(["svcnames", "status"]) & set(build_kwargs.keys())) == 0:
         if os.environ.get("OSVC_SERVICE_LINK"):
@@ -160,7 +139,7 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
 
     # force a refresh of node.svcs
     try:
-        node.rebuild_services(svcnames, build_kwargs["minimal"])
+        node.rebuild_services(svcnames)
     except ex.excError as exc:
         print(exc, file=sys.stderr)
         ret = 1
@@ -170,7 +149,7 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
         # setenv changed the service config file
         # we need to rebuild again
         try:
-            node.rebuild_services(svcnames, build_kwargs["minimal"])
+            node.rebuild_services(svcnames)
         except ex.excError as exc:
             print(exc, file=sys.stderr)
             ret = 1
@@ -208,7 +187,7 @@ def export_env_from_options(options):
 
 def _main(node, argv=None):
     """
-    Build the service list, full or minimal depending on the requested action.
+    Build the service list.
     Execute action-specific codepaths.
     """
     build_err = False

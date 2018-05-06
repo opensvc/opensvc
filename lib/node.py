@@ -547,7 +547,7 @@ class Node(Crypt, ExtConfig):
             return list_services()
         if is_service(selector):
             return [selector]
-        self.build_services(minimal=True)
+        self.build_services()
         try:
             return self._svcs_selector(selector)
         finally:
@@ -739,18 +739,16 @@ class Node(Crypt, ExtConfig):
             msg += "\n".join(["- "+err for err in errors])
         raise ex.excError(msg)
 
-    def rebuild_services(self, svcnames, minimal):
+    def rebuild_services(self, svcnames):
         """
         Delete the list of Svc objects in the Node object and create a new one.
 
         Args:
           svcnames: add only Svc objects for services specified
-          minimal: include a minimal set of properties in the new Svc objects
         """
         del self.services
         self.services = None
-        self.build_services(svcnames=svcnames, minimal=minimal,
-                            node=self)
+        self.build_services(svcnames=svcnames, node=self)
 
     def close(self):
         """

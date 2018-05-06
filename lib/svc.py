@@ -448,6 +448,7 @@ class Svc(Crypt, ExtConfig):
         )
         if cf:
             self.paths.cf = cf
+        self.resources_initialized = False
         self.resources_by_id = {}
         self.encap_resources = {}
         self.resourcesets_by_id = {}
@@ -562,6 +563,7 @@ class Svc(Crypt, ExtConfig):
                 ),
             },
         )
+        return sched
 
     @lazy
     def ha(self):
@@ -864,9 +866,8 @@ class Svc(Crypt, ExtConfig):
                 return True
         return False
 
-    def post_build(self):
+    def configure_sched_tasks(self):
         """
-        A method run after the service is done building.
         Add resource-dependent tasks to the scheduler.
         """
         try:
@@ -1256,11 +1257,25 @@ class Svc(Crypt, ExtConfig):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
+    def init_resources(self):
+        if self.resources_initialized:
+            return
+        if self.scale_target is not None:
+            # scalers can't have resources
+            return
+        from svcBuilder import add_resources
+        add_resources(self)
+        self.resources_initialized = True
+        #import traceback
+        #traceback.print_stack()
+        self.log.debug("resources initialized")
+
     def get_resource(self, rid, with_encap=False):
         """
         Return a resource object by id.
         Return None if the rid is not found.
         """
+        self.init_resources()
         if rid in self.resources_by_id:
             return self.resources_by_id[rid]
         if with_encap and rid in self.encap_resources:
@@ -1274,6 +1289,7 @@ class Svc(Crypt, ExtConfig):
         <_type> can be:
           None: all resources are returned
         """
+        self.init_resources()
         if _type is None:
             return self.resources_by_id.values()
         if not isinstance(_type, (list, tuple)):
@@ -1540,17 +1556,21 @@ class Svc(Crypt, ExtConfig):
                 pass
 
         if not refresh:
-            data["running"] = self.get_running()
+            data["running"] = self.get_running(data["resources"].keys())
         return data
 
-    def get_running(self):
+    def get_running(self, rids=None):
         lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname)
         running = []
         running += [self._get_running(lockfile).get("rid")]
         lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname+".sync")
         running += [self._get_running(lockfile).get("rid")]
-        for task in self.get_resources("task"):
-            lockfile = os.path.join(task.var_d, "run.lock")
+        if rids is None:
+            rids = [r.rid for r in self.get_resources("task")]
+        else:
+            rids = [rid for rid in rids if rid.startswith("task")]
+        for rid in rids:
+            lockfile = os.path.join(self.var_d, rid, "run.lock")
             running += [self._get_running(lockfile).get("rid")]
         return [rid for rid in running if rid]
 
@@ -1709,8 +1729,6 @@ class Svc(Crypt, ExtConfig):
         return data
 
     def update_status_data(self):
-        if self.options.minimal:
-            return
         self.log.debug("update status dump")
         # print_status_data() with from_resource_status_cache=True does a status.json write
         self.print_status_data(from_resource_status_cache=True)
@@ -1752,10 +1770,10 @@ class Svc(Crypt, ExtConfig):
                   "resources", file=sys.stderr)
             return 1
         for rid in self.action_rid:
-            if rid not in self.resources_by_id:
-                print("resource not found")
+            resource = self.get_resource(rid)
+            if resource is None:
+                print("resource %s not found" % rid)
                 continue
-            resource = self.resources_by_id[rid]
             print(rcStatus.colorize_status(str(resource.status(refresh=self.options.refresh))))
         return 0
 
@@ -3472,6 +3490,7 @@ class Svc(Crypt, ExtConfig):
             resource.setup_environ()
 
     def all_rids(self):
+        self.init_resources()
         return [rid for rid in self.resources_by_id if rid is not None] + \
                list(self.encap_resources.keys())
 
@@ -3675,7 +3694,6 @@ class Svc(Crypt, ExtConfig):
                 raise ex.excAbortAction("no resource match the given --rid, --subset "
                                         "and --tags specifiers")
         else:
-            # no resources certainly mean the build was done with minimal=True
             # let the action go on. 'delete', for one, takes a --rid but does
             # not need resource initialization
             rids = rid
@@ -3693,6 +3711,8 @@ class Svc(Crypt, ExtConfig):
         except ex.excAbortAction as exc:
             self.log.info(exc)
             return 0
+        if self.options.cron and action in ("resource_monitor", "sync_all", "status") or action == "print_schedule":
+            self.configure_sched_tasks()
         try:
             return self._action(action, options=options)
         except lock.LOCK_EXCEPTIONS as exc:
@@ -3745,7 +3765,6 @@ class Svc(Crypt, ExtConfig):
                            "action %s", action)
             self.purge_status_caches()
 
-        self.setup_environ(action=action)
         self.setup_signal_handlers()
         self.set_skip_resources(keeprid=self.action_rid, xtags=options.xtags)
         if action == "status" or \
@@ -3759,6 +3778,7 @@ class Svc(Crypt, ExtConfig):
            options.dry_run:
             err = self.do_action(action, options)
         else:
+            self.setup_environ(action=action)
             err = self.do_logged_action(action, options)
         return err
 
@@ -3951,8 +3971,8 @@ class Svc(Crypt, ExtConfig):
 
         if action == "sync_all" and self.command_is_scoped():
             for rid in self.action_rid:
-                resource = self.resources_by_id[rid]
-                if not resource.type.startswith("sync"):
+                resource = self.get_resource(rid)
+                if not resource or not resource.type.startswith("sync"):
                     continue
                 try:
                     resource.reslock(action=action, suffix="sync")
