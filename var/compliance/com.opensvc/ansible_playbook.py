@@ -53,6 +53,7 @@ import sys
 import stat
 import re
 import tempfile
+from utilities import which
 from subprocess import *
 
 sys.path.append(os.path.dirname(__file__))
@@ -68,6 +69,10 @@ class AnsiblePlaybook(CompObject):
 
     def init(self):
         self.rules = []
+        if not which('ansible-playbook'):
+            perror('ansible-playbook binary not found')
+            raise ComplianceError()
+
         self.inventory = os.path.join(os.environ["OSVC_PATH_COMP"], ".ansible-inventory")
 
         for rule in self.get_rules():
