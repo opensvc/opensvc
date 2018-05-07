@@ -240,7 +240,10 @@ class App(Resource):
                     raise ex.excAbortAction()
                 cmd = [self.script, script_arg if script_arg else action]
             except:
-                cmd = shlex.split(val)
+                if "|" in val or "&&" in val or ";" in val:
+                    return val
+                else:
+                    cmd = shlex.split(val)
         cmd = self.validate_on_action(cmd)
         return cmd
 
@@ -433,15 +436,23 @@ class App(Resource):
         """
         if dedicated_log:
             return self._run_cmd_dedicated_log(action, cmd)
-        elif return_out:
-            out, err, ret = justcall(cmd)
-            if ret != 0:
-                return "Error: info not implemented in launcher"
-            return out
         else:
-            out, err, ret = justcall(cmd)
-            self.log.debug("%s returned out=[%s], err=[%s], ret=[%d]", cmd, out, err, ret)
-            return ret
+            try:
+                kwargs = self.common_popen_kwargs(cmd)
+            except ValueError as exc:
+                if return_out:
+                    return "error: %s" % str(exc)
+                else:
+                    self.log.error("%s", exc)
+                    return 1
+            ret, out, err = self.call(cmd, **kwargs)
+            if return_out:
+                if ret != 0:
+                    return "Error: info not implemented in launcher"
+                return out
+            else:
+                self.log.debug("%s returned out=[%s], err=[%s], ret=[%d]", cmd, out, err, ret)
+                return ret
 
     @lazy
     def limits(self):
@@ -471,23 +482,32 @@ class App(Resource):
             return action_timeout
         return self.timeout
 
+    def common_popen_kwargs(self, cmd):
+        kwargs = {
+            'stdin': self.svc.node.devnull,
+        }
+        if isinstance(cmd, list):
+            kwargs.update(run_as_popen_kwargs(cmd[0], self.limits))
+        else:
+            kwargs["shell"] = True
+        return kwargs
+
     def _run_cmd_dedicated_log(self, action, cmd):
         """
         Poll stdout and stderr to log as soon as new lines are available.
         """
+        now = datetime.now()
         kwargs = {
-            'stdin': None,
             'timeout': self.get_timeout(action),
             'logger': self.log,
         }
         try:
-            kwargs.update(run_as_popen_kwargs(cmd[0], self.limits))
+            kwargs.update(self.common_popen_kwargs(cmd))
         except ValueError as exc:
             self.log.error("%s", exc)
             return 1
         user = kwargs.get("env").get("LOGNAME")
         self.log.info('exec %s as user %s', ' '.join(cmd), user)
-        now = datetime.now()
         try:
             ret = lcall(cmd, **kwargs)
         except (KeyboardInterrupt, ex.excSignal):
