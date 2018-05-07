@@ -349,24 +349,42 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
     start = time.time()
     if "close_fds" not in kwargs:
         kwargs["close_fds"] = close_fds
-    proc = Popen(cmd, stdout=PIPE, stderr=PIPE, **kwargs)
-    log_level = {proc.stdout: outlvl, proc.stderr: errlvl}
+    rout, wout = os.pipe()
+    rerr, werr = os.pipe()
+    proc = Popen(cmd, stdout=wout, stderr=werr, **kwargs)
+    log_level = {
+        rout: outlvl,
+        rerr: errlvl
+    }
+    pending = {
+        rout: "",
+        rerr: ""
+    }
     terminated = False
     killed = False
 
     def check_io():
         logged = 0
-        ready_to_read = select.select([proc.stdout, proc.stderr], [], [], 0.5)[0]
-        for io in ready_to_read:
-            line = io.readline()
+        rlist, _, xlist = select.select([rout, rerr], [], [], 0.5)
+        if xlist:
+            return logged
+        for io in rlist:
+            buff = os.read(io, 32768)
             if sys.version_info[0] < 3:
-                line = line.decode("utf8")
+                buff = buff.decode("utf8")
             else:
-                line = line.decode("ascii", errors="ignore")
-            if line in ('', b''):
+                buff = buff.decode("ascii", errors="ignore")
+            if buff in ('', b''):
                 continue
-            logger.log(log_level[io], line[:-1])
-            logged += 1
+            buff = pending[io] + buff
+            while True:
+                l = buff.split("\n", 1)
+                if len(l) == 1:
+                    pending[io] = l[0]
+                    break
+                line, buff = l
+                logger.log(log_level[io], line)
+                logged += 1
         return logged
 
     # keep checking stdout/stderr until the proc exits
@@ -388,7 +406,15 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
         logged = check_io()
         if logged == 0:
             break
-    return proc.wait()
+    for io in rout, rerr:
+        line = pending[io]
+        if line:
+            logger.log(log_level[io], line)
+    os.close(rout)
+    os.close(rerr)
+    os.close(wout)
+    os.close(werr)
+    return proc.returncode
 
 
 def call(argv,
