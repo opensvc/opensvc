@@ -175,8 +175,7 @@ class Resource(object):
         """
         A helper method to save stacks in the service log.
         """
-        self.log.error("unexpected error. stack saved in the service debug log")
-        self.log.debug("", exc_info=True)
+        self.log.error("", exc_info=True)
 
     def setup_environ(self):
         """

@@ -1266,8 +1266,6 @@ class Svc(Crypt, ExtConfig):
         from svcBuilder import add_resources
         add_resources(self)
         self.resources_initialized = True
-        #import traceback
-        #traceback.print_stack()
         self.log.debug("resources initialized")
 
     def get_resource(self, rid, with_encap=False):
@@ -4746,11 +4744,7 @@ class Svc(Crypt, ExtConfig):
         """
         A helper method to save stacks in the service log.
         """
-        self.log.error("unexpected error. stack saved in the service debug log")
-        import traceback
-        buff = traceback.format_exc()
-        for line in buff.splitlines():
-            self.log.debug(line)
+        self.log.error("", exc_info=True)
 
     def vcall(self, *args, **kwargs):
         """
