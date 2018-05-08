@@ -459,22 +459,22 @@ class Listener(shared.OsvcThread, Crypt):
         self.set_smon(svcname, status="idle", reset_retries=True)
         return {"status": 0}
 
-    def get_service_slaves(self, svcname):
+    def get_service_slaves(self, svcname, slaves=None):
         """
         Recursive lookup of service slaves.
         """
-        slaves = set()
+        if slaves is None:
+            slaves = set()
         for nodename in shared.CLUSTER_DATA:
             try:
                 data = shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]
             except KeyError:
                 continue
-            if not data.get("enslave_children"):
-                continue
-            _slaves = set(data.get("children", [])) - slaves
-            slaves |= _slaves
-            for slave in _slaves:
-                slaves |= self.get_service_slaves(slave)
+            new_slaves = set(data.get("slaves", [])) | set(data.get("scaler_slaves", []))
+            new_slaves -= slaves
+            slaves |= new_slaves
+            for slave in new_slaves:
+                slaves |= self.get_service_slaves(slave, slaves)
         return slaves
 
     def action_set_service_monitor(self, nodename, **kwargs):
