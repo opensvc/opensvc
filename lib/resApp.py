@@ -445,12 +445,15 @@ class App(Resource):
                 else:
                     self.log.error("%s", exc)
                     return 1
-            ret, out, err = self.call(cmd, **kwargs)
             if return_out:
+                ret, out, err = self.call(cmd, **kwargs)
                 if ret != 0:
                     return "Error: info not implemented in launcher"
                 return out
             else:
+                kwargs["outlog"] = False
+                kwargs["errlog"] = False
+                ret, out, err = self.call(cmd, **kwargs)
                 self.log.debug("%s returned out=[%s], err=[%s], ret=[%d]", cmd, out, err, ret)
                 return ret
 
