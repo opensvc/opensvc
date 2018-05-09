@@ -1608,6 +1608,11 @@ class Monitor(shared.OsvcThread, Crypt):
             return 'up'
 
     def get_agg_placement(self, svcname):
+        try:
+            if shared.SERVICES[svcname].placement == "none":
+                return "n/a"
+        except KeyError:
+            pass
         instances = [instance for instance in self.get_service_instances(svcname).values() \
                      if not instance.get("frozen")]
         if len(instances) < 2:

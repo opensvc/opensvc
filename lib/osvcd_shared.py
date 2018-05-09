@@ -152,6 +152,15 @@ class OsvcThread(threading.Thread):
         # hash for log dups avoiding
         self.duplog_data = {}
 
+        self.rankers = {
+            "nodes order": "placement_ranks_nodes_order",
+            "shift": "placement_ranks_shift",
+            "spread": "placement_ranks_spread",
+            "score": "placement_ranks_score",
+            "load avg": "placement_ranks_load_avg",
+            "none": "placement_ranks_none",
+        }
+
     def notify_config_change(self):
         """
         Notify thread the node configuration file changed.
@@ -692,17 +701,9 @@ class OsvcThread(threading.Thread):
     def placement_ranks(self, svc, candidates=None):
         if candidates is None:
             candidates = self.placement_candidates(svc)
-        if svc.placement == "nodes order":
-            return self.placement_ranks_nodes_order(svc, candidates)
-        elif svc.placement == "shift":
-            return self.placement_ranks_shift(svc, candidates)
-        elif svc.placement == "spread":
-            return self.placement_ranks_spread(svc, candidates)
-        elif svc.placement == "score":
-            return self.placement_ranks_score(svc, candidates)
-        elif svc.placement == "load avg":
-            return self.placement_ranks_load_avg(svc, candidates)
-        else:
+        try:
+            return getattr(self, self.rankers[svc.placement])(svc, candidates)
+        except AttributeError:
             return [rcEnv.nodename]
 
     def duplog(self, lvl, msg, **kwargs):
@@ -770,6 +771,12 @@ class OsvcThread(threading.Thread):
                 return True
             else:
                 return False
+
+    def placement_ranks_none(self, svc, candidates, silent=False):
+        """
+        Always return an empty list.
+        """
+        return []
 
     def placement_ranks_spread(self, svc, candidates, silent=False):
         """
