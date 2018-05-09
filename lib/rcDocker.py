@@ -435,7 +435,7 @@ class DockerLib(object):
         try:
             cmd = self.docker_cmd + ["login", reg] + self.login_as_service_args()
         except Exception:
-            self.log.debug("skip registry login as service: node not registered")
+            self.svc.log.debug("skip registry login as service: node not registered")
             return
         justcall(cmd)
 
