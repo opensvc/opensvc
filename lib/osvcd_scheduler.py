@@ -191,6 +191,7 @@ class Scheduler(shared.OsvcThread):
             except KeyError:
                 # deleted during previous iterations
                 continue
+            svc.configure_scheduler()
             svc.options.cron = True
             try:
                 provisioned = shared.AGG[svc.svcname].provisioned

@@ -449,6 +449,7 @@ class Svc(Crypt, ExtConfig):
         if cf:
             self.paths.cf = cf
         self.resources_initialized = False
+        self.scheduler_configured = False
         self.resources_by_id = {}
         self.encap_resources = {}
         self.resourcesets_by_id = {}
@@ -866,10 +867,13 @@ class Svc(Crypt, ExtConfig):
                 return True
         return False
 
-    def configure_sched_tasks(self):
+    def configure_scheduler(self):
         """
         Add resource-dependent tasks to the scheduler.
         """
+        if self.scheduler_configured:
+            return
+        self.scheduler_configured = True
         try:
             monitor_schedule = self.conf_get('DEFAULT', 'monitor_schedule')
         except ex.OptNotFound:
@@ -3710,7 +3714,7 @@ class Svc(Crypt, ExtConfig):
             self.log.info(exc)
             return 0
         if self.options.cron and action in ("resource_monitor", "sync_all", "status") or action == "print_schedule":
-            self.configure_sched_tasks()
+            self.configure_scheduler()
         try:
             return self._action(action, options=options)
         except lock.LOCK_EXCEPTIONS as exc:
