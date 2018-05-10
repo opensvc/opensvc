@@ -19,10 +19,13 @@ class Ip(Res.Ip):
             return ret, out, err
 
     def startip_cmd(self):
-        if ':' in self.addr:
-            cmd = ['ifconfig', self.ipdev, 'inet6', 'add', '/'.join([self.addr, to_cidr(self.mask)])]
+        if which("ifconfig"):
+            if ':' in self.addr:
+                cmd = ['ifconfig', self.ipdev, 'inet6', 'add', '/'.join([self.addr, to_cidr(self.mask)])]
+            else:
+                cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', to_dotted(self.mask), 'up']
         else:
-            cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', to_dotted(self.mask), 'up']
+            cmd = [rcEnv.syspaths.ip, "addr", "add", '/'.join([self.addr, to_cidr(self.mask)]), "dev", self.ipdev]
 
         ret, out, err = self.vcall(cmd)
         if ret != 0:
@@ -37,11 +40,14 @@ class Ip(Res.Ip):
         raise ex.excError
 
     def stopip_cmd(self):
-        if ':' in self.addr:
-            cmd = ['ifconfig', self.ipdev, 'inet6', 'del', '/'.join([self.addr, to_cidr(self.mask)])]
+        if which("ifconfig"):
+            if ':' in self.addr:
+                cmd = ['ifconfig', self.ipdev, 'inet6', 'del', '/'.join([self.addr, to_cidr(self.mask)])]
+            else:
+                if self.stacked_dev is None:
+                    return 1, "", "no stacked dev found"
+                cmd = ['ifconfig', self.stacked_dev, 'down']
         else:
-            if self.stacked_dev is None:
-                return 1, "", "no stacked dev found"
-            cmd = ['ifconfig', self.stacked_dev, 'down']
+            cmd = [rcEnv.syspaths.ip, "addr", "del", '/'.join([self.addr, to_cidr(self.mask)]), "dev", self.ipdev]
         return self.vcall(cmd)
 
