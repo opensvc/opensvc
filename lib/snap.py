@@ -107,7 +107,7 @@ class Snap(Res.Resource):
             return
         if len(self.snaps) == 0 :
             return
-        for s in self.snaps.keys():
+        for s in list(self.snaps.keys()):
             self.snapdestroykey(s)
         if rset is None:
             return
