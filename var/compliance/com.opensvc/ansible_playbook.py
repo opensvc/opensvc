@@ -71,7 +71,7 @@ class AnsiblePlaybook(CompObject):
         self.rules = []
         if not which('ansible-playbook'):
             perror('ansible-playbook binary not found')
-            raise ComplianceError()
+            raise NotApplicable()
 
         self.inventory = os.path.join(os.environ["OSVC_PATH_COMP"], ".ansible-inventory")
 
