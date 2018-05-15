@@ -237,20 +237,10 @@ class Asset(rcAsset.Asset):
         return 'Unknown'
 
     def _get_os_kernel(self):
-        (out, err, ret) = justcall(['uname', '-r'])
-        if ret != 0:
-            return 'Unknown'
-        return out.split('\n')[0]
+        return os.uname()[2]
 
     def _get_os_arch(self):
-        if which('arch') is not None:
-            cmd = ['arch']
-        else:
-            cmd = ['uname', '-m']
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            return 'Unknown'
-        return out.split('\n')[0]
+        return os.uname()[4]
 
     def _get_cpu_freq(self):
         p = '/proc/cpuinfo'
