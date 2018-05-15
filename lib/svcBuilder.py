@@ -162,13 +162,6 @@ def get_sync_args(svc, s):
 
     return kwargs
 
-def add_resources_group(svc, restype):
-    for s in svc.config.sections():
-        try:
-            add_resource(svc, restype, s)
-        except ex.RequiredOptNotFound:
-            continue
-
 def add_resource(svc, restype, s):
     if restype == "pool":
         restype = "zpool"
@@ -181,7 +174,9 @@ def add_resource(svc, restype, s):
         # don't add them from here
         return
 
-    if s != 'app' and s != restype and re.match(match, s, re.I) is None:
+    try:
+        adder = globals()['add_'+restype]
+    except AttributeError:
         return
 
     tags = get_tags(svc, s)
@@ -208,7 +203,7 @@ def add_resource(svc, restype, s):
     if s in svc.resources_by_id:
         return
 
-    globals()['add_'+restype](svc, s)
+    adder(svc, s)
 
 def add_ip_gce(svc, s):
     kwargs = init_kwargs(svc, s)
@@ -2213,28 +2208,18 @@ def build(name, svcconf=None, node=None):
     return svc
 
 def add_resources(svc):
-    #
-    # instanciate resources
-    #
-    add_resources_group(svc, 'container')
-    add_resources_group(svc, 'ip')
-    add_resources_group(svc, 'disk')
-    add_resources_group(svc, 'fs')
-    add_resources_group(svc, 'share')
-    add_resources_group(svc, 'app')
-    add_resources_group(svc, 'task')
-
-    # deprecated, folded into "disk"
-    add_resources_group(svc, 'vdisk')
-    add_resources_group(svc, 'vmdg')
-    add_resources_group(svc, 'loop')
-    add_resources_group(svc, 'drbd')
-    add_resources_group(svc, 'vg')
-    add_resources_group(svc, 'pool')
-
-    add_resources_group(svc, 'sync')
+    """
+    Instanciate resource objects and add them to the service.
+    """
+    for s in svc.config.sections():
+        restype = s.split("#")[0]
+        if restype in ("env", "subset"):
+            continue
+        try:
+            add_resource(svc, restype, s)
+        except ex.RequiredOptNotFound:
+            continue
     add_mandatory_syncs(svc)
-
 
 def build_services(status=None, svcnames=None, create_instance=False,
                    node=None):
