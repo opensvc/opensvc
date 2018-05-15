@@ -87,7 +87,7 @@ def osrun(cmd, stdout=False, stderr=False):
         os.system(cmd)
     else:
         ret = os.WEXITSTATUS(os.system(cmd))
-        logit("cmd [%s]  ret[%s]"%(cmd,ret), stdout, stderr)
+        logit("cmd [%s]  ret[%s]"%(cmd, ret), stdout, stderr)
     if ret is not None:
         return ret
 
@@ -95,38 +95,38 @@ make_sure_path_exists(pathlog)
 
 if sysname == 'SunOS':
     osvcfmri = 'svc:/site/application/opensvc:boot'
-    cmd = ['svcs', '-vl', osvcfmri, '2>/dev/null' ]
+    cmd = ['svcs', '-vl', osvcfmri, '2>/dev/null']
     ret = osrun(' '.join(cmd))
     if ret == 0:
-	# Solaris install from IPS package with standard FMRI
-        logit("Solaris postinstall check for first run",stdout=False)
-	cmd = ['svcprop', '-p', 'boot/firstrun', osvcfmri, '|', 'grep', 'done']
+        # Solaris install from IPS package with standard FMRI
+        logit("Solaris postinstall check for first run", stdout=False)
+        cmd = ['svcprop', '-p', 'boot/firstrun', osvcfmri, '|', 'grep', 'done']
         ret = osrun(' '.join(cmd))
-	if ret == 0:
-	    logit("Solaris postinstall already executed. Exiting.",stdout=False)
+        if ret == 0:
+            logit("Solaris postinstall already executed. Exiting.", stdout=False)
             sys.exit(0)
 
-logit("\nStarting OpenSVC postinstall\n",stdout=True)
+logit("\nStarting OpenSVC postinstall\n", stdout=True)
 
 SolarisRootRelocate = False
 if sysname == 'SunOS' and "PKG_INSTALL_ROOT" in os.environ and os.environ['PKG_INSTALL_ROOT'] != '/':
-     logit("SunOS PKG_INSTALL_ROOT <%s>"%(os.environ['PKG_INSTALL_ROOT']))
-     SolarisRootRelocate = True
+    logit("SunOS PKG_INSTALL_ROOT <%s>"%(os.environ['PKG_INSTALL_ROOT']))
+    SolarisRootRelocate = True
 
 variables = {
-  "pathsvc": pathsvc,
-  "pathsbin": pathsbin,
-  "pathbin": pathbin,
-  "pathetc": pathetc,
-  "pathvar": pathvar,
-  "pathtmp": pathtmp,
-  "pathlib": pathlib,
-  "pathlog": pathlog,
-  "pathusr": pathusr,
-  "SolarisRootRelocate": SolarisRootRelocate
+    "pathsvc": pathsvc,
+    "pathsbin": pathsbin,
+    "pathbin": pathbin,
+    "pathetc": pathetc,
+    "pathvar": pathvar,
+    "pathtmp": pathtmp,
+    "pathlib": pathlib,
+    "pathlog": pathlog,
+    "pathusr": pathusr,
+    "SolarisRootRelocate": SolarisRootRelocate
 }
 for key in variables:
-    logit("var %s <%s>"%(key,variables[key]))
+    logit("var %s <%s>"%(key, variables[key]))
 
 def install_cron():
     logit("begin")
@@ -140,7 +140,7 @@ def install_winservice():
     if sysname != 'Windows':
         return
     logit("begin")
-    logit("install OpenSVC agent winservice",stdout=True)
+    logit("install OpenSVC agent winservice", stdout=True)
     schedstop()
     time.sleep(3)
     schedremove()
@@ -204,13 +204,13 @@ def save_file(infile):
     outfile = os.path.join(os.sep, pathtmp, nfname)
     logit("outfile <%s>"%outfile)
 
-    logit("saving file <%s> to <%s>"%(infile,outfile),stdout=True)
+    logit("saving file <%s> to <%s>"%(infile, outfile), stdout=True)
     try:
         shutil.copyfile(infile, outfile)
     except:
         import traceback
         traceback.print_exc()
-        logit("error while trying to save file <%s> to <%s>"%(infile,outfile),stderr=True)
+        logit("error while trying to save file <%s> to <%s>"%(infile, outfile), stderr=True)
         return False
     return True
 
@@ -221,14 +221,14 @@ def install_cron_unix():
     """
 
     remove_entries = [
-      'bin/nodemgr schedulers',
-      'bin/nodemgr compliance check',
-      'bin/svcmon ',
-      'bin/cron/opensvc',
-      'svcmgr resource monitor',
-      'svcmgr resource_monitor',
-      'nodemgr cron',
-      'perfagt.'+sysname,
+        'bin/nodemgr schedulers',
+        'bin/nodemgr compliance check',
+        'bin/svcmon ',
+        'bin/cron/opensvc',
+        'svcmgr resource monitor',
+        'svcmgr resource_monitor',
+        'nodemgr cron',
+        'perfagt.'+sysname,
     ]
 
     purge = []
@@ -236,12 +236,12 @@ def install_cron_unix():
 
     """ order of preference
     """
-    if sysname == 'SunOS' :
+    if sysname == 'SunOS':
         if SolarisRootRelocate is True:
             suncron = os.environ["PKG_INSTALL_ROOT"] + '/var/spool/cron/crontabs/root'
             root_crontab_locs = suncron
         else:
-            root_crontab_locs = [ '/var/spool/cron/crontabs/root' ]
+            root_crontab_locs = ['/var/spool/cron/crontabs/root']
     else:
         root_crontab_locs = [
             '/etc/cron.d/opensvc',
@@ -261,7 +261,7 @@ def install_cron_unix():
                 purge.append(loc)
 
     if not root_crontab:
-        logit("no root crontab found in usual locations <%s>"%str(root_crontab_locs),stderr=True)
+        logit("no root crontab found in usual locations <%s>"%str(root_crontab_locs), stderr=True)
         return False
 
     new = False
@@ -270,14 +270,14 @@ def install_cron_unix():
             f = open(root_crontab, 'r')
             new = f.readlines()
             f.close()
-            logit("loaded crontab <%s> content <%s>"%(root_crontab,new))
+            logit("loaded crontab <%s> content <%s>"%(root_crontab, new))
         except:
             f.close()
             import traceback
             traceback.print_exc()
 
     if not new:
-        logit("empty crontab found. skipping purge.",stderr=False)
+        logit("empty crontab found. skipping purge.", stderr=False)
         if os.path.exists(root_crontab) and os.stat(root_crontab).st_size == 0:
             logit("removing crontab %s"%root_crontab)
             os.unlink(root_crontab)
@@ -289,23 +289,23 @@ def install_cron_unix():
         for re in remove_entries:
             logit("looping re <%s>"%re)
             if line.find(re) != -1:
-                logit("delete line <%s> from <%s>"%(re,root_crontab))
+                logit("delete line <%s> from <%s>"%(re, root_crontab))
                 del new[i]
 
     logit("saving crontab <%s>"%root_crontab)
     try:
         save_file(root_crontab)
     except:
-        logit('Error while trying to backup crontab <%s>. skipping crontab update'%(root_crontab),stderr=True)
+        logit('Error while trying to backup crontab <%s>. skipping crontab update'%(root_crontab), stderr=True)
         return False
 
-    logit("updating crontab <%s> with content <%s>"%(root_crontab,new))
+    logit("updating crontab <%s> with content <%s>"%(root_crontab, new))
     try:
         f = open(root_crontab, 'w')
         f.write(''.join(new))
         f.close()
     except:
-        logit("error while trying to update crontab %s"%root_crontab,stderr=True)
+        logit("error while trying to update crontab %s"%root_crontab, stderr=True)
         f.close()
         import traceback
         traceback.print_exc()
@@ -320,7 +320,7 @@ def install_cron_unix():
     for loc in purge:
         try:
             f = open(loc, 'r')
-            new = [ line for line in f.readlines() if line.find('opensvc.daily') == -1 and line.find('svcmon --updatedb') == -1 ]
+            new = [line for line in f.readlines() if line.find('opensvc.daily') == -1 and line.find('svcmon --updatedb') == -1]
             f.close()
             f = open(loc, 'w')
             f.write(''.join(new))
@@ -357,22 +357,22 @@ def _activate_systemd(systemdsvc):
     # remove unit file from /etc/systemd/system
     olddst = os.path.join('/etc/systemd/system/', systemdsvc)
     if os.path.exists(olddst):
-        logit("found unit file in /etc/systemd/system",stdout=False)
-        logit("disabling old systemd unit file",stdout=False)
+        logit("found unit file in /etc/systemd/system", stdout=False)
+        logit("disabling old systemd unit file", stdout=False)
         cmd = ['systemctl', '-q', 'disable', systemdsvc]
         ret = osrun(' '.join(cmd))
         if ret > 0:
-            logit("issue met while trying to disable old %s systemd unit file"%systemdsvc,stderr=True)
-        logit("removing old systemd unit file",stdout=False)
+            logit("issue met while trying to disable old %s systemd unit file"%systemdsvc, stderr=True)
+        logit("removing old systemd unit file", stdout=False)
         cmd = ['rm', '-f', olddst]
         ret = osrun(' '.join(cmd))
         if ret > 0:
-            logit("issue met while trying to remove old %s systemd unit file"%systemdsvc,stderr=True)
+            logit("issue met while trying to remove old %s systemd unit file"%systemdsvc, stderr=True)
 
     systemd_unit_path = [
-            '/usr/lib/systemd/system/',
-            '/lib/systemd/system/',
-        ]
+        '/usr/lib/systemd/system/',
+        '/lib/systemd/system/',
+    ]
 
     installed = False
     for path in systemd_unit_path:
@@ -380,33 +380,33 @@ def _activate_systemd(systemdsvc):
             # populate systemd tree with opensvc unit file
             src = os.path.join(pathini, "systemd."+systemdsvc)
             dst = os.path.join(path, systemdsvc)
-            logit("installing %s systemd unit file in %s"%(systemdsvc, path),stdout=True)
+            logit("installing %s systemd unit file in %s"%(systemdsvc, path), stdout=True)
             try:
                 shutil.copyfile(src, dst)
                 os.chmod(dst, p0644)
                 installed = True
             except Exception as exc:
-                logit("issue met while trying to install systemd unit file: %s"%str(exc),stderr=True)
+                logit("issue met while trying to install systemd unit file: %s"%str(exc), stderr=True)
 
     if installed is not True:
-        logit("issue met while trying to identify suitable systemd unit file location",stderr=True)
+        logit("issue met while trying to identify suitable systemd unit file location", stderr=True)
 
     # reset paths in ExecStart and ExecStop
     osrun("sed -i 's@/usr/share/opensvc/bin@"+pathbin+"@' "+dst)
 
     # reload systemd configuration
-    logit("reloading systemd configuration",stdout=True)
+    logit("reloading systemd configuration", stdout=True)
     cmd = ['systemctl', '-q', 'daemon-reload']
     ret = osrun(' '.join(cmd))
     if ret > 0:
-        logit("issue met during systemctl reload",stderr=True)
+        logit("issue met during systemctl reload", stderr=True)
 
     # enable opensvc agent startup through systemd
     logit("enabling systemd configuration")
     cmd = ['systemctl', '-q', 'enable', systemdsvc]
     ret = osrun(' '.join(cmd))
     if ret > 0:
-        logit("issue met during systemctl enable",stderr=True)
+        logit("issue met during systemctl enable", stderr=True)
 
 
 def systemd_mgmt():
@@ -430,12 +430,12 @@ def activate_debian(launcher):
     cmd = ['update-rc.d', '-f', 'opensvc', 'remove']
     ret = osrun(' '.join(cmd))
     if ret > 0:
-        logit("issue met while trying to remove opensvc rc launchers",stderr=True)
+        logit("issue met while trying to remove opensvc rc launchers", stderr=True)
         return False
     cmd = ['update-rc.d', 'opensvc', 'defaults']
     ret = osrun(' '.join(cmd))
     if ret > 0:
-        logit("issue met while trying to install opensvc rc launchers",stderr=True)
+        logit("issue met while trying to install opensvc rc launchers", stderr=True)
         return False
     return True
 
@@ -451,14 +451,14 @@ def activate_hpux(launcher):
             if os.path.exists(l):
                 logit("removing %s"%l)
                 os.unlink(l)
-            logit("create link %s -> %s"%(l,rc))
+            logit("create link %s -> %s"%(l, rc))
             os.symlink(rc, l)
     try:
         f = open("/etc/rc.config.d/opensvc", "w")
         f.write("RUN_OPENSVC=1\n")
         f.close()
     except:
-        logit("issue met while trying to install rc.config.d opensvc file",stderr=True)
+        logit("issue met while trying to install rc.config.d opensvc file", stderr=True)
         f.close()
         import traceback
         traceback.print_exc()
@@ -473,7 +473,7 @@ def activate_AIX(launcher):
             if os.path.exists(l):
                 logit("removing %s"%l)
                 os.unlink(l)
-            logit("create link %s -> %s"%(l,rc))
+            logit("create link %s -> %s"%(l, rc))
             os.symlink(rc, l)
     return True
 
@@ -485,7 +485,7 @@ def activate_OSF1(launcher):
             if os.path.exists(l):
                 logit("removing %s"%l)
                 os.unlink(l)
-            logit("symlinking %s and %s"%(rc,l))
+            logit("symlinking %s and %s"%(rc, l))
             os.symlink(rc, l)
             return True
 
@@ -504,7 +504,7 @@ def activate_SunOS(launcher):
             if os.path.exists(l):
                 logit("removing %s"%l)
                 os.unlink(l)
-            logit("symlinking %s and %s"%(rc,l))
+            logit("symlinking %s and %s"%(rc, l))
             os.symlink(rc, l)
     return True
 
@@ -522,10 +522,10 @@ def update_file(filename, srctext, replacetext):
     """
     import fileinput
     for line in fileinput.input(filename, inplace=1):
-        if line.rstrip('\n') == srctext.rstrip('\n') :
+        if line.rstrip('\n') == srctext.rstrip('\n'):
             line = replacetext
-        msg=line.rstrip('\n')
-        logit(msg,stdout=True)
+        msg = line.rstrip('\n')
+        logit(msg, stdout=True)
     fileinput.close()
 
 def install_params(path2file):
@@ -653,7 +653,7 @@ def install_rc():
     elif sysname == 'Windows':
         return False
     else:
-        logit("could not select an init script: unsupported operating system",stderr=True)
+        logit("could not select an init script: unsupported operating system", stderr=True)
         return False
 
     if os.path.islink(rc):
@@ -683,12 +683,12 @@ def gen_keys():
     sshhome = os.path.join(home, ".ssh")
     logit("sshhome <%s>"%sshhome)
     if not os.path.exists(sshhome):
-        logit("create dir %s"%sshhome,stdout=True)
+        logit("create dir %s"%sshhome, stdout=True)
         os.makedirs(sshhome, p0700)
     priv = os.path.join(sshhome, "id_rsa")
     pub = os.path.join(sshhome, "id_rsa.pub")
     if os.path.exists(pub) or os.path.exists(priv):
-        logit("either %s or %s already exist"%(pub,priv))
+        logit("either %s or %s already exist"%(pub, priv))
         return
     cmd = ['ssh-keygen', '-t', 'rsa', '-b', '2048', '-P', '""', '-f', priv]
     try:
@@ -699,7 +699,7 @@ def gen_keys():
 def missing_dir(pathd):
     logit("begin")
     if not os.path.exists(pathd):
-        logit("create dir %s"%pathd,stdout=True)
+        logit("create dir %s"%pathd, stdout=True)
         os.makedirs(pathd, p0755)
 
 def missing_dirs():
@@ -728,11 +728,11 @@ def convert_svclinks():
             continue
         rpath = os.path.realpath(fpath)
         if rpath != rcService:
-            logit("%s != %s"%(rpath,rcService))
+            logit("%s != %s"%(rpath, rcService))
             continue
         logit("removing %s"%fpath)
         os.unlink(fpath)
-        logit("create link %s -> %s"%(fpath,svcmgr))
+        logit("create link %s -> %s"%(fpath, svcmgr))
         os.symlink(svcmgr, fpath)
 
 def move_env_to_conf():
@@ -788,14 +788,14 @@ def move_usr_to_opt():
                 logit("file %s already exist"%dst)
                 continue
             if os.path.isdir(f):
-                logit("copying dir %s to %s"%(f,dst))
+                logit("copying dir %s to %s"%(f, dst))
                 shutil.copytree(f, dst, symlinks=True)
             elif os.path.islink(f):
                 linkto = os.readlink(f)
-                logit("create link %s -> %s"%(dst,linto))
+                logit("create link %s -> %s"%(dst, linto))
                 os.symlink(linkto, dst)
             else:
-                logit("copying file %s to %s"%(f,dst))
+                logit("copying file %s to %s"%(f, dst))
                 shutil.copy2(f, dst)
 
     if os.path.exists(old_pathetc):
@@ -807,13 +807,13 @@ def move_usr_to_opt():
                 continue
             if os.path.islink(f):
                 linkto = os.readlink(f)
-                logit("create link %s -> %s"%(dst,linto))
+                logit("create link %s -> %s"%(dst, linto))
                 os.symlink(linkto, dst)
             elif os.path.isdir(f):
-                logit("copying dir %s to %s"%(f,dst))
+                logit("copying dir %s to %s"%(f, dst))
                 shutil.copytree(f, dst, symlinks=True)
             else:
-                logit("copying file %s to %s"%(f,dst))
+                logit("copying file %s to %s"%(f, dst))
                 shutil.copy2(f, dst)
 
     if os.path.exists(old_pathsvc):
@@ -865,13 +865,13 @@ def install_etc_path():
         buff = f.read()
         f.close()
     except:
-        logit("issue met while trying to read %s"%(p),stderr=True)
+        logit("issue met while trying to read %s"%(p), stderr=True)
         return
     l = buff.strip().split(":")
     n = len(l)
     for op in (pathbin, pathetc):
         if op in l:
-            logit("dir %s already present in %s"%(op,p))
+            logit("dir %s already present in %s"%(op, p))
             continue
         logit("adding dir %s"%(op))
         l.append(op)
@@ -884,7 +884,7 @@ def install_etc_path():
         f.write(":".join(l)+'\n')
         f.close()
     except:
-        logit("issue met while trying to write %s"%(p),stderr=True)
+        logit("issue met while trying to write %s"%(p), stderr=True)
         return
 
 def install_profile():
@@ -906,7 +906,7 @@ def install_profile():
         f.write(buff)
         f.close()
     except:
-        logit("issue met while trying to install profile in file %s"%(prof),stderr=True)
+        logit("issue met while trying to install profile in file %s"%(prof), stderr=True)
         f.close()
         import traceback
         traceback.print_exc()
@@ -929,11 +929,11 @@ def install_bash_completion():
         logit("no bash completion directory found")
         return
     try:
-        logit("installing bash completion file src %s to tgt %s"%(src,dst))
+        logit("installing bash completion file src %s to tgt %s"%(src, dst))
         shutil.copyfile(src, dst)
         os.chmod(dst, p0644)
     except:
-        logit("issue met while trying to install bash completion file src %s to tgt %s"%(src,dst))
+        logit("issue met while trying to install bash completion file src %s to tgt %s"%(src, dst))
 
 def install_link(source, target):
     logit("begin")
@@ -944,13 +944,13 @@ def install_link(source, target):
         logit("link already ok")
         return True
     if os.path.islink(target) or os.path.exists(target):
-        logit("unlink %s",target)
+        logit("unlink %s", target)
         os.unlink(target)
     try:
-        logit("create link %s -> %s"%(target,source))
-        os.symlink(source,target)
+        logit("create link %s -> %s"%(target, source))
+        os.symlink(source, target)
     except:
-        logit("issue met while trying to symlink src %s with tgt %s"%(source,target))
+        logit("issue met while trying to symlink src %s with tgt %s"%(source, target))
 
 def install_pythonlink():
     logit("begin")
@@ -972,7 +972,7 @@ def install_pythonlink_windows():
     try:
         installfolder = get_registry_value('HKEY_CURRENT_USER', 'Software\\OpenSVC', 'path')
     except:
-        logit("issue met while trying to read path into registry HKCU/Software/OpenSVC/path",stderr=True)
+        logit("issue met while trying to read path into registry HKCU/Software/OpenSVC/path", stderr=True)
         sys.exit(1)
 
     installfolder = installfolder.rstrip('\\')
@@ -1003,7 +1003,7 @@ def move_host_mode():
     cmd = [nodemgr, 'set', '--param', 'node.host_mode', '--value', mode]
     ret = osrun(' '.join(cmd))
     if ret != 0:
-        logit("failed to set host_mode in node.conf",stdout=True)
+        logit("failed to set host_mode in node.conf", stdout=True)
         return
     shutil.move(hm, hm+'.old')
 
@@ -1074,7 +1074,7 @@ def nodeconf_params():
             config.write(fp)
             fp.close()
         except:
-            logit("failed to write new %s"%nodeconf,stderr=True)
+            logit("failed to write new %s"%nodeconf, stderr=True)
 
 def save_exc():
     logit("begin")
@@ -1086,7 +1086,7 @@ def save_exc():
             import datetime
             now = str(datetime.datetime.now()).replace(' ', '-')
         except:
-            now =""
+            now = ""
 
         try:
             f = tempfile.NamedTemporaryFile(dir=pathtmp, prefix='exc-'+now+'-')
@@ -1095,10 +1095,10 @@ def save_exc():
         f.close()
         f = open(f.name, 'w')
         traceback.print_exc(file=f)
-        logit("unexpected error. stack saved in %s"%f.name,stderr=True)
+        logit("unexpected error. stack saved in %s"%f.name, stderr=True)
         f.close()
     except:
-        logit("unexpected error",stderr=True)
+        logit("unexpected error", stderr=True)
         traceback.print_exc()
 
 def purge_collector_api_cache():
@@ -1225,7 +1225,7 @@ def restart_daemon():
     if not os.path.exists(flag):
         return
     os.unlink(flag)
-    os.environ['OPENSVC_AGENT_UPGRADE']="1"
+    os.environ['OPENSVC_AGENT_UPGRADE'] = "1"
     cmd = "%s/nodemgr daemon start" % pathbin
     osrun(cmd, stdout=True)
     cmd = "%s/nodemgr daemon running" % pathbin
@@ -1238,26 +1238,26 @@ def init_secret():
     if sysname == 'Windows':
         cmd = "nodemgr ping --node 127.0.0.1"
     else:
-        cmd =  "%s/nodemgr ping --node 127.0.0.1" % pathbin
+        cmd = "%s/nodemgr ping --node 127.0.0.1" % pathbin
     osrun(cmd)
 
 def solaris_fmri_setprop():
     logit("begin")
     if sysname != 'SunOS':
-        logit("Only useful on SunOS",stdout=False)
+        logit("Only useful on SunOS", stdout=False)
         return
     else:
-        logit("issuing setprop on fmri",stdout=False)
+        logit("issuing setprop on fmri", stdout=False)
         osvcfmri = 'svc:/site/application/opensvc:boot'
         cmd = ['svccfg', '-s', osvcfmri, 'setprop', 'boot/firstrun', '=', 'done', '2>/dev/null']
         ret = osrun(' '.join(cmd))
         if ret == 0:
-	    # setprop ok, Solaris install from IPS package with standard FMRI
-            logit("setprop ok. now refreshing fmri",stdout=False)
-	    cmd = ['svccfg', '-s', osvcfmri, 'refresh']
+            # setprop ok, Solaris install from IPS package with standard FMRI
+            logit("setprop ok. now refreshing fmri", stdout=False)
+            cmd = ['svccfg', '-s', osvcfmri, 'refresh']
             ret = osrun(' '.join(cmd))
-	    if ret == 0:
-	        logit("fmri refresh successfully executed",stdout=False)
+            if ret == 0:
+                logit("fmri refresh successfully executed", stdout=False)
 
 try:
     move_var_files_in_subdirs()
@@ -1283,7 +1283,7 @@ try:
     restart_daemon()
     init_secret()
     solaris_fmri_setprop()
-    logit("\nOpenSVC postinstall terminated\n",stdout=True)
+    logit("\nOpenSVC postinstall terminated\n", stdout=True)
 except:
     save_exc()
     sys.exit(1)

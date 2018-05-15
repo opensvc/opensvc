@@ -9,10 +9,18 @@ data = {
  "fmt": "full added content with %%HOSTNAME%%@corp.com: some pattern into the file."
 }
   """,
-  "description": """* Verify file content.
+  "example_value_replace": """ 
+{
+ "path": "/etc/resolv.conf",
+ "replace": "^search .*$",
+ "fmt": "search foo.com bar.com baz.com"
+}
+  """,
+  "description": """* Verify or Change file content.
 * The collector provides the format with wildcards.
 * The module replace the wildcards with contextual values.
-* The fmt must match the check pattern
+* The fmt must match the check pattern ['check' statement]
+* The fmt is used to substitute any string matching the replace pattern ['replace' statement]
 
 Wildcards:
 %%ENV:VARNAME%%		Any environment variable value
@@ -22,7 +30,7 @@ Wildcards:
 """,
   "form_definition": """
 Desc: |
-  A fileinc rule, fed to the 'fileinc' compliance object to verify a line matching the 'check' regular expression is present in the specified file.
+  A fileinc rule, fed to the 'fileinc' compliance object to verify a line matching the 'check' regular expression is present in the specified file. Alternatively, the 'replace' statement can be used to substitute any matching expression by string provided by 'fmt' or 'ref' content.
 Css: comp48
 
 Outputs:
@@ -46,8 +54,16 @@ Inputs:
     Label: Check regexp
     DisplayModeLabel: check
     LabelCss: action16
-    Mandatory: Yes
-    Help: A regular expression. Matching the regular expression is sufficent to grant compliancy.
+    Mandatory: No
+    Help: A regular expression. Matching the regular expression is sufficent to grant compliancy. It is required to use either 'check' or 'replace'.
+    Type: string
+  -
+    Id: replace
+    Label: Replace regexp
+    DisplayModeLabel: replace
+    LabelCss: action16
+    Mandatory: No
+    Help: A regular expression. Any pattern matched by the reguler expression will be replaced. It is required to use either 'check' or 'replace'.
     Type: string
   -
     Id: fmt
@@ -90,13 +106,14 @@ class CompFileInc(CompObject):
         self.files = {}
         self.ok = {}
         self.checks = []
+        self.replaces = []
         self.upds = {}
 
         self.sysname, self.nodename, x, x, self.machine = os.uname()
         for rule in self.get_rules():
             self.add_rule(rule)
 
-        if len(self.checks) == 0:
+        if len(self.checks) == 0 and len(self.replaces) == 0:
             raise NotApplicable()
 
     def fixable(self):
@@ -145,6 +162,9 @@ class CompFileInc(CompObject):
         if 'fmt' in d and 'ref' in d:
             perror("'fmt' and 'ref' are exclusive:", d)
             r |= RET_ERR
+        if 'check' in d and 'replace' in d:
+            perror("'check' and 'replace' are exclusive:", d)
+            r |= RET_ERR
         if 'path' in d:
             d['path'] = d['path'].strip()
         if 'ref' in d:
@@ -178,12 +198,15 @@ class CompFileInc(CompObject):
             perror("'fmt' or 'ref' should be defined:", d)
             r |= RET_ERR
         c = c.strip()
-        if re.match(d['check'], c) is not None or len(c) == 0:
-            val = True
-        else:
-            val = False
-            r |= RET_ERR
-        self.checks.append({'check':d['check'], 'path':d['path'], 'add':c, 'valid':val})
+        if 'check' in d and d['check'] is not None:
+            if re.match(d['check'], c) is not None or len(c) == 0:
+                val = True
+            else:
+                val = False
+                r |= RET_ERR
+            self.checks.append({'check':d['check'], 'path':d['path'], 'add':c, 'valid':val})
+        if 'replace' in d and d['replace'] is not None:
+            self.replaces.append({'replace':d['replace'], 'path':d['path'], 'add':c})
         return r
         
     def check(self):
@@ -222,6 +245,24 @@ class CompFileInc(CompObject):
                 perror("pattern '%s' not found in %s"%(ck['check'], ck['path']))
                 pr |= RET_ERR
             r |= pr
+
+        for rp in self.replaces:
+            pr = RET_OK
+            m = 0
+            ok = 0
+            lines = self.files[rp['path']].split('\n')
+            for line in lines:
+                groups = re.finditer(rp['replace'], line)
+                try:
+                    while True:
+                        current = groups.next()
+                        pinfo("%s : string '%s' should be replaced by '%s' in line '%s'" % (rp['path'], current.group(0), rp['add'], line))
+                        m += 1
+                        pr |= RET_ERR
+                except StopIteration:
+                    pass
+            r |= pr
+
         return r
 
     def rewrite_files(self):
@@ -282,6 +323,29 @@ class CompFileInc(CompObject):
                 self.upds[ck['path']] = 1
 
         r |= self.rewrite_files()
+
+        for rp in self.replaces:
+            need_rewrite = False
+            lines = self.files[rp['path']].rstrip('\n').split('\n')
+            for i, line in enumerate(lines):
+                groups = re.finditer(rp['replace'], line)
+                try:
+                    while True:
+                        current = groups.next()
+                        newline = re.sub(rp['replace'], rp['add'], line, count=1)
+                        lines[i] = newline
+                        pinfo("rewrite %s:%d:'%s', new content: '%s'" %(rp['path'], i, line, lines[i]))
+                        line = newline
+                        need_rewrite = True
+                except StopIteration:
+                    pass
+
+            if need_rewrite:
+                self.files[rp['path']] = '\n'.join(lines).rstrip("\n")+"\n"
+                self.upds[rp['path']] = 1
+
+        r |= self.rewrite_files()
+
         return r
 
 
