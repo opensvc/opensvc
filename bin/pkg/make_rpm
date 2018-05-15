@@ -56,6 +56,7 @@ $(echo ${DESCRIPTION}|fold -s)
 rm -rf "%{buildroot}"
 install -m 0755 -d "%{buildroot}"
 tar cpf - . | ( cd %{buildroot} && tar xf - )
+exit 0
 
 %pre
 $(cat $OSVC/bin/preinstall)
