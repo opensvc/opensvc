@@ -1315,6 +1315,7 @@ class Svc(Crypt, ExtConfig):
         """
         Return the list of resourceset matching the specified types.
         """
+        self.init_resources()
         if not isinstance(_type, (set, list, tuple)):
             _types = [_type]
         else:
