@@ -231,6 +231,7 @@ class OptParser(object):
                 developed_args.append(matching[0])
                 continue
             elif len(matching) == 0 and idx > 0:
+                developed_args = []
                 break
             else:
                 # ambiguous
