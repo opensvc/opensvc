@@ -58,6 +58,7 @@ except Exception as e:
 
 def do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
     tries = 5
+    s = ""
     for i in range(tries):
         try:
             return _do_call(fn, args, kwargs, log, proxy, mode=mode)
@@ -77,7 +78,7 @@ def do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
                 raise
         if max_wait > 0:
             time.sleep(random.random()*max_wait)
-        log.warning("retry call %s on error %s" % (fn, str(e)))
+        log.warning("retry call %s on error %s" % (fn, s))
     log.error("failed to call %s after %d tries" % (fn, tries))
 
 def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
