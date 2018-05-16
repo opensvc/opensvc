@@ -3977,7 +3977,7 @@ class Node(Crypt, ExtConfig):
         os.system("systemctl reset-failed opensvc-agent")
         if os.environ.get("OPENSVC_AGENT_UPGRADE"):
             os.system("systemctl set-environment OPENSVC_AGENT_UPGRADE=1")
-        os.system("systemctl start opensvc-agent")
+        os.system("systemctl restart opensvc-agent")
         os.system("systemctl unset-environment OPENSVC_AGENT_UPGRADE")
 
     def daemon_stop_systemd(self):
