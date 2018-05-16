@@ -349,6 +349,7 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
     start = time.time()
     if "close_fds" not in kwargs:
         kwargs["close_fds"] = close_fds
+    os.environ["PYTHONIOENCODING"] = "UTF-8"
     rout, wout = os.pipe()
     rerr, werr = os.pipe()
     proc = Popen(cmd, stdout=wout, stderr=werr, **kwargs)
