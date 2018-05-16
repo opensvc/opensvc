@@ -176,7 +176,7 @@ def add_resource(svc, restype, s):
 
     try:
         adder = globals()['add_'+restype]
-    except AttributeError:
+    except KeyError:
         return
 
     tags = get_tags(svc, s)
