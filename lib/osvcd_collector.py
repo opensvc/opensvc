@@ -125,6 +125,7 @@ class Collector(shared.OsvcThread, Crypt):
             return
         data = shared.THREADS["monitor"].status()
         _data = {
+            "cluster_id": self.cluster_id,
             "nodes": {},
             "services": {},
         }
