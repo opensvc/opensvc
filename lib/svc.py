@@ -3647,7 +3647,10 @@ class Svc(Crypt, ExtConfig):
         if rid is None:
             rid = []
         elif is_string(rid):
-            rid = rid.split(',')
+            if rid:
+                rid = rid.split(',')
+            else:
+                rid = []
 
         if tags is None:
             tags = []
@@ -3740,14 +3743,13 @@ class Svc(Crypt, ExtConfig):
         for rid in self.action_rid_before_depends:
             depends |= self.action_rid_dependencies(action, rid) - set(self.action_rid_before_depends)
 
+        self.action_rid = set(self.action_rid_before_depends)
         if len(depends) > 0:
             self.log.info("add rid %s to satisfy dependencies" % ", ".join(depends))
-            self.action_rid = list(set(self.action_rid_before_depends) | depends)
-        else:
-            self.action_rid = list(self.action_rid_before_depends)
+            self.action_rid |= depends
 
+        self.action_rid = list(self.action_rid)
         self.action_rid_depends = list(depends)
-
         self.action_start_date = datetime.datetime.now()
 
         if self.node is None:
