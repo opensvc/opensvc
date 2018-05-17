@@ -5,18 +5,20 @@ import sys
 import re
 import datetime
 import rcExceptions as ex
-from rcGlobalEnv import rcEnv
+from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import justcall, banner
 from converters import convert_duration
 from subprocess import *
 
 class Collector(object):
     def __init__(self, options=None, node=None, svcname=None):
-        self.options = options
+        if isinstance(options, dict):
+            self.options = Storage(options)
+        else:
+            self.options = options
         self.node = node
         self.collector = node.collector
         self.svcname = svcname
-        self.options = options
 
     def rotate_root_pw(self, pw):
         opts = {}
