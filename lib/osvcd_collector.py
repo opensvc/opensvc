@@ -38,7 +38,7 @@ class Collector(shared.OsvcThread, Crypt):
         last_status = {}
         last_status_changed = []
         for svcname, nodename in self.last_status:
-            if data["nodes"].get(nodename, {}).get("services", {}).get(svcname) is None:
+            if data["nodes"].get(nodename, {}).get("services", {}).get("status", {}).get(svcname) is None:
                 last_status_changed += [svcname, svcname+"@"+nodename]
         for nodename, ndata in data["nodes"].items():
             for svcname, sdata in ndata.get("services", {}).get("status", {}).items():
