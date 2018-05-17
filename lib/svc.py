@@ -4583,6 +4583,27 @@ class Svc(Crypt, ExtConfig):
 
         self.unset_lazy("config")
 
+    def set_purge_collector_tag(self):
+        if not self.options.purge_collector:
+            return
+        self.log.info("tag the service for purge on the collector")
+        try:
+            data = self.collector_rest_get("/services/self", {"props": "svc_id"})
+            svc_id = data["data"][0]["svc_id"]
+            data = self.collector_rest_get("/tags/@purge")
+            if len(data["data"]) == 0:
+                data = self.collector_rest_post("/tags", {"tag_name": "@purge"})
+            data = self.collector_rest_post("/tags/services", {
+                "svc_id": svc_id,
+                "tag_id": data["data"][0]["tag_id"],
+            })
+            if "info" in data:
+                self.log.info(data["info"])
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(data["error"])
+
     def delete(self):
         """
         The 'delete' action entrypoint.
@@ -4622,6 +4643,7 @@ class Svc(Crypt, ExtConfig):
                     ], nodename=peer, sync=True)
             self.delete_service_conf()
             self.delete_service_logs()
+            self.set_purge_collector_tag()
         else:
             self.delete_resources()
 

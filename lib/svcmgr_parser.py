@@ -230,6 +230,10 @@ OPT = Storage({
         action="store_true", dest="provision",
         help="Provision the service resources after config file creation. "
              "Defaults to False."),
+    "purge_collector": Option(
+        "--purge-collector", default=False,
+        action="store_true", dest="purge_collector",
+        help="On service delete, also remove the service collector-side"),
     "recover": Option(
         "--recover", default=False,
         action="store_true", dest="recover",
@@ -881,6 +885,7 @@ ACTIONS = {
         "delete": {
             "msg": "Delete a service, or only the resources specified by :opt:`--rid` on the local service instance.",
             "options": ASYNC_ACTION_OPTS + ACTION_OPTS + [
+                OPT.purge_collector,
                 OPT.unprovision,
             ],
         },

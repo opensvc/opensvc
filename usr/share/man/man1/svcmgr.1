@@ -10423,6 +10423,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --purge-collector
+On service delete, also remove the service collector-side
+.TP
 .B --unprovision
 Unprovision the service resources before config files file deletion. Defaults to False.
 .TP
