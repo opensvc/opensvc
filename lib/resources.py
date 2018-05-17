@@ -458,7 +458,7 @@ class Resource(object):
         if self.rstatus is not None and not refresh:
             return self.rstatus
 
-        last_status = self.load_status_last()
+        last_status = self.load_status_last(refresh)
 
         if refresh:
             self.purge_status_last()
@@ -514,7 +514,7 @@ class Resource(object):
     def has_status_last(self):
         return os.path.exists(self.fpath_status_last)
 
-    def load_status_last(self):
+    def load_status_last(self, refresh=False):
         """
         Fetch the resource status from the on-disk cache.
         """
@@ -535,7 +535,7 @@ class Resource(object):
             self.log.debug(exc)
             return rcStatus.UNDEF
 
-        if hasattr(self, "set_label"):
+        if not refresh and hasattr(self, "set_label"):
             if hasattr(self, "_lazy_label"):
                 attr = "_lazy_label"
             else:
