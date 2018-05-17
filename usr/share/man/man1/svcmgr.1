@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-05\-09
+.TH SVCMGR 1 2018\-05\-17
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -5952,6 +5952,9 @@ Push the local service instance resources and application launchers info key/val
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --sync
+Use synchronous collector communication. For example, :cmd:`push resinfo --sync` before a compliance run makes sure the pushed data has hit the collector database before the rulesets are contextualized.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:

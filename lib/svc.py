@@ -3355,10 +3355,17 @@ class Svc(Crypt, ExtConfig):
         The 'push_resinfo' scheduler task and action entrypoint.
         Push the per-resource key/value pairs to the collector.
         """
+        return self._push_resinfo(sync=self.options.syncrpc)
+
+    def _push_resinfo(self, sync=False):
+        """
+        The 'push_resinfo' scheduler task and action entrypoint.
+        Push the per-resource key/value pairs to the collector.
+        """
         data = []
         for _data in self.resinfo().values():
             data += _data
-        self.node.collector.call('push_resinfo', data)
+        self.node.collector.call('push_resinfo', data, sync=sync)
 
     def push_encap_config(self):
         """

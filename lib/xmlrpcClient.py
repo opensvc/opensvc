@@ -391,7 +391,7 @@ class Collector(object):
                 args += [(rcEnv.uuid, rcEnv.nodename)]
             self.proxy.resmon_update(*args)
 
-    def push_resinfo(self, vals, sync=True):
+    def push_resinfo(self, vals, sync=False):
         if 'update_resinfo' not in self.proxy_methods:
             return
         vars = ['res_svcname',
@@ -405,7 +405,10 @@ class Collector(object):
         args = [vars, vals]
         if self.auth_node:
             args += [(rcEnv.uuid, rcEnv.nodename)]
-        self.proxy.update_resinfo(*args)
+        if sync:
+            self.proxy.update_resinfo_sync(*args)
+        else:
+            self.proxy.update_resinfo(*args)
 
     def push_config(self, svc, sync=True):
         def repr_config(svc):

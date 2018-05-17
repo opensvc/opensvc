@@ -319,6 +319,13 @@ OPT = Storage({
         "--subsets", default=None,
         action="store", dest="parm_subsets",
         help="Limit the action to the resources in the specified, comma-separated, list of subsets."),
+    "sync": Option(
+        "--sync", default=False,
+        action="store_true", dest="syncrpc",
+        help="Use synchronous collector communication. For example, "
+             ":cmd:`push resinfo --sync` before a compliance run makes sure "
+             "the pushed data has hit the collector database before the "
+             "rulesets are contextualized."),
     "tag": Option(
         "--tag", default=None,
         action="store", dest="tag",
@@ -696,6 +703,7 @@ ACTIONS = {
                    "key/value pairs the collector.",
             "options": [
                 OPT.cron,
+                OPT.sync,
             ],
         },
         "print_base_devs": {
