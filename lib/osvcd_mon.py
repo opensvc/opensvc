@@ -406,7 +406,7 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def service_delete(self, svcname):
         self.set_smon(svcname, "deleting", local_expect="unset")
-        proc = self.service_command(svcname, ["delete"])
+        proc = self.service_command(svcname, ["delete", "--purge-collector"])
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
@@ -431,7 +431,7 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def service_purge_on_success(self, svcname):
         self.set_smon(svcname, "deleting", local_expect="unset")
-        proc = self.service_command(svcname, ["delete"])
+        proc = self.service_command(svcname, ["delete", "--purge-collector"])
         self.push_proc(
             proc=proc,
             on_success="generic_callback",

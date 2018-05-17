@@ -4586,6 +4586,12 @@ class Svc(Crypt, ExtConfig):
     def set_purge_collector_tag(self):
         if not self.options.purge_collector:
             return
+        try:
+            self._set_purge_collector_tag(self)
+        except Exception as exc:
+            self.log.warning(exc)
+
+    def _set_purge_collector_tag(self):
         self.log.info("tag the service for purge on the collector")
         try:
             data = self.collector_rest_get("/services/self", {"props": "svc_id"})
