@@ -104,14 +104,17 @@ class Resource(object):
         if keys is None:
             return []
         for idx, key in enumerate(keys):
-            if len(key) == 2:
+            count = len(key)
+            if count and key[-1] is None:
+                key[-1] = ""
+            if count == 2:
                 keys[idx] = [
                     self.svc.svcname,
                     self.svc.node.nodename,
                     self.svc.topology,
                     self.rid
                 ] + key
-            elif len(key) == 3:
+            elif count == 3:
                 keys[idx] = [
                     self.svc.svcname,
                     self.svc.node.nodename,
