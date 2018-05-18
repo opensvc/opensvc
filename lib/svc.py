@@ -4587,7 +4587,7 @@ class Svc(Crypt, ExtConfig):
         if not self.options.purge_collector:
             return
         try:
-            self._set_purge_collector_tag(self)
+            self._set_purge_collector_tag()
         except Exception as exc:
             self.log.warning(exc)
 
