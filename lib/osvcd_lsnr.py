@@ -231,25 +231,20 @@ class Listener(shared.OsvcThread, Crypt):
             return
         result = self.router(nodename, data, conn, encrypted)
         if result:
+            conn.setblocking(1)
             if encrypted:
                 message = self.encrypt(result)
             else:
                 message = self.msg_encode(result)
             for chunk in chunker(message, 64*1024):
-                while True:
-                    try:
-                        conn.sendall(chunk)
-                    except socket.error as exc:
-                        if exc.errno == 32:
-                            # broken pipe
-                            self.log.info(exc)
-                        elif exc.errno == 11:
-                            # EGAIN/EWOULDBLOCK
-                            #self.log.warning("socket full. retry chunk send")
-                            time.sleep(0.05)
-                            continue
-                        else:
-                            self.log.warning(exc)
+                try:
+                    conn.sendall(chunk)
+                except socket.error as exc:
+                    if exc.errno == 32:
+                        # broken pipe
+                        self.log.info(exc)
+                    else:
+                        self.log.warning(exc)
                     break
             message_len = len(message)
             self.stats.sessions.tx += message_len
