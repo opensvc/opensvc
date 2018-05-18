@@ -727,6 +727,11 @@ class Collector(object):
         args = [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.daemon_ping(*args)
 
+    def push_status(self, svcname, data, sync=True):
+        import json
+        args = [svcname, json.dumps(data), (rcEnv.uuid, rcEnv.nodename)]
+        self.proxy.push_status(*args)
+
     def push_daemon_status(self, data, changes=None, sync=True):
         import json
         args = [json.dumps(data), json.dumps(changes), (rcEnv.uuid, rcEnv.nodename)]

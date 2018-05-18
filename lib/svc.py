@@ -1605,6 +1605,7 @@ class Svc(Crypt, ExtConfig):
             "updated": datetime.datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "mtime": now,
             "app": self.app,
+            "env": self.svc_env,
             "placement": self.placement,
             "topology": self.topology,
             "provisioned": True,
@@ -3342,6 +3343,13 @@ class Svc(Crypt, ExtConfig):
                 catnode.add_column(__data[-2], color.LIGHTBLUE)
                 catnode.add_column(__data[-1])
         print(tree)
+
+    def push_status(self):
+        """
+        Push the service instance status to the collector synchronously.
+        Usually done asynchronously and automatically by the collector thread.
+        """
+        self.node.collector.call('push_status', self.svcname, self.print_status_data(mon_data=False, refresh=True))
 
     def push_config(self):
         """

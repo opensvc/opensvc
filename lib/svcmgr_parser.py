@@ -689,6 +689,9 @@ ACTIONS = {
                 OPT.cron,
             ],
         },
+        "push_status": {
+            "msg": "Push service instance status to the collector synchronously.",
+        },
         "push_encap_config": {
             "msg": "Push service configuration to the containers hosting an encapsulated service.",
             "options": [
