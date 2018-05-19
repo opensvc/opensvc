@@ -1095,14 +1095,6 @@ class Collector(object):
             self.proxy.update_sym_xml(*args)
         return r
 
-    def push_all(self, svcs, sync=True):
-        args = [[svc.svcname for svc in svcs]]
-        if self.auth_node:
-            args += [(rcEnv.uuid, rcEnv.nodename)]
-        for svc in svcs:
-            self.push_config(svc, sync=sync)
-            self.push_containerinfo(svc, sync=sync)
-
     def push_checks(self, vars, vals, sync=True):
         if "push_checks" not in self.proxy_methods:
             print("'push_checks' method is not exported by the collector")
