@@ -376,20 +376,10 @@ class Collector(object):
         self.proxy.end_action(*args)
 
     def svcmon_update_combo(self, g_vars, g_vals, r_vars, r_vals):
-        if 'svcmon_update_combo' in self.proxy_methods:
-            args = [g_vars, g_vals, r_vars, r_vals]
-            if self.auth_node:
-                args += [(rcEnv.uuid, rcEnv.nodename)]
-            self.proxy.svcmon_update_combo(*args)
-        else:
-            args = [g_vars, g_vals]
-            if self.auth_node:
-                args += [(rcEnv.uuid, rcEnv.nodename)]
-            self.proxy.svcmon_update(*args)
-            args = [r_vars, r_vals]
-            if self.auth_node:
-                args += [(rcEnv.uuid, rcEnv.nodename)]
-            self.proxy.resmon_update(*args)
+        args = [g_vars, g_vals, r_vars, r_vals]
+        if self.auth_node:
+            args += [(rcEnv.uuid, rcEnv.nodename)]
+        self.proxy.svcmon_update_combo(*args)
 
     def push_resinfo(self, vals, sync=False):
         if 'update_resinfo' not in self.proxy_methods:
