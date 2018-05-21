@@ -2297,11 +2297,15 @@ def create(svcname, resources=[], provision=False):
         print("failed to open", cf, "for writing", file=sys.stderr)
         return {"ret": 1}
 
-    defaults = {}
+    import json
+    import uuid
+
+    defaults = {
+       "id": str(uuid.uuid4()),
+    }
     sections = {}
     rtypes = {}
 
-    import json
     for r in resources:
         try:
             d = json.loads(r)

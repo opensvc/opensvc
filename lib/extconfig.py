@@ -425,6 +425,8 @@ class ExtConfig(object):
                 val = rcEnv.nodename
             elif _ref == "short_nodename":
                 val = rcEnv.nodename.split(".")[0]
+            elif _ref == "id" and hasattr(self, "svcname"):
+                val = self.id
             elif _ref == "svcname" and hasattr(self, "svcname"):
                 val = self.svcname
             elif _ref == "short_svcname" and hasattr(self, "svcname"):

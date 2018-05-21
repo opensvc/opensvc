@@ -620,6 +620,16 @@ class Svc(Crypt, ExtConfig):
         return comp
 
     @lazy
+    def id(self):
+        try:
+            return self.conf_get("DEFAULT", "id")
+        except ex.OptNotFound as exc:
+            import uuid
+            newid = str(uuid.uuid4())
+            self._set("DEFAULT", "id", newid)
+            return newid
+
+    @lazy
     def disabled(self):
         try:
             return self.conf_get("DEFAULT", "disable")
