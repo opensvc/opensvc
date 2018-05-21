@@ -497,10 +497,11 @@ class Monitor(shared.OsvcThread, Crypt):
         if svc.topology == "flex" and instances is not None:
             data["DEFAULT"]["flex_min_nodes"] = instances
             data["DEFAULT"]["flex_max_nodes"] = instances
-        try:
-            del data["DEFAULT"]["scale"]
-        except KeyError:
-            pass
+        for kw in ("scale", "id"):
+            try:
+                del data["DEFAULT"][kw]
+            except KeyError:
+                pass
         cmd = ["create"]
         proc = self.service_command(svcname, cmd, stdin=json.dumps(data))
         out, err = proc.communicate()
