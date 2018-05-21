@@ -156,7 +156,9 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
 
     if options.provision:
         if len(node.svcs) == 1 and action in ("create", "pull"):
-            node.svcs[0].action("provision", options)
+            ret = node.svcs[0].action("provision", options)
+            if ret == 0:
+                node.svcs[0].action("thaw")
 
     if ret != 0:
         return ret

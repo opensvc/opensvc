@@ -2090,11 +2090,16 @@ class Monitor(shared.OsvcThread, Crypt):
             self.set_smon(svcname, global_expect="unset")
         elif (smon.global_expect == "frozen" and frozen == "frozen") or \
              (smon.global_expect == "thawed" and frozen == "thawed") or \
-             (smon.global_expect == "unprovisioned" and provisioned is False) or \
-             (smon.global_expect == "provisioned" and provisioned is True):
+             (smon.global_expect == "unprovisioned" and provisioned is False):
             self.log.info("service %s global expect is %s, already is",
                           svcname, smon.global_expect)
             self.set_smon(svcname, global_expect="unset")
+        elif smon.global_expect == "provisioned" and provisioned is True:
+            if shared.AGG[svcname].avail in ("up", "n/a"):
+                # provision success, thaw
+                self.set_smon(svcname, global_expect="thawed")
+            else:
+                self.set_smon(svcname, global_expect="unset")
         elif (smon.global_expect == "purged" and purged is True) or \
              (smon.global_expect == "deleted" and deleted is True):
             self.log.info("service %s global expect is %s, already is",
