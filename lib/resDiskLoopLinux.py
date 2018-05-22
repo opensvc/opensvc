@@ -55,7 +55,7 @@ class Disk(Res.Disk):
 
     def _status(self, verbose=False):
         r = self.resource_handling_file()
-        if not os.path.exists(self.loopFile):
+        if self.is_provisioned() and not os.path.exists(self.loopFile):
             if r is None or (r and r.status() in (rcStatus.UP, rcStatus.STDBY_UP)):
                 self.status_log("%s does not exist" % self.loopFile)
         if self.is_up():
