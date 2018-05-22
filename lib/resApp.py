@@ -215,14 +215,12 @@ class App(Resource):
             keyvals.append(["Error", "info not implemented in launcher"])
             return keyvals
         for line in buff.splitlines():
-            if re.match("\w+:\s*.*$", line) is None:
+            try:
+                idx = line.find(':')
+            except ValueError:
                 continue
-            if len(line) == 0:
-                continue
-            elements = line.split(":")
-            if len(elements) < 2:
-                continue
-            keyvals.append([elements[0].strip(), ":".join(elements[1:]).strip()])
+            elements = line.split(":", 1)
+            keyvals.append([elements[0].strip(), elements[1].strip()])
         return keyvals
 
     def get_cmd(self, action, script_arg=None):
