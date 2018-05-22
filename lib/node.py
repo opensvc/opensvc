@@ -4179,6 +4179,15 @@ class Node(Crypt, ExtConfig):
                 self.config.add_section(section)
                 for option, value in _data.items():
                     self.config.set(section, option, value)
+            elif section.startswith("pool#"):
+                if self.config.has_section(section):
+                    self.log.info("update pool %s", section)
+                    self.config.remove_section(section)
+                else:
+                    self.log.info("add pool %s", section)
+                self.config.add_section(section)
+                for option, value in _data.items():
+                    self.config.set(section, option, value)
 
         # remove obsolete hb configurations
         for section in self.config.sections():
@@ -4196,6 +4205,12 @@ class Node(Crypt, ExtConfig):
         for section in self.config.sections():
             if section.startswith("arbitrator#") and section not in data:
                 self.log.info("remove arbitrator %s", section)
+                self.config.remove_section(section)
+
+        # remove obsolete pool configurations
+        for section in self.config.sections():
+            if section.startswith("pool#") and section not in data:
+                self.log.info("remove pool %s", section)
                 self.config.remove_section(section)
 
         self.write_config()

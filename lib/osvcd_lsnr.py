@@ -548,6 +548,7 @@ class Listener(shared.OsvcThread, Crypt):
         for section in self.config.sections():
             if section.startswith("hb#") or \
                section.startswith("stonith#") or \
+               section.startswith("pool#") or \
                section.startswith("arbitrator#"):
                 result["data"][section] = {}
                 for key, val in self.config.items(section):
