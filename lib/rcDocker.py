@@ -457,7 +457,7 @@ class DockerLib(object):
         cmd = self.docker_cmd + ['images', '--no-trunc']
         results = justcall(cmd)
         if results[2] != 0:
-            return
+            return {}
         data = {}
         for line in results[0].splitlines():
             elements = line.split()
@@ -515,7 +515,9 @@ class DockerLib(object):
 
         # referenced images
         for resource in self.svc.get_resources("container.docker"):
-            image_id = self.get_run_image_id(resource)
+            image_id = self.get_run_image_id(resource, pull=False)
+            if image_id is None:
+                continue
             images_done.append(image_id)
             data.append([resource.rid, "run_image", resource.run_image])
             data.append([resource.rid, "docker_image_id", image_id])
