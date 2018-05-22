@@ -204,7 +204,7 @@ class Section(object):
         section = self.section
         if self.section in self.top.deprecated_sections:
             return ""
-        if rtype and self.section+"."+rtype in self.top.deprecated_sections:
+        if rtype and self.top and self.section+"."+rtype in self.top.deprecated_sections:
             return ""
         if fmt == "text":
             return self._template_text(rtype, section)
@@ -304,7 +304,7 @@ class Section(object):
                     return k
         else:
             fkey = ".".join((self.section, keyword))
-            if fkey in self.top.deprecated_keywords:
+            if self.top is not None and fkey in self.top.deprecated_keywords:
                 keyword = self.top.deprecated_keywords[fkey]
             for k in self.keywords:
                 if k.keyword == keyword:
