@@ -13,6 +13,10 @@ from rcGlobalEnv import rcEnv
 SECRETS = []
 
 class ExtConfig(object):
+    def __init__(self, default_status_groups=None):
+        self.ref_cache = {}
+        self.default_status_groups = default_status_groups
+
     @lazy
     def has_default_section(self):
         if hasattr(self, "svcname"):
@@ -77,8 +81,7 @@ class ExtConfig(object):
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
         unset_all_lazy(self)
-        if hasattr(self, "ref_cache"):
-            delattr(self, "ref_cache")
+        self.ref_cache = {}
 
     def unset_line(self, lines, section, option):
         section = "[%s]" % section
@@ -157,9 +160,9 @@ class ExtConfig(object):
             raise ex.excError("the DEFAULT section is not allowed in %s" % self.paths.cf)
         if not self.config.has_section(section):
             if section != 'DEFAULT' and self.has_default_section:
-                raise ex.excError("section [%s] not found" % section)
+                raise ex.OptNotFound("section [%s] not found" % section)
             if not self.has_default_section:
-                raise ex.excError("section [%s] not found" % section)
+                raise ex.OptNotFound("section [%s] not found" % section)
         if evaluate:
             return self.conf_get(section, option, "string", scope=True)
         else:
@@ -317,8 +320,7 @@ class ExtConfig(object):
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
         unset_all_lazy(self)
-        if hasattr(self, "ref_cache"):
-            delattr(self, "ref_cache")
+        self.ref_cache = {}
 
     def set_line(self, lines, section, option, value):
         """
@@ -403,134 +405,139 @@ class ExtConfig(object):
     # config helpers
     #
     #########################################################################
-    def handle_reference(self, ref, scope=False, impersonate=None, config=None):
-            if "[" in ref and ref.endswith("]"):
-                i = ref.index("[")
-                index = ref[i+1:-1]
-                ref = ref[:i]
-                index = int(self.handle_references(index, scope=scope,
-                                                   impersonate=impersonate))
-            else:
-                index = None
+    def handle_reference(self, ref, scope=False, impersonate=None, config=None, section=None):
+        if "[" in ref and ref.endswith("]"):
+            i = ref.index("[")
+            index = ref[i+1:-1]
+            ref = ref[:i]
+            index = int(self.handle_references(index, scope=scope,
+                                               impersonate=impersonate,
+                                               section=section))
+        else:
+            index = None
 
-            if ref[0] == "#":
+        if ref[0] == "#":
+            return_length = True
+            _ref = ref[1:]
+        else:
+            return_length = False
+            _ref = ref
+
+        # hardcoded references
+        if _ref == "nodename":
+            val = rcEnv.nodename
+        elif _ref == "short_nodename":
+            val = rcEnv.nodename.split(".")[0]
+        elif _ref == "id" and hasattr(self, "svcname"):
+            val = self.id
+        elif _ref == "svcname" and hasattr(self, "svcname"):
+            val = self.svcname
+        elif _ref == "short_svcname" and hasattr(self, "svcname"):
+            val = self.svcname.split(".")[0]
+        elif _ref == "rid" and hasattr(self, "svcname"):
+            val = section
+        elif _ref == "rindex" and hasattr(self, "svcname"):
+            val = section.split("#")[-1]
+        elif _ref == "clustername":
+            if hasattr(self, "node"):
+                val = self.node.cluster_name
+            else:
+                val = self.cluster_name
+        elif _ref == "clusternodes":
+            if hasattr(self, "node"):
+                val = " ".join(self.node.cluster_nodes)
+            else:
+                val = " ".join(self.cluster_nodes)
+        elif _ref == "clusterdrpnodes":
+            if hasattr(self, "node"):
+                val = " ".join(self.node.cluster_drpnodes)
+            else:
+                val = " ".join(self.cluster_drpnodes)
+        elif _ref == "dns":
+            if hasattr(self, "node"):
+                val = " ".join(self.node.dns)
+            else:
+                val = " ".join(self.dns)
+        elif _ref == "dnsnodes":
+            if hasattr(self, "node"):
+                val = " ".join(self.node.dnsnodes)
+            else:
+                val = " ".join(self.dnsnodes)
+        elif _ref == "svcmgr":
+            val = rcEnv.paths.svcmgr
+        elif _ref == "nodemgr":
+            val = rcEnv.paths.nodemgr
+        elif _ref == "etc":
+            val = rcEnv.paths.pathetc
+        elif _ref == "var":
+            val = rcEnv.paths.pathvar
+        elif _ref == "collector_api":
+            if rcEnv.dbopensvc:
+                val = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api") if rcEnv.dbopensvc else ""
+            else:
+                val = ""
+        elif _ref == "dnsuxsockd":
+            val = rcEnv.paths.dnsuxsockd
+        elif _ref == "dnsuxsock":
+            val = rcEnv.paths.dnsuxsock
+        elif _ref.startswith("safe://"):
+            try:
+                if hasattr(self, "node"):
+                    val = self.node.download_from_safe(_ref, svcname=self.svcname)
+                else:
+                    val = self.download_from_safe(_ref)
+                val = val.decode()
+                SECRETS.append(val)
+            except ex.excError as exc:
+                val = ""
+        else:
+            val = None
+
+        _v = None
+        if val is None:
+            # use DEFAULT as the implicit section
+            n_dots = ref.count(".")
+            if n_dots == 0 and self.has_default_section:
+                _section = "DEFAULT"
+                _v = ref
+            elif n_dots == 1:
+                _section, _v = ref.split(".")
+            else:
+                raise ex.excError("%s: reference can have only one dot" % ref)
+
+            if len(_section) == 0:
+                raise ex.excError("%s: reference section can not be empty" % ref)
+            if len(_v) == 0:
+                raise ex.excError("%s: reference option can not be empty" % ref)
+
+            if _v[0] == "#":
                 return_length = True
-                _ref = ref[1:]
+                _v = _v[1:]
             else:
                 return_length = False
-                _ref = ref
 
-            # hardcoded references
-            if _ref == "nodename":
-                val = rcEnv.nodename
-            elif _ref == "short_nodename":
-                val = rcEnv.nodename.split(".")[0]
-            elif _ref == "id" and hasattr(self, "svcname"):
-                val = self.id
-            elif _ref == "svcname" and hasattr(self, "svcname"):
-                val = self.svcname
-            elif _ref == "short_svcname" and hasattr(self, "svcname"):
-                val = self.svcname.split(".")[0]
-            elif _ref == "clustername":
-                if hasattr(self, "node"):
-                    val = self.node.cluster_name
-                else:
-                    val = self.cluster_name
-            elif _ref == "clusternodes":
-                if hasattr(self, "node"):
-                    val = " ".join(self.node.cluster_nodes)
-                else:
-                    val = " ".join(self.cluster_nodes)
-            elif _ref == "clusterdrpnodes":
-                if hasattr(self, "node"):
-                    val = " ".join(self.node.cluster_drpnodes)
-                else:
-                    val = " ".join(self.cluster_drpnodes)
-            elif _ref == "dns":
-                if hasattr(self, "node"):
-                    val = " ".join(self.node.dns)
-                else:
-                    val = " ".join(self.dns)
-            elif _ref == "dnsnodes":
-                if hasattr(self, "node"):
-                    val = " ".join(self.node.dnsnodes)
-                else:
-                    val = " ".join(self.dnsnodes)
-            elif _ref == "svcmgr":
-                val = rcEnv.paths.svcmgr
-            elif _ref == "nodemgr":
-                val = rcEnv.paths.nodemgr
-            elif _ref == "etc":
-                val = rcEnv.paths.pathetc
-            elif _ref == "var":
-                val = rcEnv.paths.pathvar
-            elif _ref == "collector_api":
-                if rcEnv.dbopensvc:
-                    val = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api") if rcEnv.dbopensvc else ""
-                else:
-                    val = ""
-            elif _ref == "dnsuxsockd":
-                val = rcEnv.paths.dnsuxsockd
-            elif _ref == "dnsuxsock":
-                val = rcEnv.paths.dnsuxsock
-            elif _ref.startswith("safe://"):
-                try:
-                    if hasattr(self, "node"):
-                        val = self.node.download_from_safe(_ref, svcname=self.svcname)
-                    else:
-                        val = self.download_from_safe(_ref)
-                    val = val.decode()
-                    SECRETS.append(val)
-                except ex.excError as exc:
-                    val = ""
-            else:
-                val = None
+            val = self._handle_reference(ref, _section, _v, scope=scope,
+                                         impersonate=impersonate,
+                                         config=config)
 
-            _v = None
             if val is None:
-                # use DEFAULT as the implicit section
-                n_dots = ref.count(".")
-                if n_dots == 0 and self.has_default_section:
-                    _section = "DEFAULT"
-                    _v = ref
-                elif n_dots == 1:
-                    _section, _v = ref.split(".")
-                else:
-                    raise ex.excError("%s: reference can have only one dot" % ref)
+                # deferred
+                return
 
-                if len(_section) == 0:
-                    raise ex.excError("%s: reference section can not be empty" % ref)
-                if len(_v) == 0:
-                    raise ex.excError("%s: reference option can not be empty" % ref)
+        if return_length or index is not None:
+            if is_string(val):
+                val = val.split()
+            if return_length:
+                return str(len(val))
+            if index is not None:
+                try:
+                    return val[index]
+                except IndexError:
+                    if _v is not None and _v in ("exposed_devs", "sub_devs", "base_devs"):
+                        return
+                    return ""
 
-                if _v[0] == "#":
-                    return_length = True
-                    _v = _v[1:]
-                else:
-                    return_length = False
-
-                val = self._handle_reference(ref, _section, _v, scope=scope,
-                                             impersonate=impersonate,
-                                             config=config)
-
-                if val is None:
-                    # deferred
-                    return
-
-            if return_length or index is not None:
-                if is_string(val):
-                    val = val.split()
-                if return_length:
-                    return str(len(val))
-                if index is not None:
-                    try:
-                        return val[index]
-                    except IndexError:
-                        if _v is not None and _v in ("exposed_devs", "sub_devs", "base_devs"):
-                            return
-                        return ""
-
-            return val
+        return val
 
     def _handle_reference(self, ref, _section, _v, scope=False,
                           impersonate=None, config=None):
@@ -577,7 +584,7 @@ class ExtConfig(object):
 
         raise ex.excError("%s: unknown reference" % ref)
 
-    def _handle_references(self, s, scope=False, impersonate=None, config=None):
+    def _handle_references(self, s, scope=False, impersonate=None, config=None, section=None):
         if not is_string(s):
             return s
         while True:
@@ -587,7 +594,7 @@ class ExtConfig(object):
             ref = m.group(0).strip("{}").lower()
             val = self.handle_reference(ref, scope=scope,
                                         impersonate=impersonate,
-                                        config=config)
+                                        config=config, section=section)
             if val is None:
                 # deferred
                 return
@@ -612,28 +619,37 @@ class ExtConfig(object):
             s = s[:m.start()] + str(val) + s[m.end():]
             return s
 
-    def handle_references(self, s, scope=False, impersonate=None, config=None):
-        key = (s, scope, impersonate)
-        if hasattr(self, "ref_cache") and self.ref_cache is not None \
-           and key in self.ref_cache:
+    def handle_references(self, s, scope=False, impersonate=None, config=None, section=None):
+        key = (str(s), scope, impersonate)
+        if key in self.ref_cache:
             return self.ref_cache[key]
         try:
             val = self._handle_references(s, scope=scope,
                                           impersonate=impersonate,
-                                          config=config)
+                                          config=config, section=section)
             val = self._handle_expressions(val)
             val = self._handle_references(val, scope=scope,
                                           impersonate=impersonate,
-                                          config=config)
+                                          config=config, section=section)
         except Exception as e:
             raise
             raise ex.excError("%s: reference evaluation failed: %s"
                               "" % (s, str(e)))
-        if hasattr(self, "ref_cache") and self.ref_cache is not None and \
-           val is not None:
-            # don't cache lazy reference miss-evaluations
+        if self.cacheable(s, val):
             self.ref_cache[key] = val
         return val
+
+    @staticmethod
+    def cacheable(s, val):
+        if val is None:
+            # don't cache lazy reference miss-evaluations
+            return False
+        s = str(s)
+        if "{rid}" in s or "{rindex}" in s:
+            # those can take different values in the same service,
+            # being section-dependent
+            return False
+        return True
 
     def conf_get(self, s, o, t=None, scope=None, impersonate=None,
                  use_default=True, config=None, verbose=True):
@@ -769,13 +785,15 @@ class ExtConfig(object):
             if required:
                 raise ex.RequiredOptNotFound
             else:
-                exc.default = default
+                exc.default = self.handle_references(default, scope=scope,
+                                         impersonate=impersonate,
+                                         config=config, section=s)
                 raise exc
 
         try:
             val = self.handle_references(val, scope=scope,
                                          impersonate=impersonate,
-                                         config=config)
+                                         config=config, section=s)
         except ex.excError as exc:
             if o.startswith("pre_") or o.startswith("post_") or \
                o.startswith("blocking_"):
@@ -919,7 +937,7 @@ class ExtConfig(object):
             """
             value = config.get(section, option)
             try:
-                value = self.handle_references(value, scope=True, config=config)
+                value = self.handle_references(value, scope=True, config=config, section=section)
             except ex.excError as exc:
                 if not option.startswith("pre_") and \
                    not option.startswith("post_") and \
