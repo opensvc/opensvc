@@ -584,21 +584,33 @@ class ExtConfig(object):
 
         raise ex.excError("%s: unknown reference" % ref)
 
-    def _handle_references(self, s, scope=False, impersonate=None, config=None, section=None):
+    def _handle_references(self, s, scope=False, impersonate=None, config=None, section=None, first_step=None):
         if not is_string(s):
             return s
+        done = ""
         while True:
             m = re.search(r'{\w*[\w#][\w\.\[\]:\/]*}', s)
             if m is None:
-                return s
+                return done + s
             ref = m.group(0).strip("{}").lower()
+            if first_step and ref.startswith("safe://"):
+                # do safe references after expressions only
+                done += s[:m.end()]
+                s = s[m.end():]
+                continue
             val = self.handle_reference(ref, scope=scope,
                                         impersonate=impersonate,
                                         config=config, section=section)
             if val is None:
                 # deferred
                 return
-            s = s[:m.start()] + val + s[m.end():]
+            if ref.startswith("safe://"):
+                # disallow new refs in val
+                done += s[:m.start()] + val
+                s = s[m.end():]
+            else:
+                # allow new refs in val
+                s = s[:m.start()] + val + s[m.end():]
 
     @staticmethod
     def _handle_expressions(s):
@@ -626,7 +638,7 @@ class ExtConfig(object):
         try:
             val = self._handle_references(s, scope=scope,
                                           impersonate=impersonate,
-                                          config=config, section=section)
+                                          config=config, section=section, first_step=True)
             val = self._handle_expressions(val)
             val = self._handle_references(val, scope=scope,
                                           impersonate=impersonate,
