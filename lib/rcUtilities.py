@@ -239,7 +239,7 @@ def mimport(*args, **kwargs):
 
     mod = ""
     for i, e in enumerate(args):
-        if e in ("res", "prov", "check") and i == 0:
+        if e in ("res", "prov", "check", "pool") and i == 0:
             mod += e
         else:
             mod += fmt(e)

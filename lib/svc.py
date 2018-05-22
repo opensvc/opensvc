@@ -435,10 +435,9 @@ class Svc(Crypt, ExtConfig):
     It exposes operations methods like provision, unprovision, stop, start,
     and sync.
     """
-    # for ExtConfig
-    default_status_groups = DEFAULT_STATUS_GROUPS
 
     def __init__(self, svcname=None, node=None, cf=None):
+        ExtConfig.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.type = "hosted"
         self.svcname = svcname
         self.node = node
@@ -458,7 +457,6 @@ class Svc(Crypt, ExtConfig):
         self.encap_resources = {}
         self.resourcesets_by_id = {}
 
-        self.ref_cache = {}
         self.encap_json_status_cache = {}
         self.rset_status_cache = None
         self.lockfd = None
@@ -4839,6 +4837,11 @@ class Svc(Crypt, ExtConfig):
             return rid
 
     def update(self):
+        return self._update(self.options.resource,
+                            interactive=self.options.interactive,
+                            provision=self.options.provision)
+
+    def _update(self, resources, interactive=False, provision=False):
         """
         The 'update' action entry point.
         Add resources to the service configuration, and provision them if
@@ -4867,7 +4870,7 @@ class Svc(Crypt, ExtConfig):
 
         rid = []
 
-        for data in self.options.resource:
+        for data in resources:
             is_resource = False
             if 'rid' in data:
                 section = data['rid']
@@ -4903,7 +4906,7 @@ class Svc(Crypt, ExtConfig):
                 try:
                     sections[section].update(self.kwdict.KEYS.update(section, data))
                 except (MissKeyNoDefault, KeyInvalidValue) as exc:
-                    if not self.options.interactive:
+                    if not interactive:
                         raise ex.excError(str(exc))
                 rid.append(section)
 
@@ -4919,7 +4922,7 @@ class Svc(Crypt, ExtConfig):
             group = section.split("#")[0]
             svcBuilder.add_resource(self, group, section)
 
-        if self.options.provision and len(rid) > 0:
+        if provision and len(rid) > 0:
             options = Storage(self.options)
             options.rid = rid
             self.action("provision", options)
@@ -5243,4 +5246,26 @@ class Svc(Crypt, ExtConfig):
             raise ex.excError(data["error"])
         return data
 
+    def translate_volume(self, section):
+        """
+        Transform a volume section into resources sections using the storage
+        pool translation rules.
+        """
+        size = self.conf_get(section, "size")
+        try:
+            poolname = self.conf_get(section, "pool")
+        except ex.OptNotFound as exc:
+            poolname = exc.default
+        try:
+            fmt = self.conf_get(section, "format")
+        except ex.OptNotFound as exc:
+            fmt = exc.default
+        try:
+            mnt = self.conf_get(section, "mnt")
+        except ex.OptNotFound as exc:
+            mnt = exc.default
+        pool = self.node.get_pool(poolname)
+        data = pool.translate(fmt=fmt, size=size, mnt=mnt)
+        self._update(data)
+        self._delete_resources_config([section])
 

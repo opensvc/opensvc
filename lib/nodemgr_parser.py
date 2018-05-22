@@ -481,6 +481,17 @@ ACTIONS = {
             ],
         },
     },
+    "Pool actions": {
+        "pool_ls": {
+            "msg": "List the available pools.",
+        },
+        "pool_status": {
+            "msg": "Show pools status.",
+            "options": [
+                OPT.id,
+            ],
+        },
+    },
     "Network actions": {
         "network_ls": {
             "msg": "List the available networks.",

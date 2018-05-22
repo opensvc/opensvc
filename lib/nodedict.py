@@ -1154,6 +1154,102 @@ class KeywordCniConfig(Keyword):
                   text="The directory hosting the CNI network configuration files."
                 )
 
+class KeywordPoolType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="pool",
+                  keyword="type",
+                  default="loop",
+                  candidates=["loop", "vg", "zpool"],
+                  order=15,
+                  text="The pool type."
+                )
+
+class KeywordPoolMntOpt(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="pool",
+                  keyword="mnt_opt",
+                  order=15,
+                  at=True,
+                  text="The mount options of the fs created over the pool devices."
+                )
+
+class KeywordPoolVgName(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="pool",
+                  rtype="vg",
+                  keyword="name",
+                  required=True,
+                  order=15,
+                  text="The name of the volume group to allocate the pool logical volumes into."
+                )
+
+class KeywordPoolZpoolName(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="pool",
+                  rtype="zpool",
+                  keyword="name",
+                  required=True,
+                  order=15,
+                  text="The name of the zpool to allocate the pool datasets into."
+                )
+
+class KeywordPoolLoopPath(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="pool",
+                  keyword="path",
+                  rtype="loop",
+                  default="{var}/pool/loop",
+                  order=15,
+                  text="The path to create the pool loop files in."
+                )
+
+class KeywordPoolLoopFsType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="pool",
+                  keyword="fs_type",
+                  default="xfs",
+                  order=15,
+                  text="The filesystem to format the pool devices with."
+                )
+
+class KeywordPoolMkfsOpt(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="pool",
+                  keyword="mkfs_opt",
+                  default=[],
+                  convert="list",
+                  order=15,
+                  example="-O largefile",
+                  text="The mkfs command options to use to format the pool devices."
+                )
+
+class KeywordPoolVgCreateOpt(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="pool",
+                  rtype="vg",
+                  keyword="create_opt",
+                  default=[],
+                  convert="list",
+                  order=15,
+                  text="The lvcreate command options to use to create the pool logical volumes."
+                )
+
 
 class KeyDict(KeywordStore):
     def __init__(self):
@@ -1257,6 +1353,14 @@ class KeyDict(KeywordStore):
         self += KeywordHbRelaySecret()
         self += KeywordCniPlugins()
         self += KeywordCniConfig()
+        self += KeywordPoolType()
+        self += KeywordPoolMntOpt()
+        self += KeywordPoolLoopPath()
+        self += KeywordPoolLoopFsType()
+        self += KeywordPoolMkfsOpt()
+        self += KeywordPoolVgCreateOpt()
+        self += KeywordPoolZpoolName()
+        self += KeywordPoolVgName()
 
 KEYS = KeyDict()
 

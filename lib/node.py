@@ -94,13 +94,11 @@ class Node(Crypt, ExtConfig):
     Defines a cluster node.  It contain list of Svc.
     Implements node-level actions and checks.
     """
-    # for ExtConfig
-    default_status_groups = DEFAULT_STATUS_GROUPS
-
     def __str__(self):
         return self.nodename
 
     def __init__(self):
+        ExtConfig.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.config = None
         self.auth_config = None
         self.clouds = None
@@ -4340,6 +4338,56 @@ class Node(Crypt, ExtConfig):
 
     ##########################################################################
     #
+    # Pool actions
+    #
+    ##########################################################################
+    @formatter
+    def pool_ls(self):
+        data = self.pool_ls_data()
+        if self.options.format == "json":
+            return data
+        print("\n".join([name for name in data]))
+
+    def pool_ls_data(self):
+        data = set(["default"])
+        for section in self.config.sections():
+            if section.startswith("pool#"):
+                data.add(section.split("#")[-1])
+        return sorted(list(data))
+
+    @formatter
+    def pool_status(self):
+        data = self.pool_status_data()
+        if self.options.format == "json":
+            return data
+        from forest import Forest
+        from rcColor import color
+        tree = Forest()
+        node = tree.add_node()
+        node.add_column(rcEnv.nodename, color.BOLD)
+        node.add_column("type")
+        node.add_column("head")
+        node.add_column("size")
+        node.add_column("used")
+        node.add_column("free")
+        for name, _data in data.items():
+            leaf = node.add_node()
+            leaf.add_column(name, color.BOLD)
+            leaf.add_column(_data["type"])
+            leaf.add_column(_data["head"])
+            for key in ("size", "used", "free"):
+                leaf.add_column(print_size(_data[key], unit="k", compact=True))
+        print(tree)
+
+    def pool_status_data(self):
+        data = {}
+        for name in self.pool_ls_data():
+            pool = self.get_pool(name)
+            data[name] = pool.status()
+        return data
+
+    ##########################################################################
+    #
     # Network actions
     #
     ##########################################################################
@@ -4428,4 +4476,12 @@ class Node(Crypt, ExtConfig):
         """
         unset_lazy(self, prop)
 
-
+    def get_pool(self, poolname):
+        section = "pool#"+poolname
+        try:
+            ptype = self.conf_get(section, "type")
+        except ex.OptNotFound as exc:
+            ptype = exc.default
+        from rcUtilities import mimport
+        mod = mimport("pool", ptype)
+        return mod.Pool(node=self, name=poolname)
