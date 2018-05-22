@@ -2072,7 +2072,7 @@ class Node(Crypt, ExtConfig):
             os.unlink(fpath)
         except OSError:
             pass
-        os.system("%s pushasset" % rcEnv.syspaths.nodemgr)
+        os.system("%s pushasset" % rcEnv.paths.nodemgr)
         return 0
 
     def array(self):
