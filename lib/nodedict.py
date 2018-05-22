@@ -1160,8 +1160,8 @@ class KeywordPoolType(Keyword):
                   self,
                   section="pool",
                   keyword="type",
-                  default="loop",
-                  candidates=["loop", "vg", "zpool"],
+                  default="directory",
+                  candidates=["directory", "loop", "vg", "zpool"],
                   order=15,
                   text="The pool type."
                 )
@@ -1209,6 +1209,18 @@ class KeywordPoolLoopPath(Keyword):
                   keyword="path",
                   rtype="loop",
                   default="{var}/pool/loop",
+                  order=15,
+                  text="The path to create the pool loop files in."
+                )
+
+class KeywordPoolDirectoryPath(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="pool",
+                  keyword="path",
+                  rtype="directory",
+                  default="{var}/pool/directory",
                   order=15,
                   text="The path to create the pool loop files in."
                 )
@@ -1355,6 +1367,7 @@ class KeyDict(KeywordStore):
         self += KeywordCniConfig()
         self += KeywordPoolType()
         self += KeywordPoolMntOpt()
+        self += KeywordPoolDirectoryPath()
         self += KeywordPoolLoopPath()
         self += KeywordPoolLoopFsType()
         self += KeywordPoolMkfsOpt()
