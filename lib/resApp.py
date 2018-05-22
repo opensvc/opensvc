@@ -8,7 +8,7 @@ import time
 import stat
 import shlex
 
-from rcUtilities import justcall, which, lazy, is_string, lcall
+from rcUtilities import which, lazy, is_string, lcall
 from converters import convert_boolean
 from rcGlobalEnv import rcEnv
 from resources import Resource
@@ -103,6 +103,7 @@ class App(Resource):
                  stop_timeout=None,
                  check_timeout=None,
                  info_timeout=None,
+                 status_log=False,
                  **kwargs):
 
         Resource.__init__(self, rid, "app", **kwargs)
@@ -112,6 +113,7 @@ class App(Resource):
         self.check_seq = check
         self.info_seq = info
         self.timeout = timeout
+        self.status_log_flag = status_log
         self.start_timeout = start_timeout
         self.stop_timeout = stop_timeout
         self.check_timeout = check_timeout
@@ -452,6 +454,13 @@ class App(Resource):
                 kwargs["outlog"] = False
                 kwargs["errlog"] = False
                 ret, out, err = self.call(cmd, **kwargs)
+                if self.status_log_flag:
+                    out = out.strip()
+                    for line in out.splitlines():
+                        self.status_log(line, "info")
+                    err = err.strip()
+                    for line in err.splitlines():
+                        self.status_log(line, "warn")
                 self.log.debug("%s returned out=[%s], err=[%s], ret=[%d]", cmd, out, err, ret)
                 return ret
 

@@ -1246,6 +1246,20 @@ class KeywordAppScript(Keyword):
                   text="Full path to the app launcher script. Or its basename if the file is hosted in the <svcname>.d path. This script must accept as arg0 the activated actions word: start for start, stop for stop, status for check, info for info."
                 )
 
+class KeywordAppStatusLog(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="status_log",
+                  at=True,
+                  order=9,
+                  required=False,
+                  default=False,
+                  convert="boolean",
+                  text="Redirect the checker script stdout to the resource status info-log, and stderr to warn-log. The default is false, for it is common the checker scripts outputs are not tuned for opensvc."
+                )
+
 class KeywordAppTimeout(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4810,6 +4824,7 @@ class KeyDict(KeywordStore):
         self += KeywordAppLimitRss()
         self += KeywordAppLimitStack()
         self += KeywordAppLimitVmem()
+        self += KeywordAppStatusLog()
         self += KeywordAppTimeout()
         self += KeywordAppStartTimeout()
         self += KeywordAppStopTimeout()

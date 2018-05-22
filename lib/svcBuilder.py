@@ -2001,6 +2001,11 @@ def add_app(svc, s):
         kwargs['info'] = exc.default
 
     try:
+        kwargs['status_log'] = svc.conf_get(s, 'status_log')
+    except ex.OptNotFound as exc:
+        kwargs['status_log'] = exc.default
+
+    try:
         kwargs['timeout'] = svc.conf_get(s, 'timeout')
     except ex.OptNotFound as exc:
         kwargs['timeout'] = exc.default
