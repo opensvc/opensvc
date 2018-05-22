@@ -20,7 +20,10 @@ def generate_examples(fmt="text"):
     svc_key = svcdict.KEYS
     for section in svc_key.sections:
         if section not in ("subset", "DEFAULT", "app", "task"):
-            svc_types = svc_key[str(section)].getkey("type").candidates
+            svc_type_key = svc_key[str(section)].getkey("type")
+            if svc_type_key is None:
+                continue
+            svc_types = svc_type_key.candidates
             for svc_type in svc_types:
                 if svc_type is not None:
                     fpath = os.path.join(dpath, "template.service."+section+"."+svc_type+".example")
