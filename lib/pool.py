@@ -35,11 +35,14 @@ class Pool(object):
         except ex.OptNotFound as exc:
             return exc.default
 
+    def section_index(self, section):
+        return section.split("#")[-1]
+
     @lazy
     def default_mnt(self):
         return os.path.join("/srv/{id}/{rindex}")
 
-    def translate(self, size=None, fmt=True, mnt=None):
+    def translate(self, section, size=None, fmt=True, mnt=None):
         pass
 
     def status(self):

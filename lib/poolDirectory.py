@@ -5,6 +5,7 @@ import os
 import pool
 import rcExceptions as ex
 from rcUtilities import lazy, justcall
+from rcGlobalEnv import rcEnv
 
 class Pool(pool.Pool):
     @lazy
@@ -21,17 +22,28 @@ class Pool(pool.Pool):
         except ex.OptNotFound as exc:
             return exc.default
 
-    def translate(self, size=None, fmt=True, mnt=None):
+    def translate(self, section, size=None, fmt=True, mnt=None):
         fs = {
             "rtype": "fs",
             "type": "directory",
-            "path": os.path.join(self.path, "{id}", "{rindex}"),
+            "path": os.path.join(self.path, "{id}_"+self.section_index(section)),
         }
-        if mnt:
-            fs["mnt"] = mnt
+        bind = {
+            "rtype": "fs",
+            "dev": os.path.join(self.path, "{id}_"+self.section_index(section)),
+        }
+        if rcEnv.sysname == "Linux":
+            bind["type"] = "none"
+            bind["mnt_opt"] = "bind,rw"
+        elif rcEnv.sysname == "SunOS":
+            bind["type"] = "lofs"
         else:
-            fs["mnt"] = self.default_mnt
-        return [fs]
+            return [fs]
+        if bind:
+            bind["mnt"] = mnt
+        else:
+            bind["mnt"] = self.default_mnt
+        return [fs, bind]
 
     def status(self):
         from converters import convert_size

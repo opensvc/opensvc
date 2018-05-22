@@ -5265,7 +5265,7 @@ class Svc(Crypt, ExtConfig):
         except ex.OptNotFound as exc:
             mnt = exc.default
         pool = self.node.get_pool(poolname)
-        data = pool.translate(fmt=fmt, size=size, mnt=mnt)
+        data = pool.translate(section, fmt=fmt, size=size, mnt=mnt)
         self._update(data)
         self._delete_resources_config([section])
 

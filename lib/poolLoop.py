@@ -21,12 +21,12 @@ class Pool(pool.Pool):
         except ex.OptNotFound as exc:
             return exc.default
 
-    def translate(self, size=None, fmt=True, mnt=None):
+    def translate(self, section, size=None, fmt=True, mnt=None):
         data = [
             {
                 "rtype": "disk",
                 "type": "loop",
-                "file": os.path.join(self.path, "{id}", "{rindex}.img"),
+                "file": os.path.join(self.path, "{id}", self.section_index(section)+".img"),
                 "size": size,
             }
         ]
@@ -34,7 +34,7 @@ class Pool(pool.Pool):
             fs = {
                 "rtype": "fs",
                 "type": self.fs_type,
-                "dev": os.path.join(self.path, "{id}", "{rindex}.img"),
+                "dev": os.path.join(self.path, "{id}", self.section_index(section)+".img"),
             }
             if mnt:
                 fs["mnt"] = mnt

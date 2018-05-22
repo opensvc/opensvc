@@ -11,11 +11,11 @@ class Pool(pool.Pool):
     def zpool(self):
         return self.node.conf_get(self.section, "name")
 
-    def translate(self, size=None, fmt=True, mnt=None):
+    def translate(self, section, size=None, fmt=True, mnt=None):
         data = []
         fs = {
             "type": "zfs",
-            "dev": self.zpool+"/" + "{id}_{rindex}",
+            "dev": self.zpool+"/" + "{id}_"+self.section_index(section),
             "mkfs_opt": " ".join(self.mkfs_opt),
             "rtype": "fs",
         }
