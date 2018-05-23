@@ -88,6 +88,7 @@ class Collector(shared.OsvcThread, Crypt):
                 shared.NODE.collector.call(*args, **kwargs)
             except Exception as exc:
                 self.log.exception(exc)
+                time.sleep(0.2)
 
     def send_containerinfo(self, svcname):
         if svcname not in shared.SERVICES:
