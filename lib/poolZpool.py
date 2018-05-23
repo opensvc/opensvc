@@ -34,15 +34,18 @@ class Pool(pool.Pool):
         from converters import convert_size
         data = {
             "type": "zpool",
+            "free": -1,
+            "used": -1,
+            "size": -1,
+            "head": self.zpool,
         }
-        cmd = ["zpool", "list", "-H", "-o", "size,alloc,free", "-p", self.zpool]
+        cmd = ["zpool", "get", "-H", "size,alloc,free", "-p", self.zpool]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return data
-        l = out.splitlines()[-1].split()
-        data["free"] = convert_size(l[2], default_unit="", _to="kb")
-        data["used"] = convert_size(l[1], default_unit="", _to="kb")
-        data["size"] = convert_size(l[0], default_unit="", _to="kb")
-        data["head"] = self.zpool
+        lines = out.splitlines()
+        data["size"] = convert_size(lines[0].split()[2], default_unit="", _to="kb")
+        data["used"] = convert_size(lines[1].split()[2], default_unit="", _to="kb")
+        data["free"] = convert_size(lines[2].split()[2], default_unit="", _to="kb")
         return data
 
