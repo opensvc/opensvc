@@ -722,7 +722,7 @@ class DockerLib(object):
             mntpts.append(resource.mount_point)
             mntpt_res[resource.mount_point] = resource
         for mntpt in sorted(mntpts, reverse=True):
-            if mntpt.startswith(self.docker_data_dir):
+            if self.docker_data_dir.startswith(mntpt):
                 return mntpt_res[mntpt]
 
     def docker_start(self, verbose=True):
