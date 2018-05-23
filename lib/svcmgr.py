@@ -153,12 +153,11 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
         except ex.excError as exc:
             print(exc, file=sys.stderr)
             ret = 1
+        node.svcs[0].translate_volumes()
 
     if options.provision:
         if len(node.svcs) == 1 and action in ("create", "pull"):
-            ret = node.svcs[0].action("provision", options)
-            if ret == 0:
-                node.svcs[0].action("thaw")
+            node.svcs[0].action("provision", options)
 
     if ret != 0:
         return ret

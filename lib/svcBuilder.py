@@ -2220,8 +2220,6 @@ def add_resources(svc):
         restype = s.split("#")[0]
         if restype in ("env", "subset"):
             continue
-        elif restype == "volume":
-            svc.translate_volume(s)
         try:
             add_resource(svc, restype, s)
         except ex.RequiredOptNotFound:
