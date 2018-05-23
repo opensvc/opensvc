@@ -3672,6 +3672,9 @@ class Svc(Crypt, ExtConfig):
         subsets = options.get("subsets", None)
         xtags = options.get("xtags", None)
 
+        if rid or tags or subsets or xtags:
+            self.init_resources()
+
         if rid is None:
             rid = []
         elif is_string(rid):
@@ -5245,6 +5248,11 @@ class Svc(Crypt, ExtConfig):
         if "error" in data:
             raise ex.excError(data["error"])
         return data
+
+    def translate_volumes(self):
+        for section in self.config.sections():
+            if section.startswith("volume#"):
+                self.translate_volume(section)
 
     def translate_volume(self, section):
         """
