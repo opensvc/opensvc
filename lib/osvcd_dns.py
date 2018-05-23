@@ -422,21 +422,24 @@ class Dns(shared.OsvcThread, Crypt):
                             port = int(port)
                         except Exception as exc:
                             continue
+                        qnames = []
+                        qnames.append("_%s._%s.%s.%s.svc.%s." % (str(port), proto, _svcname, app, self.cluster_name))
                         try:
                             serv = socket.getservbyport(port)
+                            qnames.append("_%s._%s.%s.%s.svc.%s." % (serv, proto, _svcname, app, self.cluster_name))
                         except socket.error as exc:
-                            continue
-                        qname = "_%s._%s.%s.%s.svc.%s." % (serv, proto, _svcname, app, self.cluster_name)
+                            pass
                         target = "%s.%s.%s.svc.%s." % (self.unique_name(addr), _svcname, app, self.cluster_name)
-                        if qname not in names:
-                            names[qname] = set()
                         content = "%(prio)d %(weight)d %(port)d %(target)s" % {
                             "prio": 0,
                             "weight": weight,
                             "port": port,
                             "target": target,
                         }
-                        names[qname].add(content)
+                        for qname in qnames:
+                            if qname not in names:
+                                names[qname] = set()
+                            names[qname].add(content)
         return names
 
     def svc_ips(self):
