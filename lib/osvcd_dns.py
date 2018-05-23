@@ -422,12 +422,12 @@ class Dns(shared.OsvcThread, Crypt):
                             port = int(port)
                         except Exception as exc:
                             continue
-                        qnames = []
-                        qnames.append("_%s._%s.%s.%s.svc.%s." % (str(port), proto, _svcname, app, self.cluster_name))
+                        qnames = set()
+                        qnames.add("_%s._%s.%s.%s.svc.%s." % (str(port), proto, _svcname, app, self.cluster_name))
                         try:
                             serv = socket.getservbyport(port)
-                            qnames.append("_%s._%s.%s.%s.svc.%s." % (serv, proto, _svcname, app, self.cluster_name))
-                        except OSError as exc:
+                            qnames.add("_%s._%s.%s.%s.svc.%s." % (serv, proto, _svcname, app, self.cluster_name))
+                        except (socket.error, OSError) as exc:
                             # port/proto not found
                             pass
                         except Exception as exc:
@@ -442,6 +442,10 @@ class Dns(shared.OsvcThread, Crypt):
                         for qname in qnames:
                             if qname not in names:
                                 names[qname] = set()
+                            uend = " %d %s" % (port, target)
+                            if any([True for c in names[qname] if c.endswith(uend)]):
+                                # avoid multiple SRV entries pointing to the same ip:port
+                                continue
                             names[qname].add(content)
         return names
 
