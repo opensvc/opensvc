@@ -427,8 +427,11 @@ class Dns(shared.OsvcThread, Crypt):
                         try:
                             serv = socket.getservbyport(port)
                             qnames.append("_%s._%s.%s.%s.svc.%s." % (serv, proto, _svcname, app, self.cluster_name))
-                        except socket.error as exc:
+                        except OSError as exc:
+                            # port/proto not found
                             pass
+                        except Exception as exc:
+                            self.log.warning("port %d resolution failed: %s", port, exc)
                         target = "%s.%s.%s.svc.%s." % (self.unique_name(addr), _svcname, app, self.cluster_name)
                         content = "%(prio)d %(weight)d %(port)d %(target)s" % {
                             "prio": 0,
