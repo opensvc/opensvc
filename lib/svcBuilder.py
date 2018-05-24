@@ -836,7 +836,7 @@ def add_fs_directory(svc, s):
 
     if zone is not None:
         zp = None
-        for r in svc.get_resources("container.zone", discard_disabled=False):
+        for r in [r for r in svc.resources_by_id.values() if r.type == "container.zone"]:
             if r.name == zone:
                 try:
                     zp = r.get_zonepath()
@@ -903,7 +903,7 @@ def add_fs(svc, s):
 
     if zone is not None:
         zp = None
-        for r in svc.get_resources("container.zone", discard_disabled=False):
+        for r in [r for r in svc.resources_by_id.values() if r.type == "container.zone"]:
             if r.name == zone:
                 try:
                     zp = r.get_zonepath()
@@ -2216,14 +2216,33 @@ def add_resources(svc):
     """
     Instanciate resource objects and add them to the service.
     """
-    for s in svc.config.sections():
-        restype = s.split("#")[0]
-        if restype in ("env", "subset"):
+    sections = {}
+    for section in svc.config.sections():
+        restype = section.split("#")[0]
+        if restype in ("subset", "env"):
             continue
         try:
-            add_resource(svc, restype, s)
-        except ex.RequiredOptNotFound:
-            continue
+            sections[restype].add(section)
+        except KeyError:
+            sections[restype] = set([section])
+
+    ordered_restypes = [
+        "container",
+        "ip",
+        "disk",
+        "fs",
+        "share",
+        "app",
+        "sync",
+        "task",
+    ]
+
+    for restype in ordered_restypes:
+        for section in sections.get(restype, []):
+            try:
+                add_resource(svc, restype, section)
+            except ex.RequiredOptNotFound:
+                continue
     add_mandatory_syncs(svc)
 
 def build_services(status=None, svcnames=None, create_instance=False,
