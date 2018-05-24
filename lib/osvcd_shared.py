@@ -575,8 +575,8 @@ class OsvcThread(threading.Thread):
             return
         self.duplog("info", "cluster is split, we don't have quorum: "
                     "%(live)d+%(avote)d/%(total)d votes (%(a)s)",
-                    live=live, avote=arbitrator_vote, total=total,
-                    a=arbitrator["name"])
+                    live=live, avote=n_extra_votes, total=total,
+                    a=",".join(extra_votes))
         self.log.info("toc")
         NODE.system.crash()
 
