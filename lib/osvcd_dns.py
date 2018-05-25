@@ -233,19 +233,21 @@ class Dns(shared.OsvcThread, Crypt):
         if qtype == "ANY":
             if PTR_SUFFIX in qname:
                 return self.ptr_record(parameters)
-            return self.a_record(parameters) + \
-                   self.srv_record(parameters) + \
-                   self.txt_record(parameters) + \
-                   self.cname_record(parameters)
+            data = []
+            suffix = parameters["qname"].lower().lstrip("*.")
+            return self._action_list(suffix, lookup=True)
         return []
 
     def action_list(self, parameters):
         zonename = parameters.get("zonename").lower()
-        data = self.soa_record({"qname": zonename})
-        if len(data) == 0:
+        return self._action_list(zonename)
+
+    def _action_list(self, suffix, lookup=False):
+        data = self.soa_record({"qname": suffix})
+        if len(data) == 0 and not lookup:
             return data
         for qname, contents in self.a_records().items():
-            if not qname.endswith(zonename):
+            if not qname.endswith(suffix):
                 continue
             for content in contents:
                 data.append({
@@ -255,7 +257,7 @@ class Dns(shared.OsvcThread, Crypt):
                     "ttl": 60
                 })
         for qname, contents in self.srv_records().items():
-            if not qname.endswith(zonename):
+            if not qname.endswith(suffix):
                 continue
             for content in contents:
                 data.append({
