@@ -52,7 +52,8 @@ class Dns(shared.OsvcThread, Crypt):
 
         self.log.info("listening on %s", rcEnv.paths.dnsuxsock)
 
-        self.suffix = ".%s." % self.cluster_name.strip(".")
+        self.zone = "%s." % self.cluster_name.strip(".")
+        self.suffix = ".%s" % self.zone
         self.suffix_len = len(self.suffix)
         self.soa_data = {
             "origin": self.origin,
@@ -191,6 +192,8 @@ class Dns(shared.OsvcThread, Crypt):
         if not hasattr(self, fname):
             return {"error": "action not supported", "result": False}
         result = getattr(self, fname)(data.get("parameters", {}))
+        if result == []:
+            return False
         return {"result": result}
 
     def action_initialize(self, parameters):
@@ -230,22 +233,45 @@ class Dns(shared.OsvcThread, Crypt):
             return self.ptr_record(parameters)
         if qtype == "CNAME":
             return self.cname_record(parameters)
+        if qtype == "NS":
+            return self.ns_record(parameters)
         if qtype == "ANY":
             if PTR_SUFFIX in qname:
                 return self.ptr_record(parameters)
-            data = []
-            suffix = parameters["qname"].lower().lstrip("*.")
-            return self._action_list(suffix, lookup=True)
+            #if parameters["qname"].startswith("*."):
+            #    return self.lookup_pattern(parameters["qname"].lstrip("*."))
+            parameters["qname"] = parameters["qname"].lstrip("*.")
+            return self.a_record(parameters) + \
+                   self.srv_record(parameters) + \
+                   self.txt_record(parameters) + \
+                   self.cname_record(parameters)
+
+            return self._action_list(qname, lookup=True)
         return []
 
     def action_list(self, parameters):
         zonename = parameters.get("zonename").lower()
         return self._action_list(zonename)
 
-    def _action_list(self, suffix, lookup=False):
+    def lookup_pattern(self, suffix):
+        data = []
+        for qname, contents in self.a_records().items():
+            if not qname.endswith(suffix):
+                continue
+            for content in contents:
+                data.append({
+                    "qtype": "A",
+                    "qname": qname,
+                    "content": content,
+                    "ttl": 60
+                })
+        return data
+
+    def _action_list(self, suffix):
         data = self.soa_record({"qname": suffix})
-        if len(data) == 0 and not lookup:
+        if len(data) == 0:
             return data
+        data += self.zone_ns_records(suffix)
         for qname, contents in self.a_records().items():
             if not qname.endswith(suffix):
                 continue
@@ -273,21 +299,45 @@ class Dns(shared.OsvcThread, Crypt):
 
     @lazy
     def origin(self):
-        return "dns"+self.suffix
+        return "dns.%s" % self.zone
 
     @lazy
     def contact(self):
         return "contact@opensvc.com"
+
+    def ns_record(self, parameters):
+        qname = parameters.get("qname").lower()
+        if qname != self.zone:
+            return []
+        return zone_ns_records(self.zone)
+
+    def zone_ns_records(self, zonename):
+        data = []
+        for dns in shared.NODE.dnsnodes:
+            dns = dns.split(".")[0] + "." + zonename
+            data.append({
+                "qtype": "NS",
+                "qname": zonename,
+                "content": dns,
+                "ttl": 3600
+            })
+        return data
+
+    def soa_records(self):
+        return [self.zone]
+
+    def soa_records_rev(self):
+        addrs = []
+        for addr in set(self.svc_ips()):
+            addrs.append(".".join(reversed(addr.split(".")[:-1]))+PTR_SUFFIX)
+        return addrs
 
     def soa_record(self, parameters):
         qname = parameters.get("qname").lower()
         if qname.endswith(PTR_SUFFIX):
             if qname not in self.soa_records_rev():
                 return []
-        elif qname.endswith(self.cluster_name.strip(".")+"."):
-            if qname not in self.soa_records():
-                return []
-        else:
+        elif qname != self.zone:
             return []
 
         data = [
@@ -374,23 +424,6 @@ class Dns(shared.OsvcThread, Crypt):
             return
         return self.cache[key].get(kind)
 
-    def soa_records(self):
-        data = self.get_cache("soa")
-        if data is not None:
-            return data
-        names = set([self.suffix.lstrip("."), "svc"+self.suffix])
-        for nodename, node in shared.CLUSTER_DATA.items():
-            status = node.get("services", {}).get("status", {})
-            for svcname, svc in status.items():
-                scaler_slave = svc.get("scaler_slave")
-                if scaler_slave:
-                    continue
-                app = svc.get("app", "default").lower()
-                names.add("%s.%s.svc.%s." % (svcname, app, self.cluster_name))
-                names.add("%s.svc.%s." % (app, self.cluster_name))
-        self.set_cache("soa", names)
-        return names
-
     @staticmethod
     def unique_name(addr):
         return addr.replace(".", "-").replace(":", "-")
@@ -410,7 +443,8 @@ class Dns(shared.OsvcThread, Crypt):
                         _svcname = svcname[svcname.index(".")+1:]
                     else:
                         _svcname = svcname
-                    qname = "%s.%s.svc.%s." % (_svcname, app, self.cluster_name)
+                    zone = "%s.svc.%s." % (app, self.cluster_name)
+                    qname = "%s.%s" % (_svcname, zone)
                     if qname not in names:
                         names[qname] = set()
                     for rid, resource in status[svcname].get("resources", {}).items():
@@ -428,6 +462,9 @@ class Dns(shared.OsvcThread, Crypt):
                             if name not in names:
                                 names[name] = set()
                             names[name].add(addr)
+        for i, ip in enumerate(shared.NODE.dns):
+            dns = "%s.%s." % (shared.NODE.dnsnodes[i].split(".")[0], self.cluster_name)
+            names[dns] = set([ip])
         self.set_cache("a", names)
         return names
 
@@ -498,9 +535,4 @@ class Dns(shared.OsvcThread, Crypt):
                         addrs.append(addr)
         return addrs
 
-    def soa_records_rev(self):
-        addrs = []
-        for addr in set(self.svc_ips()):
-            addrs.append(".".join(reversed(addr.split(".")[:-1]))+PTR_SUFFIX)
-        return addrs
 
