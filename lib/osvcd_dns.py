@@ -341,19 +341,20 @@ class Dns(shared.OsvcThread, Crypt):
             return []
         names = []
         ref = ".".join(reversed(qname[:-PTR_SUFFIX_LEN].split(".")))
-        for nodename, node in shared.CLUSTER_DATA.items():
-            status = node.get("services", {}).get("status", {})
-            for svcname, svc in status.items():
-                app = svc.get("app", "default").lower()
-                for rid, resource in status[svcname].get("resources", {}).items():
-                    addr = resource.get("info", {}).get("ipaddr")
-                    if addr is None:
-                        continue
-                    if addr != ref:
-                        continue
-                    if "hostname" in resource:
-                        names.append("%s.%s.%s.svc.%s." % (hostname, svcname, app, self.cluster_name))
-                    names.append("%s.%s.svc.%s." % (svcname, app, self.cluster_name))
+        with shared.CLUSTER_DATA_LOCK:
+            for nodename, node in shared.CLUSTER_DATA.items():
+                status = node.get("services", {}).get("status", {})
+                for svcname, svc in status.items():
+                    app = svc.get("app", "default").lower()
+                    for rid, resource in status[svcname].get("resources", {}).items():
+                        addr = resource.get("info", {}).get("ipaddr")
+                        if addr is None:
+                            continue
+                        if addr != ref:
+                            continue
+                        if "hostname" in resource:
+                            names.append("%s.%s.%s.svc.%s." % (hostname, svcname, app, self.cluster_name))
+                        names.append("%s.%s.svc.%s." % (svcname, app, self.cluster_name))
         return names
 
     def set_cache(self, kind, data):
@@ -369,7 +370,7 @@ class Dns(shared.OsvcThread, Crypt):
             return
         if kind not in self.cache[key]:
             return
-        return self.cache[key][kind]
+        return self.cache[key].get(kind)
 
     def soa_records(self):
         data = self.get_cache("soa")
@@ -397,33 +398,34 @@ class Dns(shared.OsvcThread, Crypt):
         if data is not None:
             return data
         names = {}
-        for nodename, node in shared.CLUSTER_DATA.items():
-            status = node.get("services", {}).get("status", {})
-            for svcname, svc in status.items():
-                app = svc.get("app", "default").lower()
-                scaler_slave = svc.get("scaler_slave")
-                if scaler_slave:
-                    _svcname = svcname[svcname.index(".")+1:]
-                else:
-                    _svcname = svcname
-                qname = "%s.%s.svc.%s." % (_svcname, app, self.cluster_name)
-                if qname not in names:
-                    names[qname] = set()
-                for rid, resource in status[svcname].get("resources", {}).items():
-                    addr = resource.get("info", {}).get("ipaddr")
-                    if addr is None:
-                        continue
-                    hostname = resource.get("info", {}).get("hostname")
-                    names[qname].add(addr)
-                    rname = self.unique_name(addr) + "." + qname
-                    if rname not in names:
-                        names[rname] = set()
-                    names[rname].add(addr)
-                    if hostname:
-                        name = hostname + "." + qname
-                        if name not in names:
-                            names[name] = set()
-                        names[name].add(addr)
+        with shared.CLUSTER_DATA_LOCK:
+            for nodename, node in shared.CLUSTER_DATA.items():
+                status = node.get("services", {}).get("status", {})
+                for svcname, svc in status.items():
+                    app = svc.get("app", "default").lower()
+                    scaler_slave = svc.get("scaler_slave")
+                    if scaler_slave:
+                        _svcname = svcname[svcname.index(".")+1:]
+                    else:
+                        _svcname = svcname
+                    qname = "%s.%s.svc.%s." % (_svcname, app, self.cluster_name)
+                    if qname not in names:
+                        names[qname] = set()
+                    for rid, resource in status[svcname].get("resources", {}).items():
+                        addr = resource.get("info", {}).get("ipaddr")
+                        if addr is None:
+                            continue
+                        hostname = resource.get("info", {}).get("hostname")
+                        names[qname].add(addr)
+                        rname = self.unique_name(addr) + "." + qname
+                        if rname not in names:
+                            names[rname] = set()
+                        names[rname].add(addr)
+                        if hostname:
+                            name = hostname + "." + qname
+                            if name not in names:
+                                names[name] = set()
+                            names[name].add(addr)
         self.set_cache("a", names)
         return names
 
@@ -432,64 +434,66 @@ class Dns(shared.OsvcThread, Crypt):
         if data is not None:
             return data
         names = {}
-        for nodename, node in shared.CLUSTER_DATA.items():
-            status = node.get("services", {}).get("status", {})
-            weight = node.get("stats", {}).get("score", 10)
-            for svcname, svc in status.items():
-                app = svc.get("app", "default").lower()
-                scaler_slave = svc.get("scaler_slave")
-                if scaler_slave:
-                    _svcname = svcname[svcname.index(".")+1:]
-                else:
-                    _svcname = svcname
-                for rid, resource in status[svcname].get("resources", {}).items():
-                    addr = resource.get("info", {}).get("ipaddr")
-                    if addr is None:
-                        continue
-                    for expose in resource.get("info", {}).get("expose", []):
-                        try:
-                            port, proto = re.split("[/-]", expose.split(":")[0])
-                            port = int(port)
-                        except Exception as exc:
+        with shared.CLUSTER_DATA_LOCK:
+            for nodename, node in shared.CLUSTER_DATA.items():
+                status = node.get("services", {}).get("status", {})
+                weight = node.get("stats", {}).get("score", 10)
+                for svcname, svc in status.items():
+                    app = svc.get("app", "default").lower()
+                    scaler_slave = svc.get("scaler_slave")
+                    if scaler_slave:
+                        _svcname = svcname[svcname.index(".")+1:]
+                    else:
+                        _svcname = svcname
+                    for rid, resource in status[svcname].get("resources", {}).items():
+                        addr = resource.get("info", {}).get("ipaddr")
+                        if addr is None:
                             continue
-                        qnames = set()
-                        qnames.add("_%s._%s.%s.%s.svc.%s." % (str(port), proto, _svcname, app, self.cluster_name))
-                        try:
-                            serv = socket.getservbyport(port)
-                            qnames.add("_%s._%s.%s.%s.svc.%s." % (serv, proto, _svcname, app, self.cluster_name))
-                        except (socket.error, OSError) as exc:
-                            # port/proto not found
-                            pass
-                        except Exception as exc:
-                            self.log.warning("port %d resolution failed: %s", port, exc)
-                        target = "%s.%s.%s.svc.%s." % (self.unique_name(addr), _svcname, app, self.cluster_name)
-                        content = "%(prio)d %(weight)d %(port)d %(target)s" % {
-                            "prio": 0,
-                            "weight": weight,
-                            "port": port,
-                            "target": target,
-                        }
-                        for qname in qnames:
-                            if qname not in names:
-                                names[qname] = set()
-                            uend = " %d %s" % (port, target)
-                            if any([True for c in names[qname] if c.endswith(uend)]):
-                                # avoid multiple SRV entries pointing to the same ip:port
+                        for expose in resource.get("info", {}).get("expose", []):
+                            try:
+                                port, proto = re.split("[/-]", expose.split(":")[0])
+                                port = int(port)
+                            except Exception as exc:
                                 continue
-                            names[qname].add(content)
+                            qnames = set()
+                            qnames.add("_%s._%s.%s.%s.svc.%s." % (str(port), proto, _svcname, app, self.cluster_name))
+                            try:
+                                serv = socket.getservbyport(port)
+                                qnames.add("_%s._%s.%s.%s.svc.%s." % (serv, proto, _svcname, app, self.cluster_name))
+                            except (socket.error, OSError) as exc:
+                                # port/proto not found
+                                pass
+                            except Exception as exc:
+                                self.log.warning("port %d resolution failed: %s", port, exc)
+                            target = "%s.%s.%s.svc.%s." % (self.unique_name(addr), _svcname, app, self.cluster_name)
+                            content = "%(prio)d %(weight)d %(port)d %(target)s" % {
+                                "prio": 0,
+                                "weight": weight,
+                                "port": port,
+                                "target": target,
+                            }
+                            for qname in qnames:
+                                if qname not in names:
+                                    names[qname] = set()
+                                uend = " %d %s" % (port, target)
+                                if any([True for c in names[qname] if c.endswith(uend)]):
+                                    # avoid multiple SRV entries pointing to the same ip:port
+                                    continue
+                                names[qname].add(content)
         self.set_cache("srv", names)
         return names
 
     def svc_ips(self):
         addrs = []
-        for nodename, node in shared.CLUSTER_DATA.items():
-            status = node.get("services", {}).get("status", {})
-            for svcname, svc in status.items():
-                for rid, resource in status[svcname].get("resources", {}).items():
-                    addr = resource.get("info", {}).get("ipaddr")
-                    if addr is None:
-                        continue
-                    addrs.append(addr)
+        with shared.CLUSTER_DATA_LOCK:
+            for nodename, node in shared.CLUSTER_DATA.items():
+                status = node.get("services", {}).get("status", {})
+                for svcname, svc in status.items():
+                    for rid, resource in status[svcname].get("resources", {}).items():
+                        addr = resource.get("info", {}).get("ipaddr")
+                        if addr is None:
+                            continue
+                        addrs.append(addr)
         return addrs
 
     def soa_records_rev(self):
