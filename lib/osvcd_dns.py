@@ -31,6 +31,7 @@ class Dns(shared.OsvcThread, Crypt):
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.dns")
+        self.cache = {}
         if not os.path.exists(rcEnv.paths.dnsuxsockd):
             os.makedirs(rcEnv.paths.dnsuxsockd)
         try:
@@ -83,6 +84,9 @@ class Dns(shared.OsvcThread, Crypt):
                 self.join_threads()
                 self.sock.close()
                 sys.exit(0)
+
+    def cache_key(self):
+        return tuple(sorted(self.get_gen(inc=False).values()))
 
     def status(self, **kwargs):
         data = shared.OsvcThread.status(self, **kwargs)
@@ -352,7 +356,25 @@ class Dns(shared.OsvcThread, Crypt):
                     names.append("%s.%s.svc.%s." % (svcname, app, self.cluster_name))
         return names
 
+    def set_cache(self, kind, data):
+        key = self.cache_key()
+        if key not in self.cache:
+            self.cache = {}
+        self.cache[key] = {kind: data}
+
+    def get_cache(self, kind):
+        key = self.cache_key()
+        if key not in self.cache:
+            self.cache = {}
+            return
+        if kind not in self.cache[key]:
+            return
+        return self.cache[key][kind]
+
     def soa_records(self):
+        data = self.get_cache("soa")
+        if data is not None:
+            return data
         names = set([self.suffix.lstrip("."), "svc"+self.suffix])
         for nodename, node in shared.CLUSTER_DATA.items():
             status = node.get("services", {}).get("status", {})
@@ -363,6 +385,7 @@ class Dns(shared.OsvcThread, Crypt):
                 app = svc.get("app", "default").lower()
                 names.add("%s.%s.svc.%s." % (svcname, app, self.cluster_name))
                 names.add("%s.svc.%s." % (app, self.cluster_name))
+        self.set_cache("soa", names)
         return names
 
     @staticmethod
@@ -370,6 +393,9 @@ class Dns(shared.OsvcThread, Crypt):
         return addr.replace(".", "-").replace(":", "-")
 
     def a_records(self):
+        data = self.get_cache("a")
+        if data is not None:
+            return data
         names = {}
         for nodename, node in shared.CLUSTER_DATA.items():
             status = node.get("services", {}).get("status", {})
@@ -398,9 +424,13 @@ class Dns(shared.OsvcThread, Crypt):
                         if name not in names:
                             names[name] = set()
                         names[name].add(addr)
+        self.set_cache("a", names)
         return names
 
     def srv_records(self):
+        data = self.get_cache("srv")
+        if data is not None:
+            return data
         names = {}
         for nodename, node in shared.CLUSTER_DATA.items():
             status = node.get("services", {}).get("status", {})
@@ -447,6 +477,7 @@ class Dns(shared.OsvcThread, Crypt):
                                 # avoid multiple SRV entries pointing to the same ip:port
                                 continue
                             names[qname].add(content)
+        self.set_cache("srv", names)
         return names
 
     def svc_ips(self):
