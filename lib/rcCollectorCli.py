@@ -340,6 +340,10 @@ class Cmd(object):
             if len(d) > 0 and d[0] == "@" and os.path.exists(d[1:]):
                 with open(d[1:], 'r') as fd:
                     data = fd.read()
+                try:
+                    data = data.encode("utf-8")
+                except:
+                    pass
                 headers = {
                   'Accept' : 'application/json',
                   'Content-Type' : 'application/json; charset=utf-8'
