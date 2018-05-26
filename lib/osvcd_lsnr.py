@@ -213,7 +213,6 @@ class Listener(shared.OsvcThread, Crypt):
             p = Popen([rcEnv.paths.nodemgr, 'dequeue_actions'],
                       stdout=None, stderr=None, stdin=None,
                       close_fds=os.name!="nt")
-            p.communicate()
             return
 
         if encrypted:
