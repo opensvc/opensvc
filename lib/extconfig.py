@@ -821,7 +821,10 @@ class ExtConfig(object):
         if config is None:
             config = self.config
         if config.has_option(s, o):
-            return config.get(s, o)
+            if sys.version_info[0] < 3:
+                return config.get(s, o).encode("utf-8")
+            else:
+                return config.get(s, o)
         raise ex.OptNotFound("unscoped keyword %s.%s not found." % (s, o))
 
     def conf_has_option_scoped(self, s, o, impersonate=None, config=None, scope_order=None):
