@@ -12,6 +12,8 @@ except:
 def convert_shlex(s):
     if s is None:
         return
+    if isinstance(s, list):
+        return s
     return shlex.split(s)
 
 def convert_integer(s):
