@@ -1818,7 +1818,7 @@ class Node(Crypt, ExtConfig):
                 continue
             return rid
 
-    def register_as_user(self):
+    def register_as_node(self):
         """
         Returns a node registration unique id, authenticating to the
         collector as a user.
@@ -1864,7 +1864,7 @@ class Node(Crypt, ExtConfig):
             raise ex.excError(data["error"])
         print(data.get("info", ""))
 
-    def register_as_node(self):
+    def register_as_user(self):
         """
         Returns a node registration unique id, authenticating to the
         collector as a node.
@@ -1886,7 +1886,7 @@ class Node(Crypt, ExtConfig):
         that will be used as a password valid for the current hostname used
         as a username in the application code context.
         """
-        if self.options.user is None:
+        if self.options.user is not None:
             register_fn = "register_as_user"
         else:
             register_fn = "register_as_node"
