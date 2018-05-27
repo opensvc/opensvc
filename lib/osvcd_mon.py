@@ -1902,7 +1902,8 @@ class Monitor(shared.OsvcThread, Crypt):
         self.log.info("slow path service status eval: %s", svcname)
         try:
             with shared.SERVICES_LOCK:
-                return shared.SERVICES[svcname].print_status_data(mon_data=False)
+                return shared.SERVICES[svcname].print_status_data(mon_data=False,
+                                                                  refresh=True)
         except KeyboardInterrupt:
             return
         except Exception as exc:
