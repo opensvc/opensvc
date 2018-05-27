@@ -3,6 +3,7 @@ from __future__ import print_function
 import sys
 import re
 import os
+import copy
 
 import rcExceptions as ex
 from converters import *
@@ -797,9 +798,9 @@ class ExtConfig(object):
             if required:
                 raise ex.RequiredOptNotFound
             else:
-                exc.default = self.handle_references(default, scope=scope,
-                                         impersonate=impersonate,
-                                         config=config, section=s)
+                exc.default = copy.copy(self.handle_references(default, scope=scope,
+                                                               impersonate=impersonate,
+                                                               config=config, section=s))
                 raise exc
 
         try:
