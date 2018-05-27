@@ -274,7 +274,7 @@ class ExtConfig(object):
             except (ex.excError, rcConfigParser.NoOptionError) as exc:
                 _value = []
             except ex.OptNotFound as exc:
-                _value = exc.default
+                _value = copy.copy(exc.default)
             return _value
 
         if op == "remove":
@@ -578,7 +578,7 @@ class ExtConfig(object):
             return self.conf_get(_section, _v, "string", scope=scope,
                                  impersonate=impersonate, config=config)
         except ex.OptNotFound as exc:
-            return exc.default
+            return copy.copy(exc.default)
         except ex.RequiredOptNotFound:
             raise ex.excError("%s: unresolved reference (%s)"
                               "" % (ref, str(exc)))
@@ -801,8 +801,9 @@ class ExtConfig(object):
                 exc.default = copy.copy(self.handle_references(default, scope=scope,
                                                                impersonate=impersonate,
                                                                config=config, section=s))
+                if t not in (None, "string"):
+                    exc.default = globals()["convert_"+t](exc.default)
                 raise exc
-
         try:
             val = self.handle_references(val, scope=scope,
                                          impersonate=impersonate,

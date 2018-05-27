@@ -10,12 +10,16 @@ except:
     NUMERIC_TYPES = (int, float)
 
 def convert_shlex(s):
+    if s is None:
+        return
     return shlex.split(s)
 
 def convert_integer(s):
     """
     Return <s> cast to int.
     """
+    if s is None:
+        return
     return int(s)
 
 def convert_list(s):
@@ -54,6 +58,8 @@ def convert_set(s):
     """
     Return convert_list result cast to a set.
     """
+    if s is None:
+        return set()
     if isinstance(s, set):
         return s
     return set(convert_list(s))
@@ -62,6 +68,8 @@ def convert_set_comma(s):
     """
     Return convert_list_comma result cast to a set.
     """
+    if s is None:
+        return set()
     if isinstance(s, set):
         return s
     return set(convert_list_comma(s))
