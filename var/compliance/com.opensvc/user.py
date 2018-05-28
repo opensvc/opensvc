@@ -112,7 +112,7 @@ try:
 except:
     cap_shadow = False
 
-from subprocess import Popen, list2cmdline, PIPE
+from subprocess import Popen, PIPE
 
 sys.path.append(os.path.dirname(__file__))
 

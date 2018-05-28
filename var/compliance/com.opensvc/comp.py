@@ -84,6 +84,13 @@ def bencode(buff):
             return bytes(buff, "ascii")
     return buff
 
+def encode_list(cmd):
+    return [str(w) for w in cmd]
+
+def list2cmdline(cmd):
+    import subprocess
+    return subprocess.list2cmdline(encode_list(cmd))
+
 class CompObject(object):
     def __init__(self,
                  prefix=None,
