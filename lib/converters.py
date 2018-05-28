@@ -124,7 +124,7 @@ def convert_duration(s, _to="s", _from="s"):
       1 => 1
     """
     if s is None:
-        raise ValueError("convert duration error: None is not a valid duration")
+        return
 
     units = {
         "w": 604800,
