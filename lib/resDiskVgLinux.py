@@ -5,7 +5,7 @@ import resDisk
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              devs_to_disks, udevadm_settle
-from rcUtilities import which, justcall, cache
+from rcUtilities import which, justcall, cache, lazy
 
 class Disk(resDisk.Disk):
     def __init__(self,
@@ -110,13 +110,20 @@ class Disk(resDisk.Disk):
         (ret, out, err) = self.vcall(cmd)
         self.clear_cache("vg.tags")
 
+    @lazy
+    def has_metad(self):
+        return which("lvmetad") is not None
+
     def list_tags(self, tags=[]):
         tmo = 5
         try:
             self.wait_for_fn(self.test_vgs, tmo, 1, errmsg="vgs is still reporting the vg as not found after %d seconds"%tmo)
         except ex.excError as e:
             self.log.warning(str(e))
-            ret, out, err = self.vcall(["pvscan"])
+            cmd = ["pvscan"]
+            if self.has_metad:
+                cmd += ["--cache"]
+            ret, out, err = self.vcall(cmd, warn_to_info=True)
         # last chance
         data = self.get_tags()
         if self.name not in data:
