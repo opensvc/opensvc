@@ -1238,7 +1238,7 @@ class Monitor(shared.OsvcThread, Crypt):
         if len(self.cluster_nodes) == 1:
             self.end_rejoin_grace_period("single node cluster")
             return False
-        n_idle = len([1 for node in shared.CLUSTER_DATA.values() if node.get("monitor", {}).get("status") == "idle"])
+        n_idle = len([1 for node in shared.CLUSTER_DATA.values() if node.get("monitor", {}).get("status") in ("idle", "rejoin")])
         if n_idle >= len(self.cluster_nodes):
             self.end_rejoin_grace_period("now rejoined")
             return False
