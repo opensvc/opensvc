@@ -482,8 +482,6 @@ class App(Resource):
                 if data[key] > _vg:
                     _vg = data[key]
                 resource.setrlimit(rlim, (data[key], _vg))
-                _vs, _vg = resource.getrlimit(rlim)
-            self.log.info("limit %s = %s", key, data[key])
         return data
 
     def get_timeout(self, action):
@@ -507,6 +505,8 @@ class App(Resource):
         Poll stdout and stderr to log as soon as new lines are available.
         """
         now = datetime.now()
+        for lim, val in self.limits.items():
+            self.log.info("set limit %s = %s", lim, val)
         kwargs = {
             'timeout': self.get_timeout(action),
             'logger': self.log,
