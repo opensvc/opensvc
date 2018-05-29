@@ -1984,7 +1984,7 @@ class Svc(Crypt, ExtConfig):
         def add_instances(node):
             if len(self.peers) < 1:
                 return
-            for nodename in self.peers:
+            for nodename in sorted(list(self.peers)):
                 if nodename == rcEnv.nodename:
                     continue
                 add_instance(nodename, node)
