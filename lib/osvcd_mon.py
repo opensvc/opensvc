@@ -1220,6 +1220,14 @@ class Monitor(shared.OsvcThread, Crypt):
             break
         self.set_smon(svc.svcname, global_expect="unset", status="idle")
 
+    def end_rejoin_grace_period(self, reason=""):
+        self.rejoin_grace_period_expired = True
+        self.duplog("info", "end of rejoin grace period: %s" % reason,
+                    nodename="")
+        nmon = self.get_node_monitor()
+        if nmon.status == "rejoin":
+            self.set_nmon(status="idle")
+
     def orchestrator_auto_grace(self):
         """
         After daemon startup, wait for <rejoin_grace_period_expired> seconds
@@ -1228,22 +1236,17 @@ class Monitor(shared.OsvcThread, Crypt):
         if self.rejoin_grace_period_expired:
             return False
         if len(self.cluster_nodes) == 1:
-            self.rejoin_grace_period_expired = True
-            self.duplog("info", "end of rejoin grace period: single node cluster",
-                        nodename="")
+            self.end_rejoin_grace_period("single node cluster")
             return False
         n_idle = len([1 for node in shared.CLUSTER_DATA.values() if node.get("monitor", {}).get("status") == "idle"])
         if n_idle >= len(self.cluster_nodes):
-            self.rejoin_grace_period_expired = True
-            self.duplog("info", "end of rejoin grace period: now rejoined",
-                        nodename="")
+            self.end_rejoin_grace_period("now rejoined")
             return False
         now = datetime.datetime.utcnow()
         if now > self.startup + datetime.timedelta(seconds=self.rejoin_grace_period):
-            self.rejoin_grace_period_expired = True
+            self.end_rejoin_grace_period("expired, but some nodes are still "
+                                         "unreacheable. freeze node.")
             self.freezer.node_freeze()
-            self.log.info("rejoin grace period expired, but some nodes "
-                        "are still unreacheable. freeze node.")
             return False
         self.duplog("info", "in rejoin grace period", nodename="")
         return True
@@ -1990,7 +1993,10 @@ class Monitor(shared.OsvcThread, Crypt):
             }
 
         if shared.NMON_DATA.status == "init" and len(self.status_threads) == 0:
-            self.set_nmon(status="idle")
+            if not self.rejoin_grace_period_expired:
+                self.set_nmon(status="rejoin")
+            else:
+                self.set_nmon(status="idle")
         return data
 
     #########################################################################
