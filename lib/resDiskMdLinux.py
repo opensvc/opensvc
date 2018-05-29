@@ -269,7 +269,10 @@ class Disk(resDisk.Disk):
             # try to get the info from the config so pr co-resource can reserv
             # during provision
             try:
-                return set([os.path.realpath(dev) for dev in self.conf_get("devs").split()])
+                devs = self.conf_get("devs")
+                if devs is None:
+                    return set()
+                return set([os.path.realpath(dev) for dev in devs.split()])
             except ex.OptNotFound:
                 return set()
         try:
