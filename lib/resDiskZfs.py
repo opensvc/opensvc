@@ -106,17 +106,21 @@ class Disk(resDisk.Disk):
             self.log.info("%s is already up" % self.name)
             return 0
         ret = self.import_pool()
-        if ret == 0:
-            self.can_rollback = True
-        return ret
+        if ret != 0:
+            raise ex.excError("failed to import pool")
+        self.can_rollback = True
 
     def do_stop(self):
         if not self.is_up():
             self.log.info("%s is already down" % self.name)
             return 0
-        cmd = [ 'zpool', 'export', self.name ]
-        (ret, out, err) = self.vcall(cmd)
-        return ret
+        cmd = ["zpool", "export", self.name]
+        ret, out, err = self.vcall(cmd, err_to_warn=True)
+        if ret != 0:
+            cmd = ["zpool", "export", "-f", self.name]
+            ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
 
     def sub_devs(self):
         if self.is_up():
