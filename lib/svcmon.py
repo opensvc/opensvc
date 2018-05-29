@@ -18,6 +18,11 @@ try:
 except:
     version = "dev"
 
+CLEAREOL = "\x1b[K"
+CLEAREOLNEW = "\x1b[K\n"
+CLEAREOS = "\x1b[J"
+CURSORHOME = "\x1b[H"
+
 __ver = prog + " version " + version
 __usage = prog + \
     " [ OPTIONS ]\n" \
@@ -77,6 +82,7 @@ def _main(node, argv=None):
     (options, args) = parser.parse_args(argv)
     node.check_privs(argv)
     rcColor.use_color = options.color
+    chars = 0
 
     while True:
         if options.parm_svcs:
@@ -88,12 +94,18 @@ def _main(node, argv=None):
             "color": options.color,
         })
         if options.watch:
-            preamble = "\033[H\033[J" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
+            if chars == 0:
+                print(CURSORHOME+CLEAREOS)
+                chars = 1
+            preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
         else:
             preamble = ""
-        node.daemon_status(svcnames=expanded_svcs, preamble=preamble, node=options.node)
+        outs = node.daemon_status_str(svcnames=expanded_svcs, preamble=preamble, node=options.node)
         if not options.watch:
+            print(outs)
             break
+        else:
+            print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
         time.sleep(options.interval)
 
 def main(argv=None):

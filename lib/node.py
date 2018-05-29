@@ -3248,6 +3248,9 @@ class Node(Crypt, ExtConfig):
         return data
 
     def daemon_status(self, svcnames=None, preamble="", node=None):
+        print(self.daemon_status_str(svcnames=svcnames, preamble=preamble, node=node))
+
+    def daemon_status_str(self, svcnames=None, preamble="", node=None):
         if node:
             daemon_node = node
         elif self.options.node:
@@ -3496,7 +3499,7 @@ class Node(Crypt, ExtConfig):
         if sys.version_info[0] < 3:
             pad = " "
             def print_bytes(val):
-                print(val)
+                return val+"\n"
             def bare_len(val):
                 ansi_escape = re.compile(r'\x1b[^m]*m')
                 val = ansi_escape.sub('', val)
@@ -3505,7 +3508,7 @@ class Node(Crypt, ExtConfig):
         else:
             pad = b" "
             def print_bytes(val):
-                print(val.decode("utf-8"))
+                return val.decode("utf-8")+"\n"
             def bare_len(val):
                 ansi_escape = re.compile(b'\x1b[^m]*m')
                 val = ansi_escape.sub(b'', val)
@@ -3513,8 +3516,9 @@ class Node(Crypt, ExtConfig):
                 return len(val)
 
         def list_print(data):
+            outs = ""
             if len(data) == 0:
-                return
+                return ""
             widths = [0] * len(data[0])
             _data = []
             for line in data:
@@ -3530,12 +3534,13 @@ class Node(Crypt, ExtConfig):
                     val = val + pad*(widths[i]-bare_len(val))
                     _line.append(val)
                 _line = pad.join(_line)
-                print_bytes(_line)
+                outs += print_bytes(_line)
+            return outs
 
         def print_section(data):
             if len(data) == 0:
-                return
-            list_print(data)
+                return ""
+            return list_print(data)
 
         def load_threads():
             for key in sorted([key for key in data if key != "cluster"]):
@@ -3788,8 +3793,8 @@ class Node(Crypt, ExtConfig):
             load_svc(svcname)
 
         # print tabulated lists
-        print(preamble)
-        print_section(out)
+        outs = "\n".join((preamble, print_section(out)))
+        return outs
 
     def daemon_blacklist_clear(self):
         """
