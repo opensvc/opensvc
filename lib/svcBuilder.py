@@ -278,22 +278,28 @@ def add_ip(svc, s):
 
     kwargs = init_kwargs(svc, s)
 
-    try:
-        kwargs['ipname'] = svc.conf_get(s, 'ipname')
-    except ex.OptNotFound:
-        pass
+    if rtype == "cni":
+        try:
+            kwargs['ipdev'] = svc.conf_get(s, 'ipdev')
+        except ex.OptNotFound as exc:
+            kwargs['ipdev'] = exc.default
+    else:
+        try:
+            kwargs['ipname'] = svc.conf_get(s, 'ipname')
+        except ex.OptNotFound:
+            pass
 
-    kwargs['ipdev'] = svc.conf_get(s, 'ipdev')
+        kwargs['ipdev'] = svc.conf_get(s, 'ipdev')
 
-    try:
-        kwargs['mask'] = svc.conf_get(s, 'netmask')
-    except ex.OptNotFound as exc:
-        kwargs['mask'] = exc.default
+        try:
+            kwargs['mask'] = svc.conf_get(s, 'netmask')
+        except ex.OptNotFound as exc:
+            kwargs['mask'] = exc.default
 
-    try:
-        kwargs['gateway'] = svc.conf_get(s, 'gateway')
-    except ex.OptNotFound as exc:
-        kwargs['gateway'] = exc.default
+        try:
+            kwargs['gateway'] = svc.conf_get(s, 'gateway')
+        except ex.OptNotFound as exc:
+            kwargs['gateway'] = exc.default
 
     try:
         zone = svc.conf_get(s, 'zone')

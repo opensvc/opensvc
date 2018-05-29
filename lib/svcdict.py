@@ -1953,11 +1953,25 @@ class KeywordIpIpname(Keyword):
         Keyword.__init__(
                   self,
                   section="ip",
+                  rtype=[None, 'crossbow', 'amazon', 'docker', 'gce'],
                   keyword="ipname",
                   order=12,
                   required=False,
                   at=True,
                   text="The DNS name or IP address of the ip resource. Can be different from one node to the other, in which case '@nodename' can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter. With the amazon driver, the special <allocate> value tells the provisioner to assign a new private address."
+                )
+
+class KeywordIpCniIpname(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="cni",
+                  keyword="ipname",
+                  order=12,
+                  required=False,
+                  at=True,
+                  text="Not used by the cni driver."
                 )
 
 class KeywordIpDnsNameSuffix(Keyword):
@@ -2294,11 +2308,26 @@ class KeywordIpIpdev(Keyword):
         Keyword.__init__(
                   self,
                   section="ip",
+                  rtype=[None, 'crossbow', 'amazon', 'docker', 'gce'],
                   keyword="ipdev",
                   order=11,
                   at=True,
                   required=True,
                   text="The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the '@nodename' can be specified."
+                )
+
+class KeywordIpCniIpdev(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="ip",
+                  rtype="cni",
+                  keyword="ipdev",
+                  default="eth12",
+                  order=11,
+                  at=True,
+                  required=False,
+                  text="The interface name in the container namespace."
                 )
 
 class KeywordIpIpdevext(Keyword):
@@ -2334,6 +2363,7 @@ class KeywordIpNetmask(Keyword):
         Keyword.__init__(
                   self,
                   section="ip",
+                  rtype=[None, 'crossbow', 'amazon', 'docker', 'gce'],
                   keyword="netmask",
                   at=True,
                   order=13,
@@ -2346,6 +2376,7 @@ class KeywordIpGateway(Keyword):
         Keyword.__init__(
                   self,
                   section="ip",
+                  rtype=[None, 'crossbow', 'amazon', 'docker', 'gce'],
                   keyword="gateway",
                   at=True,
                   order=14,
@@ -4715,7 +4746,9 @@ class KeyDict(KeywordStore):
         self += KeywordSyncSyncMaxDelay()
         self += KeywordIpType()
         self += KeywordIpIpname()
+        self += KeywordIpCniIpname()
         self += KeywordIpIpdev()
+        self += KeywordIpCniIpdev()
         self += KeywordIpIpdevext()
         self += KeywordIpDelNetRoute()
         self += KeywordIpNetmask()
