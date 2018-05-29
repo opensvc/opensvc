@@ -398,7 +398,7 @@ class Rsync(resSync.Sync):
         if len(nodes) == 0:
             return rcStatus.UP
 
-        self.status_log("%s need update"%', '.join(nodes))
+        self.status_log("%s need update"%', '.join(sorted(nodes)))
         return rcStatus.DOWN
 
     @cache("rsync.version")
@@ -442,12 +442,12 @@ class Rsync(resSync.Sync):
             if rcEnv.paths.drp_path in dst:
                 self.label = "rsync system files to drpnodes"
             else:
-                self.label = "rsync svc config to %s"%(', '.join(sorted(target)))
+                self.label = "rsync svc config to %s"%(', '.join(sorted(sorted(target))))
         else:
-            _src = ', '.join(src)
+            _src = ', '.join(sorted(src))
             if len(_src) > 300:
                 _src = _src[0:300]
-            _dst = ', '.join(target)
+            _dst = ', '.join(sorted(target))
             self.label = "rsync %s to %s"%(_src, _dst)
         self.src = src
         self.dst = dst
