@@ -1,9 +1,9 @@
+"""
+The lxc v1, v2, v3 resource driver
+"""
 import os
 from datetime import datetime
-from subprocess import *
 
-import sys
-import rcStatus
 import resources as Res
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which, justcall, lazy
@@ -43,19 +43,18 @@ class Lxc(resContainer.Container):
     def files_to_sync(self):
         # the config file might be in a umounted fs resource
         # in which case, no need to ask for its sync as the sync won't happen
-        l = []
+        data = []
 
         # replicate the config file in the system standard path
-        cf = self.get_cf_path()
-        if cf:
-            l.append(cf)
-
-        return l
+        cfg = self.get_cf_path()
+        if cfg:
+            data.append(cfg)
+        return data
 
     def rcp_from(self, src, dst):
         rootfs = self.get_rootfs()
-        if len(rootfs) == 0:
-            raise ex.excError()
+        if not rootfs:
+            raise ex.excError
         src = rootfs + src
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
@@ -65,8 +64,8 @@ class Lxc(resContainer.Container):
 
     def rcp(self, src, dst):
         rootfs = self.get_rootfs()
-        if len(rootfs) == 0:
-            raise ex.excError()
+        if not rootfs:
+            raise ex.excError
         dst = rootfs + dst
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
@@ -84,16 +83,15 @@ class Lxc(resContainer.Container):
         elif action == 'stop':
             cmd = ['lxc-stop', '-n', self.name, '-o', outf]
         else:
-            self.log.error("unsupported lxc action: %s" % action)
-            return 1
+            raise ex.excError("unsupported lxc action: %s" % action)
 
         def prex():
             os.umask(0o022)
 
-        t = datetime.now()
-        ret, out, err = self.vcall(cmd, preexec_fn=prex)
-        len = datetime.now() - t
-        self.log.info('%s done in %s - ret %i - logs in %s' % (action, len, ret, outf))
+        begin = datetime.now()
+        ret, _, _ = self.vcall(cmd, preexec_fn=prex)
+        duration = datetime.now() - begin
+        self.log.info('%s done in %s - ret %i - logs in %s', action, duration, ret, outf)
         if ret != 0:
             raise ex.excError
 
@@ -102,18 +100,18 @@ class Lxc(resContainer.Container):
         value = None
         if not os.path.exists(self.cf):
             return None
-        with open(self.cf, 'r') as f:
-            for line in f.readlines():
+        with open(self.cf, 'r') as ofile:
+            for line in ofile.readlines():
                 if param not in line:
                     continue
                 if line.strip()[0] == '#':
                     continue
-                l = line.replace('\n', '').split('=')
-                if len(l) < 2:
+                data = line.replace('\n', '').split('=')
+                if len(data) < 2:
                     continue
-                if l[0].strip() != param:
+                if data[0].strip() != param:
                     continue
-                value = ' '.join(l[1:]).strip()
+                value = ' '.join(data[1:]).strip()
                 break
         return value
 
@@ -135,21 +133,19 @@ class Lxc(resContainer.Container):
     def install_drp_flag(self):
         rootfs = self.get_rootfs()
         flag = os.path.join(rootfs, ".drp_flag")
-        self.log.info("install drp flag in container : %s"%flag)
-        with open(flag, 'w') as f:
-            f.write(' ')
-            f.close()
+        self.log.info("install drp flag in container : %s", flag)
+        with open(flag, 'w') as ofile:
+            ofile.write(' ')
 
     def set_cpuset_clone_children(self):
         ppath = "/sys/fs/cgroup/cpuset"
         if not os.path.exists(ppath):
-            self.log.debug("set_clone_children: %s does not exist" % ppath)
+            self.log.debug("set_clone_children: %s does not exist", ppath)
             return
         path = "/sys/fs/cgroup/cpuset/lxc"
-        val = "1"
         try:
             os.makedirs(path)
-            self.log.info("mkdir %s" % path)
+            self.log.info("mkdir %s", path)
         except (OSError, IOError):
             # errno 17: file exists
             pass
@@ -165,35 +161,35 @@ class Lxc(resContainer.Container):
         if current_val is None:
             return
         if current_val == "1":
-            self.log.debug("set_cpuset_clone_children: %s/%s already set to 1" % (path, parm))
+            self.log.debug("set_cpuset_clone_children: %s/%s already set to 1", path, parm)
             return
         self.set_sysfs(path, parm, "1")
 
     def get_sysfs(self, path, parm):
         fpath = os.sep.join([path, parm])
         if not os.path.exists(fpath):
-            self.log.debug("get_sysfs: %s does not exist" % path)
-            return
-        with open(fpath, "r") as f:
-            current_val = f.read().rstrip("\n")
-        self.log.debug("get_sysfs: %s contains %s" % (fpath, repr(current_val)))
+            self.log.debug("get_sysfs: %s does not exist", path)
+            return None
+        with open(fpath, "r") as ofile:
+            current_val = ofile.read().rstrip("\n")
+        self.log.debug("get_sysfs: %s contains %s", fpath, repr(current_val))
         return current_val
 
     def set_sysfs(self, path, parm, val):
         fpath = os.sep.join([path, parm])
-        self.log.info("echo %s >%s" % (val, fpath))
-        with open(fpath, "w") as f:
-            f.write(val)
+        self.log.info("echo %s >%s", val, fpath)
+        with open(fpath, "w") as ofile:
+            ofile.write(val)
 
-    def cleanup_cgroup(self, t="*"):
+    def cleanup_cgroup(self, grp="*"):
         import glob
-        for p in glob.glob("/sys/fs/cgroup/%s/lxc/%s-[0-9]" % (t, self.name)) + \
-                 glob.glob("/sys/fs/cgroup/%s/lxc/%s" % (t, self.name)):
+        for path in glob.glob("/sys/fs/cgroup/%s/lxc/%s-[0-9]" % (grp, self.name)) + \
+                    glob.glob("/sys/fs/cgroup/%s/lxc/%s" % (grp, self.name)):
             try:
-                os.rmdir(p)
-                self.log.info("removed leftover cgroup %s" % p)
-            except Exception as e:
-                self.log.debug("failed to remove leftover cgroup %s: %s" % (p, str(e)))
+                os.rmdir(path)
+                self.log.info("removed leftover cgroup %s", path)
+            except Exception as exc:
+                self.log.debug("failed to remove leftover cgroup %s: %s", path, str(exc))
 
     def container_start(self):
         if not self.svc.create_pg:
@@ -220,7 +216,7 @@ class Lxc(resContainer.Container):
     def get_links(self):
         links = []
         cmd = ['lxc-info', '--name', self.name]
-        out, err, ret = justcall(cmd)
+        out, _, ret = justcall(cmd)
         if ret != 0:
             return []
         for line in out.splitlines():
@@ -249,14 +245,13 @@ class Lxc(resContainer.Container):
     def is_up(self, nodename=None):
         if which("lxc-ps"):
             return self.is_up_ps(nodename=nodename)
-        else:
-            return self.is_up_info(nodename=nodename)
+        return self.is_up_info(nodename=nodename)
 
     def is_up_info(self, nodename=None):
         cmd = ['lxc-info', '--name', self.name]
         if nodename is not None:
             cmd = rcEnv.rsh.split() + [nodename] + cmd
-        out, err, ret = justcall(cmd)
+        out, _, ret = justcall(cmd)
         if ret != 0:
             return False
         if 'RUNNING' in out:
@@ -267,7 +262,7 @@ class Lxc(resContainer.Container):
         cmd = ['lxc-ps', '--name', self.name]
         if nodename is not None:
             cmd = rcEnv.rsh.split() + [nodename] + cmd
-        out, err, ret = justcall(cmd)
+        out, _, ret = justcall(cmd)
         if ret != 0:
             return False
         if self.name in out:
@@ -294,29 +289,29 @@ class Lxc(resContainer.Container):
     def install_cf(self):
         if self.cf is None:
             return
-        cf = self.get_cf_path()
-        if cf is None:
+        cfg = self.get_cf_path()
+        if cfg is None:
             self.log.debug("could not determine the config file standard hosting directory")
             return
-        if self.cf == cf:
+        if self.cf == cfg:
             return
-        dn = os.path.dirname(cf)
-        if not os.path.isdir(dn):
+        cfg_d = os.path.dirname(cfg)
+        if not os.path.isdir(cfg_d):
             try:
-                os.makedirs(dn)
-            except Exception as e:
-                raise ex.excError("failed to create directory %s: %s"%(dn, str(e)))
-        self.log.info("install %s as %s" % (self.cf, cf))
+                os.makedirs(cfg_d)
+            except Exception as exc:
+                raise ex.excError("failed to create directory %s: %s"%(cfg_d, str(exc)))
+        self.log.info("install %s as %s", self.cf, cfg)
         try:
             import shutil
-            shutil.copy(self.cf, cf)
-        except Exception as e:
-            raise ex.excError(str(e))
+            shutil.copy(self.cf, cfg)
+        except Exception as exc:
+            raise ex.excError(str(exc))
 
     def get_cf_path(self):
         path = which('lxc-info')
         if path is None:
-            return None
+            return
         dpath = os.path.dirname(path)
         if not dpath.endswith("bin"):
             return
@@ -330,13 +325,13 @@ class Lxc(resContainer.Container):
             return "/etc/lxc/%s/config" % self.name
 
     def check_installed_cf(self):
-        cf = self.get_cf_path()
-        if cf is None:
+        cfg = self.get_cf_path()
+        if cfg is None:
             self.status_log("could not determine the config file standard hosting directory")
             return False
-        if os.path.exists(cf):
+        if os.path.exists(cfg):
             return True
-        self.status_log("config file is not installed as %s" % cf)
+        self.status_log("config file is not installed as %s" % cfg)
         return False
 
     def _status(self, verbose=False):
@@ -356,18 +351,18 @@ class Lxc(resContainer.Container):
                     os.path.join(os.sep, 'usr'),
                     os.path.join(os.sep, 'usr', 'local')]
         for prefix in [self.prefix] + [p for p in prefixes if p != self.prefix]:
-            cf = os.path.join(prefix, d_lxc, self.name, 'config')
-            if os.path.exists(cf):
-                cf_d = os.path.dirname(cf)
-                if not os.path.exists(cf_d):
-                    os.makedirs(cf_d)
-                self.cf = cf
+            cfg = os.path.join(prefix, d_lxc, self.name, 'config')
+            if os.path.exists(cfg):
+                cfg_d = os.path.dirname(cfg)
+                if not os.path.exists(cfg_d):
+                    os.makedirs(cfg_d)
+                self.cf = cfg
                 return
 
         # on Oracle Linux, config is in /etc/lxc
-        cf = os.path.join(os.sep, 'etc', 'lxc', self.name, 'config')
-        if os.path.exists(cf):
-            self.cf = cf
+        cfg = os.path.join(os.sep, 'etc', 'lxc', self.name, 'config')
+        if os.path.exists(cfg):
+            self.cf = cfg
             return
 
         self.cf = None
@@ -379,8 +374,8 @@ class Lxc(resContainer.Container):
                     os.path.join(os.sep, 'usr'),
                     os.path.join(os.sep, 'usr', 'local')]
         for prefix in prefixes:
-             if os.path.exists(os.path.join(prefix, 'bin', 'lxc-start')):
-                 return prefix
+            if os.path.exists(os.path.join(prefix, 'bin', 'lxc-start')):
+                return prefix
         raise ex.excError("lxc install prefix not found")
 
     def __init__(self,
@@ -399,6 +394,7 @@ class Lxc(resContainer.Container):
                                         osvc_root_path=osvc_root_path,
                                         **kwargs)
 
+        self.links = None
         if rcmd is not None:
             self.runmethod = rcmd
         elif which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
@@ -423,7 +419,7 @@ class Lxc(resContainer.Container):
             return False
 
         cmd = self.runmethod + ['test', '-f', '/bin/systemctl']
-        out, err, ret = justcall(cmd)
+        out, _, ret = justcall(cmd)
         if ret == 1:
             # not a systemd container. no more checking.
             self.log.debug("/bin/systemctl not found in container")
@@ -434,7 +430,7 @@ class Lxc(resContainer.Container):
         # and listening apps.
         # => wait for systemd default target to become active
         cmd = self.runmethod + ['systemctl', 'is-active', 'default.target']
-        out, err, ret = justcall(cmd)
+        out, _, ret = justcall(cmd)
         if ret == 1:
             # if systemctl is-active fails, retry later
             self.log.debug("systemctl is-active failed")
@@ -449,4 +445,3 @@ class Lxc(resContainer.Container):
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
-
