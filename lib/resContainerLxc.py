@@ -124,6 +124,12 @@ class Lxc(resContainer.Container):
         if rootfs is None:
             self.log.error("could not determine lxc container rootfs")
             raise ex.excError
+        if ":" in rootfs:
+            # zfs:/tank/svc1, nbd:file1, ...
+            idx = rootfs.index(":")
+            prefix = rootfs[:idx]
+            if "/" not in prefix:
+                return rootfs[idx:]
         return rootfs
 
     def install_drp_flag(self):
@@ -411,7 +417,6 @@ class Lxc(resContainer.Container):
 
     def dummy(self, cache_fallback=False):
         pass
-
 
     def operational(self):
         if not resContainer.Container.operational(self):
