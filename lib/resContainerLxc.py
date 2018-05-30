@@ -120,6 +120,8 @@ class Lxc(resContainer.Container):
     def get_rootfs(self):
         rootfs = self.get_cf_value("lxc.rootfs")
         if rootfs is None:
+            rootfs = self.get_cf_value("lxc.rootfs.path")
+        if rootfs is None:
             self.log.error("could not determine lxc container rootfs")
             raise ex.excError
         return rootfs
