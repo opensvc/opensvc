@@ -1234,6 +1234,18 @@ class KeywordCreatePg(Keyword):
                   text="Use process containers when possible. Containers allow capping memory, swap and cpu usage per service. Lxc containers are naturally containerized, so skip containerization of their startapp."
                 )
 
+class KeywordAppType(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="type",
+                  order=10,
+                  candidates=("simple", "forking"),
+                  default="forking",
+                  text="The app driver to use. 'simple' for foreground-running apps. 'forking' for daemonizing apps."
+                )
+
 class KeywordAppScript(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4845,6 +4857,7 @@ class KeyDict(KeywordStore):
         self += KeywordFsDirPerm()
         self += KeywordLoopFile()
         self += KeywordLoopSize()
+        self += KeywordAppType()
         self += KeywordAppScript()
         self += KeywordAppLimitAs()
         self += KeywordAppLimitCore()

@@ -178,6 +178,7 @@ class rcEnv:
         zpool="/sbin/zpool",
     )
     if sysname == "Linux":
+        syspaths.ps = "/bin/ps"
         syspaths.blkid = "/sbin/blkid"
         syspaths.dmsetup = "/sbin/dmsetup"
         syspaths.ip = "/sbin/ip"
@@ -191,12 +192,14 @@ class rcEnv:
         syspaths.pvscan = "/sbin/pvscan"
         syspaths.vgs = "/sbin/vgs"
     elif sysname == "SunOS":
+        syspaths.ps = "/usr/ucb/ps"
         syspaths.df = "/usr/sbin/df"
         syspaths.mount = "/usr/sbin/mount"
         syspaths.umount = "/usr/sbin/umount"
         syspaths.zfs = "/usr/sbin/zfs"
         syspaths.zpool = "/usr/sbin/zpool"
     elif sysname == "AIX":
+        syspaths.ps = "/usr/sbin/ps"
         syspaths.df = "/usr/sbin/df"
         syspaths.mount = "/usr/sbin/mount"
         syspaths.umount = "/usr/sbin/umount"

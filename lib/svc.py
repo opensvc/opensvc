@@ -273,7 +273,8 @@ STOP_GROUPS = [
 ]
 
 STATUS_TYPES = [
-    "app",
+    "app.simple",
+    "app.forking",
     "container.amazon",
     "container.docker",
     "container.esx",
@@ -3514,6 +3515,7 @@ class Svc(Crypt, ExtConfig):
         own setup_environ() method.
         """
         os.environ['OPENSVC_SVCNAME'] = self.svcname
+        os.environ['OPENSVC_SVC_ID'] = self.id
         if action:
             os.environ['OPENSVC_ACTION'] = action
         for resource in self.get_resources():

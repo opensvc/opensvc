@@ -10,7 +10,7 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
-from rcUtilities import cmdline2list, ximport, check_privs, list_services
+from rcUtilities import cmdline2list, mimport, check_privs, list_services
 
 if 'PATH' not in os.environ:
     os.environ['PATH'] = ""
@@ -1978,7 +1978,11 @@ def add_task(svc, s):
     svc += r
 
 def add_app(svc, s):
-    resApp = ximport('resApp')
+    try:
+        rtype = svc.conf_get(s, 'type')
+    except ex.OptNotFound as exc:
+        rtype = exc.default
+
     kwargs = init_kwargs(svc, s)
 
     try:
@@ -2036,7 +2040,8 @@ def add_app(svc, s):
     except ex.OptNotFound as exc:
         kwargs['info_timeout'] = exc.default
 
-    r = resApp.App(**kwargs)
+    mod = mimport("res", "app", rtype)
+    r = mod.App(**kwargs)
     svc += r
 
 

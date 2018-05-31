@@ -1,5 +1,5 @@
 """
-The module defining the App resource and RsetApps resourceset objects.
+The module defining the App resource class.
 """
 from subprocess import Popen
 from datetime import datetime
@@ -106,7 +106,7 @@ class App(Resource):
                  status_log=False,
                  **kwargs):
 
-        Resource.__init__(self, rid, "app", **kwargs)
+        Resource.__init__(self, rid, **kwargs)
         self.script = script
         self.start_seq = start
         self.stop_seq = stop
@@ -118,8 +118,11 @@ class App(Resource):
         self.stop_timeout = stop_timeout
         self.check_timeout = check_timeout
         self.info_timeout = info_timeout
+        self.label = self.type.split(".")[-1]
         if script:
-            self.label = os.path.basename(script)
+            self.label += ": " + os.path.basename(script)
+        elif start:
+            self.label += ": " + os.path.basename(start.split()[0])
         self.lockfd = None
         try:
             # compat
@@ -175,17 +178,21 @@ class App(Resource):
         Return 0 if the app resource is up.
         """
         if self.pg_frozen():
-            raise StatusNA()
+            raise StatusNA
+        return self._check()
+
+    def _check(self, verbose=True):
         if self.check_seq is False:
-            self.status_log("check is not set", "info")
-            raise StatusNA()
+            if verbose:
+                self.status_log("check is not set", "info")
+            raise StatusNA
         try:
             cmd = self.get_cmd("check", "status")
         except ex.excAbortAction:
-            raise StatusNA()
+            raise StatusNA
         except ex.excError as exc:
             self.status_log(str(exc), "warn")
-            raise StatusNA()
+            raise StatusNA
         ret = self.run("status", cmd, dedicated_log=False)
         return ret
 
@@ -498,6 +505,8 @@ class App(Resource):
             kwargs.update(run_as_popen_kwargs(cmd[0], self.limits))
         else:
             kwargs["shell"] = True
+        if "env" in kwargs:
+            kwargs["env"]["OPENSVC_RID"] = self.rid
         return kwargs
 
     def _run_cmd_dedicated_log(self, action, cmd):
