@@ -105,7 +105,8 @@ def _main(node, argv=None):
             print(outs)
             break
         else:
-            print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
+            if outs is not None:
+                print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
         time.sleep(options.interval)
 
 def main(argv=None):
