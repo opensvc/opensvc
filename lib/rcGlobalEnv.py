@@ -192,7 +192,7 @@ class rcEnv:
         syspaths.pvscan = "/sbin/pvscan"
         syspaths.vgs = "/sbin/vgs"
     elif sysname == "SunOS":
-        syspaths.ps = "/usr/ucb/ps"
+        syspaths.ps = "/usr/bin/ps"
         syspaths.df = "/usr/sbin/df"
         syspaths.mount = "/usr/sbin/mount"
         syspaths.umount = "/usr/sbin/umount"
