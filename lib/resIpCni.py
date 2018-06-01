@@ -222,6 +222,8 @@ class Ip(Res.Ip):
 
     def cni_cmd(self, _env, data):
         cmd = [self.cni_bin(data)]
+        if not which(cmd[0]):
+            raise ex.excError("%s not found" % cmd[0])
         self.log_cmd(_env, data, cmd)
         env = {}
         env.update(rcEnv.initial_env)
@@ -340,12 +342,14 @@ class Ip(Res.Ip):
             if result is not None:
                 data["prevResult"] = result
             result = self.cni_cmd(_env, data)
+
         if self.expose and result:
             data = {}
             data.update(PORTMAP_CONF)
-            data["runtimeConfig"] = self.runtime_config()
             data["prevResult"] = result
-            result = self.cni_cmd(_env, data)
+            data["runtimeConfig"] = self.runtime_config()
+            if data["runtimeConfig"]:
+                result = self.cni_cmd(_env, data)
 
     def del_cni(self):
         if not self.has_netns():
@@ -372,7 +376,9 @@ class Ip(Res.Ip):
             data = {}
             data.update(PORTMAP_CONF)
             data["runtimeConfig"] = self.runtime_config()
-            result = self.cni_cmd(_env, data)
+            if data["runtimeConfig"]:
+                result = self.cni_cmd(_env, data)
+
         for data in reversed(self.get_plugins()):
             data["cniVersion"] = self.cni_data["cniVersion"]
             data["name"] = self.cni_data["name"]
