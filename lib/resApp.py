@@ -436,12 +436,24 @@ class App(Resource):
             self.svc.save_exc()
             return 1
 
+    def netns_formatter(self, cmd):
+        if rcEnv.sysname != "Linux":
+            return cmd
+        if which("ip") is None:
+            return cmd
+        resources = [res for res in self.svc.get_resources("ip.cni") if res.container_rid is None]
+        if not resources:
+            return cmd
+        return ["/sbin/ip", "netns", "exec", resources[0].nspid] + cmd
+
     def _run_cmd(self, action, cmd, dedicated_log=True, return_out=False):
         """
         Switch between buffered outputs or polled execution.
         Return stdout if <return_out>, else return the returncode.
         """
         if dedicated_log:
+            if action == "start":
+                cmd = self.netns_formatter(cmd)
             return self._run_cmd_dedicated_log(action, cmd)
         else:
             try:
