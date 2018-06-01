@@ -61,7 +61,7 @@ class App(resApp.App):
             return ret
         match = self.get_running()
         if not match:
-            self.log.info("process no found running")
+            self.log.info("process not found")
             return
         cmd = ["kill"] + [str(pid) for pid in match]
         ret, _, _ = self.vcall(cmd)
