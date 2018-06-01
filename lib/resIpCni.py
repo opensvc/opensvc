@@ -329,6 +329,7 @@ class Ip(Res.Ip):
             _env["CNI_CONTAINERID"] = str(self.container_pid)
             _env["CNI_NETNS"] = self.container_sandboxkey
         else:
+            _env["CNI_CONTAINERID"] = self.svc.id
             _env["CNI_NETNS"] = self.nspidfile
 
         ret = 0
