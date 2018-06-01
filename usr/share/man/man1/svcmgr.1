@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-05\-22
+.TH SVCMGR 1 2018\-06\-01
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -3749,6 +3749,9 @@ Show this help message and exit.
 List the service names with a local instance. Most useful to test a service selector expression before running an action.
 
 
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:

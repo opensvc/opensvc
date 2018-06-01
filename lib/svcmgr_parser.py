@@ -509,6 +509,9 @@ ACTIONS = {
         "ls": {
             "msg": "List the service names with a local instance. Most useful to test "
                    "a service selector expression before running an action.",
+            "options": [
+                OPT.format,
+            ],
         },
         "status": {
             "msg": "Return the local service instance overall status code.",
