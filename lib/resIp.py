@@ -58,16 +58,19 @@ class Ip(Res.Resource):
         """
         Contribute resource key/val pairs to the resource info.
         """
-        if self.ipname is None:
-            return {}
+        data = {}
         try:
             self.getaddr()
         except ex.excError:
             pass
-        data = {
-            "ipaddr": self.addr,
-            "ipdev": self.ipdev,
-        }
+
+        try:
+            data["ipaddr"] = self.addr
+        except:
+            pass
+
+        if self.ipdev:
+            data["ipdev"] = self.ipdev
         if self.gateway:
             data["gateway"] = self.gateway
         if self.mask is not None:
