@@ -514,6 +514,10 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.exception(exc)
             return
 
+        self.service_status_fallback(svcname)
+        self.set_smon(svcname, global_expect="thawed")
+        self.wait_global_expect_change(svcname, "thawed", 600)
+
         self.set_smon(svcname, global_expect="provisioned")
         self.wait_global_expect_change(svcname, "provisioned", 600)
 
