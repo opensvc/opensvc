@@ -4102,7 +4102,14 @@ class Node(Crypt, ExtConfig):
             raise ex.excError("--secret must be set")
         if self.options.node is None:
             raise ex.excError("--node must be set")
+        self._daemon_join(self.options.node, self.options.secret)
 
+    def daemon_rejoin(self):
+        if self.options.node is None:
+            raise ex.excError("--node must be set")
+        self._daemon_join(self.options.node, self.cluster_key)
+
+    def _daemon_join(self, joined, secret):
         # freeze and remember the initial frozen state
         initially_frozen = self.frozen()
         if not initially_frozen:
@@ -4115,12 +4122,12 @@ class Node(Crypt, ExtConfig):
             self.config.add_section("cluster")
         data = self.daemon_send(
             {"action": "join"},
-            nodename=self.options.node,
+            nodename=joined,
             cluster_name="join",
-            secret=self.options.secret,
+            secret=secret,
         )
         if data is None:
-            raise ex.excError("join node %s failed" % self.options.node)
+            raise ex.excError("join node %s failed" % joined)
         data = data.get("data")
         if data is None:
             raise ex.excError("join failed: no data in response")
@@ -4149,7 +4156,7 @@ class Node(Crypt, ExtConfig):
         self.config.set("cluster", "name", cluster_name)
         self.config.set("cluster", "id", cluster_id)
         self.config.set("cluster", "nodes", " ".join(cluster_nodes))
-        self.config.set("cluster", "secret", self.options.secret)
+        self.config.set("cluster", "secret", secret)
         if isinstance(dns, list) and len(dns) > 0:
             self.config.set("cluster", "dns", " ".join(dns))
         if isinstance(cluster_drpnodes, list) and len(cluster_drpnodes) > 0:
@@ -4222,18 +4229,18 @@ class Node(Crypt, ExtConfig):
                 self.config.remove_section(section)
 
         self.write_config()
-        self.log.info("join node %s", self.options.node)
+        self.log.info("join node %s", joined)
 
         # join other nodes
         errors = 0
         for nodename in cluster_nodes:
-            if nodename in (rcEnv.nodename, self.options.node):
+            if nodename in (rcEnv.nodename, joined):
                 continue
             data = self.daemon_send(
                 {"action": "join"},
                 nodename=nodename,
                 cluster_name="join",
-                secret=self.options.secret,
+                secret=secret,
             )
             if data is None:
                 self.log.error("join node %s failed", nodename)

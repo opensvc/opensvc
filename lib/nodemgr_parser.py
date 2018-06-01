@@ -569,50 +569,56 @@ ACTIONS = {
     "Node daemon management": {
         "daemon_blacklist_status": {
             "msg": "Show the content of the daemon senders blacklist.",
-         },
+        },
         "daemon_blacklist_clear": {
             "msg": "Empty the content of the daemon senders blacklist.",
-         },
+        },
         "daemon_restart": {
             "msg": "Restart the daemon.",
-         },
+        },
         "daemon_running": {
             "msg": "Return with code 0 if the daemon is running, else return "
                    "with code 1",
-         },
+        },
         "daemon_shutdown": {
             "msg": "Stop all local services instances then stop the daemon.",
-         },
+        },
         "daemon_status": {
             "msg": "Display the daemon status.",
             "options": [
                 OPT.node,
             ],
-         },
+        },
         "daemon_start": {
             "msg": "Start the daemon or a daemon thread pointed by :opt:`--thread-id`.",
             "options": DAEMON_OPTS + [
                 OPT.thr_id,
             ],
-         },
+        },
         "daemon_stop": {
             "msg": "Stop the daemon or a daemon thread pointed by :opt:`--thread-id`.",
             "options": DAEMON_OPTS + [
                 OPT.thr_id,
             ],
-         },
+        },
         "daemon_join": {
             "msg": "Join the cluster of the node specified by :opt:`--node <node>`, authenticating with :opt:`--secret <secret>`.",
             "options": [
                 OPT.node,
                 OPT.secret,
             ],
-         },
+        },
+        "daemon_rejoin": {
+            "msg": "Rejoin the cluster of the node specified by :opt:`--node <node>`, authenticating with the already known secret. This will re-merge the remote node cluster-wide configurations in the local node configuration file.",
+            "options": [
+                OPT.node,
+            ],
+        },
         "daemon_leave": {
             "msg": "Inform peer nodes we leave the cluster. Make sure the "
                    "left nodes are no longer in the services nodes list "
                    "before leaving, so the other nodes won't takeover.",
-         },
+        },
     },
     "Push data to the collector": {
         "pushasset": {
@@ -621,7 +627,7 @@ ACTIONS = {
                 OPT.sync,
                 OPT.cron,
             ],
-         },
+        },
         "pushstats": {
             "msg": "Push performance metrics to collector. By default pushed "
                    "stats interval begins yesterday at the beginning of the "
@@ -635,25 +641,25 @@ ACTIONS = {
                 OPT.stats_dir,
                 OPT.cron,
             ],
-         },
+        },
         "pushdisks": {
             "msg": "Push disks usage information to the collector.",
             "options": [
                 OPT.cron,
             ],
-         },
+        },
         "pushpkg": {
             "msg": "Push package/version list to the collector.",
             "options": [
                 OPT.cron,
             ],
-         },
+        },
         "pushpatch": {
             "msg": "Push patch/version list to the collector.",
             "options": [
                 OPT.cron,
             ],
-         },
+        },
         "pushsym": {
             "msg": "Push symmetrix configurations to the collector.",
             "options": [
@@ -661,98 +667,98 @@ ACTIONS = {
                 OPT.opt_object,
                 OPT.symcli_db_file,
             ],
-         },
+        },
         "pushemcvnx": {
             "msg": "Push EMC CX/VNX configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushcentera": {
             "msg": "Push EMC Centera configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushnetapp": {
             "msg": "Push Netapp configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pusheva": {
             "msg": "Push HP EVA configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushnecism": {
             "msg": "Push NEC ISM configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushhds": {
             "msg": "Push HDS configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushdcs": {
             "msg": "Push Datacore configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushfreenas": {
             "msg": "Push FreeNAS configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushxtremio": {
             "msg": "Push XtremIO configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushibmsvc": {
             "msg": "Push IBM SVC configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushhp3par": {
             "msg": "Push HP 3par configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushibmds": {
             "msg": "Push IBM DS configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushvioserver": {
             "msg": "Push IBM VIO server configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushgcedisks": {
             "msg": "Push Google Compute Engine disks configurations to the "
                    "collector.",
@@ -760,39 +766,39 @@ ACTIONS = {
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushbrocade": {
             "msg": "Push Brocade switch configuration to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "pushnsr": {
             "msg": "Push EMC Networker index to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,
             ],
-         },
+        },
         "sysreport": {
             "msg": "Push system report to the collector for archiving and "
                    "diff analysis.",
             "options": [
                 OPT.cron,
             ],
-         },
+        },
         "checks": {
             "msg": "Run node health checks. Push results to collector.",
             "options": [
                 OPT.cron,
             ],
-         },
+        },
     },
     "Misc": {
         "prkey": {
             "msg": "Show the scsi3 persistent reservation key of this node.",
-         },
+        },
     },
     "Compliance": {
         "compliance_auto": {

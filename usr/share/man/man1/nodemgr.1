@@ -2198,6 +2198,33 @@ Specify a data formatter. Possible values are json, csv or table.
 Show this help message and exit
 
 .RE
+\fBnodemgr daemon rejoin\fP
+.RS
+
+Rejoin the cluster of the node specified by :opt:`--node <node>`, authenticating with the already known secret. This will re-merge the remote node cluster-wide configurations in the local node configuration file.
+
+
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
 \fBnodemgr daemon restart\fP
 .RS
 
