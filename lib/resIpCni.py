@@ -3,7 +3,6 @@ A CNI driver following the specs available at
 https://github.com/containernetworking/cni/blob/master/SPEC.md
 """
 import os
-import hashlib
 import json
 from subprocess import Popen, PIPE
 
@@ -186,8 +185,7 @@ class Ip(Res.Ip):
 
     @lazy
     def nspid(self):
-        nspid = hashlib.sha224(self.svc.svcname).hexdigest()
-        return nspid
+        return self.svc.id
 
     @lazy
     def nspidfile(self):
