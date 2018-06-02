@@ -209,7 +209,6 @@ class Listener(shared.OsvcThread, Crypt):
         del chunks
 
         if dequ:
-            self.log.info("%s", os.getcwd())
             p = Popen([rcEnv.paths.nodemgr, 'dequeue_actions'],
                       stdout=None, stderr=None, stdin=None,
                       close_fds=os.name!="nt")
@@ -733,6 +732,8 @@ class Listener(shared.OsvcThread, Crypt):
                 line = ofile.readline()
 
             while True:
+                if self.stopped():
+                    break
                 line = ofile.readline()
                 line_size = len(line)
                 if line_size == 0:

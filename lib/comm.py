@@ -30,6 +30,9 @@ BLACKLIST_LOCK = threading.RLock()
 # new messages
 BLACKLIST_THRESHOLD = 5
 
+class SockReset(Exception):
+    pass
+
 try:
     from Crypto.Cipher import AES
     def _encrypt(message, key, _iv):
@@ -464,7 +467,7 @@ class Crypt(object):
             return
         return data[0]
 
-    def recv_messages(self, sock, cluster_name=None, secret=None, use_select=True, encrypted=True, bufsize=65536):
+    def recv_messages(self, sock, cluster_name=None, secret=None, use_select=True, encrypted=True, bufsize=65536, stream=False):
         """
         Receive, decrypt and return a message from a socket.
         """
@@ -483,7 +486,11 @@ class Crypt(object):
                     break
             else:
                 chunk = sock.recv(bufsize)
-            if not chunk or chunk == sep:
+            if not chunk:
+                if stream:
+                    raise SockReset
+                break
+            if chunk == sep:
                 break
             chunks.append(chunk)
         if sys.version_info[0] >= 3:
@@ -503,6 +510,7 @@ class Crypt(object):
 
     def socket_parms(self, nodename):
         data = Storage()
+        data.nodename = nodename
         if nodename == rcEnv.nodename and os.name != "nt":
             data.af = socket.AF_UNIX
             data.to = rcEnv.paths.lsnruxsock
@@ -596,7 +604,9 @@ class Crypt(object):
             nodenames = [rcEnv.nodename]
 
         socks = {}
-        for nodename in nodenames:
+        reconnect = set()
+
+        def init_sock(nodename):
             sp = self.socket_parms(nodename)
             try:
                 sock = socket.socket(sp.af, socket.SOCK_STREAM)
@@ -611,17 +621,38 @@ class Crypt(object):
                     return
                 sock.sendall(message)
                 socks[sock] = sp
+                if nodename in reconnect:
+                    self.log.debug("reconnected %s", nodename)
+                    reconnect.remove(nodename)
             except socket.error as exc:
-                self.log.error("daemon send to %s error: %s", sp.to_s, str(exc))
+                self.log.debug("daemon send to %s error: %s", sp.to_s, str(exc))
+
+        for nodename in nodenames:
+            init_sock(nodename)
 
         try:
             while True:
+                for nodename in list(reconnect):
+                    self.log.debug("reconnect %s", nodename)
+                    init_sock(nodename)
                 ready_to_read, _, exceptionals = select.select(socks.keys(), [], socks, 1)
                 for sock in ready_to_read:
-                    data = self.recv_messages(sock, cluster_name=cluster_name, secret=secret, use_select=False, encrypted=socks[sock].encrypted, bufsize=1)
-                    if data is None:
+                    try:
+                        rdata = self.recv_messages(sock, cluster_name=cluster_name, secret=secret, use_select=False, encrypted=socks[sock].encrypted, bufsize=1, stream=True)
+                    except SockReset:
+                        sp = socks[sock]
+                        self.log.debug("lost stream with %s", sp.nodename)
+                        sock.close()
+                        reconnect.add(sp.nodename)
+                        del socks[sock]
                         continue
-                    for message in data:
+                    except socket.error as exc:
+                        if exc.errno == 104:
+                            # connection reset by peer
+                            time.sleep(0.1)
+                    if rdata is None:
+                        continue
+                    for message in rdata:
                         yield message
                 for sock in exceptionals:
                     del socks[sock]
