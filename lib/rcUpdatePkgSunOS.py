@@ -22,6 +22,11 @@ def gen_adminfile():
     return filename
 
 def update(fpath):
+    try:
+        # causing: pkgadd "unable to create temporary directory" errors
+        del os.environ["TMPDIR"]
+    except:
+        pass
     # check downloaded package integrity
     cmd = ['pkgchk', '-d', fpath, 'all']
     print(' '.join(cmd))
