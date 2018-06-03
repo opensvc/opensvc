@@ -3,14 +3,16 @@ import rcStatus
 import resources as Res
 import time
 import os
-from rcUtilities import justcall, qcall
-from stat import *
+import stat
+
+from rcUtilities import justcall, qcall, which
 import resContainer
 import rcExceptions as ex
 from rcZfs import zfs_setprop
 from rcGlobalEnv import rcEnv
 
 ZONECFG="/usr/sbin/zonecfg"
+ZONEADM="/usr/sbin/zoneadm"
 PGREP="/usr/bin/pgrep"
 PWAIT="/usr/bin/pwait"
 INIT="/sbin/init"
@@ -110,24 +112,26 @@ class Zone(resContainer.Container):
         return ret
 
     def zoneadm(self, action, option=None):
-        if action in [ 'ready' , 'boot' ,'shutdown' , 'halt' ,'attach', 'detach', 'install', 'clone' ] :
-            cmd = ['zoneadm', '-z', self.name, action ]
+        if action in ['ready' , 'boot' ,'shutdown' , 'halt' ,'attach', 'detach', 'install', 'clone']:
+            cmd = [ZONEADM, "-z", self.name, action]
         else:
-            self.log.error("unsupported zone action: %s" % action)
+            self.log.error("unsupported zone action: %s", action)
             return 1
         if option is not None:
             cmd += option
 
-        t = datetime.now()
-        (ret, out, err) = self.vcall(cmd,err_to_info=True)
-        len = datetime.now() - t
+        begin = datetime.now()
+        if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon" and which("su"):
+            # the zoneadm command gives an error when executed from osvcd.
+            # su creates a clean execution context and makes zoneadm succeed.
+            cmd = ["su", "root", "-c", " ".join(cmd)]
+        self.log.info("%s", " ".join(cmd))
+        ret = self.lcall(cmd, env={})
+        duration = datetime.now() - begin
         if ret != 0:
-            msg = '%s failed status: %i in %s logs in %s' % (' '.join(cmd), ret, len, out)
-            self.log.error(msg)
-            raise ex.excError(msg)
+            raise ex.excError('%s failed in %s - ret %i' % (' '.join(cmd), duration, ret))
         else:
-            self.log.info('%s done in %s - ret %i - logs in %s'
-                            % (' '.join(cmd), len, ret, out))
+            self.log.info('%s done in %s - ret %i' % (' '.join(cmd), duration, ret))
         self.zone_refresh()
         return ret
 
@@ -139,9 +143,9 @@ class Zone(resContainer.Container):
         if s.st_uid != 0 or s.st_gid != 0:
             self.log.info("set %s ownership to uid 0 gid 0"%self.zonepath)
             os.chown(self.zonepath, 0, 0)
-        mode = s[ST_MODE]
-        if (S_IWOTH&mode) or (S_IXOTH&mode) or (S_IROTH&mode) or \
-           (S_IWGRP&mode) or (S_IXGRP&mode) or (S_IRGRP&mode):
+        mode = s[stat.ST_MODE]
+        if (stat.S_IWOTH&mode) or (stat.S_IXOTH&mode) or (stat.S_IROTH&mode) or \
+           (stat.S_IWGRP&mode) or (stat.S_IXGRP&mode) or (stat.S_IRGRP&mode):
             self.vcall(['chmod', '700', self.zonepath])
 
     def rcp_from(self, src, dst):
