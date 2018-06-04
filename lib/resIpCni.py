@@ -200,7 +200,7 @@ class Ip(Res.Ip):
         try:
             data = self.svc.dockerlib.docker_inspect(self.container.container_id)
             return data["NetworkSettings"]["SandboxKey"]
-        except (IndexError, KeyError):
+        except (AttributeError, IndexError, KeyError):
             return
 
     @lazy
