@@ -3267,7 +3267,7 @@ class Node(Crypt, ExtConfig):
 
         from converters import print_size
         from rcColor import colorize, color, unicons
-        if self.options.format == "json":
+        if self.options.format == "json" or self.options.jsonpath_filter:
             self.print_data(data)
             return
 
