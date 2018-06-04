@@ -468,6 +468,13 @@ ACTIONS = {
             "msg": "Unsnooze alerts on the node",
             "options": [],
         },
+        "wait": {
+            "msg": "Wait for the condition given by --filter to become true. The condition applies to, so are rooted to, the monitor thread data. The condition is expressed as <jonspath><op><val>. Supported ops are '=', '>', '>=', '<', '<=', '~'. '~' is a fullmatch of the <val> regular expression unless '^' or '$' are specified.",
+            "options": [
+                OPT.local,
+                OPT.node,
+            ]
+        },
         "wol": {
             "msg": "Forge and send a udp Wake-On-LAN packet to the mac addresses "
                    "specified by :opt:`--mac` and :opt:`--broadcast` arguments.",

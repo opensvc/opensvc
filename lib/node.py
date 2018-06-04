@@ -1471,7 +1471,6 @@ class Node(Crypt, ExtConfig):
     def print_push_disks(self, data):
         from forest import Forest
         from rcColor import color
-        from converters import print_size
 
         tree = Forest()
         head_node = tree.add_node()
@@ -2961,6 +2960,98 @@ class Node(Crypt, ExtConfig):
         except Exception as exc:
             self.log.debug(str(exc))
 
+    def wait(self):
+        """
+        Wait for a condition on the monitor thread data.
+        Catch broken pipe.
+        """
+        try:
+            self._wait()
+        except ex.excSignal:
+            return
+        except (OSError, IOError) as exc:
+            if exc.errno == 32:
+                # broken pipe
+                return
+
+    def _wait(self):
+        """
+        Wait for a condition on the monitor thread data
+        """
+        import json_delta
+        from jsonpath_ng import jsonpath
+        from jsonpath_ng.ext import parse
+
+        if self.options.node:
+            nodename = self.options.node
+        else:
+            nodename = rcEnv.nodename
+
+        ops = ("=", ">", "<", "~", ">=", "<=")
+        path = self.options.jsonpath_filter
+        oper = None
+        val = None
+        for op in ops:
+            idx = path.rfind(op)
+            if idx < 0:
+                continue
+            val = path[idx+len(op):].strip()
+            path = path[:idx].strip()
+            oper = op
+            if op == "~":
+                if not val.startswith(".*") and not val.startswith("^"):
+                    val = ".*" + val
+                if not val.endswith(".*") and not val.endswith("$"):
+                    val = val + ".*"
+            break
+
+        try:
+            jsonpath_expr = parse(path)
+        except Exception as exc:
+            raise ex.excError(exc)
+
+        def eval_cond(val):
+            for match in jsonpath_expr.find(data):
+                obj_class = type(match.value)
+                try:
+                    if obj_class == bool:
+                        val = convert_boolean(val)
+                    else:
+                        val = obj_class(val)
+                except Exception as exc:
+                    raise ex.excError("can not convert to a common type")
+                if oper == "=":
+                    if match.value == val:
+                        return True
+                elif oper == ">":
+                    if match.value > val:
+                        return True
+                elif oper == "<":
+                    if match.value < val:
+                        return True
+                elif oper == ">=":
+                    if match.value >= val:
+                        return True
+                elif oper == "<=":
+                    if match.value <= val:
+                        return True
+                elif is_string(match.value) and oper == "~":
+                    if re.match(val, match.value):
+                        return True
+            return False
+
+        data = self._daemon_status()["monitor"]["nodes"]
+        if eval_cond(val):
+            return
+
+        for msg in self.daemon_events(nodename):
+            if msg.get("kind") != "patch":
+                continue
+            _nodename = msg.get("nodename")
+            json_delta.patch(data[_nodename], msg["data"])
+            if eval_cond(val):
+                break
+
     def events(self, nodename=None):
         try:
             self._events(nodename=nodename)
@@ -3265,7 +3356,6 @@ class Node(Crypt, ExtConfig):
         if data is None or data.get("status", 0) != 0:
             return
 
-        from converters import print_size
         from rcColor import colorize, color, unicons
         if self.options.format == "json" or self.options.jsonpath_filter:
             self.print_data(data)

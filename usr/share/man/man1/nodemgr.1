@@ -1885,6 +1885,39 @@ A JSONPath expression to filter a JSON output.
 Show this help message and exit
 
 .RE
+\fBnodemgr wait\fP
+.RS
+
+Wait for the condition given by --filter to become true. The condition applies to, so are rooted to, the monitor thread data. The condition is expressed as <jonspath><op><val>. Supported ops are '=', '>', '>=', '<', '<=', '~'. '~' is a fullmatch of the <val> regular expression unless '^' or '$' are specified.
+
+
+.TP
+.B --local
+Set to disable cluster-wide operations.
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, csv or table.
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
 \fBnodemgr wol\fP
 .RS
 
