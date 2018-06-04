@@ -1799,7 +1799,7 @@ class Svc(Crypt, ExtConfig):
         Display in human-readable format the hierarchical service status.
         """
         data = self.print_status_data(mon_data=True, refresh=self.options.refresh)
-        if self.options.format is not None:
+        if self.options.format is not None or self.options.jsonpath_filter:
             return data
 
         from rcColor import color, colorize, STATUS_COLOR
@@ -2613,7 +2613,7 @@ class Svc(Crypt, ExtConfig):
         if categories is None:
             categories = ["exposed", "sub", "base"]
         data = self.devs(categories=categories)
-        if self.options.format is not None:
+        if self.options.format is not None or self.options.jsonpath_filter:
             return data
         from forest import Forest
         from rcColor import color
@@ -3145,7 +3145,7 @@ class Svc(Crypt, ExtConfig):
         The 'print config' action entry point.
         Print the service configuration in the format specified by --format.
         """
-        if self.options.format is not None:
+        if self.options.format is not None or self.options.jsonpath_filter:
             return self.print_config_data(evaluate=self.options.eval,
                                           impersonate=self.options.impersonate)
         from rcColor import print_color_config
@@ -3324,7 +3324,7 @@ class Svc(Crypt, ExtConfig):
         return data
 
     def print_resinfo(self):
-        if self.options.format is None:
+        if self.options.format is not None or self.options.jsonpath_filter:
             self.print_resinfo_tree()
             return
         data = [[

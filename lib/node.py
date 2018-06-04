@@ -3251,7 +3251,8 @@ class Node(Crypt, ExtConfig):
         return data
 
     def daemon_status(self, svcnames=None, preamble="", node=None):
-        print(self.daemon_status_str(svcnames=svcnames, preamble=preamble, node=node))
+        data = self.daemon_status_str(svcnames=svcnames, preamble=preamble, node=node)
+        return data
 
     def daemon_status_str(self, svcnames=None, preamble="", node=None):
         if node:
@@ -3265,9 +3266,9 @@ class Node(Crypt, ExtConfig):
             return
 
         from converters import print_size
-        from rcColor import format_json, colorize, color, unicons
+        from rcColor import colorize, color, unicons
         if self.options.format == "json":
-            format_json(data)
+            self.print_data(data)
             return
 
         from rcStatus import Status, colorize_status

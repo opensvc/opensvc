@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-06\-01
+.TH SVCMGR 1 2018\-06\-04
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -214,6 +214,9 @@ Display service alerts.
 
 
 .TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
@@ -303,6 +306,9 @@ Display asset information known to the collector.
 
 
 .TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
@@ -391,6 +397,9 @@ Show this help message and exit.
 Display service checks.
 
 
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
@@ -570,6 +579,9 @@ Display service disks.
 
 
 .TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
@@ -664,6 +676,9 @@ A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action a
 .TP
 .B --end=END
 A end date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
@@ -760,6 +775,9 @@ A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action a
 .B --end=END
 A end date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
@@ -848,6 +866,9 @@ Show this help message and exit.
 List all available tags. Use :opt:`--like` to filter the output.
 
 
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
@@ -1128,6 +1149,9 @@ Display network information known to the collector for each service ip.
 
 
 .TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
@@ -1226,6 +1250,9 @@ Specify an object id to act on
 .B --end=END
 A end date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
 .TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
@@ -1314,6 +1341,9 @@ Show this help message and exit.
 List all service tags.
 
 
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
@@ -3750,6 +3780,9 @@ List the service names with a local instance. Most useful to test a service sele
 
 
 .TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
@@ -4631,6 +4664,9 @@ Print the list of base devices the local service instance or the specified resou
 
 
 .TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
@@ -4826,6 +4862,9 @@ Aggregate the information of :cmd:`print base devs`, :cmd:`print sub devs` and :
 
 
 .TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
@@ -4934,6 +4973,9 @@ Show this help message and exit.
 Print the list of devices the local service instance or the specified resources expose.
 
 
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
@@ -5044,6 +5086,9 @@ Display a specific service resource status, pointed by --rid
 
 
 .TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
@@ -5150,6 +5195,9 @@ Print the service tasks schedule.
 
 
 .TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
@@ -5251,6 +5299,9 @@ Resources Flags:
 
 
 .TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
@@ -5348,6 +5399,9 @@ Show this help message and exit.
 Print the list of devices the local service instance or the specified resources are layered on.
 
 
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
@@ -10867,6 +10921,9 @@ Display the service current configuration.
 
 
 .TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.
 .TP
@@ -10961,6 +11018,9 @@ Show this help message and exit.
 Display the service resource and env section key/val pairs pushed to the collector.
 
 
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, csv or table.

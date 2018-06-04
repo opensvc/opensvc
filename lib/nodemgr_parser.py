@@ -94,6 +94,10 @@ OPT = Storage({
              ":opt:`--param` is evaluated, scoped and dereferenced. If set "
              "with the :cmd:`nodemgr set` action, the current value is "
              "evaluated before mangling."),
+    "filter": Option(
+        "--filter", default="",
+        action="store", dest="jsonpath_filter",
+        help="A JSONPath expression to filter a JSON output."),
     "filterset": Option(
         "--filterset", default="",
         action="store", dest="filterset",
@@ -315,6 +319,7 @@ GLOBAL_OPTS = [
     OPT.color,
     OPT.debug,
     OPT.format,
+    OPT.filter,
     OPT.help,
 ]
 

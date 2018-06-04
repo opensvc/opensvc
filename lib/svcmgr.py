@@ -204,6 +204,7 @@ def _main(node, argv=None):
     rcColor.use_color = options.color
     try:
         node.options.format = options.format
+        node.options.jsonpath_filter = options.jsonpath_filter
     except AttributeError:
         pass
     if os.environ.get("OSVC_SERVICE_LINK") is None and \

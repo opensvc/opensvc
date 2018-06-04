@@ -260,6 +260,7 @@ def formatter(fn):
     def decorator(*args, **kwargs):
         fmt = args[0].options.format
 
+        _fmt_kwargs = {}
         if fmt == "json":
             _fmt = format_json
         elif fmt == "table":
@@ -286,6 +287,20 @@ def formatter(fn):
             return
         if fmt != "json" and len(data) == 0:
             return
+
+        if not isinstance(data, (dict, list)):
+            print(data)
+            return
+
+        path = args[0].options.jsonpath_filter
+        if path:
+            from jsonpath_ng import jsonpath
+            from jsonpath_ng.ext import parse
+            try:
+                jsonpath_expr = parse(path)
+                data = [match.value for match in jsonpath_expr.find(data)]
+            except Exception as exc:
+                raise ex.excError(str(exc))
 
         if not isinstance(data, (dict, list)):
             print(data)

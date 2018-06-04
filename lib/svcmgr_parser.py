@@ -112,6 +112,10 @@ OPT = Storage({
              ":opt:`--param` is evaluated, scoped and dereferenced. If set "
              "with the :cmd:`svcmgr set` action, the current value is "
              "evaluated before mangling."),
+    "filter": Option(
+        "--filter", default="",
+        action="store", dest="jsonpath_filter",
+        help="A JSONPath expression to filter a JSON output."),
     "follow": Option(
         "--follow", default=False,
         action="store_true", dest="follow",
@@ -510,6 +514,7 @@ ACTIONS = {
             "msg": "List the service names with a local instance. Most useful to test "
                    "a service selector expression before running an action.",
             "options": [
+                OPT.filter,
                 OPT.format,
             ],
         },
@@ -533,6 +538,7 @@ ACTIONS = {
                    "* ``S``  Standby\n"
                    "",
             "options": [
+                OPT.filter,
                 OPT.format,
                 OPT.hide_disabled,
                 OPT.refresh,
@@ -543,6 +549,7 @@ ACTIONS = {
             "msg": "Display a specific service resource status, pointed by"
                    " --rid",
             "options": [
+                OPT.filter,
                 OPT.format,
                 OPT.refresh,
                 OPT.rid,
@@ -720,6 +727,7 @@ ACTIONS = {
             "msg": "Print the list of base devices the local service instance or the "
                    "specified resources are layered on.",
             "options": [
+                OPT.filter,
                 OPT.format,
                 OPT.rid,
                 OPT.tags,
@@ -730,6 +738,7 @@ ACTIONS = {
             "msg": "Print the list of devices the local service instance or the specified "
                    "resources expose.",
             "options": [
+                OPT.filter,
                 OPT.format,
                 OPT.rid,
                 OPT.tags,
@@ -740,6 +749,7 @@ ACTIONS = {
             "msg": "Print the list of devices the local service instance or the specified "
                    "resources are layered on.",
             "options": [
+                OPT.filter,
                 OPT.format,
                 OPT.rid,
                 OPT.tags,
@@ -749,6 +759,7 @@ ACTIONS = {
         "print_devs": {
             "msg": "Aggregate the information of :cmd:`print base devs`, :cmd:`print sub devs` and :cmd:`print exposed devs`.",
             "options": [
+                OPT.filter,
                 OPT.format,
                 OPT.rid,
                 OPT.tags,
@@ -815,6 +826,7 @@ ACTIONS = {
         "print_schedule": {
             "msg": "Print the service tasks schedule.",
             "options": [
+                OPT.filter,
                 OPT.format,
                 OPT.verbose,
             ],
@@ -847,12 +859,14 @@ ACTIONS = {
             "msg": "Display the service resource and env section key/val pairs "
                    "pushed to the collector.",
             "options": [
+                OPT.filter,
                 OPT.format,
             ],
         },
         "print_config": {
             "msg": "Display the service current configuration.",
             "options": [
+                OPT.filter,
                 OPT.format,
                 OPT.eval,
                 OPT.impersonate,
@@ -1047,6 +1061,7 @@ ACTIONS = {
             "options": [
                 OPT.begin,
                 OPT.end,
+                OPT.filter,
                 OPT.format,
             ],
         },
@@ -1067,18 +1082,21 @@ ACTIONS = {
                 OPT.begin,
                 OPT.id,
                 OPT.end,
+                OPT.filter,
                 OPT.format,
             ],
         },
         "collector_checks": {
             "msg": "Display service checks.",
             "options": [
+                OPT.filter,
                 OPT.format,
             ],
         },
         "collector_disks": {
             "msg": "Display service disks.",
             "options": [
+                OPT.filter,
                 OPT.format,
             ],
         },
@@ -1091,6 +1109,7 @@ ACTIONS = {
         "collector_alerts": {
             "msg": "Display service alerts.",
             "options": [
+                OPT.filter,
                 OPT.format,
             ],
         },
@@ -1101,12 +1120,14 @@ ACTIONS = {
             "options": [
                 OPT.begin,
                 OPT.end,
+                OPT.filter,
                 OPT.format,
             ],
         },
         "collector_asset": {
             "msg": "Display asset information known to the collector.",
             "options": [
+                OPT.filter,
                 OPT.format,
             ],
         },
@@ -1114,6 +1135,7 @@ ACTIONS = {
             "msg": "Display network information known to the collector for "
                    "each service ip.",
             "options": [
+                OPT.filter,
                 OPT.format,
             ],
         },
@@ -1132,12 +1154,14 @@ ACTIONS = {
         "collector_show_tags": {
             "msg": "List all service tags.",
             "options": [
+                OPT.filter,
                 OPT.format,
             ],
         },
         "collector_list_tags": {
             "msg": "List all available tags. Use :opt:`--like` to filter the output.",
             "options": [
+                OPT.filter,
                 OPT.format,
                 OPT.like,
             ],
