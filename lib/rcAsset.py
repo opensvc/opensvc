@@ -457,6 +457,8 @@ class Asset(object):
             s = self.node.conf_get(section, kw)
             source = self.s_config
         except ex.OptNotFound as exc:
+            if exc.default is None:
+                return None
             s = exc.default
             source = self.s_default
         return {
