@@ -85,7 +85,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 if self.stopped():
                     self.join_status_threads()
                     self.join_threads()
-                    self.terminate_procs()
+                    self.kill_procs()
                     sys.exit(0)
         except Exception as exc:
             self.log.exception(exc)

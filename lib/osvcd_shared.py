@@ -224,13 +224,13 @@ class OsvcThread(threading.Thread):
             "on_error_kwargs": on_error_kwargs if on_error_kwargs else {},
         }))
 
-    def terminate_procs(self):
+    def kill_procs(self):
         """
-        Send a terminate() to all procs in the queue and wait for their
+        Send a kill() to all procs in the queue and wait for their
         completion.
         """
         for data in self.procs:
-            data.proc.terminate()
+            data.proc.kill()
             for _ in range(self.stop_tmo):
                 data.proc.poll()
                 if data.proc.returncode is not None:

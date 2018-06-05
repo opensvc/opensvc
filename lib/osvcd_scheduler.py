@@ -53,7 +53,7 @@ class Scheduler(shared.OsvcThread):
             except Exception as exc:
                 self.log.exception(exc)
             if self.stopped():
-                self.terminate_procs()
+                self.kill_procs()
                 sys.exit(0)
 
     def do(self):
