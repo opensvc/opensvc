@@ -87,7 +87,7 @@ class Collector(shared.OsvcThread, Crypt):
                 #self.log.info("call %s", args[0])
                 shared.NODE.collector.call(*args, **kwargs)
             except Exception as exc:
-                self.log.exception(exc)
+                self.log.error("call %s: %s", args[0], exc)
                 time.sleep(0.2)
 
     def send_containerinfo(self, svcname):
