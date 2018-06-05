@@ -661,6 +661,7 @@ class Crypt(object):
                         if exc.errno == 104:
                             # connection reset by peer
                             time.sleep(0.1)
+                            continue
                     if rdata is None:
                         continue
                     for message in rdata:
