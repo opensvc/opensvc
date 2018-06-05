@@ -548,13 +548,16 @@ class Crypt(object):
             while True:
                 try:
                     sock.connect(sp.to)
-                    sock.sendall(message)
                     break
                 except socket.error as exc:
                     if exc.errno == 11:
                         # Resource temporarily unavailable (daemon busy, overflow)
                         # Give it a little time, and make sure we don't short loop
                         time.sleep(0.1)
+                        continue
+                    raise
+
+            sock.sendall(message)
 
             if with_result:
                 elapsed = 0
