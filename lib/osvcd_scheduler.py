@@ -67,10 +67,11 @@ class Scheduler(shared.OsvcThread):
                     shared.SCHED_TICKER.wait(1)
             if self.stopped():
                 break
-            self.dequeue_actions()
-            if last + self.interval < now:
-                last = time.time()
-                self.run_scheduler()
+            if shared.NMON_DATA.status not in ("init", "upgrade"):
+                self.dequeue_actions()
+                if last + self.interval < now:
+                    last = time.time()
+                    self.run_scheduler()
             done = self.janitor_procs()
 
     def drop_running(self, sigs):

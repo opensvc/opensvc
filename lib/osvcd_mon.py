@@ -56,7 +56,6 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
-        self.set_nmon("init")
         self.log.info("monitor started")
         self.startup = datetime.datetime.utcnow()
         self.rejoin_grace_period_expired = False

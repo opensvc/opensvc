@@ -75,7 +75,7 @@ SMON_DATA_LOCK = threading.RLock()
 
 # the local node monitor data, where the listener can set expected states
 NMON_DATA = Storage({
-    "status": "idle",
+    "status": "init",
     "status_updated": time.time(),
 })
 NMON_DATA_LOCK = threading.RLock()

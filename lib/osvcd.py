@@ -275,10 +275,6 @@ class Daemon(object):
             self.threads["listener"] = Listener()
             self.threads["listener"].start()
             changed = True
-        if self.need_start("scheduler"):
-            self.threads["scheduler"] = Scheduler()
-            self.threads["scheduler"].start()
-            changed = True
         if shared.NODE and rcEnv.dbopensvc and self.need_start("collector"):
             self.threads["collector"] = Collector()
             self.threads["collector"].start()
@@ -286,6 +282,10 @@ class Daemon(object):
         if self.need_start("monitor"):
             self.threads["monitor"] = Monitor()
             self.threads["monitor"].start()
+            changed = True
+        if self.need_start("scheduler"):
+            self.threads["scheduler"] = Scheduler()
+            self.threads["scheduler"].start()
             changed = True
 
         for hb_type, txc, rxc in HEARTBEATS:
