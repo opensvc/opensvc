@@ -35,7 +35,7 @@ class Scheduler(shared.OsvcThread):
             "cmd": " ".join(self.format_cmd(action, svcname, rids)),
             "queued": entry["queued"].strftime(shared.JSON_DATEFMT),
             "expire": entry["expire"].strftime(shared.JSON_DATEFMT),
-        } for (action, delay, svcname, rids), entry in self.delayed.items()]
+        } for (action, svcname, rids), entry in self.delayed.items()]
         return data
 
     def run(self):
@@ -106,24 +106,30 @@ class Scheduler(shared.OsvcThread):
     def queue_action(self, action, delay=0, svcname=None, rids=None):
         if rids:
             rids = ",".join(rids)
-        sig = (action, delay, svcname, rids)
-        if sig in self.delayed:
-            self.log.debug("drop already queued action '%s'", str(sig))
-            return []
+        sig = (action, svcname, rids)
         if sig in self.running:
-            self.log.debug("drop already running action '%s'", str(sig))
-            return []
+            self.log.debug("drop already running action '%s'", sig)
+            return
+        if sig in self.delayed:
+            if delay == 0 and self.delayed[sig]["delay"] > 0:
+                self.log.debug("promote queued action %s from delayed to asap", sig)
+                now = datetime.datetime.utcnow()
+                self.delayed[sig]["delay"] = 0
+                self.delayed[sig]["expire"] = now
+            self.log.debug("drop already queued action %s", sig)
+            return
         now = datetime.datetime.utcnow()
         exp = now + datetime.timedelta(seconds=delay)
         self.delayed[sig] = {
             "queued": now,
             "expire": exp,
+            "delay": delay,
         }
         if delay > 0:
-            self.log.debug("queued action %s for run asap" % str(sig))
+            self.log.debug("queued action %s for run asap", sig)
         else:
-            self.log.debug("queued action %s delayed until %s" % (str(sig), exp))
-        return []
+            self.log.debug("queued action %s delayed until %s", sig, exp)
+        return
 
     def get_todo(self):
         """
@@ -137,7 +143,7 @@ class Scheduler(shared.OsvcThread):
         for sig, task in self.delayed.items():
             if task["expire"] > now:
                 continue
-            action, delay, svcname, rids = sig
+            action, svcname, rids = sig
             merge_key = (svcname is None, action, rids)
             if merge_key not in todo:
                 if svcname:
@@ -148,13 +154,13 @@ class Scheduler(shared.OsvcThread):
                     "action": action,
                     "rids": rids,
                     "svcname": _svcname,
-                    "sigs": [(action, delay, svcname, rids)],
+                    "sigs": [sig],
                     "queued": task["queued"],
                 }
             else:
+                todo[merge_key]["sigs"].append(sig)
                 if svcname:
                     todo[merge_key]["svcname"].append(svcname)
-                todo[merge_key]["sigs"].append((action, delay, svcname, rids))
                 if task["queued"] < todo[merge_key]["queued"]:
                     todo[merge_key]["queued"] = task["queued"]
         return sorted(todo.values(), key=lambda task: task["queued"])[:open_slots]
@@ -176,7 +182,6 @@ class Scheduler(shared.OsvcThread):
     def run_scheduler(self):
         #self.log.info("run schedulers")
         nonprov = []
-        run = []
 
         if shared.NODE:
             shared.NODE.options.cron = True
@@ -185,7 +190,7 @@ class Scheduler(shared.OsvcThread):
                     delay = shared.NODE.sched.validate_action(action)
                 except ex.excAbortAction:
                     continue
-                run += self.queue_action(action, delay)
+                self.queue_action(action, delay)
         for svcname in list(shared.SERVICES.keys()):
             try:
                 svc = shared.SERVICES[svcname]
@@ -211,14 +216,12 @@ class Scheduler(shared.OsvcThread):
                 except TypeError:
                     delay = data
                     rids = None
-                run += self.queue_action(action, delay, svc.svcname, rids)
+                self.queue_action(action, delay, svc.svcname, rids)
 
         # log a scheduler loop digest
         msg = []
         if len(nonprov) > 0:
             msg.append("non provisioned service skipped: %s." % ", ".join(nonprov))
-        if len(run) > 0:
-            msg.append("queued: %s." % ", ".join(run))
         if len(msg) > 0:
             self.log.info(" ".join(msg))
 
