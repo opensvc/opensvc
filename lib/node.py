@@ -2487,6 +2487,8 @@ class Node(Crypt, ExtConfig):
                             ret = 1
                         err += ret
                 except ex.excError as exc:
+                    ret = 1
+                    err += ret
                     if not need_aggregate:
                         print("%s: %s" % (svc.svcname, exc), file=sys.stderr)
                     continue
