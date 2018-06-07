@@ -34,6 +34,8 @@ import time
 import random
 import os
 import sys
+
+import six
 from rcGlobalEnv import rcEnv
 import rcStatus
 import rcExceptions as ex
@@ -1017,7 +1019,10 @@ class Collector(object):
                 print(" extract", key)
                 vars = [key]
                 try:
-                    vals = [xmlrpclib.Binary(zlib.compress(getattr(sym, 'get_'+key)()))]
+                    data = getattr(sym, 'get_'+key)()
+                    if six.PY3:
+                        data = bytes(data)
+                    vals = [xmlrpclib.Binary(zlib.compress(data))]
                 except Exception as e:
                     print(e)
                     continue
