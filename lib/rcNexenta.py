@@ -3,14 +3,10 @@ import json
 import base64
 import os
 
-if sys.version_info[0] < 3:
-    from urllib2 import Request, urlopen
-    from urllib2 import HTTPError, URLError
-else:
-    from urllib.request import Request, urlopen
-    from urllib.error import HTTPError, URLError
-
 import rcExceptions as ex
+import six.moves.configparser as ConfigParser
+from six.moves.urllib.request import Request, urlopen
+from six.moves.urllib.error import HTTPError, URLError
 from rcGlobalEnv import rcEnv
 
 class logger(object):
@@ -42,7 +38,6 @@ class Nexenta(object):
     def init(self):
         if self.username is not None and self.password is not None:
             return
-        import ConfigParser
         cf = rcEnv.paths.authconf
         self.conf = ConfigParser.RawConfigParser()
         self.conf.read(cf)

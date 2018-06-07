@@ -15,6 +15,7 @@ import json
 import re
 import hashlib
 
+import six
 from resources import Resource
 from resourceset import ResourceSet
 from freezer import Freezer
@@ -31,11 +32,8 @@ from rcScheduler import Scheduler, SchedOpts, sched_action
 from comm import Crypt
 from extconfig import ExtConfig
 
-if sys.version_info[0] < 3:
+if six.PY2:
     BrokenPipeError = IOError
-else:
-    raw_input = input
-
 
 def signal_handler(*args):
     """
@@ -4407,6 +4405,7 @@ class Svc(Crypt, ExtConfig):
             comment = re.sub("(\[.+://.+])", lambda m: get_href(m.group(1)), comment)
             print(comment)
 
+        from six.moves import input
         for key, default_val in self.env_section_keys().items():
             if key.endswith(".comment"):
                 continue
@@ -4414,7 +4413,7 @@ class Svc(Crypt, ExtConfig):
                 continue
             if self.config.has_option("env", key+".comment"):
                 print_comment(self.config.get("env", key+".comment"))
-            newval = raw_input("%s [%s] > " % (key, str(default_val)))
+            newval = input("%s [%s] > " % (key, str(default_val)))
             if newval != "":
                 self._set("env", key, newval)
 

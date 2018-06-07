@@ -3,11 +3,7 @@ from rcUtilities import justcall, which
 import os
 import telnetlib
 
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
-
+import six.moves.configparser as ConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 

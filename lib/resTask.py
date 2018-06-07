@@ -1,14 +1,13 @@
 import os
 import pwd
 import sys
+
 import resources as Res
 import lock
 import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-
-if sys.version_info[0] >= 3:
-    raw_input = input
+from six.moves import input
 
 def run_as_popen_kwargs(user):
     if rcEnv.sysname == "Windows":
@@ -98,7 +97,7 @@ class Task(Res.Resource):
         print("This task run requires confirmation.\nPlease make sure you fully "
               "understand its role and effects before confirming the run.")
         try:
-            buff = raw_input("Do you really want to run %s (yes/no) > " % self.rid)
+            buff = input("Do you really want to run %s (yes/no) > " % self.rid)
         except ex.excSignal:
             raise ex.excError("timeout waiting for confirmation")
 

@@ -7,6 +7,7 @@ import json
 from stat import *
 from subprocess import *
 
+import six
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, cmdline2list
@@ -225,7 +226,7 @@ class SysReport(object):
         cmd_d = os.path.join(self.collect_cmd_d, fname)
         p = Popen(l, stdout=PIPE, stderr=STDOUT, close_fds=True)
         out, err = p.communicate()
-        if sys.version_info[0] >= 3:
+        if six.PY3:
             out = out.decode("utf-8")
         self.write(os.path.join(cmd_d), out)
 

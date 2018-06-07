@@ -11,11 +11,8 @@ import time
 import select
 from subprocess import Popen, PIPE
 
-try:
-    import Queue as queue
-except ImportError:
-    import queue
-
+import six
+import six.moves.queue as queue 
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode, drop_option, chunker
@@ -200,7 +197,7 @@ class Listener(shared.OsvcThread, Crypt):
                 chunks.append(chunk)
             if not chunk or chunk.endswith(b"\x00"):
                 break
-        if sys.version_info[0] >= 3:
+        if six.PY3:
             data = b"".join(chunks)
             dequ = data == b"dequeue_actions"
         else:

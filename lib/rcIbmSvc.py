@@ -1,12 +1,9 @@
-from rcUtilities import justcall, which
-import rcExceptions as ex
 import os
 
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
+import rcExceptions as ex
+import six.moves.configparser as ConfigParser
 
+from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:

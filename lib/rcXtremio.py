@@ -3,18 +3,14 @@ from __future__ import print_function
 import sys
 import os
 import json
+from optparse import Option
 
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
-
+import six.moves.configparser as ConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import justcall
 from converters import convert_size
 from rcOptParser import OptParser
-from optparse import Option
 
 try:
     import requests

@@ -184,10 +184,7 @@ def initLogger(name, handlers=None):
                 streamhandler.setLevel(logging.INFO)
 
     if "syslog" in handlers:
-        try:
-            import ConfigParser
-        except ImportError:
-            import configparser as ConfigParser
+        import six.moves.configparser as ConfigParser
         config = ConfigParser.RawConfigParser({})
         try:
             config.read(rcEnv.paths.nodeconf)

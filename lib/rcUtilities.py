@@ -1,5 +1,7 @@
 from __future__ import print_function
-import os, sys
+
+import os
+import sys
 import datetime
 import time
 import logging
@@ -11,6 +13,8 @@ import rcExceptions as ex
 from subprocess import *
 from rcGlobalEnv import rcEnv
 from functools import wraps
+
+import six
 import lock
 import json
 import ast
@@ -210,7 +214,7 @@ def bdecode(buff):
     """
     if buff is None:
         return buff
-    if sys.version_info[0] < 3:
+    if six.PY2:
         return buff
     if type(buff) == str:
         return buff
@@ -220,7 +224,7 @@ def is_string(s):
     """
     python[23] compatible string-type test
     """
-    if sys.version_info[0] == 2:
+    if six.PY2:
         l = (str, unicode)
     else:
         l = (str)
@@ -371,7 +375,7 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
             return logged
         for io in rlist:
             buff = os.read(io, 32768)
-            if sys.version_info[0] < 3:
+            if six.PY2:
                 buff = buff.decode("utf8")
             else:
                 buff = buff.decode("ascii", errors="ignore")
@@ -716,7 +720,7 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         Return the cmd arg useable by subprocess Popen
         """
         if not kwargs.get("shell", False):
-            if sys.version_info[0] < 3:
+            if six.PY2:
                 cmdv = shlex.split(cmd.encode('utf8'))
                 cmdv = [elem.decode('utf8') for elem in cmdv]
             else:
@@ -1047,7 +1051,7 @@ def read_cf(fpath, defaults=None):
     if not os.path.exists(fpath):
         return config
     with codecs.open(fpath, "r", "utf8") as ofile:
-        if sys.version_info[0] >= 3:
+        if six.PY3:
             config.read_file(ofile)
         else:
             config.readfp(ofile)

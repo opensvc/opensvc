@@ -12,12 +12,13 @@ import zlib
 import time
 import select
 
+import six
 import pyaes
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import lazy, bdecode
 
-if sys.version_info[0] >= 3:
+if six.PY3:
     to_bytes = lambda x: bytes(x, "utf-8")
 else:
     to_bytes = lambda x: bytes(x)
@@ -493,7 +494,7 @@ class Crypt(object):
             if chunk == sep:
                 break
             chunks.append(chunk)
-        if sys.version_info[0] >= 3:
+        if six.PY3:
             data = b"".join(chunks)
         else:
             data = "".join(chunks)

@@ -3,14 +3,12 @@ from __future__ import unicode_literals
 
 import sys
 
+from six.moves import reduce
+from six import u as unicode
+import rcExceptions as ex
 from textwrap import wrap
 from rcColor import color, colorize
 from rcUtilities import term_width
-import rcExceptions as ex
-
-if sys.version_info[0] >= 3:
-    from functools import reduce
-    unicode = str
 
 def parse_data(data):
     try:

@@ -1,14 +1,10 @@
 from __future__ import print_function
 
 import os
-from xml.etree.ElementTree import XML, fromstring
 
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
-
+import six.moves.configparser as ConfigParser
 import rcExceptions as ex
+from xml.etree.ElementTree import XML, fromstring
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, which
 

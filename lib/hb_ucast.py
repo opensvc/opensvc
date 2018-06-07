@@ -5,6 +5,7 @@ import sys
 import socket
 import threading
 
+import six
 import rcExceptions as ex
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
@@ -213,10 +214,7 @@ class HbUcastRx(HbUcast):
                 chunks.append(chunk)
             if not chunk or chunk.endswith(b"\x00"):
                 break
-        if sys.version_info[0] >= 3:
-            data = b"".join(chunks)
-        else:
-            data = "".join(chunks)
+        data = six.b("").join(chunks)
         del chunks
 
         nodename, data = self.decrypt(data, sender_id=addr[0])

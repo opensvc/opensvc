@@ -3,27 +3,18 @@ from __future__ import print_function
 import sys
 import os
 import json
-import rcExceptions as ex
-from subprocess import *
 import time
-from rcGlobalEnv import rcEnv
-from rcUtilities import cache, clear_cache, justcall, which
 import re
 import datetime
+from subprocess import *
 
-if sys.version_info[0] < 3:
-    from urllib2 import Request, urlopen
-    from urllib2 import HTTPError
-    from urllib import urlencode
-else:
-    from urllib.request import Request, urlopen, build_opener
-    from urllib.error import HTTPError
-    from urllib.parse import urlencode
-
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
+import six.moves.configparser as ConfigParser
+import rcExceptions as ex
+from rcGlobalEnv import rcEnv
+from rcUtilities import cache, clear_cache, justcall, which
+from six.moves.urllib.request import Request, urlopen
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib.parse import urlencode
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin

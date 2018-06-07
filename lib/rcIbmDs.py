@@ -3,11 +3,7 @@ import os
 import tempfile
 from subprocess import *
 
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
-
+import six.moves.configparser as ConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 

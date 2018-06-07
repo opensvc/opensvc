@@ -19,14 +19,10 @@ import socket
 import time
 import re
 
-if sys.version_info[0] < 3:
-    from urllib2 import Request, urlopen
-    from urllib2 import HTTPError
-    from urllib import urlencode
-else:
-    from urllib.request import Request, urlopen
-    from urllib.error import HTTPError
-    from urllib.parse import urlencode
+import six
+from six.moves.urllib.request import Request, urlopen
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib.parse import urlencode
 
 import svcBuilder
 import xmlrpcClient
@@ -45,7 +41,7 @@ from converters import *
 from comm import Crypt
 from extconfig import ExtConfig
 
-if sys.version_info[0] < 3:
+if six.PY2:
     BrokenPipeError = IOError
 
 os.environ['LANG'] = 'C'
@@ -890,7 +886,7 @@ class Node(Crypt, ExtConfig):
             tmpf = tempfile.NamedTemporaryFile()
             fpath = tmpf.name
             tmpf.close()
-            if sys.version_info[0] >= 3:
+            if six.PY3:
                 with codecs.open(fpath, "w", "utf-8") as tmpf:
                     self.config.write(tmpf)
             else:
@@ -2670,7 +2666,7 @@ class Node(Crypt, ExtConfig):
                               "non-encrypted transport")
         request = Request(url+path)
         auth_string = '%s:%s' % (api["username"], api["password"])
-        if sys.version_info[0] >= 3:
+        if six.PY3:
             base64string = base64.encodestring(auth_string.encode()).decode()
         else:
             base64string = base64.encodestring(auth_string)
@@ -3592,7 +3588,7 @@ class Node(Crypt, ExtConfig):
                 state,
             ))
 
-        if sys.version_info[0] < 3:
+        if six.PY2:
             pad = " "
             def print_bytes(val):
                 return val+"\n"

@@ -10,6 +10,7 @@ import time
 import json
 import contextlib
 
+import six
 from rcGlobalEnv import rcEnv
 
 class LockNoLockFile(Exception):
@@ -60,7 +61,7 @@ def bdecode(buff):
     """
     if buff is None:
         return buff
-    if sys.version_info[0] < 3:
+    if six.PY2:
         return buff
     if type(buff) == str:
         return buff

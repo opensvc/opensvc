@@ -10,6 +10,7 @@ import optparse
 import shlex
 import re
 import copy
+import textwrap
 
 # issue19884 workaround (spurious heading '\033[1034h')
 TERM = os.environ.get("TERM")
@@ -18,18 +19,19 @@ if TERM:
     import readline
     os.environ["TERM"] = TERM
 
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
 import atexit
 import fnmatch
+
+import six.moves.configparser as ConfigParser
 import rcExceptions as ex
+from six.moves import input
 from rcGlobalEnv import Storage
+from rcUtilities import bdecode
+from rcColor import formatter
 
 try:
     import requests
-except:
+except ImportError:
     raise ex.excError("This feature requires the python requests module")
 
 try:
@@ -39,7 +41,6 @@ except ImportError:
 
 # the collector api doc uses restructured text we'll have to print
 # in the command help messages
-import textwrap
 try:
     import docutils.utils
     import docutils.parsers
@@ -47,12 +48,6 @@ try:
     has_docutils = True
 except:
     has_docutils = False
-
-from rcUtilities import bdecode
-from rcColor import formatter
-
-if sys.version_info[0] >= 3:
-    raw_input = input
 
 progname = "opensvc-cli"
 homedir = os.path.expanduser("~")
@@ -2434,7 +2429,7 @@ class Cli(object):
                 import getpass
                 return getpass.getpass()
             else:
-                return raw_input(o+": ")
+                return input(o+": ")
         if self.options[o] is not None:
             self.need_save = True
             return self.options[o]
@@ -2470,7 +2465,7 @@ class Cli(object):
         line = ''
         while line not in ('exit', 'quit'):
             try:
-                line = raw_input(self.host+":"+path+' # ')
+                line = input(self.host+":"+path+' # ')
                 self.dispatch(line)
             except ValueError as exc:
                 print(exc)

@@ -10,11 +10,8 @@ import codecs
 import hashlib
 from subprocess import Popen, PIPE
 
-try:
-    import Queue as queue
-except ImportError:
-    import queue
-
+import six
+import six.moves.queue as queue
 import rcExceptions as ex
 from rcConfigParser import RawConfigParser
 from rcUtilities import lazy, unset_lazy, is_string
@@ -279,7 +276,7 @@ class OsvcThread(threading.Thread):
         try:
             config = RawConfigParser()
             with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as filep:
-                if sys.version_info[0] >= 3:
+                if six.PY3:
                     config.read_file(filep)
                 else:
                     config.readfp(filep)

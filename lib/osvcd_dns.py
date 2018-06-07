@@ -11,6 +11,7 @@ import shutil
 import json
 import re
 
+import six
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import lazy, bdecode
@@ -21,7 +22,7 @@ PTR_SUFFIX_LEN = 14
 PTR6_SUFFIX = ".ip6.arpa."
 PTR6_SUFFIX_LEN = 10
 
-if sys.version_info[0] < 3:
+if six.PY2:
     MAKEFILE_KWARGS = {"bufsize": 0}
 else:
     MAKEFILE_KWARGS = {"buffering": None}

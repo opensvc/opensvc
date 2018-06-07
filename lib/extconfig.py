@@ -5,6 +5,7 @@ import re
 import os
 import copy
 
+import six
 import rcExceptions as ex
 from converters import *
 from rcUtilities import is_string, try_decode, read_cf, eval_expr, unset_lazy, \
@@ -823,7 +824,7 @@ class ExtConfig(object):
         if config is None:
             config = self.config
         if config.has_option(s, o):
-            if sys.version_info[0] < 3:
+            if six.PY2:
                 return config.get(s, o).encode("utf-8")
             else:
                 return config.get(s, o)
@@ -920,10 +921,7 @@ class ExtConfig(object):
         The validate config core method.
         Returns a dict with the list of syntax warnings and errors.
         """
-        try:
-            import ConfigParser
-        except ImportError:
-            import configparser as ConfigParser
+        import six.moves.configparser as ConfigParser
 
         ret = {
             "errors": 0,

@@ -1,7 +1,10 @@
 from __future__ import print_function
+
 import os
 import sys
 import platform
+
+import six
 import rcExceptions as ex
 from rcUtilities import is_string
 
@@ -108,7 +111,7 @@ def format_json(d):
       "indent": 4,
       "separators": (',', ': '),
     }
-    if sys.version_info[0] < 3:
+    if six.PY2:
         kwargs["encoding"] = "utf8"
     colorize_json(json.dumps(d, **kwargs))
     try:

@@ -5,14 +5,10 @@ import sys
 import os
 import json
 import time
-from xml.etree.ElementTree import XML, fromstring
 
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
-
+import six.moves.configparser as ConfigParser
 import rcExceptions as ex
+from xml.etree.ElementTree import XML, fromstring
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import justcall, which
 from converters import convert_size

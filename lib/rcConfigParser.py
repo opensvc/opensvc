@@ -1,15 +1,13 @@
 from __future__ import print_function
 import sys
 
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
+import six
+import six.moves.configparser as ConfigParser
 
 ParsingError = ConfigParser.ParsingError
 NoOptionError = ConfigParser.NoOptionError
 
-if sys.version_info[0] < 3:
+if six.PY2:
     class RawConfigParser(ConfigParser.RawConfigParser):
         def __init__(self, *args, **kwargs):
             ConfigParser.RawConfigParser.__init__(self, *args, **kwargs)
@@ -45,6 +43,5 @@ if sys.version_info[0] < 3:
 else:
     class RawConfigParser(ConfigParser.RawConfigParser):
         def __init__(self, *args, **kwargs):
-            if sys.version_info[0] >= 3:
-                kwargs["strict"] = False
+            kwargs["strict"] = False
             ConfigParser.RawConfigParser.__init__(self, *args, **kwargs)

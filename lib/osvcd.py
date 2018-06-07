@@ -10,6 +10,7 @@ import logging
 import codecs
 from optparse import OptionParser
 
+import six
 import rcExceptions as ex
 import rcLogger
 import osvcd_shared as shared
@@ -165,7 +166,7 @@ class Daemon(object):
         try:
             config = RawConfigParser()
             with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as filep:
-                if sys.version_info[0] >= 3:
+                if six.PY3:
                     config.read_file(filep)
                 else:
                     config.readfp(filep)

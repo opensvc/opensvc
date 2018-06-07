@@ -1,14 +1,17 @@
 from __future__ import print_function
-from stat import *
+
 import os
 import sys
 import re
 import datetime
 import json
+from stat import *
+from subprocess import *
+
+import six
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_exe, justcall, banner, is_string, fcache
-from subprocess import *
 from rcColor import color, colorize, formatter
 
 comp_dir = os.path.join(rcEnv.paths.pathvar, 'compliance')
@@ -80,7 +83,7 @@ class Module(object):
 
     def strip_unprintable(self, s):
         s = regex.sub('', s)
-        if sys.version_info[0] >= 3:
+        if six.PY3:
             return s
         else:
             return s.decode('utf8', 'ignore')
@@ -523,7 +526,7 @@ class Compliance(object):
                 val = json.dumps(tmp)
             except Exception as e:
                 pass
-            if sys.version_info[0] < 3:
+            if six.PY2:
                 val = val.encode("utf-8")
         else:
             val = str(val)

@@ -1,11 +1,9 @@
 import os
 import sys
-from rcGlobalEnv import rcEnv
 
-try:
-    import ConfigParser
-except ImportError:
-    import configparser as ConfigParser
+import six
+import six.moves.configparser as ConfigParser
+from rcGlobalEnv import rcEnv
 
 def node_get_node_env():
     import codecs
@@ -13,7 +11,7 @@ def node_get_node_env():
     if not os.path.exists(rcEnv.paths.nodeconf):
         return 'TST'
     with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as f:
-        if sys.version_info[0] >= 3:
+        if six.PY3:
             config.read_file(f)
         else:
             config.readfp(f)
