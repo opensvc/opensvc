@@ -217,7 +217,7 @@ class Rsync(resSync.Sync):
                 self.rset.snaps.set_logger(self.log)
             self.rset.snaps.try_snap(self.rset, target, rid=self.rid)
 
-        if hasattr(self, "alt_src"):
+        if hasattr(self, "alt_src") and self.rid != "sync#i0":
             """ The pre_action() has provided us with a better source
                 to sync from. Use that
             """
