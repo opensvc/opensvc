@@ -5150,12 +5150,12 @@ class Svc(Crypt, ExtConfig):
                 cluster_name=cluster_name,
             )
         except Exception as exc:
-            self.log.error("post service action on node %s failed: %s",
-                           nodename, exc)
+            self.log.error("post service action '%s' on node %s failed: %s",
+                           cmd, nodename, exc)
             return 1
         if data is None or data["status"] != 0:
-            self.log.error("post service action on node %s failed",
-                           nodename)
+            self.log.error("post service action '%s' on node %s failed",
+                           cmd, nodename)
             return 1
         if "data" not in data:
             return 0
