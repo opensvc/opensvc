@@ -23,6 +23,10 @@ Files: usr/share/opensvc/lib/json_delta/*
 Copyright: 2012-2015, Philip J. Roberts
 License: MIT
 
+Files: usr/share/opensvc/lib/six.py
+Copyright: 2010-2018, Benjamin Peterson
+License: MIT
+
 Files: usr/share/opensvc/lib/json_path/*
 Copyright: 2013, Kenneth Knowles
            2017, Tomas Aparicio
