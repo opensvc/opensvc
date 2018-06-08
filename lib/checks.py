@@ -44,6 +44,7 @@ class checks(check):
         self.register('Advfs', 'Usage')
         self.register('Numa')
         self.register('Sync')
+        self.register('Jstat')
         self.register_local_checkers()
 
     def __iadd__(self, c):
