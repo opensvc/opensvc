@@ -744,6 +744,8 @@ class Monitor(shared.OsvcThread, Crypt):
         if not self.compat:
             return
         if svc.topology == "failover" and smon.local_expect == "started":
+            if status == "up" and self.get_service_instance(svc.svcname, rcEnv.nodename).avail != "up":
+                self.set_smon(svc.svcname, local_expect="unset")
             return
         if self.service_frozen(svc.svcname) or self.freezer.node_frozen():
             #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
