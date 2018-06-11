@@ -25,6 +25,7 @@ from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode, purge_cache, fsum
 from svcBuilder import build, fix_exe_link
 from freezer import Freezer
+from jsonpath_ng import jsonpath, parse
 
 STARTED_STATES = [
     "n/a",
@@ -744,9 +745,28 @@ class Monitor(shared.OsvcThread, Crypt):
         if not self.compat:
             return
         if svc.topology == "failover" and smon.local_expect == "started":
+            # decide if the service local_expect=started should be reset
             if status == "up" and self.get_service_instance(svc.svcname, rcEnv.nodename).avail != "up":
+                self.log.info("service '%s' is globally up but the local instance is "
+                              "not and is in 'started' local expect. reset",
+                              svc.svcname)
                 self.set_smon(svc.svcname, local_expect="unset")
-            return
+            elif self.service_started_instances_count(svc.svcname) > 1 and \
+                 self.get_service_instance(svc.svcname, rcEnv.nodename).avail != "up" and \
+                 not self.placement_leader(svc):
+                self.log.info("service '%s' has multiple instance in 'started' "
+                              "local expect and we are not leader. reset",
+                              svc.svcname)
+                self.set_smon(svc.svcname, local_expect="unset")
+            elif status != "up" and \
+                 self.get_service_instance(svc.svcname, rcEnv.nodename).avail != "up" and \
+                 not self.service_restartable(svc):
+                self.log.info("service '%s' is not up and not restartable, but "
+                              "is in 'started' local expect. reset",
+                              svc.svcname)
+                self.set_smon(svc.svcname, local_expect="unset")
+            else:
+                return
         if self.service_frozen(svc.svcname) or self.freezer.node_frozen():
             #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
             return
@@ -1375,6 +1395,32 @@ class Monitor(shared.OsvcThread, Crypt):
             else:
                 count += 1
         return count
+
+    def service_restartable(self, svc):
+        """
+        Return True if a service has at least one restartable resource that
+        has not exhausted its restart tries. Return False otherwise.
+        """
+        for res in svc.get_resources():
+            if res.disabled:
+                continue
+            if not res.nb_restart:
+                continue
+            if self.get_smon_retries(svc.svcname, res.rid) < res.nb_restart:
+                return True
+        return False
+
+    def service_started_instances_count(self, svcname):
+        """
+        Count the number of service instances in 'started' local expect state.
+        """
+        jsonpath_expr = parse("*.services.status.'%s'.monitor.local_expect" % svcname)
+        try:
+            count = len([True for match in jsonpath_expr.find(shared.CLUSTER_DATA) if match.value == "started"])
+            return count
+        except Exception as exc:
+            self.log.warning(exc)
+            return 0
 
     def up_service_instances(self, svcname):
         nodenames = []
