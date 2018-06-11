@@ -599,21 +599,22 @@ class Monitor(shared.OsvcThread, Crypt):
             if nb_restart == 0:
                 if resource.get("standby"):
                     nb_restart = self.default_stdby_nb_restart
-                else:
+                elif not resource.get("monitor"):
                     return False
             retries = self.get_smon_retries(svc.svcname, rid)
             if retries > nb_restart:
                 return False
             if retries >= nb_restart:
-                self.log.info("max retries (%d) reached for resource %s.%s",
-                              nb_restart, svc.svcname, rid)
-                svc.log.info("max retries (%d) reached for resource %s",
-                              nb_restart, rid)
+                if nb_restart > 0:
+                    self.log.info("max retries (%d) reached for resource %s.%s",
+                                  nb_restart, svc.svcname, rid)
+                    svc.log.info("max retries (%d) reached for resource %s",
+                                  nb_restart, rid)
                 self.inc_smon_retries(svc.svcname, rid)
                 if resource.get("monitor"):
                     candidates = self.placement_candidates(svc)
                     if candidates != [rcEnv.nodename] and len(candidates) > 0:
-                        self.log.info("toc for service %s rid %s"
+                        self.log.info("toc for service %s rid %s",
                                       svc.svcname, rid)
                         svc.log.info("toc for rid %s", rid)
                         self.service_toc(svc.svcname)
@@ -774,8 +775,9 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.set_smon(svc.svcname, local_expect="unset")
             elif status != "up" and \
                  self.get_service_instance(svc.svcname, rcEnv.nodename).avail != "up" and \
-                 not self.service_restartable(svc):
-                self.log.info("service '%s' is not up and not restartable, but "
+                 not self.resources_orchestrator_will_handle(svc):
+                self.log.info("service '%s' is not up and no resource monitor "
+                              "action will be attempted, but "
                               "is in 'started' local expect. reset",
                               svc.svcname)
                 self.set_smon(svc.svcname, local_expect="unset")
@@ -1410,17 +1412,23 @@ class Monitor(shared.OsvcThread, Crypt):
                 count += 1
         return count
 
-    def service_restartable(self, svc):
+    def resources_orchestrator_will_handle(self, svc):
         """
-        Return True if a service has at least one restartable resource that
-        has not exhausted its restart tries. Return False otherwise.
+        Return True if the resource orchestrator will try something to restore
+        service to its optimal state.
         """
         for res in svc.get_resources():
             if res.disabled:
                 continue
-            if not res.nb_restart:
+            try:
+                status = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]["resources"][res.rid]["status"]
+            except KeyError:
                 continue
-            if self.get_smon_retries(svc.svcname, res.rid) < res.nb_restart:
+            if status in ("up", "stdby up", "n/a", "undef"):
+                continue
+            if res.nb_restart and self.get_smon_retries(svc.svcname, res.rid) < res.nb_restart:
+                return True
+            if res.monitor:
                 return True
         return False
 
