@@ -19,11 +19,12 @@ class Disk(resDisk.Disk):
         self.label = "vg "+str(name)
 
     def has_it(self):
-        """Returns True if the vg is present
+        """
+        Return True if the vg is present
         """
         if not which("vxdg"):
             raise ex.excError("vxdg command not found")
-        ret = qcall( [ 'vxdg', 'list', self.name ] )
+        ret = qcall(["vxdg", "list", self.name])
         if ret == 0 :
             return True
         else:
@@ -37,7 +38,7 @@ class Disk(resDisk.Disk):
             return False
         if not self.has_it():
             return False
-        cmd = [ 'vxprint', '-ng', self.name ]
+        cmd = ["vxprint", "-ng", self.name]
         ret = qcall(cmd)
         if ret == 0 :
                 return True

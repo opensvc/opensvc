@@ -2764,7 +2764,7 @@ class KeywordDiskMdLayout(Keyword):
                   section="disk",
                   at=True,
                   keyword="layout",
-                  rtype="md",
+                  rtype=["md"],
                   provisioning=True,
                   text="The md raid layout to use with mdadm create command (see mdadm man for values)"
                 )
@@ -3031,7 +3031,7 @@ class KeywordDiskPvs(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  rtype=["lvm", "vg"],
+                  rtype=["lvm", "vg", "veritas"],
                   keyword="pvs",
                   required=True,
                   text="The list of paths to the physical volumes of the volume group.",
