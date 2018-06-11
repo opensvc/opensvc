@@ -2292,7 +2292,7 @@ class Svc(Crypt, ExtConfig):
         if not self.has_encap_resources:
             self.log.debug("skip encap %s: no encap resource", ' '.join(cmd))
             return '', '', 0
-        if not container.is_up():
+        if container.status(ignore_nostatus=True) not in (rcStatus.STDBY_UP, rcStatus.UP):
             msg = "skip encap %s: the container is not running here" % ' '.join(cmd)
             if verbose:
                 self.log.info(msg)
