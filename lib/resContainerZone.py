@@ -250,12 +250,9 @@ class Zone(resContainer.Container):
             self.log.info("zone container %s already running" % self.name)
             return 0
         self.zoneadm('boot')
-        if self.state == "running":
-            return(0)
-        else:
-            raise(ex.excError("zone should be running"))
-        self.log.info("wait for zone operational")
-        self.wait_for_fn(self.operational, self.startup_timeout, 2)
+        if self.state != "running":
+            raise ex.excError("zone should be running")
+        self.wait_multi_user()
 
     def halt(self):
         """ Need wait poststat after returning to installed state on ipkg
