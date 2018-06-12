@@ -3182,7 +3182,7 @@ class KeywordFsSize(Keyword):
                   section="fs",
                   rtype=rcEnv.fs_non_pooling,
                   keyword="size",
-                  required=True,
+                  required=False,
                   convert="size",
                   at=True,
                   text="The size of the logical volume to provision for this filesystem. A size expression or <n>%{FREE|PVS|VG}.",
