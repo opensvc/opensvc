@@ -14,7 +14,7 @@ class Disk(resDisk.Disk):
         resDisk.Disk.__init__(self,
                               rid=rid,
                               name=name,
-                              type='disk.veritas',
+                              type='disk.vxdg',
                               **kwargs)
         self.label = "vg "+str(name)
 
