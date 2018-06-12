@@ -23,7 +23,7 @@ class Disk(resDisk.Disk):
         self.fullname = "%s/%s" % (vg, name)
         self.label = "vxvol %s" % self.fullname
         self.vg = vg
-        self.devpath  = "/dev/vx/rdsk/%s/%s" % (self.vg, self.name)
+        self.devpath  = "/dev/vx/dsk/%s/%s" % (self.vg, self.name)
 
     def _info(self):
         data = [
