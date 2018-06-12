@@ -51,6 +51,11 @@ class Prov(provisioning.Prov):
         except ex.OptNotFound:
             create_options = []
 
+        # strip dev dir in case the alloc vxassist parameter was formatted using sub_devs
+        # lazy references
+        for idx, option in enumerate(create_options):
+            create_options[idx] = option.replace("/dev/vx/dsk/", "")
+
         # create the logical volume
         cmd = ['vxassist', '-g', self.r.vg, "make", self.r.name] + size_parm + create_options
         ret, out, err = self.r.vcall(cmd)
