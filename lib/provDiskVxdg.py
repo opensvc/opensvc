@@ -28,10 +28,8 @@ class Prov(provisioning.Prov):
         return False
 
     def unprovisioner(self):
-        if not self.has_it():
-            return
-        if self.r.has_it():
-            self.destroy_vg()
+        #if self.r.has_it():
+        #    self.destroy_vg()
         self.unsetup()
 
     def unsetup(self):
@@ -61,6 +59,9 @@ class Prov(provisioning.Prov):
             if line.startswith("group:"):
                 if "name=%s "%self.r.name in line:
                     self.r.log.info("pv %s is already a member of vg %s", pv, self.r.name)
+                    return True
+                elif "name= " in line:
+                    # pv already initialized but not in a dg
                     return True
                 else:
                     vg = line.split("name=", 1)[0].split()[0]
