@@ -569,6 +569,7 @@ class ExtConfig(object):
                 if _v != dref:
                     continue
                 try:
+                    self.init_resources()
                     res = self.resources_by_id[_section]
                     devs = getattr(res, dref)()
                     return list(devs)
