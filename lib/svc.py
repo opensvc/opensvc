@@ -302,6 +302,7 @@ STATUS_TYPES = [
     "disk.scsireserv",
     "disk.vg",
     "disk.vxdg",
+    "disk.vxvol",
     "disk.zpool",
     "fs",
     "fs.dir",

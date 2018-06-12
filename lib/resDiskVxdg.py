@@ -16,7 +16,7 @@ class Disk(resDisk.Disk):
                               name=name,
                               type='disk.vxdg',
                               **kwargs)
-        self.label = "vg "+str(name)
+        self.label = "vxdg "+str(name)
 
     def has_it(self):
         """

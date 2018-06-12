@@ -621,6 +621,9 @@ def add_disk_compat(svc, s):
     if disk_type in ('Veritas', 'Vxdg'):
         add_vxdg(svc, s)
         return
+    if disk_type == 'Vxvol':
+        add_vxvol(svc, s)
+        return
 
     raise ex.OptNotFound
 
@@ -632,6 +635,20 @@ def add_vxdg(svc, s):
         m = __import__('resDiskVxdg')
     except ImportError:
         svc.log.error("disk type vxdg is not implemented")
+        return
+
+    r = m.Disk(**kwargs)
+    svc += r
+
+def add_vxvol(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs['name'] = svc.conf_get(s, 'name')
+    kwargs['vg'] = svc.conf_get(s, 'vg')
+
+    try:
+        m = __import__('resDiskVxvol')
+    except ImportError:
+        svc.log.error("disk type vxvol is not implemented")
         return
 
     r = m.Disk(**kwargs)
@@ -732,6 +749,9 @@ def add_disk(svc, s):
         return
     if disk_type in ('Veritas', 'Vxdg'):
         add_vxdg(svc, s)
+        return
+    if disk_type == 'Vxvol':
+        add_vxvol(svc, s)
         return
     if disk_type == 'Lvm' or disk_type == 'Vg' or disk_type == rcEnv.sysname:
         add_vg(svc, s)

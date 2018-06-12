@@ -2405,7 +2405,7 @@ class KeywordDiskType(Keyword):
                   at=True,
                   order=9,
                   default="vg",
-                  candidates=["disk", "veritas", "vxdg", "raw", "rados", "md", "drbd", "loop", "zpool", "pool", "raw", "vmdg", "vdisk", "lvm", "vg", "lv", "amazon", "gce"],
+                  candidates=["disk", "veritas", "vxdg", "vxvol", "raw", "rados", "md", "drbd", "loop", "zpool", "pool", "raw", "vmdg", "vdisk", "lvm", "vg", "lv", "amazon", "gce"],
                   text="The volume group driver to use. Leave empty to activate the native volume group manager."
                 )
 
@@ -2470,7 +2470,7 @@ class KeywordDiskLvVg(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  rtype="lv",
+                  rtype=["lv", "vxvol"],
                   keyword="vg",
                   order=11,
                   at=True,
@@ -2498,13 +2498,13 @@ class KeywordDiskLvCreateOptions(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  rtype="lv",
+                  rtype=["lv", "vxvol"],
                   keyword="create_options",
                   convert="shlex",
                   order=13,
                   at=True,
                   provisioning=True,
-                  text="Additional options to pass to the logical volume create command. Size and name are alread set.",
+                  text="Additional options to pass to the logical volume create command (lvcreate or vxassist, depending on the driver). Size and name are alread set.",
                   example="--contiguous y"
                 )
 
@@ -2696,7 +2696,7 @@ class KeywordDiskVgName(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  rtype=["lvm", "vg", "veritas", "vxdg"],
+                  rtype=["lvm", "vg", "veritas", "vxdg", "vxvol"],
                   keyword="name",
                   order=10,
                   at=True,
@@ -2868,11 +2868,11 @@ class KeywordDiskSize(Keyword):
         Keyword.__init__(
                   self,
                   section="disk",
-                  rtype="rados",
+                  rtype=["rados", "vxvol"],
                   keyword="size",
                   convert="size",
                   provisioning=True,
-                  text="The rados image size in MB"
+                  text="The block device size in size expression format."
                 )
 
 class KeywordDiskImages(Keyword):
