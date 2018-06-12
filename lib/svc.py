@@ -301,7 +301,7 @@ STATUS_TYPES = [
     "disk.rados",
     "disk.scsireserv",
     "disk.vg",
-    "disk.veritas",
+    "disk.vxdg",
     "disk.zpool",
     "fs",
     "fs.dir",

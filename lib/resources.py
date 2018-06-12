@@ -1033,10 +1033,17 @@ class Resource(object):
         """
         Find the provisioning module, import it and instanciate a Prov object.
         """
+        driver_translations = {
+            "disk.veritas": "disk.vxdg",
+        }
+        if self.type in driver_translations:
+            translated_type = driver_translations[self.type]
+        else:
+            translated_type = self.type
         try:
-            driver_group, driver = self.type.split(".", 1)
+            driver_group, driver = translated_type.split(".", 1)
         except ValueError:
-            driver_group = self.type
+            driver_group = translated_type
             driver = ""
         try:
             mod = mimport("prov", driver_group, driver, fallback=True)

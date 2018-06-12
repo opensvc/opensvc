@@ -618,20 +618,20 @@ def add_disk_compat(svc, s):
     if disk_type == 'Gandi':
         add_gandi(svc, s)
         return
-    if disk_type == 'Veritas':
-        add_veritas(svc, s)
+    if disk_type in ('Veritas', 'Vxdg'):
+        add_vxdg(svc, s)
         return
 
     raise ex.OptNotFound
 
-def add_veritas(svc, s):
+def add_vxdg(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs['name'] = svc.conf_get(s, 'name')
 
     try:
-        m = __import__('resDiskVgVeritas')
+        m = __import__('resDiskVxdg')
     except ImportError:
-        svc.log.error("disk type veritas is not implemented")
+        svc.log.error("disk type vxdg is not implemented")
         return
 
     r = m.Disk(**kwargs)
@@ -730,8 +730,8 @@ def add_disk(svc, s):
     if disk_type == 'Gandi':
         add_gandi(svc, s)
         return
-    if disk_type == 'Veritas':
-        add_veritas(svc, s)
+    if disk_type in ('Veritas', 'Vxdg'):
+        add_vxdg(svc, s)
         return
     if disk_type == 'Lvm' or disk_type == 'Vg' or disk_type == rcEnv.sysname:
         add_vg(svc, s)
