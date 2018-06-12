@@ -1,6 +1,7 @@
 import resDisk
 import re
 from collections import namedtuple
+from rcGlobalEnv import rcEnv
 
 import rcExceptions as ex
 from rcUtilities import qcall, which, justcall
@@ -114,21 +115,21 @@ class Disk(resDisk.Disk):
         """
         parse "vxdisk -g <vgname> -q path"
         """
-        if len(self.sub_devs_cache) > 0 :
+        if hasattr(self, "sub_devs_cache") and len(self.sub_devs_cache) > 0:
             return self.sub_devs_cache
 
         if not which("vxdisk"):
             return set()
         devs = set()
-        cmd = [ 'vxdisk', '-g', self.name, '-q', 'list' ]
-        (ret, out, err) = self.call(cmd, errlog=False)
+        cmd = ['vxdisk', '-g', self.name, '-q', 'list']
+        out, err, ret = justcall(cmd)
         if ret != 0 :
             self.sub_devs_cache = devs
             return devs
-        for line in out.split('\n'):
-            dev = line.split(" ")[0]
-            if dev != '' :
-                if re.match('^.*s[0-9]$', dev) is None:
+        for line in out.splitlines():
+            dev = line.split(" ", 1)[0]
+            if dev != '':
+                if rcEnv.sysname == "SunOS" and re.match('^.*s[0-9]$', dev) is None:
                     dev += "s2"
                 devs.add("/dev/vx/dsk/" + dev)
 
