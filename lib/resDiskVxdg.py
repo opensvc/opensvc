@@ -60,12 +60,16 @@ class Disk(resDisk.Disk):
         cmd = ["vxprint", "-ng", self.name]
         ret = qcall(cmd)
         if ret == 0 :
-                return True
+            return True
         else:
-                return False
+            return False
 
     def defects(self):
-        data = self.vxprint()
+        try:
+            data = self.vxprint()
+        except ex.excError:
+            # dg does not exist
+            return []
         errs = ["%s:%s:%s" % (key[0], key[1], val.STATE) for key, val in data.items() if val.STATE not in ("-", "ACTIVE")]
         errs += ["%s:%s:%s" % (key[0], key[1], val.KSTATE) for key, val in data.items() if val.KSTATE not in ("-", "ENABLED")]
         return sorted(errs)
