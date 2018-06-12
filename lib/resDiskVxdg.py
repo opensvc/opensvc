@@ -1,8 +1,9 @@
 import resDisk
 import re
+from collections import namedtuple
 
 import rcExceptions as ex
-from rcUtilities import qcall, which
+from rcUtilities import qcall, which, justcall
 
 class Disk(resDisk.Disk):
     """ basic Veritas Volume group resource
@@ -17,6 +18,23 @@ class Disk(resDisk.Disk):
                               type='disk.vxdg',
                               **kwargs)
         self.label = "vxdg "+str(name)
+
+    def vxprint(self):
+        cmd = ["vxprint", "-g", self.name]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        data = {}
+        for line in out.splitlines():
+            words = line.split()
+            if len(words) < 7:
+                continue
+            if words[0] == "TY":
+                headers = list(words)
+                continue
+            line = namedtuple("line", headers)._make(words)
+            data[(line.TY, line.NAME)] = line
+        return data
 
     def has_it(self):
         """
@@ -44,6 +62,17 @@ class Disk(resDisk.Disk):
                 return True
         else:
                 return False
+
+    def defects(self):
+        data = self.vxprint()
+        errs = ["%s:%s:%s" % (key[0], key[1], val.STATE) for key, val in data.items() if val.STATE not in ("-", "ACTIVE")]
+        errs += ["%s:%s:%s" % (key[0], key[1], val.KSTATE) for key, val in data.items() if val.KSTATE not in ("-", "ENABLED")]
+        return sorted(errs)
+
+    def _status(self, **kwargs):
+        for defect in self.defects():
+             self.status_log(defect, "warn")
+        return resDisk.Disk._status(self, **kwargs)
 
     def do_startvol(self):
         cmd = [ 'vxvol', '-g', self.name, '-f', 'startall' ]
@@ -101,7 +130,7 @@ class Disk(resDisk.Disk):
             if dev != '' :
                 if re.match('^.*s[0-9]$', dev) is None:
                     dev += "s2"
-                devs.add("/dev/rdsk/" + dev)
+                devs.add("/dev/vx/dsk/" + dev)
 
         self.log.debug("found devs %s held by vg %s" % (devs, self.name))
         self.sub_devs_cache = devs
