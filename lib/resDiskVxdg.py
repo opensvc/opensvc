@@ -79,9 +79,17 @@ class Disk(resDisk.Disk):
              self.status_log(defect, "warn")
         return resDisk.Disk._status(self, **kwargs)
 
+    def has_vxvol_resources(self):
+        for res in self.svc.get_resources("disk.vxvol"):
+            if res.vg == self.name:
+                return True
+        return False
+
     def do_startvol(self):
-        cmd = [ 'vxvol', '-g', self.name, '-f', 'startall' ]
-        (ret, out, err) = self.vcall(cmd)
+        if self.has_vxvol_resources():
+            return 0
+        cmd = ['vxvol', '-g', self.name, '-f', 'startall']
+        ret, out, err = self.vcall(cmd)
         return ret
 
     def do_stopvol(self):
