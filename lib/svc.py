@@ -1699,7 +1699,7 @@ class Svc(Crypt, ExtConfig):
                     _data["info"] = info
                 if len(tags) > 0:
                     _data["tags"] = tags
-                if _data["provisioned"]["state"] is False:
+                if _data["provisioned"]["state"] is False and not resource.is_disabled():
                     data["provisioned"] = False
                 if resource.subset:
                     _data["subset"] = resource.subset
