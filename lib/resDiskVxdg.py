@@ -115,27 +115,39 @@ class Disk(resDisk.Disk):
         (ret, out, err) = self.vcall(cmd)
         return ret
 
+    def vxdisk_list(self):
+        if not which("vxdisk"):
+            return {}
+        cmd = ["vxdisk", "list"]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        data = {}
+        for line in out.splitlines():
+            words = line.split(None, 4)
+            if len(words) < 5:
+                continue
+            if words[0] == "DEVICE":
+                headers = list(words)
+                continue
+            dev = namedtuple("dev", headers)._make(words)
+            if dev.GROUP != self.name and dev.GROUP != "(%s)"%self.name:
+                continue
+            data[dev.DEVICE] = dev
+        return data
+
     def sub_devs(self):
         """
-        parse "vxdisk -g <vgname> -q path"
+        Return the set of devices used by the dg.
         """
         if hasattr(self, "sub_devs_cache") and len(self.sub_devs_cache) > 0:
             return self.sub_devs_cache
 
-        if not which("vxdisk"):
-            return set()
-        devs = set()
-        cmd = ['vxdisk', '-g', self.name, '-q', 'list']
-        out, err, ret = justcall(cmd)
-        if ret != 0 :
-            self.sub_devs_cache = devs
-            return devs
-        for line in out.splitlines():
-            dev = line.split(" ", 1)[0]
-            if dev != '':
-                if rcEnv.sysname == "SunOS" and re.match('^.*s[0-9]$', dev) is None:
-                    dev += "s2"
-                devs.add("/dev/vx/dsk/" + dev)
+        devs = ["/dev/vx/dsk/"+dev for dev in self.vxdisk_list()]
+        if rcEnv.sysname == "SunOS":
+            for idx, dev in enumerate(devs):
+                if re.match('^.*s[0-9]$', dev) is None:
+                    devs[idx] += "s2"
 
         self.log.debug("found devs %s held by vg %s" % (devs, self.name))
         self.sub_devs_cache = devs
