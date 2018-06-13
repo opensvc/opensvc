@@ -1276,12 +1276,12 @@ class Svc(Crypt, ExtConfig):
     def init_resources(self):
         if self.resources_initialized:
             return
+        self.resources_initialized = True
         if self.scale_target is not None:
             # scalers can't have resources
             return
         from svcBuilder import add_resources
         add_resources(self)
-        self.resources_initialized = True
         self.log.debug("resources initialized")
 
     def get_resource(self, rid, with_encap=False):
