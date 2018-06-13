@@ -169,7 +169,7 @@ def add_resource(svc, restype, s):
     else:
         match = restype+"#"
 
-    if restype in ("disk", "vg", "zpool") and re.match(match+'.+pr', s, re.I) is not None:
+    if restype in ("disk", "vg", "zpool") and re.match(match+'.+pr$', s, re.I) is not None:
         # persistent reserv resource are declared by their peer resource:
         # don't add them from here
         return
