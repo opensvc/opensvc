@@ -576,8 +576,8 @@ class Monitor(shared.OsvcThread, Crypt):
                 #              svcname)
                 continue
             svc = self.get_service(svcname)
-            self.service_orchestrator(svcname, svc)
             self.resources_orchestrator(svcname, svc)
+            self.service_orchestrator(svcname, svc)
         self.sync_services_conf()
 
     def resources_orchestrator(self, svcname, svc):
@@ -599,8 +599,6 @@ class Monitor(shared.OsvcThread, Crypt):
             if nb_restart == 0:
                 if resource.get("standby"):
                     nb_restart = self.default_stdby_nb_restart
-                elif not resource.get("monitor"):
-                    return False
             retries = self.get_smon_retries(svc.svcname, rid)
             if retries > nb_restart:
                 return False
@@ -622,9 +620,14 @@ class Monitor(shared.OsvcThread, Crypt):
                         self.log.info("would toc for service %s rid %s, but "
                                       "no node is candidate for takeover.",
                                       svc.svcname, rid)
-                        svc.log.info("would toc for rid %s, but "
+                        svc.log.info("would toc for rid %s %s, but "
                                      "no node is candidate for takeover.",
-                                     rid)
+                                     rid, resource["status"])
+                else:
+                    self.log.info("service %s unmonitored rid %s went %s",
+                                  svcname, rid, resource["status"])
+                    svc.log.info("unmonitored rid %s went %s",
+                                 rid, resource["status"])
                 return False
             self.inc_smon_retries(svc.svcname, rid)
             self.log.info("restart resource %s.%s, try %d/%d", svc.svcname, rid,
