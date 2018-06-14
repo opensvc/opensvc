@@ -777,7 +777,7 @@ class Monitor(shared.OsvcThread, Crypt):
                               svc.svcname)
                 self.set_smon(svc.svcname, local_expect="unset")
             elif status != "up" and \
-                 self.get_service_instance(svc.svcname, rcEnv.nodename).avail != "up" and \
+                 self.get_service_instance(svc.svcname, rcEnv.nodename).avail in ("down", "stdby down", "undef", "n/a") and \
                  not self.resources_orchestrator_will_handle(svc):
                 self.log.info("service '%s' is not up and no resource monitor "
                               "action will be attempted, but "
