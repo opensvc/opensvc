@@ -604,36 +604,41 @@ class Monitor(shared.OsvcThread, Crypt):
                 return False
             if retries >= nb_restart:
                 if nb_restart > 0:
-                    self.log.info("max retries (%d) reached for resource %s.%s",
-                                  nb_restart, svc.svcname, rid)
-                    svc.log.info("max retries (%d) reached for resource %s",
-                                  nb_restart, rid)
+                    self.log.info("service %s max retries (%d) reached for "
+                                  "resource %s (%s)", svc.svcname, nb_restart,
+                                  rid, resource["label"])
+                    svc.log.info("max retries (%d) reached for resource %s "
+                                 "(%s)", nb_restart, rid, resource["label"])
                 self.inc_smon_retries(svc.svcname, rid)
                 if resource.get("monitor"):
                     candidates = self.placement_candidates(svc)
                     if candidates != [rcEnv.nodename] and len(candidates) > 0:
-                        self.log.info("toc for service %s rid %s",
-                                      svc.svcname, rid)
-                        svc.log.info("toc for rid %s", rid)
+                        self.log.info("toc for service %s rid %s %s",
+                                      svc.svcname, rid, resource["label"])
+                        svc.log.info("toc for rid %s (%s)", rid,
+                                      resource["label"])
                         self.service_toc(svc.svcname)
                     else:
-                        self.log.info("would toc for service %s rid %s, but "
+                        self.log.info("would toc for service %s rid %s (%s) %s, but "
                                       "no node is candidate for takeover.",
-                                      svc.svcname, rid)
-                        svc.log.info("would toc for rid %s %s, but "
+                                      svc.svcname, rid, resource["label"],
+                                      resource["status"])
+                        svc.log.info("would toc for rid %s (%s) %s, but "
                                      "no node is candidate for takeover.",
-                                     rid, resource["status"])
+                                     rid, resource["label"], resource["status"])
                 else:
-                    self.log.info("service %s unmonitored rid %s went %s",
-                                  svcname, rid, resource["status"])
-                    svc.log.info("unmonitored rid %s went %s",
-                                 rid, resource["status"])
+                    self.log.info("service %s unmonitored rid %s (%s) went %s",
+                                  svc.svcname, rid, resource["label"],
+                                  resource["status"])
+                    svc.log.info("unmonitored rid %s (%s) went %s",
+                                 rid, resource["label"], resource["status"])
                 return False
             self.inc_smon_retries(svc.svcname, rid)
-            self.log.info("restart resource %s.%s, try %d/%d", svc.svcname, rid,
+            self.log.info("service %s restart resource %s (%s), try %d/%d",
+                          svc.svcname, rid, resource["label"],
                           retries+1, nb_restart)
-            svc.log.info("restart resource %s, try %d/%d", rid,
-                         retries+1, nb_restart)
+            svc.log.info("restart resource %s (%s), try %d/%d", rid,
+                         resource["label"], retries+1, nb_restart)
             return True
 
         def stdby_resource(svc, rid, resource):
@@ -647,16 +652,18 @@ class Monitor(shared.OsvcThread, Crypt):
                 return False
             if retries >= nb_restart:
                 self.inc_smon_retries(svc.svcname, rid)
-                self.log.info("max retries (%d) reached for standby resource "
-                              "%s.%s", nb_restart, svc.svcname, rid)
+                self.log.info("service %s max retries (%d) reached for standby "
+                              "resource %s (%s)", svc.svcname, nb_restart, rid,
+                              resource["label"])
                 svc.log.info("max retries (%d) reached for standby resource "
-                             "%s", nb_restart, rid)
+                             "%s (%s)", nb_restart, rid, resource["label"])
                 return False
             self.inc_smon_retries(svc.svcname, rid)
-            self.log.info("start standby resource %s.%s, try %d/%d", svc.svcname, rid,
+            self.log.info("service %s start standby resource %s (%s), try "
+                          "%d/%d", svc.svcname, rid, resource["label"],
                           retries+1, nb_restart)
-            svc.log.info("start standby resource %s, try %d/%d", rid,
-                          retries+1, nb_restart)
+            svc.log.info("start standby resource %s (%s), try %d/%d", rid,
+                         resource["label"], retries+1, nb_restart)
             return True
 
         smon = self.get_service_monitor(svc.svcname)
