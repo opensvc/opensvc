@@ -66,8 +66,15 @@ class Kvm(resContainer.Container):
             raise ex.excError
 
     def container_stop(self):
-        cmd = ['virsh', 'shutdown', self.name]
-        (ret, buff, err) = self.vcall(cmd)
+        state = self.dom_state()
+        if state == "running":
+            cmd = ['virsh', 'shutdown', self.name]
+        elif state in ("blocked", "paused", "crashed"):
+            self.container_forcestop()
+        else:
+            self.log.info("skip stop, container state=%s", state)
+            return
+        ret, buff, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -80,14 +87,26 @@ class Kvm(resContainer.Container):
     def is_up_on(self, nodename):
         return self.is_up(nodename)
 
-    def is_up(self, nodename=None):
+    def dom_state(self, nodename=None):
         cmd = ['virsh', 'dominfo', self.name]
         if nodename is not None:
             cmd = rcEnv.rsh.split() + [nodename] + cmd
         (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0:
-            return False
-        if "running" in out.split():
+            return
+        for line in out.splitlines():
+            if line.startswith("State:"):
+                return line.split(":", 1)[-1].strip()
+
+    def is_up(self, nodename=None):
+        state = self.dom_state(nodename=nodename)
+        if state == "running":
+            return True
+        return False
+
+    def is_down(self, nodename=None):
+        state = self.dom_state(nodename=nodename)
+        if state in (None, "shut off", "no state"):
             return True
         return False
 
