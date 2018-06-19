@@ -203,6 +203,8 @@ class syncHp3par(resSync.Sync):
             self._cmd("stoprcopygroup -f %s" % self.rcg, log=True)
         else:
             target = data['rcg']['Target']
+            if target not in self.rcg_names:
+                raise ex.excError("target %s not found in rcg names (%s)" % (target, ", ".join([name for name in self.rcg_names])))
             self._cmd("stoprcopygroup -f %s" % self.rcg_names[target], target=target, log=True)
         self.clear_caches()
 
