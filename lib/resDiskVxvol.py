@@ -83,6 +83,9 @@ class Disk(resDisk.Disk):
 
     def remove_dev_holders(self, devpath, tree):
         dev = tree.get_dev_by_devpath(devpath)
+        if dev is None:
+            self.log.error("the device %s is not in the devtree", devpath)
+            return
         holders_devpaths = set()
         holder_devs = dev.get_children_bottom_up()
         for holder_dev in holder_devs:
