@@ -74,7 +74,10 @@ class Keyword(object):
         if self.rtype is None:
             return self.section+"."+self.keyword in self.top.deprecated_keywords
         for rtype in self.rtype:
-            if self.section+"."+rtype+"."+self.keyword in self.top.deprecated_keywords:
+            if rtype is None:
+                if self.section+"."+self.keyword in self.top.deprecated_keywords:
+                    return True
+            elif self.section+"."+rtype+"."+self.keyword in self.top.deprecated_keywords:
                 return True
         return False
 
@@ -214,11 +217,10 @@ class Section(object):
             return ""
 
     def _template_text(self, rtype, section):
-        dpath = rcEnv.paths.pathdoc
-        fpath = os.path.join(dpath, self.top.template_prefix+section+".conf")
+        fpath = os.path.join(rcEnv.paths.pathdoc, self.top.template_prefix+section+".conf")
         if rtype:
             section += ", type "+rtype
-            fpath = os.path.join(dpath, self.top.template_prefix+self.section+"."+rtype+".conf")
+            fpath = os.path.join(rcEnv.paths.pathdoc, self.top.template_prefix+self.section+"."+rtype+".conf")
         s = "#"*78 + "\n"
         s += "# %-74s #\n" % " "
         s += "# %-74s #\n" % section
