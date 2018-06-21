@@ -643,11 +643,10 @@ zlib                                                               ALL  @@R:zlib
         return out.splitlines()
 
     def deb_get_installed_packages(self):
-        p = Popen(['dpkg', '-l'], stdout=PIPE)
-        (out, err) = p.communicate()
+        p = Popen(['dpkg', '-l'], stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
         if p.returncode != 0:
-            perror('can not fetch installed packages list')
-            return []
+            raise Exception('can not fetch installed packages list: %s' % err)
         l = []
         out = bdecode(out)
         for line in out.splitlines():
