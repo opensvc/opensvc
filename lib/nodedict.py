@@ -1383,4 +1383,4 @@ if __name__ == "__main__":
     else:
         fmt = "text"
 
-    KEYS.print_templates(fmt=fmt)
+    KEYS.write_templates(fmt=fmt)

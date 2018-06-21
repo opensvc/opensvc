@@ -190,7 +190,7 @@ class Section(object):
         self.keywords.append(o)
         return self
 
-    def template(self, fmt="text"):
+    def template(self, fmt="text", write=False):
         k = self.getkey("type")
         if k is None:
             return self._template(fmt=fmt)
@@ -198,25 +198,25 @@ class Section(object):
             return self._template(fmt=fmt)
         s = ""
         if not k.strict_candidates:
-            s += self._template(fmt=fmt)
+            s += self._template(fmt=fmt, write=write)
         for t in k.candidates:
-            s += self._template(t, fmt=fmt)
+            s += self._template(t, fmt=fmt, write=write)
         return s
 
-    def _template(self, rtype=None, fmt="text"):
+    def _template(self, rtype=None, fmt="text", write=False):
         section = self.section
         if self.section in self.top.deprecated_sections:
             return ""
         if rtype and self.top and self.section+"."+rtype in self.top.deprecated_sections:
             return ""
         if fmt == "text":
-            return self._template_text(rtype, section)
+            return self._template_text(rtype, section, write=write)
         elif fmt == "rst":
-            return self._template_rst(rtype, section)
+            return self._template_rst(rtype, section, write=write)
         else:
             return ""
 
-    def _template_text(self, rtype, section):
+    def _template_text(self, rtype, section, write=False):
         fpath = os.path.join(rcEnv.paths.pathdoc, self.top.template_prefix+section+".conf")
         if rtype:
             section += ", type "+rtype
@@ -241,11 +241,13 @@ class Section(object):
                 if keyword.keyword == "type":
                     continue
                 s += keyword.template(fmt="text")
-        with open(fpath, "w") as f:
-            f.write(s)
+        if write:
+            print("write", fpath)
+            with open(fpath, "w") as f:
+                f.write(s)
         return s
 
-    def _template_rst(self, rtype, section):
+    def _template_rst(self, rtype, section, write=False):
         dpath = os.path.join(rcEnv.paths.pathtmp, "rst")
         if not os.path.exists(dpath):
             os.makedirs(dpath)
@@ -267,8 +269,10 @@ class Section(object):
                 if keyword.keyword == "type":
                     continue
                 s += keyword.template(fmt="rst", section=section)
-        with open(fpath, "w") as f:
-            f.write(s)
+        if write:
+            print("write", fpath)
+            with open(fpath, "w") as f:
+                f.write(s)
         return s
 
     def getkeys(self, rtype=None):
@@ -349,6 +353,13 @@ class KeywordStore(dict):
         """
         for section in sorted(self.sections):
             print(self.sections[section].template(fmt=fmt))
+
+    def write_templates(self, fmt="text"):
+        """
+        Write templates in the spectified format (text by default, or rst).
+        """
+        for section in sorted(self.sections):
+            self.sections[section].template(fmt=fmt, write=True)
 
     def required_keys(self, section, rtype=None):
         """

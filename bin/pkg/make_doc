@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PATH_SCRIPT="$(cd $(/usr/bin/dirname $(whence -- $0 || echo $0));pwd)"
+PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 
 sudo python $PATH_SCRIPT/../../lib/svcdict.py
 sudo python $PATH_SCRIPT/../../lib/nodedict.py
