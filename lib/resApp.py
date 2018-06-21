@@ -16,28 +16,67 @@ import rcStatus
 import rcExceptions as ex
 import lock
 
-def run_as_popen_kwargs(fpath, limits):
+def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
     """
     Setup the Popen keyword args to execute <fpath> with the
     privileges demoted to those of the owner of <fpath>.
     """
     if rcEnv.sysname == "Windows":
         return {}
+    if cwd is None:
+        cwd = rcEnv.paths.pathtmp
+
     import pwd
     try:
         fstat = os.stat(fpath)
     except Exception as exc:
         raise ex.excError(str(exc))
-    cwd = rcEnv.paths.pathtmp
     user_uid = fstat[stat.ST_UID]
     user_gid = fstat[stat.ST_GID]
     try:
-        user_name = pwd.getpwuid(user_uid)[0]
+        pwd_user = pwd.getpwuid(user_uid)
+        user_name = pwd_user.pw_name
     except KeyError:
+        pwd_user = None
         user_name = "unknown"
+
+    if user_name in ("root", "unknown") and user is not None:
+        try:
+            user_uid = int(user)
+        except ValueError:
+            try:
+                pwd_user = pwd.getpwnam(user)
+            except KeyError:
+                raise ex.excError("user %s does not exist" % user)
+            user_uid = pwd_user.pw_uid
+            user_gid = pwd_user.pw_gid
+            user_name = user
+        else:
+            try:
+                pwd_user = pwd.getpwuid(user_uid)
+            except KeyError:
+                raise ex.excError("user %d does not exist" % user_uid)
+            user_name = pwd_user.pw_name
+            user_gid = pwd_user.pw_gid
+
+        if group is not None:
+            import grp
+            try:
+                user_gid = int(group)
+            except ValueError:
+                try:
+                    grp_group = grp.getgrnam(group)
+                except KeyError:
+                    raise ex.excError("group %s does not exist" % group)
+                user_gid = grp_group.gr_gid
+            else:
+                try:
+                    grp_group = grp.getgrgid(user_gid)
+                except KeyError:
+                    raise ex.excError("group %d does not exist" % user_gid)
+
     try:
         pw_record = pwd.getpwnam(user_name)
-        user_name = pw_record.pw_name
         user_home_dir = pw_record.pw_dir
     except KeyError:
         user_home_dir = rcEnv.paths.pathtmp
@@ -104,6 +143,9 @@ class App(Resource):
                  check_timeout=None,
                  info_timeout=None,
                  status_log=False,
+                 user=None,
+                 group=None,
+                 cwd=None,
                  **kwargs):
 
         Resource.__init__(self, rid, **kwargs)
@@ -113,6 +155,9 @@ class App(Resource):
         self.check_seq = check
         self.info_seq = info
         self.timeout = timeout
+        self.user = user
+        self.group = group
+        self.cwd = cwd
         self.status_log_flag = status_log
         self.start_timeout = start_timeout
         self.stop_timeout = stop_timeout
@@ -514,7 +559,7 @@ class App(Resource):
             'stdin': self.svc.node.devnull,
         }
         if isinstance(cmd, list):
-            kwargs.update(run_as_popen_kwargs(cmd[0], self.limits))
+            kwargs.update(run_as_popen_kwargs(cmd[0], self.limits, self.user, self.group, self.cwd))
         else:
             kwargs["shell"] = True
         if "env" in kwargs:

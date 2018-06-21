@@ -2060,6 +2060,21 @@ def add_app(svc, s):
     except ex.OptNotFound as exc:
         kwargs['info_timeout'] = exc.default
 
+    try:
+        kwargs['user'] = svc.conf_get(s, 'user')
+    except ex.OptNotFound as exc:
+        kwargs['user'] = exc.default
+
+    try:
+        kwargs['group'] = svc.conf_get(s, 'group')
+    except ex.OptNotFound as exc:
+        kwargs['group'] = exc.default
+
+    try:
+        kwargs['cwd'] = svc.conf_get(s, 'cwd')
+    except ex.OptNotFound as exc:
+        kwargs['cwd'] = exc.default
+
     mod = mimport("res", "app", rtype)
     r = mod.App(**kwargs)
     svc += r

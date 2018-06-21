@@ -1507,6 +1507,39 @@ class KeywordAppLimitVmem(Keyword):
                   text=""
                 )
 
+class KeywordAppUser(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="user",
+                  at=True,
+                  order=12,
+                  text="If the binary is owned by the root user, run it as the specified user instead of root."
+                )
+
+class KeywordAppGroup(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="group",
+                  at=True,
+                  order=12,
+                  text="If the binary is owned by the root user, run it as the specified group instead of root."
+                )
+
+class KeywordAppCwd(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="app",
+                  keyword="cwd",
+                  at=True,
+                  order=12,
+                  text="Change the working directory to the specified location instead of the default <pathtmp>."
+                )
+
 class KeywordSyncType(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4880,6 +4913,9 @@ class KeyDict(KeywordStore):
         self += KeywordAppStop()
         self += KeywordAppCheck()
         self += KeywordAppInfo()
+        self += KeywordAppUser()
+        self += KeywordAppGroup()
+        self += KeywordAppCwd()
         self += KeywordSyncNexentaName()
         self += KeywordSyncNexentaFiler()
         self += KeywordSyncNexentaPath()
