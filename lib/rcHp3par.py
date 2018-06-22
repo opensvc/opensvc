@@ -195,6 +195,8 @@ class Hp3par(object):
         if which(self.cli) is None:
             raise ex.excError("%s executable not found" % self.cli)
 
+        # HOME is needed to locate the ssl cert validation file
+        os.environ["HOME"] = os.path.expanduser("~root")
         os.environ["TPDPWFILE"] = self.pwf
         os.environ["TPDNOCERTPROMPT"] = "1"
 
