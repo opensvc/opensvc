@@ -194,10 +194,9 @@ class Ip(Res.Ip):
                 return ret, out, err
 
         # announce
-        if which("arping") is not None:
-            cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
-            self.log.info(" ".join(cmd))
-            out, err, ret = justcall(cmd)
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, os.path.join(rcEnv.paths.pathlib, "arp.py"), self.guest_dev, self.addr]
+        self.log.info(" ".join(cmd))
+        out, err, ret = justcall(cmd)
 
         return 0, "", ""
 
@@ -320,10 +319,9 @@ class Ip(Res.Ip):
                 return ret, out, err
 
         # announce
-        if which("arping") is not None:
-            cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "arping" , "-c", "1", "-A", "-I", self.guest_dev, self.addr]
-            self.log.info(" ".join(cmd))
-            out, err, ret = justcall(cmd)
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, os.path.join(rcEnv.paths.pathlib, "arp.py"), self.guest_dev, self.addr]
+        self.log.info(" ".join(cmd))
+        out, err, ret = justcall(cmd)
 
     def ip_wait(self):
         # ip activation may still be incomplete

@@ -182,14 +182,11 @@ class Ip(Res.Resource):
         Announce to neighbors the ip address is plumbed on ipdev through a
         arping broadcast of unsollicited packets.
         """
-        if ':' in self.addr:
+        if ':' in self.addr or self.ipdev in ("lo", "lo0"):
             return
-        if not which("arping"):
-            self.log.warning("arp announce skipped. install 'arping'")
-            return
-        cmd = ["arping", "-U", "-c", "1", "-I", self.ipdev, "-s", self.addr, self.addr]
-        self.log.info(' '.join(cmd))
-        qcall(cmd)
+        from arp import send_arp
+        self.log.info("send gratuitous arp to announce %s is at %s", self.addr, self.ipdev)
+        send_arp(self.ipdev, self.addr)
 
     def abort_start(self):
         """
