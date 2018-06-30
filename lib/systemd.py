@@ -12,21 +12,34 @@ SCOPE_TUNED = 1
 SCOPE_UNTUNED = 2
 
 def gen_systemd_scope_name(vmname):
-    sdvm = "opensvc-dummy-machine"
-    for fpqemu in glob.glob("/run/systemd/machines/qemu*"):
-        qemu = fpqemu.split('/')[-1]
-        if qemu.endswith(vmname):
-            sdvm = qemu
-            break
-    dashname = sdvm + '.scope'
-    asciiname = dashname.replace('-', '\\x2d')
-    scopename = 'machine-' + asciiname
-    return scopename
+    candidates = glob.glob("/run/systemd/machines/*-*-%s"%vmname)
+    if not candidates:
+        return
+    machine = os.path.basename(candidates[0]).replace('-', '\\x2d')
+    return 'machine-%s.scope' % machine
 
 def gen_systemd_dirname(vmname):
     scopename = gen_systemd_scope_name(vmname)
-    fullpathname = '/etc/systemd/system/' + scopename + '.d'
+    fullpathname = '/etc/systemd/system/%s.d' % scopename
     return fullpathname
+
+def remove_scope_killmode(res):
+    scope = has_scope(res.name)
+    if scope == SCOPE_NONE:
+        # no need to tune (no scope)
+        return
+
+    folder = gen_systemd_dirname(res.name)
+    fname = os.path.join(folder, CONFIG)
+    res.log.info("remove systemd machine scope custom config file %s" % fname)
+    try:
+        os.unlink(fname)
+    except Exception as exc:
+        res.log.warning(exc)
+    try:
+        os.rmdir(folder)
+    except Exception:
+        pass
 
 def deploy_scope_killmode(res):
     scope = has_scope(res.name)
@@ -63,6 +76,8 @@ def deploy_scope_killmode(res):
 
 def has_scope(vmname):
     scopename = gen_systemd_scope_name(vmname)
+    if scopename is None:
+        return SCOPE_NONE
     out, _, ret = justcall(['systemctl', 'cat', scopename])
     if ret != 0:
         return SCOPE_NONE
