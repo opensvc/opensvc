@@ -12,7 +12,7 @@ SCOPE_TUNED = 1
 SCOPE_UNTUNED = 2
 
 def gen_systemd_scope_name(vmname):
-    sdvm = None
+    sdvm = "opensvc-dummy-machine"
     for fpqemu in glob.glob("/run/systemd/machines/qemu*"):
         qemu = fpqemu.split('/')[-1]
         if qemu.endswith(vmname):
