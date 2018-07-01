@@ -41,6 +41,9 @@ def remove_scope_killmode(res):
     except Exception:
         pass
 
+    if res.svc.running_action != "shutdown":
+        systemd_daemon_reload()
+
 def deploy_scope_killmode(res):
     scope = has_scope(res.name)
     if scope == SCOPE_NONE:
@@ -71,6 +74,9 @@ def deploy_scope_killmode(res):
                               "config file %s" % fname)
 
     # reload systemd config
+    systemd_daemon_reload()
+
+def systemd_daemon_reload():
     res.log.info("reload systemd configuration")
     justcall(['systemctl', 'daemon-reload'])
 
