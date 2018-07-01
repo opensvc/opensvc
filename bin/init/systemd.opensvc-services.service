@@ -5,6 +5,7 @@ After=opensvc-agent.service
 
 [Service]
 Type=oneshot
+TimeoutStopSec=1h
 RemainAfterExit=true
 ExecStart=/usr/share/opensvc/bin/nodemgr pushasset
 ExecStop=/usr/share/opensvc/bin/nodemgr daemon shutdown
