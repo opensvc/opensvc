@@ -3,7 +3,7 @@ import os
 import rcExceptions as ex
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
+from rcUtilities import which, bdecode
 from converters import convert_size
 
 class Prov(provisioning.Prov):
@@ -55,8 +55,13 @@ class Prov(provisioning.Prov):
         if layout:
             cmd += ["-p", layout]
         cmd += devs
-        ret, out, err = self.r.vcall(cmd)
-        if ret != 0:
+        self.r.log.info(" ".join(cmd))
+        from subprocess import Popen, PIPE
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        out, err = proc.communicate(input=b'no\n')
+        out, err = bdecode(out).strip(), bdecode(err).strip()
+        self.r.log.info(out)
+        if proc.returncode != 0:
             raise ex.excError(err)
         self.r.can_rollback = True
         if len(out) > 0:
