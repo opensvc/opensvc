@@ -64,6 +64,9 @@ class Kvm(resContainer.Container):
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
+
+    def start(self):
+        resContainer.Container.start(self)
         import systemd
         systemd.deploy_scope_killmode(self)
 
@@ -79,6 +82,11 @@ class Kvm(resContainer.Container):
         ret, buff, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
+
+    def stop(self):
+        import systemd
+        systemd.remove_scope_killmode(self)
+        resContainer.Container.stop(self)
 
     def container_forcestop(self):
         cmd = ['virsh', 'destroy', self.name]
