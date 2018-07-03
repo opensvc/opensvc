@@ -6,6 +6,7 @@ import os
 import stat
 
 from rcUtilities import justcall, qcall, which
+from rcUtilitiesSunOS import get_os_ver
 import resContainer
 import rcExceptions as ex
 from rcZfs import zfs_setprop
@@ -95,9 +96,6 @@ class Zone(resContainer.Container):
         self.zonepath = zp
         return zp
 
-    def files_to_sync(self):
-        return [self.zone_cf]
-
     def zonecfg(self, zonecfg_args=[]):
         cmd = [ZONECFG, '-z', self.name] + zonecfg_args
         (ret, out, err) = self.vcall(cmd,err_to_info=True)
@@ -176,11 +174,15 @@ class Zone(resContainer.Container):
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 raise ex.excError
+        options = []
+        if get_os_ver() >= 11.3:
+            options += ["-x", "deny-zbe-clone"]
         try:
             self.umount_fs_in_zonepath()
-            self.zoneadm('attach')
+            self.zoneadm('attach', options)
         except ex.excError:
-            self.zoneadm('attach', ['-F'])
+            options.append("-F")
+            self.zoneadm('attach', options)
         self.can_rollback = True
 
     def delete(self):
@@ -433,7 +435,7 @@ class Zone(resContainer.Container):
 
     def provision(self):
         if not 'noaction' in self.tags:
-            resContainer.Container.provision()
+            resContainer.Container.provision(self)
         self.svc.sub_set_action([
             #"ip",
             "disk.scsireserv",
@@ -449,7 +451,7 @@ class Zone(resContainer.Container):
             "disk.scsireserv",
             "ip"], "unprovision", tags=set([self.name]))
         if not 'noaction' in self.tags:
-            resContainer.Container.unprovision()
+            resContainer.Container.unprovision(self)
 
     def presync(self):
         self.export_zone_cfg()
