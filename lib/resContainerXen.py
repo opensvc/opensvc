@@ -7,9 +7,6 @@ import resContainer
 rcU = __import__("rcUtilities" + os.uname()[0])
 
 class Xen(resContainer.Container):
-    startup_timeout = 180
-    shutdown_timeout = 120
-
     def __init__(self,
                  rid,
                  name,

@@ -19,8 +19,6 @@ except ImportError:
         return
 
 class CloudVm(resContainer.Container):
-    startup_timeout = 240
-    shutdown_timeout = 120
     save_timeout = 240
 
     def __init__(self,
@@ -194,7 +192,7 @@ class CloudVm(resContainer.Container):
         self.log.info("power on container %s"%self.name)
         self._vm_perform_power_operation(n['id'], 'powerOn')
         self.log.info("wait for container up status")
-        self.wait_for_fn(self.is_up, self.startup_timeout, 5)
+        self.wait_for_fn(self.is_up, self.start_timeout, 5)
 
     def wait_for_startup(self):
         pass

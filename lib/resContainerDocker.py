@@ -18,6 +18,8 @@ class Docker(resContainer.Container):
     """
     Docker container resource driver.
     """
+    default_start_timeout = 2
+
     def __init__(self,
                  rid,
                  name="",
@@ -40,7 +42,6 @@ class Docker(resContainer.Container):
         self.run_command = run_command
         self.run_args = run_args
         self.docker_service = docker_service
-        self.startup_timeout = 2
 
     @lazy
     def container_name(self):

@@ -243,7 +243,7 @@ class Zone(resContainer.Container):
 
     def wait_multi_user(self):
         self.log.info("wait for smf state on on %s", MULTI_USER_SMF)
-        self.wait_for_fn(self.is_multi_user, self.startup_timeout, 2)
+        self.wait_for_fn(self.is_multi_user, self.start_timeout, 2)
 
     def boot(self):
         "return 0 if zone is running else return self.zoneadm('boot')"
@@ -266,10 +266,10 @@ class Zone(resContainer.Container):
             return 0
         if self.state == 'running':
             (ret, out, err) = self.vcall(['zlogin' , self.name , '/sbin/init' , '0'])
-            for t in range(self.shutdown_timeout):
+            for t in range(self.stop_timeout):
                 self.zone_refresh()
                 if self.state == 'installed':
-                    for t2 in range(self.shutdown_timeout):
+                    for t2 in range(self.stop_timeout):
                         time.sleep(1)
                         (out,err,st) = justcall([ 'pgrep', '-fl', 'ipkg/poststate.*'+ self.name])
                         if st == 0 :
@@ -368,9 +368,9 @@ class Zone(resContainer.Container):
         if qcall(cmd) != 0:
             raise(ex.excError("failed " + " ".join(cmd)))
         self.log.info("wait for zone running again")
-        self.wait_for_fn(self.is_up, self.startup_timeout, 2)
+        self.wait_for_fn(self.is_up, self.start_timeout, 2)
         self.log.info("wait for zone operational")
-        self.wait_for_fn(self.operational, self.startup_timeout, 2)
+        self.wait_for_fn(self.operational, self.start_timeout, 2)
 
     def umount_fs_in_zonepath(self):
         """zone boot will fail if some fs linger under the zonepath.

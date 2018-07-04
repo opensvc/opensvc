@@ -9,9 +9,6 @@ from rcUtilitiesLinux import check_ping
 import resContainer
 
 class Kvm(resContainer.Container):
-    startup_timeout = 180
-    shutdown_timeout = 120
-
     def __init__(self,
                  rid,
                  name,

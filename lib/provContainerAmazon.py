@@ -26,5 +26,5 @@ class Prov(provisioning.Prov):
         self.r.log.info("create instance %s, size %s, image %s, key %s, subnet %s"%(self.r.name, size.name, image.name, self.r.key_name, subnet.name))
         c.driver.create_node(name=self.r.name, size=size, image=image, ex_keyname=self.r.key_name, ex_subnet=subnet)
         self.r.log.info("wait for container up status")
-        self.r.wait_for_fn(self.r.is_up, self.r.startup_timeout, 5)
+        self.r.wait_for_fn(self.r.is_up, self.r.start_timeout, 5)
 

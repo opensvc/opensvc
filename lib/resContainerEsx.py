@@ -7,9 +7,6 @@ from rcUtilities import which
 rcU = __import__("rcUtilities" + os.uname()[0])
 
 class Esx(resContainer.Container):
-    startup_timeout = 180
-    shutdown_timeout = 120
-
     def __init__(self,
                  rid,
                  name,

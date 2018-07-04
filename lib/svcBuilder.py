@@ -957,8 +957,11 @@ def add_fs(svc, s):
 
     svc += r
 
-def add_container_esx(svc, s):
-    kwargs = init_kwargs(svc, s)
+def container_kwargs(svc, s):
+    """
+    Common kwargs for all containers.
+    """
+    kwargs = {}
     kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
 
     try:
@@ -971,95 +974,56 @@ def add_container_esx(svc, s):
     except ex.OptNotFound as exc:
         pass
 
+    try:
+        kwargs['start_timeout'] = svc.conf_get(s, 'start_timeout')
+    except ex.OptNotFound as exc:
+        kwargs['start_timeout'] = exc.default
+
+    try:
+        kwargs['stop_timeout'] = svc.conf_get(s, 'stop_timeout')
+    except ex.OptNotFound as exc:
+        kwargs['stop_timeout'] = exc.default
+
+    return kwargs
+
+def add_container_esx(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
     m = __import__('resContainerEsx')
     r = m.Esx(**kwargs)
     svc += r
 
 def add_container_hpvm(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
-
+    kwargs.update(container_kwargs(svc, s))
     m = __import__('resContainerHpVm')
     r = m.HpVm(**kwargs)
     svc += r
 
 def add_container_ldom(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
-
+    kwargs.update(container_kwargs(svc, s))
     m = __import__('resContainerLdom')
     r = m.Ldom(**kwargs)
     svc += r
 
 def add_container_vbox(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
-
+    kwargs.update(container_kwargs(svc, s))
     m = __import__('resContainerVbox')
     r = m.Vbox(**kwargs)
     svc += r
 
 def add_container_xen(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
-
+    kwargs.update(container_kwargs(svc, s))
     m = __import__('resContainerXen')
     r = m.Xen(**kwargs)
     svc += r
 
 def add_container_zone(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
+    kwargs.update(container_kwargs(svc, s))
 
     try:
         kwargs['delete_on_stop'] = svc.conf_get(s, 'delete_on_stop')
@@ -1072,44 +1036,19 @@ def add_container_zone(svc, s):
 
 def add_container_vcloud(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
-
+    kwargs.update(container_kwargs(svc, s))
     kwargs['cloud_id'] = svc.conf_get(s, 'cloud_id')
     kwargs['vapp'] = svc.conf_get(s, 'vapp')
     kwargs['key_name'] = svc.conf_get(s, 'key_name')
-
     m = __import__('resContainerVcloud')
     r = m.CloudVm(**kwargs)
     svc += r
 
 def add_container_amazon(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
-    # mandatory keywords
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
+    kwargs.update(container_kwargs(svc, s))
     kwargs['cloud_id'] = svc.conf_get(s, 'cloud_id')
     kwargs['key_name'] = svc.conf_get(s, 'key_name')
-
-    # optional keywords
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
 
     # provisioning keywords
     try:
@@ -1134,18 +1073,7 @@ def add_container_amazon(svc, s):
 
 def add_container_openstack(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
-
+    kwargs.update(container_kwargs(svc, s))
     kwargs['cloud_id'] = svc.conf_get(s, 'cloud_id')
     kwargs['key_name'] = svc.conf_get(s, 'key_name')
 
@@ -1165,86 +1093,36 @@ def add_container_openstack(svc, s):
 
 def add_container_vz(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
-
+    kwargs.update(container_kwargs(svc, s))
     m = __import__('resContainerVz')
     r = m.Vz(**kwargs)
     svc += r
 
 def add_container_kvm(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
-
+    kwargs.update(container_kwargs(svc, s))
     m = __import__('resContainerKvm')
     r = m.Kvm(**kwargs)
     svc += r
 
 def add_container_srp(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
-
+    kwargs.update(container_kwargs(svc, s))
     m = __import__('resContainerSrp')
     r = m.Srp(**kwargs)
     svc += r
 
 def add_container_lxd(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
+    kwargs.update(container_kwargs(svc, s))
     m = __import__('resContainerLxd')
     r = m.Container(**kwargs)
     svc += r
 
 def add_container_lxc(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
+    kwargs.update(container_kwargs(svc, s))
     kwargs['rcmd'] = get_rcmd(svc, s)
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
-
     try:
         kwargs['cf'] = svc.conf_get(s, 'cf')
     except ex.OptNotFound as exc:
@@ -1256,13 +1134,8 @@ def add_container_lxc(svc, s):
 
 def add_container_docker(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
+    kwargs.update(container_kwargs(svc, s))
     kwargs['run_image'] = svc.conf_get(s, 'run_image')
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        pass
 
     try:
         kwargs['run_command'] = svc.conf_get(s, 'run_command')
@@ -1285,21 +1158,12 @@ def add_container_docker(svc, s):
 
 def add_container_ovm(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+
     try:
         kwargs['uuid'] = svc.conf_get(s, 'uuid')
     except ex.OptNotFound as exc:
         kwargs['uuid'] = exc.default
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
-
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
 
     m = __import__('resContainerOvm')
     r = m.Ovm(**kwargs)
@@ -1307,13 +1171,8 @@ def add_container_ovm(svc, s):
 
 def add_container_jail(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
+    kwargs.update(container_kwargs(svc, s))
     kwargs['jailroot'] = svc.conf_get(s, 'jailroot')
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
 
     try:
         kwargs['ips'] = svc.conf_get(s, 'ips')

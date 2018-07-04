@@ -8,9 +8,6 @@ from rcUtilities import fcache
 rcU = __import__("rcUtilities" + os.uname()[0])
 
 class Ovm(resContainer.Container):
-    startup_timeout = 180
-    shutdown_timeout = 120
-
     def __init__(self,
                  rid,
                  name,

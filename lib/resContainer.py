@@ -9,8 +9,6 @@ class Container(Res.Resource):
     """
     The container base class.
     """
-    startup_timeout = 600
-    shutdown_timeout = 60
 
     def __init__(self,
                  rid,
@@ -18,11 +16,15 @@ class Container(Res.Resource):
                  guestos=None,
                  type=None,
                  osvc_root_path=None,
+                 start_timeout=600,
+                 stop_timeout=60,
                  **kwargs):
         Res.Resource.__init__(self,
                               rid=rid,
                               type=type,
                               **kwargs)
+        self.start_timeout = start_timeout
+        self.stop_timeout = stop_timeout
         self.osvc_root_path = osvc_root_path
         self.sshbin = '/usr/bin/ssh'
         try:
@@ -98,16 +100,16 @@ class Container(Res.Resource):
 
     def wait_for_startup(self):
         self.log.info("wait for up status")
-        self.wait_for_fn(self.is_up, self.startup_timeout, 2)
+        self.wait_for_fn(self.is_up, self.start_timeout, 2)
         if hasattr(self, 'ping'):
             self.log.info("wait for container ping")
-            self.wait_for_fn(self.ping, self.startup_timeout, 2)
+            self.wait_for_fn(self.ping, self.start_timeout, 2)
         self.log.info("wait for container operational")
-        self.wait_for_fn(self.operational, self.startup_timeout, 2)
+        self.wait_for_fn(self.operational, self.start_timeout, 2)
 
     def wait_for_shutdown(self):
         self.log.info("wait for down status")
-        for tick in range(self.shutdown_timeout):
+        for tick in range(self.stop_timeout):
             if self.is_down():
                 return
             time.sleep(1)

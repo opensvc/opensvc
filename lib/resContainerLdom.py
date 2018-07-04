@@ -20,7 +20,6 @@ class Ldom(resContainer.Container):
                                         guestos=guestos,
                                         osvc_root_path=osvc_root_path,
                                         **kwargs)
-        self.shutdown_timeout = 240
         self.sshbin = '/usr/local/bin/ssh'
 
 
@@ -104,7 +103,7 @@ class Ldom(resContainer.Container):
             if ret == 0:
                 try:
                     self.log.info("wait for container shutdown")
-                    self.wait_for_fn(self.is_shutdown, self.shutdown_timeout, 2)
+                    self.wait_for_fn(self.is_shutdown, self.stop_timeout, 2)
                 except ex.excError:
                     pass
             self.container_forcestop()

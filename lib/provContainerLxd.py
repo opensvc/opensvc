@@ -27,7 +27,7 @@ class Prov(provisioning.Prov):
         ret, out, err = self.r.vcall(cmd, stdin=PIPE)
         if ret != 0:
             raise ex.excError
-        self.r.wait_for_fn(self.r.is_up, self.r.startup_timeout, 2)
+        self.r.wait_for_fn(self.r.is_up, self.r.start_timeout, 2)
         self.r.can_rollback = True
 
     def unprovisioner(self):

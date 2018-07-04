@@ -9,8 +9,6 @@ from rcUtilitiesLinux import check_ping
 import resContainer
 
 class CloudVm(resContainer.Container):
-    startup_timeout = 240
-    shutdown_timeout = 120
     save_timeout = 240
 
     def __init__(self,
@@ -226,18 +224,18 @@ class CloudVm(resContainer.Container):
             return
         elif n.state == NodeState().PENDING:
             self.log.info("already pending. wait for running state.")
-            self.wait_for_fn(self.is_up, self.startup_timeout, 5)
+            self.wait_for_fn(self.is_up, self.start_timeout, 5)
             return
         elif n.state == NodeState().REBOOTING:
             self.log.info("currently rebooting. wait for running state.")
-            self.wait_for_fn(self.is_up, self.startup_timeout, 5)
+            self.wait_for_fn(self.is_up, self.start_timeout, 5)
             return
         elif n.state == NodeState().STOPPED:
             c = self.get_cloud()
             self.log.info("starting ebs ec2 instance through aws")
             c.driver.ex_start_node(n)
             self.log.info("wait for container up status")
-            self.wait_for_fn(self.is_up, self.startup_timeout, 5)
+            self.wait_for_fn(self.is_up, self.start_timeout, 5)
             return
         raise ex.excError("don't know what to do with node in state: %s"%NodeState().tostring(n.state))
 

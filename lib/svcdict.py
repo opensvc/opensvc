@@ -3059,6 +3059,51 @@ class KeywordContainerNoPreemptAbort(Keyword):
                   text="If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
                 )
 
+class KeywordContainerDockerStartTimeout(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  rtype=["docker"],
+                  keyword="start_timeout",
+                  convert="duration",
+                  order=9,
+                  at=True,
+                  text="Wait for <duration> before declaring the container action a failure.",
+                  default="2",
+                  example="5"
+                )
+
+class KeywordContainerStartTimeout(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  rtype=rcEnv.vt_cloud+['ldom', 'hpvm', 'kvm', 'xen', 'vbox', 'ovm', 'esx', 'zone', 'lxd', 'lxc', 'jail', 'vz', 'srp'],
+                  keyword="start_timeout",
+                  convert="duration",
+                  order=9,
+                  at=True,
+                  text="Wait for <duration> before declaring the container action a failure.",
+                  default="240",
+                  example="180"
+                )
+
+class KeywordContainerStopTimeout(Keyword):
+    def __init__(self):
+        Keyword.__init__(
+                  self,
+                  section="container",
+                  rtype=rcEnv.vt_cloud+['ldom', 'hpvm', 'kvm', 'xen', 'vbox', 'ovm', 'esx', 'zone', 'lxd', 'lxc', 'jail', 'vz', 'srp', 'docker'],
+                  keyword="stop_timeout",
+                  convert="duration",
+                  order=9,
+                  at=True,
+                  text="Wait for <duration> before declaring the container action a failure.",
+                  default="120",
+                  example="180"
+                )
+
 class KeywordDiskPvs(Keyword):
     def __init__(self):
         Keyword.__init__(
@@ -4969,6 +5014,9 @@ class KeyDict(KeywordStore):
         self += KeywordContainerOrigin()
         self += KeywordContainerRcmd()
         self += KeywordContainerVapp()
+        self += KeywordContainerStartTimeout()
+        self += KeywordContainerStopTimeout()
+        self += KeywordContainerDockerStartTimeout()
         self += KeywordVmName()
         self += KeywordVmHostname()
         self += KeywordOsvcRootPath()

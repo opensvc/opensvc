@@ -9,8 +9,6 @@ from rcUtilitiesLinux import check_ping
 import resContainer
 
 class CloudVm(resContainer.Container):
-    startup_timeout = 240
-    shutdown_timeout = 120
     save_timeout = 240
 
     def __init__(self,
@@ -255,7 +253,7 @@ class CloudVm(resContainer.Container):
         self.log.info("create instance %s, size %s, image %s, key %s"%(self.name, size.name, image.name, self.key_name))
         n = c.driver.create_node(name=self.name, size=size, image=image, ex_keyname=self.key_name, ex_shared_ip_group_id=self.shared_ip_group)
         self.log.info("wait for container up status")
-        self.wait_for_fn(self.is_up, self.startup_timeout, 5)
+        self.wait_for_fn(self.is_up, self.start_timeout, 5)
         #n = c.driver.ex_update_node(n, accessIPv4='46.231.128.84')
 
     def wait_for_startup(self):
