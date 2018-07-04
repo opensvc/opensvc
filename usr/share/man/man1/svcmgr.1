@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-06\-04
+.TH SVCMGR 1 2018\-07\-04
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -51,6 +51,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -64,6 +66,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -155,6 +161,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -168,6 +176,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -247,6 +259,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -260,6 +274,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -339,6 +357,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -352,6 +372,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -431,6 +455,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -444,6 +470,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -520,6 +550,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -533,6 +565,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -612,6 +648,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -625,6 +663,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -710,6 +752,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -723,6 +767,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -808,6 +856,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -821,6 +871,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -903,6 +957,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -916,6 +972,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -1001,6 +1061,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -1014,6 +1076,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -1090,6 +1156,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -1103,6 +1171,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -1182,6 +1254,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -1195,6 +1269,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -1283,6 +1361,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -1296,6 +1376,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -1375,6 +1459,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -1388,6 +1474,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -1464,6 +1554,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -1477,6 +1569,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -1553,6 +1649,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -1566,6 +1664,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -1647,6 +1749,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -1660,6 +1764,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -1751,6 +1859,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -1764,6 +1874,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -1852,6 +1966,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -1865,6 +1981,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -1944,6 +2064,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -1957,6 +2079,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -2036,6 +2162,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -2049,6 +2177,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -2137,6 +2269,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -2150,6 +2284,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -2238,6 +2376,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -2251,6 +2391,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -2327,6 +2471,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -2340,6 +2486,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -2416,6 +2566,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -2429,6 +2581,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -2502,6 +2658,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -2515,6 +2673,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -2588,6 +2750,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -2601,6 +2765,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -2674,6 +2842,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -2687,6 +2857,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -2762,6 +2936,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -2775,6 +2951,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -2860,6 +3040,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -2873,6 +3055,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -2966,6 +3152,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -2979,6 +3167,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -3096,6 +3288,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -3109,6 +3303,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -3182,6 +3380,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -3195,6 +3395,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -3288,6 +3492,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -3301,6 +3507,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -3395,6 +3605,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -3408,6 +3620,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -3481,6 +3697,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -3494,6 +3712,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -3620,6 +3842,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -3633,6 +3857,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -3721,6 +3949,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -3734,6 +3964,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -3813,6 +4047,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -3826,6 +4062,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -3955,6 +4195,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -3968,6 +4210,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -4085,6 +4331,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -4098,6 +4346,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -4215,6 +4467,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -4228,6 +4482,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -4345,6 +4603,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -4358,6 +4618,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -4475,6 +4739,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -4488,6 +4754,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -4605,6 +4875,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -4618,6 +4890,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -4717,6 +4993,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -4730,6 +5008,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -4803,6 +5085,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -4816,6 +5100,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -4915,6 +5203,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -4928,6 +5218,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -5027,6 +5321,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -5040,6 +5336,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -5136,6 +5436,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -5149,6 +5451,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -5231,6 +5537,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -5244,6 +5552,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -5341,6 +5653,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -5354,6 +5668,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -5453,6 +5771,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -5466,6 +5786,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -5592,6 +5916,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -5605,6 +5931,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -5678,6 +6008,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -5691,6 +6023,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -5770,6 +6106,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -5783,6 +6121,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -5859,6 +6201,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -5872,6 +6216,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -5948,6 +6296,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -5961,6 +6311,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -6040,6 +6394,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -6053,6 +6409,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -6126,6 +6486,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -6139,6 +6501,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -6259,6 +6625,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -6272,6 +6640,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -6392,6 +6764,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -6405,6 +6779,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -6525,6 +6903,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -6538,6 +6918,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -6658,6 +7042,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -6671,6 +7057,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -6753,6 +7143,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -6766,6 +7158,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -6883,6 +7279,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -6896,6 +7294,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -7013,6 +7415,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -7026,6 +7430,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -7149,6 +7557,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -7162,6 +7572,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -7238,6 +7652,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -7251,6 +7667,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -7380,6 +7800,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -7393,6 +7815,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -7513,6 +7939,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -7526,6 +7954,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -7605,6 +8037,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -7618,6 +8052,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -7744,6 +8182,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -7757,6 +8197,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -7886,6 +8330,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -7899,6 +8345,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -8019,6 +8469,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -8032,6 +8484,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -8149,6 +8605,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -8162,6 +8620,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -8279,6 +8741,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -8292,6 +8756,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -8409,6 +8877,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -8422,6 +8892,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -8539,6 +9013,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -8552,6 +9028,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -8669,6 +9149,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -8682,6 +9164,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -8799,6 +9285,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -8812,6 +9300,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -8929,6 +9421,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -8942,6 +9436,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -9059,6 +9557,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -9072,6 +9572,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -9189,6 +9693,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -9202,6 +9708,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -9319,6 +9829,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -9332,6 +9844,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -9449,6 +9965,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -9462,6 +9980,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -9579,6 +10101,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -9592,6 +10116,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -9709,6 +10237,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -9722,6 +10252,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -9848,6 +10382,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -9861,6 +10397,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -9955,6 +10495,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -9968,6 +10510,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -10085,6 +10631,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -10098,6 +10646,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -10221,6 +10773,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -10234,6 +10788,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -10307,6 +10865,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -10320,6 +10880,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -10457,6 +11021,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -10470,6 +11036,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -10599,6 +11169,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -10612,6 +11184,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -10691,6 +11267,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -10704,6 +11282,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -10862,6 +11444,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -10875,6 +11459,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -10960,6 +11548,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -10973,6 +11563,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -11052,6 +11646,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -11065,6 +11661,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -11232,6 +11832,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -11245,6 +11847,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -11397,6 +12003,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -11410,6 +12018,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -11536,6 +12148,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -11549,6 +12163,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 
@@ -11622,6 +12240,8 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<group>.<key>'
 
+      - '<single value jsonpath expression on the json service status data>'
+
     - '<op>' can be:
 
       - '<'  '>'  '<='  '>='  '='
@@ -11635,6 +12255,10 @@ Examples:
 - 'ip:+task:'
 
 - '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
 
 Note:
 

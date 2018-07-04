@@ -629,10 +629,24 @@ class Node(Crypt, ExtConfig):
             return match
 
         def svc_matching(svc, param, op, value):
-            try:
-                current = svc._get(param, evaluate=True)
-            except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
-                current = None
+            if param.startswith("$."):
+                from jsonpath_ng import jsonpath
+                from jsonpath_ng.ext import parse
+                try:
+                    jsonpath_expr = parse(param)
+                    data = svc.print_status_data()
+                    matches = jsonpath_expr.find(data)
+                    if len(matches) != 1:
+                        current = None
+                    else:
+                        current = matches[0].value
+                except Exception as exc:
+                    current = None
+            else:
+                try:
+                    current = svc._get(param, evaluate=True)
+                except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
+                    current = None
             if current is None:
                 if "." in param:
                     group, _param = param.split(".", 1)
