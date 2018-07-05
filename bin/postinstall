@@ -354,21 +354,6 @@ def activate_systemd(launcher):
         _activate_systemd(systemdsvc)
 
 def _activate_systemd(systemdsvc):
-    # remove unit file from /etc/systemd/system
-    olddst = os.path.join('/etc/systemd/system/', systemdsvc)
-    if os.path.exists(olddst):
-        logit("found unit file in /etc/systemd/system", stdout=False)
-        logit("disabling old systemd unit file", stdout=False)
-        cmd = ['systemctl', '-q', 'disable', systemdsvc]
-        ret = osrun(' '.join(cmd))
-        if ret > 0:
-            logit("issue met while trying to disable old %s systemd unit file"%systemdsvc, stderr=True)
-        logit("removing old systemd unit file", stdout=False)
-        cmd = ['rm', '-f', olddst]
-        ret = osrun(' '.join(cmd))
-        if ret > 0:
-            logit("issue met while trying to remove old %s systemd unit file"%systemdsvc, stderr=True)
-
     systemd_unit_path = [
         '/usr/lib/systemd/system/',
         '/lib/systemd/system/',
