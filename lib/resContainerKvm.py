@@ -64,8 +64,6 @@ class Kvm(resContainer.Container):
 
     def start(self):
         resContainer.Container.start(self)
-        import systemd
-        systemd.deploy_scope_killmode(self)
 
     def container_stop(self):
         state = self.dom_state()
@@ -81,8 +79,6 @@ class Kvm(resContainer.Container):
             raise ex.excError
 
     def stop(self):
-        import systemd
-        systemd.remove_scope_killmode(self)
         resContainer.Container.stop(self)
 
     def container_forcestop(self):
@@ -200,9 +196,5 @@ class Kvm(resContainer.Container):
         return self.devmapping
 
     def _status(self, verbose=False):
-        import systemd
-        ret = systemd.has_scope(self.name)
-        if ret == systemd.SCOPE_UNTUNED:
-            self.status_log("machine scope has a wrong killmode")
         return resContainer.Container._status(self, verbose=verbose)
 
