@@ -3,8 +3,12 @@ Description=OpenSVC agent
 Documentation=http://docs.opensvc.com/ file:/usr/share/doc/opensvc/ man:nodemgr(1) man:svcmgr(1) man:svcmon(1)
 Before=opensvc-services.service
 After=network.target network-online.target time-sync.target multi-user.target
-After=libvirtd.service
 After=dockerd.service
+After=libvirtd.service
+After=virt-guest-shutdown.target
+After=libvirt-guests.service
+Wants=libvirtd.service
+Wants=libvirt-guests.service
 Requires=opensvc-services.service
 
 [Service]
