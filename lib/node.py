@@ -358,9 +358,9 @@ class Node(Crypt, ExtConfig):
             val = int(val.rstrip("%"))
         else:
             total = self.stats().get(metric) # mb
+            if total in (0, None):
+                return 0
             val = val // 1024 // 1024 # b > mb
-            if total is None:
-                return
             val = int(val/total*100)
             if val > limit:
                 # unreasonable
