@@ -440,6 +440,11 @@ class ExtConfig(object):
             val = section
         elif _ref == "rindex" and hasattr(self, "svcname"):
             val = section.split("#")[-1]
+        elif _ref == "clusterid":
+            if hasattr(self, "node"):
+                val = self.node.cluster_id
+            else:
+                val = self.cluster_id
         elif _ref == "clustername":
             if hasattr(self, "node"):
                 val = self.node.cluster_name
