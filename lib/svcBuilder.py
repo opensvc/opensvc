@@ -957,7 +957,7 @@ def add_fs(svc, s):
 
     svc += r
 
-def container_kwargs(svc, s):
+def container_kwargs(svc, s, default_name="svcname"):
     """
     Common kwargs for all containers.
     """
@@ -967,7 +967,10 @@ def container_kwargs(svc, s):
     try:
         kwargs['name'] = svc.conf_get(s, 'name')
     except ex.OptNotFound as exc:
-        kwargs['name'] = svc.svcname
+        if default_name is None:
+            kwargs['name'] = exc.default
+        else:
+            kwargs['name'] = svc.svcname
 
     try:
         kwargs['guestos'] = svc.conf_get(s, 'guestos')
@@ -1134,7 +1137,7 @@ def add_container_lxc(svc, s):
 
 def add_container_docker(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
+    kwargs.update(container_kwargs(svc, s, default_name=None))
     kwargs['run_image'] = svc.conf_get(s, 'run_image')
 
     try:
