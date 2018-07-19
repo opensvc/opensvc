@@ -533,11 +533,28 @@ class Crypt(object):
         """
         if nodename is None or nodename == "":
             nodename = rcEnv.nodename
-        sp = self.socket_parms(nodename)
-
-        sock = socket.socket(sp.af, socket.SOCK_STREAM)
         try:
-            sock.settimeout(0.2)
+            while True:
+                try:
+                    sp = self.socket_parms(nodename)
+                    sock = socket.socket(sp.af, socket.SOCK_STREAM)
+                    sock.connect(sp.to)
+                    break
+                except socket.timeout:
+                    time.sleep(0.1)
+                    continue
+                except socket.error as exc:
+                    if exc.errno in (11, 146, 149):
+                        # 11  EBUSY
+                        # 146 EREFUSED
+                        # 149 EALREADY
+                        # Resource temporarily unavailable (daemon busy, overflow)
+                        # Give it a little time, and make sure we don't short loop
+                        sock.close()
+                        time.sleep(0.1)
+                        continue
+                    raise
+
             if sp.encrypted:
                 message = self.encrypt(data, cluster_name=cluster_name,
                                        secret=secret)
@@ -546,18 +563,7 @@ class Crypt(object):
             if message is None:
                 return {"status": 1, "err": "failed to encrypt message"}
 
-            while True:
-                try:
-                    sock.connect(sp.to)
-                    break
-                except socket.error as exc:
-                    if exc.errno == 11:
-                        # Resource temporarily unavailable (daemon busy, overflow)
-                        # Give it a little time, and make sure we don't short loop
-                        time.sleep(0.1)
-                        continue
-                    raise
-
+            sock.settimeout(0.2)
             sock.sendall(message)
 
             if with_result:
