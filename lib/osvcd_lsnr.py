@@ -137,7 +137,7 @@ class Listener(shared.OsvcThread, Crypt):
                 self.stats.sessions.clients[addr[0]].accepted += 1
                 #self.log.info("accept %s", str(addr))
             except socket.timeout:
-                return
+                continue
             thr = threading.Thread(target=self.handle_client, args=(conn, addr, encrypted))
             thr.start()
             self.threads.append(thr)
