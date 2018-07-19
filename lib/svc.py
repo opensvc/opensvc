@@ -4069,7 +4069,8 @@ class Svc(Crypt, ExtConfig):
             self.save_exc()
         finally:
             self.running_action = None
-            if not (action == "delete" and not self.command_is_scoped()):
+            if action not in ACTIONS_NO_STATUS_CHANGE and \
+               not (action == "delete" and not self.command_is_scoped()):
                 self.update_status_data()
             self.clear_action(action, err)
             self.svcunlock()
