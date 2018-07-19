@@ -1684,7 +1684,10 @@ class Monitor(shared.OsvcThread, Crypt):
         elif astatus_s == set(['n/a']):
             return 'n/a'
         elif n_up == 0:
-            return 'down'
+            if "warn" in astatus_l:
+                return "warn"
+            else:
+                return 'down'
         elif n_up > instance.get("flex_max_nodes", n_instances):
             return 'warn'
         elif n_up < instance.get("flex_min_nodes", 1) and not instance.get("scaler_slave"):
