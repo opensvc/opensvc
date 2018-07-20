@@ -538,11 +538,9 @@ class Crypt(object):
                 try:
                     sp = self.socket_parms(nodename)
                     sock = socket.socket(sp.af, socket.SOCK_STREAM)
+                    sock.settimeout(0.2)
                     sock.connect(sp.to)
                     break
-                except socket.timeout:
-                    time.sleep(0.1)
-                    continue
                 except socket.error as exc:
                     if exc.errno in (11, 146, 149):
                         # 11  EBUSY
@@ -563,7 +561,6 @@ class Crypt(object):
             if message is None:
                 return {"status": 1, "err": "failed to encrypt message"}
 
-            sock.settimeout(0.2)
             sock.sendall(message)
 
             if with_result:
