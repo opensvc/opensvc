@@ -112,8 +112,12 @@ def pid_to_ids(pid):
     with open("/proc/%d/environ" % pid) as fp:
         buff = fp.read()
     data = Storage()
-    for line in buff.splitlines():
-        key, val = line.split("=", 1)
+    for line in buff.split('\0'):
+        line = line.replace("\n", "")
+        try:
+            key, val = line.split("=", 1)
+        except ValueError:
+            continue
         if key == "OPENSVC_SVC_ID":
             data["svc_id"] = val
         elif key == "OPENSVC_SVCNAME":
