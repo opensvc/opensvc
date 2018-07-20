@@ -164,6 +164,9 @@ class Hb(shared.OsvcThread):
         kind = data.get("kind", "full")
         change = False
         if kind == "patch":
+            if shared.REMOTE_GEN[nodename] == 0:
+                # waiting for a full: ignore patches
+                return
             if nodename not in shared.CLUSTER_DATA:
                 # happens during init. drop the patch, a full will follow
                 shared.REMOTE_GEN[nodename] = 0
