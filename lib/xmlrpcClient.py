@@ -89,7 +89,8 @@ def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
         _d = _e - _b
         log.info("call %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
         return buff
-    except Exception as exc:
+    except (OSError, Exception) as exc:
+        # socket.gaierror (name resolution failure) is a subclass of OSError in py3.3+
         _e = datetime.now()
         _d = _e - _b
         log.error("call %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, exc))
