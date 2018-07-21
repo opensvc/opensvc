@@ -3338,7 +3338,10 @@ class Node(Crypt, ExtConfig):
             nodename=self.options.node,
             silent=True,
         )
-        return data
+        if data["status"] != 0:
+            # the daemon is not running or refused the connection,
+            # tell the collector ourselves
+            self.collector.call(*args, **kwargs)
 
     def _daemon_status(self, silent=False, refresh=False, node=None):
         data = self.daemon_send(
