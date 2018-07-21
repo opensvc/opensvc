@@ -1105,7 +1105,10 @@ class Monitor(shared.OsvcThread, Crypt):
             discard_constraints_violation=False,
             discard_start_failed=False
         )
-        if self.placement_ranks(svc, candidates)[0] != rcEnv.nodename:
+        ranks = self.placement_ranks(svc, candidates)
+        if not ranks:
+            return
+        if ranks[0] != rcEnv.nodename:
             # not natural leader
             return
         current_slaves = self.scaler_current_slaves(svc.svcname)
