@@ -19,7 +19,6 @@ class KeyInvalidValue(Exception):
 class Keyword(object):
     def __init__(self, section, keyword,
                  rtype=None,
-                 order=100,
                  required=False,
                  generic=False,
                  at=False,
@@ -40,7 +39,6 @@ class Keyword(object):
             self.rtype = rtype
         else:
             self.rtype = [rtype]
-        self.order = order
         self.generic = generic
         self.at = at
         self.top = None
@@ -61,7 +59,7 @@ class Keyword(object):
             self.default_text = self.default
 
     def __lt__(self, o):
-        return self.order < o.order
+        return self.section + self.keyword < o.section + o.keyword
 
     def __getattribute__(self, attr):
         if attr == "default":
@@ -318,8 +316,9 @@ class Section(object):
         return
 
 class KeywordStore(dict):
-    def __init__(self, provision=False, deprecated_keywords={}, deprecated_sections={},
-                 template_prefix="template.", base_sections=[], has_default_section=True):
+    def __init__(self, provision=False, keywords=[], deprecated_keywords={},
+                 deprecated_sections={}, template_prefix="template.",
+                 base_sections=[], has_default_section=True):
         dict.__init__(self)
         self.sections = {}
         self.deprecated_sections = deprecated_sections
@@ -328,6 +327,19 @@ class KeywordStore(dict):
         self.base_sections = base_sections
         self.provision = provision
         self.has_default_section = has_default_section
+
+        for keyword in keywords:
+            sections = keyword.get("sections", [keyword.get("section")])
+            prefixes = keyword.get("prefixes", [""])
+            for section in sections:
+                for prefix in prefixes:
+                    data = dict((key, val) for (key, val) in keyword.items() if key not in ("sections", "prefixes"))
+                    data.update({
+                        "section": section,
+                        "keyword": prefix+keyword["keyword"],
+                        "text": keyword["text"].replace("{prefix}", prefix),
+                    })
+                    self += Keyword(**data)
 
     def __iadd__(self, o):
         if not isinstance(o, Keyword):
@@ -345,7 +357,7 @@ class KeywordStore(dict):
         k = str(key)
         if k not in self.sections:
             return Section(k)
-        return self.sections[str(key)]
+        return self.sections[k]
 
     def print_templates(self, fmt="text"):
         """
