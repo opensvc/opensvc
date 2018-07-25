@@ -17,9 +17,6 @@ class HbMcast(Hb, Crypt):
     A class factorizing common methods and properties for the multicast
     heartbeat tx and rx child classes.
     """
-    DEFAULT_MCAST_PORT = 10000
-    DEFAULT_MCAST_ADDR = "224.3.29.71"
-    DEFAULT_MCAST_TIMEOUT = 15
 
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
@@ -46,23 +43,24 @@ class HbMcast(Hb, Crypt):
 
     def _configure(self):
         try:
-            self.port = self.config.getint(self.name, "port")
-        except Exception:
-            self.port = self.DEFAULT_MCAST_PORT
+            self.port = shared.NODE.conf_get(self.name, "port")
+        except ex.OptNotFound as exc:
+            self.port = exc.default
         try:
-            self.addr = self.config.get(self.name, "addr")
-        except Exception:
-            self.addr = self.DEFAULT_MCAST_ADDR
+            self.addr = shared.NODE.conf_get(self.name, "addr")
+        except ex.OptNotFound as exc:
+            self.addr = exc.default
         try:
-            self.timeout = self.config.getint(self.name, "timeout")
-        except Exception:
-            self.timeout = self.DEFAULT_MCAST_TIMEOUT
+            self.timeout = shared.NODE.conf_get(self.name, "timeout")
+        except ex.OptNotFound as exc:
+            self.timeout = exc.default
         group = socket.inet_aton(self.addr)
         try:
-            self.intf = self.config.get(self.name, "intf")
+            self.intf = shared.NODE.conf_get(self.name, "intf")
             self.src_addr = self.get_ip_address(self.intf)
             self.mreq = group + socket.inet_aton(self.src_addr)
-        except Exception:
+        except Exception as exc:
+            self.log.warning("fallback to any intf: %s", exc)
             self.intf = "any"
             self.src_addr = "0.0.0.0"
             self.mreq = struct.pack("4sl", group, socket.INADDR_ANY)

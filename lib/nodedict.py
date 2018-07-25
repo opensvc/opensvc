@@ -612,6 +612,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "section": "hb",
         "keyword": "port",
         "rtype": "unicast",
+        "convert": "integer",
         "at": True,
         "default": 10000,
         "text": "The port for each node to send to or listen on."
@@ -619,6 +620,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
     {
         "section": "hb",
         "keyword": "timeout",
+        "convert": "duration",
         "at": True,
         "default": 15,
         "text": "The delay since the last received heartbeat from a node before considering this node is gone."
@@ -644,6 +646,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "section": "hb",
         "keyword": "port",
         "rtype": "multicast",
+        "convert": "integer",
         "at": True,
         "default": 10000,
         "text": "The port for each node to send to or listen on."
