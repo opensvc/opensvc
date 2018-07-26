@@ -1022,7 +1022,7 @@ class Collector(object):
                 try:
                     data = getattr(sym, 'get_'+key)()
                     if six.PY3:
-                        data = bytes(data)
+                        data = bytes(data, "utf-8")
                     vals = [xmlrpclib.Binary(zlib.compress(data))]
                 except Exception as e:
                     print(e)
