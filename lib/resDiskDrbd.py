@@ -27,6 +27,7 @@ class Drbd(Res.Resource):
         self.res = res
         self.label = "drbd "+res
         self.drbdadm = None
+        self.rollback_even_if_standby = True
 
     def __str__(self):
         return "%s resource=%s" % (Res.Resource.__str__(self),\
@@ -36,7 +37,7 @@ class Drbd(Res.Resource):
         cf = os.path.join(os.sep, 'etc', 'drbd.d', self.res+'.res')
         if os.path.exists(cf):
             return [cf]
-        self.log.error("%s does not exist"%cf)
+        self.log.error("%s does not exist", cf)
         return []
 
     def drbdadm_cmd(self, cmd):
@@ -106,6 +107,8 @@ class Drbd(Res.Resource):
         (ret, out, err) = self.vcall(self.drbdadm_cmd('up'))
         if ret != 0:
             raise ex.excError
+        self.can_rollback_conn = True
+        self.can_rollback = True
 
     def get_cstate(self):
         self.prereq()
@@ -125,12 +128,12 @@ class Drbd(Res.Resource):
     def start_connection(self):
         cstate = self.get_cstate()
         if cstate == "Connected":
-            self.log.info("drbd resource %s is already up"%self.res)
+            self.log.info("drbd resource %s is already connected", self.res)
         elif cstate == "StandAlone":
             self.drbdadm_down()
             self.drbdadm_up()
         elif cstate == "WFConnection":
-            self.log.info("drbd resource %s peer node is not listening"%self.res)
+            self.log.info("drbd resource %s peer node is not listening", self.res)
             pass
         else:
             self.drbdadm_up()
@@ -147,11 +150,13 @@ class Drbd(Res.Resource):
     def start_role(self, role):
         roles = self.get_roles()
         if roles[0] != role:
-            (ret, out, err) = self.vcall(self.drbdadm_cmd(role.lower()))
+            ret, out, err = self.vcall(self.drbdadm_cmd(role.lower()))
             if ret != 0:
                 raise ex.excError
+            self.can_rollback_role = True
+            self.can_rollback = True
         else:
-            self.log.info("drbd resource %s is already %s"%(self.res, role))
+            self.log.info("drbd resource %s is already %s", self.res, role)
 
     def startstandby(self):
         self.start_connection()
@@ -159,9 +164,11 @@ class Drbd(Res.Resource):
         if roles[0] == "Primary":
             return
         self.start_role('Secondary')
-        self.can_rollback = True
 
     def stopstandby(self):
+        self.go_secondary()
+
+    def go_secondary(self):
         self.start_connection()
         roles = self.get_roles()
         if roles[0] == "Secondary":
@@ -171,12 +178,23 @@ class Drbd(Res.Resource):
     def start(self):
         self.start_connection()
         self.start_role('Primary')
-        self.can_rollback = True
 
     def stop(self):
         if self.standby:
             self.stopstandby()
         else:
+            self.drbdadm_down()
+
+    def rollback(self):
+        if not self.can_rollback:
+            return
+        if self.standby:
+            if not self.can_rollback_role:
+                return
+            self.go_secondary()
+        else:
+            if not self.can_rollback_connection:
+                return
             self.drbdadm_down()
 
     def _status(self, verbose=False):

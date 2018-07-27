@@ -74,6 +74,7 @@ class Resource(object):
             pass
         self.status_logs = []
         self.can_rollback = False
+        self.rollback_even_if_standby = False
 
     @lazy
     def log(self):

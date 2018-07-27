@@ -4147,7 +4147,7 @@ class Svc(Crypt, ExtConfig):
         if self.disable_rollback:
             self.log.info("skip rollback %s: as instructed by DEFAULT.rollback=false", action)
             return
-        rids = [r.rid for r in self.get_resources() if r.can_rollback and not r.standby]
+        rids = [r.rid for r in self.get_resources() if r.can_rollback and (r.rollback_even_if_standby or not r.standby)]
         if len(rids) == 0:
             self.log.info("skip rollback %s: no resource activated", action)
             return
