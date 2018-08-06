@@ -612,20 +612,26 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.inc_smon_retries(svc.svcname, rid)
                 if resource.get("monitor"):
                     candidates = self.placement_candidates(svc)
+                    log = " ".join(resource.get("log", []))
+                    if not log:
+                        log = "no log"
                     if candidates != [rcEnv.nodename] and len(candidates) > 0:
-                        self.log.info("toc for service %s rid %s %s",
-                                      svc.svcname, rid, resource["label"])
-                        svc.log.info("toc for rid %s (%s)", rid,
-                                      resource["label"])
+                        self.log.info("toc for service %s rid %s (%s) %s (%s)",
+                                      svc.svcname, rid, resource["label"],
+                                      resource["status"], log)
+                        svc.log.info("toc for rid %s (%s) %s (%s)", rid,
+                                      resource["label"], resource["status"],
+                                      log)
                         self.service_toc(svc.svcname)
                     else:
-                        self.log.info("would toc for service %s rid %s (%s) %s, but "
+                        self.log.info("would toc for service %s rid %s (%s) %s (%s), but "
                                       "no node is candidate for takeover.",
                                       svc.svcname, rid, resource["label"],
-                                      resource["status"])
-                        svc.log.info("would toc for rid %s (%s) %s, but "
+                                      resource["status"], log)
+                        svc.log.info("would toc for rid %s (%s) %s (%s), but "
                                      "no node is candidate for takeover.",
-                                     rid, resource["label"], resource["status"])
+                                     rid, resource["label"],
+                                     resource["status"], log)
                 else:
                     self.log.info("service %s unmonitored rid %s (%s) went %s",
                                   svc.svcname, rid, resource["label"],
