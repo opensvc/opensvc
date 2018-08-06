@@ -1197,3 +1197,18 @@ class ExtConfig(object):
                 edata[section][key] = val
         return edata
 
+    def section_kwargs(self, section, rtype):
+        kwargs = {}
+        try:
+            cat = section.split("#")[0]
+        except ValueError:
+            return kwargs
+        for keyword in self.kwdict.KEYS.all_keys(cat, rtype):
+            try:
+                kwargs[keyword.keyword] = self.conf_get(section, keyword.keyword)
+            except ex.RequiredOptNotFound:
+                raise
+            except ex.OptNotFound as exc:
+                kwargs[keyword.keyword] = exc.default
+        return kwargs
+

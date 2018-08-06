@@ -382,6 +382,35 @@ class KeywordStore(dict):
             return []
         return [k for k in sorted(self.sections[section].getkeys(rtype)) if k.required is True]
 
+    def optional_keys(self, section, rtype=None):
+        """
+        Return the list of optional keywords in the section for the resource
+        type specified by <rtype>.
+        """
+        if section not in self.sections:
+            return []
+        return [k for k in sorted(self.sections[section].getkeys(rtype)) if k.required is False]
+
+    def all_keys(self, section, rtype=None):
+        """
+        Return the list of optional keywords in the section for the resource
+        type specified by <rtype>.
+        """
+        if section not in self.sections:
+            return []
+        return sorted(self.sections[section].getkeys(rtype))
+
+    def section_kwargs(self, cat, rtype=None):
+        kwargs = {}
+        for keyword in self.all_keys(cat, rtype):
+            try:
+                kwargs[keyword.name] = self.conf_get(s, keyword.name)
+            except ex.RequiredOptNotFound:
+                raise
+            except ex.OptNotFound as exc:
+                kwargs[keyword.name] = exc.default
+        return kwargs
+
     def purge_keywords_from_dict(self, d, section):
         """
         Remove unknown keywords from a section.
