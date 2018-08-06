@@ -690,7 +690,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if resource["status"] not in ("warn", "down", "stdby down"):
                 self.reset_smon_retries(svc.svcname, rid)
                 continue
-            if resource.get("provisioned", {}).get("state") is False:
+            if not resource.get("provisioned", {}).get("state"):
                 continue
             if monitored_resource(svc, rid, resource) or stdby_resource(svc, rid, resource):
                 rids.append(rid)
@@ -2507,9 +2507,8 @@ class Monitor(shared.OsvcThread, Crypt):
                                     continue
                                 changed = True
                     if changed:
-                        svc.purge_status_data_dump()
                         try:
-                            svc.print_status_data_eval()
+                            svc.print_status_data_eval(refresh=True)
                         except Exception:
                             # can happen when deleting the service
                             pass
