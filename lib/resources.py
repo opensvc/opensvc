@@ -24,6 +24,11 @@ ALLOW_ACTION_WITH_NOACTION = [
     "set_unprovisioned",
 ]
 
+LOCKER_TYPES = [
+    "disk.scsireserv",
+    "disk.lock",
+]
+
 class Resource(object):
     """
     Resource drivers parent class
@@ -165,15 +170,17 @@ class Resource(object):
         Resources needing to be started or stopped in a specific order
         should redefine that.
         """
-        if self.rid+"pr" == other.rid:
-            return False
-        elif self.rid == other.rid+"pr":
-            return True
+        if self.type in LOCKER_TYPES and other.type not in LOCKER_TYPES:
+            ret = True
+        elif self.type not in LOCKER_TYPES and other.type in LOCKER_TYPES:
+            ret = False
         elif self.type == "sync.zfssnap" and other.type == "sync.zfs":
-            return True
+            ret = True
         elif self.type == "sync.zfs" and other.type == "sync.zfssnap":
-            return False
-        return self.sort_key < other.sort_key
+            ret = False
+        else:
+            ret = self.sort_key < other.sort_key
+        return ret
 
     def save_exc(self):
         """

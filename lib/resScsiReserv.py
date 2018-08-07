@@ -33,6 +33,7 @@ class ScsiReserv(Res.Resource):
                               rid=rid+"pr",
                               type="disk.scsireserv",
                               **kwargs)
+        self.sort_key = rid
 
     def mangle_devs(self, devs):
         """
