@@ -2288,13 +2288,12 @@ def create(svcname, resources=[], provision=False):
                 del d["rtype"]
             defaults.update(d)
 
-    from svcdict import KeyDict
+    from svcdict import KEYS
     from keywords import MissKeyNoDefault, KeyInvalidValue
     try:
-        keys = KeyDict(provision=provision)
-        defaults.update(keys.update('DEFAULT', defaults))
+        defaults.update(KEYS.update('DEFAULT', defaults))
         for section, d in sections.items():
-            sections[section].update(keys.update(section, d))
+            sections[section].update(KEYS.update(section, d))
     except (MissKeyNoDefault, KeyInvalidValue):
         return {"ret": 1}
 
