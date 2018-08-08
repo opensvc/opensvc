@@ -562,18 +562,18 @@ class Freenas(object):
         except ValueError:
             raise ex.excError(buff)
 
-    def del_iscsi_initiatorgroup(self, ig_id=None, **kwargs):
-        content = self.get_iscsi_authorizedinitiator_id(ig_id)
+    def del_iscsi_initiatorgroup(self, id=None, **kwargs):
+        content = self.get_iscsi_authorizedinitiator_id(id)
         try:
             data = json.loads(content)
         except ValueError:
             raise ex.excError("initiator group not found")
-        self._del_iscsi_initiatorgroup(ig_id=ig_id, **kwargs)
+        self._del_iscsi_initiatorgroup(ig_id=id, **kwargs)
         print(json.dumps(data, indent=8))
         return data
 
     def _del_iscsi_initiatorgroup(self, ig_id=None, **kwargs):
-        if id is None:
+        if ig_id is None:
             raise ex.excError("'id' in mandatory")
         response = self.delete('/services/iscsi/authorizedinitiator/%d' % ig_id)
         if response.status_code != 204:
