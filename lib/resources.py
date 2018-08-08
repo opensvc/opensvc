@@ -977,10 +977,13 @@ class Resource(object):
         except Exception as exc:
             self.status_log("provisioned: %s"%str(exc), "error")
             isprov = False
-        return {
-            "state": isprov,
-            "mtime": self.provisioned_flag_mtime(),
-        }
+        data = {}
+        if isprov is not None:
+            data["state"] = isprov
+        mtime = self.provisioned_flag_mtime()
+        if mtime is not None:
+            data["mtime"] = mtime
+        return data
 
     def is_provisioned_flag(self):
         """

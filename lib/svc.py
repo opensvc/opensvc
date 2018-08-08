@@ -1682,7 +1682,9 @@ class Svc(Crypt, ExtConfig):
                     "type": resource.type,
                     "label": resource.label,
                 }
-                _data["provisioned"] = resource.provisioned_data()
+                prov_data = resource.provisioned_data()
+                if prov_data:
+                    _data["provisioned"] = prov_data
                 if disable:
                     _data["disable"] = disable
                 if resource.standby:
@@ -1699,7 +1701,7 @@ class Svc(Crypt, ExtConfig):
                     _data["info"] = info
                 if len(tags) > 0:
                     _data["tags"] = tags
-                if _data["provisioned"]["state"] is False and not resource.is_disabled():
+                if _data.get("provisioned", {}).get("state") is False and not resource.is_disabled():
                     data["provisioned"] = False
                 if resource.subset:
                     _data["subset"] = resource.subset
