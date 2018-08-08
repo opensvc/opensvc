@@ -270,72 +270,6 @@ STOP_GROUPS = [
     "ip",
 ]
 
-STATUS_TYPES = [
-    "app.simple",
-    "app.forking",
-    "container.amazon",
-    "container.docker",
-    "container.esx",
-    "container.hpvm",
-    "container.jail",
-    "container.kvm",
-    "container.lxc",
-    "container.lxd",
-    "container.ldom",
-    "container.openstack",
-    "container.ovm",
-    "container.srp",
-    "container.vbox",
-    "container.vcloud",
-    "container.vz",
-    "container.xen",
-    "container.zone",
-    "disk.drbd",
-    "disk.gandi",
-    "disk.gce",
-    "disk.lock",
-    "disk.loop",
-    "disk.md",
-    "disk.lv",
-    "disk.raw",
-    "disk.rados",
-    "disk.scsireserv",
-    "disk.vg",
-    "disk.vxdg",
-    "disk.vxvol",
-    "disk.zpool",
-    "fs",
-    "fs.dir",
-    "fs.docker",
-    "ip",
-    "ip.docker",
-    "ip.cni",
-    "share.nfs",
-    "sync.btrfs",
-    "sync.btrfssnap",
-    "sync.dcsckpt",
-    "sync.dcssnap",
-    "sync.dds",
-    "sync.docker",
-    "sync.evasnap",
-    "sync.hp3par",
-    "sync.hp3parsnap",
-    "sync.ibmdssnap",
-    "sync.necismsnap",
-    "sync.netapp",
-    "sync.nexenta",
-    "sync.radossnap",
-    "sync.radosclone",
-    "sync.rsync",
-    "sync.symclone",
-    "sync.symsnap",
-    "sync.symsrdfs",
-    "sync.s3",
-    "sync.zfs",
-    "sync.zfssnap",
-    "task",
-]
-
 ACTIONS_DO_MASTER = [
     "clear",
     "freeze",
@@ -1067,6 +1001,9 @@ class Svc(Crypt, ExtConfig):
                 s = self.conf_get(resource.rid, action+'_requires')
             except ex.OptNotFound:
                 continue
+            except ValueError:
+                # keyword not supported. data resources for example.
+                continue
             s = s.replace("stdby ", "stdby_")
             l = s.split(" ")
             l = list(map(lambda x: x.replace("stdby_", "stdby "), l))
@@ -1323,12 +1260,14 @@ class Svc(Crypt, ExtConfig):
                     resources.append(resource)
         return resources
 
-    def get_resourcesets(self, _type, strict=False):
+    def get_resourcesets(self, _type=None, strict=False):
         """
         Return the list of resourceset matching the specified types.
         """
         self.init_resources()
-        if not isinstance(_type, (set, list, tuple)):
+        if _type is None:
+            _types = [res.type for res in self.resources_by_id.values()]
+        elif not isinstance(_type, (set, list, tuple)):
             _types = [_type]
         else:
             _types = _type
@@ -1670,7 +1609,7 @@ class Svc(Crypt, ExtConfig):
         elif self.encap:
             data['encap'] = True
 
-        for rset in self.get_resourcesets(STATUS_TYPES, strict=True):
+        for rset in self.get_resourcesets(strict=True):
             for resource in rset.resources:
                 status = rcStatus.Status(resource.status(verbose=True))
                 log = resource.status_logs_strlist()
@@ -1682,7 +1621,9 @@ class Svc(Crypt, ExtConfig):
                     "type": resource.type,
                     "label": resource.label,
                 }
-                _data["provisioned"] = resource.provisioned_data()
+                prov_data = resource.provisioned_data()
+                if prov_data:
+                    _data["provisioned"] = prov_data
                 if disable:
                     _data["disable"] = disable
                 if resource.standby:
@@ -1699,7 +1640,7 @@ class Svc(Crypt, ExtConfig):
                     _data["info"] = info
                 if len(tags) > 0:
                     _data["tags"] = tags
-                if _data["provisioned"]["state"] is False and not resource.is_disabled():
+                if _data.get("provisioned", {}).get("state") is False and not resource.is_disabled():
                     data["provisioned"] = False
                 if resource.subset:
                     _data["subset"] = resource.subset
@@ -1849,6 +1790,8 @@ class Svc(Crypt, ExtConfig):
                     subset = group + ":" + resource["subset"]
                 else:
                     subset = group
+                if group not in subsets:
+                    subsets[group] = {}
                 if subset not in subsets[group]:
                     subsets[group][subset] = []
                 resource["rid"] = rid
@@ -1857,8 +1800,12 @@ class Svc(Crypt, ExtConfig):
             return subsets
 
         def add_subsets(subsets, node_nodename, running):
-            for group in DEFAULT_STATUS_GROUPS:
-                subset_names = sorted(subsets[group])
+            done = set()
+            def do(group):
+                try:
+                    subset_names = sorted(subsets[group])
+                except KeyError:
+                    return
                 for subset in subset_names:
                     if subset != group:
                         node_subset = node_nodename.add_node()
@@ -1875,6 +1822,14 @@ class Svc(Crypt, ExtConfig):
                         node_subset = node_nodename
                     for resource in sorted(subsets[group][subset], key=lambda x: x["rid"]):
                         add_res_node(resource, node_subset, running=running)
+            for group in DEFAULT_STATUS_GROUPS:
+                done.add(group)
+                do(group)
+
+            # data resources
+            left = sorted(list(set([key for key in self.resourcesets_by_id]) - done))
+            for group in left:
+                do(group)
 
         # discard disabled resources ?
         if self.options.show_disabled is not None:
@@ -2555,13 +2510,12 @@ class Svc(Crypt, ExtConfig):
         for group in groups:
             status["status_group"][group] = rcStatus.Status(rcStatus.NA)
 
-        for driver in STATUS_TYPES:
-            if driver in excluded_groups:
-                continue
-            group = driver.split('.')[0]
+        for group in DEFAULT_STATUS_GROUPS:
             if group not in groups:
                 continue
-            for resource in self.get_resources(driver):
+            for resource in self.get_resources(group):
+                if resource.type in excluded_groups:
+                    continue
                 rstatus = resource.status()
                 if resource.type.startswith("sync"):
                     if rstatus == rcStatus.UP:
@@ -5190,6 +5144,9 @@ class Svc(Crypt, ExtConfig):
             try:
                 d[option] = self.conf_get(s, "pg_"+option)
             except ex.OptNotFound as exc:
+                pass
+            except ValueError:
+                # keyword not supported. data resource for example.
                 pass
 
         return d

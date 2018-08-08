@@ -59,9 +59,9 @@ class Ip(Res.Ip):
             used.append(int(idx))
         idx = 0
         while True:
-            idx += 1
             if idx not in used:
                 return "eth%d" % idx
+            idx += 1
 
     @lazy
     def container(self):

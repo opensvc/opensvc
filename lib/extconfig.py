@@ -1197,7 +1197,7 @@ class ExtConfig(object):
                 edata[section][key] = val
         return edata
 
-    def section_kwargs(self, section, rtype):
+    def section_kwargs(self, section, rtype=None):
         kwargs = {}
         try:
             cat = section.split("#")[0]
