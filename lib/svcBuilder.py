@@ -22,6 +22,8 @@ def get_tags(svc, section):
         s = svc.conf_get(section, 'tags')
     except ex.OptNotFound as exc:
         s = exc.default
+    except ValueError as exc:
+        s = set()
     return s
 
 def get_optional(svc, section):
@@ -55,6 +57,8 @@ def get_encap(svc, section):
         return svc.conf_get(section, "encap")
     except ex.OptNotFound as exc:
         return exc.default
+    except ValueError as exc:
+        return False
 
 def get_shared(svc, section):
     try:

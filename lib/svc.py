@@ -1067,6 +1067,9 @@ class Svc(Crypt, ExtConfig):
                 s = self.conf_get(resource.rid, action+'_requires')
             except ex.OptNotFound:
                 continue
+            except ValueError:
+                # keyword not supported. data resources for example.
+                continue
             s = s.replace("stdby ", "stdby_")
             l = s.split(" ")
             l = list(map(lambda x: x.replace("stdby_", "stdby "), l))
@@ -5192,6 +5195,9 @@ class Svc(Crypt, ExtConfig):
             try:
                 d[option] = self.conf_get(s, "pg_"+option)
             except ex.OptNotFound as exc:
+                pass
+            except ValueError:
+                # keyword not supported. data resource for example.
                 pass
 
         return d
