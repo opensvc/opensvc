@@ -650,20 +650,20 @@ class Freenas(object):
             raise ex.excError(buff)
 
     # target
-    def del_iscsi_target(self, target_id=None, **kwargs):
-        content = self.get_iscsi_target_id(target_id)
+    def del_iscsi_target(self, id=None, **kwargs):
+        content = self.get_iscsi_target_id(id)
         try:
             data = json.loads(content)
         except ValueError:
             raise ex.excError("target not found")
-        self._del_iscsi_target(target_id=target_id, **kwargs)
+        self._del_iscsi_target(id=id, **kwargs)
         print(json.dumps(data, indent=8))
         return data
 
-    def _del_iscsi_target(self, target_id=None, **kwargs):
-        if target_id is None:
-            raise ex.excError("'target_id' is mandatory")
-        response = self.delete('/services/iscsi/target/%d' % target_id)
+    def _del_iscsi_target(self, id=None, **kwargs):
+        if id is None:
+            raise ex.excError("'id' is mandatory")
+        response = self.delete('/services/iscsi/target/%d' % id)
         if response.status_code != 204:
             raise ex.excError(str(response))
 
