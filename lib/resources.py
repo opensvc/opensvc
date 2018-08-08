@@ -1199,4 +1199,6 @@ class Resource(object):
         lock.unlock(self.lockfd)
         self.lockfd = None
 
-
+    def section_kwargs(self):
+        rtype = self.type.split(".")[-1]
+        return self.svc.section_kwargs(self.rid, rtype)
