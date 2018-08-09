@@ -600,9 +600,10 @@ class Monitor(shared.OsvcThread, Crypt):
                 if resource.get("standby"):
                     nb_restart = self.default_stdby_nb_restart
             retries = self.get_smon_retries(svc.svcname, rid)
+
             if retries > nb_restart:
                 return False
-            if retries >= nb_restart:
+            elif retries == nb_restart:
                 if nb_restart > 0:
                     self.log.info("service %s max retries (%d) reached for "
                                   "resource %s (%s)", svc.svcname, nb_restart,
@@ -639,13 +640,14 @@ class Monitor(shared.OsvcThread, Crypt):
                     svc.log.info("unmonitored rid %s (%s) went %s",
                                  rid, resource["label"], resource["status"])
                 return False
-            self.inc_smon_retries(svc.svcname, rid)
-            self.log.info("service %s restart resource %s (%s), try %d/%d",
-                          svc.svcname, rid, resource["label"],
-                          retries+1, nb_restart)
-            svc.log.info("restart resource %s (%s), try %d/%d", rid,
-                         resource["label"], retries+1, nb_restart)
-            return True
+            else:
+                self.inc_smon_retries(svc.svcname, rid)
+                self.log.info("service %s restart resource %s (%s), try %d/%d",
+                              svc.svcname, rid, resource["label"],
+                              retries+1, nb_restart)
+                svc.log.info("restart resource %s (%s), try %d/%d", rid,
+                             resource["label"], retries+1, nb_restart)
+                return True
 
         def stdby_resource(svc, rid, resource):
             if resource.get("standby") is not True:
@@ -1937,11 +1939,11 @@ class Monitor(shared.OsvcThread, Crypt):
             mtime = datetime.datetime.utcfromtimestamp(mtime)
             last_config = self.get_last_svc_config(svcname)
             if last_config is None or mtime > datetime.datetime.strptime(last_config["updated"], shared.DATEFMT):
-                self.log.info("compute service %s config checksum", svcname)
+                self.log.debug("compute service %s config checksum", svcname)
                 try:
                     csum = fsum(cfg)
                 except (OSError, IOError) as exc:
-                    self.log.info("service %s config checksum error: %s", svcname, exc)
+                    self.log.warning("service %s config checksum error: %s", svcname, exc)
                     continue
                 try:
                     with shared.SERVICES_LOCK:
@@ -1951,8 +1953,8 @@ class Monitor(shared.OsvcThread, Crypt):
                     continue
             else:
                 csum = last_config["csum"]
-            if last_config is None:
-                self.log.debug("purge %s status cache" % svcname)
+            if last_config is None or last_config["csum"] != csum:
+                self.log.info("service %s configuration change" % svcname)
                 shared.SERVICES[svcname].purge_status_caches()
             with shared.SERVICES_LOCK:
                 scope = sorted(list(shared.SERVICES[svcname].nodes | shared.SERVICES[svcname].drpnodes))
