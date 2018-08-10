@@ -51,8 +51,8 @@ OPT = Storage({
         "--secure-tpc", default=True, action="store_false", dest="insecure_tpc",
         help="Set the insecure_tpc flag to False"),
     "compression": Option(
-        "--compression", default="on", action="store", dest="compression",
-        choices=["on", "off", "inherit", "lzjb", "lz4", "gzip", "gzip-9", "zle"],
+        "--compression", default="inherit", action="store", dest="compression",
+        choices=["off", "inherit", "lzjb", "lz4", "gzip", "gzip-9", "zle"],
         help="Toggle compression"),
     "dedup": Option(
         "--dedup", default="off", action="store", dest="dedup", choices=["on", "off"],
