@@ -294,8 +294,10 @@ class Monitor(shared.OsvcThread, Crypt):
             # can happen when deleting the service
             pass
 
-        self.log.info("the service %s config fetched from node %s is now "
-                      "installed", svcname, nodename)
+        self.event("service_config_installed", {
+            "svcname": svcname,
+            "from": nodename
+        })
 
     #########################################################################
     #
@@ -611,60 +613,34 @@ class Monitor(shared.OsvcThread, Crypt):
                         "restart": nb_restart,
                     })
                 self.inc_smon_retries(svc.svcname, rid)
-                log = " ".join(resource.get("log", []))
                 if resource.get("monitor"):
                     candidates = self.placement_candidates(svc)
                     if candidates != [rcEnv.nodename] and len(candidates) > 0:
-                        self.event(
-                            "resource_toc",
-                            data={
-                                "svcname": svc.svcname,
-                                "rid": rid,
-                            },
-                            log_data={
-                                "log": log if log else "no log",
-                            },
-                        )
-                        self.service_toc(svc.svcname)
-                    else:
-                        self.event(
-                            "resource_would_toc",
-                            data={
-                                "reason": "no_candidate",
-                                "svcname": svc.svcname,
-                                "rid": rid,
-                            },
-                            log_data={
-                                "log": log if log else "no log",
-                            },
-                        )
-                else:
-                    self.event(
-                        "resource_degraded",
-                        data={
+                        self.event("resource_toc", {
                             "svcname": svc.svcname,
                             "rid": rid,
-                        },
-                        log_data={
-                            "log": log if log else "no log",
-                        },
-                    )
-                    return False
-            else:
-                log = " ".join(resource.get("log", []))
-                self.inc_smon_retries(svc.svcname, rid)
-                self.event(
-                    "resource_restart",
-                    data={
+                        })
+                        self.service_toc(svc.svcname)
+                    else:
+                        self.event("resource_would_toc", {
+                            "reason": "no_candidate",
+                            "svcname": svc.svcname,
+                            "rid": rid,
+                        })
+                else:
+                    self.event("resource_degraded", {
                         "svcname": svc.svcname,
                         "rid": rid,
-                        "restart": nb_restart,
-                        "try": retries+1,
-                    },
-                    log_data={
-                        "log": log if log else "no log",
-                    },
-                )
+                    })
+                    return False
+            else:
+                self.inc_smon_retries(svc.svcname, rid)
+                self.event("resource_restart", {
+                    "svcname": svc.svcname,
+                    "rid": rid,
+                    "restart": nb_restart,
+                    "try": retries+1,
+                })
                 return True
 
         def stdby_resource(svc, rid, resource):
@@ -685,19 +661,12 @@ class Monitor(shared.OsvcThread, Crypt):
                 })
                 return False
             self.inc_smon_retries(svc.svcname, rid)
-            log = " ".join(resource.get("log", []))
-            self.event(
-                "stdby_resource_restart",
-                data={
-                    "svcname": svc.svcname,
-                    "rid": rid,
-                    "restart": nb_restart,
-                    "try": retries+1,
-                },
-                log_data={
-                    "log": log if log else "no log",
-                },
-            )
+            self.event("stdby_resource_restart", {
+                "svcname": svc.svcname,
+                "rid": rid,
+                "restart": nb_restart,
+                "try": retries+1,
+            })
             return True
 
         smon = self.get_service_monitor(svc.svcname)
@@ -761,12 +730,12 @@ class Monitor(shared.OsvcThread, Crypt):
         if nmon.global_expect == "frozen":
             self.unfreeze_when_all_nodes_joined = False
             if not node_frozen:
-                self.event("node_freeze", data={"reason": "target"})
+                self.event("node_freeze", {"reason": "target"})
                 self.freezer.node_freeze()
         elif nmon.global_expect == "thawed":
             self.unfreeze_when_all_nodes_joined = False
             if node_frozen:
-                self.event("node_thaw", data={"reason": "target"})
+                self.event("node_thaw", {"reason": "target"})
                 self.freezer.node_thaw()
 
     def service_orchestrator(self, svcname, svc):
@@ -916,14 +885,11 @@ class Monitor(shared.OsvcThread, Crypt):
         elif smon.status == "ready":
             now = time.time()
             if smon.status_updated < (now - self.ready_period):
-                self.event(
-                    "service_start",
-                    data={
-                        "reason": "from_ready",
-                        "svcname": svc.svcname,
-                        "since": int(now-smon.status_updated),
-                    }
-                )
+                self.event("instance_start", {
+                    "reason": "from_ready",
+                    "svcname": svc.svcname,
+                    "since": int(now-smon.status_updated),
+                })
                 if smon.stonith and smon.stonith not in shared.CLUSTER_DATA:
                     # stale peer which previously ran the service
                     self.node_stonith(smon.stonith)
@@ -942,13 +908,10 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.set_smon(svc.svcname, status="wait parents")
                 return
             if len(svc.peers) == 1:
-                self.event(
-                    "service_start",
-                    data={
-                        "reason": "single_node",
-                        "svcname": svc.svcname,
-                    }
-                )
+                self.event("instance_start", {
+                    "reason": "single_node",
+                    "svcname": svc.svcname,
+                })
                 self.service_start(svc.svcname)
                 return
             peer = self.peer_transitioning(svc.svcname)
@@ -998,14 +961,11 @@ class Monitor(shared.OsvcThread, Crypt):
         if smon.status == "ready":
             now = time.time()
             if smon.status_updated < (now - self.ready_period):
-                self.event(
-                    "service_start",
-                    data={
-                        "reason": "from_ready",
-                        "svcname": svc.svcname,
-                        "since": now-smon.status_updated,
-                    }
-                )
+                self.event("instance_start", {
+                    "reason": "from_ready",
+                    "svcname": svc.svcname,
+                    "since": now-smon.status_updated,
+                })
                 self.service_start(svc.svcname)
             else:
                 tmo = int(smon.status_updated + self.ready_period - now) + 1
@@ -1045,14 +1005,11 @@ class Monitor(shared.OsvcThread, Crypt):
                               ", ".join(to_stop))
                 if rcEnv.nodename not in to_stop:
                     return
-                self.event(
-                    "service_stop",
-                    data={
-                        "reason": "flex_threshold",
-                        "svcname": svc.svcname,
-                        "up": n_up,
-                    }
-                )
+                self.event("instance_stop", {
+                    "reason": "flex_threshold",
+                    "svcname": svc.svcname,
+                    "up": n_up,
+                })
                 self.service_stop(svc.svcname)
 
     def service_orchestrator_manual(self, svc, smon, status):
@@ -1063,25 +1020,19 @@ class Monitor(shared.OsvcThread, Crypt):
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
         if smon.global_expect == "frozen":
             if self.service_frozen(svc.svcname) is False:
-                self.event(
-                    "service_freeze",
-                    data={
-                        "reason": "target",
-                        "svcname": svc.svcname,
-                        "monitor": smon,
-                    }
-                )
+                self.event("instance_freeze", {
+                    "reason": "target",
+                    "svcname": svc.svcname,
+                    "monitor": smon,
+                })
                 self.service_freeze(svc.svcname)
         elif smon.global_expect == "thawed":
             if self.service_frozen(svc.svcname):
-                self.event(
-                    "service_thaw",
-                    data={
-                        "reason": "target",
-                        "svcname": svc.svcname,
-                        "monitor": smon,
-                    }
-                )
+                self.event("instance_thaw", {
+                    "reason": "target",
+                    "svcname": svc.svcname,
+                    "monitor": smon,
+                })
                 self.service_thaw(svc.svcname)
         elif smon.global_expect == "shutdown":
             if not self.children_down(svc):
@@ -1091,14 +1042,10 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.set_smon(svc.svcname, status="idle")
 
             if not self.service_frozen(svc.svcname):
-                self.event(
-                    "service_freeze",
-                    data={
-                        "reason": "target",
-                        "svcname": svc.svcname,
-                        "monitor": smon,
-                    }
-                )
+                self.event("instance_freeze", {
+                    "reason": "target",
+                    "svcname": svc.svcname,
+                })
                 self.service_freeze(svc.svcname)
             elif not self.is_instance_shutdown(instance):
                 thawed_on = self.service_instances_thawed(svc.svcname)
@@ -1118,6 +1065,10 @@ class Monitor(shared.OsvcThread, Crypt):
 
             if not self.service_frozen(svc.svcname):
                 self.log.info("freeze service %s", svc.svcname)
+                self.event("instance_freeze", {
+                    "reason": "target",
+                    "svcname": svc.svcname,
+                })
                 self.service_freeze(svc.svcname)
             elif instance.avail not in STOPPED_STATES:
                 thawed_on = self.service_instances_thawed(svc.svcname)
@@ -1127,60 +1078,74 @@ class Monitor(shared.OsvcThread, Crypt):
                                 svcname=svc.svcname,
                                 thawed_on=", ".join(thawed_on))
                 else:
-                    self.event(
-                        "service_stop",
-                        data={
-                            "reason": "target",
-                            "svcname": svc.svcname,
-                        }
-                    )
+                    self.event("instance_stop", {
+                        "reason": "target",
+                        "svcname": svc.svcname,
+                    })
                     self.service_stop(svc.svcname)
         elif smon.global_expect == "started":
             if self.service_frozen(svc.svcname):
-                self.log.info("thaw service %s", svc.svcname)
+                self.event("instance_thaw", {
+                    "reason": "target",
+                    "svcname": svc.svcname,
+                })
                 self.service_thaw(svc.svcname)
             elif status not in STARTED_STATES:
                 self.service_orchestrator_auto(svc, smon, status)
         elif smon.global_expect == "unprovisioned":
             if not self.service_unprovisioned(instance) and \
                self.leader_first(svc, provisioned=False):
+                self.event("instance_unprovision", {
+                    "reason": "target",
+                    "svcname": svc.svcname,
+                })
                 self.service_unprovision(svc.svcname)
         elif smon.global_expect == "provisioned":
             if not self.service_provisioned(instance) and \
                self.leader_first(svc, provisioned=True):
+                self.event("instance_provision", {
+                    "reason": "target",
+                    "svcname": svc.svcname,
+                })
                 self.service_provision(svc)
         elif smon.global_expect == "deleted":
             if svc.svcname in shared.SERVICES:
+                self.event("instance_delete", {
+                    "reason": "target",
+                    "svcname": svc.svcname,
+                })
                 self.service_delete(svc.svcname)
         elif smon.global_expect == "purged" and \
              self.leader_first(svc, provisioned=False, deleted=True, check_min_instances_reached=False):
             if svc.svcname in shared.SERVICES and \
                (not self.service_unprovisioned(instance) or instance is not None):
+                self.event("instance_purge", {
+                    "reason": "target",
+                    "svcname": svc.svcname,
+                })
                 self.service_purge(svc.svcname)
         elif smon.global_expect == "aborted" and \
              smon.local_expect not in (None, "started"):
+            self.event("instance_abort", {
+                "reason": "target",
+                "svcname": svc.svcname,
+            })
             self.set_smon(svc.svcname, local_expect="unset")
         elif smon.global_expect == "placed":
             if instance["monitor"].get("placement") != "leader":
                 if instance.avail not in STOPPED_STATES:
-                    self.event(
-                        "service_stop",
-                        data={
-                            "reason": "target",
-                            "svcname": svc.svcname,
-                        }
-                    )
+                    self.event("instance_stop", {
+                        "reason": "target",
+                        "svcname": svc.svcname,
+                    })
                     self.service_stop(svc.svcname)
             elif self.non_leaders_stopped(svc) and \
                  (shared.AGG[svc.svcname].placement not in ("optimal", "n/a") or shared.AGG[svc.svcname].avail != "up") and \
                  instance.avail in STOPPED_STATES:
-                self.event(
-                    "service_start",
-                    data={
-                        "reason": "target",
-                        "svcname": svc.svcname,
-                    }
-                )
+                self.event("instance_start", {
+                    "reason": "target",
+                    "svcname": svc.svcname,
+                })
                 self.service_start(svc.svcname)
 
     def scaler_current_slaves(self, svcname):

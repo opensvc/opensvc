@@ -98,26 +98,35 @@ COLLECTOR_XMLRPC_QUEUE = []
 
 # event messages to log, indexed by (event id, reason)
 EVENTS = {
+    ("crash", "split"): "cluster is split, we don't have quorum: {node_votes}+{arbitrator_votes}/{voting} votes {pro_voters}",
+    ("forget_peer", "no_rx"): "no rx thread still receive from node {peer} and maintenance grace period expired. flush its data",
+    ("node_config_change", None): "node config change",
     ("node_freeze", "target"): "freeze node",
     ("node_thaw", None): "thaw node",
     ("node_freeze", "upgrade"): "freeze node for upgrade until the cluster is complete",
     ("node_thaw", "upgrade"): "thaw node after upgrade, the cluster is complete",
-    ("max_resource_restart", None): "max restart ({restart}) reached for resource ({rid}) ({resource[label]})",
-    ("max_stdby_resource_restart", None): "max restart ({restart}) reached for standby resource {rid] ({resource[label]})",
+    ("max_resource_restart", None): "max restart ({restart}) reached for resource {rid} ({resource.label})",
+    ("max_stdby_resource_restart", None): "max restart ({restart}) reached for standby resource {rid} ({resource.label})",
     ("monitor_started", None): "monitor started",
-    ("resource_toc", None): "toc for resource {rid} ({resource[label]}) {resource[status]} ({log})",
-    ("resource_would_toc", "no_candidate"): "would toc for resource {rid} ({resource[label]}) {resource[status]} ({log}), but no node is candidate for takeover.",
-    ("resource_degraded", None): "resource {rid} ({resource[label]}) degraded to {resource[status]} ({log})",
-    ("resource_restart", None): "restart resource {rid} ({resource[label]}) {resource[status]} ({log}), try {try}/{restart}",
-    ("stdby_resource_restart", None): "start standby resource {rid} ({resource[label]}) {resource[status]} ({log}), try {try}/{restart}",
-    ("service_start", "single_node"): "start idle single node {instance[avail]} instance",
-    ("service_start", "from_ready"): "start {instance[topology]} {instance[avail]} instance ready for {since} seconds",
-    ("service_start", "target"): "start {instance[topology]} {instance[avail]} instance to satisfy the {instance[monitor][global_expect]} target",
-    ("service_stop", "target"): "stop {instance[topology]} {instance[avail]} instance to satisfy the {instance[monitor][global_expect]} target",
-    ("service_stop", "target"): "stop {instance[topology]} {instance[avail]} instance to satisfy the {instance[monitor][global_expect]} target",
-    ("service_stop", "flex_threshold"): "stop $(instance[topology]} {instance[avail]} instance to meet threshold constraints: {up}/{instance[flex_min_nodes]}-{instance[flex_max_nodes]}",
-    ("service_thaw", "target"): "thaw instance to satisfy the {instance[monitor][global_expect]} target",
-    ("service_freeze", "target"): "freeze instance to satisfy the {instance[monitor][global_expect]} target",
+    ("resource_toc", None): "toc for resource {rid} ({resource.label}) {resource.status} {resource.log}",
+    ("resource_would_toc", "no_candidate"): "would toc for resource {rid} ({resource.label}) {resource.status} {resource.log}, but no node is candidate for takeover.",
+    ("resource_degraded", None): "resource {rid} ({resource.label}) degraded to {resource.status} {resource.log}",
+    ("resource_restart", None): "restart resource {rid} ({resource.label}) {resource.status} {resource.log}, try {try}/{restart}",
+    ("stdby_resource_restart", None): "start standby resource {rid} ({resource.label}) {resource.status} {resource.log}, try {try}/{restart}",
+    ("service_config_installed", None): "config fetched from node {from} is now installed",
+    ("instance_abort", "target"): "abort {instance.topology} {instance.avail} instance {instance.monitor.local_expect} action to satisfy the {instance.monitor.global_expect} target",
+    ("instance_delete", "target"): "delete {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
+    ("instance_freeze", "target"): "freeze instance to satisfy the {instance.monitor.global_expect} target",
+    ("instance_provision", "target"): "provision {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
+    ("instance_purge", "target"): "purge {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
+    ("instance_start", "single_node"): "start idle single node {instance.avail} instance",
+    ("instance_start", "from_ready"): "start {instance.topology} {instance.avail} instance ready for {since} seconds",
+    ("instance_start", "target"): "start {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
+    ("instance_stop", "target"): "stop {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
+    ("instance_stop", "target"): "stop {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
+    ("instance_stop", "flex_threshold"): "stop $(instance.topology} {instance.avail} instance to meet threshold constraints: {up}/{instance.flex_min_nodes}-{instance.flex_max_nodes}",
+    ("instance_thaw", "target"): "thaw instance to satisfy the {instance.monitor.global_expect} target",
+    ("instance_unprovision", "target"): "unprovision {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
 }
 
 def wake_heartbeat_tx():
@@ -314,7 +323,7 @@ class OsvcThread(threading.Thread):
         if not self._node_conf_event.is_set():
             return
         self._node_conf_event.clear()
-        self.log.info("config change event received")
+        self.event("node_config_change")
         unset_lazy(self, "config")
         unset_lazy(self, "quorum")
         unset_lazy(self, "arbitrators")
@@ -611,11 +620,13 @@ class OsvcThread(threading.Thread):
                         live=live, avote=n_extra_votes, total=total,
                         a=",".join(extra_votes))
             return
-        self.duplog("info", "cluster is split, we don't have quorum: "
-                    "%(live)d+%(avote)d/%(total)d votes (%(a)s)",
-                    live=live, avote=n_extra_votes, total=total,
-                    a=",".join(extra_votes))
-        self.log.info("toc")
+        self.event("crash", {
+            "reason": "split",
+            "node_votes": live,
+            "arbitrator_votes": n_extra_votes,
+            "voting": total,
+            "pro_voters": [nodename for nodename in CLUSTER_DATA] + extra_votes,
+        })
         NODE.system.crash()
 
     def forget_peer_data(self, nodename, change=False):
@@ -636,9 +647,13 @@ class OsvcThread(threading.Thread):
                               nodename, nmon.status, time.time()-nmon.status_updated,
                               self.maintenance_grace_period)
             return
-        self.log.info("no rx thread still receive from node %s and maintenance "
-                      "grace period expired. flush its data",
-                      nodename)
+        self.event(
+            "forget_peer",
+            {
+                "reason": "no_rx",
+                "peer": nodename,
+            }
+        )
         with CLUSTER_DATA_LOCK:
             try:
                 del CLUSTER_DATA[nodename]
@@ -965,14 +980,14 @@ class OsvcThread(threading.Thread):
             data = {}
         data["id"] = eid
         svcname = data.get("svcname")
-        data["monitor"] = self.get_node_monitor()
+        data["monitor"] = Storage(self.get_node_monitor())
         if svcname:
-            data["service"] = self.get_service_agg(svcname)
-            data["instance"] = self.get_service_instance(svcname, rcEnv.nodename)
-            data["instance"]["monitor"] = self.get_service_monitor(svcname)
+            data["service"] = Storage(self.get_service_agg(svcname))
+            data["instance"] = Storage(self.get_service_instance(svcname, rcEnv.nodename))
+            data["instance"]["monitor"] = Storage(self.get_service_monitor(svcname))
             rid = data.get("rid")
             if rid:
-                data["resource"] = data["instance"].get("resources", {}).get(rid, {})
+                data["resource"] = Storage(data["instance"].get("resources", {}).get(rid, {}))
             try:
                 del data["instance"]["resources"]
             except KeyError:
