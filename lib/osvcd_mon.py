@@ -57,7 +57,7 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
-        self.log.info("monitor started")
+        self.event("monitor_started")
         self.startup = datetime.datetime.utcnow()
         self.rejoin_grace_period_expired = False
         self.shortloops = 0
@@ -72,7 +72,7 @@ class Monitor(shared.OsvcThread, Crypt):
 
         if os.environ.get("OPENSVC_AGENT_UPGRADE"):
             if not self.freezer.node_frozen():
-                self.log.info("freeze node until the cluster is complete")
+                self.event("node_freeze", data={"reason": "upgrade"})
                 self.unfreeze_when_all_nodes_joined = True
                 self.freezer.node_freeze()
 
@@ -605,48 +605,66 @@ class Monitor(shared.OsvcThread, Crypt):
                 return False
             elif retries == nb_restart:
                 if nb_restart > 0:
-                    self.log.info("service %s max retries (%d) reached for "
-                                  "resource %s (%s)", svc.svcname, nb_restart,
-                                  rid, resource["label"])
-                    svc.log.info("max retries (%d) reached for resource %s "
-                                 "(%s)", nb_restart, rid, resource["label"])
+                    self.event("max_resource_restart", {
+                        "svcname": svc.svcname,
+                        "rid": rid,
+                        "restart": nb_restart,
+                    })
                 self.inc_smon_retries(svc.svcname, rid)
+                log = " ".join(resource.get("log", []))
                 if resource.get("monitor"):
                     candidates = self.placement_candidates(svc)
-                    log = " ".join(resource.get("log", []))
-                    if not log:
-                        log = "no log"
                     if candidates != [rcEnv.nodename] and len(candidates) > 0:
-                        self.log.info("toc for service %s rid %s (%s) %s (%s)",
-                                      svc.svcname, rid, resource["label"],
-                                      resource["status"], log)
-                        svc.log.info("toc for rid %s (%s) %s (%s)", rid,
-                                      resource["label"], resource["status"],
-                                      log)
+                        self.event(
+                            "resource_toc",
+                            data={
+                                "svcname": svc.svcname,
+                                "rid": rid,
+                            },
+                            log_data={
+                                "log": log if log else "no log",
+                            },
+                        )
                         self.service_toc(svc.svcname)
                     else:
-                        self.log.info("would toc for service %s rid %s (%s) %s (%s), but "
-                                      "no node is candidate for takeover.",
-                                      svc.svcname, rid, resource["label"],
-                                      resource["status"], log)
-                        svc.log.info("would toc for rid %s (%s) %s (%s), but "
-                                     "no node is candidate for takeover.",
-                                     rid, resource["label"],
-                                     resource["status"], log)
+                        self.event(
+                            "resource_would_toc",
+                            data={
+                                "reason": "no_candidate",
+                                "svcname": svc.svcname,
+                                "rid": rid,
+                            },
+                            log_data={
+                                "log": log if log else "no log",
+                            },
+                        )
                 else:
-                    self.log.info("service %s unmonitored rid %s (%s) went %s",
-                                  svc.svcname, rid, resource["label"],
-                                  resource["status"])
-                    svc.log.info("unmonitored rid %s (%s) went %s",
-                                 rid, resource["label"], resource["status"])
-                return False
+                    self.event(
+                        "resource_degraded",
+                        data={
+                            "svcname": svc.svcname,
+                            "rid": rid,
+                        },
+                        log_data={
+                            "log": log if log else "no log",
+                        },
+                    )
+                    return False
             else:
+                log = " ".join(resource.get("log", []))
                 self.inc_smon_retries(svc.svcname, rid)
-                self.log.info("service %s restart resource %s (%s), try %d/%d",
-                              svc.svcname, rid, resource["label"],
-                              retries+1, nb_restart)
-                svc.log.info("restart resource %s (%s), try %d/%d", rid,
-                             resource["label"], retries+1, nb_restart)
+                self.event(
+                    "resource_restart",
+                    data={
+                        "svcname": svc.svcname,
+                        "rid": rid,
+                        "restart": nb_restart,
+                        "try": retries+1,
+                    },
+                    log_data={
+                        "log": log if log else "no log",
+                    },
+                )
                 return True
 
         def stdby_resource(svc, rid, resource):
@@ -660,18 +678,26 @@ class Monitor(shared.OsvcThread, Crypt):
                 return False
             if retries >= nb_restart:
                 self.inc_smon_retries(svc.svcname, rid)
-                self.log.info("service %s max retries (%d) reached for standby "
-                              "resource %s (%s)", svc.svcname, nb_restart, rid,
-                              resource["label"])
-                svc.log.info("max retries (%d) reached for standby resource "
-                             "%s (%s)", nb_restart, rid, resource["label"])
+                self.event("max_stdby_resource_restart", {
+                    "svcname": svc.svcname,
+                    "rid": rid,
+                    "restart": nb_restart,
+                })
                 return False
             self.inc_smon_retries(svc.svcname, rid)
-            self.log.info("service %s start standby resource %s (%s), try "
-                          "%d/%d", svc.svcname, rid, resource["label"],
-                          retries+1, nb_restart)
-            svc.log.info("start standby resource %s (%s), try %d/%d", rid,
-                         resource["label"], retries+1, nb_restart)
+            log = " ".join(resource.get("log", []))
+            self.event(
+                "stdby_resource_restart",
+                data={
+                    "svcname": svc.svcname,
+                    "rid": rid,
+                    "restart": nb_restart,
+                    "try": retries+1,
+                },
+                log_data={
+                    "log": log if log else "no log",
+                },
+            )
             return True
 
         smon = self.get_service_monitor(svc.svcname)
@@ -692,7 +718,7 @@ class Monitor(shared.OsvcThread, Crypt):
             if resource["status"] not in ("warn", "down", "stdby down"):
                 self.reset_smon_retries(svc.svcname, rid)
                 continue
-            if not resource.get("provisioned", {}).get("state"):
+            if resource.get("provisioned", {}).get("state") is False:
                 continue
             if monitored_resource(svc, rid, resource) or stdby_resource(svc, rid, resource):
                 rids.append(rid)
@@ -725,7 +751,7 @@ class Monitor(shared.OsvcThread, Crypt):
         nmon = self.get_node_monitor()
         node_frozen = self.freezer.node_frozen()
         if self.unfreeze_when_all_nodes_joined and node_frozen and len(self.cluster_nodes) == len(shared.CLUSTER_DATA):
-            self.log.info("thaw node now the cluster is complete")
+            self.event("node_thaw", data={"reason": "upgrade"})
             self.freezer.node_thaw()
             self.unfreeze_when_all_nodes_joined = False
             node_frozen = False
@@ -735,12 +761,12 @@ class Monitor(shared.OsvcThread, Crypt):
         if nmon.global_expect == "frozen":
             self.unfreeze_when_all_nodes_joined = False
             if not node_frozen:
-                self.log.info("freeze node")
+                self.event("node_freeze", data={"reason": "target"})
                 self.freezer.node_freeze()
         elif nmon.global_expect == "thawed":
             self.unfreeze_when_all_nodes_joined = False
             if node_frozen:
-                self.log.info("thaw node")
+                self.event("node_thaw", data={"reason": "target"})
                 self.freezer.node_thaw()
 
     def service_orchestrator(self, svcname, svc):
@@ -890,9 +916,14 @@ class Monitor(shared.OsvcThread, Crypt):
         elif smon.status == "ready":
             now = time.time()
             if smon.status_updated < (now - self.ready_period):
-                self.log.info("failover service %s status %s/ready for "
-                              "%d seconds", svc.svcname, status,
-                              now-smon.status_updated)
+                self.event(
+                    "service_start",
+                    data={
+                        "reason": "from_ready",
+                        "svcname": svc.svcname,
+                        "since": int(now-smon.status_updated),
+                    }
+                )
                 if smon.stonith and smon.stonith not in shared.CLUSTER_DATA:
                     # stale peer which previously ran the service
                     self.node_stonith(smon.stonith)
@@ -911,8 +942,13 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.set_smon(svc.svcname, status="wait parents")
                 return
             if len(svc.peers) == 1:
-                self.log.info("failover service %s status %s/idle and "
-                              "single node", svc.svcname, status)
+                self.event(
+                    "service_start",
+                    data={
+                        "reason": "single_node",
+                        "svcname": svc.svcname,
+                    }
+                )
                 self.service_start(svc.svcname)
                 return
             peer = self.peer_transitioning(svc.svcname)
@@ -962,8 +998,14 @@ class Monitor(shared.OsvcThread, Crypt):
         if smon.status == "ready":
             now = time.time()
             if smon.status_updated < (now - self.ready_period):
-                self.log.info("flex service %s status %s/ready for %d seconds",
-                              svc.svcname, status, now-smon.status_updated)
+                self.event(
+                    "service_start",
+                    data={
+                        "reason": "from_ready",
+                        "svcname": svc.svcname,
+                        "since": now-smon.status_updated,
+                    }
+                )
                 self.service_start(svc.svcname)
             else:
                 tmo = int(smon.status_updated + self.ready_period - now) + 1
@@ -1003,10 +1045,14 @@ class Monitor(shared.OsvcThread, Crypt):
                               ", ".join(to_stop))
                 if rcEnv.nodename not in to_stop:
                     return
-                self.log.info("flex service %s started, starting or ready to "
-                              "start instances: %d/%d-%d. local status %s",
-                              svc.svcname, n_up, svc.flex_min_nodes,
-                              svc.flex_max_nodes, instance.avail)
+                self.event(
+                    "service_stop",
+                    data={
+                        "reason": "flex_threshold",
+                        "svcname": svc.svcname,
+                        "up": n_up,
+                    }
+                )
                 self.service_stop(svc.svcname)
 
     def service_orchestrator_manual(self, svc, smon, status):
@@ -1017,11 +1063,25 @@ class Monitor(shared.OsvcThread, Crypt):
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
         if smon.global_expect == "frozen":
             if self.service_frozen(svc.svcname) is False:
-                self.log.info("freeze service %s", svc.svcname)
+                self.event(
+                    "service_freeze",
+                    data={
+                        "reason": "target",
+                        "svcname": svc.svcname,
+                        "monitor": smon,
+                    }
+                )
                 self.service_freeze(svc.svcname)
         elif smon.global_expect == "thawed":
             if self.service_frozen(svc.svcname):
-                self.log.info("thaw service %s", svc.svcname)
+                self.event(
+                    "service_thaw",
+                    data={
+                        "reason": "target",
+                        "svcname": svc.svcname,
+                        "monitor": smon,
+                    }
+                )
                 self.service_thaw(svc.svcname)
         elif smon.global_expect == "shutdown":
             if not self.children_down(svc):
@@ -1031,7 +1091,14 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.set_smon(svc.svcname, status="idle")
 
             if not self.service_frozen(svc.svcname):
-                self.log.info("freeze service %s", svc.svcname)
+                self.event(
+                    "service_freeze",
+                    data={
+                        "reason": "target",
+                        "svcname": svc.svcname,
+                        "monitor": smon,
+                    }
+                )
                 self.service_freeze(svc.svcname)
             elif not self.is_instance_shutdown(instance):
                 thawed_on = self.service_instances_thawed(svc.svcname)
@@ -1060,6 +1127,13 @@ class Monitor(shared.OsvcThread, Crypt):
                                 svcname=svc.svcname,
                                 thawed_on=", ".join(thawed_on))
                 else:
+                    self.event(
+                        "service_stop",
+                        data={
+                            "reason": "target",
+                            "svcname": svc.svcname,
+                        }
+                    )
                     self.service_stop(svc.svcname)
         elif smon.global_expect == "started":
             if self.service_frozen(svc.svcname):
@@ -1089,10 +1163,24 @@ class Monitor(shared.OsvcThread, Crypt):
         elif smon.global_expect == "placed":
             if instance["monitor"].get("placement") != "leader":
                 if instance.avail not in STOPPED_STATES:
+                    self.event(
+                        "service_stop",
+                        data={
+                            "reason": "target",
+                            "svcname": svc.svcname,
+                        }
+                    )
                     self.service_stop(svc.svcname)
             elif self.non_leaders_stopped(svc) and \
                  (shared.AGG[svc.svcname].placement not in ("optimal", "n/a") or shared.AGG[svc.svcname].avail != "up") and \
                  instance.avail in STOPPED_STATES:
+                self.event(
+                    "service_start",
+                    data={
+                        "reason": "target",
+                        "svcname": svc.svcname,
+                    }
+                )
                 self.service_start(svc.svcname)
 
     def scaler_current_slaves(self, svcname):

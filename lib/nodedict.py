@@ -749,6 +749,19 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "convert": "list",
         "text": "The lvcreate command options to use to create the pool logical volumes."
     },
+    {
+        "section": "hook",
+        "keyword": "events",
+        "default": [],
+        "convert": "list",
+        "text": "The list of events to execute the hook command on. The special value 'all' is also supported."
+    },
+    {
+        "section": "hook",
+        "keyword": "command",
+        "convert": "shlex",
+        "text": "The command to execute on selected events. The program is fed the json-formatted event data through stdin."
+    },
 ]
 
 

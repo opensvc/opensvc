@@ -3081,18 +3081,23 @@ class Node(Crypt, ExtConfig):
             nodename = rcEnv.nodename
         for msg in self.daemon_events(nodename):
             if self.options.format == "json":
-                print(msg)
+                print(json.dumps(msg))
                 sys.stdout.flush()
             else:
-                print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"), msg.get("nodename", ""))
-                for event in msg["data"]:
-                    try:
-                        key, val = event
-                        line = "  %s => %s" % (".".join([str(k) for k in key]), str(val))
-                    except ValueError:
-                        line = "  %s deleted" % ".".join([str(k) for k in event[0]])
-                    print(line)
-                    sys.stdout.flush()
+                kind = msg.get("kind")
+                print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"), msg.get("nodename", ""), kind)
+                if kind == "patch":
+                    for event in msg["data"]:
+                        try:
+                            key, val = event
+                            line = "  %s => %s" % (".".join([str(k) for k in key]), str(val))
+                        except ValueError:
+                            line = "  %s deleted" % ".".join([str(k) for k in event[0]])
+                        print(line)
+                        sys.stdout.flush()
+                elif kind == "event":
+                    for key, val in msg.get("data", {}).items():
+                        print("  %s=%s" % ((str(key).upper(), str(val))))
 
     def logs(self, nodename=None):
         try:
@@ -4620,3 +4625,18 @@ class Node(Crypt, ExtConfig):
         from rcUtilities import mimport
         mod = mimport("pool", ptype)
         return mod.Pool(node=self, name=poolname)
+
+    @lazy
+    def hooks(self):
+        """
+        A hash of hook command sets, indexed by event.
+        """
+        data = {}
+        for section in self.conf_sections("hook"):
+            command = tuple(self.conf_get(section, "command"))
+            events = self.conf_get(section, "events")
+            for event in events:
+                if event not in data:
+                    data[event] = set()
+                data[event].add(command)
+        return data

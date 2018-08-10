@@ -8,6 +8,7 @@ import datetime
 import time
 import codecs
 import hashlib
+import json
 from subprocess import Popen, PIPE
 
 import six
@@ -94,6 +95,30 @@ HB_TX_TICKER = threading.Condition()
 
 # a queue of xmlrpc calls to do, fed by the lsnr, purged by the collector thread
 COLLECTOR_XMLRPC_QUEUE = []
+
+# event messages to log, indexed by (event id, reason)
+EVENTS = {
+    ("node_freeze", "target"): "freeze node",
+    ("node_thaw", None): "thaw node",
+    ("node_freeze", "upgrade"): "freeze node for upgrade until the cluster is complete",
+    ("node_thaw", "upgrade"): "thaw node after upgrade, the cluster is complete",
+    ("max_resource_restart", None): "max restart ({restart}) reached for resource ({rid}) ({resource[label]})",
+    ("max_stdby_resource_restart", None): "max restart ({restart}) reached for standby resource {rid] ({resource[label]})",
+    ("monitor_started", None): "monitor started",
+    ("resource_toc", None): "toc for resource {rid} ({resource[label]}) {resource[status]} ({log})",
+    ("resource_would_toc", "no_candidate"): "would toc for resource {rid} ({resource[label]}) {resource[status]} ({log}), but no node is candidate for takeover.",
+    ("resource_degraded", None): "resource {rid} ({resource[label]}) degraded to {resource[status]} ({log})",
+    ("resource_restart", None): "restart resource {rid} ({resource[label]}) {resource[status]} ({log}), try {try}/{restart}",
+    ("stdby_resource_restart", None): "start standby resource {rid} ({resource[label]}) {resource[status]} ({log}), try {try}/{restart}",
+    ("service_start", "single_node"): "start idle single node {instance[avail]} instance",
+    ("service_start", "from_ready"): "start {instance[topology]} {instance[avail]} instance ready for {since} seconds",
+    ("service_start", "target"): "start {instance[topology]} {instance[avail]} instance to satisfy the {instance[monitor][global_expect]} target",
+    ("service_stop", "target"): "stop {instance[topology]} {instance[avail]} instance to satisfy the {instance[monitor][global_expect]} target",
+    ("service_stop", "target"): "stop {instance[topology]} {instance[avail]} instance to satisfy the {instance[monitor][global_expect]} target",
+    ("service_stop", "flex_threshold"): "stop $(instance[topology]} {instance[avail]} instance to meet threshold constraints: {up}/{instance[flex_min_nodes]}-{instance[flex_max_nodes]}",
+    ("service_thaw", "target"): "thaw instance to satisfy the {instance[monitor][global_expect]} target",
+    ("service_freeze", "target"): "freeze instance to satisfy the {instance[monitor][global_expect]} target",
+}
 
 def wake_heartbeat_tx():
     """
@@ -469,6 +494,22 @@ class OsvcThread(threading.Thread):
                 return "leader"
         return ""
 
+    def hook_command(self, cmd, data):
+        """
+        A generic nodemgr command Popen wrapper.
+        """
+        cmd = list(cmd)
+        eid = data.get("data", {}).get("id")
+        self.log.info("execute %s hook: %s", eid, " ".join(cmd))
+        try:
+            proc = Popen(cmd, stdout=None, stderr=None, stdin=PIPE, close_fds=True)
+            proc.stdin.write(json.dumps(data).encode())
+            proc.stdin.close()
+        except Exception as exc:
+            self.log.error("%s hook %s execution error: %s", eid, " ".join(cmd), exc)
+            return
+        return proc
+
     def node_command(self, cmd):
         """
         A generic nodemgr command Popen wrapper.
@@ -641,6 +682,17 @@ class OsvcThread(threading.Thread):
         try:
             with CLUSTER_DATA_LOCK:
                 return Storage(CLUSTER_DATA[nodename]["services"]["status"][svcname])
+        except KeyError:
+            return
+
+    @staticmethod
+    def get_service_agg(svcname):
+        """
+        Return the specified service aggregated status structure.
+        """
+        try:
+            with AGG_LOCK:
+                return AGG[svcname]
         except KeyError:
             return
 
@@ -897,4 +949,72 @@ class OsvcThread(threading.Thread):
             return True
         return False
 
+    def event(self, eid, data=None, log_data=None, level="info"):
+        """
+        Put an "event"-kind event in the events queue, then log in node.log
+        and in the service.log if a svcname is provided in <data>. If a
+        <log_data> is passed, merge it in <data> before formatting the messages
+        to log.
+        """
+        evt = {
+            "nodename": rcEnv.nodename,
+            "kind": "event",
+            "id": eid,
+        }
+        if not isinstance(data, dict):
+            data = {}
+        data["id"] = eid
+        svcname = data.get("svcname")
+        data["monitor"] = self.get_node_monitor()
+        if svcname:
+            data["service"] = self.get_service_agg(svcname)
+            data["instance"] = self.get_service_instance(svcname, rcEnv.nodename)
+            data["instance"]["monitor"] = self.get_service_monitor(svcname)
+            rid = data.get("rid")
+            if rid:
+                data["resource"] = data["instance"].get("resources", {}).get(rid, {})
+            try:
+                del data["instance"]["resources"]
+            except KeyError:
+                pass
+
+        evt["data"] = data
+        EVENT_Q.put(evt)
+        hooks = NODE.hooks.get(eid, set()) | NODE.hooks.get("all", set())
+        for hook in hooks:
+            proc = self.hook_command(hook, evt)
+            if proc:
+                self.push_proc(proc)
+
+        if not level:
+            return
+
+        key = eid, data.get("reason")
+        fmt = EVENTS.get(key)
+        if not fmt:
+            # fallback to a generic message
+            key = eid, None
+            fmt = EVENTS.get(key)
+        if not fmt:
+            return
+
+        fmt_data = {}
+        fmt_data.update(data)
+        if isinstance(log_data, dict):
+            fmt_data.update(log_data)
+
+        svcname = fmt_data.get("svcname")
+        if svcname:
+            # log to node.log with a "service <svcname> " prefix
+            node_fmt = "service {svcname} "+fmt
+            getattr(self.log, level)(node_fmt.format(**fmt_data))
+
+            # log to <svcname.log>
+            with SERVICES_LOCK:
+                svc = SERVICES.get(svcname)
+                if svc:
+                    getattr(svc.log, level)(fmt.format(**fmt_data))
+        else:
+            # log to node.log with no prefix
+            getattr(self.log, level)(fmt.format(**fmt_data))
 
