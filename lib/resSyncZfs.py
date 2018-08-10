@@ -372,7 +372,7 @@ class SyncZfs(resSync.Sync):
 
     def get_remote_state(self, node):
         self.set_statefile()
-        cmd1 = ['env', 'LANG=C', 'cat', self.statefile]
+        cmd1 = ['cat', self.statefile]
         cmd = rcEnv.rsh.split() + [node] + cmd1
         (ret, out, err) = self.call(cmd)
         if ret != 0:
@@ -387,7 +387,7 @@ class SyncZfs(resSync.Sync):
         return self.parse_statefile(out)
 
     def get_snap_uuid(self, snap):
-        cmd = [rcEnv.syspaths.zfs, 'list', '-H', '-o', 'creation', '-t', 'snapshot', snap]
+        cmd = ['env', 'LC_ALL=C', rcEnv.syspaths.zfs, 'list', '-H', '-o', 'creation', '-t', 'snapshot', snap]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError
