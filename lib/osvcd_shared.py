@@ -981,12 +981,24 @@ class OsvcThread(threading.Thread):
         svcname = data.get("svcname")
         data["monitor"] = Storage(self.get_node_monitor())
         if svcname:
-            data["service"] = Storage(self.get_service_agg(svcname))
-            data["instance"] = Storage(self.get_service_instance(svcname, rcEnv.nodename))
-            data["instance"]["monitor"] = Storage(self.get_service_monitor(svcname))
+            try:
+                data["service"] = Storage(self.get_service_agg(svcname))
+            except TypeError:
+                data["service"] = Storage()
+            try:
+                data["instance"] = Storage(self.get_service_instance(svcname, rcEnv.nodename))
+            except TypeError:
+                data["instance"] = Storage()
+            try:
+                data["instance"]["monitor"] = Storage(self.get_service_monitor(svcname))
+            except TypeError:
+                data["instance"]["monitor"] = Storage()
             rid = data.get("rid")
             if rid:
-                data["resource"] = Storage(data["instance"].get("resources", {}).get(rid, {}))
+                try:
+                    data["resource"] = Storage(data["instance"].get("resources", {}).get(rid, {}))
+                except TypeError:
+                    data["resource"] = Storage()
             try:
                 del data["instance"]["resources"]
             except KeyError:
