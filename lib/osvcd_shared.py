@@ -124,7 +124,7 @@ EVENTS = {
     ("instance_start", "target"): "start {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
     ("instance_stop", "target"): "stop {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
     ("instance_stop", "target"): "stop {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
-    ("instance_stop", "flex_threshold"): "stop $(instance.topology} {instance.avail} instance to meet threshold constraints: {up}/{instance.flex_min_nodes}-{instance.flex_max_nodes}",
+    ("instance_stop", "flex_threshold"): "stop {instance.topology} {instance.avail} instance to meet threshold constraints: {up}/{instance.flex_min_nodes}-{instance.flex_max_nodes}",
     ("instance_thaw", "target"): "thaw instance to satisfy the {instance.monitor.global_expect} target",
     ("instance_unprovision", "target"): "unprovision {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
 }
@@ -974,7 +974,6 @@ class OsvcThread(threading.Thread):
         evt = {
             "nodename": rcEnv.nodename,
             "kind": "event",
-            "id": eid,
         }
         if not isinstance(data, dict):
             data = {}
