@@ -1212,3 +1212,12 @@ class ExtConfig(object):
                 kwargs[keyword.keyword] = exc.default
         return kwargs
 
+    def conf_sections(self, cat=None, src_config=None):
+        if src_config is None:
+            config = self.config
+        else:
+            config = src_config
+        for section in config.sections():
+            if cat is None or section.startswith(cat+"#"):
+                yield section
+
