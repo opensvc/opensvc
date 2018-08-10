@@ -191,9 +191,9 @@ class Section(object):
     def template(self, fmt="text", write=False):
         k = self.getkey("type")
         if k is None:
-            return self._template(fmt=fmt)
+            return self._template(fmt=fmt, write=write)
         if k.candidates is None:
-            return self._template(fmt=fmt)
+            return self._template(fmt=fmt, write=write)
         s = ""
         if not k.strict_candidates:
             s += self._template(fmt=fmt, write=write)
@@ -230,15 +230,14 @@ class Section(object):
             s += "[%s#0]\n" % self.section
         if rtype is not None:
             s += ";type = " + rtype + "\n\n"
-        for keyword in sorted(self.getkeys(rtype)):
-            s += keyword.template(fmt="text")
+            for keyword in sorted(self.getkeys(rtype)):
+                s += keyword.template(fmt="text")
         for keyword in sorted(self.getprovkeys(rtype)):
             s += keyword.template(fmt="text")
-        if rtype is not None:
-            for keyword in sorted(self.getkeys()):
-                if keyword.keyword == "type":
-                    continue
-                s += keyword.template(fmt="text")
+        for keyword in sorted(self.getkeys()):
+            if keyword.keyword == "type":
+                continue
+            s += keyword.template(fmt="text")
         if write:
             print("write", fpath)
             with open(fpath, "w") as f:
