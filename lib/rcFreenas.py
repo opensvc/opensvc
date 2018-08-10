@@ -429,7 +429,7 @@ class Freenas(object):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
                 raise ex.excError("'%s' key is mandatory" % key)
-        size = convert_size(size, _to="MB")
+        size = convert_size(size, _to="MiB")
         d = {
             "iscsi_target_extent_type": "File",
             "iscsi_target_extent_name": name,
@@ -477,10 +477,10 @@ class Freenas(object):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
                 raise ex.excError("'%s' key is mandatory" % key)
-        size = convert_size(size, _to="MB")
+        size = convert_size(size, _to="MiB")
         d = {
             "name": name,
-            "volsize": str(size)+"MB",
+            "volsize": str(size)+"MiB",
             "compression": compression,
             "dedup": dedup,
         }
@@ -546,12 +546,12 @@ class Freenas(object):
         if volume is None:
             raise ex.excError("volume not found")
         if size.startswith("+"):
-            incr = convert_size(size.lstrip("+"), _to="MB")
+            incr = convert_size(size.lstrip("+"), _to="MiB")
             zvol_data = self.get_zvol(volume=volume, name=data["iscsi_target_extent_name"])
-            current_size = convert_size(int(zvol_data["volsize"]), _to="MB")
-            size = str(current_size + incr) + "MB"
+            current_size = convert_size(int(zvol_data["volsize"]), _to="MiB")
+            size = str(current_size + incr) + "MiB"
         else:
-            size = str(convert_size(size, _to="MB")) + "MB"
+            size = str(convert_size(size, _to="MiB")) + "MiB"
 
         d = {
             "volsize": size,
