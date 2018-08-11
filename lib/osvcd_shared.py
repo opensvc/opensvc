@@ -127,6 +127,8 @@ EVENTS = {
     ("instance_stop", "flex_threshold"): "stop {instance.topology} {instance.avail} instance to meet threshold constraints: {up}/{instance.flex_min_nodes}-{instance.flex_max_nodes}",
     ("instance_thaw", "target"): "thaw instance to satisfy the {instance.monitor.global_expect} target",
     ("instance_unprovision", "target"): "unprovision {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
+    ("scale_up", None): "misses {delta} instance to reach scale target {instance.scale}",
+    ("scale_down", None): "exceeds {delta} instance to reach scale target {instance.scale}",
 }
 
 def wake_heartbeat_tx():
@@ -736,6 +738,10 @@ class OsvcThread(threading.Thread):
         candidates = []
         with CLUSTER_DATA_LOCK:
             for nodename, data in CLUSTER_DATA.items():
+                if nodename not in svc.peers:
+                    # can happen if the same service is deployed on
+                    # differrent cluster segments
+                    continue
                 if data == "unknown":
                     continue
                 if discard_preserved and data.get("monitor", {}).get("status") in ("maintenance", "upgrade", "init"):

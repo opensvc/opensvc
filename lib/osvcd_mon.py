@@ -1177,11 +1177,17 @@ class Monitor(shared.OsvcThread, Crypt):
         if n_slots == svc.scale_target:
             return
         missing = svc.scale_target - n_slots
-        self.log.info("service %s scale delta %d on target %d", svc.svcname,
-                      missing, svc.scale_target)
         if missing > 0:
+            self.event("scale_up", {
+               "svcname": svc.svcname,
+               "delta": missing,
+            })
             self.service_orchestrator_scaler_up(svc, missing, current_slaves)
         else:
+            self.event("scale_down", {
+               "svcname": svc.svcname,
+               "delta": -missing,
+            })
             self.service_orchestrator_scaler_down(svc, missing, current_slaves)
 
     def service_orchestrator_scaler_up(self, svc, missing, current_slaves):
@@ -1985,11 +1991,11 @@ class Monitor(shared.OsvcThread, Crypt):
             if not os.path.exists(linkp):
                 continue
             try:
-                mtime = os.path.getmtime(cfg)
+                mtimestamp = os.path.getmtime(cfg)
             except Exception as exc:
                 self.log.warning("failed to get %s mtime: %s", cfg, str(exc))
-                mtime = 0
-            mtime = datetime.datetime.utcfromtimestamp(mtime)
+                mtimestamp = 0
+            mtime = datetime.datetime.utcfromtimestamp(mtimestamp)
             last_config = self.get_last_svc_config(svcname)
             if last_config is None or mtime > datetime.datetime.strptime(last_config["updated"], shared.DATEFMT):
                 self.log.debug("compute service %s config checksum", svcname)
@@ -2008,7 +2014,13 @@ class Monitor(shared.OsvcThread, Crypt):
                 csum = last_config["csum"]
             if last_config is None or last_config["csum"] != csum:
                 self.log.info("service %s configuration change" % svcname)
-                shared.SERVICES[svcname].purge_status_caches()
+                try:
+                    status_mtime = os.stat(shared.SERVICES[svcname].status_data_dump).st_mtime
+                    if mtimestamp > status_mtime:
+                        self.log.info("service %s refresh instance status", svcname)
+                        shared.SERVICES[svcname].purge_status_caches()
+                except OSError:
+                    pass
             with shared.SERVICES_LOCK:
                 scope = sorted(list(shared.SERVICES[svcname].nodes | shared.SERVICES[svcname].drpnodes))
             config[svcname] = {
