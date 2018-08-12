@@ -41,6 +41,7 @@ class check(checks.check):
         r = []
         wwid = None
         dev = None
+        n = 0
         for line in lines:
             if len(line) > 0 and not '\_ ' in line and not line.startswith('['):
                 # new mpath
@@ -86,6 +87,7 @@ class check(checks.check):
         r = []
         wwid = None
         dev = None
+        n = 0
         for line in lines:
             if ' dm-' in line:
                 # new mpath
