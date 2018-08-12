@@ -74,32 +74,33 @@ class ScsiReserv(Res.Resource):
         return False
 
     def ack_unit_attention(self, d):
-        raise ex.notImplemented
+        raise ex.MissImpl
 
     def disk_registered(self, disk):
-        raise ex.notImplemented
+        raise ex.MissImpl
 
     def disk_register(self, disk):
-        raise ex.notImplemented
+        raise ex.MissImpl
 
     def disk_unregister(self, disk):
-        raise ex.notImplemented
+        raise ex.MissImpl
 
     def get_reservation_key(self, disk):
-        raise ex.notImplemented
+        raise ex.MissImpl
 
     def disk_reserved(self, disk):
-        raise ex.notImplemented
+        raise ex.MissImpl
 
     def disk_release(self, disk):
-        raise ex.notImplemented
+        raise ex.MissImpl
 
     def disk_reserve(self, disk):
-        raise ex.notImplemented
+        raise ex.MissImpl
+
+    def _disk_preempt_reservation(self, disk, oldkey):
+        raise ex.MissImpl
 
     def disk_preempt_reservation(self, disk, oldkey):
-        if not hasattr(self, '_disk_preempt_reservation'):
-            raise ex.notImplemented
         if not self.svc.options.force and os.environ.get("OSVC_ACTION_ORIGIN") != "daemon":
             self.log.error("%s is already reserved. use --force to override this safety net"%disk)
             raise ex.excError
