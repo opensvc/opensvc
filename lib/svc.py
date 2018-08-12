@@ -500,7 +500,6 @@ class Svc(Crypt, ExtConfig):
                 ),
             },
         )
-        return sched
 
     @lazy
     def ha(self):

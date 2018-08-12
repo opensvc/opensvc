@@ -169,11 +169,3 @@ Internal                 : False
         self.snapname = snapname
         self._info = {}
         self.default_schedule = "@0"
-
-    def __str__(self):
-        return "%s dcs=%s manager=%s snapname=%s" % (
-                 resSync.Sync.__str__(self),
-                 ' '.join(self.dcs),
-                 ' '.join(self.manager),
-                 ' '.join(self.snapname))
-
