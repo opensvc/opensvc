@@ -11,10 +11,10 @@ def get_os_ver():
     cmd = ['uname', '-v']
     out, err, ret = justcall(cmd)
     if ret != 0:
-        return self.undef
+        return 0
     lines = out.split('\n')
     if len(lines) == 0:
-        return self.undef
+        return 0
     try:
         osver = float(lines[0])
     except:
