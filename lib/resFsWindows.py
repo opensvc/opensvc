@@ -7,7 +7,7 @@ import resFs as Res
 import rcExceptions as ex
 
 def diskpartfile_name(self):
-    return os.path.join(rcEnv.pathvar, 'diskpart_' + self.svc.svcname)
+    return os.path.join(rcEnv.paths.pathvar, 'diskpart_' + self.svc.svcname)
 
 def online_drive(self, driveindex):
     diskpart_file = diskpartfile_name(self) + '_online_disk_' + str(driveindex)
@@ -65,8 +65,8 @@ class Mount(Res.Mount):
         self.svc.wmi = wmi.WMI()
 
     def mountpt_to_driverletter(self):
-        i = self.mountPoint.index(':')
-        return self.mountPoint[:i+1]
+        i = self.mount_point.index(':')
+        return self.mount_point[:i+1]
 
     def get_volume(self, refresh=False):
         if not refresh and hasattr(self, "volume"):
@@ -89,13 +89,13 @@ class Mount(Res.Mount):
         return True
 
     def is_up(self):
-        return rcMounts.Mounts(wmi=self.svc.wmi).has_mount(self.device, self.mountPoint)
+        return rcMounts.Mounts(wmi=self.svc.wmi).has_mount(self.device, self.mount_point)
 
     def start(self):
 	if self.is_online(self.device) is True:
-	    self.log.info("fs(%s %s) is already online"%(self.device, self.mountPoint))
+	    self.log.info("fs(%s %s) is already online"%(self.device, self.mount_point))
         if self.is_up() is True:
-            self.log.info("fs(%s %s) is already mounted"%(self.device, self.mountPoint))
+            self.log.info("fs(%s %s) is already mounted"%(self.device, self.mount_point))
             return 0
 	ret = mount(self)
 	if ret != 0:
@@ -106,11 +106,11 @@ class Mount(Res.Mount):
     def stop(self):
         if self.is_up() is False:
             self.log.info("fs(%s %s) is already umounted"%
-                    (self.device, self.mountPoint))
+                    (self.device, self.mount_point))
             return 0
         ret = try_umount(self)
         if ret != 0:
-            raise ex.excError('failed to dismount %s'%self.mountPoint)
+            raise ex.excError('failed to dismount %s'%self.mount_point)
         return 0
 
 if __name__ == "__main__":
