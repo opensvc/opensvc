@@ -28,6 +28,8 @@ class check(checks.check):
         r = []
         dev = None
         wwid = None
+        n = 0
+        proto = ""
         for line in lines:
             if "LUN PATH INFORMATION FOR LUN" in line:
                 # new mpath
