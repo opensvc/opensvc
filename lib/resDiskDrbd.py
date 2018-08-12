@@ -46,7 +46,7 @@ class Drbd(Res.Resource):
                 self.drbdadm = 'drbdadm'
             else:
                 self.log("drbdadm command not found")
-                raise exc.excError
+                raise ex.excError
         return [self.drbdadm] + cmd.split() + [self.res]
 
     def exposed_devs(self):
@@ -107,7 +107,7 @@ class Drbd(Res.Resource):
         (ret, out, err) = self.vcall(self.drbdadm_cmd('up'))
         if ret != 0:
             raise ex.excError
-        self.can_rollback_conn = True
+        self.can_rollback_connection = True
         self.can_rollback = True
 
     def get_cstate(self):
