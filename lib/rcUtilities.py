@@ -10,7 +10,7 @@ import select
 import shlex
 import re
 import rcExceptions as ex
-from subprocess import *
+from subprocess import Popen, PIPE
 from rcGlobalEnv import rcEnv
 from functools import wraps
 
@@ -1010,9 +1010,10 @@ def clear_cache(sig, o=None):
     lock.unlock(lfd)
 
 def purge_cache():
+    import shutil
     cache_d = get_cache_d()
     try:
-        shutil.rmtree(d)
+        shutil.rmtree(cache_d)
     except:
         pass
 
