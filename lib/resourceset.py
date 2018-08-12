@@ -181,7 +181,7 @@ class ResourceSet(object):
         """
         Return True if the resourceset has at least one encap resource
         """
-        resources = [True for res in self.resources if resource.encap]
+        resources = [True for res in self.resources if res.encap]
         if len(resources) == 0:
             return False
         return True
