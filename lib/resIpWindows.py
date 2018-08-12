@@ -17,9 +17,9 @@ class Ip(Res.Ip):
             if '.' in self.mask:
                 self.log.error("netmask parameter is mandatory for ipv6 adresses")
                 raise ex.excError
-            cmd = ['netsh', 'interface', 'ipv6', 'add', 'address', self.ipDev, self.addr, self.mask]
+            cmd = ['netsh', 'interface', 'ipv6', 'add', 'address', self.ipdev, self.addr, self.mask]
         else:
-            cmd = ['netsh', 'interface', 'ipv4', 'add', 'address', self.ipDev, self.addr, self.mask]
+            cmd = ['netsh', 'interface', 'ipv4', 'add', 'address', self.ipdev, self.addr, self.mask]
 
         ret, out, err = self.vcall(cmd)
         if ret != 0:
@@ -35,8 +35,8 @@ class Ip(Res.Ip):
 
     def stopip_cmd(self):
         if ':' in self.addr:
-            cmd = ['netsh', 'interface', 'ipv6', 'delete', 'address', self.ipDev, "addr="+self.addr]
+            cmd = ['netsh', 'interface', 'ipv6', 'delete', 'address', self.ipdev, "addr="+self.addr]
         else:
-            cmd = ['netsh', 'interface', 'ipv4', 'delete', 'address', self.ipDev, "addr="+self.addr]
+            cmd = ['netsh', 'interface', 'ipv4', 'delete', 'address', self.ipdev, "addr="+self.addr]
         return self.vcall(cmd)
 
