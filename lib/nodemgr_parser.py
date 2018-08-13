@@ -795,9 +795,12 @@ ACTIONS = {
         },
         "sysreport": {
             "msg": "Push system report to the collector for archiving and "
-                   "diff analysis.",
+                   "diff analysis. The --force option resend all monitored "
+                   "files and outputs to the collector instead of only those "
+                   "that changed since the last sysreport.",
             "options": [
                 OPT.cron,
+                OPT.force,
             ],
         },
         "checks": {

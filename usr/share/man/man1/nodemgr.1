@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2018\-07\-04
+.TH NODEMGR 1 2018\-08\-13
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -3486,12 +3486,15 @@ Show this help message and exit
 \fBnodemgr sysreport\fP
 .RS
 
-Push system report to the collector for archiving and diff analysis.
+Push system report to the collector for archiving and diff analysis. The --force option resend all monitored files and outputs to the collector instead of only those that changed since the last sysreport.
 
 
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --force
+Force action, ignore sanity checks.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
