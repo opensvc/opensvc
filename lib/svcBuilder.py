@@ -601,9 +601,6 @@ def add_disk_compat(svc, s):
     if disk_type == 'Lv':
         add_lv(svc, s)
         return
-    if disk_type == 'Docker':
-        add_docker_vol(svc, s)
-        return
     if disk_type == 'Gce':
         add_disk_gce(svc, s)
         return
@@ -726,9 +723,6 @@ def add_disk(svc, s):
         return
     if disk_type == 'Lv':
         add_lv(svc, s)
-        return
-    if disk_type == 'Docker':
-        add_docker_vol(svc, s)
         return
     if disk_type == 'Md':
         add_md(svc, s)
