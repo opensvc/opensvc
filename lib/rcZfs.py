@@ -211,3 +211,59 @@ class Dataset(object):
         else:
             return False
 
+def zpool_devs(poolname, devtree):
+    """
+    Search zpool vdevs from the output of "zpool status <poolname>" if
+    imported.
+    """
+    devs = set()
+    cmd = ['zpool', 'status']
+    if rcEnv.sysname == "Linux":
+        cmd += ["-L", "-P"]
+    cmd += [poolname]
+    out, err, ret = justcall(cmd)
+    if ret != 0:
+        raise ex.excError(err)
+
+    import re
+
+    for line in out.split('\n'):
+        if re.match('^\t  ', line) is not None:
+            if re.match('^\t  mirror', line) is not None:
+                continue
+            if re.match('^\t  raid', line) is not None:
+                continue
+            # vdev entry
+            disk = line.split()[0]
+            if rcEnv.sysname == "SunOS":
+                if disk.startswith(rcEnv.paths.pathvar):
+                    disk = disk.split('/')[-1]
+                if re.match("^.*", disk) is None:
+                    continue
+                if not disk.startswith("/dev/rdsk/"):
+                    disk = "/dev/rdsk/" + disk
+            devs.add(disk)
+
+    vdevs = set()
+    for d in devs:
+        if "emcpower" in d:
+            regex = re.compile('[a-g]$', re.UNICODE)
+            d = regex.sub('c', d)
+        elif rcEnv.sysname == "SunOS":
+            if re.match('^.*s[0-9]*$', d) is None:
+                d += "s2"
+            else:
+                regex = re.compile('s[0-9]*$', re.UNICODE)
+                d = regex.sub('s2', d)
+        elif rcEnv.sysname == "Linux":
+            tdev = devtree.get_dev_by_devpath(d)
+            if tdev is None:
+                continue
+            for path in tdev.devpath:
+                if "/dev/mapper/" in path or "by-id" in path:
+                    d = path
+                    break
+        vdevs.add(d)
+
+    return vdevs
+
