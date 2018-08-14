@@ -26,7 +26,7 @@ class App(resApp.App):
         if count == 0:
             return rcStatus.DOWN
         elif count > 1:
-            self.status_log("more than of process runs")
+            self.status_log("more than one process runs (pid %s)" % ", ".join(match))
             return rcStatus.UP
         else:
             return rcStatus.UP
@@ -38,15 +38,20 @@ class App(resApp.App):
             return []
         match = []
         for pid in out.split():
-            cmd = [rcEnv.syspaths.ps, "-p", pid, "e"]
-            out, _, _ = justcall(cmd)
+            cmd2 = [rcEnv.syspaths.ps, "-p", pid, "e"]
+            out, _, _ = justcall(cmd2)
             words = out.split()
             if "OPENSVC_SVC_ID="+self.svc.id not in words:
                 continue
             if "OPENSVC_RID="+self.rid not in words:
                 continue
             match.append(pid)
-        return match
+        # exclude child processes
+        cmd += ["-P", ",".join(match)]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return match
+        return list(set(match) - set(out.split()))
 
     def _check(self):
         try:
