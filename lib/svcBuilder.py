@@ -1941,6 +1941,12 @@ def add_app(svc, s):
     except ex.OptNotFound as exc:
         kwargs['cwd'] = exc.default
 
+    if rtype == "simple":
+        try:
+            kwargs['kill'] = svc.conf_get(s, 'kill')
+        except ex.OptNotFound as exc:
+            kwargs['kill'] = exc.default
+
     mod = mimport("res", "app", rtype)
     r = mod.App(**kwargs)
     svc += r

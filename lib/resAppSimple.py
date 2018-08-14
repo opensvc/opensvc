@@ -17,7 +17,8 @@ class App(resApp.App):
     The simple App resource driver class.
     """
 
-    def __init__(self, rid, **kwargs):
+    def __init__(self, rid, kill="parent", **kwargs):
+        self.kill = kill
         resApp.App.__init__(self, rid, type="app.simple", **kwargs)
 
     def _check_simple(self):
@@ -31,7 +32,7 @@ class App(resApp.App):
         else:
             return rcStatus.UP
 
-    def get_running(self):
+    def get_running(self, with_children=False):
         cmd = ["pgrep", "-f", " ".join(self.get_cmd("start"))]
         out, err, ret = justcall(cmd)
         if ret != 0:
@@ -46,6 +47,8 @@ class App(resApp.App):
             if "OPENSVC_RID="+self.rid not in words:
                 continue
             match.append(pid)
+        if with_children:
+            return match
         # exclude child processes
         cmd += ["-P", ",".join(match)]
         out, err, ret = justcall(cmd)
@@ -64,13 +67,13 @@ class App(resApp.App):
         ret = resApp.App.stop(self)
         if ret is not None:
             return ret
-        match = self.get_running()
+        match = self.get_running(with_children=self.kill=="tree")
         if not match:
             self.log.info("process not found")
             return
         cmd = ["kill"] + [str(pid) for pid in match]
         ret, _, _ = self.vcall(cmd)
-        self.wait_for_fn(lambda: not self.get_running(), 5, 1)
+        self.wait_for_fn(lambda: not self.get_running(), 5, 1, errmsg="Waited too long for process %s to disappear"%(",".join([str(pid) for pid in match])))
         return ret
 
     def _run_cmd_dedicated_log(self, action, cmd):

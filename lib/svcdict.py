@@ -804,6 +804,15 @@ KEYWORDS = [
     },
     {
         "section": "app",
+        "keyword": "kill",
+        "rtype": "simple",
+        "candidates": ["parent", "tree"],
+        "default": "parent",
+        "at": True,
+        "text": "Select a process kill strategy to use on resource stop. parent: kill only the parent process forked by the agent. tree: also kill its children."
+    },
+    {
+        "section": "app",
         "keyword": "script",
         "at": True,
         "required": False,
