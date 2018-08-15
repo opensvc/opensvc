@@ -69,12 +69,18 @@ OPT = Storage({
     "comment": Option(
         "--comment", action="store", dest="comment",
         help="Description for your reference"),
+    "lun": Option(
+        "--lun", action="store", type=int, dest="lun",
+        help="The logical unit number to assign to the extent on attach to a target. If not specified, a free lun is automatically assigned."),
     "id": Option(
         "--id", action="store", type=int, dest="id",
         help="An object id, as reported by a list action"),
     "alias": Option(
         "--alias", action="store", dest="alias",
         help="An object name alias"),
+    "target": Option(
+        "--target", action="append", dest="target",
+        help="The target object iqn"),
     "target_id": Option(
         "--target-id", action="store", type=int, dest="target_id",
         help="The target object id"),
@@ -88,6 +94,9 @@ OPT = Storage({
     "portal_id": Option(
         "--portal-id", action="store", type=int, dest="portal_id",
         help="The portal object id"),
+    "initiatorgroup": Option(
+        "--initiatorgroup", action="append", dest="initiatorgroup",
+        help="The initiator group object id"),
     "initiatorgroup_id": Option(
         "--initiatorgroup-id", action="store", type=int, dest="initiatorgroup_id",
         help="The initiator group object id"),
@@ -114,6 +123,7 @@ ACTIONS = {
                 OPT.blocksize,
                 OPT.secure_tpc,
                 OPT.mappings,
+                OPT.lun,
             ],
         },
         "add_iscsi_zvol": {
@@ -128,6 +138,16 @@ ACTIONS = {
                 OPT.compression,
                 OPT.dedup,
                 OPT.mappings,
+                OPT.lun,
+            ],
+        },
+        "map_iscsi_zvol": {
+            "msg": "Map an extent to the specified initiator:target links",
+            "options": [
+                OPT.name,
+                OPT.target,
+                OPT.mappings,
+                OPT.lun,
             ],
         },
         "add_iscsi_initiatorgroup": {
@@ -150,6 +170,8 @@ ACTIONS = {
             "options": [
                 OPT.portal_id,
                 OPT.target_id,
+                OPT.target,
+                OPT.initiatorgroup,
                 OPT.initiatorgroup_id,
                 OPT.authgroup_id,
                 OPT.authtype,
@@ -169,6 +191,19 @@ ACTIONS = {
             "options": [
                 OPT.name,
                 OPT.naa,
+            ],
+        },
+        "unmap": {
+            "msg": "Unmap the specified initiator:target links",
+            "options": [
+                OPT.mappings,
+            ],
+        },
+        "unmap_iscsi_zvol": {
+            "msg": "Unmap an extent from the specified initiator:target links",
+            "options": [
+                OPT.name,
+                OPT.mappings,
             ],
         },
         "del_iscsi_initiatorgroup": {
@@ -385,6 +420,15 @@ class Freenas(object):
                 l.append(target["id"])
         return l
 
+    def get_iscsi_initiatorgroup_ids(self, initiator_names):
+        buff = self.get_iscsi_authorizedinitiator()
+        data = json.loads(buff)
+        l = []
+        for initiator in data:
+            if initiator["iscsi_target_initiator_initiators"] in initiator_names:
+                l.append(initiator["id"])
+        return l
+
     def get_iscsi_extents_data(self):
         buff = self.get_iscsi_extents()
         data = json.loads(buff)
@@ -443,21 +487,23 @@ class Freenas(object):
         return data
 
     def add_iscsi_targets_to_extent(self, extent_id=None, targets=None,
-                                    **kwargs):
+                                    lun=None, **kwargs):
         for key in ["extent_id", "targets"]:
             if locals()[key] is None:
                 raise ex.excError("'%s' key is mandatory" % key)
         target_ids = self.get_iscsi_target_ids(targets)
         data = []
         for target_id in target_ids:
-            data.append(self.add_iscsi_target_to_extent(target_id, extent_id))
+            data.append(self.add_iscsi_target_to_extent(target_id, extent_id, lun=lun))
         return data
 
-    def add_iscsi_target_to_extent(self, target_id, extent_id):
+    def add_iscsi_target_to_extent(self, target_id, extent_id, lun=None):
         d = {
             "iscsi_target": target_id,
             "iscsi_extent": extent_id,
         }
+        if lun is not None:
+            d["iscsi_lunid"] = lun
         buff = self.post("/services/iscsi/targettoextent", d)
         data = json.loads(buff)
         return data
@@ -522,13 +568,16 @@ class Freenas(object):
             ig_data[d["id"]] = d
         mappings = {}
         for d in tte_data:
-            for tg in tg_by_target[d["iscsi_target"]]:
+            disk_id = extent_data[d["iscsi_extent"]]["iscsi_target_extent_naa"].replace("0x", "")
+            for tg in tg_by_target.get(d["iscsi_target"], []):
                 ig_id = tg["iscsi_target_initiatorgroup"]
                 ig = ig_data[ig_id]
                 for hba_id in ig["iscsi_target_initiator_initiators"].split("\n"):
                     tgt_id = target_data[tg["iscsi_target"]]["iscsi_target_name"]
-                    mappings[hba_id+":"+tgt_id] = {
-                       "disk_id": extent_data[d["iscsi_extent"]]["iscsi_target_extent_naa"].replace("0x", ""),
+                    mappings[hba_id+":"+tgt_id+":"+disk_id] = {
+                       "targetgroup": tg,
+                       "extent": d,
+                       "disk_id": disk_id,
                        "tgt_id": tgt_id,
                        "hba_id": hba_id,
                     }
@@ -569,7 +618,6 @@ class Freenas(object):
         except ValueError:
             raise ex.excError("initiator group not found")
         self._del_iscsi_initiatorgroup(ig_id=id, **kwargs)
-        print(json.dumps(data, indent=8))
         return data
 
     def _del_iscsi_initiatorgroup(self, ig_id=None, **kwargs):
@@ -579,9 +627,30 @@ class Freenas(object):
         if response.status_code != 204:
             raise ex.excError(str(response))
 
+    def _del_iscsi_targettoextent(self, id=None, **kwargs):
+        try:
+            data = self.get_iscsi_targettoextent(id)
+        except Exception as exc:
+            data = {"error": str(exc)}
+        if id is None:
+            raise ex.excError("'id' in mandatory")
+        response = self.delete('/services/iscsi/targettoextent/%d' % id)
+        if response.status_code != 204:
+            raise ex.excError(str(response))
+        return data
+
+    def get_iscsi_targettoextent(self, id=None, **kwargs):
+        if id is None:
+            raise ex.excError("'id' in mandatory")
+        content = self.get('/services/iscsi/targettoextent/%d' % id)
+        try:
+            data = json.loads(content)
+        except ValueError:
+            raise ex.excError("targettoextent not found")
+        return data
+
     def add_iscsi_initiatorgroup(self, **kwargs):
         data = self._add_iscsi_initiatorgroup(**kwargs)
-        print(json.dumps(data, indent=8))
         return data
 
     def _add_iscsi_initiatorgroup(self, initiators=None, auth_network="ALL", comment=None,
@@ -621,16 +690,44 @@ class Freenas(object):
             raise ex.excError(str(response))
 
     def add_iscsi_targetgroup(self, **kwargs):
-        data = self._add_iscsi_targetgroup(**kwargs)
+        if kwargs.get("portal_id") is None:
+            kwargs["portal_id"] = 1
+        for key in ["initiatorgroup", "target"]:
+            idkey = key + "_id"
+            val = kwargs.get(idkey)
+            if val is None:
+                ids = []
+            else:
+                ids = [val]
+
+            names = kwargs.get(key)
+            if names is not None:
+                fn = "get_iscsi_%s_ids" % key
+                ids += getattr(self, fn)(names)
+                if not ids:
+                    raise ex.excError("no '%s' ids found" % key)
+                del kwargs[key]
+            kwargs[idkey] = ids
+
+        data = []
+        for tid in kwargs["target_id"]:
+            for igid in kwargs["initiatorgroup_id"]:
+                _data = self._add_iscsi_targetgroup(
+                    portal_id=kwargs.get("portal_id"),
+                    initiatorgroup_id=igid,
+                    target_id=tid,
+                    authtype=kwargs.get("authtype"),
+                    authgroup_id=kwargs.get("authgroup_id"),
+                )
+                data.append(_data)
+        return data
+
         print(json.dumps(data, indent=8))
         return data
 
     def _add_iscsi_targetgroup(self, portal_id=None, initiatorgroup_id=None,
                                target_id=None, authtype="None",
                                authgroup_id=None, **kwargs):
-        for key in ["portal_id", "initiatorgroup_id", "target_id"]:
-            if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
         d = {
             "iscsi_target": target_id,
             "iscsi_target_initiatorgroup": initiatorgroup_id,
@@ -642,7 +739,6 @@ class Freenas(object):
         if authgroup_id:
             d["iscsi_target_authgroup"] = authgroup_id
 
-        print(d)
         buff = self.post('/services/iscsi/targetgroup/', d)
         try:
             return json.loads(buff)
@@ -689,7 +785,7 @@ class Freenas(object):
             raise ex.excError(buff)
 
     def add_iscsi_file(self, name=None, size=None, volume=None, targets=None,
-                       mappings=None, insecure_tpc=True, blocksize=512, **kwargs):
+                       mappings=None, insecure_tpc=True, blocksize=512, lun=None, **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
                 raise ex.excError("'%s' key is mandatory" % key)
@@ -708,7 +804,7 @@ class Freenas(object):
                     raise ex.excError("\n".join(data["iscsi_target_extent_name"]))
                 raise ex.excError(data["iscsi_target_extent_name"])
             raise ex.excError(str(data))
-        self.add_iscsi_targets_to_extent(extent_id=data["id"], targets=targets, **kwargs)
+        self.add_iscsi_targets_to_extent(extent_id=data["id"], targets=targets, lun=lun, **kwargs)
         disk_id = data["iscsi_target_extent_naa"].replace("0x", "")
         results = {
             "driver_data": data,
@@ -730,14 +826,54 @@ class Freenas(object):
     def translate_mappings(self, mappings):
         targets = set()
         for mapping in mappings:
-            elements = mapping.split(":")
-            targets |= set(elements[-1].split(","))
+            elements = mapping.split(":iqn.")
+            targets |= set(("iqn."+elements[-1]).split(","))
         targets = list(targets)
         return targets
 
-    def add_iscsi_zvol(self, name=None, size=None, volume=None, targets=None,
-                       mappings=None, insecure_tpc=True, blocksize=512, **kwargs):
-        for key in ["name", "size", "volume"]:
+    def split_mappings(self, mappings):
+        data = []
+        for mapping in mappings:
+            elements = mapping.split(":iqn.")
+            for target in set(("iqn."+elements[-1]).split(",")):
+                data.append((elements[0], target))
+        return data
+
+    def unmap(self, mappings=None, **kwargs):
+        for key in ["mappings"]:
+            if locals()[key] is None:
+                raise ex.excError("'%s' key is mandatory" % key)
+        targets = self.split_mappings(mappings)
+        current_mappings = self.list_mappings()
+        results = []
+        for mapping in self.split_mappings(mappings):
+            for tg in current_mappings.values():
+                if tg["tgt_id"] != mapping[1] or \
+                   tg["hba_id"] != mapping[0]:
+                    continue
+                result = self.del_iscsi_targetgroup(tg_id=tg["targetgroup"]["id"])
+                results.append(result)
+        return results
+
+    def unmap_iscsi_zvol(self, name=None, mappings=None, **kwargs):
+        for key in ["name", "mappings"]:
+            if locals()[key] is None:
+                raise ex.excError("'%s' key is mandatory" % key)
+        targets = self.split_mappings(mappings)
+        current_mappings = self.list_mappings()
+        extent = self.get_iscsi_extent(name=name)
+        results = []
+        for mapping in self.split_mappings(mappings):
+            mapping = ":".join(mapping)+":"+extent["iscsi_target_extent_naa"].replace("0x", "")
+            tg = current_mappings.get(mapping)
+            if not tg:
+                continue
+            result = self._del_iscsi_targettoextent(tg["extent"]["id"])
+            results.append(result)
+        return results
+
+    def map_iscsi_zvol(self, name=None, targets=None, mappings=None, lun=None, **kwargs):
+        for key in ["name"]:
             if locals()[key] is None:
                 raise ex.excError("'%s' key is mandatory" % key)
         if targets is None and mappings is None:
@@ -746,6 +882,19 @@ class Freenas(object):
         if mappings is not None and targets is None:
             targets = self.translate_mappings(mappings)
 
+        data = self.get_iscsi_extent(name=name)
+        if data is None:
+            raise ex.excError("zvol not found")
+        results = self.add_iscsi_targets_to_extent(extent_id=data["id"], targets=targets, lun=lun, **kwargs)
+        return results
+
+    def add_iscsi_zvol(self, name=None, size=None, volume=None, targets=None,
+                       mappings=None, insecure_tpc=True, blocksize=512, lun=None, **kwargs):
+        for key in ["name", "size", "volume"]:
+            if locals()[key] is None:
+                raise ex.excError("'%s' key is mandatory" % key)
+
+        # extent
         data = self.add_iscsi_zvol_extent(name=name, size=size, volume=volume, **kwargs)
 
         if "id" not in data:
@@ -754,8 +903,19 @@ class Freenas(object):
                     raise ex.excError("\n".join(data["iscsi_target_extent_name"]))
                 raise ex.excError(data["iscsi_target_extent_name"])
             raise ex.excError(str(data))
-        self.add_iscsi_targets_to_extent(extent_id=data["id"], targets=targets, **kwargs)
-        self.add_diskinfo(data, size, volume)
+
+        # mappings
+        if targets is not None or mappings is not None:
+            if mappings is not None and targets is None:
+                targets = self.translate_mappings(mappings)
+            self.add_iscsi_targets_to_extent(extent_id=data["id"], targets=targets, lun=lun, **kwargs)
+
+        # collector update
+        warnings = []
+        try:
+            self.add_diskinfo(data, size, volume)
+        except Exception as exc:
+            warnings.append(str(exc))
         disk_id = data["iscsi_target_extent_naa"].replace("0x", "")
         results = {
             "driver_data": data,
@@ -763,6 +923,9 @@ class Freenas(object):
             "disk_devid": data["id"],
             "mappings": self.list_mappings(naa=disk_id),
         }
+        if warnings:
+            results["warnings"] = warnings
+
         return results
 
     def del_iscsi_zvol(self, name=None, naa=None, **kwargs):
@@ -774,7 +937,13 @@ class Freenas(object):
         volume = self.extent_volume(data)
         self.del_iscsi_extent(data["id"])
         self.del_zvol(name=name, volume=volume)
-        self.del_diskinfo(data["iscsi_target_extent_naa"].replace("0x", ""))
+        warnings = []
+        try:
+            self.del_diskinfo(data["iscsi_target_extent_naa"].replace("0x", ""))
+        except Exception as exc:
+            warnings.append(str(exc))
+        if warnings:
+            data["warnings"] = warnings
         print(json.dumps(data, indent=8))
 
     def extent_volume(self, data):
