@@ -337,7 +337,6 @@ class HbDiskRx(HbDisk):
                     continue
                 if updated < time.time() - self.timeout:
                     # discard too old dataset
-                    self.log.info("discard too old dataset")
                     continue
                 self.last_updated[nodename] = updated
                 self.store_rx_data(_data, nodename)
