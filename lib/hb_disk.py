@@ -38,6 +38,8 @@ class HbDisk(Hb, Crypt):
             "dev": self.dev,
             "timeout": self.timeout,
         }
+        for peer in data.peers:
+            data.peers[peer].update(self.peer_config.get(peer, {}))
         return data
 
     def configure(self):
@@ -223,12 +225,12 @@ class HbDiskTx(HbDisk):
 
     def _configure(self):
         HbDisk._configure(self)
+        if self.peer_config[rcEnv.nodename].slot < 0:
+            self.allocate_slot()
 
     def run(self):
         try:
             self.configure()
-            if self.peer_config[rcEnv.nodename].slot < 0:
-                self.allocate_slot()
         except ex.excAbortAction as exc:
             self.log.error(exc)
             self.stop()
@@ -243,11 +245,6 @@ class HbDiskTx(HbDisk):
                     shared.HB_TX_TICKER.wait(self.default_hb_period)
         except Exception as exc:
             self.log.exception(exc)
-
-    def status(self, **kwargs):
-        data = HbDisk.status(self, **kwargs)
-        data["config"] = {}
-        return data
 
     def do(self):
         with self.hb_fo() as fo:
@@ -299,12 +296,22 @@ class HbDiskRx(HbDisk):
             self.stop()
             sys.exit(1)
 
+        loop = 0
         while True:
+            loop += 1
+            if loop > 10:
+                loop = 0
+                if self.has_missing_peers():
+                    with self.hb_fo() as fo:
+                        self.load_peer_config(fo=fo)
             self.do()
             if self.stopped():
                 sys.exit(0)
             with shared.HB_TX_TICKER:
                 shared.HB_TX_TICKER.wait(self.default_hb_period)
+
+    def has_missing_peer(self):
+        return [True for data in self.peer_config.values() if data.slot < 0] != []
 
     def do(self):
         with self.hb_fo() as fo:
