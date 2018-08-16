@@ -301,7 +301,9 @@ class HbDiskRx(HbDisk):
             loop += 1
             if loop > 10:
                 loop = 0
-                if self.has_missing_peers():
+                missing = self.missing_peers()
+                if missing:
+                    self.log.info("reload slots for missing peers: %s", ", ".join(missing))
                     with self.hb_fo() as fo:
                         self.load_peer_config(fo=fo)
             self.do()
@@ -310,7 +312,7 @@ class HbDiskRx(HbDisk):
             with shared.HB_TX_TICKER:
                 shared.HB_TX_TICKER.wait(self.default_hb_period)
 
-    def has_missing_peer(self):
+    def missing_peers(self):
         return [True for data in self.peer_config.values() if data.slot < 0] != []
 
     def do(self):
