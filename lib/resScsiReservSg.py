@@ -85,8 +85,10 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         if ret != 0:
             raise ex.excError(err)
         _devpath = "/dev/mapper/"+out.strip()
+        if not out:
+            raise ex.excError()
         if not os.path.exists(_devpath):
-            raise ex.excError("%s does not exist")
+            raise ex.excError("%s does not exist" % _devpath)
         return _devpath
 
     def get_reservation_key(self, disk):
