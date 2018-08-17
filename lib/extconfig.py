@@ -640,9 +640,11 @@ class ExtConfig(object):
             return s
 
     def handle_references(self, s, scope=False, impersonate=None, config=None, section=None):
-        key = (str(s), scope, impersonate)
-        if key in self.ref_cache:
-            return self.ref_cache[key]
+        cacheable = self.cacheable(s)
+        if cacheable:
+            key = (str(s), scope, impersonate)
+            if key in self.ref_cache:
+                return self.ref_cache[key]
         try:
             val = self._handle_references(s, scope=scope,
                                           impersonate=impersonate,
@@ -655,16 +657,16 @@ class ExtConfig(object):
             raise
             raise ex.excError("%s: reference evaluation failed: %s"
                               "" % (s, str(e)))
-        if self.cacheable(s, val):
+        if val is not None and cacheable:
             self.ref_cache[key] = val
         return val
 
     @staticmethod
-    def cacheable(s, val):
-        if val is None:
-            # don't cache lazy reference miss-evaluations
+    def cacheable(s):
+        try:
+            s = str(s)
+        except:
             return False
-        s = str(s)
         if "{rid}" in s or "{rindex}" in s:
             # those can take different values in the same service,
             # being section-dependent
