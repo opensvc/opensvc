@@ -185,6 +185,9 @@ class Drbd(Res.Resource):
         else:
             self.drbdadm_down()
 
+    def shutdown(self):
+        self.drbdadm_down()
+
     def rollback(self):
         if not self.can_rollback:
             return
