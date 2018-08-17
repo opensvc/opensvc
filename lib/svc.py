@@ -159,6 +159,17 @@ ACTIONS_NO_STATUS_CHANGE = [
     "validate_config",
 ]
 
+#
+# don't refresh the status at the end of these actions because
+# we need a Svc rebuild to produce an accurate status dump.
+# osvcd will refresh the status due to cf_mtime>status_mtime.
+#
+ACTIONS_CF_CHANGE = [
+    "edit_config",
+    "set",
+    "unset",
+]
+
 ACTIONS_ALLOW_ON_INVALID_NODE = [
     "abort",
     "clear",
@@ -3740,7 +3751,7 @@ class Svc(Crypt, ExtConfig):
         if self.node is None:
             self.node = node.Node()
 
-        if action not in ACTIONS_NO_STATUS_CHANGE and \
+        if action not in ACTIONS_NO_STATUS_CHANGE + ACTIONS_CF_CHANGE and \
            'compliance' not in action and \
            'collector' not in action and \
             not options.dry_run and \
@@ -4022,9 +4033,11 @@ class Svc(Crypt, ExtConfig):
             self.save_exc()
         finally:
             self.running_action = None
-            if action not in ACTIONS_NO_STATUS_CHANGE and \
+            if action not in ACTIONS_NO_STATUS_CHANGE + ACTIONS_CF_CHANGE and \
                not (action == "delete" and not self.command_is_scoped()):
                 self.update_status_data()
+            elif action in ACTIONS_CF_CHANGE:
+                self.wake_monitor()
             self.clear_action(action, err)
             self.svcunlock()
             if action == "sync_all" and self.command_is_scoped():
@@ -4075,7 +4088,7 @@ class Svc(Crypt, ExtConfig):
             status = action + " failed"
         else:
             status = "idle"
-            if action == "start":
+            if action == "start" and not self.command_is_scoped():
                 local_expect == "started"
         try:
             self.set_service_monitor(local_expect=local_expect, status=status)
