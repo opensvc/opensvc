@@ -53,7 +53,6 @@ class Monitor(shared.OsvcThread, Crypt):
         self._shutdown = False
         self.compat = True
         self.last_node_data = None
-        self.status_threads = {}
 
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
@@ -76,6 +75,8 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.unfreeze_when_all_nodes_joined = True
                 self.freezer.node_freeze()
 
+        self.services_init_status()
+
         # send a first message without service status, so the peers know
         # we are in init state.
         self.update_hb_data()
@@ -84,7 +85,6 @@ class Monitor(shared.OsvcThread, Crypt):
             while True:
                 self.do()
                 if self.stopped():
-                    self.join_status_threads()
                     self.join_threads()
                     self.kill_procs()
                     sys.exit(0)
@@ -97,14 +97,6 @@ class Monitor(shared.OsvcThread, Crypt):
             if data.status and data.status != "scaling" and data.status.endswith("ing"):
                 count += 1
         return count
-
-    def join_status_threads(self):
-        """
-        Initial service status eval is done is thread.
-        Join those still not terminated.
-        """
-        for thr in self.status_threads.values():
-            thr.join()
 
     def set_next(self, timeout):
         """
@@ -288,8 +280,8 @@ class Monitor(shared.OsvcThread, Crypt):
             return
 
         try:
-            shared.SERVICES[svcname].purge_status_data_dump()
-            shared.SERVICES[svcname].print_status_data_eval()
+            shared.SERVICES[svcname].print_status_data_eval(mon_data=False,
+                                                            refresh=True)
         except Exception:
             # can happen when deleting the service
             pass
@@ -311,6 +303,22 @@ class Monitor(shared.OsvcThread, Crypt):
     def node_stonith(self, node):
         proc = self.node_command(["stonith", "--node", node])
         self.push_proc(proc=proc)
+
+    def service_startstandby_resources(self, svcname, rids, slave=None):
+        self.set_smon(svcname, "restarting")
+        cmd = ["startstandby", "--rid", ",".join(rids)]
+        if slave:
+            cmd += ["--slave", slave]
+        proc = self.service_command(svcname, cmd)
+        self.push_proc(
+            proc=proc,
+            on_success="service_start_resources_on_success",
+            on_success_args=[svcname, rids],
+            on_success_kwargs={"slave": slave},
+            on_error="generic_callback",
+            on_error_args=[svcname],
+            on_error_kwargs={"status": "idle"},
+        )
 
     def service_start_resources(self, svcname, rids, slave=None):
         self.set_smon(svcname, "restarting")
@@ -549,6 +557,17 @@ class Monitor(shared.OsvcThread, Crypt):
             on_error_kwargs={"status": "idle"},
         )
 
+    def services_init_status(self):
+        proc = self.service_command("*", ["status", "--parallel", "--refresh"], local=False)
+        self.push_proc(
+            proc=proc,
+            on_success="services_init_status_callback",
+            on_error="services_init_status_callback",
+        )
+
+    def services_init_status_callback(self, *args, **kwargs):
+        self.set_nmon(status="rejoin")
+
 
     #########################################################################
     #
@@ -598,9 +617,6 @@ class Monitor(shared.OsvcThread, Crypt):
             if smon.local_expect != "started":
                 return False
             nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
-            if nb_restart == 0:
-                if resource.get("standby"):
-                    nb_restart = self.default_stdby_nb_restart
             retries = self.get_smon_retries(svc.svcname, rid)
 
             if retries > nb_restart:
@@ -682,19 +698,23 @@ class Monitor(shared.OsvcThread, Crypt):
         except KeyError:
             return
 
-        rids = []
+        mon_rids = []
+        stdby_rids = []
         for rid, resource in resources.items():
             if resource["status"] not in ("warn", "down", "stdby down"):
                 self.reset_smon_retries(svc.svcname, rid)
                 continue
             if resource.get("provisioned", {}).get("state") is False:
                 continue
-            if monitored_resource(svc, rid, resource) or stdby_resource(svc, rid, resource):
-                rids.append(rid)
-                continue
+            if monitored_resource(svc, rid, resource):
+                mon_rids.append(rid)
+            elif stdby_resource(svc, rid, resource):
+                stdby_rids.append(rid)
 
-        if len(rids) > 0:
-            self.service_start_resources(svc.svcname, rids)
+        if len(mon_rids) > 0:
+            self.service_start_resources(svc.svcname, mon_rids)
+        if len(stdby_rids) > 0:
+            self.service_startstandby_resources(svc.svcname, stdby_rids)
 
         # same for encap resources
         rids = []
@@ -702,18 +722,22 @@ class Monitor(shared.OsvcThread, Crypt):
             if cdata.get("frozen"):
                 continue
             resources = cdata.get("resources", [])
-            rids = []
+            mon_rids = []
+            stdby_rids = []
             for rid, resource in resources.items():
                 if resource["status"] not in ("warn", "down", "stdby down"):
                     self.reset_smon_retries(svc.svcname, rid)
                     continue
                 if resource.get("provisioned", {}).get("state") is False:
                     continue
-                if monitored_resource(svc, rid, resource) or stdby_resource(svc, rid, resource):
-                    rids.append(rid)
-                    continue
-            if len(rids) > 0:
-                self.service_start_resources(svc.svcname, rids, slave=crid)
+                if monitored_resource(svc, rid, resource):
+                    mon_rids.append(rid)
+                elif stdby_resource(svc, rid, resource):
+                    stdby_rids.append(rid)
+            if len(mon_rids) > 0:
+                self.service_start_resources(svc.svcname, mon_rids, slave=crid)
+            if len(stdby_rids) > 0:
+                self.service_startstandby_resources(svc.svcname, stdby_rids, slave=crid)
 
     def node_orchestrator(self):
         self.orchestrator_auto_grace()
@@ -1359,7 +1383,7 @@ class Monitor(shared.OsvcThread, Crypt):
         if len(self.cluster_nodes) == 1:
             self.end_rejoin_grace_period("single node cluster")
             return False
-        n_idle = len([1 for node in shared.CLUSTER_DATA.values() if node.get("monitor", {}).get("status") in ("idle", "rejoin")])
+        n_idle = len([1 for node in shared.CLUSTER_DATA.values() if node.get("monitor", {}).get("status") in ("idle", "rejoin") and "services" in node])
         if n_idle >= len(self.cluster_nodes):
             self.end_rejoin_grace_period("now rejoined")
             return False
@@ -2017,7 +2041,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 try:
                     status_mtime = os.stat(shared.SERVICES[svcname].status_data_dump).st_mtime
                     if mtimestamp > status_mtime:
-                        self.log.info("service %s refresh instance status", svcname)
+                        self.log.info("service %s refresh instance status older than config", svcname)
                         shared.SERVICES[svcname].purge_status_caches()
                 except OSError:
                     pass
@@ -2084,6 +2108,9 @@ class Monitor(shared.OsvcThread, Crypt):
         Also update the monitor 'local_expect' field for each service.
         """
 
+        if shared.NMON_DATA.status == "init":
+            return {}
+
         # purge data cached by the @cache decorator
         purge_cache()
 
@@ -2098,6 +2125,7 @@ class Monitor(shared.OsvcThread, Crypt):
             except Exception:
                 # preserve previous status data if any (an action may be running)
                 mtime = 0
+
             if mtime > last_mtime + 0.0001:
                 try:
                     with open(fpath, 'r') as filep:
@@ -2111,28 +2139,12 @@ class Monitor(shared.OsvcThread, Crypt):
                     # json not found
                     pass
 
-
             if svcname not in data:
                 if last_mtime > 0:
                     #self.log.info("service %s status preserved", svcname)
                     data[svcname] = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]
-                elif shared.NMON_DATA.status == "init":
-                    thr = threading.Thread(target=self.service_status_fallback, args=(svcname,))
-                    thr.start()
-                    self.status_threads[svcname] = thr
-                    data[svcname] = {}
                 else:
                     data[svcname] = self.service_status_fallback(svcname)
-
-            if svcname in self.status_threads:
-                thr = self.status_threads[svcname]
-                thr.join(0)
-                if not thr.is_alive():
-                    del self.status_threads[svcname]
-
-            if not data[svcname]:
-                del data[svcname]
-                continue
 
             # update the frozen instance attribute
             with shared.SERVICES_LOCK:
@@ -2154,11 +2166,6 @@ class Monitor(shared.OsvcThread, Crypt):
                 "resources": {},
             }
 
-        if shared.NMON_DATA.status == "init" and len(self.status_threads) == 0:
-            if not self.rejoin_grace_period_expired:
-                self.set_nmon(status="rejoin")
-            else:
-                self.set_nmon(status="idle")
         return data
 
     #########################################################################
@@ -2575,7 +2582,8 @@ class Monitor(shared.OsvcThread, Crypt):
                                 changed = True
                     if changed:
                         try:
-                            svc.print_status_data_eval(refresh=True)
+                            svc.print_status_data_eval(mon_data=False,
+                                                       refresh=True)
                         except Exception:
                             # can happen when deleting the service
                             pass
