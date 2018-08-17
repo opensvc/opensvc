@@ -862,6 +862,8 @@ class Freenas(object):
         targets = self.split_mappings(mappings)
         current_mappings = self.list_mappings()
         extent = self.get_iscsi_extent(name=name)
+        if not extent:
+            raise ex.excError("no extent found for disk : %s" % (name))
         results = []
         for mapping in self.split_mappings(mappings):
             mapping = ":".join(mapping)+":"+extent["iscsi_target_extent_naa"].replace("0x", "")
