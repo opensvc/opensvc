@@ -530,13 +530,15 @@ class OsvcThread(threading.Thread):
         proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
         return proc
 
-    def service_command(self, svcname, cmd, stdin=None):
+    def service_command(self, svcname, cmd, stdin=None, local=True):
         """
         A generic svcmgr command Popen wrapper.
         """
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
-        cmd = [rcEnv.paths.svcmgr, '-s', svcname, "--local"] + cmd
+        cmd = [rcEnv.paths.svcmgr, '-s', svcname] + cmd
+        if local:
+            cmd += ["--local"]
         self.log.info("execute: %s", " ".join(cmd))
         if stdin is not None:
             _stdin = PIPE
