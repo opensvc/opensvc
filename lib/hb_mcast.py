@@ -213,10 +213,16 @@ class HbMcastRx(HbMcast):
             self.stats.errors += 1
             self.set_beating(nodename)
             return
-        self.store_rx_data(data, nodename)
-        self.set_last(nodename)
-        self.set_beating(nodename)
-        self.set_peers_beating()
+        try:
+            self.store_rx_data(data, nodename)
+            self.set_last(nodename)
+        except Exception as exc:
+            if self.get_last(nodename).success:
+                self.log.error("%s", exc)
+            self.set_last(nodename, success=False)
+        finally:
+            self.set_beating(nodename)
+            self.set_peers_beating()
 
 
 
