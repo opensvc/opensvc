@@ -96,7 +96,7 @@ class Hb(shared.OsvcThread):
             else:
                 self.log.info("node %s hb status beating => stale", nodename)
         self.peers[nodename].beating = beating
-        if not beating:
+        if not beating and self.peers[nodename].last > 0:
             self.forget_peer_data(nodename, change)
 
     @staticmethod
@@ -164,11 +164,11 @@ class Hb(shared.OsvcThread):
         kind = data.get("kind", "full")
         change = False
         if kind == "patch":
-            if shared.REMOTE_GEN.get(nodename, 0) == 0:
+            if current_gen == 0:
                 # waiting for a full: ignore patches
                 return
             if nodename not in shared.CLUSTER_DATA:
-                # happens during init. drop the patch, a full will follow
+                # happens during init. ignore the patch, and ask for a full
                 shared.REMOTE_GEN[nodename] = 0
                 shared.LOCAL_GEN[nodename] = our_gen_on_peer
                 return
