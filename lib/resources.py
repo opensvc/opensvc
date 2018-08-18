@@ -314,6 +314,7 @@ class Resource(object):
         Return True for action known to be causing a resource status change.
         """
         actions = (
+            "shutdown",
             "start",
             "startstandby",
             "stop",
@@ -338,6 +339,7 @@ class Resource(object):
         Return True if the action should be skipped.
         """
         actions = (
+            "shutdown",
             "start",
             "startstandby",
             "stop",
