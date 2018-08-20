@@ -1,10 +1,10 @@
 [Unit]
 Description=OpenSVC agent
 Documentation=http://docs.opensvc.com/ file:/usr/share/doc/opensvc/ man:nodemgr(1) man:svcmgr(1) man:svcmon(1)
-Wants=network-online.target
-Wants=time-sync.target
-Wants=multi-user.target
 Before=opensvc-services.service
+After=network-online.target
+After=time-sync.target
+After=multi-user.target
 After=network.target
 After=dockerd.service
 After=libvirtd.service
