@@ -1003,6 +1003,9 @@ ACTIONS = {
         },
         "collector_untag": {
             "msg": "Unset a node tag (pointed by --tag).",
+            "options": [
+                OPT.tag,
+            ],
         },
         "collector_show_tags": {
             "msg": "list all node tags",
