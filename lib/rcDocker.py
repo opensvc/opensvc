@@ -85,11 +85,13 @@ class DockerLib(object):
 
         if self.docker_daemon_private:
             self.docker_socket = "unix://"+os.path.join(self.docker_var_d, 'docker.sock')
+            self.compat_docker_socket = "unix://"+os.path.join(rcEnv.paths.pathvar, self.svc.svcname, 'docker.sock')
         else:
             self.docker_socket = None
 
         if self.docker_daemon_private:
             self.docker_pid_file = os.path.join(self.docker_var_d, 'docker.pid')
+            self.compat_docker_pid_file = os.path.join(rcEnv.paths.pathvar, self.svc.svcname, 'docker.pid')
         else:
             self.docker_pid_file = None
             lines = [line for line in self.docker_info.splitlines() if "Root Dir" in line]
@@ -101,7 +103,11 @@ class DockerLib(object):
         try:
             self.docker_cmd = [self.docker_exe]
             if self.docker_socket:
-                self.docker_cmd += ['-H', self.docker_socket]
+                if self.test_sock() or not os.path.exists(self.compat_docker_socket[7:]):
+                    sock = self.docker_socket
+                else:
+                    sock = self.compat_docker_socket
+                self.docker_cmd += ['-H', sock]
         except:
             self.docker_cmd = None
 
@@ -668,6 +674,17 @@ class DockerLib(object):
                 else:
                     raise ex.excError("failed to kill docker daemon: %s" % str(exc))
 
+    def test_sock(self):
+        import socket
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            sock.connect(self.docker_socket)
+        except Exception as exc:
+            return False
+        finally:
+            sock.close()
+        return True
+
     @lazy
     def dockerd_cmd(self):
         """
@@ -675,6 +692,7 @@ class DockerLib(object):
         """
         if self.docker_cmd is None:
             return []
+
         if self.docker_min_version("17.05"):
             cmd = [
                 self.dockerd_exe,
@@ -819,11 +837,15 @@ class DockerLib(object):
         """
         Return True if the docker daemon is running.
         """
-        if not os.path.exists(self.docker_pid_file):
+        if os.path.exists(self.docker_pid_file):
+            pid_file = self.docker_pid_file
+        elif os.path.exists(self.compat_docker_pid_file):
+            pid_file = self.compat_docker_pid_file
+        else:
             self.svc.log.debug("docker_running: no pid file %s", self.docker_pid_file)
             return False
         try:
-            with open(self.docker_pid_file, "r") as ofile:
+            with open(pid_file, "r") as ofile:
                 buff = ofile.read()
         except IOError as exc:
             if exc.errno == errno.ENOENT:
