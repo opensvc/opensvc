@@ -504,7 +504,10 @@ class ExtConfig(object):
         if val is None:
             # use DEFAULT as the implicit section
             n_dots = ref.count(".")
-            if n_dots == 0 and self.has_default_section:
+            if n_dots == 0 and section and section != "DEFAULT":
+                _section = section
+                _v = ref
+            elif n_dots == 0 and self.has_default_section:
                 _section = "DEFAULT"
                 _v = ref
             elif n_dots == 1:
@@ -523,9 +526,17 @@ class ExtConfig(object):
             else:
                 return_length = False
 
-            val = self._handle_reference(ref, _section, _v, scope=scope,
-                                         impersonate=impersonate,
-                                         config=config)
+            try:
+                val = self._handle_reference(ref, _section, _v, scope=scope,
+                                             impersonate=impersonate,
+                                             config=config)
+            except Exception:
+                val = None
+
+            if val is None and _section != "DEFAULT" and n_dots == 0 and self.has_default_section:
+                val = self._handle_reference(ref, "DEFAULT", _v, scope=scope,
+                                             impersonate=impersonate,
+                                             config=config)
 
             if val is None:
                 # deferred
