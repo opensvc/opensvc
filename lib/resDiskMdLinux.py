@@ -105,8 +105,8 @@ class Disk(resDisk.Disk):
             return
         if not self.is_shared:
             return
-        s = self.svc.group_status(excluded_groups=set(["app", "sync", "hb"]))
-        if self.svc.options.force or s['overall'].status == rcStatus.UP:
+        s = self.svc.group_status(excluded_groups=set(["app", "sync", "task"]))
+        if self.svc.options.force or s['avail'].status == rcStatus.UP:
             self.md_config_export()
 
     def files_to_sync(self):
