@@ -15,6 +15,7 @@ import textwrap
 import rcColor
 from rcUtilities import term_width, is_string
 import rcExceptions as ex
+import svc
 
 
 class OsvcHelpFormatter(optparse.TitledHelpFormatter):
@@ -65,7 +66,7 @@ class OptParser(object):
     def __init__(self, args=None, prog="", options=None, actions=None,
                  deprecated_actions=None, actions_translations=None,
                  global_options=None, svc_select_options=None, colorize=True,
-                 width=None, formatter=None, indent=6):
+                 width=None, formatter=None, indent=6, async_actions=None):
         self.parser = None
         self.args = args
         self.prog = prog
@@ -87,6 +88,10 @@ class OptParser(object):
                                                self.width)
         else:
             self.formatter = formatter
+        if async_actions is None:
+            self.async_actions = []
+        else:
+            self.async_actions = async_actions
         self.formatter.format_heading = lambda x: "\n"
         self.get_parser()
 
@@ -132,8 +137,12 @@ class OptParser(object):
         else:
             desc = "  " + fancya
         desc += '\n\n'
+        if action in self.async_actions:
+            preamble = "Asynchronous orchestrated action, unless --local or --node <node> is specified.\n\n"
+        else:
+            preamble = ""
         wrapper = textwrap.TextWrapper(width=self.width-self.indent, replace_whitespace=False)
-        text = self.actions[section][action]["msg"]
+        text = preamble + self.actions[section][action]["msg"]
         for line in wrapper.wrap(text):
             for _line in line.splitlines():
                 desc += self.subsequent_indent+_line.replace("``", "`")+"\n"
@@ -159,6 +168,7 @@ class OptParser(object):
             desc += section + '\n'
             desc += '-' * len(section)
             desc += "\n\n"
+
             for valid_action in valid_actions:
                 if svc and not hasattr(svc, valid_action):
                     continue

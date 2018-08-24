@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-08\-20
+.TH SVCMGR 1 2018\-08\-24
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -2905,6 +2905,8 @@ Show this help message and exit.
 \fBsvcmgr abort\fP
 .RS
 
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
+
 Abort the action asynchronously done by the cluster daemons.
 
 
@@ -3553,6 +3555,8 @@ Show this help message and exit.
 \fBsvcmgr freeze\fP
 .RS
 
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
+
 Block orchestration on the service.
 
 
@@ -3757,6 +3761,8 @@ Show this help message and exit.
 .RE
 \fBsvcmgr giveback\fP
 .RS
+
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Stop the service on its current node and start on the node chosen by the placement policy.
 
@@ -5832,6 +5838,8 @@ Show this help message and exit.
 \fBsvcmgr provision\fP
 .RS
 
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
+
 Provision the service. Leave the service in frozen, stdby up state.
 
 
@@ -7476,6 +7484,8 @@ Show this help message and exit.
 \fBsvcmgr shutdown\fP
 .RS
 
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
+
 Stop a service, including its standby resources. The log shipping to the collector is synchronous.
 
 
@@ -7712,6 +7722,8 @@ Show this help message and exit.
 .RE
 \fBsvcmgr start\fP
 .RS
+
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Start a service. The started instances depend on the service placement policy, so the local instance may not start. A failover service is considered started when one instance is started. A flex service is considered started when `<flex_min_nodes>` instances are started.
 
@@ -8097,6 +8109,8 @@ Show this help message and exit.
 .RE
 \fBsvcmgr stop\fP
 .RS
+
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Stop all service instances. The standby resources are not stopped, unless :opt:`--force` is specified.
 
@@ -10443,6 +10457,8 @@ Show this help message and exit.
 \fBsvcmgr thaw\fP
 .RS
 
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
+
 Unblock orchestration on the service.
 
 
@@ -10555,6 +10571,8 @@ Show this help message and exit.
 .RE
 \fBsvcmgr toc\fP
 .RS
+
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Trigger the service instance pre_monitor_action script and monitor_action method. Beware, this might crash or reboot the local node.
 
@@ -10691,6 +10709,8 @@ Show this help message and exit.
 .RE
 \fBsvcmgr unprovision\fP
 .RS
+
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Shutdown and unprovision all service instances. Beware, data will be lost upon fs and disk unprovisioning.
 
@@ -11081,6 +11101,8 @@ Show this help message and exit.
 .RE
 \fBsvcmgr delete\fP
 .RS
+
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Delete a service, or only the resources specified by :opt:`--rid` on the local service instance.
 

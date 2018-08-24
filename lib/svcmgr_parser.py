@@ -1,6 +1,7 @@
 """
 svcmgr command line actions and options
 """
+import svc
 from rcGlobalEnv import Storage
 from rcOptParser import OptParser
 from optparse import Option
@@ -1287,5 +1288,5 @@ class SvcmgrOptParser(OptParser):
                            global_options=GLOBAL_OPTS,
                            svc_select_options=SVC_SELECT_OPTS,
                            colorize=colorize, width=width,
-                           formatter=formatter, indent=indent)
+                           formatter=formatter, indent=indent, async_actions=svc.ACTION_ASYNC)
 

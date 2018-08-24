@@ -51,6 +51,17 @@ DEFAULT_STATUS_GROUPS = [
     "arbitrator",
 ]
 
+ACTION_ASYNC = {
+    "freeze": {
+        "target": "frozen",
+        "progress": "freezing",
+    },
+    "thaw": {
+        "target": "thawed",
+        "progress": "thawing",
+    },
+}
+
 REMOTE_ACTIONS = [
     "freeze",
     "reboot",
@@ -3283,19 +3294,15 @@ class Node(Crypt, ExtConfig):
                 raise ex.excAbortAction()
             else:
                 raise ex.excError()
-        states = {
-            "freeze": "frozen",
-            "thaw": "thawed",
-        }
         if self.options.local:
             return
-        if action not in states:
+        if action not in ACTION_ASYNC:
             return
-        self.set_node_monitor(global_expect=states[action])
+        self.set_node_monitor(global_expect=ACTION_ASYNC[action]["target"])
         self.log.info("%s action requested", action)
         if not wait:
             raise ex.excAbortAction()
-        self.poll_async_action(states[action], timeout=timeout)
+        self.poll_async_action(ACTION_ASYNC[action]["target"], timeout=timeout)
 
     def poll_async_action(self, state, timeout=None):
         """
