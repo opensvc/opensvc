@@ -477,6 +477,9 @@ class App(Resource):
             else:
                 self.svc.save_exc()
             return 1
+        except ex.excError as exc:
+            self.log.error(exc)
+            return 1
         except:
             self.svc.save_exc()
             return 1
