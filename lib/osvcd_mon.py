@@ -363,6 +363,12 @@ class Monitor(shared.OsvcThread, Crypt):
         if changed:
             self.update_hb_data()
 
+    def service_status(self, svcname):
+        proc = self.service_command(svcname, ["status", "--refresh", "--waitlock=0"], local=False)
+        self.push_proc(
+            proc=proc,
+        )
+
     def service_toc(self, svcname):
         proc = self.service_command(svcname, ["toc"])
         self.push_proc(
@@ -2042,7 +2048,7 @@ class Monitor(shared.OsvcThread, Crypt):
                     status_mtime = os.stat(shared.SERVICES[svcname].status_data_dump).st_mtime
                     if mtimestamp > status_mtime:
                         self.log.info("service %s refresh instance status older than config", svcname)
-                        shared.SERVICES[svcname].purge_status_caches()
+                        self.service_status(svcname)
                 except OSError:
                     pass
             with shared.SERVICES_LOCK:
@@ -2125,6 +2131,8 @@ class Monitor(shared.OsvcThread, Crypt):
             except Exception:
                 # preserve previous status data if any (an action may be running)
                 mtime = 0
+                # trigger an async status refresh with no lock wait
+                self.service_status(svcname)
 
             if mtime > last_mtime + 0.0001:
                 try:
