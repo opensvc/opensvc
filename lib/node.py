@@ -412,6 +412,30 @@ class Node(Crypt, ExtConfig):
                 nodes.append(node)
         return nodes
 
+    @lazy
+    def arbitrators(self):
+        arbitrators = []
+        for section in self.config.sections():
+            if not section.startswith("arbitrator#"):
+                continue
+            data = {
+                "id": section,
+            }
+            try:
+                data["name"] = self.conf_get(section, "name")
+            except Exception:
+                continue
+            try:
+                data["secret"] = self.conf_get(section, "secret")
+            except Exception:
+                continue
+            try:
+                data["timeout"] = self.conf_get(section, "timeout")
+            except ex.OptNotFound as exc:
+                data["timeout"] = exc.default
+            arbitrators.append(data)
+        return arbitrators
+
     @staticmethod
     def split_url(url, default_app=None):
         """
@@ -3937,7 +3961,7 @@ class Node(Crypt, ExtConfig):
         )
         print(json.dumps(data, indent=4, sort_keys=True))
 
-    def _ping(self, node):
+    def _ping(self, node, timeout=5):
         """
         Fetch the daemon senders blacklist as a ping test, from either
         a peer or an arbitrator node, swiching between secrets as appropriate.
@@ -3979,6 +4003,7 @@ class Node(Crypt, ExtConfig):
             nodename=node,
             cluster_name=cluster_name,
             secret=secret,
+            timeout=timeout,
         )
         if data is None or "status" not in data or data["status"] != 0:
             return 1

@@ -110,30 +110,6 @@ class Crypt(object):
         return sorted(self.cluster_nodes)
 
     @lazy
-    def arbitrators(self):
-        if hasattr(self, "get_node"):
-            config = self.get_node().config
-        else:
-            config = self.config
-        arbitrators = []
-        for section in config.sections():
-            data = {
-                "id": section,
-            }
-            if not section.startswith("arbitrator#"):
-                continue
-            try:
-                data["name"] = config.get(section, "name")
-            except Exception:
-                continue
-            try:
-                data["secret"] = config.get(section, "secret")
-            except Exception:
-                continue
-            arbitrators.append(data)
-        return arbitrators
-
-    @lazy
     def cluster_nodes(self):
         """
         Return the cluster nodes, read from cluster.nodes in the node

@@ -2320,7 +2320,7 @@ class Monitor(shared.OsvcThread, Crypt):
             votes = self.arbitrators_votes()
             self.last_arbitrator_ping = time.time()
             self.arbitrators_data = {}
-            for arbitrator in self.arbitrators:
+            for arbitrator in shared.NODE.arbitrators:
                 self.arbitrators_data[arbitrator["id"]] = {
                     "name": arbitrator["name"],
                     "status": "up" if arbitrator["name"] in votes else "down"

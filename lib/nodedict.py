@@ -575,6 +575,15 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "text": "The secret to use to encrypt/decrypt data exchanged with the arbitrator (AES256)."
     },
     {
+        "section": "arbitrator",
+        "keyword": "timeout",
+        "convert": "duration",
+        "at": True,
+        "default": 5,
+        "text": "The maximum time to wait for the arbitrator vote during a quorum election. "
+                "Upon expiration, the vote is considered lost for the querying node."
+    },
+    {
         "section": "stonith",
         "keyword": "cmd",
         "at": True,

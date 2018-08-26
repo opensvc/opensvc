@@ -328,7 +328,7 @@ class OsvcThread(threading.Thread):
         self.event("node_config_change")
         unset_lazy(self, "config")
         unset_lazy(self, "quorum")
-        unset_lazy(self, "arbitrators")
+        unset_lazy(NODE, "arbitrators")
         unset_lazy(self, "cluster_name")
         unset_lazy(self, "cluster_key")
         unset_lazy(self, "cluster_id")
@@ -599,8 +599,8 @@ class OsvcThread(threading.Thread):
 
     def arbitrators_votes(self):
         votes = []
-        for arbitrator in self.arbitrators:
-            ret = NODE._ping(arbitrator["name"])
+        for arbitrator in NODE.arbitrators:
+            ret = NODE._ping(arbitrator["name"], arbitrator["timeout"])
             if ret == 0:
                 votes.append(arbitrator["name"])
         return votes
@@ -614,7 +614,7 @@ class OsvcThread(threading.Thread):
             self.duplog("info", "cluster is split, ignore as the node is frozen",
                         msgid="quorum disabled")
             return
-        total = len(self.cluster_nodes) + len(self.arbitrators)
+        total = len(self.cluster_nodes) + len(NODE.arbitrators)
         live = len(CLUSTER_DATA)
         extra_votes = self.arbitrators_votes()
         n_extra_votes = len(extra_votes)
