@@ -28,6 +28,9 @@ class Kvm(resContainer.Container):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def list_kvmconffiles(self):
+        if not self.shared:
+            # don't send the container cf to nodes that won't run it
+            return []
         if os.path.exists(self.cf):
             return [self.cf]
         return []
