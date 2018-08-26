@@ -17,6 +17,7 @@ class HbMcast(Hb, Crypt):
     A class factorizing common methods and properties for the multicast
     heartbeat tx and rx child classes.
     """
+    src_addr = None
 
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
