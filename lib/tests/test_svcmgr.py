@@ -55,10 +55,11 @@ class TestSvcmgr:
             sys.stdout = _stdout
 
         print(output)
+        print(ret)
         data = json.loads(output)
 
         assert ret == 0
-        assert isinstance(json.loads(output), dict)
+        assert isinstance(data, dict)
 
     def test_003_svcmgr_print_config(self):
         """
