@@ -151,13 +151,15 @@ class HbUcastRx(HbUcast):
     """
     def __init__(self, name):
         HbUcast.__init__(self, name, role="rx")
+        self.sock = None
 
-    def run(self):
+    def _configure(self):
+        HbUcast._configure(self)
+        if self.sock:
+            self.log.debug("close socket")
+            self.sock.close()
         try:
-            self.configure()
-        except ex.excAbortAction:
-            return
-        try:
+            self.log.debug("bind socket")
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.sock.bind((self.peer_config[rcEnv.nodename].addr,
@@ -166,6 +168,12 @@ class HbUcastRx(HbUcast):
             self.sock.settimeout(2)
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
+            raise ex.excAbortAction
+
+    def run(self):
+        try:
+            self.configure()
+        except ex.excAbortAction:
             return
 
         self.log.info("listening on %s:%s",
