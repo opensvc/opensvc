@@ -2225,6 +2225,7 @@ class Svc(Crypt, ExtConfig):
             self.log.error("invalid monitor action '%s'", self.monitor_action)
             return
         self.log.info("start monitor action '%s'", self.monitor_action)
+        time.sleep(2)
         getattr(self, self.monitor_action)()
 
     def encap_cmd(self, cmd, verbose=False, error="raise"):

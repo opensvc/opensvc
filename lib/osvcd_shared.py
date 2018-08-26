@@ -631,6 +631,8 @@ class OsvcThread(threading.Thread):
             "voting": total,
             "pro_voters": [nodename for nodename in CLUSTER_DATA] + extra_votes,
         })
+        # give a little time for log flush
+        time.sleep(2)
         NODE.system.crash()
 
     def forget_peer_data(self, nodename, change=False):
