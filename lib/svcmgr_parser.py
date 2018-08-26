@@ -461,6 +461,12 @@ ACTIONS = {
                    "domain>``.",
             "options": ACTION_OPTS,
         },
+        "boot": {
+            "msg": "Clean up actions executed before the daemon starts. For "
+                   "example scsi reservation release and vg tags removal. "
+                   "Never execute this action manually.",
+            "options": ACTION_OPTS,
+        },
         "shutdown": {
             "msg": "Stop a service, including its standby resources. The log "
                    "shipping to the collector is synchronous.",

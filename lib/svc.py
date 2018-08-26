@@ -2816,6 +2816,14 @@ class Svc(Crypt, ExtConfig):
     def slave_stop(self):
         self.encap_cmd(['stop'], verbose=True, error="continue")
 
+    def boot(self):
+        self.options.force = True
+        self.master_boot()
+
+    @_master_action
+    def master_boot(self):
+        self.sub_set_action(START_GROUPS, "boot", xtags=set(["zone", "docker"]))
+
     def shutdown(self):
         self.options.force = True
         self.slave_shutdown()

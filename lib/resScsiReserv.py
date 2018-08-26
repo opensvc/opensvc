@@ -290,5 +290,8 @@ class ScsiReserv(Res.Resource):
         if self.scsirelease() != 0:
             raise ex.excError
 
+    def boot(self):
+        self.stop()
+
     def is_provisioned(self, refresh=False):
         return True

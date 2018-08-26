@@ -809,6 +809,12 @@ class Resource(object):
         """
         pass
 
+    def boot(self):
+        """
+        Clean up actions to do on node boot before the daemon starts.
+        """
+        pass
+
     def shutdown(self):
         """
         Always promote to the stop action

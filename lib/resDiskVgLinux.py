@@ -270,3 +270,5 @@ class Disk(resDisk.Disk):
                     devs.add(lvp)
         return devs
 
+    def boot(self):
+        self.do_stop()
