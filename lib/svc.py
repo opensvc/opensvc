@@ -2678,6 +2678,8 @@ class Svc(Crypt, ExtConfig):
             return
         if self.command_is_scoped():
             return
+        if self.options.dry_run:
+            raise ex.excAbortAction()
         self.daemon_mon_action(action, wait=wait, timeout=timeout)
         raise ex.excAbortAction()
 
