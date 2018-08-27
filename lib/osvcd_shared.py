@@ -337,6 +337,7 @@ class OsvcThread(threading.Thread):
         unset_lazy(self, "maintenance_grace_period")
         unset_lazy(self, "rejoin_grace_period")
         unset_lazy(self, "ready_period")
+        self.arbitrators_data = None
         if not hasattr(self, "reconfigure"):
             return
         try:
