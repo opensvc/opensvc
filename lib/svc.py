@@ -1503,7 +1503,6 @@ class Svc(Crypt, ExtConfig):
                     except ValueError:
                         pass
         except lock.LOCK_EXCEPTIONS as exc:
-            print(1, self.options.waitlock)
             raise ex.excAbortAction(str(exc))
 
         if data is None:
