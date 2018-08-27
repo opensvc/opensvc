@@ -2319,12 +2319,19 @@ class Monitor(shared.OsvcThread, Crypt):
         if self.arbitrators_data is None or self.last_arbitrator_ping < time.time() - self.arbitrators_check_period:
             votes = self.arbitrators_votes()
             self.last_arbitrator_ping = time.time()
-            self.arbitrators_data = {}
+            arbitrators_data = {}
             for arbitrator in shared.NODE.arbitrators:
-                self.arbitrators_data[arbitrator["id"]] = {
+                arbitrators_data[arbitrator["id"]] = {
                     "name": arbitrator["name"],
                     "status": "up" if arbitrator["name"] in votes else "down"
                 }
+                if self.arbitrators_data is None or \
+                   self.arbitrators_data[arbitrator["id"]]["status"] != arbitrators_data[arbitrator["id"]]["status"]:
+                    if arbitrators_data[arbitrator["id"]]["status"] == "up":
+                        self.event("arbitrator_up", data={"arbitrator": arbitrator["name"]})
+                    else:
+                        self.event("arbitrator_down", data={"arbitrator": arbitrator["name"]})
+            self.arbitrators_data = arbitrators_data
         return self.arbitrators_data
 
     def update_cluster_data(self):

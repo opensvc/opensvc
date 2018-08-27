@@ -98,6 +98,8 @@ COLLECTOR_XMLRPC_QUEUE = []
 
 # event messages to log, indexed by (event id, reason)
 EVENTS = {
+    ("arbitrator_up", None): "arbitrator {arbitrator} is now reachable",
+    ("arbitrator_down", None): "arbitrator {arbitrator} is no longer reachable",
     ("crash", "split"): "cluster is split, we don't have quorum: {node_votes}+{arbitrator_votes}/{voting} votes {pro_voters}",
     ("forget_peer", "no_rx"): "no rx thread still receive from node {peer} and maintenance grace period expired. flush its data",
     ("node_config_change", None): "node config change",
