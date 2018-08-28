@@ -84,7 +84,7 @@ class Disk(resDisk.Disk):
              json.dump(list(disk_ids), ofile)
 
     def postsync(self):
-        pass
+        self.auto_assemble_disable()
 
     def down_state_alerts(self):
         if not self.is_shared:
