@@ -64,6 +64,8 @@ class ColorStreamHandler(logging.StreamHandler):
             l[1] = l[1].replace("WARNING", colorize("W", color.BROWN))
             l[1] = l[1].replace("DEBUG", colorize("D", color.LIGHTBLUE))
             l[1] = l[1].replace("INFO", " ")
+            if l[2].startswith("do "):
+                l[2] = colorize(l[2], color.BOLD)
             return " ".join(l)
 
         return c(text)

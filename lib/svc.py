@@ -4168,8 +4168,14 @@ class Svc(Crypt, ExtConfig):
         actionlogfilehandler.setFormatter(actionlogformatter)
         actionlogfilehandler.setLevel(logging.INFO)
         self.log.addHandler(actionlogfilehandler)
-        if "/svcmgr.py" in sys.argv:
-            self.log.info(" ".join(sys.argv))
+        try:
+            if sys.argv[0].endswith("/svcmgr.py"):
+                runlog = "do "+" ".join(sys.argv[1:])
+                runlog = runlog.replace("-s %s "%self.svcname, "")
+                runlog = runlog.replace("--service %s "%self.svcname, "")
+                self.log.info(runlog)
+        except IndexError:
+            pass
 
         err = self.do_action(action, options)
 
@@ -4186,6 +4192,7 @@ class Svc(Crypt, ExtConfig):
         This action translates into 'stop' followed by 'start'
         """
         self.stop()
+        self.log.info("instance stopped, ready for restart.")
         self.start()
 
     def _migrate(self):

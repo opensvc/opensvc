@@ -377,6 +377,9 @@ def colorize_log_line(line, last=None):
     elements[2] = elements[2].replace("ERROR", colorize("ERROR", color.RED))
     elements[2] = elements[2].replace("WARNING", colorize("WARNING", color.BROWN))
     elements[2] = elements[2].replace("INFO", colorize("INFO", color.LIGHTBLUE))
+    if elements[3].startswith("do "):
+        elements[3] = colorize(elements[3], color.BOLD)
+
     return " ".join(elements)
 
 
