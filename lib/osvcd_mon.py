@@ -1177,6 +1177,23 @@ class Monitor(shared.OsvcThread, Crypt):
                     "svcname": svc.svcname,
                 })
                 self.service_start(svc.svcname)
+        elif smon.global_expect.startswith("placed@"):
+            target = smon.global_expect.split("@")[-1].split(",")
+            if rcEnv.nodename not in target:
+                if instance.avail not in STOPPED_STATES:
+                    self.event("instance_stop", {
+                        "reason": "target",
+                        "svcname": svc.svcname,
+                    })
+                    self.service_stop(svc.svcname)
+            elif self.instances_stopped(svc.svcname, set(svc.peers) - set(target)) and \
+                 rcEnv.nodename in target and \
+                 instance.avail in STOPPED_STATES:
+                self.event("instance_start", {
+                    "reason": "target",
+                    "svcname": svc.svcname,
+                })
+                self.service_start(svc.svcname)
 
     def scaler_current_slaves(self, svcname):
         return [slave for slave in shared.SERVICES \
@@ -1453,6 +1470,28 @@ class Monitor(shared.OsvcThread, Crypt):
         live_nodes = [nodename for nodename in shared.CLUSTER_DATA if shared.CLUSTER_DATA[nodename] is not None]
         min_instances = set(svc.peers) & set(live_nodes)
         return len(instances) >= len(min_instances)
+
+    def instances_started(self, svcname, nodes):
+        for nodename in nodes:
+            instance = self.get_service_instance(svcname, nodename)
+            if instance is None:
+                continue
+            if instance.get("avail") in STOPPED_STATES:
+                return False
+        self.log.info("service '%s' instances on nodes '%s' are stopped",
+            svcname, ", ".join(nodes))
+        return True
+
+    def instances_stopped(self, svcname, nodes):
+        for nodename in nodes:
+            instance = self.get_service_instance(svcname, nodename)
+            if instance is None:
+                continue
+            if instance.get("avail") not in STOPPED_STATES:
+                self.log.info("service '%s' instance node '%s' is not stopped yet",
+                              svcname, nodename)
+                return False
+        return True
 
     def non_leaders_stopped(self, svc):
         for nodename, instance in self.get_service_instances(svc.svcname).items():
@@ -2299,6 +2338,10 @@ class Monitor(shared.OsvcThread, Crypt):
              shared.AGG[svcname].placement in ("optimal", "n/a") and \
              shared.AGG[svcname].avail == "up":
             self.set_smon(svcname, global_expect="unset")
+        elif smon.global_expect.startswith("placed@"):
+            target = smon.global_expect.split("@")[-1].split(",")
+            if self.instances_started(svcname, target):
+                self.set_smon(svcname, global_expect="unset")
 
     def set_smon_l_expect_from_status(self, data, svcname):
         if svcname not in data:
@@ -2560,6 +2603,14 @@ class Monitor(shared.OsvcThread, Crypt):
                 return True
             else:
                 return False
+        elif global_expect.startswith("placed@"):
+            target = global_expect.split("@")[-1].split(",")
+            if rcEnv.nodename in target:
+                if instance["avail"] in STOPPED_STATES:
+                    return True
+            else:
+                if instance["avail"] not in STOPPED_STATES:
+                    return True
         return False
 
     def merge_hb_data_provision(self):

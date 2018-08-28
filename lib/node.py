@@ -3889,12 +3889,15 @@ class Node(Crypt, ExtConfig):
                             slave_parents[child] = set([svcname])
                         else:
                             slave_parents[child] |= set([svcname])
+                    global_expect = _data["monitor"].get("global_expect")
+                    if global_expect and "@" in global_expect:
+                        global_expect = global_expect[:global_expect.index("@")+1]
                     services[svcname].nodes[node] = {
                         "avail": _data.get("avail", "undef"),
                         "overall": _data.get("overall", "undef"),
                         "frozen": _data.get("frozen", False),
                         "mon": _data["monitor"].get("status", ""),
-                        "global_expect": _data["monitor"].get("global_expect"),
+                        "global_expect": global_expect,
                         "placement": _data["monitor"].get("placement", ""),
                         "provisioned": _data.get("provisioned"),
                     }

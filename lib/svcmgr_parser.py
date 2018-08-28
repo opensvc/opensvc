@@ -809,6 +809,15 @@ ACTIONS = {
                 OPT.to,
             ],
         },
+        "move": {
+            "msg": "Ask the daemon to orchestrate a stop of the service instances "
+                   "running on nodes not in the specified target, and start "
+                   "instances on the specified target nodes. The target is "
+                   "specified by :opt:`--to <nodename>,<nodename>`.",
+            "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
+                OPT.to,
+            ],
+        },
         "resource_monitor": {
             "msg": "Refresh the monitored resource status. This action is "
                    "scheduleable, usually every minute.",

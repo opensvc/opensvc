@@ -1,6 +1,6 @@
 
 
-svcmgr="abort clear collector compliance create delete disable dns docker edit enable freeze frozen get giveback logs ls migrate pg postsync presync print provision prstatus pull push resource restart resync run scale set shutdown snooze start startstandby status stop switch sync takeover thaw toc unprovision unset unsnooze update validate"
+svcmgr="abort boot clear collector compliance create delete disable dns docker edit enable freeze frozen get giveback logs ls migrate move pg postsync presync print provision prstatus pull push resource restart resync run scale set shutdown snooze start startstandby status stop switch sync takeover thaw toc unprovision unset unsnooze update validate"
 svcmgr_collector="ack alerts asset checks create disks events list log networks show tag untag"
 svcmgr_collector_ack="action unavailability"
 svcmgr_collector_create="tag"
@@ -70,7 +70,9 @@ svcmgr_sync_update="--color --daemon --debug --dry-run --env --local --master --
 svcmgr_logs="--backlog --color --daemon --debug --env --follow --local --no-pager --node --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_print_base_devs="--color --daemon --debug --env --filter --format --rid --status --subsets --tags --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_migrate="--color --daemon --debug --disable-rollback --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --time --to --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
+svcmgr_print_resource_status="--color --daemon --debug --env --filter --format --rid --status --waitlock -c --cluster -h --help -p --parallel -r --refresh -s --service"
 svcmgr_push_encap_config="--color --cron --daemon --debug --env --status --waitlock -c --cluster -h --help -p --parallel -s --service"
+svcmgr_move="--color --daemon --debug --disable-rollback --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --time --to --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_sync_resync="--color --daemon --debug --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_freeze="--color --daemon --debug --env --local --master --node --slave --slaves --status --time --wait --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_abort="--color --daemon --debug --env --status --waitlock -c --cluster -h --help -p --parallel -s --service"
@@ -86,7 +88,7 @@ svcmgr_presync="--color --daemon --debug --dry-run --env --local --master --node
 svcmgr_sync_drp="--color --daemon --debug --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_sync_establish="--color --daemon --debug --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_giveback="--color --daemon --debug --disable-rollback --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --time --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
-svcmgr_print_resource_status="--color --daemon --debug --env --filter --format --rid --status --waitlock -c --cluster -h --help -p --parallel -r --refresh -s --service"
+svcmgr_boot="--color --daemon --debug --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_start="--color --daemon --debug --disable-rollback --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --time --upto --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_sync_break="--color --daemon --debug --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_ls="--color --daemon --debug --env --filter --format --status --waitlock -c --cluster -h --help -p --parallel -s --service"

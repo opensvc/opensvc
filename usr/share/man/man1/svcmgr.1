@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-08\-24
+.TH SVCMGR 1 2018\-08\-28
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -2996,6 +2996,142 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 Show this help message and exit.
 
 .RE
+\fBsvcmgr boot\fP
+.RS
+
+Clean up actions executed before the daemon starts. For example scsi reservation release and vg tags removal. Never execute this action manually.
+
+
+.TP
+.B --dry-run
+Show the action execution plan.
+.TP
+.B -f, --force
+Force action, ignore sanity checks.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
+.B --rid=PARM_RID
+A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
+
+* A resource id
+* A driver group name (app, fs, disk, ...)
+
+Examples:
+
+* 'app'
+  all app resources
+* 'container#1,ip#1'
+  only container#1 and ip#1
+
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
+.TP
+.B --subsets=PARM_SUBSETS
+Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --tags=PARM_TAGS
+A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the json service status data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B -c, --cluster
+Execute the action on all cluster nodes. Aggregate the json outputs.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --daemon
+A flag inhibiting the daemonization. Set by the daemonization routine.
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
 \fBsvcmgr clear\fP
 .RS
 
@@ -4115,6 +4251,156 @@ Show this help message and exit.
 .RS
 
 Live migrate the service to the remote node. --to <node> specify the remote node to migrate the service to.
+
+
+.TP
+.B --dry-run
+Show the action execution plan.
+.TP
+.B -f, --force
+Force action, ignore sanity checks.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
+.B --rid=PARM_RID
+A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
+
+* A resource id
+* A driver group name (app, fs, disk, ...)
+
+Examples:
+
+* 'app'
+  all app resources
+* 'container#1,ip#1'
+  only container#1 and ip#1
+
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
+.TP
+.B --subsets=PARM_SUBSETS
+Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --tags=PARM_TAGS
+A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+If set, don't try to rollback resources activated before a start action interrupts on error.
+.TP
+.B --time=TIME
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination.
+.TP
+.B --to=PARM_DESTINATION_NODE
+The remote node to start or migrate the service to. Or the target number of instance to scale to.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the json service status data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B -c, --cluster
+Execute the action on all cluster nodes. Aggregate the json outputs.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --daemon
+A flag inhibiting the daemonization. Set by the daemonization routine.
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr move\fP
+.RS
+
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
+
+Ask the daemon to orchestrate a stop of the service instances running on nodes not in the specified target, and start instances on the specified target nodes. The target is specified by :opt:`--to <nodename>,<nodename>`.
 
 
 .TP
@@ -8257,6 +8543,8 @@ Show this help message and exit.
 \fBsvcmgr switch\fP
 .RS
 
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
+
 Stop the running failover service instance and start the instance on the peer node specified by :opt:`--to <nodename>`.
 
 
@@ -10311,6 +10599,8 @@ Show this help message and exit.
 .RE
 \fBsvcmgr takeover\fP
 .RS
+
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Stop the service on its current node and start on the local node.
 

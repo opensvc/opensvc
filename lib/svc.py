@@ -65,6 +65,10 @@ ACTION_ASYNC = {
         "target": "placed",
         "progress": "placing",
     },
+    "move": {
+        "target": "placed@",
+        "progress": "placing@",
+    },
     "provision": {
         "target": "provisioned",
         "progress": "provisioning",
@@ -84,6 +88,14 @@ ACTION_ASYNC = {
     "stop": {
         "target": "stopped",
         "progress": "stopping",
+    },
+    "switch": {
+        "target": "placed@",
+        "progress": "placing@",
+    },
+    "takeover": {
+        "target": "placed@",
+        "progress": "placing@",
     },
     "toc": {
         "progress": "tocing",
@@ -2699,6 +2711,12 @@ class Svc(Crypt, ExtConfig):
         if action == "delete" and self.options.unprovision:
             global_expect = "purged"
             action = "purge"
+        elif action == "move":
+            global_expect += self.options.destination_node
+        elif action in ("switch", "takeover"):
+            dst = self.destination_node_sanity_checks()
+            global_expect += dst
+        print(global_expect)
         self.set_service_monitor(global_expect=global_expect, svcname=svcname)
         if svcname == self.svcname:
             self.log.info("%s action requested", action)
@@ -4264,15 +4282,9 @@ class Svc(Crypt, ExtConfig):
 
     def takeover(self):
         """
-        Service move to local node.
+        Orchestrated move of a failover running instance to the local node.
         """
-        self.destination_node_sanity_checks(rcEnv.nodename)
-        self.svcunlock()
-        self._clear(nodename=rcEnv.nodename)
-        self._clear(nodename=self.options.destination_node)
-        self.daemon_mon_action("stop", wait=True)
-        self.daemon_service_action(["start"], nodename=rcEnv.nodename)
-        self.daemon_mon_action("thaw", wait=True)
+        pass
 
     def giveback(self):
         """
@@ -4294,17 +4306,18 @@ class Svc(Crypt, ExtConfig):
         self._set("DEFAULT", "scale", str(value))
         self.set_service_monitor()
 
+    def move(self):
+        """
+        Orchestrated move of running instances to the nodes specified by --to.
+        """
+        pass
+
     def switch(self):
         """
-        Service move to another node.
+        Orchestrated move a failover running instance to another node.
+        Implicitely the other node in a 2-nodes cluster.
         """
-        dst = self.destination_node_sanity_checks()
-        self.svcunlock()
-        self._clear(nodename=rcEnv.nodename)
-        self._clear(nodename=dst)
-        self.daemon_mon_action("stop", wait=True)
-        self.daemon_service_action(["start"], nodename=dst, timeout=self.options.time)
-        self.daemon_mon_action("thaw", wait=True)
+        pass
 
     def collector_rest_get(self, *args, **kwargs):
         kwargs["svcname"] = self.svcname
