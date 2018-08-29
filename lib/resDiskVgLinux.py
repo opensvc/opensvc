@@ -112,19 +112,22 @@ class Disk(resDisk.Disk):
 
     @lazy
     def has_metad(self):
-        return which("lvmetad") is not None
+        cmd = ["pgrep", "lvmetad"]
+        out, err, ret = justcall(cmd)
+        return ret == 0
+
+    def pvscan(self):
+        cmd = ["pvscan"]
+        if self.has_metad:
+            cmd += ["--cache"]
+        ret, out, err = self.vcall(cmd, warn_to_info=True)
+        self.clear_cache("vg.lvs")
+        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("vg.tags")
 
     def list_tags(self, tags=[]):
-        tmo = 5
-        try:
-            self.wait_for_fn(self.test_vgs, tmo, 1, errmsg="vgs is still reporting the vg as not found after %d seconds"%tmo)
-        except ex.excError as e:
-            self.log.warning(str(e))
-            cmd = ["pvscan"]
-            if self.has_metad:
-                cmd += ["--cache"]
-            ret, out, err = self.vcall(cmd, warn_to_info=True)
-        # last chance
+        if not self.test_vgs():
+            self.pvscan()
         data = self.get_tags()
         if self.name not in data:
             raise ex.excError("vg %s not found" % self.name)
