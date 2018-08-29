@@ -4,7 +4,7 @@ import time
 import os
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, fcache
+from rcUtilities import justcall, cache
 from rcUtilitiesLinux import check_ping
 import resContainer
 
@@ -38,7 +38,7 @@ class Kvm(resContainer.Container):
     def files_to_sync(self):
         return self.list_kvmconffiles()
 
-    @fcache
+    @cache("virsh.capabilities")
     def capabilities(self):
         cmd = ['virsh', 'capabilities']
         out, err, ret = justcall(cmd)
