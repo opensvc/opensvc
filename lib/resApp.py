@@ -389,13 +389,13 @@ class App(Resource):
         except lock.LockAcquire as exc:
             raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
         except ex.excSignal:
-            raise ex.excError("interrupted by signal %s" % details)
+            self.log.info("interrupted by signal %s" % details)
         except Exception as exc:
             self.save_exc()
             raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
-
-        if lockfd is not None:
-            self.lockfd = lockfd
+        finally:
+            if lockfd is not None:
+                self.lockfd = lockfd
 
     def _status(self, verbose=False):
         """
@@ -595,9 +595,9 @@ class App(Resource):
             ret = lcall(cmd, **kwargs)
         except (KeyboardInterrupt, ex.excSignal):
             _len = datetime.now() - now
-            self.log.error('%s interrupted after %s - ret %d',
+            self.log.info('%s interrupted after %s - ret %d',
                            action, _len, 1)
-            return 1
+            return 0
         _len = datetime.now() - now
         msg = '%s done in %s - ret %d' % (action, _len, ret)
         if ret == 0:
