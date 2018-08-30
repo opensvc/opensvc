@@ -1030,6 +1030,8 @@ class ExtConfig(object):
                 return 0
             except ex.OptNotFound:
                 return 0
+            except ex.RequiredOptNotFound:
+                return 1
             err += check_candidates(key, section, option, value)
             return err
 
