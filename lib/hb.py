@@ -135,7 +135,8 @@ class Hb(shared.OsvcThread):
             if shared.HB_MSG is not None:
                 return shared.HB_MSG, shared.HB_MSG_LEN
             with shared.HB_MSG_LOCK:
-                shared.HB_MSG = self.encrypt(shared.CLUSTER_DATA[rcEnv.nodename], encode=False)
+                with shared.CLUSTER_DATA_LOCK:
+                    shared.HB_MSG = self.encrypt(shared.CLUSTER_DATA[rcEnv.nodename], encode=False)
                 if shared.HB_MSG is None:
                     shared.HB_MSG_LEN = 0
                 else:
