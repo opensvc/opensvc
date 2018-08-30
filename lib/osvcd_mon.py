@@ -62,12 +62,13 @@ class Monitor(shared.OsvcThread, Crypt):
         self.shortloops = 0
         self.unfreeze_when_all_nodes_joined = False
 
-        shared.CLUSTER_DATA[rcEnv.nodename] = {
-            "compat": shared.COMPAT_VERSION,
-            "agent": shared.NODE.agent_version,
-            "monitor": shared.NMON_DATA,
-            "services": {},
-        }
+        with shared.CLUSTER_DATA_LOCK:
+            shared.CLUSTER_DATA[rcEnv.nodename] = {
+                "compat": shared.COMPAT_VERSION,
+                "agent": shared.NODE.agent_version,
+                "monitor": shared.NMON_DATA,
+                "services": {},
+            }
 
         if os.environ.get("OPENSVC_AGENT_UPGRADE"):
             if not self.freezer.node_frozen():
