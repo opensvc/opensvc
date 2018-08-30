@@ -1,21 +1,41 @@
 import os
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which
+from rcUtilities import justcall, which, cache, clear_cache
 import rcStatus
 import rcExceptions as ex
 from resources import Resource
 
 class Share(Resource):
 
+    @cache("showmount.e")
+    def get_showmount(self):
+        self.data = {}
+        cmd = ["showmount", "-e", "--no-headers"]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError("nfs server not operational")
+        for line in out.splitlines():
+            try:
+                idx = line.rindex(" ")
+            except IndexError:
+                continue
+            path = line[0:idx]
+            ips = line[idx+1:].split(",")
+            if ips == ['(everyone)']:
+                ips = '*'
+            self.data[path] = ips
+        return self.data
+
+    @cache("exportfs.v")
     def get_exports(self):
         self.data = {}
-        cmd = [ 'exportfs', '-v' ]
+        cmd = ["exportfs", "-v"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError(err)
         out = out.replace('\n ', '').replace('\n\t', '')
-        for line in out.split('\n'):
+        for line in out.splitlines():
             words = line.split()
             if len(words) != 2:
                 continue
@@ -40,9 +60,20 @@ class Share(Resource):
         exports = self.get_exports()
         if self.path not in exports:
             return False
+        try:
+            showmount = self.get_showmount()
+        except ex.excError as exc:
+            self.status_log(str(exc), "info")
+            return False
+        if self.path not in showmount:
+            self.status_log("%s in userland etab but not in kernel etab" % self.path)
+            return False
         for client in self.opts:
             if client not in exports[self.path]:
                 self.issues[client] = "%s not exported to client %s"%(self.path, client)
+                self.issues_missing_client.append(client)
+            elif showmount[self.path] != "*" and client not in showmount[self.path]:
+                self.issues[client] = "%s not exported to client %s in kernel etab"%(self.path, client)
                 self.issues_missing_client.append(client)
             elif self.opts[client] > exports[self.path][client]:
                 self.issues[client] = "%s is exported to client %s with missing options: current '%s', minimum required '%s'"%(self.path, client, ','.join(exports[self.path][client]), ','.join(self.opts[client]))
@@ -73,6 +104,8 @@ class Share(Resource):
 
             cmd = [ 'exportfs', '-o', ','.join(opts), ':'.join((client, self.path)) ]
             ret, out, err = self.vcall(cmd)
+            clear_cache("exportfs.v")
+            clear_cache("showmount.e")
             if ret != 0:
                 raise ex.excError
 
@@ -87,6 +120,8 @@ class Share(Resource):
         for client in self.opts:
             cmd = [ 'exportfs', '-u', ':'.join((client, self.path)) ]
             ret, out, err = self.vcall(cmd)
+            clear_cache("exportfs.v")
+            clear_cache("showmount.e")
             if ret != 0:
                 raise ex.excError
 
