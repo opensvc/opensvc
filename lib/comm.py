@@ -543,7 +543,10 @@ class Crypt(object):
                 elapsed = 0
                 while True:
                     try:
-                        return self.recv_message(sock, cluster_name=cluster_name, secret=secret, encrypted=sp.encrypted)
+                        buff = self.recv_message(sock, cluster_name=cluster_name, secret=secret, encrypted=sp.encrypted)
+                        if buff is None:
+                            raise socket.timeout
+                        return buff
                     except socket.timeout:
                         if timeout > 0 and elapsed > timeout:
                             return {"status": 1, "err": "timeout"}
