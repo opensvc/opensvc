@@ -2849,6 +2849,7 @@ class Svc(Crypt, ExtConfig):
 
     def boot(self):
         self.options.force = True
+        self.options.no_daemon = True
         self.master_boot()
 
     @_master_action
@@ -5079,6 +5080,8 @@ class Svc(Crypt, ExtConfig):
             raise ex.excError("clear on node %s failed" % nodename)
 
     def wake_monitor(self):
+        if self.options.no_daemon:
+            return
         options = {
             "svcname": self.svcname,
         }
