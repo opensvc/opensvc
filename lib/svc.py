@@ -2712,6 +2712,8 @@ class Svc(Crypt, ExtConfig):
             global_expect = "purged"
             action = "purge"
         elif action == "move":
+            if self.options.destination_node is None:
+                raise ex.excError("the --to <node>[,<node>,...] option is required")
             global_expect += self.options.destination_node
         elif action in ("switch", "takeover"):
             dst = self.destination_node_sanity_checks()
