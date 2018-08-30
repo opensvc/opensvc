@@ -7,6 +7,7 @@ import os
 import time
 import stat
 import shlex
+import six
 
 from rcUtilities import which, lazy, is_string, lcall
 from converters import convert_boolean
@@ -295,7 +296,10 @@ class App(Resource):
                 if "|" in val or "&&" in val or ";" in val:
                     return val
                 else:
-                    cmd = shlex.split(val)
+                    if six.PY2:
+                        cmd = map(lambda s: s.decode('utf8'), shlex.split(val.encode('utf8')))
+                    else:
+                        cmd = shlex.split(val)
         cmd = self.validate_on_action(cmd)
         return cmd
 
