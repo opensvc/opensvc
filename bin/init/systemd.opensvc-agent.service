@@ -10,15 +10,9 @@ After=dockerd.service
 After=libvirtd.service
 After=virt-guest-shutdown.target
 After=libvirt-guests.service
-After=multipathd.service
-After=iscsi.service
-After=iscsi-shutdown.service
 After=blk-availability.service
 Wants=libvirtd.service
 Wants=libvirt-guests.service
-Wants=multipathd.service
-Wants=iscsi.service
-Wants=iscsi-shutdown.service
 Wants=blk-availability.service
 Requires=opensvc-services.service
 
