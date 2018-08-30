@@ -150,11 +150,11 @@ class Monitor(shared.OsvcThread, Crypt):
         shared.wake_collector()
 
     def shutdown(self):
-        with shared.SERVICES_LOCK:
-            for svc in shared.SERVICES.values():
-                self.service_shutdown(svc.svcname)
+        cmd = [rcEnv.paths.svcmgr, "--service", "*", "shutdown", "--local", "--parallel"]
+        proc = Popen(cmd, stdin=None, stdout=None, stderr=None, close_fds=True)
+        proc.communicate()
         self._shutdown = True
-        shared.wake_monitor("service %s shutdown terminated" % svc.svcname)
+        shared.wake_monitor("services shutdown terminated")
 
     #########################################################################
     #

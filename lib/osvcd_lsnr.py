@@ -320,12 +320,19 @@ class Listener(shared.OsvcThread, Crypt):
     def action_daemon_shutdown(self, nodename, **kwargs):
         self.log.info("shutdown daemon requested")
         with shared.THREADS_LOCK:
-            shared.THREADS["monitor"].shutdown()
+            shared.THREADS["scheduler"].stop()
+            mon = shared.THREADS["monitor"]
+        try:
+            mon.shutdown()
+        except Exception as exc:
+            self.log.exception(exc)
 
+        self.log.info("services are now shutdown")
         while True:
             with shared.THREADS_LOCK:
                 if not shared.THREADS["monitor"].is_alive():
                     break
+            time.sleep(0.3)
         shared.DAEMON_STOP.set()
         return {"status": 0}
 
