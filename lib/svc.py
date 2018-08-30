@@ -304,6 +304,7 @@ ACTIONS_DO_MASTER = [
 ]
 
 ACTIONS_DO_MASTER_AND_SLAVE = [
+    "boot",
     "migrate",
     "prstart",
     "prstop",
@@ -312,7 +313,6 @@ ACTIONS_DO_MASTER_AND_SLAVE = [
     "start",
     "startstandby",
     "stop",
-    "switch",
 ]
 
 ACTIONS_NEED_SNAP_TRIGGER = [
