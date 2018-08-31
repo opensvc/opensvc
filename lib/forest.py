@@ -5,6 +5,7 @@ Forest data representation module.
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import six
 from textwrap import wrap
 
 from rcUtilities import term_width
@@ -193,6 +194,8 @@ def forest(data, columns=1, separator="  ", widths=None):
         """
         if width == 0:
             return []
+        if six.PY2 and isinstance(text, str):
+            text = text.decode("utf8")
         return wrap(
             text,
             initial_indent="",
