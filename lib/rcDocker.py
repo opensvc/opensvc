@@ -680,7 +680,6 @@ class DockerLib(object):
         try:
             sock.connect(self.docker_socket[7:])
         except Exception as exc:
-            print(exc)
             return False
         finally:
             sock.close()
