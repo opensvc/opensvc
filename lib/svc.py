@@ -901,8 +901,12 @@ class Svc(Crypt, ExtConfig):
         """
         Purge all service resources on-disk status caches.
         """
-        for rset in self.resourcesets_by_id.values():
-            rset.purge_status_last()
+        import glob
+        for fpath in glob.glob(os.path.join(self.var_d, "*#*", "status.last")):
+            try:
+                os.unlink(fpath)
+            except:
+                pass
 
     def get_subset_parallel(self, rtype):
         """
