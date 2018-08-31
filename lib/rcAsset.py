@@ -1,5 +1,6 @@
 import os
 import datetime
+import codecs
 from subprocess import *
 
 import rcExceptions as ex
@@ -538,7 +539,7 @@ class Asset(object):
             return []
         if not os.path.exists(p):
             return []
-        with open(p, 'r') as f:
+        with codecs.open(p, "r", "utf8") as f:
             buff = f.read()
         d = []
         for line in buff.split('\n'):
