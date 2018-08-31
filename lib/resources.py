@@ -314,6 +314,7 @@ class Resource(object):
         Return True for action known to be causing a resource status change.
         """
         actions = (
+            "boot",
             "shutdown",
             "start",
             "startstandby",
