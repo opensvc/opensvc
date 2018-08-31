@@ -4107,7 +4107,7 @@ class Svc(Crypt, ExtConfig):
         if progress is None:
             return
         local_expect = None
-        if action in ("stop", "unprovision", "delete", "shutdown", "rollback") and not self.command_is_scoped():
+        if action in ("stop", "unprovision", "delete", "rollback") and not self.command_is_scoped():
             local_expect = "unset"
             if self.orchestrate == "ha":
                 self.master_freeze()
