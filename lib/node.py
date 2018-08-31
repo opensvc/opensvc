@@ -2224,7 +2224,7 @@ class Node(Crypt, ExtConfig):
         Execute the nodemgr or svcmgr action described in payload element
         received from the collector's action queue.
         """
-        if action.get("svcname") is None or action.get("svcname") == "":
+        if action.get("svc_id") in (None, "") or action.get("svcname") in (None, ""):
             cmd = [rcEnv.paths.nodemgr]
         else:
             cmd = [rcEnv.paths.svcmgr, "-s", action.get("svcname")]
