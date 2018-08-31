@@ -205,7 +205,7 @@ class Drbd(Res.Resource):
             roles = self.get_roles()
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return rcStatus.DOWN
         self.status_log(str(roles[0]), "info")
         ret, out, err = self.call(self.drbdadm_cmd('dstate'))
         if ret != 0:
