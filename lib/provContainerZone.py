@@ -277,7 +277,7 @@ class Prov(provisioning.Prov):
         if brand == "native":
             zone2clone.boot_and_wait_reboot()
         elif brand == "ipkg":
-            zone2clone.boot()
+            zone2clone.zone_boot()
         else:
             raise(ex.excError("zone brand: %s not yet implemented" % (brand)))
         zone2clone.wait_multi_user()
@@ -307,7 +307,7 @@ class Prov(provisioning.Prov):
         if brand == "native":
             zone2clone.boot_and_wait_reboot()
         elif brand == "ipkg":
-            zone2clone.boot()
+            zone2clone.zone_boot()
         else:
             raise(ex.excError("zone brand: %s not yet implemented" % (brand)))
         zone2clone.wait_multi_user()
@@ -397,7 +397,7 @@ class Prov(provisioning.Prov):
             self.create_sysidcfg(self.r)
 
         if need_boot is True:
-            self.r.boot()
+            self.r.zone_boot()
             self.r.wait_multi_user()
 
         self.r.log.info("provisioned")

@@ -245,7 +245,7 @@ class Zone(resContainer.Container):
         self.log.info("wait for smf state on on %s", MULTI_USER_SMF)
         self.wait_for_fn(self.is_multi_user, self.start_timeout, 2)
 
-    def boot(self):
+    def zone_boot(self):
         "return 0 if zone is running else return self.zoneadm('boot')"
         self.zone_refresh()
         if self.state == "running" :
@@ -285,7 +285,7 @@ class Zone(resContainer.Container):
         return 0
 
     def container_start(self):
-        return self.boot()
+        return self.zone_boot()
 
     def _status(self, verbose=False):
         self.zone_refresh()
@@ -355,7 +355,7 @@ class Zone(resContainer.Container):
             wait for zone operational
         """
         self.log.info("wait for zone boot and reboot...")
-        self.boot()
+        self.zone_boot()
         if self.is_running is False:
             raise(ex.excError("zone is not running"))
         cmd = [PGREP, "-z", self.name, "-f", INIT]
@@ -410,7 +410,7 @@ class Zone(resContainer.Container):
             self.ready()
         self.svc.sub_set_action("ip", "start", tags=set([self.name]))
         if not 'noaction' in self.tags:
-            self.boot()
+            self.zone_boot()
         self.svc.sub_set_action([
             "disk.scsireserv",
             "disk.zpool",
