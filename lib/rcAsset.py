@@ -613,6 +613,9 @@ class Asset(object):
 
         return lan
 
+    def get_boot_id(self):
+        return str(os.path.getmtime("/proc/1"))
+
     def get_last_boot(self):
         os.environ["LANG"] = "C"
         cmd = ["/usr/bin/uptime"]

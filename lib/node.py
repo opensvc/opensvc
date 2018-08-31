@@ -111,6 +111,7 @@ class Node(Crypt, ExtConfig):
         self.clouds = None
         self.paths = Storage(
             reboot_flag=os.path.join(rcEnv.paths.pathvar, "REBOOT_FLAG"),
+            last_boot_id=os.path.join(rcEnv.paths.pathvar, "last_boot_id"),
             tmp_cf=os.path.join(rcEnv.paths.pathvar, "node.conf.tmp"),
             cf=rcEnv.paths.nodeconf,
         )
@@ -4675,3 +4676,14 @@ class Node(Crypt, ExtConfig):
                     data[event] = set()
                 data[event].add(command)
         return data
+
+    def write_boot_id(self):
+        with open(self.paths.last_boot_id, "w") as ofile:
+            ofile.write(self.asset.get_boot_id())
+
+    def last_boot_id(self):
+        try:
+            with open(self.paths.last_boot_id, "r") as ofile:
+                return ofile.read()
+        except Exception:
+            return

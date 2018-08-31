@@ -76,7 +76,14 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.unfreeze_when_all_nodes_joined = True
                 self.freezer.node_freeze()
 
-        self.services_init_status()
+        last_boot_id = shared.NODE.last_boot_id()
+        boot_id = shared.NODE.asset.get_boot_id()
+        self.log.info("boot id %s, last %s", boot_id, last_boot_id)
+        if last_boot_id in (None, boot_id):
+            self.services_init_status()
+        else:
+            self.services_init_boot()
+        shared.NODE.write_boot_id()
 
         # send a first message without service status, so the peers know
         # we are in init state.
@@ -572,7 +579,16 @@ class Monitor(shared.OsvcThread, Crypt):
             on_error="services_init_status_callback",
         )
 
+    def services_init_boot(self):
+        proc = self.service_command("*", ["boot", "--parallel"])
+        self.push_proc(
+            proc=proc,
+            on_success="services_init_status_callback",
+            on_error="services_init_status_callback",
+        )
+
     def services_init_status_callback(self, *args, **kwargs):
+        self.update_hb_data()
         self.set_nmon(status="rejoin")
 
 
@@ -1077,7 +1093,6 @@ class Monitor(shared.OsvcThread, Crypt):
                     "reason": "target",
                     "svcname": svc.svcname,
                 })
-                self.service_freeze(svc.svcname)
             elif not self.is_instance_shutdown(instance):
                 thawed_on = self.service_instances_thawed(svc.svcname)
                 if thawed_on:
@@ -2083,7 +2098,8 @@ class Monitor(shared.OsvcThread, Crypt):
             else:
                 csum = last_config["csum"]
             if last_config is None or last_config["csum"] != csum:
-                self.log.info("service %s configuration change" % svcname)
+                if last_config is not None:
+                    self.log.info("service %s configuration change" % svcname)
                 try:
                     status_mtime = os.stat(shared.SERVICES[svcname].status_data_dump).st_mtime
                     if mtimestamp > status_mtime:
@@ -2622,10 +2638,14 @@ class Monitor(shared.OsvcThread, Crypt):
         with shared.SERVICES_LOCK:
             with shared.CLUSTER_DATA_LOCK:
                 for svc in shared.SERVICES.values():
+                    try:
+                        idata = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]
+                    except KeyError:
+                        continue
                     changed = False
                     for resource in svc.shared_resources:
                         try:
-                            local = Storage(shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"])
+                            local = Storage(idata["resources"][resource.rid]["provisioned"])
                         except KeyError:
                             local = Storage()
                         for nodename in svc.peers:
