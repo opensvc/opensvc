@@ -68,11 +68,6 @@ OPT = Storage({
         "--debug", default=False,
         action="store_true", dest="debug",
         help="Increase stream and file log verbosity up to the debug level."),
-    "daemon": Option(
-        "--daemon", default=False,
-        action="store_true", dest="daemon",
-        help="A flag inhibiting the daemonization. Set by the "
-             "daemonization routine."),
     "disable_rollback": Option(
         "--disable-rollback", default=False,
         action="store_true", dest="disable_rollback",
@@ -404,7 +399,6 @@ SVC_SELECT_OPTS = [
 GLOBAL_OPTS = SVC_SELECT_OPTS + [
     OPT.cluster,
     OPT.color,
-    OPT.daemon,
     OPT.debug,
     OPT.env,
     OPT.parallel,

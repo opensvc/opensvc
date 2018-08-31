@@ -69,13 +69,16 @@ def do_svcs_action_detached(argv=None):
     Keyboard interrupts do abort the detached process though.
     """
     ret = 0
+    env = {}
+    env.update(os.environ)
+    env["OSVC_DETACHED"] = "1"
     try:
         import subprocess
         import signal
-        proc = subprocess.Popen([sys.executable, __file__] + argv + ["--daemon"],
+        proc = subprocess.Popen([sys.executable, __file__] + argv,
                                 stdout=None, stderr=None, stdin=None,
                                 close_fds=True, cwd=os.sep,
-                                preexec_fn=os.setsid)
+                                preexec_fn=os.setsid, env=env)
         proc.wait()
         ret = proc.returncode
     except KeyboardInterrupt as exc:
@@ -99,8 +102,8 @@ def do_svcs_action(node, options, action, argv):
     ret = 0
 
     if os.environ.get("OSVC_ACTION_ORIGIN") != "daemon" and \
-       not options.daemon and ( \
-        action in ("stop", "shutdown", "unprovision", "switch") or \
+       os.environ.get("OSVC_DETACHED") != "1" and ( \
+        action in ("stop", "shutdown", "unprovision") or \
         (action == "delete" and options.unprovision == True)
        ):
         ret = do_svcs_action_detached(argv)

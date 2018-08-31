@@ -2308,7 +2308,7 @@ class Svc(Crypt, ExtConfig):
             container.wait_multi_user()
 
         if fwd_options:
-            options = ['--daemon']
+            options = []
             if self.options.dry_run:
                 options.append('--dry-run')
             if self.options.force:
@@ -2338,6 +2338,7 @@ class Svc(Crypt, ExtConfig):
         if verbose:
             self.log.info(" ".join(cmd))
 
+        cmd = ["env", "OSVC_DETACHED=1"] + cmd
         if container is not None and hasattr(container, "rcmd"):
             try:
                 out, err, ret = container.rcmd(cmd)
