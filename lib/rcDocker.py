@@ -678,8 +678,9 @@ class DockerLib(object):
         import socket
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         try:
-            sock.connect(self.docker_socket)
+            sock.connect(self.docker_socket[7:])
         except Exception as exc:
+            print(exc)
             return False
         finally:
             sock.close()
