@@ -266,7 +266,7 @@ class Asset(rcAsset.Asset):
         pid = self.zsched_pid()
         if pid is None:
             return
-        return os.path.getmtime("/proc/%s" % pid)
+        return str(os.path.getmtime("/proc/%s" % pid))
 
     def zsched_pid(self):
         cmd = ["pgrep", "zsched"]
