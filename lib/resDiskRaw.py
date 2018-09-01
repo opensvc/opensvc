@@ -295,7 +295,7 @@ class Disk(resDisk.Disk):
                 "sync",
                 "app",
                 "disk",
-                "hb"
+                "task"
             ]))
             msg = "%s not found" % ', '.join(sorted(self.devs_not_found))
             if str(status["avail"]) not in ("up", "n/a"):

@@ -407,7 +407,7 @@ class App(Resource):
             "app",
             "disk.scsireserv",
             "disk.drbd",
-            "hb"
+            "task"
         ]))
         if n_ref_res > 0 and str(status["avail"]) not in ("up", "n/a"):
             self.log.debug("abort resApp status because needed resources avail status is %s", status["avail"])

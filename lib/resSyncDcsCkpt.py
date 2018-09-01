@@ -143,7 +143,7 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
         self.checkpoint()
 
     def refresh_svcstatus(self):
-        self.svcstatus = self.svc.group_status(excluded_groups=set(["sync", 'hb', 'app']))
+        self.svcstatus = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
 
     def get_svcstatus(self):
         if len(self.svcstatus) == 0:

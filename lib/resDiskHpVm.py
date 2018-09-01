@@ -41,13 +41,13 @@ class Disk(resVg.Disk):
         return [self.sharefile_name(), self.mksffile_name()]
 
     def postsync(self):
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
+        s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
         if s['overall'].status != rcStatus.UP:
             self.do_mksf()
             self.do_share()
 
     def presync(self):
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
+        s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
         if self.svc.options.force or s['overall'].status == rcStatus.UP:
             self.write_mksf()
             self.write_share()

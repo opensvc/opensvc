@@ -99,7 +99,7 @@ Internal                 : False
             self.pre_sync_check_flex_primary()
         except ex.excAbortAction:
             return True
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
+        s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
         if s['overall'].status not in [rcStatus.UP, rcStatus.NA]:
             return True
         return False

@@ -176,7 +176,7 @@ class syncNecIsmSnap(resSync.Sync):
                 self.array.sc_link_ld(sv, ld)
 
     def refresh_svcstatus(self):
-        self.svcstatus = self.svc.group_status(excluded_groups=set(["sync", 'hb']))
+        self.svcstatus = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
 
     def get_svcstatus(self):
         if len(self.svcstatus) == 0:

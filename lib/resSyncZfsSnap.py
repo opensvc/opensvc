@@ -139,7 +139,7 @@ class syncZfsSnap(resSync.Sync):
         return rcStatus.WARN
 
     def can_update(self):
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
+        s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
         if not self.svc.options.force and \
            s['avail'].status not in [rcStatus.UP, rcStatus.NA]:
             return False

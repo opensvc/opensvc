@@ -105,7 +105,7 @@ class Disk(resDisk.Disk):
             return
         if not self.is_shared:
             return
-        s = self.svc.group_status(excluded_groups=set(["app", "sync", "task"]))
+        s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
         if self.svc.options.force or s['avail'].status == rcStatus.UP:
             self.md_config_export()
 

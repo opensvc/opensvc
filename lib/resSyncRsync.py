@@ -136,7 +136,7 @@ class Rsync(resSync.Sync):
         # Also accept n/a status, because it's what the avail status
         # ends up to be when only sync#* are specified using --rid
         #
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
+        s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
         if not self.svc.options.force and \
            s['avail'].status not in [rcStatus.UP, rcStatus.NA]:
             if s['avail'].status == rcStatus.WARN:
@@ -370,7 +370,7 @@ class Rsync(resSync.Sync):
 
         """ sync state on nodes where the service is not UP
         """
-        s = self.svc.group_status(excluded_groups=set(["sync", "hb", "app"]))
+        s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
         if s['avail'].status != rcStatus.UP or \
            (self.svc.topology == 'flex' and \
             rcEnv.nodename != self.svc.flex_primary and \

@@ -107,7 +107,7 @@ class syncSymSrdfS(resSync.Sync):
             self.do_dgimport(self.dgfile_rdf_name)
 
     def presync(self):
-        s = self.svc.group_status(excluded_groups=set(["sync", "app"]))
+        s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
         if self.svc.options.force or s['avail'].status == rcStatus.UP:
             self.do_rdf_dgexport()
             self.do_local_dgexport()
@@ -562,7 +562,7 @@ class syncSymSrdfS(resSync.Sync):
         self.promote_devs_rw()
 
     def refresh_svcstatus(self):
-        self.svcstatus = self.svc.group_status(excluded_groups=set(["sync", 'hb']))
+        self.svcstatus = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
 
     def get_svcstatus(self):
         if len(self.svcstatus) == 0:

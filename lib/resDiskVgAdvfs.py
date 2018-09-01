@@ -64,7 +64,7 @@ class Disk(resDisk.Disk):
 
     def sub_devs(self):
         if not os.path.exists(self.sub_devs_name()):
-            s = self.svc.group_status(excluded_groups=set(["sync", "hb"]))
+            s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
             import rcStatus
             if s['overall'].status == rcStatus.UP:
                 self.log.debug("no sub_devs cache file and service up ... refresh sub_devs cache")
