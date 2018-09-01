@@ -262,6 +262,25 @@ class Asset(rcAsset.Asset):
                 return l.split(':')[-1].strip()
         return ''
 
+    def get_boot_id_zone(self):
+        pid = self.zsched_pid()
+        if pid is None:
+            return
+        return os.path.getmtime("/proc/%s" % pid)
+
+    def zsched_pid(self):
+        cmd = ["pgrep", "zsched"]
+        out, err, ret = justcall(cmd)
+        pid = out.split()[0]
+        if pid == "":
+            return
+        return pid
+
+    def get_boot_id(self):
+        if self.zone:
+            return self.get_boot_id_zone()
+        else:
+            return rcAsset.Asset.get_boot_id(self)
 
 if __name__ == "__main__":
     print(Asset()._get_cpu_model())
