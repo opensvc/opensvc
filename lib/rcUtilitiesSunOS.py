@@ -1,4 +1,5 @@
-from rcUtilities import justcall
+from rcUtilities import justcall, cache
+from subprocess import Popen, PIPE
 
 def check_ping(addr, timeout=5, count=1):
     cmd = ['ping', addr, "%s" % timeout]
@@ -50,6 +51,15 @@ def get_solaris_version():
             osver = lines[0]
 
     return float(osver)
+
+@cache("prtvtoc.{args[0]}")
+def prtvtoc(dev):
+    p = Popen(["prtvtoc", dev], stdout=PIPE, stderr=PIPE)
+    out, err = p.communicate()
+    if p.returncode != 0:
+        return
+    out = out.decode()
+    return out
 
 def devs_to_disks(self, devs=set()):
     return devs

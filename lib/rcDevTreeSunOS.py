@@ -4,6 +4,7 @@ import os
 import re
 from subprocess import *
 from rcUtilities import which, cache
+from rcUtilitiesSunOS import prtvtoc
 from rcGlobalEnv import rcEnv
 import rcDevTreeVeritas
 
@@ -25,12 +26,10 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                2      5    00          0  71127180  71127179
                7      0    00   71060733     66447  71127179
         """
-        p = Popen(["prtvtoc", d.devpath[0]], stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
+        out = prtvtoc(d.devpath[0])
+        if out is None:
             return
-        out = out.decode()
-        for line in out.split("\n"):
+        for line in out.splitlines():
             line = line.strip()
             if line.startswith('*'):
                 continue

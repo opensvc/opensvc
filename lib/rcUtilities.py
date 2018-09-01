@@ -939,7 +939,7 @@ def cache(sig):
             if len(args) > 0 and hasattr(args[0], "cache_sig_prefix"):
                 _sig = args[0].cache_sig_prefix + sig
             else:
-                _sig = sig
+                _sig = sig.format(args=args, kwargs=kwargs)
 
             fpath = cache_fpath(_sig)
 
@@ -970,6 +970,7 @@ def cache_fpath(sig):
             # we run unlocked here ...
             # another process created the dir since we tested ?
             pass
+    sig = sig.replace("/", "(slash)")
     fpath = os.path.join(cache_d, sig)
     return fpath
 

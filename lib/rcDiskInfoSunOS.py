@@ -2,6 +2,7 @@ import os
 import rcDiskInfo
 import rcDevTreeVeritas
 from rcUtilities import justcall
+from rcUtilitiesSunOS import prtvtoc
 import math
 from rcGlobalEnv import rcEnv
 from rcZone import is_zone
@@ -19,9 +20,8 @@ class diskInfo(rcDiskInfo.diskInfo):
     def get_part_size(self, dev):
         part = dev[-1]
         size = 0
-        cmd = ['prtvtoc', dev]
-        (out, err, ret) = justcall(cmd)
-        if ret != 0:
+        out = prtvtoc(dev)
+        if out is None:
             return size
 
         bytes_per_sect = 0
@@ -53,9 +53,8 @@ class diskInfo(rcDiskInfo.diskInfo):
         size = 0
         dev = dev.replace("/dev/dsk/", "/dev/rdsk/")
         dev = dev.replace("/dev/vx/dmp/", "/dev/vx/rdmp/")
-        cmd = ['prtvtoc', dev]
-        (out, err, ret) = justcall(cmd)
-        if ret != 0:
+        out = prtvtoc(dev)
+        if out is None:
             return size
 
         """
