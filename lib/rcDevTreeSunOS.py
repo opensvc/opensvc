@@ -3,7 +3,7 @@ import glob
 import os
 import re
 from subprocess import *
-from rcUtilities import which
+from rcUtilities import which, cache
 from rcGlobalEnv import rcEnv
 import rcDevTreeVeritas
 
@@ -147,17 +147,33 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                 parentdev.add_child(childname)
 
     def load_zpool(self):
-        p = Popen(["zpool", "list", "-H"], stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
+        out = self.zfs_list()
+        if out is None:
             return
-        out = out.decode()
-        for line in out.split('\n'):
+        for line in out.splitlines():
             l = line.split()
             if len(l) == 0:
                 continue
             poolname = l[0]
             self.load_zpool1(poolname)
+
+    @cache("zfs.list")
+    def zfs_list(self):
+        p = Popen(["zfs", "list", "-H"], stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        out = out.decode()
+        return out
+
+    @cache("zfs.list.snapshots")
+    def zfs_list_snapshots(self):
+        p = Popen(["zfs", "list", "-H", "-t", "snapshot"], stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            return
+        out = out.decode()
+        return out
 
     def load_zpool1(self, poolname):
         p = Popen(["zpool", "status", poolname], stdout=PIPE, stderr=PIPE)
@@ -166,7 +182,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             return
         out = out.decode()
         self.zpool_members[poolname] = []
-        for line in out.split('\n'):
+        for line in out.splitlines():
             l = line.split()
             if len(l) != 5:
                 continue
@@ -217,12 +233,11 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             self.zpool_datasets[poolname].append((zfsname, size))
             self.zpool_datasets_used[poolname] += size
 
-        p = Popen(["zfs", "list", "-H", "-t", "snapshot"], stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
+        out = self.zfs_list_snapshots()
+        if out is None:
             return
-        out = out.decode()
-        for line in out.split('\n'):
+
+        for line in out.splitlines():
             l = line.split()
             if len(l) == 0:
                 continue
