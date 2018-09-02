@@ -1507,8 +1507,8 @@ class Svc(Crypt, ExtConfig):
         """
         data = None
         try:
-            lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname + ".json.status", intent="status from cache")
-            with lock.cmlock(timeout=2, delay=1, lockfile=lockfile):
+            lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname + ".json.status")
+            with lock.cmlock(timeout=2, delay=1, lockfile=lockfile, intent="status from cache"):
                 if not from_resource_status_cache and \
                    not refresh and \
                    os.path.exists(self.status_data_dump) and \
@@ -1527,9 +1527,9 @@ class Svc(Crypt, ExtConfig):
 
         if data is None:
             # use a different lock to not block the faster "from cache" codepath
-            lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname + ".status", intent="status")
+            lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname + ".status")
             try:
-                with lock.cmlock(timeout=waitlock, delay=1, lockfile=lockfile):
+                with lock.cmlock(timeout=waitlock, delay=1, lockfile=lockfile, intent="status"):
                     data = self.print_status_data_eval(refresh=refresh)
             except lock.LOCK_EXCEPTIONS as exc:
                 raise ex.excAbortAction(str(exc))
