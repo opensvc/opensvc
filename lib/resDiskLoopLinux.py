@@ -3,7 +3,7 @@ import re
 import time
 
 from rcGlobalEnv import *
-from rcUtilities import call, which
+from rcUtilities import call, which, clear_cache
 import rcStatus
 import resDiskLoop as Res
 import rcExceptions as ex
@@ -27,7 +27,8 @@ class Disk(Res.Disk):
         try:
             with cmlock(timeout=30, delay=1, lockfile=lockfile):
                 cmd = [rcEnv.syspaths.losetup, '-f', self.loopFile]
-                (ret, out, err) = self.vcall(cmd)
+                ret, out, err = self.vcall(cmd)
+                clear_cache("losetup.json")
         except Exception as exc:
             raise ex.excError(str(exc))
         if ret != 0:
@@ -45,7 +46,8 @@ class Disk(Res.Disk):
             return 0
         for loop in self.loop:
             cmd = [rcEnv.syspaths.losetup, '-d', loop]
-            (ret, out, err) = self.vcall(cmd)
+            ret, out, err = self.vcall(cmd)
+            clear_cache("losetup.json")
             if ret != 0:
                 raise ex.excError
 

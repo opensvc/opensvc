@@ -1,22 +1,30 @@
 import os
 import re
+import json
 
 from rcGlobalEnv import *
-from rcUtilities import justcall, which
+from rcUtilities import justcall, which, cache
 import rcStatus
 import rcExceptions as ex
+
+@cache("losetup.json")
+def losetup_data():
+    cmd = ["losetup", "-J"]
+    out, err, ret = justcall(cmd)
+    try:
+        return json.loads(out)["loopdevices"]
+    except ValueError:
+        return
 
 def file_to_loop(f):
     """
     Given a file path, returns the loop device associated. For example,
     /path/to/file => /dev/loop0
     """
-    if which(rcEnv.syspaths.losetup) is None:
-        return []
-    if not os.path.isfile(f):
-        return []
-    if rcEnv.sysname != 'Linux':
-        return []
+    data = losetup_data()
+    if data:
+        return [_data["name"] for _data in data if _data["back-file"] == f]
+
     out, err, ret = justcall([rcEnv.syspaths.losetup, '-j', f])
     if len(out) == 0:
         return []
@@ -39,15 +47,16 @@ def loop_to_file(f):
     Given a loop dev, returns the loop file associated. For example,
     /dev/loop0 => /path/to/file
     """
-    if which(rcEnv.syspaths.losetup) is None:
-        return []
-    if not os.path.exists(f):
-        return []
-    if rcEnv.sysname != 'Linux':
-        return []
+    data = losetup_data()
+    if data:
+        for _data in data:
+            if _data["name"] == f:
+                return _data["back-file"]
+        return
+
     out, err, ret = justcall([rcEnv.syspaths.losetup, f])
     if len(out) == 0:
-        return []
+        return
 
     for line in out.split('\n'):
         l = line.split('(')
