@@ -23,6 +23,9 @@ if six.PY3:
 else:
     to_bytes = lambda x: bytes(x)
 
+SOCK_TMO = 0.2
+PAUSE = 0.2
+
 # Number of received misencrypted data messages by senders
 BLACKLIST = {}
 BLACKLIST_LOCK = threading.RLock()
@@ -514,7 +517,7 @@ class Crypt(object):
                 try:
                     sp = self.socket_parms(nodename)
                     sock = socket.socket(sp.af, socket.SOCK_STREAM)
-                    sock.settimeout(0.2)
+                    sock.settimeout(SOCK_TMO)
                     sock.connect(sp.to)
                     break
                 except socket.error as exc:
@@ -525,7 +528,7 @@ class Crypt(object):
                         # Resource temporarily unavailable (daemon busy, overflow)
                         # Give it a little time, and make sure we don't short loop
                         sock.close()
-                        time.sleep(0.1)
+                        time.sleep(PAUSE)
                         continue
                     raise
 
@@ -550,7 +553,8 @@ class Crypt(object):
                     except socket.timeout:
                         if timeout > 0 and elapsed > timeout:
                             return {"status": 1, "err": "timeout"}
-                        elapsed += 0.2
+                        time.sleep(PAUSE)
+                        elapsed += SOCK_TMO + PAUSE
         except socket.error as exc:
             if not silent:
                 self.log.error("daemon send to %s error: %s", sp.to_s, str(exc))
@@ -646,7 +650,7 @@ class Crypt(object):
                     except socket.error as exc:
                         if exc.errno == 104:
                             # connection reset by peer
-                            time.sleep(0.1)
+                            time.sleep(PAUSE)
                             continue
                     if rdata is None:
                         continue
