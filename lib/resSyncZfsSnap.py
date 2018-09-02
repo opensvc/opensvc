@@ -7,7 +7,7 @@ import time
 import datetime
 import resSync
 import rcZfs
-from rcUtilities import justcall
+from rcUtilities import justcall, cache, clear_cache
 
 class syncZfsSnap(resSync.Sync):
     def __init__(self,
@@ -56,9 +56,11 @@ class syncZfsSnap(resSync.Sync):
         snap += datetime.datetime.now().strftime(suffix)
         try:
             ds.snapshot(snapname=snap, recursive=self.recursive)
+            clear_cache("zfs.list.snapshots.name")
         except Exception as e:
             raise ex.excError(str(e))
 
+    @cache("zfs.list.snapshots.name")
     def list_snaps(self, dataset):
         cmd = ["zfs", "list", "-r", "-H", "-t", "snapshot", "-o", "name"]
         out, err, ret = justcall(cmd)
@@ -93,6 +95,7 @@ class syncZfsSnap(resSync.Sync):
                 else:
                     options = []
                 ds.destroy(options=options)
+                clear_cache("zfs.list.snapshots.name")
             except Exception as e:
                 raise ex.excError(str(e))
 
