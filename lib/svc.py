@@ -1507,7 +1507,7 @@ class Svc(Crypt, ExtConfig):
         """
         data = None
         try:
-            lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname + ".json.status")
+            lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname + ".json.status", intent="status from cache")
             with lock.cmlock(timeout=2, delay=1, lockfile=lockfile):
                 if not from_resource_status_cache and \
                    not refresh and \
@@ -1521,11 +1521,15 @@ class Svc(Crypt, ExtConfig):
         except lock.LOCK_EXCEPTIONS as exc:
             raise ex.excAbortAction(str(exc))
 
+        waitlock = convert_duration(self.options.waitlock)
+        if waitlock < 0:
+            waitlock = DEFAULT_WAITLOCK
+
         if data is None:
             # use a different lock to not block the faster "from cache" codepath
-            lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname + ".status")
+            lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname + ".status", intent="status")
             try:
-                with lock.cmlock(timeout=30, delay=1, lockfile=lockfile):
+                with lock.cmlock(timeout=waitlock, delay=1, lockfile=lockfile):
                     data = self.print_status_data_eval(refresh=refresh)
             except lock.LOCK_EXCEPTIONS as exc:
                 raise ex.excAbortAction(str(exc))
