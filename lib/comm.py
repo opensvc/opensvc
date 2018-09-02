@@ -461,7 +461,7 @@ class Crypt(object):
                 if ready[0]:
                     chunk = sock.recv(bufsize)
                 else:
-                    break
+                    raise socket.timeout
                 if ready[2]:
                     break
             else:
@@ -546,10 +546,7 @@ class Crypt(object):
                 elapsed = 0
                 while True:
                     try:
-                        buff = self.recv_message(sock, cluster_name=cluster_name, secret=secret, encrypted=sp.encrypted)
-                        if buff is None:
-                            raise socket.timeout
-                        return buff
+                        return self.recv_message(sock, cluster_name=cluster_name, secret=secret, encrypted=sp.encrypted)
                     except socket.timeout:
                         if timeout > 0 and elapsed > timeout:
                             return {"status": 1, "err": "timeout"}
