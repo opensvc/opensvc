@@ -4,7 +4,7 @@ import time
 import os
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, cache
+from rcUtilities import justcall, cache, clear_cache
 from rcUtilitiesLinux import check_ping
 import resContainer
 
@@ -59,6 +59,26 @@ class Kvm(resContainer.Container):
     def ping(self):
         return check_ping(self.addr, timeout=1, count=1)
 
+    def wait_for_up(self):
+        """
+        Container::wait_for_up() redefined for is_up cache clear
+        """
+        self.log.info("wait for up status")
+        def is_up():
+            clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))
+            return self.is_up()
+        self.wait_for_fn(is_up, self.start_timeout, 2)
+
+    def wait_for_shutdown(self):
+        """
+        Container::wait_for_down() redefined for is_down cache clear
+        """
+        self.log.info("wait for down status")
+        def is_down():
+            clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))
+            return self.is_down()
+        self.wait_for_fn(is_down, self.stop_timeout, 2, errmsg="waited too long for shutdown")
+
     def container_start(self):
         if not os.path.exists(self.cf):
             self.log.error("%s not found"%self.cf)
@@ -71,6 +91,7 @@ class Kvm(resContainer.Container):
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
+        clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))
 
     def start(self):
         resContainer.Container.start(self)
@@ -87,6 +108,7 @@ class Kvm(resContainer.Container):
         ret, buff, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
+        clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))
 
     def stop(self):
         resContainer.Container.stop(self)
@@ -100,16 +122,20 @@ class Kvm(resContainer.Container):
     def is_up_on(self, nodename):
         return self.is_up(nodename)
 
-    def dom_state(self, nodename=None):
-        cmd = ['virsh', 'dominfo', self.name]
-        if nodename is not None:
-            cmd = rcEnv.rsh.split() + [nodename] + cmd
-        (ret, out, err) = self.call(cmd, errlog=False)
+    @cache("virsh.dom_state.{args[1]}@{args[2]}")
+    def _dom_state(self, vmname, nodename, cmd):
+        ret, out, err = self.call(cmd, errlog=False)
         if ret != 0:
             return
         for line in out.splitlines():
             if line.startswith("State:"):
                 return line.split(":", 1)[-1].strip()
+
+    def dom_state(self, nodename=None):
+        cmd = ['virsh', 'dominfo', self.name]
+        if nodename is not None:
+            cmd = rcEnv.rsh.split() + [nodename] + cmd
+        return self._dom_state(self.name, nodename if nodename else rcEnv.nodename, cmd)
 
     def is_up(self, nodename=None):
         state = self.dom_state(nodename=nodename)

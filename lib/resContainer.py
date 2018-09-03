@@ -99,22 +99,26 @@ class Container(Res.Resource):
         return False
 
     def wait_for_startup(self):
+        self.wait_for_up()
+        self.wait_for_ping()
+        self.wait_for_operational()
+
+    def wait_for_up(self):
         self.log.info("wait for up status")
         self.wait_for_fn(self.is_up, self.start_timeout, 2)
+
+    def wait_for_ping(self):
         if hasattr(self, 'ping'):
             self.log.info("wait for container ping")
             self.wait_for_fn(self.ping, self.start_timeout, 2)
+
+    def wait_for_operational(self):
         self.log.info("wait for container operational")
         self.wait_for_fn(self.operational, self.start_timeout, 2)
 
     def wait_for_shutdown(self):
         self.log.info("wait for down status")
-        for tick in range(self.stop_timeout):
-            if self.is_down():
-                return
-            time.sleep(1)
-        self.log.error("Waited too long for shutdown")
-        raise ex.excError
+        self.wait_for_fn(self.is_down, self.stop_timeout, 2, errmsg="waited too long for shutdown")
 
     def install_drp_flag(self):
         print("TODO: install_drp_flag()")
