@@ -67,7 +67,7 @@ class Scheduler(shared.OsvcThread):
                     shared.SCHED_TICKER.wait(1)
             if self.stopped():
                 break
-            if shared.NMON_DATA.status not in ("init", "upgrade"):
+            if shared.NMON_DATA.status not in ("init", "upgrade", "shutting"):
                 self.dequeue_actions()
                 if last + self.interval < now:
                     last = time.time()

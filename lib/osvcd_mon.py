@@ -158,6 +158,7 @@ class Monitor(shared.OsvcThread, Crypt):
         shared.wake_collector()
 
     def shutdown(self):
+        self.set_nmon("shutting")
         cmd = [rcEnv.paths.svcmgr, "--service", "*", "shutdown", "--local", "--parallel"]
         proc = Popen(cmd, stdin=None, stdout=None, stderr=None, close_fds=True)
         proc.communicate()
@@ -598,7 +599,7 @@ class Monitor(shared.OsvcThread, Crypt):
     #
     #########################################################################
     def orchestrator(self):
-        if shared.NMON_DATA.status == "init":
+        if shared.NMON_DATA.status in ("init", "shutting"):
             return
 
         # node
