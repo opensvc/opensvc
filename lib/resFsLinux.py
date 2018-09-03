@@ -353,7 +353,7 @@ class Mount(Res.Mount):
             return set(btrfs_devs(self.mount_point))
         if self.fs_type == "zfs":
             from rcZfs import zpool_devs
-            return zpool_devs(self.device.split("/")[0], self.svc.node.devtree)
+            return set(zpool_devs(self.device.split("/")[0], self.svc.node.devtree))
 
         dev = self.realdev()
         if dev is None or dev.startswith("LABEL=") or dev.startswith("UUID="):

@@ -1,4 +1,4 @@
-from rcUtilities import justcall, call, vcall
+from rcUtilities import justcall, call, vcall, cache
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 import logging
@@ -211,6 +211,7 @@ class Dataset(object):
         else:
             return False
 
+@cache("zpool.devs.{args[0]}")
 def zpool_devs(poolname, devtree):
     """
     Search zpool vdevs from the output of "zpool status <poolname>" if
@@ -265,5 +266,5 @@ def zpool_devs(poolname, devtree):
                     break
         vdevs.add(d)
 
-    return vdevs
+    return list(vdevs)
 
