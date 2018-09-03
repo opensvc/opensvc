@@ -239,9 +239,8 @@ class Dns(shared.OsvcThread, Crypt):
         if qtype == "ANY":
             if PTR_SUFFIX in qname:
                 return self.ptr_record(parameters)
-            #if parameters["qname"].startswith("*."):
-            #    return self.lookup_pattern(parameters["qname"].lstrip("*."))
-            parameters["qname"] = parameters["qname"].lstrip("*.")
+            if parameters["qname"].startswith("*."):
+                return []
             return self.a_record(parameters) + \
                    self.srv_record(parameters) + \
                    self.txt_record(parameters) + \
