@@ -373,9 +373,18 @@ class Monitor(shared.OsvcThread, Crypt):
             self.update_hb_data()
 
     def service_status(self, svcname):
-        proc = self.service_command(svcname, ["status", "--refresh", "--waitlock=0"], local=False)
+        smon = self.get_service_monitor(svcname)
+        if smon.status and smon.status.endswith("ing"):
+            # no need to run status, the running action will refresh the status earlier
+            return
+        cmd = ["status", "--refresh", "--waitlock=0"]
+        if self.has_proc(cmd):
+            # no need to run status twice
+            return
+        proc = self.service_command(svcname, cmd, local=False)
         self.push_proc(
             proc=proc,
+            cmd=cmd,
         )
 
     def service_toc(self, svcname):

@@ -242,15 +242,23 @@ class OsvcThread(threading.Thread):
         })
         return data
 
+    def has_proc(self, cmd):
+        for proc in self.procs:
+             if proc.cmd == cmd:
+                 return True
+        return False
+
     def push_proc(self, proc,
                   on_success=None, on_success_args=None, on_success_kwargs=None,
-                  on_error=None, on_error_args=None, on_error_kwargs=None):
+                  on_error=None, on_error_args=None, on_error_kwargs=None,
+                  cmd=None):
         """
         Enqueue a structure including a Popen() result and the success and
         error callbacks.
         """
         self.procs.append(Storage({
             "proc": proc,
+            "cmd": cmd,
             "on_success": on_success,
             "on_success_args": on_success_args if on_success_args else [],
             "on_success_kwargs": on_success_kwargs if on_success_kwargs else {},
