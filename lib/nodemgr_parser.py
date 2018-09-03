@@ -1034,6 +1034,8 @@ ACTIONS = {
     },
 }
 
+DEPRECATED_OPTIONS = []
+
 DEPRECATED_ACTIONS = [
     "collector_json_asset",
     "collector_json_networks",
@@ -1063,6 +1065,7 @@ class NodemgrOptParser(OptParser):
                  indent=6):
         OptParser.__init__(self, args=args, prog=PROG, options=OPT,
                            actions=ACTIONS,
+                           deprecated_options=DEPRECATED_OPTIONS,
                            deprecated_actions=DEPRECATED_ACTIONS,
                            actions_translations=ACTIONS_TRANSLATIONS,
                            global_options=GLOBAL_OPTS,

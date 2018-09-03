@@ -20,6 +20,8 @@ import svc
 
 class OsvcHelpFormatter(optparse.TitledHelpFormatter):
     def format_option(self, option):
+        if option in self.deprecated_options:
+            return ""
         result = []
         opts = self.option_strings[option]
         opt_width = self.help_position - self.current_indent - 2
@@ -44,6 +46,7 @@ class OsvcHelpFormatter(optparse.TitledHelpFormatter):
         return "".join(result).replace("``", "`")
 
 class OptionParserNoHelpOptions(optparse.OptionParser):
+    deprecated_options = []
     def format_help(self, formatter=None):
         if formatter is None:
             formatter = self.formatter
@@ -64,6 +67,7 @@ class OptParser(object):
     """
 
     def __init__(self, args=None, prog="", options=None, actions=None,
+                 deprecated_options=None,
                  deprecated_actions=None, actions_translations=None,
                  global_options=None, svc_select_options=None, colorize=True,
                  width=None, formatter=None, indent=6, async_actions=None):
@@ -72,6 +76,7 @@ class OptParser(object):
         self.prog = prog
         self.options = options
         self.actions = actions
+        self.deprecated_options = [self.options[name] for name in deprecated_options] if deprecated_options else []
         self.deprecated_actions = deprecated_actions if deprecated_actions else []
         self.actions_translations = actions_translations if actions_translations else {}
         self.global_options = global_options if global_options else []
@@ -88,6 +93,7 @@ class OptParser(object):
                                                self.width)
         else:
             self.formatter = formatter
+        self.formatter.deprecated_options = self.deprecated_options
         if async_actions is None:
             self.async_actions = []
         else:

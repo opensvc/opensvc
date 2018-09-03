@@ -106,7 +106,7 @@ complete -F _comp_handler nodemgr
 
 """
 
-def do_prog_lists(prog, actions, global_opts):
+def do_prog_lists(prog, actions, global_opts, deprecated_options, opts):
     buff =""
     data = {}
     for section in actions:
@@ -129,6 +129,12 @@ def do_prog_lists(prog, actions, global_opts):
     for section in actions:
         for action in actions[section]:
             l = actions[section][action].get("options", []) + global_opts
+            for name in deprecated_options:
+                opt = opts[name]
+                try:
+                    l.remove(opt)
+                except ValueError:
+                    pass
             options = [str(opt) for opt in l]
             options = " ".join(sorted(options))
             options = options.replace("/", " ")
@@ -142,6 +148,12 @@ def do_opts_with_arg():
     for section in svcmgr_parser.ACTIONS:
         for action in svcmgr_parser.ACTIONS[section]:
             l = svcmgr_parser.ACTIONS[section][action].get("options", []) + svcmgr_parser.GLOBAL_OPTS
+            for name in svcmgr_parser.DEPRECATED_OPTIONS:
+                opt = svcmgr_parser.OPT[name]
+                try:
+                    l.remove(opt)
+                except ValueError:
+                    pass
             for opt in l:
                 if opt.action not in ("store", "append"):
                     continue
@@ -149,6 +161,12 @@ def do_opts_with_arg():
     for section in nodemgr_parser.ACTIONS:
         for action in nodemgr_parser.ACTIONS[section]:
             l = nodemgr_parser.ACTIONS[section][action].get("options", []) + nodemgr_parser.GLOBAL_OPTS
+            for name in nodemgr_parser.DEPRECATED_OPTIONS:
+                opt = svcmgr_parser.OPT[name]
+                try:
+                    l.remove(opt)
+                except ValueError:
+                    pass
             for opt in l:
                 if opt.action not in ("store", "append"):
                     continue
@@ -162,8 +180,8 @@ def do_opts_with_arg():
 
 def do_lists():
     buff = ""
-    buff += do_prog_lists("svcmgr", svcmgr_parser.ACTIONS, svcmgr_parser.GLOBAL_OPTS)
-    buff += do_prog_lists("nodemgr", nodemgr_parser.ACTIONS, nodemgr_parser.GLOBAL_OPTS)
+    buff += do_prog_lists("svcmgr", svcmgr_parser.ACTIONS, svcmgr_parser.GLOBAL_OPTS, svcmgr_parser.DEPRECATED_OPTIONS, svcmgr_parser.OPT)
+    buff += do_prog_lists("nodemgr", nodemgr_parser.ACTIONS, nodemgr_parser.GLOBAL_OPTS, nodemgr_parser.DEPRECATED_OPTIONS, nodemgr_parser.OPT)
     buff += do_opts_with_arg()
     return buff
 

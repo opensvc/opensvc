@@ -39,6 +39,8 @@ class ManPageFormatter(optparse.HelpFormatter):
         """FORMAT A SINGLE OPTION.
         THE BASE CLASS TAKES CARE TO REPLACE CUSTOM OPTPARSE VALUES.
         """
+        if option in self.deprecated_options:
+            return ""
         result = []
         opts = self.option_strings[option]
         result.append('.TP\n.B %s\n' % self._markup(opts))
@@ -115,6 +117,7 @@ def do_svcmgr():
     parser = optparser.parser
     parser.formatter = ManPageFormatter()
     parser.formatter.set_parser(parser)
+    parser.formatter.deprecated_options = parser.deprecated_options
     synopsis = parser.get_usage()
     l = parser.formatter._write_header(prog, synopsis=synopsis, desc=desc, long_desc=long_desc)
     #l += parser.format_option_help()
@@ -136,6 +139,7 @@ def do_nodemgr():
     parser = optparser.parser
     parser.formatter = ManPageFormatter()
     parser.formatter.set_parser(parser)
+    parser.formatter.deprecated_options = parser.deprecated_options
     synopsis = parser.get_usage()
     l = parser.formatter._write_header(prog, synopsis=synopsis, desc=desc, long_desc=long_desc)
     #l += parser.format_option_help()
@@ -155,6 +159,7 @@ def do_svcmon():
     parser = svcmon.parser
     svcmon.parser.formatter = ManPageFormatter()
     parser.formatter.set_parser(parser)
+    parser.formatter.deprecated_options = []
     synopsis = parser.get_usage()
     l = parser.formatter._write_header(prog, synopsis=synopsis, desc=desc, long_desc=long_desc)
     l += parser.format_option_help()

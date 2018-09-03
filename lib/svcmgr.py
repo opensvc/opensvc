@@ -184,6 +184,8 @@ def split_env(arg):
     return option, value
 
 def export_env_from_options(options):
+    if options.get("daemon"):
+        os.environ["OSVC_DETACHED"] = "1"
     for arg in options.get("env", []):
         option, value = split_env(arg)
         option = option.upper()

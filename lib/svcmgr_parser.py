@@ -68,6 +68,11 @@ OPT = Storage({
         "--debug", default=False,
         action="store_true", dest="debug",
         help="Increase stream and file log verbosity up to the debug level."),
+    "daemon": Option(
+        "--daemon", default=False,
+        action="store_true", dest="daemon",
+        help="A flag inhibiting the command daemonization. Set by the "
+             "daemonization routine."),
     "disable_rollback": Option(
         "--disable-rollback", default=False,
         action="store_true", dest="disable_rollback",
@@ -399,6 +404,7 @@ SVC_SELECT_OPTS = [
 GLOBAL_OPTS = SVC_SELECT_OPTS + [
     OPT.cluster,
     OPT.color,
+    OPT.daemon,
     OPT.debug,
     OPT.env,
     OPT.parallel,
@@ -1188,6 +1194,10 @@ ACTIONS = {
     },
 }
 
+DEPRECATED_OPTIONS = [
+    "daemon",
+]
+
 DEPRECATED_ACTIONS = [
     "collector_json_alerts",
     "collector_json_asset",
@@ -1292,6 +1302,7 @@ class SvcmgrOptParser(OptParser):
                  indent=6):
         OptParser.__init__(self, args=args, prog=PROG, options=OPT,
                            actions=ACTIONS,
+                           deprecated_options=DEPRECATED_OPTIONS,
                            deprecated_actions=DEPRECATED_ACTIONS,
                            actions_translations=ACTIONS_TRANSLATIONS,
                            global_options=GLOBAL_OPTS,
