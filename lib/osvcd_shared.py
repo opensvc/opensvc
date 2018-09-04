@@ -742,7 +742,7 @@ class OsvcThread(threading.Thread):
         """
         Return the list of service nodes meeting the following criteria:
         * we have valid service instance data (not unknown, has avail)
-        * the node is not in maintenance, init or upgrade (default)
+        * the node is not in maintenance, shutting, init or upgrade (default)
         * the node is not frozen (default)
         * the node is not overloaded (default)
         * the service is not frozen (default)
@@ -759,7 +759,7 @@ class OsvcThread(threading.Thread):
                     continue
                 if data == "unknown":
                     continue
-                if discard_preserved and data.get("monitor", {}).get("status") in ("maintenance", "upgrade", "init"):
+                if discard_preserved and data.get("monitor", {}).get("status") in ("maintenance", "upgrade", "init", "shutting"):
                     continue
                 if discard_frozen and data.get("frozen", False):
                     # node frozen
