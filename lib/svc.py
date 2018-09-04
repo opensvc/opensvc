@@ -178,6 +178,7 @@ ACTIONS_NO_STATUS_CHANGE = [
 #
 ACTIONS_CF_CHANGE = [
     "edit_config",
+    "scale",
     "set",
     "unset",
 ]
