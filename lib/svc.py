@@ -2901,24 +2901,26 @@ class Svc(Crypt, ExtConfig):
         their rebutal of the action before it begins.
         """
         self.abort_start_done = True
-        if rcEnv.sysname == "Windows":
+        resources = [res for res in self.get_resources() if \
+                     not res.skip and not res.is_disabled() and \
+                     hasattr(res, "abort_start")]
+        if rcEnv.sysname == "Windows" or len(resources) < 2:
             parallel = False
         else:
             try:
                 from multiprocessing import Process
                 parallel = True
                 def wrapper(func):
-                    if func():
+                    try:
+                        if func():
+                            sys.exit(1)
+                    except ex.excSignal:
                         sys.exit(1)
             except ImportError:
                 parallel = False
 
         procs = {}
-        for resource in self.get_resources():
-            if resource.skip or resource.is_disabled():
-                continue
-            if not hasattr(resource, 'abort_start'):
-                continue
+        for resource in resources:
             if not parallel:
                 if resource.abort_start():
                     raise ex.excError("start aborted due to resource %s "
