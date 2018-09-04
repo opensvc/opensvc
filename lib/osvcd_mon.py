@@ -2447,7 +2447,10 @@ class Monitor(shared.OsvcThread, Crypt):
 
         if self.mon_changed():
             self.update_cluster_data()
-        data = shared.CLUSTER_DATA[rcEnv.nodename]
+
+        data = {}
+        with shared.CLUSTER_DATA_LOCK:
+            data.update(shared.CLUSTER_DATA[rcEnv.nodename])
 
         for key in ("updated", "gen"):
             # exclude from the diff
