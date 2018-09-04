@@ -2726,7 +2726,7 @@ class Svc(Crypt, ExtConfig):
                 raise ex.excError("the --to <node>[,<node>,...] option is required")
             global_expect += self.options.destination_node
         elif action in ("switch", "takeover"):
-            dst = self.destination_node_sanity_checks()
+            dst = self.destination_node_sanity_checks(rcEnv.nodename)
             global_expect += dst
         self.set_service_monitor(global_expect=global_expect, svcname=svcname)
         if svcname == self.svcname:
