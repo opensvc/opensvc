@@ -97,26 +97,38 @@ class Collector(shared.OsvcThread, Crypt):
             return
         self.log.info("send service %s container info", svcname)
         with shared.SERVICES_LOCK:
-            shared.NODE.collector.call("push_containerinfo", shared.SERVICES[svcname])
+            try:
+                shared.NODE.collector.call("push_containerinfo", shared.SERVICES[svcname])
+            except Exception as exc:
+                self.log.error("call push_containerinfo: %s", exc)
 
     def send_service_config(self, svcname):
         if svcname not in shared.SERVICES:
             return
         self.log.info("send service %s config", svcname)
         with shared.SERVICES_LOCK:
-            shared.NODE.collector.call("push_config", shared.SERVICES[svcname])
+            try:
+                shared.NODE.collector.call("push_config", shared.SERVICES[svcname])
+            except Exception as exc:
+                self.log.error("call push_config: %s", exc)
 
     def send_daemon_status(self, data):
         if self.last_status_changed:
             self.log.info("send daemon status, changed: %s", ", ".join(self.last_status_changed))
         else:
             self.log.info("send daemon status, resync")
-        shared.NODE.collector.call("push_daemon_status", data, self.last_status_changed)
+        try:
+            shared.NODE.collector.call("push_daemon_status", data, self.last_status_changed)
+        except Exception as exc:
+            self.log.error("call push_daemon_status: %s", exc)
         self.last_comm = datetime.datetime.utcnow()
 
     def ping(self):
         self.log.info("ping the collector")
-        shared.NODE.collector.call("daemon_ping")
+        try:
+            shared.NODE.collector.call("daemon_ping")
+        except Exception as exc:
+            self.log.error("call daemon_ping: %s", exc)
         self.last_comm = datetime.datetime.utcnow()
 
     def get_data(self):
