@@ -84,8 +84,8 @@ class DockerLib(object):
         self.docker_var_d = self.svc.var_d
 
         if self.docker_daemon_private:
-            self.docker_socket = "unix://"+os.path.join(self.docker_var_d, 'docker.sock')
-            self.compat_docker_socket = "unix://"+os.path.join(rcEnv.paths.pathvar, self.svc.svcname, 'docker.sock')
+            self.docker_socket = os.path.join(self.docker_var_d, 'docker.sock')
+            self.compat_docker_socket = os.path.join(rcEnv.paths.pathvar, self.svc.svcname, 'docker.sock')
         else:
             self.docker_socket = None
 
@@ -103,11 +103,11 @@ class DockerLib(object):
         try:
             self.docker_cmd = [self.docker_exe]
             if self.docker_socket:
-                if self.test_sock() or not os.path.exists(self.compat_docker_socket[7:]):
+                if self.test_sock(self.docker_socket) or not self.test_sock(self.compat_docker_socket):
                     sock = self.docker_socket
                 else:
                     sock = self.compat_docker_socket
-                self.docker_cmd += ['-H', sock]
+                self.docker_cmd += ['-H', "unix://"+sock]
         except:
             self.docker_cmd = None
 
@@ -674,11 +674,11 @@ class DockerLib(object):
                 else:
                     raise ex.excError("failed to kill docker daemon: %s" % str(exc))
 
-    def test_sock(self):
+    def test_sock(self, path):
         import socket
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         try:
-            sock.connect(self.docker_socket[7:])
+            sock.connect(path)
         except Exception as exc:
             return False
         finally:
@@ -696,21 +696,21 @@ class DockerLib(object):
         if self.docker_min_version("17.05"):
             cmd = [
                 self.dockerd_exe,
-                '-H', self.docker_socket,
+                '-H', "unix://"+self.docker_socket,
                 '--data-root', self.docker_data_dir,
                 '-p', self.docker_pid_file
             ]
         elif self.docker_min_version("1.13"):
             cmd = [
                 self.dockerd_exe,
-                '-H', self.docker_socket,
+                '-H', "unix://"+self.docker_socket,
                 '-g', self.docker_data_dir,
                 '-p', self.docker_pid_file
             ]
         elif self.docker_min_version("1.8"):
             cmd = [
                 self.docker_exe, 'daemon',
-                '-H', self.docker_socket,
+                '-H', "unix://"+self.docker_socket,
                 '-g', self.docker_data_dir,
                 '-p', self.docker_pid_file
             ]
