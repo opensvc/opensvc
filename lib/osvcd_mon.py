@@ -2443,14 +2443,16 @@ class Monitor(shared.OsvcThread, Crypt):
         """
         Prepare the heartbeat data we send to other nodes.
         """
-        now = time.time()
 
         if self.mon_changed():
             self.update_cluster_data()
 
-        data = {}
         with shared.CLUSTER_DATA_LOCK:
-            data.update(shared.CLUSTER_DATA[rcEnv.nodename])
+            self._update_hb_data_locked()
+
+    def _update_hb_data_locked(self):
+        now = time.time()
+        data = shared.CLUSTER_DATA[rcEnv.nodename]
 
         for key in ("updated", "gen"):
             # exclude from the diff
