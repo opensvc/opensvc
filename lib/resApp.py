@@ -373,6 +373,7 @@ class App(Resource):
         details = "(timeout %d, delay %d, action %s, lockfile %s)" % \
                   (timeout, delay, action, self.lockfile)
         self.log.debug("acquire app lock %s", details)
+        lockfd = None
         try:
             lockfd = lock.lock(
                 timeout=timeout,
