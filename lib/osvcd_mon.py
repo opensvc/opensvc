@@ -159,9 +159,18 @@ class Monitor(shared.OsvcThread, Crypt):
 
     def shutdown(self):
         self.set_nmon("shutting")
-        cmd = [rcEnv.paths.svcmgr, "--service", "*", "shutdown", "--local", "--parallel"]
+        self.kill_procs()
+
+        # use a long waitlock to maximize chances to wait for user-submitted
+        # commands to finish
+        cmd = [rcEnv.paths.svcmgr, "--service", "*", "shutdown", "--local",
+               "--parallel", "--waitlock=5m"]
         proc = Popen(cmd, stdin=None, stdout=None, stderr=None, close_fds=True)
         proc.communicate()
+
+        # send a last status to peers so they can takeover asap
+        self.update_hb_data()
+
         self._shutdown = True
         shared.wake_monitor("services shutdown terminated")
 

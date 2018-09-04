@@ -536,9 +536,15 @@ class OsvcThread(threading.Thread):
         """
         A generic nodemgr command Popen wrapper.
         """
-        cmd = [rcEnv.paths.nodemgr] + cmd
-        self.log.info("execute: %s", " ".join(cmd))
-        proc = Popen(cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
+        env = os.environ.copy()
+        env["OSVC_ACTION_ORIGIN"] = "daemon"
+        _cmd = [os.environ.get("OSVC_PYTHON", "python")]
+        pyargs = os.environ.get("OSVC_PYTHON_ARGS")
+        if pyargs:
+            _cmd += pyargs.split()
+        _cmd += [os.path.join(rcEnv.paths.pathlib, "nodemgr.py")]
+        self.log.info("execute: nodemgr %s", " ".join(cmd))
+        proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
         return proc
 
     def service_command(self, svcname, cmd, stdin=None, local=True):
@@ -547,15 +553,20 @@ class OsvcThread(threading.Thread):
         """
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
-        cmd = [rcEnv.paths.svcmgr, '-s', svcname] + cmd
+        _cmd = [os.environ.get("OSVC_PYTHON", "python")]
+        pyargs = os.environ.get("OSVC_PYTHON_ARGS")
+        if pyargs:
+            _cmd += pyargs.split()
+        _cmd += [os.path.join(rcEnv.paths.pathlib, "svcmgr.py")]
+        cmd = ["-s", svcname] + cmd
         if local:
             cmd += ["--local"]
-        self.log.info("execute: %s", " ".join(cmd))
+        self.log.info("execute: svcmgr %s", " ".join(cmd))
         if stdin is not None:
             _stdin = PIPE
         else:
             _stdin = None
-        proc = Popen(cmd, stdout=None, stderr=None, stdin=_stdin, close_fds=True, env=env)
+        proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=_stdin, close_fds=True, env=env)
         if stdin:
             proc.stdin.write(stdin.encode())
         return proc
