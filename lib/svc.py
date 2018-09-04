@@ -2727,7 +2727,6 @@ class Svc(Crypt, ExtConfig):
         elif action in ("switch", "takeover"):
             dst = self.destination_node_sanity_checks()
             global_expect += dst
-        print(global_expect)
         self.set_service_monitor(global_expect=global_expect, svcname=svcname)
         if svcname == self.svcname:
             self.log.info("%s action requested", action)
