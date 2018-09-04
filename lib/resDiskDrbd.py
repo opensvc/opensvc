@@ -45,8 +45,7 @@ class Drbd(Res.Resource):
             if which('drbdadm'):
                 self.drbdadm = 'drbdadm'
             else:
-                self.log("drbdadm command not found")
-                raise ex.excError
+                raise ex.excError("drbdadm command not found")
         return [self.drbdadm] + cmd.split() + [self.res]
 
     def exposed_devs(self):
