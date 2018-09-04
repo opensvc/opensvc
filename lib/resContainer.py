@@ -40,7 +40,9 @@ class Container(Res.Resource):
         self.guestos = guestos
         if guestos is not None:
             self.guestos = guestos.lower()
-        if self.guestos != "windows":
+        if self.guestos == "windows":
+            self.runmethod = None
+        else:
             self.runmethod = rcEnv.rsh.split() + [name]
         self.booted = False
 
@@ -78,20 +80,18 @@ class Container(Res.Resource):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
 
     def operational(self):
-        if self.guestos == "windows":
-            """ Windows has no sshd.
-            """
+        if not self.runmethod or not self.svc.has_encap_resources:
             return True
         timeout = 1
-        if 'ssh' in self.runmethod[0]:
-            cmd = [ self.sshbin, '-o', 'StrictHostKeyChecking=no',
-                                 '-o', 'ForwardX11=no',
-                                 '-o', 'BatchMode=yes',
-                                 '-n',
-                                 '-o', 'ConnectTimeout='+repr(timeout),
-                                  self.name, 'pwd']
+        if "ssh" in self.runmethod[0]:
+            cmd = [self.sshbin, "-o", "StrictHostKeyChecking=no",
+                                "-o", "ForwardX11=no",
+                                "-o", "BatchMode=yes",
+                                "-n",
+                                "-o", "ConnectTimeout="+repr(timeout),
+                                 self.name, "pwd"]
         else:
-            cmd = self.runmethod + ['pwd']
+            cmd = self.runmethod + ["pwd"]
         import subprocess
         out, err, ret = justcall(cmd, stdin=self.svc.node.devnull)
         if ret == 0:
