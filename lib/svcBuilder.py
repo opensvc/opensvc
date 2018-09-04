@@ -1842,7 +1842,10 @@ def add_task(svc, s):
         kwargs['user'] = svc.conf_get(s, 'user')
     except ex.OptNotFound as exc:
         kwargs['user'] = exc.default
-
+    try:
+        kwargs['timeout'] = svc.conf_get(s, 'timeout')
+    except ex.OptNotFound as exc:
+        kwargs['timeout'] = exc.default
     try:
         kwargs['snooze'] = svc.conf_get(s, 'snooze')
     except ex.OptNotFound as exc:

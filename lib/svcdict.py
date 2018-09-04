@@ -2551,6 +2551,14 @@ KEYWORDS = [
     },
     {
         "section": "task",
+        "keyword": "timeout",
+        "convert": "duration",
+        "at": True,
+        "text": "Wait for <duration> before declaring the task run action a failure. If no timeout is set, the agent waits indefinitely for the task command to exit.",
+        "example": "5m"
+    },
+    {
+        "section": "task",
         "keyword": "snooze",
         "at": True,
         "default": 0,

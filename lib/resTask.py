@@ -44,6 +44,7 @@ class Task(Res.Resource):
                  command=None,
                  user=None,
                  on_error=None,
+                 timeout=0,
                  snooze=0,
                  confirmation=False,
                  **kwargs):
@@ -52,6 +53,7 @@ class Task(Res.Resource):
         self.on_error = on_error
         self.user = user
         self.snooze = snooze
+        self.timeout = timeout
         self.confirmation = confirmation
 
     def __str__(self):
@@ -111,7 +113,7 @@ class Task(Res.Resource):
         try:
             with lock.cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=0):
                 self._run()
-        except Exception:
+        except lock.LOCK_EXCEPTIONS:
             raise ex.excError("task is already running (maybe too long for the schedule)")
 
     def _run(self):
@@ -122,6 +124,7 @@ class Task(Res.Resource):
             except Exception as exc:
                 self.log.warning(exc)
         kwargs = {
+          'timeout': self.timeout,
           'blocking': True,
         }
         kwargs.update(run_as_popen_kwargs(self.user))
