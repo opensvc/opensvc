@@ -34,6 +34,16 @@ def rotator(source, dest):
             df.write(data)
     os.remove(source)
 
+class StreamFilter(logging.Filter):
+    def filter(self, record):
+        try:
+            if record.args["f_stream"] is False:
+                return False
+            else:
+                return True
+        except (AttributeError, TypeError):
+            return True
+
 class RedactingFormatter(object):
     def __init__(self, orig_formatter):
         self.orig_formatter = orig_formatter
@@ -170,6 +180,8 @@ def initLogger(name, handlers=None):
         streamformatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
         streamhandler = ColorStreamHandler()
         streamhandler.setFormatter(RedactingFormatter(streamformatter))
+        streamfilter = StreamFilter()
+        streamhandler.addFilter(streamfilter)
         log.addHandler(streamhandler)
 
         if '--debug' in sys.argv:

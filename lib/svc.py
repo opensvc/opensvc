@@ -4208,7 +4208,7 @@ class Svc(Crypt, ExtConfig):
                 runlog = "do "+" ".join(sys.argv[1:])
                 runlog = runlog.replace("-s %s "%self.svcname, "")
                 runlog = runlog.replace("--service %s "%self.svcname, "")
-                self.log.info(runlog)
+                self.log.info(runlog, {"f_stream": False})
         except IndexError:
             pass
 
