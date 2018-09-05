@@ -3,6 +3,7 @@ import sys
 import optparse
 import time
 import datetime
+import threading
 
 #
 # add project lib to path
@@ -22,6 +23,8 @@ CLEAREOL = "\x1b[K"
 CLEAREOLNEW = "\x1b[K\n"
 CLEAREOS = "\x1b[J"
 CURSORHOME = "\x1b[H"
+
+EVENT = threading.Event()
 
 __ver = prog + " version " + version
 __usage = prog + \
@@ -78,36 +81,57 @@ parser.add_option(
          "- ``!`` usage requires single quoting the expression to prevent "
          "shell history expansion")
 
+def events(node, nodename):
+    while True:
+        for msg in node.daemon_events(nodename):
+            EVENT.set()
+        # retry until daemon restart
+        time.sleep(1)
+
+def start_events_thread(node, nodename):
+    thr = threading.Thread(target=events, args=(node, nodename,))
+    thr.daemon = True
+    thr.start()
+    return thr
+
 def _main(node, argv=None):
     (options, args) = parser.parse_args(argv)
     node.check_privs(argv)
     rcColor.use_color = options.color
     chars = 0
 
-    while True:
-        if options.parm_svcs:
-            expanded_svcs = node.svcs_selector(options.parm_svcs)
-        else:
-            expanded_svcs = None
+    if options.parm_svcs:
+        expanded_svcs = node.svcs_selector(options.parm_svcs)
+    else:
+        expanded_svcs = None
 
-        node.options.update({
-            "color": options.color,
-        })
-        if options.watch:
+    node.options.update({
+        "color": options.color,
+    })
+
+    if options.watch:
+        start_events_thread(node, options.node)
+        preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
+        outs = node.daemon_status_str(svcnames=expanded_svcs, preamble=preamble, node=options.node)
+        if outs is not None:
+            print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
+        while True:
+            EVENT.wait()
+            EVENT.clear()
             if chars == 0:
                 print(CURSORHOME+CLEAREOS)
                 chars = 1
             preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
-        else:
-            preamble = ""
-        outs = node.daemon_status_str(svcnames=expanded_svcs, preamble=preamble, node=options.node)
-        if not options.watch:
-            print(outs)
-            break
-        else:
+            outs = node.daemon_status_str(svcnames=expanded_svcs, preamble=preamble, node=options.node)
             if outs is not None:
                 print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
-        time.sleep(options.interval)
+            # min delay
+            time.sleep(0.2)
+    else:
+        preamble = ""
+        outs = node.daemon_status_str(svcnames=expanded_svcs, preamble=preamble, node=options.node)
+        print(outs)
+
 
 def main(argv=None):
     if argv is None:
