@@ -3764,7 +3764,9 @@ class Svc(Crypt, ExtConfig):
             self.log.error(exc)
             return 1
         except ex.excAbortAction as exc:
-            self.log.info(exc)
+            msg = str(exc)
+            if msg:
+                self.log.info(exc)
             return 0
         if (self.options.cron and action in ("run", "resource_monitor", "sync_all", "status")) or action == "print_schedule":
             self.configure_scheduler()
