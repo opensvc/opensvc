@@ -418,6 +418,10 @@ class OsvcThread(threading.Thread):
                  global_expect=None, reset_retries=False,
                  stonith=None):
         global SMON_DATA
+        instance = self.get_service_instance(svcname, rcEnv.nodename)
+        if instance and not instance.get("resources", {}):
+            # skip slavers, wrappers, scalers
+            return
         with SMON_DATA_LOCK:
             if svcname not in SMON_DATA:
                 SMON_DATA[svcname] = Storage({
