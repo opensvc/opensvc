@@ -922,9 +922,9 @@ class Monitor(shared.OsvcThread, Crypt):
                 return
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
         if smon.status in ("ready", "wait parents"):
-            if instance.avail is "up":
-                self.log.info("abort 'ready' because the local instance "
-                              "has started")
+            if instance.avail == "up":
+                self.log.info("abort '%s' because the local instance "
+                              "has started", smon.status)
                 self.set_smon(svc.svcname, "idle")
                 return
             if status == "up":
@@ -940,8 +940,9 @@ class Monitor(shared.OsvcThread, Crypt):
                 return
             peer = self.peer_transitioning(svc.svcname)
             if peer:
-                self.log.info("abort 'ready' because node %s is already "
-                              "acting on service %s", peer, svc.svcname)
+                self.log.info("abort '%s' because node %s is already "
+                              "acting on service %s", smon.status, peer,
+                              svc.svcname)
                 self.set_smon(svc.svcname, "idle")
                 return
         if smon.status == "wait parents":
@@ -949,6 +950,10 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.set_smon(svc.svcname, status="idle")
                 return
         elif smon.status == "ready":
+            if self.parent_transitioning(svc):
+                self.log.info("abort 'ready' because a parent is transitioning")
+                self.set_smon(svc.svcname, "idle")
+                return
             now = time.time()
             if smon.status_updated < (now - self.ready_period):
                 self.event("instance_start", {
@@ -970,7 +975,12 @@ class Monitor(shared.OsvcThread, Crypt):
                 return
             if status not in ("down", "stdby down", "stdby up"):
                 return
-            if not self.parents_available(svc):
+            peer = self.peer_transitioning(svc.svcname)
+            if peer:
+                return
+            if not self.placement_leader(svc, candidates):
+                return
+            if not self.parents_available(svc) or self.parent_transitioning(svc):
                 self.set_smon(svc.svcname, status="wait parents")
                 return
             if len(svc.peers) == 1:
@@ -979,11 +989,6 @@ class Monitor(shared.OsvcThread, Crypt):
                     "svcname": svc.svcname,
                 })
                 self.service_start(svc.svcname)
-                return
-            peer = self.peer_transitioning(svc.svcname)
-            if peer:
-                return
-            if not self.placement_leader(svc, candidates):
                 return
             self.log.info("failover service %s status %s", svc.svcname,
                           status)
@@ -1214,8 +1219,15 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.service_start(svc.svcname)
         elif smon.global_expect.startswith("placed@"):
             target = smon.global_expect.split("@")[-1].split(",")
+            candidates = self.placement_candidates(
+                svc, discard_frozen=False,
+                discard_overloaded=False,
+                discard_unprovisioned=False,
+                discard_constraints_violation=False,
+                discard_start_failed=False
+            )
             if rcEnv.nodename not in target:
-                if instance.avail not in STOPPED_STATES:
+                if instance.avail not in STOPPED_STATES and (set(target) & set(candidates)):
                     self.event("instance_stop", {
                         "reason": "target",
                         "svcname": svc.svcname,
@@ -1636,6 +1648,16 @@ class Monitor(shared.OsvcThread, Crypt):
             elif instance["monitor"]["status"] in ("restarting", "starting", "wait children", "provisioning"):
                 nodenames.append(nodename)
         return nodenames
+
+    def parent_transitioning(self, svc):
+        if len(svc.parents) == 0:
+            return False
+        for parent in svc.parents:
+            if parent == svc.svcname:
+                continue
+            if self.peer_transitioning(parent):
+                return True
+        return False
 
     def peer_transitioning(self, svcname):
         """
