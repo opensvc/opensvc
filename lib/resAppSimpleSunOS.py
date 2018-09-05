@@ -20,7 +20,7 @@ class App(resAppSimple.App):
     def __init__(self, rid, **kwargs):
         resAppSimple.App.__init__(self, rid, **kwargs)
 
-    def get_running(self):
+    def get_running(self, with_children=False):
         cmd = ["pgrep", "-f", " ".join(self.get_cmd("start"))]
         out, err, ret = justcall(cmd)
         if ret != 0:
@@ -35,5 +35,12 @@ class App(resAppSimple.App):
             if "OPENSVC_RID="+self.rid not in words:
                 continue
             match.append(pid)
-        return match
+        if with_children:
+            return match
+        # exclude child processes
+        cmd += ["-P", ",".join(match)]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return match
+        return list(set(match) - set(out.split()))
 
