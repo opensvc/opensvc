@@ -678,6 +678,7 @@ class OsvcThread(threading.Thread):
                               nodename, nmon.status, time.time()-nmon.status_updated,
                               self.maintenance_grace_period)
             return
+        nmon_status = nmon.status
         self.event(
             "forget_peer",
             {
@@ -700,7 +701,11 @@ class OsvcThread(threading.Thread):
             except KeyError:
                 pass
         wake_monitor(reason="forget node %s data" % nodename)
-        self.split_handler()
+        if nmon_status == "shutting":
+            self.log.info("cluster is not split, the lost node %s last known "
+                          "monitor state is '%s'", nodename, nmon_status)
+        else:
+            self.split_handler()
 
     def peer_down(self, nodename):
         """
