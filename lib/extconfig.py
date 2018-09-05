@@ -955,6 +955,7 @@ class ExtConfig(object):
             except ConfigParser.ParsingError:
                 self.log.error("error parsing %s" % path)
                 ret["errors"] += 1
+                return ret
 
         def check_scoping(key, section, option):
             """
