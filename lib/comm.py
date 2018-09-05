@@ -457,7 +457,7 @@ class Crypt(object):
         sep = b"\x00"
         while True:
             if use_select:
-                ready = select.select([sock], [], [sock], 60)
+                ready = select.select([sock], [], [sock], 1)
                 if ready[0]:
                     chunk = sock.recv(bufsize)
                 else:
