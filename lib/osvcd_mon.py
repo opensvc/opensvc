@@ -158,6 +158,9 @@ class Monitor(shared.OsvcThread, Crypt):
         shared.wake_collector()
 
     def shutdown(self):
+        """
+        Care with locks, this method runs in a lsnr client thread
+        """
         self.set_nmon("shutting")
         self.kill_procs()
 
@@ -2470,7 +2473,29 @@ class Monitor(shared.OsvcThread, Crypt):
             self.update_cluster_data()
 
         with shared.CLUSTER_DATA_LOCK:
-            self._update_hb_data_locked()
+            diff = self._update_hb_data_locked()
+
+        if diff is None:
+            return
+
+        shared.EVENT_Q.put({
+            "nodename": rcEnv.nodename,
+            "kind": "patch",
+            "data": diff,
+        })
+
+        # don't store the diff if we have no peers
+        if len(shared.LOCAL_GEN) == 0:
+            return
+
+        shared.GEN_DIFF[shared.GEN] = diff
+        self.purge_log()
+        with shared.HB_MSG_LOCK:
+             # reset the full status cache. get_message() will refill if
+             # needed.
+             shared.HB_MSG = None
+             shared.HB_MSG_LEN = 0
+        shared.wake_heartbeat_tx()
 
     def _update_hb_data_locked(self):
         now = time.time()
@@ -2504,25 +2529,7 @@ class Monitor(shared.OsvcThread, Crypt):
         data["gen"] = self.get_gen(inc=True)
         data["updated"] = now
         diff.append([["updated"], data["updated"]])
-
-        shared.EVENT_Q.put({
-            "nodename": rcEnv.nodename,
-            "kind": "patch",
-            "data": diff,
-        })
-
-        # don't store the diff if we have no peers
-        if len(shared.LOCAL_GEN) == 0:
-            return
-
-        shared.GEN_DIFF[shared.GEN] = diff
-        self.purge_log()
-        with shared.HB_MSG_LOCK:
-             # reset the full status cache. get_message() will refill if
-             # needed.
-             shared.HB_MSG = None
-             shared.HB_MSG_LEN = 0
-        shared.wake_heartbeat_tx()
+        return diff
 
     def merge_hb_data(self):
         self.merge_hb_data_compat()
