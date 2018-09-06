@@ -41,7 +41,7 @@ class StreamFilter(logging.Filter):
                 return False
             else:
                 return True
-        except (AttributeError, TypeError):
+        except (KeyError, AttributeError, TypeError):
             return True
 
 class RedactingFormatter(object):
