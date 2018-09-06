@@ -2696,7 +2696,13 @@ class Monitor(shared.OsvcThread, Crypt):
                     except KeyError:
                         continue
                     changed = False
-                    for resource in svc.shared_resources:
+                    try:
+                        shared_resources = svc.shared_resources
+                    except Exception as exc:
+                        # svc.shared_resources() can fail on resources config validation
+                        self.log.error("unable to determine service %s shared resources: %s", svc.svcname, exc)
+                        shared_resources = []
+                    for resource in shared_resources:
                         try:
                             local = Storage(idata["resources"][resource.rid]["provisioned"])
                         except KeyError:
