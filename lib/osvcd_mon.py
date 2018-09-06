@@ -661,7 +661,10 @@ class Monitor(shared.OsvcThread, Crypt):
                 return False
             if smon.local_expect != "started":
                 return False
-            nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
+            try:
+                nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
+            except AttributeError:
+                nb_restart = 0
             retries = self.get_smon_retries(svc.svcname, rid)
 
             if retries > nb_restart:
