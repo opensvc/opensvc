@@ -597,7 +597,7 @@ class ExtConfig(object):
                                  impersonate=impersonate, config=config)
         except ex.OptNotFound as exc:
             return copy.copy(exc.default)
-        except ex.RequiredOptNotFound:
+        except ex.RequiredOptNotFound as exc:
             raise ex.excError("%s: unresolved reference (%s)"
                               "" % (ref, str(exc)))
 
@@ -725,18 +725,18 @@ class ExtConfig(object):
                 raise
 
         # 2nd try: deprecated keyword
-        exc = None
+        exc = False
         for deprecated_keyword in deprecated_keywords:
             try:
                 return self._conf_get(s, deprecated_keyword, t=t, scope=scope,
                                       impersonate=impersonate,
                                       use_default=use_default, config=config,
                                       section=section, rtype=rtype)
-            except ex.RequiredOptNotFound as exc:
-                pass
+            except ex.RequiredOptNotFound:
+                exc = True
         if exc:
             self.log.error("%s.%s is mandatory" % (s, o))
-            raise exc
+            raise ex.RequiredOptNotFound
 
     def _conf_get(self, s, o, t=None, scope=None, impersonate=None,
                  use_default=True, config=None, section=None, rtype=None):
