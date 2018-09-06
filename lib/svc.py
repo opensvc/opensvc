@@ -3414,6 +3414,7 @@ class Svc(Crypt, ExtConfig):
         container in up state running an encapsulated part, synchronize the
         service configuration file.
         """
+        self.init_resources()
         if self.encap or not self.has_encap_resources:
             return
 
