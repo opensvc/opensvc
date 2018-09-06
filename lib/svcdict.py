@@ -2023,6 +2023,7 @@ KEYWORDS = [
         "section": "disk",
         "rtype": ["zpool", "pool"],
         "keyword": "name",
+        "required": True,
         "at": True,
         "text": "The name of the zfs pool"
     },
