@@ -3530,8 +3530,7 @@ class Node(Crypt, ExtConfig):
                     line.append("".join(val))
             out.append(line)
 
-            from distutils.version import LooseVersion
-            for child in sorted(list(data.get("slaves", [])), key=LooseVersion):
+            for child in sorted(list(data.get("slaves", []))):
                 load_svc(child, prefix=prefix+" ")
 
         def load_hb(key, _data):
