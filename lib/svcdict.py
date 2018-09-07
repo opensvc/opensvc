@@ -663,7 +663,7 @@ KEYWORDS = [
         "default": [],
         "default_text": "",
         "convert": "list_lower",
-        "text": "List of services that must be 'avail up' before allowing this service to be started by the daemon monitor. Whitespace separated."
+        "text": "List of services or instances expressed as <svcname>@<nodename> that must be 'avail up' before allowing this service to be started by the daemon monitor. Whitespace separated."
     },
     {
         "section": "DEFAULT",

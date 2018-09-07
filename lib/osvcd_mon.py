@@ -1500,12 +1500,21 @@ class Monitor(shared.OsvcThread, Crypt):
         if len(svc.parents) == 0:
             return True
         for parent in svc.parents:
-            if parent == svc.svcname:
-                continue
             try:
-                avail = shared.AGG[parent].avail
-            except KeyError:
-                avail = "unknown"
+                svcname, nodename = parent.split("@")
+                instance = self.get_service_instance(svcname, nodename)
+            except ValueError:
+                svcname = parent
+                instance = None
+            if svcname == svc.svcname:
+                continue
+            if instance:
+                avail = instance["avail"] 
+            else:
+                try:
+                    avail = shared.AGG[parent].avail
+                except KeyError:
+                    avail = "unknown"
             if avail in STARTED_STATES + ["unknown"]:
                 continue
             missing.append(parent)

@@ -2018,10 +2018,19 @@ class Svc(Crypt, ExtConfig):
             node_parent.add_column(svcname, color.BOLD)
             node_parent.add_column()
             try:
-                mon_data = self.get_mon_data()
-                avail = mon_data["services"][svcname]["avail"]
-            except KeyError:
-                avail = "undef"
+                svcname, nodename = svcname.split("@")
+                try:
+                    mon_data = self.get_mon_data()
+                    avail = mon_data["nodes"][nodename]["services"]["status"][svcname]["avail"]
+                except KeyError:
+                    avail = "undef"
+            except ValueError:
+                nodename = None
+                try:
+                    mon_data = self.get_mon_data()
+                    avail = mon_data["services"][svcname]["avail"]
+                except KeyError:
+                    avail = "undef"
             node_parent.add_column(avail, STATUS_COLOR[avail])
 
         def add_children(node):
