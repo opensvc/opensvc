@@ -2875,7 +2875,7 @@ class Svc(Crypt, ExtConfig):
 
     @_master_action
     def master_boot(self):
-        self.sub_set_action(START_GROUPS, "boot", xtags=set(["zone", "docker"]))
+        self.sub_set_action(START_GROUPS, "boot")
 
     def shutdown(self):
         self.options.force = True
