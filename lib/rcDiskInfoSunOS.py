@@ -19,8 +19,9 @@ class diskInfo(rcDiskInfo.diskInfo):
 
     def get_part_size(self, dev):
         part = dev[-1]
+        basedev = dev[:-2] + "s2"
         size = 0
-        out = prtvtoc(dev)
+        out = prtvtoc(basedev)
         if out is None:
             return size
 

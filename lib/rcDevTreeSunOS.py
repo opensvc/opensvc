@@ -2,8 +2,8 @@ import rcDevTree
 import glob
 import os
 import re
-from subprocess import *
-from rcUtilities import which, cache
+from subprocess import PIPE
+from rcUtilities import which, cache, justcall
 from rcUtilitiesSunOS import prtvtoc
 from rcGlobalEnv import rcEnv
 import rcDevTreeVeritas
@@ -60,7 +60,8 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         if len(self.vxdisk_cache) > 0:
             self.load_vxdisk()
         else:
-            self.load_format()
+            #self.load_format()
+            self.load_dsk()
 
     def load_vxdisk(self):
         for devpath, data in self.vxdisk_cache.items():
@@ -77,6 +78,18 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             self.add_device_devpath(d, bdevpath)
             self.load_partitions(d)
 
+    def load_dsk(self):
+        for devpath in glob.glob("/dev/rdsk/*s2"):
+            bdevpath = devpath.replace("/rdsk/", "/dsk/")
+            devname = devpath.replace("/dev/rdsk/", "")[:-2]
+            size = self.di.get_size(devpath)
+            d = self.add_dev(devname, size, "linear")
+            d.set_devpath(devpath)
+            d.set_devpath(bdevpath)
+            self.add_device_devpath(d, devpath)
+            self.add_device_devpath(d, bdevpath)
+            self.load_partitions(d)
+
     def load_format(self):
         """
         0. c3t0d0 <SUN36G cyl 24620 alt 2 hd 27 sec 107>
@@ -84,10 +97,8 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         4. c5t600508B4000971CD00010000024A0000d0 <HP-HSV210-6200 cyl 61438 alt 2 hd 128 sec 128>  EVA_SAVE
           /scsi_vhci/ssd@g600508b4000971cd00010000024a0000
         """
-        p = Popen(["format", "-e"], stdout=PIPE, stderr=PIPE, stdin=PIPE)
-        out, err = p.communicate(input=None)
-        out = out.decode()
-        for line in out.split("\n"):
+        out, err, ret = justcall(["format", "-e"], stdin=PIPE)
+        for line in out.splitlines():
             line = line.strip()
             if re.match(r"[0-9]+\. ", line) is None:
                 continue
@@ -106,11 +117,9 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
     def load_sds(self):
         if not os.path.exists("/usr/sbin/metastat"):
             return
-        p = Popen(["metastat", "-p"], stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
+        out, err, ret = justcall(["metastat", "-p"])
+        if ret != 0:
             return
-        out = out.decode()
         lines = out.split('\n')
         lines.reverse()
 
@@ -146,7 +155,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                 parentdev.add_child(childname)
 
     def load_zpool(self):
-        out = self.zfs_list()
+        out = self.zpool_list()
         if out is None:
             return
         for line in out.splitlines():
@@ -156,30 +165,24 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             poolname = l[0]
             self.load_zpool1(poolname)
 
-    @cache("zfs.list")
-    def zfs_list(self):
-        p = Popen(["zfs", "list", "-H"], stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
+    @cache("zpool.list")
+    def zpool_list(self):
+        out, err, ret = justcall(["zpool", "list", "-H"])
+        if ret != 0:
             return
-        out = out.decode()
         return out
 
     @cache("zfs.list.snapshots")
     def zfs_list_snapshots(self):
-        p = Popen(["zfs", "list", "-H", "-t", "snapshot"], stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
+        out, err, ret = justcall(["zfs", "list", "-H", "-t", "snapshot"])
+        if ret != 0:
             return
-        out = out.decode()
         return out
 
     def load_zpool1(self, poolname):
-        p = Popen(["zpool", "status", poolname], stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
+        out, err, ret = justcall(["zpool", "status", poolname])
+        if ret != 0:
             return
-        out = out.decode()
         self.zpool_members[poolname] = []
         for line in out.splitlines():
             l = line.split()
@@ -199,25 +202,21 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                 continue
             self.zpool_members[poolname].append(d)
 
-        p = Popen(["zpool", "iostat", poolname], stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
+        out, err, ret = justcall(["zpool", "iostat", poolname])
+        if ret != 0:
             return
-        out = out.decode()
         lines = out.split('\n')
         lines = [l for l in lines if len(l) > 0]
         self.zpool_used[poolname] = self.read_size(lines[-1].split()[1])
         zpool_free = self.read_size(lines[-1].split()[2])
         self.zpool_size[poolname] = self.zpool_used[poolname] + zpool_free
 
-        p = Popen(["zfs", "list", "-H", "-r", "-t", "filesystem", poolname], stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
+        out, err, ret = justcall(["zfs", "list", "-H", "-r", "-t", "filesystem", poolname])
+        if ret != 0:
             return
-        out = out.decode()
         self.zpool_datasets[poolname] = []
         self.zpool_datasets_used[poolname] = 0
-        for line in out.split('\n'):
+        for line in out.splitlines():
             l = line.split()
             if len(l) == 0:
                 continue
