@@ -137,18 +137,22 @@ class Drbd(Res.Resource):
         else:
             self.drbdadm_up()
 
-    def get_roles(self):
+    def get_role(self):
         out, err, ret = justcall(self.drbdadm_cmd('role'))
         if ret != 0:
             raise ex.excError(err)
-        out = out.strip().split('/')
+        out = out.strip()
+        if out in ("Primary", "Secondary"):
+            # drbd9
+            return out
+        out = out.split('/')
         if len(out) != 2:
             raise ex.excError(out)
-        return out
+        return out[0]
 
     def start_role(self, role):
-        roles = self.get_roles()
-        if roles[0] != role:
+        cur_role = self.get_role()
+        if cur_role != role:
             ret, out, err = self.vcall(self.drbdadm_cmd(role.lower()))
             if ret != 0:
                 raise ex.excError
@@ -159,8 +163,8 @@ class Drbd(Res.Resource):
 
     def startstandby(self):
         self.start_connection()
-        roles = self.get_roles()
-        if roles[0] == "Primary":
+        role = self.get_role()
+        if role == "Primary":
             return
         self.start_role('Secondary')
 
@@ -169,8 +173,8 @@ class Drbd(Res.Resource):
 
     def go_secondary(self):
         self.start_connection()
-        roles = self.get_roles()
-        if roles[0] == "Secondary":
+        role = self.get_role()
+        if role == "Secondary":
             return
         self.start_role('Secondary')
 
@@ -201,11 +205,11 @@ class Drbd(Res.Resource):
 
     def _status(self, verbose=False):
         try:
-            roles = self.get_roles()
+            role = self.get_role()
         except Exception as e:
             self.status_log(str(e))
             return rcStatus.DOWN
-        self.status_log(str(roles[0]), "info")
+        self.status_log(str(role), "info")
         ret, out, err = self.call(self.drbdadm_cmd('dstate'))
         if ret != 0:
             self.status_log("drbdadm dstate %s failed"%self.res)
@@ -217,9 +221,9 @@ class Drbd(Res.Resource):
             return rcStatus.DOWN
         else:
             self.status_log("unexpected drbd resource %s state: %s"%(self.res, out))
-        if roles[0] == "Primary":
+        if role == "Primary":
             return rcStatus.UP
-        elif roles[0] == "Secondary" and self.standby:
+        elif role == "Secondary" and self.standby:
             return rcStatus.STDBY_UP
         else:
             return rcStatus.WARN
