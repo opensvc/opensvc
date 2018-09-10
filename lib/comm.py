@@ -59,7 +59,7 @@ except ImportError:
         """
         Low level encrypter.
         """
-        obj = pyaes.Encrypter(pyaes.AESModeOfOperationCBC(key, iv=_iv))
+        obj = pyaes.Encrypter(pyaes.AESModeOfOperationCBC(to_bytes(key), iv=_iv))
         ciphertext = obj.feed(zlib.compress(message.encode()))
         ciphertext += obj.feed()
         return ciphertext
@@ -67,7 +67,7 @@ except ImportError:
         """
         Low level decrypter.
         """
-        obj = pyaes.Decrypter(pyaes.AESModeOfOperationCBC(key, iv=_iv))
+        obj = pyaes.Decrypter(pyaes.AESModeOfOperationCBC(to_bytes(key), iv=_iv))
         message = obj.feed(ciphertext)
         message += obj.feed()
         return zlib.decompress(message)
