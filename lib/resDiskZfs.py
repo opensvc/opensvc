@@ -196,4 +196,4 @@ class Disk(resDisk.Disk):
         Search zpool vdevs from the output of "zpool status poolname" if
         imported.
         """
-        return set(zpool_devs(self.name, self.svc.node.devtree))
+        return set(zpool_devs(self.name, self.svc.node))

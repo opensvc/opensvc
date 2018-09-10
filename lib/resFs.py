@@ -202,7 +202,7 @@ class Mount(Res.Resource):
             return set()
         if self.fs_type == "zfs":
             from rcZfs import zpool_devs
-            return set(zpool_devs(self.device.split("/")[0], self.svc.node.devtree))
+            return set(zpool_devs(self.device.split("/")[0], self.svc.node))
         for res in self.svc.get_resources():
             if hasattr(res, "is_child_dev") and res.is_child_dev(self.device):
                 # don't account fs device if the parent resource is driven by the service

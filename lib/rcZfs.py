@@ -212,7 +212,7 @@ class Dataset(object):
             return False
 
 @cache("zpool.devs.{args[0]}")
-def zpool_devs(poolname, devtree):
+def zpool_devs(poolname, node=None):
     """
     Search zpool vdevs from the output of "zpool status <poolname>" if
     imported.
@@ -256,8 +256,8 @@ def zpool_devs(poolname, devtree):
             else:
                 regex = re.compile('s[0-9]*$', re.UNICODE)
                 d = regex.sub('s2', d)
-        elif rcEnv.sysname == "Linux":
-            tdev = devtree.get_dev_by_devpath(d)
+        elif rcEnv.sysname == "Linux" and node:
+            tdev = node.devtree.get_dev_by_devpath(d)
             if tdev is None:
                 continue
             for path in tdev.devpath:
