@@ -5,7 +5,7 @@ import json
 import resDisk
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall, which, lazy, fcache
+from rcUtilities import justcall, qcall, which, lazy, cache
 from rcZfs import zpool_devs
 
 class Disk(resDisk.Disk):
@@ -55,14 +55,18 @@ class Disk(resDisk.Disk):
             return True
         return False
 
+    @cache("zpool.health.{args[1]}")
+    def zpool_health(self, name):
+        cmd = ["zpool", "list", "-H", "-o", "health", name]
+        out, err, ret = justcall(cmd)
+        return out.strip()
+
     def is_up(self):
         """Returns True if the pool is present and activated
         """
         if not self.has_it():
             return False
-        cmd = [ 'zpool', 'list', '-H', '-o', 'health', self.name ]
-        ret, out, err = self.call(cmd)
-        state = out.strip()
+        state = self.zpool_health(self.name)
         if state == "ONLINE":
             return True
         elif state == "DEGRADED":
