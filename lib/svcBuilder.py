@@ -863,7 +863,7 @@ def add_fs_directory(svc, s):
         for r in [r for r in svc.resources_by_id.values() if r.type == "container.zone"]:
             if r.name == zone:
                 try:
-                    zp = r.get_zonepath()
+                    zp = r.zonepath
                 except:
                     zp = "<%s>" % zone
                 break
@@ -930,7 +930,7 @@ def add_fs(svc, s):
         for r in [r for r in svc.resources_by_id.values() if r.type == "container.zone"]:
             if r.name == zone:
                 try:
-                    zp = r.get_zonepath()
+                    zp = r.zonepath
                 except:
                     zp = "<%s>" % zone
                 break

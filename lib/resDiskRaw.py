@@ -86,9 +86,9 @@ class Disk(resDisk.Disk):
         container_name = m.group(1)
         for r in self.svc.get_resources("container"):
             if hasattr(r, "name") and r.name == container_name:
-                if hasattr(r, "get_zonepath"):
+                if r.type == "container.zone":
                     # zone
-                    container_root = r.get_zonepath()
+                    container_root = r.zonepath
                 elif hasattr(r, "get_rootfs"):
                     # lxc
                     container_root = r.get_rootfs()

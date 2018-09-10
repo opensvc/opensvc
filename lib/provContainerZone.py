@@ -186,7 +186,7 @@ class Prov(provisioning.Prov):
         try:
             name_service = "name_service=NONE\n"
 
-            sysidcfg_filename = zone.get_zonepath() + "/root" + SYSIDCFG
+            sysidcfg_filename = zone.zonepath + "/root" + SYSIDCFG
             sysidcfg_file = open(sysidcfg_filename, "w" )
             contents = ""
             contents += "system_locale=C\n"
@@ -234,7 +234,7 @@ class Prov(provisioning.Prov):
         else:
             cmd = "create"
 
-        cmd += "; set zonepath=" + zone.get_zonepath()
+        cmd += "; set zonepath=" + zone.zonepath
 
         if zone.state is None:
             zone.zonecfg([cmd])
@@ -282,7 +282,6 @@ class Prov(provisioning.Prov):
             raise(ex.excError("zone brand: %s not yet implemented" % (brand)))
         zone2clone.wait_multi_user()
         zone2clone.stop()
-        zone2clone.zone_refresh()
         if zone2clone.state != "installed":
             raise(ex.excError("zone %s is not installed" % (zonename)))
 
@@ -312,7 +311,6 @@ class Prov(provisioning.Prov):
             raise(ex.excError("zone brand: %s not yet implemented" % (brand)))
         zone2clone.wait_multi_user()
         zone2clone.stop()
-        zone2clone.zone_refresh()
         if zone2clone.state != "installed":
             raise(ex.excError("zone %s is not installed" % (zonename)))
 

@@ -5,7 +5,7 @@ import time
 import os
 import stat
 
-from rcUtilities import justcall, qcall, which
+from rcUtilities import justcall, qcall, which, lazy
 from rcUtilitiesSunOS import get_os_ver
 import resContainer
 import rcExceptions as ex
@@ -40,9 +40,7 @@ class Zone(resContainer.Container):
                                         osvc_root_path=osvc_root_path,
                                         **kwargs)
         self.label = name
-        self.state = None
         self.delete_on_stop = delete_on_stop
-        self.zone_refresh()
         self.runmethod = [ '/usr/sbin/zlogin', '-S', name ]
         self.zone_cf = "/etc/zones/"+self.name+".xml"
         self.delayed_noaction = True
@@ -83,19 +81,6 @@ class Zone(resContainer.Container):
                 return line.split("=")[-1].strip()
         raise ex.excError("set zonepath command not found in %s" % fpath)
 
-    def get_zonepath(self):
-        if hasattr(self, "zonepath"):
-            return self.zonepath
-        try:
-            zp = self.get_zonepath_from_zonecfg_cmd()
-        except ex.excError:
-            try:
-                zp = self.get_zonepath_from_zonecfg_export()
-            except ex.excError:
-                zp = "/etc/system/%s" % self.name
-        self.zonepath = zp
-        return zp
-
     def zonecfg(self, zonecfg_args=[]):
         cmd = [ZONECFG, '-z', self.name] + zonecfg_args
         (ret, out, err) = self.vcall(cmd,err_to_info=True)
@@ -134,7 +119,6 @@ class Zone(resContainer.Container):
         return ret
 
     def set_zonepath_perms(self):
-        self.get_zonepath()
         if not os.path.exists(self.zonepath):
             os.makedirs(self.zonepath)
         s = os.stat(self.zonepath)
@@ -147,7 +131,6 @@ class Zone(resContainer.Container):
             self.vcall(['chmod', '700', self.zonepath])
 
     def rcp_from(self, src, dst):
-        self.get_zonepath()
         src = os.path.realpath(self.zonepath + '/root/' + src)
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
@@ -156,7 +139,6 @@ class Zone(resContainer.Container):
         return out, err, ret
 
     def rcp(self, src, dst):
-        self.get_zonepath()
         dst = os.path.realpath(self.zonepath + '/root/' + dst)
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
@@ -165,13 +147,13 @@ class Zone(resContainer.Container):
         return out, err, ret
 
     def attach(self):
-        self.zone_refresh()
         if self.state in ('installed' , 'ready', 'running'):
             self.log.info("zone container %s already installed" % self.name)
             return 0
         elif self.state is None:
             cmd = [ZONECFG, "-z", self.name, "-f", self.zone_cfg_path()]
             ret, out, err = self.vcall(cmd)
+            self.zone_refresh()
             if ret != 0:
                 raise ex.excError
         options = []
@@ -188,25 +170,23 @@ class Zone(resContainer.Container):
     def delete(self):
         if not self.delete_on_stop:
             return 0
-        self.zone_refresh()
         if self.state is None:
             self.log.info("zone container %s already deleted" % self.name)
             return 0
         cmd = [ZONECFG, "-z", self.name, "delete", "-F"]
         ret, out, err = self.vcall(cmd)
+        self.zone_refresh()
         if ret != 0:
             raise ex.excError
         return 0
 
     def detach(self):
-        self.zone_refresh()
         if self.state == "configured" :
             self.log.info("zone container %s already detached/configured" % self.name)
             return 0
         return self.zoneadm('detach')
 
     def ready(self):
-        self.zone_refresh()
         if self.state == 'ready' or self.state == "running" :
             self.log.info("zone container %s already ready" % self.name)
             return 0
@@ -214,7 +194,6 @@ class Zone(resContainer.Container):
         return self.zoneadm('ready')
 
     def install_drp_flag(self):
-        self.get_zonepath()
         flag = os.path.join(self.zonepath, ".drp_flag")
         self.log.info("install drp flag in container : %s"%flag)
         with open(flag, 'w') as f:
@@ -247,7 +226,6 @@ class Zone(resContainer.Container):
 
     def zone_boot(self):
         "return 0 if zone is running else return self.zoneadm('boot')"
-        self.zone_refresh()
         if self.state == "running" :
             self.log.info("zone container %s already running" % self.name)
             return 0
@@ -260,7 +238,6 @@ class Zone(resContainer.Container):
         """ Need wait poststat after returning to installed state on ipkg
             example : /bin/ksh -p /usr/lib/brand/ipkg/poststate zonename zonepath 5 4
         """
-        self.zone_refresh()
         if self.state in [ 'installed', 'configured'] :
             self.log.info("zone container %s already stopped" % self.name)
             return 0
@@ -288,13 +265,41 @@ class Zone(resContainer.Container):
         return self.zone_boot()
 
     def _status(self, verbose=False):
-        self.zone_refresh()
         if self.state == 'running' :
             return rcStatus.UP
         else:
             return rcStatus.DOWN
 
     def zone_refresh(self):
+        self.unset_lazy("zone_data")
+        self.unset_lazy("state")
+        self.unset_lazy("brand")
+        self.unset_lazy("zonepath")
+
+    @lazy
+    def state(self):
+        return self.zone_data.get("state")
+
+    @lazy
+    def zonepath(self):
+        zp = self.zone_data.get("zonepath")
+        if zp:
+            return zp
+        try:
+            zp = self.get_zonepath_from_zonecfg_cmd()
+        except ex.excError:
+            try:
+                zp = self.get_zonepath_from_zonecfg_export()
+            except ex.excError:
+                zp = "/etc/system/%s" % self.name
+        return zp
+
+    @lazy
+    def brand(self):
+        return self.zone_data.get("brand")
+
+    @lazy
+    def zone_data(self):
         """ refresh Zone object attributes:
                 state
                 zonepath
@@ -303,33 +308,26 @@ class Zone(resContainer.Container):
             zoneid:zonename:state:zonepath:uuid:brand:ip-type
         """
 
-        (out,err,st) = justcall([ 'zoneadm', '-z', self.name, 'list', '-p' ])
-
-        if st == 0 :
-            out = out.strip()
-            l = out.split(':')
-            n_fields = len(l)
-            if n_fields == 9:
-                (zoneid,zonename,state,zonepath,uuid,brand,iptype,rw,macp) = l
-            elif n_fields == 10:
-                (zoneid,zonename,state,zonepath,uuid,brand,iptype,rw,macp,dummy) = l
-            elif n_fields == 7:
-                (zoneid,zonename,state,zonepath,uuid,brand,iptype) = l
-            else:
-                raise ex.excError("Unexpected zoneadm list output: %s"%out)
-            if zonename == self.name :
-                self.state = state
-                self.zonepath = zonepath
-                self.brand = brand
-                return True
-            else:
-                return False
+        out, err, ret = justcall(["zoneadm", "-z", self.name, "list", "-p"])
+        if ret != 0 :
+            return
+        out = out.strip()
+        l = out.split(':')
+        n_fields = len(l)
+        if n_fields == 9:
+            (zoneid,zonename,state,zonepath,uuid,brand,iptype,rw,macp) = l
+        elif n_fields == 10:
+            (zoneid,zonename,state,zonepath,uuid,brand,iptype,rw,macp,dummy) = l
+        elif n_fields == 7:
+            (zoneid,zonename,state,zonepath,uuid,brand,iptype) = l
         else:
-            return False
+            raise ex.excError("Unexpected zoneadm list output: %s"%out)
+        if zonename == self.name :
+            data = dict(state=state, zonepath=zonepath, brand=brand)
+            return data
 
     def is_running(self):
         "return True if zone is running else False"
-        self.zone_refresh()
         if self.state == 'running' :
             return True
         else:
@@ -379,7 +377,6 @@ class Zone(resContainer.Container):
            if they are needed, them still may be mounted by opensvc
            if declared as zoned fs or encap fs.
         """
-        self.get_zonepath()
         if self.zonepath == "/":
             # sanity check
             return
