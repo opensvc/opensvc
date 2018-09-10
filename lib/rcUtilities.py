@@ -332,9 +332,11 @@ def which(program):
 def justcall(argv=['/bin/false'], stdin=None):
     """subprosses call argv, return (stdout,stderr,returncode)
     """
-    if which(argv[0]) is None:
-        return ("", "", 1)
-    process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
+    try:
+        process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
+    except Exception as exc:
+        if exc.errno == 2:
+            return ("", "", 1)
     stdout, stderr = process.communicate(input=None)
     return bdecode(stdout), bdecode(stderr), process.returncode
 
