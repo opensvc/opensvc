@@ -533,10 +533,14 @@ class Sym(object):
         return views
 
     def get_view(self, view):
-        out, err, ret = self.symaccesscmd(["show", "view", view])
+        out, err, ret = self.symaccesscmd(["show", "view", view, "-detail"])
         data = self.parse_xml(out, key="View_Info", as_list=["Director_Identification", "SG", "Initiator", "Device", "dev_port_info"], exclude=["Initiators"])
         if len(data) == 0:
             return
+        initiator_count = 0
+        for _data in data:
+            initiator_count += len([1 for d in _data["Initiator_List"]["Initiator"] if "wwn" in d])
+        data[0]["initiator_count"] = initiator_count
         return data[0]
 
     def get_mapping_storage_groups(self, hba_id, tgt_id):
@@ -562,8 +566,7 @@ class Sym(object):
                 if sg not in self.sg_mappings:
                     self.sg_mappings[sg] = []
                 if sg not in self.sg_initiator_count:
-                    self.sg_initiator_count[sg] = 0
-                self.sg_initiator_count[sg] += len(view_data["Initiator_List"]["Initiator"])
+                    self.sg_initiator_count[sg] = view_data["initiator_count"]
                 self.sg_mappings[sg].append({
                     "sg": sg,
                     "view_name": view_data["view_name"],
