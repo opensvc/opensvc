@@ -1,7 +1,8 @@
 import os
 import re
 import datetime
-from rcUtilities import justcall, which, bdecode
+from rcUtilities import justcall, which, bdecode, lazy
+from rcGlobalEnv import Storage
 import rcAsset
 
 def is_container():
@@ -27,6 +28,22 @@ class Asset(rcAsset.Asset):
                 self.dmidecode = []
             else:
                 self.dmidecode = out.split('\n')
+
+    @lazy
+    def os_release(self):
+        os_release_f = os.path.join(os.sep, "etc", "os-release")
+        data = Storage()
+        if not os.path.exists(os_release_f):
+            return data
+        with open(os_release_f, "r") as filep:
+            for line in filep.readlines():
+                line = line.strip("\n")
+                try:
+                    var, val = line.split("=", 1)
+                except:
+                    continue
+                data[var.lower()] = val.strip('"')
+        return data
 
     def _get_mem_bytes_esx(self):
         cmd = ['vmware-cmd', '-s', 'getresource', 'system.mem.totalMem']
@@ -145,6 +162,22 @@ class Asset(rcAsset.Asset):
         return '0'
 
     def _get_os_vendor(self):
+        vendors = {
+            "alpine": "Alpine",
+            "debian": "Debian",
+            "ubuntu": "Ubuntu",
+            "arch": "Arch",
+            "vmware": "VMware",
+            "oracle": "Oracle",
+            "sles": "SuSE",
+            "opensuse": "SuSE",
+            "rhel": "Red Hat",
+            "centos": "CentOS",
+            "fedora": "Fedora",
+            "caasp": "SuSE",
+        }
+        if self.os_release.id in vendors:
+            return vendors[self.os_release.id]
         if os.path.exists('/etc/lsb-release'):
             with open('/etc/lsb-release') as f:
                 for line in f.readlines():
@@ -169,26 +202,36 @@ class Asset(rcAsset.Asset):
                     return 'Red Hat'
         if os.path.exists('/etc/alpine-release'):
             return "Alpine"
+        if os.release.name:
+            return os.release.name
         return 'Unknown'
 
     def _get_os_release_lsb(self):
         if not os.path.exists('/etc/lsb-release'):
             return
+        r = None
         with open('/etc/lsb-release') as f:
             for line in f.readlines():
                 if 'DISTRIB_RELEASE' in line:
                     r = line.split('=')[-1].replace('\n','').strip('"')
-                    r = r.replace(self._get_os_vendor(), '').strip()
-                    if r == "":
-                        continue
-                    return r
+                    if r:
+                        break
                 if 'DISTRIB_DESCRIPTION' in line:
                     r = line.split('=')[-1].replace('\n','').strip('"')
-                    r = r.replace(self._get_os_vendor(), '').strip()
-                    if r == "":
-                        continue
-                    return r
-        return
+                    if r:
+                        break
+        if r:
+            r = r.replace(self._get_os_vendor(), '').strip()
+        return r
+
+    def _get_os_release_os_release(self):
+        r = self.os_release.pretty_name
+        if not r:
+            return
+        v = self._get_os_vendor()
+        if v:
+            r = re.sub(v, "", r, flags=re.I)
+        return r.strip()
 
     def _get_os_release_debian_version(self):
         if not os.path.exists('/etc/debian_version'):
@@ -200,6 +243,9 @@ class Asset(rcAsset.Asset):
         return r
 
     def _get_os_release(self):
+        r = self._get_os_release_os_release()
+        if r:
+            return r
         files = ['/etc/debian_version',
                  '/etc/vmware-release',
                  '/etc/oracle-release',
