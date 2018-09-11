@@ -21,6 +21,7 @@ class Scheduler(shared.OsvcThread):
     interval = 60
     delayed = {}
     running = set()
+    dropped_via_notify = set()
 
     def max_tasks(self):
         if self.node_overloaded():
@@ -32,10 +33,12 @@ class Scheduler(shared.OsvcThread):
         data = shared.OsvcThread.status(self, **kwargs)
         data["running"] = len(self.running)
         data["delayed"] = [{
-            "cmd": " ".join(self.format_cmd(action, svcname, rids)),
+            "action": action,
+            "svcname": svcname,
+            "rid": rid,
             "queued": entry["queued"].strftime(shared.JSON_DATEFMT),
             "expire": entry["expire"].strftime(shared.JSON_DATEFMT),
-        } for (action, svcname, rids), entry in self.delayed.items()]
+        } for (action, svcname, rid), entry in self.delayed.items()]
         return data
 
     def run(self):
@@ -62,6 +65,7 @@ class Scheduler(shared.OsvcThread):
         done = 0
         while True:
             now = time.time()
+            self.janitor_run_done()
             if done == 0:
                 with shared.SCHED_TICKER:
                     shared.SCHED_TICKER.wait(1)
@@ -74,18 +78,41 @@ class Scheduler(shared.OsvcThread):
                     self.run_scheduler()
             done = self.janitor_procs()
 
+    def janitor_run_done(self):
+        with shared.RUN_DONE_LOCK:
+            sigs = set(shared.RUN_DONE)
+            shared.RUN_DONE = set()
+        if not sigs:
+            return
+        inter = sigs & self.running
+        if not inter:
+            return
+        self.log.debug("run done notifications: %s", inter)
+        self.running -= inter
+        self.dropped_via_notify |= inter
+        #self.log.debug("dropped_via_notify: %s", self.dropped_via_notify)
+
     def drop_running(self, sigs):
-        self.running -= set(sigs)
+        """
+        Drop for running tasks signatures those not yet dropped via
+        notifications.
+        """
+        sigs = set(sigs)
+        not_dropped_yet = sigs - self.dropped_via_notify
+        self.running -= not_dropped_yet
+        self.dropped_via_notify -= sigs
 
     def exec_action(self, sigs, cmd):
         kwargs = dict(stdout=self.devnull, stderr=self.devnull,
-                      stdin=self.devnull, close_fds=os.name!="nt")
+                      stdin=self.devnull, close_fds=os.name!="nt",
+                      env=os.environ.copy())
         try:
             proc = Popen(cmd, **kwargs)
         except KeyboardInterrupt:
             return
         self.running |= set(sigs)
         self.push_proc(proc=proc,
+                       cmd=cmd,
                        on_success="drop_running",
                        on_success_args=[sigs],
                        on_error="drop_running",
@@ -93,29 +120,30 @@ class Scheduler(shared.OsvcThread):
 
     def format_cmd(self, action, svcname=None, rids=None):
         if svcname is None:
-            cmd = [rcEnv.paths.nodemgr, action]
+            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "nodemgr.py"), action]
         elif isinstance(svcname, list):
-            cmd = [rcEnv.paths.svcmgr, "-s", ",".join(svcname), action, "--waitlock=5", "--parallel"]
+            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", ",".join(svcname), action, "--waitlock=5", "--parallel"]
         else:
-            cmd = [rcEnv.paths.svcmgr, "-s", svcname, action, "--waitlock=5"]
+            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", svcname, action, "--waitlock=5"]
         if rids:
-            cmd += ["--rid", rids]
+            cmd += ["--rid", ",".join(sorted(list(rids)))]
         cmd.append("--cron")
         return cmd
 
-    def queue_action(self, action, delay=0, svcname=None, rids=None):
-        if rids:
-            rids = ",".join(rids)
-        sig = (action, svcname, rids)
+    def promote_queued_action(self, sig, delay):
+        if delay == 0 and self.delayed[sig]["delay"] > 0:
+            self.log.debug("promote queued action %s from delayed to asap", sig)
+            now = datetime.datetime.utcnow()
+            self.delayed[sig]["delay"] = 0
+            self.delayed[sig]["expire"] = now
+
+    def queue_action(self, action, delay=0, svcname=None, rid=None):
+        sig = (action, svcname, rid)
         if sig in self.running:
             self.log.debug("drop already running action '%s'", sig)
             return
         if sig in self.delayed:
-            if delay == 0 and self.delayed[sig]["delay"] > 0:
-                self.log.debug("promote queued action %s from delayed to asap", sig)
-                now = datetime.datetime.utcnow()
-                self.delayed[sig]["delay"] = 0
-                self.delayed[sig]["expire"] = now
+            self.promote_queued_action(sig, delay)
             self.log.debug("drop already queued action %s", sig)
             return
         now = datetime.datetime.utcnow()
@@ -138,13 +166,33 @@ class Scheduler(shared.OsvcThread):
         queue.
         """
         todo = {}
-        open_slots = max(self.max_tasks() - len(self.running), 0)
+        merge = {}
+        open_slots = max(self.max_tasks() - len(self.procs), 0)
         now = datetime.datetime.utcnow()
         for sig, task in self.delayed.items():
             if task["expire"] > now:
                 continue
-            action, svcname, rids = sig
-            merge_key = (svcname is None, action, rids)
+            action, svcname, rid = sig
+            merge_key = (action, svcname)
+            if merge_key not in merge:
+                if svcname:
+                    _svcname = [svcname]
+                else:
+                    _svcname = None
+                merge[merge_key] = {"rids": set([rid]), "task": task}
+            else:
+                merge[merge_key]["rids"].add(rid)
+                if task["queued"] < merge[merge_key]["task"]["queued"]:
+                    todo[merge_key]["task"]["queued"] = task["queued"]
+
+        for (action, svcname), data in merge.items():
+            if None in data["rids"]:
+                data["rids"] = None
+                sigs = [(action, svcname, None)]
+                merge_key = (svcname is None, action, None)
+            else:
+                sigs = [(action, svcname, rid) for rid in data["rids"]]
+                merge_key = (svcname is None, action, tuple(sorted(list(data["rids"]))))
             if merge_key not in todo:
                 if svcname:
                     _svcname = [svcname]
@@ -152,13 +200,13 @@ class Scheduler(shared.OsvcThread):
                     _svcname = None
                 todo[merge_key] = {
                     "action": action,
-                    "rids": rids,
+                    "rids": data["rids"],
                     "svcname": _svcname,
-                    "sigs": [sig],
+                    "sigs": sigs,
                     "queued": task["queued"],
                 }
             else:
-                todo[merge_key]["sigs"].append(sig)
+                todo[merge_key]["sigs"] += sigs
                 if svcname:
                     todo[merge_key]["svcname"].append(svcname)
                 if task["queued"] < todo[merge_key]["queued"]:
@@ -177,7 +225,11 @@ class Scheduler(shared.OsvcThread):
             self.exec_action(task["sigs"], cmd)
             dequeued += task["sigs"]
         for sig in dequeued:
-            del self.delayed[sig]
+            try:
+                del self.delayed[sig]
+            except KeyError:
+                #print(sig, self.delayed)
+                pass
 
     def run_scheduler(self):
         #self.log.info("run schedulers")
@@ -216,7 +268,11 @@ class Scheduler(shared.OsvcThread):
                 except TypeError:
                     delay = data
                     rids = None
-                self.queue_action(action, delay, svc.svcname, rids)
+                if rids is None:
+                    self.queue_action(action, delay, svc.svcname, rids)
+                else:
+                    for rid in rids:
+                        self.queue_action(action, delay, svc.svcname, rid)
 
         # log a scheduler loop digest
         msg = []

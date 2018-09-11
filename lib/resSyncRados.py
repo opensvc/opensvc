@@ -158,6 +158,7 @@ class syncRadosSnap(resSync.Sync):
 
         return r
 
+    @resSync.notify
     def sync_update(self):
         self.recreate()
 

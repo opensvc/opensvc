@@ -109,6 +109,7 @@ class syncHp3par(resSync.Sync):
         self.setrcopygroup_reverse()
         self.startrcopygroup()
 
+    @resSync.notify
     def sync_update(self):
         self.syncrcopygroup()
 

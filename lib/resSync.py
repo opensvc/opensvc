@@ -12,6 +12,19 @@ from rcScheduler import *
 from rcUtilities import lazy, bdecode
 from converters import convert_speed, print_size
 
+def notify(func):
+    """
+    A decorator in charge of notifying the daemon of sync task
+    termination.
+    """
+    def _func(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        finally:
+            self.log.info("notify done")
+            self.notify_done()
+    return _func
+
 class Sync(Res.Resource, Scheduler):
     default_optional = True
 
@@ -209,3 +222,7 @@ class Sync(Res.Resource, Scheduler):
                 continue
             data.append([key, str(val)])
         return data
+
+    def notify_done(self):
+        self.svc.notify_done("sync_all", rids=[self.rid])
+

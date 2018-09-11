@@ -10,7 +10,6 @@ import time
 import random
 import logging
 
-import lock
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import is_string
@@ -100,23 +99,18 @@ class SchedOpts(object):
 
 def sched_action(func):
     """
-    A decorator in charge of locking and updating the scheduler tasks
-    and subtasks timestamps.
+    A decorator in charge of updating the scheduler tasks and subtasks
+    timestamps.
     """
     def _func(self, action, options=None):
-        fds = []
         if options is None:
             options = Storage()
-        try:
-            if action in self.sched.scheduler_actions:
-                fds = self.sched.action_timestamps(action, options.rid)
-            ret = func(self, action, options)
-            if ret == 0 and action in self.sched.scheduler_actions:
-                self.sched.action_timestamps(action, options.rid, success=True)
-            return ret
-        finally:
-            for fd in fds:
-                lock.unlock(fd)
+        if action in self.sched.scheduler_actions:
+            self.sched.action_timestamps(action, options.rid)
+        ret = func(self, action, options)
+        if ret == 0 and action in self.sched.scheduler_actions:
+            self.sched.action_timestamps(action, options.rid, success=True)
+        return ret
     return _func
 
 class Scheduler(object):
@@ -934,7 +928,7 @@ class Scheduler(object):
             tsfiles.append(tsfile)
         else:
             if rids is None:
-                return []
+                return
             for _so in sched_options:
                 if not _so.section in rids:
                     continue
@@ -942,26 +936,10 @@ class Scheduler(object):
                 tsfiles.append(tsfile)
 
         if len(tsfiles) == 0:
-            return []
+            return
 
-        fds = []
-        import lock
-        try:
-            for tsfile in tsfiles:
-                if not success:
-                    fd = lock.lock(timeout=0, lockfile=tsfile+".lock")
-                    fds.append(fd)
-                self._timestamp(tsfile)
-        except lock.LOCK_EXCEPTIONS:
-            self.log.warning("a %s action is already in progess", action)
-            for fd in fds:
-                lock.unlock(fd)
-            raise
-        except Exception as exc:
-            for fd in fds:
-                lock.unlock(fd)
-            raise ex.excError("error updating timestamp %s: %s"%(tsfile, exc))
-        return fds
+        for tsfile in tsfiles:
+            self._timestamp(tsfile)
 
     def _is_croned(self):
         """

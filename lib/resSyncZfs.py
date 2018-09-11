@@ -281,6 +281,7 @@ class SyncZfs(resSync.Sync):
         self.remove_snap(dst, node)
         self.rename_snap(src, dst, node)
 
+    @resSync.notify
     def sync_update(self):
         """
         test if service status is UP else return

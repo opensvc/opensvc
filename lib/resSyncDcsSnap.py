@@ -2,6 +2,7 @@ import os
 import rcExceptions as ex
 import rcStatus
 import datetime
+import resSync
 import resSyncDcs
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
@@ -142,6 +143,7 @@ Internal                 : False
     def sync_resync(self):
         self.update_snap()
 
+    @resSync.notify
     def sync_update(self):
         self.update_snap()
 

@@ -93,8 +93,14 @@ COLLECTOR_TICKER = threading.Condition()
 SCHED_TICKER = threading.Condition()
 HB_TX_TICKER = threading.Condition()
 
-# a queue of xmlrpc calls to do, fed by the lsnr, purged by the collector thread
+# a queue of xmlrpc calls to do, fed by the lsnr, purged by the
+# collector thread
 COLLECTOR_XMLRPC_QUEUE = []
+
+# a set of run action signatures done, fed by the crm to the lsnr,
+# purged by the scheduler thread
+RUN_DONE_LOCK = threading.RLock()
+RUN_DONE = set()
 
 # event messages to log, indexed by (event id, reason)
 EVENTS = {
@@ -541,13 +547,10 @@ class OsvcThread(threading.Thread):
         """
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
-        _cmd = [os.environ.get("OSVC_PYTHON", "python")]
-        pyargs = os.environ.get("OSVC_PYTHON_ARGS")
-        if pyargs:
-            _cmd += pyargs.split()
+        _cmd = [] + rcEnv.python_cmd
         _cmd += [os.path.join(rcEnv.paths.pathlib, "nodemgr.py")]
         self.log.info("execute: nodemgr %s", " ".join(cmd))
-        proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=None, close_fds=True)
+        proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=None, close_fds=True, env=env)
         return proc
 
     def service_command(self, svcname, cmd, stdin=None, local=True):
@@ -556,10 +559,7 @@ class OsvcThread(threading.Thread):
         """
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
-        _cmd = [os.environ.get("OSVC_PYTHON", "python")]
-        pyargs = os.environ.get("OSVC_PYTHON_ARGS")
-        if pyargs:
-            _cmd += pyargs.split()
+        _cmd = [] + rcEnv.python_cmd
         _cmd += [os.path.join(rcEnv.paths.pathlib, "svcmgr.py")]
         cmd = ["-s", svcname] + cmd
         if local:

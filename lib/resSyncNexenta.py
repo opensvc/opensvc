@@ -26,6 +26,7 @@ class syncNexenta(resSync.Sync):
         # only available from CLI ?
         pass
 
+    @resSync.notify
     def sync_update(self):
         try:
             self.get_endpoints()

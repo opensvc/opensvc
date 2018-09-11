@@ -167,6 +167,7 @@ class syncIbmdsSnap(resSync.Sync):
     def sync_resync(self):
         self.resyncflash()
 
+    @resSync.notify
     def sync_update(self):
         self.resyncflash()
 

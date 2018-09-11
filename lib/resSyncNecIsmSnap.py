@@ -126,6 +126,7 @@ class syncNecIsmSnap(resSync.Sync):
         self.create()
         self.link()
 
+    @resSync.notify
     def sync_update(self):
         self.unlink()
         self.create()

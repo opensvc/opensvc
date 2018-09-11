@@ -269,6 +269,19 @@ class Listener(shared.OsvcThread, Crypt):
             options[str(key)] = val
         return getattr(self, fname)(nodename, conn=conn, encrypted=encrypted, **options)
 
+    def action_run_done(self, nodename, **kwargs):
+        svcname = kwargs.get("svcname")
+        action = kwargs.get("action")
+        rids = kwargs.get("rids")
+        if not rids is None:
+            rids = ",".join(sorted(rids))
+        if not action:
+            return {"status": 0}
+        sig = (action, svcname, rids)
+        with shared.RUN_DONE_LOCK:
+            shared.RUN_DONE.add(sig)
+        return {"status": 0}
+
     def action_relay_tx(self, nodename, **kwargs):
         with RELAY_LOCK:
             RELAY_DATA[nodename] = {

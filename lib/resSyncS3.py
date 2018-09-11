@@ -100,6 +100,7 @@ class syncS3(resSync.Sync):
         self.check_bin()
         self.tar_full()
 
+    @resSync.notify
     def sync_update(self):
         self.check_bin()
         self.tar()

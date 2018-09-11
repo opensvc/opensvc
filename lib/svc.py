@@ -427,7 +427,6 @@ class Svc(Crypt, ExtConfig):
         self.action_rid_depends = []
         self.dependencies = {}
         self.running_action = None
-        self.need_postsync = set()
 
         # set by the builder
         self.conf = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
@@ -2972,25 +2971,6 @@ class Svc(Crypt, ExtConfig):
         """
         self.all_set_action("postsync")
 
-    def remote_postsync(self):
-        """ Release the svc lock at this point because the
-            waitlock timeout is long and we are done touching
-            local data.
-
-            Action triggered by a remote master node after
-            sync_nodes and sync_drp. Typically make use of files
-            received in var/.
-            use a long waitlock timeout to give a chance to
-            remote syncs to finish
-        """
-        self.svcunlock()
-        for nodename in self.need_postsync:
-            self.daemon_service_action(['postsync', '--waitlock=3600'],
-                                       nodename=nodename, sync=False,
-                                       collect=False)
-
-        self.need_postsync = set()
-
     def remote_action(self, nodename, action, waitlock=DEFAULT_WAITLOCK,
                       sync=False, verbose=True, action_mode=True, collect=True):
         rcmd = []
@@ -3014,7 +2994,6 @@ class Svc(Crypt, ExtConfig):
         """ prepare files to send to slave nodes in var/.
             Each resource can prepare its own set of files.
         """
-        self.need_postsync = set()
         if self.presync_done:
             return
         self.all_set_action("presync")
@@ -3032,7 +3011,6 @@ class Svc(Crypt, ExtConfig):
             return
         self.presync()
         self.sub_set_action(rtypes, "sync_nodes")
-        self.remote_postsync()
 
     def sync_drp(self):
         rtypes = [
@@ -3046,7 +3024,6 @@ class Svc(Crypt, ExtConfig):
             return
         self.presync()
         self.sub_set_action(rtypes, "sync_drp")
-        self.remote_postsync()
 
     def sync_swap(self):
         rtypes = [
@@ -3295,9 +3272,7 @@ class Svc(Crypt, ExtConfig):
             "sync.docker",
             "sync.dds",
         ]
-        self.sub_set_action(rtypes, "sync_nodes")
-        self.sub_set_action(rtypes, "sync_drp")
-        self.remote_postsync()
+        self.sub_set_action(rtypes, "sync_all")
 
     def service_status(self):
         """
@@ -4105,6 +4080,9 @@ class Svc(Crypt, ExtConfig):
             elif action in ACTIONS_CF_CHANGE:
                 self.wake_monitor()
             self.clear_action(action, err)
+            if action not in ("sync_all", "run"):
+                # sync_all and run handle notfications at the resource level
+                self.notify_done(action)
             self.svcunlock()
             if action == "sync_all" and self.command_is_scoped():
                 for rid in self.action_rid:
@@ -5104,6 +5082,30 @@ class Svc(Crypt, ExtConfig):
         )
         if data is None or data["status"] != 0:
             raise ex.excError("clear on node %s failed" % nodename)
+
+    def notify_done(self, action, rids=None):
+        if not self.options.cron:
+            return
+        if rids is None:
+            rids = self.action_rid
+        options = {
+            "action": action,
+            "svcname": self.svcname,
+            "rids": rids,
+        }
+        try:
+            data = self.daemon_send(
+                {"action": "run_done", "options": options},
+                nodename=self.options.node,
+                silent=True,
+            )
+            if data and data["status"] != 0:
+                if "error" in data:
+                    self.log.warning("notify scheduler action is done failed: %s", data["error"])
+                else:
+                    self.log.warning("notify scheduler action is done failed")
+        except Exception as exc:
+            self.log.warning("notify scheduler action is done failed: %s", str(exc))
 
     def wake_monitor(self):
         if self.options.no_daemon:

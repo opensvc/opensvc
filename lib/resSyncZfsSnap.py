@@ -155,6 +155,7 @@ class syncZfsSnap(resSync.Sync):
             self.log.info("skip snapshot creation on instance not up")
         self.remove_snap(dataset)
 
+    @resSync.notify
     def sync_update(self):
         pass
 

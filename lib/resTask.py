@@ -115,6 +115,8 @@ class Task(Res.Resource):
                 self._run()
         except lock.LOCK_EXCEPTIONS:
             raise ex.excError("task is already running (maybe too long for the schedule)")
+        finally:
+            self.svc.notify_done("run", rids=[self.rid])
 
     def _run(self):
         if self.snooze:

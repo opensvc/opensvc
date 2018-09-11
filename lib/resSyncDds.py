@@ -401,3 +401,7 @@ class syncDds(resSync.Sync):
         return "%s target=%s src=%s" % (resSync.Sync.__str__(self),\
                 self.target, self.src)
 
+    @resSync.notify
+    def sync_all(self):
+        self.sync_nodes()
+        self.sync_drp()

@@ -470,3 +470,7 @@ class SyncBtrfs(resSync.Sync):
             raise ex.excError
         return dict(date=fields[0], uuid=fields[1])
 
+    @resSync.notify
+    def sync_all(self):
+        self.sync_nodes()
+        self.sync_drp()

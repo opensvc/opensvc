@@ -103,8 +103,8 @@ class Rsync(resSync.Sync):
         if self.is_disabled():
             return set()
 
-        # DRP nodes are not allowed to sync nodes nor drpnodes
         if rcEnv.nodename in self.svc.drpnodes:
+            self.log.debug("drp node not allowed to sync nodes nor drpnodes")
             return set()
 
         self.pre_sync_check_flex_primary()
@@ -244,9 +244,9 @@ class Rsync(resSync.Sync):
                 self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
                 continue
             self.sync_timestamp(node)
-            self.svc.need_postsync |= set([node])
             stats = self.parse_rsync(out)
             self.update_stats(stats, target=node)
+            self.remote_postsync(node)
 
         self.write_stats()
 
@@ -285,9 +285,12 @@ class Rsync(resSync.Sync):
             if r.skip or r.is_disabled():
                 continue
             rtargets[i] = set()
-            if action == "sync_nodes":
+            if action == "sync_all":
                 rtargets[i] |= r.nodes_to_sync('nodes')
-            else:
+                rtargets[i] |= r.nodes_to_sync('drpnodes')
+            elif action == "sync_nodes":
+                rtargets[i] |= r.nodes_to_sync('nodes')
+            elif action == "sync_drp":
                 rtargets[i] |= r.nodes_to_sync('drpnodes')
             for node in rtargets[i].copy():
                 if not r.node_can_sync(node):
@@ -315,8 +318,9 @@ class Rsync(resSync.Sync):
             raise ex.excError
 
     def post_action(self, action):
-        """Actions to do after resourceSet has iterated through the resources to
-           trigger action() on each one
+        """
+        Actions to do after resourceSet has iterated through the resources to
+        trigger action() on each one
         """
         resources = [r for r in self.rset.resources if \
                      not r.skip and not r.is_disabled() and \
@@ -327,6 +331,16 @@ class Rsync(resSync.Sync):
 
         if hasattr(self.rset, 'snaps'):
             self.rset.snaps.snap_cleanup(self.rset)
+
+    def remote_postsync(self, nodename):
+        """
+        Action triggered by a remote master node after sync_nodes and sync_drp.
+        Typically make use of files received in var/.
+        Use a long waitlock timeout to give a chance to remote syncs to finish.
+        """
+        self.svc.daemon_service_action(['postsync', '--waitlock=3600'],
+                                       nodename=nodename, sync=False,
+                                       collect=False)
 
     def sync_nodes(self):
         try:
@@ -484,3 +498,7 @@ class Rsync(resSync.Sync):
         return "%s src=%s dst=%s options=%s target=%s" % (resSync.Sync.__str__(self),\
                 self.src, self.dst, str(self.full_options), str(self.target))
 
+    @resSync.notify
+    def sync_all(self):
+        self.sync_nodes()
+        self.sync_drp()

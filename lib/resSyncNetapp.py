@@ -133,6 +133,7 @@ class syncNetapp(resSync.Sync):
         if ret != 0:
             raise ex.excError(err)
 
+    @resSync.notify
     def sync_update(self):
         s = self.snapmirror_status(self.slave())
         if not self.can_sync(s=s):

@@ -205,3 +205,22 @@ class rcEnv:
         syspaths.umount = "/usr/sbin/umount"
 
     create_or_update_dir(paths.pathtmp)
+
+    if "LD_PRELOAD" in os.environ:
+        ld_preload = os.environ["LD_PRELOAD"]
+        del os.environ["LD_PRELOAD"]
+    else:
+        ld_preload = None
+
+    if "OSVC_PYTHON_ARGS" in os.environ:
+        pyargs = os.environ["OSVC_PYTHON_ARGS"].split()
+        del os.environ["OSVC_PYTHON_ARGS"]
+    else:
+        pyargs = None
+
+    python_cmd = []
+    if ld_preload:
+        python_cmd.append("LD_PRELOAD="+ld_preload)
+    python_cmd.append(sys.executable)
+    if pyargs:
+        python_cmd += pyargs

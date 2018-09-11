@@ -59,6 +59,7 @@ class syncHp3parSnap(resSync.Sync):
     def updatevv(self):
         self.array_obj.updatevv(vvnames=self.vv_names, log=self.log)
 
+    @resSync.notify
     def sync_update(self):
         self.updatevv()
         self.array_obj.clear_caches()

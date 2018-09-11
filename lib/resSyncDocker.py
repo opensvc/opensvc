@@ -161,4 +161,7 @@ class SyncDocker(resSync.Sync):
             return rcStatus.WARN
         return rcStatus.UP
 
-
+    @resSync.notify
+    def sync_all(self):
+        self.sync_nodes()
+        self.sync_drp()

@@ -235,6 +235,7 @@ class syncSymclone(resSync.Sync):
     def sync_resync(self):
         self.recreate()
 
+    @resSync.notify
     def sync_update(self):
         self.recreate()
         self.activate()

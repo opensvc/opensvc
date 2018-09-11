@@ -188,6 +188,7 @@ class syncBtrfsSnap(resSync.Sync):
         self.create_snap(label, subvol)
         self.remove_snap(label, subvol)
 
+    @resSync.notify
     def sync_update(self):
         for subvol in self.subvol:
             self._sync_update(subvol)

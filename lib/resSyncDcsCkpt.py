@@ -2,6 +2,7 @@ import os
 import rcExceptions as ex
 import rcStatus
 import datetime
+import resSync
 import resSyncDcs
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
@@ -139,6 +140,7 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
     def sync_resume(self):
         self.resume_checkpoint()
 
+    @resSync.notify
     def sync_update(self):
         self.checkpoint()
 
