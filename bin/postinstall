@@ -545,14 +545,30 @@ def install_params(path2file):
         f.write("\n")
         f.close()
 
+def os_release():
+    os_release_f = os.path.join(os.sep, "etc", "os-release")
+    data = {"ID": None}
+    if not os.path.exists(os_release_f):
+        return data
+    with open(os_release_f, "r") as filep:
+        for line in filep.readlines():
+            line = line.strip("\n")
+            try:
+                var, val = line.split("=", 1)
+            except:
+                continue
+            data[var] = val.strip('"')
+    return data
+
 def install_rc():
     logit("begin")
     """install startup script
     """
     params = None
     copyrc = True
+    reldata = os_release()
 
-    if os.path.exists('/etc/debian_version'):
+    if reldata["ID"] in ("ubuntu", "debian") or os.path.exists('/etc/debian_version'):
         rc = '/etc/init.d/opensvc'
         params = '/etc/default/opensvc'
         src = os.path.join(pathini, 'opensvc.init.debian')
@@ -563,7 +579,7 @@ def install_rc():
         else:
             logit("debian with update-rc.d (rely on insserv)")
             activate = activate_debian
-    elif os.path.exists('/etc/arch-release'):
+    elif reldata["ID"] == "arch" or os.path.exists('/etc/arch-release'):
         rc = '/etc/init.d/opensvc'
         params = '/etc/default/opensvc'
         src = os.path.join(pathini, 'opensvc.init.debian')
@@ -571,7 +587,7 @@ def install_rc():
             logit("arch with systemd")
             copyrc = False
             activate = activate_systemd
-    elif os.path.exists('/etc/SuSE-release'):
+    elif reldata["ID"] == "sles" or os.path.exists('/etc/SuSE-release'):
         rc = '/etc/init.d/opensvc'
         params = '/etc/sysconfig/opensvc'
         src = os.path.join(pathini, 'opensvc.init.suse')
@@ -582,7 +598,7 @@ def install_rc():
         else:
             logit("SuSE with chkconfig (rely on insserv)")
             activate = activate_redhat
-    elif os.path.exists('/etc/redhat-release'):
+    elif reldata["ID"] in ("centos", "rhel", "fedora") or os.path.exists('/etc/redhat-release'):
         params = '/etc/sysconfig/opensvc'
         src = os.path.join(pathini, 'opensvc.init.redhat')
         try:
