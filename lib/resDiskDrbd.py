@@ -98,12 +98,12 @@ class Drbd(Res.Resource):
         return devps
 
     def drbdadm_down(self):
-        (ret, out, err) = self.vcall(self.drbdadm_cmd('down'))
+        ret, out, err = self.vcall(self.drbdadm_cmd('down'))
         if ret != 0:
             raise ex.excError
 
     def drbdadm_up(self):
-        (ret, out, err) = self.vcall(self.drbdadm_cmd('up'))
+        ret, out, err = self.vcall(self.drbdadm_cmd('up'))
         if ret != 0:
             raise ex.excError
         self.can_rollback_connection = True
@@ -111,23 +111,25 @@ class Drbd(Res.Resource):
 
     def get_cstate(self):
         self.prereq()
-        (out, err, ret) = justcall(self.drbdadm_cmd('cstate'))
+        out, err, ret = justcall(self.drbdadm_cmd('cstate'))
         if ret != 0:
             if "Device minor not allocated" in err:
                 return "Unattached"
             else:
                 raise ex.excError
-        return out.strip()
+        return out.split("\n")[0].strip()
 
     def prereq(self):
         if not os.path.exists("/proc/drbd"):
-            (ret, out, err) = self.vcall(['modprobe', 'drbd'])
+            ret, out, err = self.vcall(['modprobe', 'drbd'])
             if ret != 0: raise ex.excError
 
     def start_connection(self):
         cstate = self.get_cstate()
         if cstate == "Connected":
             self.log.info("drbd resource %s is already connected", self.res)
+        elif cstate == "Connecting":
+            self.log.info("drbd resource %s is already connecting", self.res)
         elif cstate == "StandAlone":
             self.drbdadm_down()
             self.drbdadm_up()
