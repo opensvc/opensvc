@@ -51,7 +51,7 @@ class Drbd(Res.Resource):
     def exposed_devs(self):
         devps = set()
 
-        (ret, out, err) = self.call(self.drbdadm_cmd('dump-xml'))
+        ret, out, err = self.call(self.drbdadm_cmd('dump-xml'))
         if ret != 0:
             raise ex.excError
 
@@ -75,7 +75,7 @@ class Drbd(Res.Resource):
     def sub_devs(self):
         devps = set()
 
-        (ret, out, err) = self.call(self.drbdadm_cmd('dump-xml'))
+        ret, out, err = self.call(self.drbdadm_cmd('dump-xml'))
         if ret != 0:
             raise ex.excError
 
@@ -106,6 +106,7 @@ class Drbd(Res.Resource):
         ret, out, err = self.vcall(self.drbdadm_cmd('up'))
         if ret != 0:
             raise ex.excError
+        self.wait_for_kwown_dstate()
         self.can_rollback_connection = True
         self.can_rollback = True
 
@@ -205,6 +206,18 @@ class Drbd(Res.Resource):
                 return
             self.drbdadm_down()
 
+    def get_dstate(self):
+        ret, out, err = self.call(self.drbdadm_cmd('dstate'))
+        if ret != 0:
+            raise ex.excError
+        return out.strip()
+
+    def wait_for_kwown_dstate(self):
+        def check():
+            dstate = self.get_dstate()
+            return dstate != "Diskless/DUnknown"
+        self.wait_for_fn(check, 5, 1, errmsg="waited too long for a known remote dstate")
+
     def _status(self, verbose=False):
         try:
             role = self.get_role()
@@ -212,20 +225,20 @@ class Drbd(Res.Resource):
             self.status_log(str(e))
             return rcStatus.DOWN
         self.status_log(str(role), "info")
-        ret, out, err = self.call(self.drbdadm_cmd('dstate'))
-        if ret != 0:
+        try:
+            dstate = self.get_dstate()
+        except ex.excError:
             self.status_log("drbdadm dstate %s failed"%self.res)
             return rcStatus.WARN
-        out = out.strip()
-        if out == "UpToDate/UpToDate":
+        if dstate == "UpToDate/UpToDate":
             pass
-        elif out == "Diskless/DUnknown":
-            self.status_log("unexpected drbd resource %s state: %s"%(self.res, out))
+        elif dstate == "Diskless/DUnknown":
+            self.status_log("unexpected drbd resource %s state: %s"%(self.res, dstate))
             return rcStatus.DOWN
-        elif out == "Unconfigured":
+        elif dstate == "Unconfigured":
             return rcStatus.DOWN
         else:
-            self.status_log("unexpected drbd resource %s state: %s"%(self.res, out))
+            self.status_log("unexpected drbd resource %s state: %s"%(self.res, dstate))
         if role == "Primary":
             return rcStatus.UP
         elif role == "Secondary" and self.standby:
