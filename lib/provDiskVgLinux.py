@@ -101,7 +101,7 @@ class Prov(provisioning.Prov):
             raise ex.excError("no pvs specified")
 
         if self.r.has_it():
-            self.r.log.info("vg %s already exists")
+            self.r.log.info("vg %s already exists", self.r.name)
             return
 
         cmd = ['vgcreate', self.r.name] + self.pvs
