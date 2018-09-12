@@ -269,9 +269,9 @@ class Container(Res.Resource):
         else:
             _svcname = self.svc.svcname
         elems = (
-            "%s.%s.svc.%s" % (_svcname, self.svc.app, self.svc.cluster_name),
-            "%s.svc.%s" % (self.svc.app, self.svc.cluster_name),
-            "svc.%s" % self.svc.cluster_name,
+            "%s.%s.svc.%s" % (_svcname, self.svc.app.lower(), self.svc.cluster_name.lower()),
+            "%s.svc.%s" % (self.svc.app.lower(), self.svc.cluster_name.lower()),
+            "svc.%s" % self.svc.cluster_name.lower(),
         )
         return elems
 
