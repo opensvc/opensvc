@@ -113,7 +113,7 @@ class Drbd(Res.Resource):
         self.prereq()
         out, err, ret = justcall(self.drbdadm_cmd('cstate'))
         if ret != 0:
-            if "Device minor not allocated" in err:
+            if "Device minor not allocated" in err or ret == 10:
                 return "Unattached"
             else:
                 raise ex.excError
@@ -219,6 +219,9 @@ class Drbd(Res.Resource):
         out = out.strip()
         if out == "UpToDate/UpToDate":
             pass
+        elif out == "Diskless/DUnknown":
+            self.status_log("unexpected drbd resource %s state: %s"%(self.res, out))
+            return rcStatus.DOWN
         elif out == "Unconfigured":
             return rcStatus.DOWN
         else:
