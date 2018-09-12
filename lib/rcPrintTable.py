@@ -51,6 +51,8 @@ def parse_data(data):
     return [labels]+rows
 
 def convert(s):
+    if isinstance(s, bool):
+        s = str(s)
     try:
         return unicode(s)
     except:
