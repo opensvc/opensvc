@@ -356,7 +356,6 @@ def activate_systemd(launcher):
 def _activate_systemd(systemdsvc):
     systemd_unit_path = [
         '/usr/lib/systemd/system/',
-        '/lib/systemd/system/',
     ]
 
     installed = False
