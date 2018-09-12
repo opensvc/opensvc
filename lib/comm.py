@@ -19,9 +19,9 @@ from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import lazy, bdecode
 
 if six.PY3:
-    to_bytes = lambda x: bytes(x, "utf-8")
+    to_bytes = lambda x: bytes(x, "utf-8") if not isinstance(x, bytes) else x
 else:
-    to_bytes = lambda x: bytes(x)
+    to_bytes = lambda x: bytes(x) if not isinstance(x, bytes) else x
 
 SOCK_TMO = 0.2
 PAUSE = 0.2
