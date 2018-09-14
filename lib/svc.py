@@ -3740,7 +3740,14 @@ class Svc(Crypt, ExtConfig):
 
         return rids
 
+    def systemd_join_agent_service(self):
+        from rcSystemd import systemd_system, systemd_join
+        if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon" or not systemd_system():
+               return
+        systemd_join("opensvc-agent.service")
+
     def action(self, action, options=None):
+        self.systemd_join_agent_service()
         self.allow_on_this_node(action)
         try:
             options = self.prepare_options(action, options)
