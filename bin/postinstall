@@ -358,6 +358,9 @@ def _activate_systemd(systemdsvc):
         '/usr/lib/systemd/system/',
     ]
 
+    if not os.path.islink('/lib') and os.path.isdir('/lib/systemd/system'):
+        systemd_unit_path = ['/lib/systemd/system']
+
     installed = False
     for path in systemd_unit_path:
         if os.path.exists(os.path.dirname(path)):
