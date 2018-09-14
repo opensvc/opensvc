@@ -213,6 +213,14 @@ class Lxc(resContainer.Container):
         """
         raise ex.excError
 
+    def get_pid(self):
+        links = []
+        cmd = ['lxc-info', '--name', self.name, '-p']
+        out, _, ret = justcall(cmd)
+        if ret != 0:
+            return []
+        return int(out.split()[-1])
+
     def get_links(self):
         links = []
         cmd = ['lxc-info', '--name', self.name]
@@ -443,5 +451,18 @@ class Lxc(resContainer.Container):
         self.log.debug("waiting for lxc to come up")
         return False
 
-    def __str__(self):
-        return "%s name=%s" % (Res.Resource.__str__(self), self.name)
+    def cni_containerid(self):
+        """
+        Used by ip.cni
+        """
+        return self.name
+
+    def cni_netns(self):
+        """
+        Used by ip.cni
+        """
+        try:
+            return "/proc/%d/ns/net" % self.get_pid()
+        except ValueError:
+            raise ex.excError("can't find container pid")
+

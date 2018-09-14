@@ -92,11 +92,10 @@ class Ip(Res.Ip):
             return self._get_ifconfig()
 
     def container_get_ifconfig(self):
-        sandboxkey = self.container_sandboxkey
-        if sandboxkey is None:
+        if self.netns is None:
             return
 
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.container_sandboxkey, "ip", "addr"]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
@@ -196,20 +195,12 @@ class Ip(Res.Ip):
         return self.svc.resources_by_id.get(self.container_rid)
 
     @lazy
-    def container_sandboxkey(self):
-        try:
-            data = self.svc.dockerlib.docker_inspect(self.container.container_id)
-            return data["NetworkSettings"]["SandboxKey"]
-        except (AttributeError, IndexError, KeyError):
-            return
+    def netns(self):
+        return self.container.cni_netns()
 
     @lazy
-    def container_pid(self):
-        try:
-            data = self.svc.dockerlib.docker_inspect(self.container.container_id)
-            return data["State"]["Pid"]
-        except (IndexError, KeyError):
-            return
+    def containerid(self):
+        return self.container.cni_containerid()
 
     def allow_start(self):
         pass
@@ -324,10 +315,10 @@ class Ip(Res.Ip):
             "CNI_PATH": self.cni_plugins,
         }
         if self.container_rid:
-            if self.container_pid is None:
+            if self.containerid is None:
                 raise ex.excError("container %s is down" % self.container_rid)
-            _env["CNI_CONTAINERID"] = str(self.container_pid)
-            _env["CNI_NETNS"] = self.container_sandboxkey
+            _env["CNI_CONTAINERID"] = str(self.containerid)
+            _env["CNI_NETNS"] = self.netns
         else:
             _env["CNI_CONTAINERID"] = self.svc.id
             _env["CNI_NETNS"] = self.nspidfile
@@ -362,11 +353,11 @@ class Ip(Res.Ip):
             "CNI_PATH": self.cni_plugins,
         }
         if self.container_rid:
-            if self.container_pid is None:
+            if self.containerid is None:
                 self.log.info("container %s is already down" % self.container_rid)
                 return
-            _env["CNI_CONTAINERID"] = str(self.container_pid)
-            _env["CNI_NETNS"] = self.container_sandboxkey
+            _env["CNI_CONTAINERID"] = str(self.containerid)
+            _env["CNI_NETNS"] = self.netns
         else:
             _env["CNI_NETNS"] = self.nspidfile
 
@@ -383,16 +374,16 @@ class Ip(Res.Ip):
             result = self.cni_cmd(_env, data)
 
     def start(self):
-        self.unset_lazy("container_pid")
-        self.unset_lazy("container_sandboxkey")
+        self.unset_lazy("containerid")
+        self.unset_lazy("netns")
         self.add_netns()
         self.add_cni()
 
     def stop(self):
         self.del_cni()
         self.del_netns()
-        self.unset_lazy("container_pid")
-        self.unset_lazy("container_sandboxkey")
+        self.unset_lazy("containerid")
+        self.unset_lazy("netns")
 
     def _status(self, verbose=False):
         try:

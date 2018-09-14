@@ -633,4 +633,28 @@ class Docker(resContainer.Container):
     def check_capabilities(self):
         return True
 
+    def container_pid(self):
+        try:
+            data = self.svc.dockerlib.docker_inspect(self.container_id)
+            return data["State"]["Pid"]
+        except (IndexError, KeyError):
+            return
 
+    def container_sandboxkey(self):
+        try:
+            data = self.svc.dockerlib.docker_inspect(self.container_id)
+            return data["NetworkSettings"]["SandboxKey"]
+        except (AttributeError, IndexError, KeyError):
+            return
+
+    def cni_containerid(self):
+        """
+        Used by ip.cni
+        """
+        return self.container_pid()
+
+    def cni_netns(self):
+        """
+        Used by ip.cni
+        """
+        return self.container_sandboxkey()
