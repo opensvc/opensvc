@@ -116,7 +116,12 @@ def _main(node, argv=None):
         if outs is not None:
             print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
         while True:
-            EVENT.wait()
+            try:
+                EVENT.wait(0.5)
+            except Exception:
+                break
+            if not EVENT.is_set():
+                continue
             EVENT.clear()
             if chars == 0:
                 print(CURSORHOME+CLEAREOS)

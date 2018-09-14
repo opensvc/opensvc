@@ -1340,10 +1340,18 @@ KEYWORDS = [
     },
     {
         "section": "ip",
-        "rtype": ["cni", "docker"],
+        "rtype": "docker",
         "keyword": "container_rid",
         "at": True,
         "required": True,
+        "text": "The resource id of the container to plumb the ip into.",
+        "example": "container#0"
+    },
+    {
+        "section": "ip",
+        "rtype": "cni",
+        "keyword": "container_rid",
+        "at": True,
         "text": "The resource id of the container to plumb the ip into.",
         "example": "container#0"
     },
