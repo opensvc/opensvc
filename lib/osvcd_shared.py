@@ -435,6 +435,7 @@ class OsvcThread(threading.Thread):
                     "status_updated": time.time(),
                 })
             if status:
+                reset_placement = False
                 if status != SMON_DATA[svcname].status:
                     self.log.info(
                         "service %s monitor status change: %s => %s",
@@ -443,8 +444,17 @@ class OsvcThread(threading.Thread):
                             SMON_DATA[svcname].status else "none",
                         status
                     )
+                    if SMON_DATA[svcname].status is not None and \
+                       "failed" in SMON_DATA[svcname].status and \
+                       (status is None or "failed" not in status):
+                        # the placement might become "leader" after transition from
+                        # "failed" to "not-failed". recompute asap so the orchestrator
+                        # won't take an undue "stop_instance" decision.
+                        reset_placement = True
                 SMON_DATA[svcname].status = status
                 SMON_DATA[svcname].status_updated = time.time()
+                if reset_placement:
+                    SMON_DATA[svcname].placement = self.get_service_placement(svcname)
 
             if local_expect:
                 if local_expect == "unset":
