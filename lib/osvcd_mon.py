@@ -1209,6 +1209,9 @@ class Monitor(shared.OsvcThread, Crypt):
             self.set_smon(svc.svcname, local_expect="unset")
         elif smon.global_expect == "placed":
             if instance["monitor"].get("placement") != "leader":
+                if not self.has_leader(svc):
+                    # avoid stopping the instance if no peer node can takeover
+                    return
                 if instance.avail not in STOPPED_STATES:
                     self.event("instance_stop", {
                         "reason": "target",
@@ -1554,6 +1557,12 @@ class Monitor(shared.OsvcThread, Crypt):
                               svcname, nodename)
                 return False
         return True
+
+    def has_leader(self, svc):
+        for nodename, instance in self.get_service_instances(svc.svcname).items():
+            if instance["monitor"].get("placement") == "leader":
+                return True
+        return False
 
     def non_leaders_stopped(self, svc):
         for nodename, instance in self.get_service_instances(svc.svcname).items():
@@ -1926,7 +1935,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 avail = instance["avail"]
             except KeyError:
                 continue
-            if avail == "up":
+            if avail in ("up", "warn"):
                 has_up = True
                 if not leader:
                     placement = "non-optimal"
@@ -2610,11 +2619,11 @@ class Monitor(shared.OsvcThread, Crypt):
                         self.log.debug("node %s wants service %s %s, already targeting that",
                                        nodename, svcname, global_expect)
                         continue
+                    #else:
+                    #    self.log.info("node %s wants service %s %s, already is", nodename, svcname, global_expect)
                     if self.accept_g_expect(svcname, instance, global_expect):
                         self.log.info("node %s wants service %s %s", nodename, svcname, global_expect)
                         self.set_smon(svcname, global_expect=global_expect)
-                    #else:
-                    #    self.log.info("node %s wants service %s %s, already is", nodename, svcname, global_expect)
 
     def accept_g_expect(self, svcname, instance, global_expect):
         if svcname not in shared.AGG:
