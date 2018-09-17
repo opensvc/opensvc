@@ -5369,7 +5369,7 @@ class Svc(Crypt, ExtConfig):
                 'Content-length': '%d' % content_size,
                 'Content-Range': 'bytes 0-%d/%d' % (content_size-1, content_size),
                 'Maxlife-Unit':"DAYS",
-                'Maxlife-Value':"1",
+                'Maxlife-Value':"7",
             }
             resp = requests.post("https://sfx.opensvc.com/apis/rest/items", headers=headers, data=base64.b64encode(filep.read(content_size)), auth=("user", "support"))
         loc = resp.headers.get("Content-Location")
