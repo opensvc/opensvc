@@ -5,9 +5,12 @@ import rcExceptions as ex
 from rcUtilities import justcall
 from converters import convert_size
 
-default_cgroup_mntpt = '/cgroup'
+UNIFIED_MNT = "/sys/fs/cgroup/unified"
+UNIFIED = os.path.exists(UNIFIED_MNT)
 
 def get_cgroup_mntpt(t):
+    if UNIFIED and t is None:
+        return UNIFIED_MNT
     p = '/proc/mounts'
     if not os.path.exists(p):
         return None
@@ -46,10 +49,16 @@ def cgroup_capable(res):
     res.log.info("system does not support process groups")
     return False
 
+def get_task_file(cgp):
+    if cgp.startswith(UNIFIED_MNT):
+        return os.path.join(cgp, "cgroup.procs")
+    else:
+        return os.path.join(cgp, "tasks")
+
 def set_task(o, t):
     o.log.debug("set_task : start %s" %(t))
     cgp = get_cgroup_path(o, t)
-    path = os.path.join(cgp, "tasks")
+    path = get_task_file(cgp)
     pid = str(os.getpid())
     with open(path, 'r') as f:
         buff = f.read()
@@ -261,7 +270,7 @@ def thaw(o):
 def kill(o):
     cgp = get_cgroup_path(o, "freezer")
     pids = set()
-    for p in glob.glob(cgp+"/tasks") + glob.glob(cgp+"/*/tasks") + glob.glob(cgp+"/*/*/tasks"):
+    for p in glob.glob(cgp+"/tasks") + glob.glob(cgp+"/*/tasks") + glob.glob(cgp+"/*/*/tasks") + glob.glob(cgp+"/cgroup.procs") + glob.glob(cgp+"/*/cgroup.procs") + glob.glob(cgp+"/*/*/cgroup.procs"):
         with open(p, "r") as f:
             buff = f.read()
         pids |= set(buff.split("\n"))
@@ -367,10 +376,13 @@ def _create_pg(o):
     if o is None:
         return
     try:
-        try:
-            set_task(o, 'systemd')
-        except:
-            pass
+        if UNIFIED:
+            set_task(o, None)
+        else:
+            try:
+                set_task(o, 'systemd')
+            except:
+                pass
         set_task(o, 'cpu')
         set_task(o, 'cpuset')
         set_task(o, 'memory')

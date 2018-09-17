@@ -1,6 +1,8 @@
 import os
 import glob
 
+from rcUtilities import justcall
+
 def systemd_escape(s):
     def escape(s):
         return "".join([c if c.isalnum() else "\\x%02x"%ord(c) for c in s])
@@ -14,6 +16,33 @@ def systemd_system():
         return "systemd" in os.readlink("/proc/1/exe")
     except:
         return False
+
+def format_unit(*args, t="slice"):
+    elms = []
+    for arg in args:
+        if arg is None:
+            continue
+        elms.append(systemd_escape(arg))
+    return "-".join(elms) + "." + t
+
+def format_slice(*args):
+    return format_unit(*args, t="slice")
+
+def format_scope(*args):
+    return format_unit(*args, t="scope")
+
+def create_slice(*args, properties=None):
+    name = format_slice(*args)
+    props = []
+    if properties:
+        for key, val in properties.items():
+            props += ["-p", "%s=%s" % (key, str(val))]
+
+    props += ["-p", "MemoryAccounting=true"]
+    cmd = ["systemd-run", "--quiet", "--scope", "--slice=%s" % name] + props + ["/bin/true"]
+    print(" ".join(cmd))
+    out, err, ret = justcall(cmd)
+    print(ret, out, err)
 
 def systemd_get_procs(unit):
     path = glob.glob("/sys/fs/cgroup/unified/system.slice/%s/cgroup.procs" % unit)
