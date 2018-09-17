@@ -282,7 +282,7 @@ class App(Resource):
     def get_cmd(self, action, script_arg=None):
         key = action + "_seq"
         val = getattr(self, key)
-        if val is False:
+        if val in (None, False):
             raise ex.excAbortAction()
         try:
             int(val)
