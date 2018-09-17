@@ -1107,7 +1107,7 @@ class Svc(Crypt, ExtConfig):
             return
         for nodename, _data in data["instances"].items():
             status = _data.get("status", "unknown")
-            if status != "idle":
+            if status != "idle" and "failed" not in status:
                 raise ex.excError("instance on node %s in %s state"
                                   "" % (nodename, status))
         global_expect = data.get("service", {}).get("global_expect")
