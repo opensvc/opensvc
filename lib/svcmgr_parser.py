@@ -640,6 +640,9 @@ ACTIONS = {
             "msg": "Unsnooze alerts on the node",
             "options": [],
         },
+        "support": {
+            "msg": "Create a tarball archive of config, var and log files, and upload it to the OpenSVC support site.",
+        },
         "sync_nodes": {
             "msg": "Run the synchronization method of each local service instance sync resource, targetting the peer nodes.",
             "options": ACTION_OPTS,

@@ -1,6 +1,6 @@
 
 
-svcmgr="abort boot clear collector compliance create delete disable dns docker edit enable freeze frozen get giveback logs ls migrate move pg postsync presync print provision prstatus pull push resource restart resync run scale set shutdown snooze start startstandby status stop switch sync takeover thaw toc unprovision unset unsnooze update validate"
+svcmgr="abort boot clear collector compliance create delete disable dns docker edit enable freeze frozen get giveback logs ls migrate move pg postsync presync print provision prstatus pull push resource restart resync run scale set shutdown snooze start startstandby status stop support switch sync takeover thaw toc unprovision unset unsnooze update validate"
 svcmgr_collector="ack alerts asset checks create disks events list log networks show tag untag"
 svcmgr_collector_ack="action unavailability"
 svcmgr_collector_create="tag"
@@ -87,7 +87,7 @@ svcmgr_unsnooze="--color --debug --env --status --waitlock -c --cluster -h --hel
 svcmgr_presync="--color --debug --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_sync_drp="--color --debug --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_sync_establish="--color --debug --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
-svcmgr_giveback="--color --debug --disable-rollback --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --time --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
+svcmgr_support="--color --debug --env --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_boot="--color --debug --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_start="--color --debug --disable-rollback --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --time --upto --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_sync_break="--color --debug --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
@@ -103,6 +103,7 @@ svcmgr_print_status="--color --debug --env --filter --format --hide-disabled --s
 svcmgr_enable="--color --debug --env --rid --status --subsets --tags --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_thaw="--color --debug --env --local --master --node --slave --slaves --status --time --wait --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_resource_monitor="--color --cron --debug --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
+svcmgr_giveback="--color --debug --disable-rollback --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --time --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_pg_thaw="--color --debug --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_stop="--color --debug --downto --dry-run --env --local --master --node --nolock --rid --slave --slaves --status --subsets --tags --time --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_print_exposed_devs="--color --debug --env --filter --format --rid --status --subsets --tags --waitlock -c --cluster -h --help -p --parallel -s --service"

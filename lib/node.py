@@ -1744,6 +1744,14 @@ class Node(Crypt, ExtConfig):
         """
         self.log.warning("to be implemented")
 
+    @lazy
+    def sysreport_mod(self):
+        try:
+            return __import__('rcSysReport'+rcEnv.sysname)
+        except ImportError:
+            print("sysreport is not supported on this os")
+            return
+
     def sysreport(self):
         """
         The sysreport node action entrypoint.
@@ -1752,12 +1760,9 @@ class Node(Crypt, ExtConfig):
         that changed since the last call.
         If the force option is set, send all files the user wants to track.
         """
-        try:
-            mod = __import__('rcSysReport'+rcEnv.sysname)
-        except ImportError:
-            print("sysreport is not supported on this os")
+        if self.sysreport_mod is None:
             return
-        mod.SysReport(node=self).sysreport(force=self.options.force)
+        self.sysreport_mod.SysReport(node=self).sysreport(force=self.options.force)
 
     def get_prkey(self):
         """

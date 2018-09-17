@@ -13,7 +13,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which, cmdline2list
 
 class SysReport(object):
-    def __init__(self, node=None):
+    def __init__(self, node=None, collect_d=None, compress=False):
         self.todo = [
           ('INC', os.path.join(rcEnv.paths.pathetc, 'node.conf')),
           ('INC', os.path.join(rcEnv.paths.pathetc, '*.conf')),
@@ -23,17 +23,31 @@ class SysReport(object):
         self.changed = []
         self.deleted = []
         self.sysreport_conf_d = os.path.join(rcEnv.paths.pathetc, "sysreport.conf.d")
-        self.sysreport_d = os.path.join(rcEnv.paths.pathvar, "sysreport")
-        self.collect_d = os.path.join(self.sysreport_d, rcEnv.nodename)
+        if collect_d is None:
+            self.sysreport_d = os.path.join(rcEnv.paths.pathvar, "sysreport")
+            self.collect_d = os.path.join(self.sysreport_d, rcEnv.nodename)
+        else:
+            self.sysreport_d = collect_d
+            self.collect_d = collect_d
         self.collect_cmd_d = os.path.join(self.collect_d, "cmd")
         self.collect_file_d = os.path.join(self.collect_d, "file")
-        self.collect_stat = os.path.join(self.collect_file_d, "stat")
-        self.full = [self.collect_stat]
+
+        if collect_d is None:
+            self.collect_stat = os.path.join(self.collect_file_d, "stat")
+            self.full = [self.collect_stat]
+        else:
+            self.collect_stat = None
+            self.full = []
         self.stat_changed = False
         self.root_uid = 0
         self.root_gid = 0
         self.node = node
-        self.archive_extension = '.tar'
+        if compress:
+            self.archive_extension = '.tar.gz'
+            self.tarmode = "w:gz"
+        else:
+            self.archive_extension = '.tar'
+            self.tarmode = "w"
         self.send_rpc = "send_sysreport"
         self.lstree_rpc = "sysreport_lstree"
 
@@ -52,20 +66,20 @@ class SysReport(object):
 
     def init_collect_d(self, fpath):
         if not os.path.exists(fpath):
-            print("create dir", fpath)
+            #print("create dir", fpath)
             os.makedirs(fpath)
 
     def init_collect_d_perms(self, fpath):
         s = os.stat(fpath)
         mode = s[ST_MODE]
         if mode != 16768:
-            print("set dir", fpath, "mode to 0600")
+            #print("set dir", fpath, "mode to 0600")
             os.chmod(fpath, 0o0600)
 
     def init_collect_d_ownership(self, fpath):
         s = os.stat(fpath)
         if s.st_uid != self.root_uid or s.st_gid != self.root_gid:
-            print("set dir", self.collect_d, "ownership to", self.root_uid, self.root_gid)
+            #print("set dir", self.collect_d, "ownership to", self.root_uid, self.root_gid)
             os.chown(self.collect_d, self.root_uid, self.root_gid)
 
     def load_stat(self):
@@ -159,6 +173,9 @@ class SysReport(object):
                 exc |= set(l)
         self.files = inc - exc
 
+        if self.collect_stat is None:
+            return
+
         # find deleted
         dst_files = self.find_files(self.collect_file_d)
         n = len(self.collect_file_d)
@@ -246,6 +263,8 @@ class SysReport(object):
         return stat
 
     def push_stat(self, fpath):
+        if self.collect_stat is None:
+            return
         stat = self.get_stat(fpath)
         cached_stat = self.stat.get(fpath)
         if cached_stat is None:
@@ -325,16 +344,19 @@ class SysReport(object):
         if self.node.collector.proxy is None:
             print("no collector connexion. abort sysreport")
             return 1
+        self.collect()
+        self.delete_collected(self.deleted)
+        self.write_stat()
+        self.send(force)
+
+    def collect(self):
         self.init()
         print("collect directory is", self.collect_d)
         for fpath in self.files:
             self.collect_file(fpath)
         for cmd in self.cmds:
             self.collect_cmd(cmd)
-        self.delete_collected(self.deleted)
-        self.write_stat()
-        self.send(force)
-
+ 
     def deleted_report(self):
         print("files deleted:")
         for fpath in sorted(self.deleted):
@@ -380,7 +402,7 @@ class SysReport(object):
         os.chdir(self.sysreport_d)
         n = len(self.sysreport_d) + 1
         print("creating tarball", tmpf)
-        tar = tarfile.open(tmpf, mode="w")
+        tar = tarfile.open(tmpf, mode=self.tarmode)
         for fpath in l:
             if len(fpath) < n:
                 print(" err: can not archive", fpath, "(fpath too short)")

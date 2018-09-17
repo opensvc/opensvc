@@ -5328,3 +5328,53 @@ class Svc(Crypt, ExtConfig):
         self._update(data)
         self._delete_resources_config([section])
 
+    def support(self):
+        """
+        Send a tarball to the OpenSVC support upload site.
+        """
+        if self.node.sysreport_mod is None:
+            return
+
+        todo = [
+          ('INC', os.path.join(rcEnv.paths.pathlog, "node.log")),
+          ('INC', os.path.join(rcEnv.paths.pathlog, "xmlrpc.log")),
+          ('INC', os.path.join(rcEnv.paths.pathlog, self.svcname+".log")),
+          ('INC', os.path.join(rcEnv.paths.pathvar, "services", self.svcname)),
+        ]
+
+        import shutil
+        collect_d = os.path.join(rcEnv.paths.pathvar, "support")
+        try:
+            shutil.rmtree(collect_d)
+        except:
+            pass
+        srep = self.node.sysreport_mod.SysReport(node=self.node, collect_d=collect_d, compress=True)
+        srep.todo += todo
+        srep.collect()
+        tmpf = srep.archive(srep.full)
+
+        try:
+            import requests
+        except:
+            print("uploading the support tarball requires the requests module", file=sys.stderr)
+            return 1
+        print("uploading the support tarball")
+        content_size = os.stat(tmpf).st_size
+        import base64
+        with open(tmpf, 'rb') as filep:
+            files = {"upload": filep}
+            headers = {
+                'Content-Type':'application/octet-stream',
+                'Content-Filename':"%s_at_%s.tar.gz" % (self.svcname, rcEnv.nodename),
+                'Content-length': '%d' % content_size,
+                'Content-Range': 'bytes 0-%d/%d' % (content_size-1, content_size),
+                'Maxlife-Unit':"DAYS",
+                'Maxlife-Value':"1",
+            }
+            resp = requests.post("https://sfx.opensvc.com/apis/rest/items", headers=headers, data=base64.b64encode(filep.read(content_size)), auth=("user", "support"))
+        loc = resp.headers.get("Content-Location")
+        if not loc:
+            print(json.dumps(resp.content, indent=4), file=sys.stderr)
+            return 1
+        print("uploaded as https://sfx.opensvc.com%s" % loc)
+
