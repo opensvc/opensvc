@@ -20,7 +20,7 @@ class Share(Resource):
                 idx = line.rindex(" ")
             except IndexError:
                 continue
-            path = line[0:idx]
+            path = line[0:idx].strip()
             ips = line[idx+1:].split(",")
             if ips == ['(everyone)']:
                 ips = '*'
