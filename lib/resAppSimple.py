@@ -69,7 +69,7 @@ class App(resApp.App):
             return ret
         match = self.get_running(with_children=self.kill=="tree")
         if not match:
-            self.log.info("process not found")
+            self.log.info("already stopped")
             return
         cmd = ["kill"] + [str(pid) for pid in match]
         ret, _, _ = self.vcall(cmd)
