@@ -566,7 +566,7 @@ class Crypt(object):
         Send a request to the daemon running on nodename and yield the results
         fetched if with_result is set.
         """
-        if nodename is None:
+        if nodename in (None, ""):
             nodename = rcEnv.nodename
         sp = self.socket_parms(nodename)
         try:
@@ -598,8 +598,10 @@ class Crypt(object):
         Send a request to the daemon running on nodename and yield the results
         fetched if with_result is set.
         """
-        if nodenames is None:
+        if nodenames in (None, [None], "", [""]):
             nodenames = [rcEnv.nodename]
+        else:
+            nodenames = [nodename for nodename in nodenames if nodename not in (None, "")]
 
         socks = {}
         reconnect = set()

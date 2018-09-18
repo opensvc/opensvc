@@ -45,7 +45,7 @@ parser.add_option("--color", default="auto",
                   help="colorize output. possible values are : auto=guess based "
                        "on tty presence, always|yes=always colorize, never|no="
                        "never colorize")
-parser.add_option("--node", default="", action="store", dest="node",
+parser.add_option("--node", action="store", dest="node",
                   help="The node to send a request to. If not specified the "
                        "local node is targeted."),
 parser.add_option("-w", "--watch", default=False,
@@ -82,11 +82,8 @@ parser.add_option(
          "shell history expansion")
 
 def events(node, nodename):
-    while True:
-        for msg in node.daemon_events(nodename):
-            EVENT.set()
-        # retry until daemon restart
-        time.sleep(1)
+    for msg in node.daemon_events(nodename):
+        EVENT.set()
 
 def start_events_thread(node, nodename):
     thr = threading.Thread(target=events, args=(node, nodename,))

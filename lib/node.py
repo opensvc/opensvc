@@ -4480,13 +4480,21 @@ class Node(Crypt, ExtConfig):
 
     def daemon_events(self, nodename=None):
         options = {}
-        for msg in self.daemon_get_streams(
-            {"action": "events", "options": options},
-            nodenames=[nodename],
-        ):
-            if msg is None:
-                break
-            yield msg
+        while True:
+            for msg in self.daemon_get_streams(
+                {"action": "events", "options": options},
+                nodenames=[nodename],
+            ):
+                if msg is None:
+                    break
+                yield msg
+
+            # retry until daemon restart
+            time.sleep(1)
+
+            # the node.conf might have changed (join, set, ...)
+            self.unset_lazy("cluster_name")
+            self.unset_lazy("cluster_key")
 
     def daemon_logs(self, nodes=None):
         options = {
