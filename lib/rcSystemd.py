@@ -17,8 +17,9 @@ def systemd_system():
     except:
         return False
 
-def format_unit(*args, t="slice"):
+def format_unit(*args, **kwargs):
     elms = []
+    t = kwargs.get("kind", "slice")
     for arg in args:
         if arg is None:
             continue
@@ -31,12 +32,12 @@ def format_slice(*args):
 def format_scope(*args):
     return format_unit(*args, t="scope")
 
-def create_slice(*args, properties=None):
+def create_slice(*args, **kwargs):
+    properties = kwargs.get("properties", {})
     name = format_slice(*args)
     props = []
-    if properties:
-        for key, val in properties.items():
-            props += ["-p", "%s=%s" % (key, str(val))]
+    for key, val in properties.items():
+        props += ["-p", "%s=%s" % (key, str(val))]
 
     props += ["-p", "MemoryAccounting=true"]
     cmd = ["systemd-run", "--quiet", "--scope", "--slice=%s" % name] + props + ["/bin/true"]
