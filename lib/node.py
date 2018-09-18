@@ -2470,7 +2470,7 @@ class Node(Crypt, ExtConfig):
         * collection and aggregation of returned data and errors
         """
         if action == "ls":
-            data = [svc.svcname for svc in self.svcs]
+            data = sorted([svc.svcname for svc in self.svcs])
             if options.format == "json":
                 print(json.dumps(data, indent=4, sort_keys=True))
             else:
