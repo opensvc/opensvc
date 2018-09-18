@@ -2131,6 +2131,7 @@ def add_resources(svc):
     """
     Instanciate resource objects and add them to the service.
     """
+    ret = 0
     sections = {}
     for section in svc.config.sections():
         restype = section.split("#")[0]
@@ -2157,8 +2158,9 @@ def add_resources(svc):
             try:
                 add_resource(svc, restype, section)
             except ex.RequiredOptNotFound:
-                continue
+                ret += 1
     add_mandatory_syncs(svc)
+    return ret
 
 def build_services(status=None, svcnames=None, create_instance=False,
                    node=None):

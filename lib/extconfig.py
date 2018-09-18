@@ -1110,12 +1110,15 @@ class ExtConfig(object):
             if not hasattr(self, "svcname"):
                 return ret
             from svcBuilder import build
+            svc = None
             try:
-                build(self.svcname, svcconf=path, node=self.node)
+                svc = build(self.svcname, svcconf=path, node=self.node)
             except Exception as exc:
                 self.log.error("the new configuration causes the following "
                                "build error: %s", str(exc))
                 ret["errors"] += 1
+            if svc:
+                ret["errors"] += svc.init_resources()
             return ret
 
         ret = validate_default_options(config, ret)

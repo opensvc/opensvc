@@ -1244,8 +1244,9 @@ class Svc(Crypt, ExtConfig):
             # scalers can't have resources
             return
         from svcBuilder import add_resources
-        add_resources(self)
+        ret = add_resources(self)
         self.log.debug("resources initialized")
+        return ret
 
     def get_resource(self, rid, with_encap=False):
         """
