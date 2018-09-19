@@ -539,8 +539,12 @@ class Asset(object):
             return []
         if not os.path.exists(p):
             return []
-        with codecs.open(p, "r", "utf8") as f:
-            buff = f.read()
+        try:
+            with codecs.open(p, "r", "utf8") as f:
+                buff = f.read()
+        except:
+            with codecs.open(p, "r", "latin1") as f:
+                buff = f.read()
         d = []
         for line in buff.split('\n'):
             line = line.strip()
