@@ -4262,7 +4262,7 @@ class Svc(Crypt, ExtConfig):
             if len(candidates) == 1:
                 destination_node = candidates[0]
         if destination_node is None:
-            raise ex.excError("a destination node must be provided this action")
+            raise ex.excError("a destination node must be provided for this action")
         if destination_node == self.current_node():
             raise ex.excError("the destination is the source node")
         if destination_node not in self.nodes:
