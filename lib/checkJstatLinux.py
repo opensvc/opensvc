@@ -153,7 +153,10 @@ def get_stat_metrics(jstat, pid, stat):
     lines = out.decode().splitlines()
     headers = lines[0].split()
     metrics = [float(val) for val in lines[1].replace(",", ".").split()]
-    return {head: metric for head, metric in zip(headers, metrics)}
+    data = {}
+    for head, metric in zip(headers, metrics):
+        data[head] = metric
+    return data
 
 def main(argv):
     parser = OptionParser(version=VERSION, usage=USAGE, option_list=OPTIONS)
