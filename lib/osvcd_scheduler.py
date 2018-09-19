@@ -183,7 +183,7 @@ class Scheduler(shared.OsvcThread):
             else:
                 merge[merge_key]["rids"].add(rid)
                 if task["queued"] < merge[merge_key]["task"]["queued"]:
-                    todo[merge_key]["task"]["queued"] = task["queued"]
+                    merge[merge_key]["task"]["queued"] = task["queued"]
 
         for (action, svcname), data in merge.items():
             if None in data["rids"]:
