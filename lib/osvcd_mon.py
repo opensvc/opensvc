@@ -933,15 +933,16 @@ class Monitor(shared.OsvcThread, Crypt):
                               "has started", smon.status)
                 self.set_smon(svc.svcname, "idle")
                 return
-            if status == "up":
-                self.log.info("abort 'ready' because an instance has started")
+            if status not in ("down", "stdby down", "stdby up"):
+                self.log.info("abort '%s' because the aggregated status has "
+                              "gone %s", smon.status, status)
                 self.set_smon(svc.svcname, "idle")
                 return
             peer = self.better_peer_ready(svc, candidates)
             if peer:
-                self.log.info("abort 'ready' because node %s has a better "
+                self.log.info("abort '%s' because node %s has a better "
                               "placement score for service %s and is also "
-                              "ready", peer, svc.svcname)
+                              "ready", smon.status, peer, svc.svcname)
                 self.set_smon(svc.svcname, "idle")
                 return
             peer = self.peer_transitioning(svc.svcname)
