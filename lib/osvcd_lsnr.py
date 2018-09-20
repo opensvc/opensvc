@@ -466,6 +466,9 @@ class Listener(shared.OsvcThread, Crypt):
         svcname = kwargs.get("svcname")
         if svcname is None:
             return {"error": "no svcname specified", "status": 1}
+        smon = self.get_service_monitor(svcname)
+        if smon.status.endswith("ing"):
+            return {"info": "skip clear on %s instance" % smon.status, "status": 0}
         self.set_smon(svcname, status="idle", reset_retries=True)
         return {"status": 0}
 
