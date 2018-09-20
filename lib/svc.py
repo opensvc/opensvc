@@ -409,6 +409,7 @@ class Svc(Crypt, ExtConfig):
         )
         if cf:
             self.paths.cf = cf
+        self.init_resources_errors = 0
         self.resources_initialized = False
         self.scheduler_configured = False
         self.resources_by_id = {}
