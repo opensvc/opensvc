@@ -142,7 +142,6 @@ class Daemon(object):
         """
         The method used as fork-point in the daemon execution mode.
         """
-        self.log.info("daemon started")
         self._run()
 
     def init_nodeconf(self):
@@ -207,6 +206,8 @@ class Daemon(object):
         """
         Loop over the daemon tasks until notified to stop.
         """
+        shared.NODE = node_mod.Node()
+        self.log.info("daemon started, version %s", shared.NODE.agent_version)
         while self.loop():
             with DAEMON_TICKER:
                 DAEMON_TICKER.wait(DAEMON_INTERVAL)
