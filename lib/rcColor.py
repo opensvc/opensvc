@@ -399,7 +399,7 @@ def colorize_log_line(line, last=None, auto=None):
     if auto:
         barel_len = len(AUTO_COLORS)
         for i, word in enumerate(auto):
-            elements[3] = re.sub("([\s,:@]+)%s([\s,:@]+)"%word, lambda m: m.group(1)+colorize(word, AUTO_COLORS[i%barel_len])+m.group(2), elements[3])
+            elements[3] = re.sub("([\s,:@'\"]+)%s([\s,:@'\"]+)"%word, lambda m: m.group(1)+colorize(word, AUTO_COLORS[i%barel_len])+m.group(2), elements[3])
     line = " ".join(elements)
     return line
 
