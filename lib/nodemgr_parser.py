@@ -472,6 +472,7 @@ ACTIONS = {
         "wait": {
             "msg": "Wait for the condition given by --filter to become true. The condition applies to, so are rooted to, the monitor thread data. The condition is expressed as <jonspath><op><val>. Supported ops are '=', '>', '>=', '<', '<=', '~'. '~' is a fullmatch of the <val> regular expression unless '^' or '$' are specified.",
             "options": [
+                OPT.duration,
                 OPT.local,
                 OPT.node,
             ]
