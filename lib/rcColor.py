@@ -75,6 +75,17 @@ STATUS_COLOR = {
     "warn": color.BROWN,
 }
 
+AUTO_COLORS = [
+    color.BLUE,
+    color.LIGHTRED,
+    color.BROWN,
+    color.LIGHTBLUE,
+    color.PURPLE,
+    color.CYAN,
+    color.GREEN,
+    color.YELLOW,
+]
+
 def ansi_colorize(s, c=None):
     global use_color
     if c is None:
@@ -359,12 +370,13 @@ def print_color_config(fpath):
     except Exception as exc:
         raise ex.excError(exc)
 
-def colorize_log_line(line, last=None):
+def colorize_log_line(line, last=None, auto=None):
     """
     Format a log line, colorizing the log level.
     Return the line as a string buffer.
     """
     import rcLogger
+    import re
     line = line.rstrip("\n")
     elements = line.split(" - ")
 
@@ -372,14 +384,23 @@ def colorize_log_line(line, last=None):
         return
 
     elements[1] = rcLogger.namefmt % elements[1]
-    elements[1] = colorize(elements[1], color.BOLD)
+    if auto:
+        barel_len = len(AUTO_COLORS)
+        for i, word in enumerate(auto):
+            if elements[1].startswith(word+"."):
+                elements[1] = colorize(elements[1], AUTO_COLORS[i%barel_len])
+    #elements[1] = colorize(elements[1], color.BOLD)
     elements[2] = "%-7s" % elements[2]
     elements[2] = elements[2].replace("ERROR", colorize("ERROR", color.RED))
     elements[2] = elements[2].replace("WARNING", colorize("WARNING", color.BROWN))
     elements[2] = elements[2].replace("INFO", colorize("INFO", color.LIGHTBLUE))
     if elements[3].startswith("do "):
         elements[3] = colorize(elements[3], color.BOLD)
-
-    return " ".join(elements)
+    if auto:
+        barel_len = len(AUTO_COLORS)
+        for i, word in enumerate(auto):
+            elements[3] = re.sub("([\s,:@]+)%s([\s,:@]+)"%word, lambda m: m.group(1)+colorize(word, AUTO_COLORS[i%barel_len])+m.group(2), elements[3])
+    line = " ".join(elements)
+    return line
 
 

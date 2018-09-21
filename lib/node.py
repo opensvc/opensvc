@@ -3170,16 +3170,17 @@ class Node(Crypt, ExtConfig):
             nodes = self.cluster_nodes
         from rcColor import colorize_log_line
         lines = []
+        auto = sorted(nodes, reverse=True) + sorted(list_services(), reverse=True)
         for nodename in nodes:
             lines += self.daemon_backlogs(nodename)
             for line in sorted(lines):
-                line = colorize_log_line(line)
+                line = colorize_log_line(line, auto=auto)
                 if line:
                     print(line)
         if not self.options.follow:
             return
         for line in self.daemon_logs(nodes):
-            line = colorize_log_line(line)
+            line = colorize_log_line(line, auto=auto)
             if line:
                 print(line)
                 sys.stdout.flush()
