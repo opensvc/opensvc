@@ -3021,11 +3021,11 @@ class Node(Crypt, ExtConfig):
         try:
             self._wait()
         except ex.excSignal:
-            return
+            return 1
         except (OSError, IOError) as exc:
             if exc.errno == 32:
                 # broken pipe
-                return
+                return 1
 
     def _wait(self):
         """
@@ -3096,6 +3096,15 @@ class Node(Crypt, ExtConfig):
         data = self._daemon_status()["monitor"]["nodes"]
         if eval_cond(val):
             return
+
+        if self.options.duration:
+            import signal
+            from converters import convert_duration
+            def alarm_handler(signum, frame):
+                print("timeout", file=sys.stderr)
+                raise ex.excSignal
+            signal.signal(signal.SIGALRM, alarm_handler)
+            signal.alarm(convert_duration(self.options.duration))
 
         for msg in self.daemon_events(nodename):
             if msg.get("kind") != "patch":

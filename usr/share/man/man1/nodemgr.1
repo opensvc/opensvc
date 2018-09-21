@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2018\-09\-17
+.TH NODEMGR 1 2018\-09\-21
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -1898,6 +1898,9 @@ Show this help message and exit
 Wait for the condition given by --filter to become true. The condition applies to, so are rooted to, the monitor thread data. The condition is expressed as <jonspath><op><val>. Supported ops are '=', '>', '>=', '<', '<=', '~'. '~' is a fullmatch of the <val> regular expression unless '^' or '$' are specified.
 
 
+.TP
+.B --duration=DURATION
+A duration expression like, '1h10m'.
 .TP
 .B --local
 Set to disable cluster-wide operations.
