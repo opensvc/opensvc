@@ -37,6 +37,24 @@ STOPPED_STATES = [
     "stdby up",
     "stdby down",
 ]
+ABORT_STATES = (
+    ("thaw failed", "thawed"),
+    ("freeze failed", "frozen"),
+    ("start failed", "started"),
+    ("stop failed", "stopped"),
+    ("delete failed", "deleted"),
+    ("unprovision failed", "unprovisioned"),
+    ("provision failed", "provisioned"),
+    ("place failed", "placed"),
+)
+NON_LEADER_ABORT_STATES = (
+    ("stop failed", "placed@"),
+    ("stop failed", "placed"),
+)
+LEADER_ABORT_STATES = (
+    ("start failed", "placed"),
+    ("start failed", "placed@"),
+)
 
 class Monitor(shared.OsvcThread, Crypt):
     """
@@ -411,7 +429,7 @@ class Monitor(shared.OsvcThread, Crypt):
             on_error_kwargs={"status": "toc failed"},
         )
 
-    def service_start(self, svcname):
+    def service_start(self, svcname, err_status="start failed"):
         self.set_smon(svcname, "starting")
         proc = self.service_command(svcname, ["start"])
         self.push_proc(
@@ -421,7 +439,7 @@ class Monitor(shared.OsvcThread, Crypt):
             on_success_kwargs={"status": "idle", "local_expect": "started"},
             on_error="generic_callback",
             on_error_args=[svcname],
-            on_error_kwargs={"status": "start failed"},
+            on_error_kwargs={"status": err_status},
         )
 
     def service_stop(self, svcname):
@@ -818,16 +836,32 @@ class Monitor(shared.OsvcThread, Crypt):
                 status = shared.AGG[svcname].avail
                 self.set_smon_g_expect_from_status(svcname, smon, status)
             return
-        if smon.global_expect != "aborted" and \
-           smon.status not in ("ready", "idle", "wait children", "wait parents"):
-            #self.log.info("service %s orchestrator out (mon status %s)", svc.svcname, smon.status)
+        if self.peer_init(svc):
             return
+        if smon.global_expect and smon.global_expect != "aborted":
+            if "failed" in smon.status:
+                if self.abort_state(svcname, smon.status, smon.global_expect, smon.placement):
+                    self.set_smon(svcname, global_expect="unset")
+                    return
+            elif smon.status not in ("ready", "idle", "wait children", "wait parents"):
+                #self.log.info("service %s orchestrator out (mon status %s)", svc.svcname, smon.status)
+                return
         status = shared.AGG[svc.svcname].avail
         self.set_smon_g_expect_from_status(svc.svcname, smon, status)
         if smon.global_expect:
             self.service_orchestrator_manual(svc, smon, status)
         else:
             self.service_orchestrator_auto(svc, smon, status)
+
+    def abort_state(self, svcname, status, global_expect, placement):
+        states = (status, global_expect)
+        if states in ABORT_STATES:
+            return True
+        if placement == "leader" and states in LEADER_ABORT_STATES:
+            return True
+        if placement != "leader" and states in NON_LEADER_ABORT_STATES:
+            return True
+        return False
 
     @staticmethod
     def scale_svcname(svcname, idx):
@@ -880,35 +914,13 @@ class Monitor(shared.OsvcThread, Crypt):
             #self.log.info("service %s orchestrator out (agg avail status %s)",
             #              svc.svcname, status)
             return
-        if svc.hard_anti_affinity:
-            intersection = set(self.get_local_svcnames()) & set(svc.hard_anti_affinity)
-            if len(intersection) > 0:
-                #self.log.info("service %s orchestrator out (hard anti-affinity with %s)",
-                #              svc.svcname, ','.join(intersection))
-                return
-        if svc.hard_affinity:
-            intersection = set(self.get_local_svcnames()) & set(svc.hard_affinity)
-            if len(intersection) < len(set(svc.hard_affinity)):
-                #self.log.info("service %s orchestrator out (hard affinity with %s)",
-                #              svc.svcname, ','.join(intersection))
-                return
+
+        if not self.pass_hard_affinities(svc):
+            return
 
         candidates = self.placement_candidates(svc)
-        if candidates != [rcEnv.nodename]:
-            # the local node is not the only candidate, we can apply soft
-            # affinity filtering
-            if svc.soft_anti_affinity:
-                intersection = set(self.get_local_svcnames()) & set(svc.soft_anti_affinity)
-                if len(intersection) > 0:
-                    #self.log.info("service %s orchestrator out (soft anti-affinity with %s)",
-                    #              svc.svcname, ','.join(intersection))
-                    return
-            if svc.soft_affinity:
-                intersection = set(self.get_local_svcnames()) & set(svc.soft_affinity)
-                if len(intersection) < len(set(svc.soft_affinity)):
-                    #self.log.info("service %s orchestrator out (soft affinity with %s)",
-                    #              svc.svcname, ','.join(intersection))
-                    return
+        if not self.pass_soft_affinities(svc, candidates):
+            return
 
         if svc.topology == "failover":
             self.service_orchestrator_auto_failover(svc, smon, status, candidates)
@@ -927,13 +939,18 @@ class Monitor(shared.OsvcThread, Crypt):
             else:
                 return
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
+        if smon.global_expect in ("started", "placed"):
+            allowed_status = ("down", "stdby down", "stdby up", "warn")
+        else:
+            allowed_status = ("down", "stdby down", "stdby up")
         if smon.status in ("ready", "wait parents"):
             if instance.avail == "up":
                 self.log.info("abort '%s' because the local instance "
                               "has started", smon.status)
                 self.set_smon(svc.svcname, "idle")
                 return
-            if status not in ("down", "stdby down", "stdby up"):
+            if status not in allowed_status or \
+               self.peer_warn(svc.svcname):
                 self.log.info("abort '%s' because the aggregated status has "
                               "gone %s", smon.status, status)
                 self.set_smon(svc.svcname, "idle")
@@ -971,16 +988,18 @@ class Monitor(shared.OsvcThread, Crypt):
                 if smon.stonith and smon.stonith not in shared.CLUSTER_DATA:
                     # stale peer which previously ran the service
                     self.node_stonith(smon.stonith)
-                self.service_start(svc.svcname)
+                self.service_start(svc.svcname, err_status="place failed" if smon.global_expect == "placed" else "start failed")
                 return
             tmo = int(smon.status_updated + self.ready_period - now) + 1
             self.log.info("service %s will start in %d seconds",
                           svc.svcname, tmo)
             self.set_next(tmo)
         elif smon.status == "idle":
-            if svc.orchestrate == "no" and smon.global_expect != "started":
+            if svc.orchestrate == "no" and smon.global_expect not in ("started", "placed"):
                 return
-            if status not in ("down", "stdby down", "stdby up"):
+            if status not in allowed_status:
+                return
+            if self.peer_warn(svc.svcname):
                 return
             peer = self.peer_transitioning(svc.svcname)
             if peer:
@@ -1051,10 +1070,14 @@ class Monitor(shared.OsvcThread, Crypt):
                               svc.svcname, tmo)
                 self.set_next(tmo)
         elif smon.status == "idle":
-            if svc.orchestrate == "no" and smon.global_expect != "started":
+            if svc.orchestrate == "no" and smon.global_expect not in ("started", "placed"):
                 return
             if n_up < svc.flex_min_nodes:
-                if instance.avail not in STOPPED_STATES:
+                if smon.global_expect in ("started", "placed"):
+                    allowed_avail = STOPPED_STATES + ["warn"]
+                else:
+                    allowed_avail = STOPPED_STATES
+                if instance.avail not in allowed_avail:
                     return
                 if not self.placement_leader(svc, candidates):
                     return
@@ -1168,6 +1191,8 @@ class Monitor(shared.OsvcThread, Crypt):
                 })
                 self.service_thaw(svc.svcname)
             elif status not in STARTED_STATES:
+                if shared.AGG[svc.svcname].frozen != "thawed":
+                    return
                 self.service_orchestrator_auto(svc, smon, status)
         elif smon.global_expect == "unprovisioned":
             if not self.service_unprovisioned(instance) and \
@@ -1209,7 +1234,15 @@ class Monitor(shared.OsvcThread, Crypt):
             })
             self.set_smon(svc.svcname, local_expect="unset")
         elif smon.global_expect == "placed":
-            if instance["monitor"].get("placement") != "leader":
+            # refresh smon for placement attr change caused by a clear
+            smon = self.get_service_monitor(svc.svcname)
+            if self.service_frozen(svc.svcname):
+                self.event("instance_thaw", {
+                    "reason": "target",
+                    "svcname": svc.svcname,
+                })
+                self.service_thaw(svc.svcname)
+            elif smon.placement != "leader":
                 if not self.has_leader(svc):
                     # avoid stopping the instance if no peer node can takeover
                     return
@@ -1219,14 +1252,10 @@ class Monitor(shared.OsvcThread, Crypt):
                         "svcname": svc.svcname,
                     })
                     self.service_stop(svc.svcname)
-            elif self.non_leaders_stopped(svc) and \
+            elif self.non_leaders_stopped(svc.svcname) and \
                  (shared.AGG[svc.svcname].placement not in ("optimal", "n/a") or shared.AGG[svc.svcname].avail != "up") and \
                  instance.avail not in STARTED_STATES:
-                self.event("instance_start", {
-                    "reason": "target",
-                    "svcname": svc.svcname,
-                })
-                self.service_start(svc.svcname)
+                self.service_orchestrator_auto(svc, smon, status)
         elif smon.global_expect.startswith("placed@"):
             target = smon.global_expect.split("@")[-1].split(",")
             candidates = self.placement_candidates(
@@ -1236,7 +1265,15 @@ class Monitor(shared.OsvcThread, Crypt):
                 discard_constraints_violation=False,
                 discard_start_failed=False
             )
-            if rcEnv.nodename not in target:
+            if self.service_frozen(svc.svcname):
+                self.event("instance_thaw", {
+                    "reason": "target",
+                    "svcname": svc.svcname,
+                })
+                self.service_thaw(svc.svcname)
+            elif rcEnv.nodename not in target:
+                if smon.status == "stop failed":
+                    return
                 if instance.avail not in STOPPED_STATES and (set(target) & set(candidates)):
                     self.event("instance_stop", {
                         "reason": "target",
@@ -1245,12 +1282,14 @@ class Monitor(shared.OsvcThread, Crypt):
                     self.service_stop(svc.svcname)
             elif self.instances_stopped(svc.svcname, set(svc.peers) - set(target)) and \
                  rcEnv.nodename in target and \
-                 instance.avail in STOPPED_STATES:
+                 instance.avail in STOPPED_STATES + ["warn"]:
+                if smon.status in ("start failed", "place failed"):
+                    return
                 self.event("instance_start", {
                     "reason": "target",
                     "svcname": svc.svcname,
                 })
-                self.service_start(svc.svcname)
+                self.service_start(svc.svcname, err_status="place failed" if smon.global_expect == "placed" else "start failed")
 
     def scaler_current_slaves(self, svcname):
         return [slave for slave in shared.SERVICES \
@@ -1445,6 +1484,39 @@ class Monitor(shared.OsvcThread, Crypt):
             break
         self.set_smon(svc.svcname, global_expect="unset", status="idle")
 
+    def pass_hard_affinities(self, svc):
+        if svc.hard_anti_affinity:
+            intersection = set(self.get_local_svcnames()) & set(svc.hard_anti_affinity)
+            if len(intersection) > 0:
+                #self.log.info("service %s orchestrator out (hard anti-affinity with %s)",
+                #              svc.svcname, ','.join(intersection))
+                return False
+        if svc.hard_affinity:
+            intersection = set(self.get_local_svcnames()) & set(svc.hard_affinity)
+            if len(intersection) < len(set(svc.hard_affinity)):
+                #self.log.info("service %s orchestrator out (hard affinity with %s)",
+                #              svc.svcname, ','.join(intersection))
+                return False
+        return True
+
+    def pass_soft_affinities(self, svc, candidates):
+        if candidates != [rcEnv.nodename]:
+            # the local node is not the only candidate, we can apply soft
+            # affinity filtering
+            if svc.soft_anti_affinity:
+                intersection = set(self.get_local_svcnames()) & set(svc.soft_anti_affinity)
+                if len(intersection) > 0:
+                    #self.log.info("service %s orchestrator out (soft anti-affinity with %s)",
+                    #              svc.svcname, ','.join(intersection))
+                    return False
+            if svc.soft_affinity:
+                intersection = set(self.get_local_svcnames()) & set(svc.soft_affinity)
+                if len(intersection) < len(set(svc.soft_affinity)):
+                    #self.log.info("service %s orchestrator out (soft affinity with %s)",
+                    #              svc.svcname, ','.join(intersection))
+                    return False
+        return True
+
     def end_rejoin_grace_period(self, reason=""):
         self.rejoin_grace_period_expired = True
         self.duplog("info", "end of rejoin grace period: %s" % reason,
@@ -1537,12 +1609,12 @@ class Monitor(shared.OsvcThread, Crypt):
         min_instances = set(svc.peers) & set(live_nodes)
         return len(instances) >= len(min_instances)
 
-    def instances_started(self, svcname, nodes):
+    def instances_started_or_start_failed(self, svcname, nodes):
         for nodename in nodes:
             instance = self.get_service_instance(svcname, nodename)
             if instance is None:
                 continue
-            if instance.get("avail") in STOPPED_STATES:
+            if instance.get("avail") in STOPPED_STATES and instance["monitor"]["status"] != "start failed":
                 return False
         self.log.info("service '%s' instances on nodes '%s' are stopped",
             svcname, ", ".join(nodes))
@@ -1565,13 +1637,30 @@ class Monitor(shared.OsvcThread, Crypt):
                 return True
         return False
 
-    def non_leaders_stopped(self, svc):
-        for nodename, instance in self.get_service_instances(svc.svcname).items():
-            if instance["monitor"].get("placement") == "leader":
+    def non_leaders_stopped(self, svcname, exclude_status=None):
+        svc = self.get_service(svcname)
+        if svc is None:
+            return True
+        if exclude_status is None:
+            exclude_status = []
+        for nodename in svc.peers:
+            if nodename == rcEnv.nodename:
                 continue
-            if instance.get("avail") not in STOPPED_STATES:
-                self.log.info("service '%s' instance node '%s' is not stopped yet",
-                              svc.svcname, nodename)
+            instance = self.get_service_instance(svc.svcname, nodename)
+            if instance is None:
+                continue
+            if instance.get("monitor", {}).get("placement") == "leader":
+                continue
+            avail = instance.get("avail")
+            smon_status = instance.get("monitor", {}).get("status")
+            if avail not in STOPPED_STATES and smon_status not in exclude_status:
+                if exclude_status:
+                    extra = "(%s/%s)" % (avail, smon_status)
+                else:
+                    extra = "(%s)" % avail
+                self.log.info("service '%s' non leader instance on node '%s' "
+                              "is not stopped yet %s",
+                              svc.svcname, nodename, extra)
                 return False
         return True
 
@@ -1670,7 +1759,7 @@ class Monitor(shared.OsvcThread, Crypt):
         for nodename, instance in self.get_service_instances(svcname).items():
             if instance["avail"] == "up":
                 nodenames.append(nodename)
-            elif instance["monitor"]["status"] in ("restarting", "starting", "wait children", "provisioning"):
+            elif instance["monitor"]["status"] in ("restarting", "starting", "wait children", "provisioning", "placing"):
                 nodenames.append(nodename)
         return nodenames
 
@@ -1683,6 +1772,57 @@ class Monitor(shared.OsvcThread, Crypt):
             if self.peer_transitioning(parent):
                 return True
         return False
+
+    def peer_init(self, svc):
+        """
+        Return True if a peer node is in init nmon status.
+        Else return False.
+        """
+        for nodename in svc.peers:
+            nmon = self.get_node_monitor(nodename=nodename)
+            if nmon is None:
+                continue
+            if nmon.status == "init":
+                return True
+        return False
+
+    def peer_warn(self, svcname, with_self=False):
+        """
+        For failover services, return the nodename of the first peer with the
+        service in warn avail status.
+        """
+        try:
+            if shared.SERVICES[svcname].topology != "failover":
+                return
+        except:
+            return
+        for nodename, instance in self.get_service_instances(svcname).items():
+            if not with_self and nodename == rcEnv.nodename:
+                continue
+            if instance["avail"] == "warn" and not instance["monitor"].get("status").endswith("ing"):
+                return nodename
+
+    def peers_options(self, svcname, candidates, status):
+        """
+        Return the nodes in <candidates> that are a viable start/place
+        orchestration option.
+
+        This method is used to determine if the global expect should be
+        reset if no options are left.
+        """
+        nodenames = []
+        for nodename in candidates:
+            instance = self.get_service_instance(svcname, nodename)
+            if instance is None:
+                continue
+            smon_status = instance["monitor"].get("status", "")
+            if smon_status in status:
+               continue
+            avail = instance["avail"]
+            if (avail == "warn" and not smon_status.endswith("ing")) or \
+               avail in STOPPED_STATES:
+                nodenames.append(nodename)
+        return nodenames
 
     def peer_transitioning(self, svcname):
         """
@@ -2390,11 +2530,18 @@ class Monitor(shared.OsvcThread, Crypt):
             self.log.info("service %s global expect is %s and its global "
                           "status is %s", svcname, smon.global_expect, status)
             self.set_smon(svcname, global_expect="unset")
-        elif smon.global_expect == "started" and \
-             status in STARTED_STATES and not local_frozen:
-            self.log.info("service %s global expect is %s and its global "
-                          "status is %s", svcname, smon.global_expect, status)
-            self.set_smon(svcname, global_expect="unset")
+        elif smon.global_expect == "started":
+            if status in STARTED_STATES and not local_frozen:
+                self.log.info("service %s global expect is %s and its global "
+                              "status is %s", svcname, smon.global_expect, status)
+                self.set_smon(svcname, global_expect="unset")
+                return
+            if frozen != "thawed":
+                return
+            svc = self.get_service(svcname)
+            if self.peer_warn(svcname, with_self=True):
+                self.set_smon(svcname, global_expect="unset")
+                return
         elif (smon.global_expect == "frozen" and frozen == "frozen") or \
              (smon.global_expect == "thawed" and frozen == "thawed") or \
              (smon.global_expect == "unprovisioned" and provisioned is False):
@@ -2417,13 +2564,25 @@ class Monitor(shared.OsvcThread, Crypt):
              self.get_agg_aborted(svcname):
             self.log.info("service %s action aborted", svcname)
             self.set_smon(svcname, global_expect="unset")
-        elif smon.global_expect == "placed" and \
-             shared.AGG[svcname].placement in ("optimal", "n/a") and \
-             shared.AGG[svcname].avail == "up":
-            self.set_smon(svcname, global_expect="unset")
+        elif smon.global_expect == "placed":
+            if shared.AGG[svcname].placement in ("optimal", "n/a") and \
+               shared.AGG[svcname].avail == "up":
+                self.set_smon(svcname, global_expect="unset")
+                return
+            if frozen != "thawed":
+                return
+            svc = self.get_service(svcname)
+            candidates = self.placement_candidates(svc, discard_start_failed=False, discard_frozen=False)
+            candidates = self.placement_leaders(svc, candidates=candidates)
+            peers = self.peers_options(svcname, candidates, ["place failed"])
+            if not peers and self.non_leaders_stopped(svcname, ["place failed"]):
+                self.log.info("service %s global expect is %s, not optimal "
+                              "and no options left", svcname, smon.global_expect)
+                self.set_smon(svcname, global_expect="unset")
+                return
         elif smon.global_expect.startswith("placed@"):
             target = smon.global_expect.split("@")[-1].split(",")
-            if self.instances_started(svcname, target):
+            if self.instances_started_or_start_failed(svcname, target):
                 self.set_smon(svcname, global_expect="unset")
 
     def set_smon_l_expect_from_status(self, data, svcname):
@@ -2604,6 +2763,7 @@ class Monitor(shared.OsvcThread, Crypt):
                 if current_global_expect == "aborted":
                     # refuse a new global expect if aborting
                     continue
+                current_global_expect_updated = instance["monitor"].get("global_expect_updated")
                 for nodename in nodenames:
                     rinstance = self.get_service_instance(svcname, nodename)
                     if rinstance is None:
@@ -2612,6 +2772,12 @@ class Monitor(shared.OsvcThread, Crypt):
                         self.set_smon(svcname, stonith=nodename)
                     global_expect = rinstance["monitor"].get("global_expect")
                     if global_expect is None:
+                        continue
+                    global_expect_updated = rinstance["monitor"].get("global_expect_updated")
+                    if current_global_expect and global_expect_updated and \
+                       current_global_expect_updated and \
+                       global_expect_updated < current_global_expect_updated:
+                        # we have a more recent update
                         continue
                     if svcname in shared.SERVICES and shared.SERVICES[svcname].disabled and \
                        global_expect not in ("frozen", "thawed", "aborted", "deleted"):
@@ -2629,6 +2795,10 @@ class Monitor(shared.OsvcThread, Crypt):
     def accept_g_expect(self, svcname, instance, global_expect):
         if svcname not in shared.AGG:
             return False
+        smon = self.get_service_monitor(svcname)
+        if global_expect not in ("aborted", "thawed", "frozen") and \
+           self.abort_state(svcname, smon.status, global_expect, smon.placement):
+            return False
         if global_expect == "stopped":
             local_avail = instance["avail"]
             local_frozen = instance.get("frozen", False)
@@ -2641,7 +2811,7 @@ class Monitor(shared.OsvcThread, Crypt):
         elif global_expect == "started":
             status = shared.AGG[svcname].avail
             local_frozen = instance.get("frozen", False)
-            if status not in STARTED_STATES or local_frozen:
+            if status in STOPPED_STATES or local_frozen:
                 return True
             else:
                 return False
@@ -2691,7 +2861,8 @@ class Monitor(shared.OsvcThread, Crypt):
                 return False
         elif global_expect == "placed":
             placement = shared.AGG[svcname].placement
-            if placement == "non-optimal":
+            frozen = shared.AGG[svcname].frozen
+            if placement == "non-optimal" or shared.AGG[svcname].avail != "up" or frozen == "frozen":
                 return True
             else:
                 return False

@@ -1129,11 +1129,6 @@ class Svc(Crypt, ExtConfig):
                 raise ex.excError("the service is in '%s' aggregated avail "
                                   "status. the daemons won't honor this "
                                   "request, so don't submit it." % avail)
-            avails = set([data["monitor"]["nodes"][node]["services"]["status"].get(self.svcname, {}).get("avail") for node in data["monitor"]["nodes"]])
-            if action == "start" and len(avails & set(["warn"])) > 0:
-                raise ex.excError("the service has instances in 'warn' avail "
-                                  "status. the daemons won't honor this request,"
-                                  " so don't submit it.")
 
     def started_on(self):
         nodenames = []
@@ -5089,9 +5084,10 @@ class Svc(Crypt, ExtConfig):
         data = self.daemon_send(
             {"action": "clear", "options": options},
             nodename=nodename,
+            timeout=5,
         )
         if data is None or data["status"] != 0:
-            raise ex.excError("clear on node %s failed" % nodename)
+            raise ex.excError("clear on node %s failed: %s" % (nodename, data.get("error", "")))
 
     def notify_done(self, action, rids=None):
         if not self.options.cron:

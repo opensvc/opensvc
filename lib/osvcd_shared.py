@@ -433,6 +433,7 @@ class OsvcThread(threading.Thread):
                 SMON_DATA[svcname] = Storage({
                     "status": "idle",
                     "status_updated": time.time(),
+                    "global_expect_updated": time.time(),
                 })
             if status:
                 reset_placement = False
@@ -481,6 +482,7 @@ class OsvcThread(threading.Thread):
                         global_expect
                     )
                 SMON_DATA[svcname].global_expect = global_expect
+                SMON_DATA[svcname].global_expect_updated = time.time()
 
             if reset_retries and "restart" in SMON_DATA[svcname]:
                 self.log.info("service %s monitor resources restart count reset",
@@ -796,7 +798,7 @@ class OsvcThread(threading.Thread):
                 instance = self.get_service_instance(svc.svcname, nodename)
                 if instance is None:
                     continue
-                if discard_start_failed and instance["monitor"]["status"] == "start failed":
+                if discard_start_failed and instance["monitor"]["status"] in ("start failed", "place failed"):
                     continue
                 if "avail" not in instance:
                     # deleting
@@ -836,6 +838,17 @@ class OsvcThread(threading.Thread):
         else:
             return
         fn(msg, kwargs)
+
+    def placement_leaders(self, svc, candidates=None):
+        ranks = self.placement_ranks(svc, candidates=candidates)
+        if not ranks:
+            return []
+        elif svc.topology == "failover":
+            return ranks[0:1]
+        elif svc.topology == "flex":
+            return ranks[0:svc.flex_min_nodes]
+        else:
+            return []
 
     def placement_leader(self, svc, candidates=None, silent=False):
         if candidates is None:
