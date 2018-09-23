@@ -936,7 +936,10 @@ class Freenas(object):
         data = self.get_iscsi_extent(name=name, naa=naa)
         if data is None:
             return
-        volume = self.extent_volume(data)
+        try:
+            volume = self.extent_volume(data)
+        except ValueError:
+            raise ex.excError("failed to identify zvol. may be a file ?")
         self.del_iscsi_extent(data["id"])
         self.del_zvol(name=name, volume=volume)
         warnings = []
