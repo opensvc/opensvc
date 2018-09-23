@@ -495,6 +495,17 @@ def activate_SunOS(launcher):
             os.symlink(rc, l)
     return True
 
+def activate_gentoo(launcher):
+    logit("begin")
+    cmd = ['rc-update', 'delete', '-a', 'opensvc']
+    ret = osrun(' '.join(cmd))
+    cmd = ['rc-update', 'add', 'opensvc', 'default']
+    ret = osrun(' '.join(cmd))
+    if ret > 0:
+        logit("issue met while trying to install opensvc rc launchers", stderr=True)
+        return False
+    return True
+
 def activate_FreeBSD(launcher):
     logit("begin")
     return True
@@ -570,7 +581,18 @@ def install_rc():
     copyrc = True
     reldata = os_release()
 
-    if reldata["ID"] in ("ubuntu", "debian") or os.path.exists('/etc/debian_version'):
+    if reldata["ID"] in ("gentoo"):
+        rc = '/etc/init.d/opensvc'
+        params = '/etc/default/opensvc'
+        src = os.path.join(pathini, 'opensvc.init.debian')
+        if systemd_mgmt():
+            logit("gentoo with systemd")
+            copyrc = False
+            activate = activate_systemd
+        else:
+            logit("gentoo with openrc")
+            activate = activate_gentoo
+    elif reldata["ID"] in ("ubuntu", "debian") or os.path.exists('/etc/debian_version'):
         rc = '/etc/init.d/opensvc'
         params = '/etc/default/opensvc'
         src = os.path.join(pathini, 'opensvc.init.debian')
