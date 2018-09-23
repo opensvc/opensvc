@@ -78,14 +78,14 @@ def wait_for_dev_ready(dev, log=None):
     raise ex.excError
 
 def promote_dev_rw(dev, log=None):
-    for dev in dev_to_paths(dev, log=log):
-       count = 0
-       if dev_is_ro(dev):
-           dev_rescan(dev, log=log)
-           wait_for_dev_ready(dev, log=log)
+    count = 0
+    for _dev in dev_to_paths(dev, log=log):
+       if dev_is_ro(_dev):
+           dev_rescan(_dev, log=log)
+           wait_for_dev_ready(_dev, log=log)
            count += 1
-       if count > 0:
-           refresh_multipath(dev, log=log)
+    if count > 0:
+        refresh_multipath(dev, log=log)
 
 def loop_is_deleted(dev):
     if not which(rcEnv.syspaths.losetup):
