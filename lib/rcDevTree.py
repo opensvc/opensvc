@@ -181,7 +181,7 @@ class Dev(object):
         if parent_size == 0:
             pct = "-"
         else:
-            pct = str(100*self.size//parent_size)+"%"
+            pct = "%.2f%%" % (100*self.size//parent_size)
 
         node_dev = node.add_node()
         node_dev.add_column(self.alias, color.BROWN)
@@ -218,7 +218,7 @@ class Dev(object):
         if prev_size == 0:
             pct = "-"
         else:
-            pct = str(100*used/self.size)+"%"
+            pct = "%.2f%%" % (100*used//self.size)
 
         node_dev = node.add_node()
         node_dev.add_column(self.alias, color.BROWN)
