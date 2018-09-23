@@ -175,9 +175,10 @@ class Asset(rcAsset.Asset):
             "centos": "CentOS",
             "fedora": "Fedora",
             "caasp": "SuSE",
+            "gentoo": "Gentoo",
         }
         if self.os_release.id in vendors:
-            return vendors[self.os_release.id]
+            return vendors.get(self.os_release.id, "")
         if os.path.exists('/etc/lsb-release'):
             with open('/etc/lsb-release') as f:
                 for line in f.readlines():
@@ -244,12 +245,13 @@ class Asset(rcAsset.Asset):
 
     def _get_os_release(self):
         r = self._get_os_release_os_release()
-        if r:
+        if r and r != "/Linux":
             return r
         files = ['/etc/debian_version',
                  '/etc/vmware-release',
                  '/etc/oracle-release',
-                 '/etc/redhat-release']
+                 '/etc/redhat-release',
+                 '/etc/gentoo-release']
         if os.path.exists('/etc/SuSE-release'):
             v = []
             with open('/etc/SuSE-release') as f:
