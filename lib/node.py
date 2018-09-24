@@ -362,6 +362,9 @@ class Node(Crypt, ExtConfig):
             return exc.default
 
     def get_min_avail(self, keyword, metric, limit=100):
+        total = self.stats().get(metric) # mb
+        if total in (0, None):
+            return 0
         try:
             val = self.conf_get("node", keyword)
         except ex.OptNotFound as exc:
@@ -369,9 +372,6 @@ class Node(Crypt, ExtConfig):
         if str(val).endswith("%"):
             val = int(val.rstrip("%"))
         else:
-            total = self.stats().get(metric) # mb
-            if total in (0, None):
-                return 0
             val = val // 1024 // 1024 # b > mb
             val = int(val/total*100)
             if val > limit:
@@ -3759,11 +3759,11 @@ class Node(Crypt, ExtConfig):
                 "|",
             ]
             for nodename in nodenames:
-                avail = data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get(key+"_avail")
                 total = data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get(key+"_total")
+                avail = data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get(key+"_avail")
                 limit = 100 - data["monitor"]["nodes"].get(nodename, {}).get("min_avail_"+key, 0)
-                if avail is None or total is None:
-                    line.append("")
+                if avail is None or total in (0, None):
+                    line.append("-")
                     continue
                 usage = 100 - avail
                 total = print_size(total, unit="MB", compact=True)
