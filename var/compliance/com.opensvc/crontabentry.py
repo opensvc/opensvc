@@ -180,7 +180,7 @@ class CrontabEntry(CompObject):
         else:
             perror('entry or ref should be defined:', d)
             r |= RET_ERR
-        if re.match(d['check'], c):
+        if re.search(d['check'], c):
             val = True
         else:
             val = False
@@ -203,7 +203,7 @@ class CrontabEntry(CompObject):
              for line in lines:
                  if line.startswith('#'):
                      continue
-                 if re.match(ck['check'], line):
+                 if re.search(ck['check'], line):
                      pr = RET_OK
                      break
              if pr == RET_OK:
@@ -233,9 +233,10 @@ class CrontabEntry(CompObject):
                 f.writelines(self.crontabs[user])
                 f.close()
             except:
-                perror("fail to close temporary file %s" %filen)
+                perror("fail to write temporary file %s" %filen)
                 r |= RET_ERR
             if user != 'root':
+                os.chown(filen, pwd.getpwnam(user).pw_uid, -1)
                 cmd = ['su', user, '-c', '/usr/bin/crontab '+filen]
             else:
                 cmd = ['/usr/bin/crontab', filen]
@@ -269,7 +270,7 @@ class CrontabEntry(CompObject):
              for line in lines:
                  if line.startswith('#'):
                      continue
-                 if re.match(ck['check'], line):
+                 if re.search(ck['check'], line):
                      pr = RET_OK
                      break
              if pr != RET_OK:
