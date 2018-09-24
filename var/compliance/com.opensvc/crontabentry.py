@@ -144,9 +144,13 @@ class CrontabEntry(CompObject):
             cmd = ['/usr/bin/crontab', '-l', user]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out,err = p.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
+        if "no crontab" in err:
+            return RET_OK, ''
         if p.returncode != 0 :
             err = bdecode(err)
-            perror("Cannot get %s's %s" %(user,err.strip('\n')))
+            perror("cannot get %s's crontab: %s" %(user,err.strip('\n')))
             return RET_ERR, ''
         return RET_OK, bdecode(out)
 
@@ -167,7 +171,7 @@ class CrontabEntry(CompObject):
             if rx == RET_OK:
                 self.crontabs[d['user']] = text
             else:
-                self.crontabs[d['user']] = ''
+                self.crontabs[d['user']] = None
         c = ''
         if 'entry' in d:
             c = self.parse_entry(d['entry'])
@@ -176,7 +180,7 @@ class CrontabEntry(CompObject):
         else:
             perror('entry or ref should be defined:', d)
             r |= RET_ERR
-        if d['check'] in c:
+        if re.match(d['check'], c):
             val = True
         else:
             val = False
@@ -188,21 +192,24 @@ class CrontabEntry(CompObject):
         r = RET_OK
         for ck in self.checks:
              if not ck['valid']:
-                 perror("Pattern '%s' for %s's crontab is absent in the requested content" %(ck['check'], ck['user']))
+                 perror("pattern '%s' is absent from %s's crontab" %(ck['check'], ck['user']))
                  r |= RET_ERR
                  continue
              pr = RET_ERR
+             if self.crontabs[ck['user']] is None:
+                 r |= RET_ERR
+                 continue
              lines = self.crontabs[ck['user']].split('\n')
              for line in lines:
                  if line.startswith('#'):
                      continue
-                 if ck['check'] in line:
+                 if re.match(ck['check'], line):
                      pr = RET_OK
                      break
              if pr == RET_OK:
-                 pinfo("Pattern '%s' matches %s's crontab, entry: %s => OK" %(ck['check'], ck['user'], '"'+line+'"'))
+                 pinfo("pattern '%s' matches %s's crontab, entry: '%s'" %(ck['check'], ck['user'], line))
              else:
-                 perror("Pattern '%s' **does not match** %s's crontab => BAD" %(ck['check'], ck['user']))
+                 perror("pattern '%s' does not match any %s's crontab entry" %(ck['check'], ck['user']))
              r |= pr
         return r
 
@@ -217,6 +224,8 @@ class CrontabEntry(CompObject):
         filen = f.name
         f.close()
         for user in self.crontabs:
+            if self.crontabs[user] is None:
+                continue
             if self.upds[user] == 0:
                 continue
             f = open(filen, 'w+')
@@ -227,21 +236,21 @@ class CrontabEntry(CompObject):
                 perror("fail to close temporary file %s" %filen)
                 r |= RET_ERR
             if user != 'root':
-                cmd = ['/usr/bin/su', user, '-c', '/usr/bin/crontab '+filen]
+                cmd = ['su', user, '-c', '/usr/bin/crontab '+filen]
             else:
                 cmd = ['/usr/bin/crontab', filen]
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             out, err = p.communicate()
             if p.returncode != 0:
                 err = bdecode(err)
-                perror("Could not append-to or create %s's %s" %(user,err.strip('\n')))
+                perror("could not append-to or create %s's %s" %(user,err.strip('\n')))
                 r |= RET_ERR
             else:
-                pinfo("Success: %s's crontab => OK" %user)
+                pinfo("new %s's crontab installed" %user)
             try:
                 os.unlink(filen)
             except:
-                perror('Could not remove temp file: %s' %filen)
+                perror('could not remove temp file: %s' %filen)
                 pass
         return r
 
@@ -249,7 +258,10 @@ class CrontabEntry(CompObject):
         r = RET_OK
         for ck in self.checks:
              if not ck['valid']:
-                 perror("Pattern '%s' for %s's crontab is absent in the requested content" %(ck['check'], ck['user']))
+                 perror("pattern '%s' is absent from %s's crontab" %(ck['check'], ck['user']))
+                 r |= RET_ERR
+                 continue
+             if self.crontabs[ck['user']] is None:
                  r |= RET_ERR
                  continue
              pr = RET_ERR
@@ -257,11 +269,11 @@ class CrontabEntry(CompObject):
              for line in lines:
                  if line.startswith('#'):
                      continue
-                 if ck['check'] in line:
+                 if re.match(ck['check'], line):
                      pr = RET_OK
                      break
              if pr != RET_OK:
-                 pinfo("Trying to add to %s's crontab, entry: %s" %(ck['user'], ck['add'].strip('\n')))
+                 pinfo("trying to add to %s's crontab, entry: %s" %(ck['user'], ck['add'].strip('\n')))
                  self.crontabs[ck['user']] += ck['add']
                  self.upds[ck['user']] = 1
              r |= pr
