@@ -46,6 +46,7 @@ ABORT_STATES = (
     ("unprovision failed", "unprovisioned"),
     ("provision failed", "provisioned"),
     ("place failed", "placed"),
+    ("purge failed", "purged"),
 )
 NON_LEADER_ABORT_STATES = (
     ("stop failed", "placed@"),
