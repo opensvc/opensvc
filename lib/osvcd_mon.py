@@ -1915,6 +1915,8 @@ class Monitor(shared.OsvcThread, Crypt):
             n_up = 0
             for slave in self.scaler_current_slaves(svcname):
                 n_up += len(self.up_service_instances(slave))
+            if n_up == 0:
+                return "n/a"
             if n_up > 0 and n_up < instance.get("scale"):
                 return "warn"
 
