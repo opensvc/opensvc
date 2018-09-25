@@ -2887,6 +2887,7 @@ class Svc(Crypt, ExtConfig):
         self.encap_cmd(['shutdown'], verbose=True, error="continue")
 
     def unprovision(self):
+        self.sub_set_action("disk.scsireserv", "stop", xtags=set(["zone", "docker"]))
         self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone", "docker"]))
 
     def provision(self):
