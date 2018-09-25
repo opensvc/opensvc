@@ -160,6 +160,25 @@ class OptParser(object):
         desc += '\n'
         return desc
 
+    def format_digest(self, action=""):
+        """
+        Format and return a digest of supported actions matching <action>
+        """
+        desc = self.usage
+        desc += "Set --help with an action to display its description and supported options.\n\n"
+
+        for section in sorted(self.actions):
+            valid_actions = self.get_valid_actions(section, action)
+            if len(valid_actions) == 0:
+                continue
+
+            desc += section + "\n\n"
+
+            for valid_action in valid_actions:
+                desc += "  " + valid_action.replace("_", " ") + "\n"
+            desc += "\n"
+        return desc[:-2]
+
     def format_desc(self, svc=False, action=None, options=True):
         """
         Format and return a svcmgr parser help message, contextualized to display
@@ -342,6 +361,9 @@ class OptParser(object):
 
         # now we know the action. and we know if --help was set.
         # we can prepare a contextualized usage message.
+        if options.parm_help and not action:
+            self.print_digest()
+
         usage = self.format_desc(action=action, options=options.parm_help)
         self.parser.set_usage(usage)
 
@@ -369,6 +391,15 @@ class OptParser(object):
         return options, action
 
 
+    def print_digest(self):
+        """
+        Reset the parser usage to the full actions list and their options.
+        Then trigger a parser error, which displays the help message.
+        """
+        usage = self.format_digest()
+        self.parser.set_usage(usage)
+        self.parser.error("no action specified")
+
     def print_full_help(self):
         """
         Reset the parser usage to the full actions list and their options.
@@ -377,7 +408,7 @@ class OptParser(object):
         usage = self.format_desc()
         self.parser.set_usage(usage)
         if self.args is None:
-            self.parser.error("Missing action")
+            self.parser.error("no action specified")
 
     def print_short_help(self):
         """
@@ -391,7 +422,7 @@ class OptParser(object):
                 "  -h, --help       Display more actions and options\n"
         self.parser.set_usage(usage)
         if self.args is None:
-            self.parser.error("Missing action")
+            self.parser.error("no action specified")
 
     def print_context_help(self, action, options):
         """
@@ -402,4 +433,6 @@ class OptParser(object):
             self.parser.print_help()
             raise ex.excError
         else:
-            self.parser.error("Invalid action: %s" % str(action))
+            usage = self.format_digest(action)
+            self.parser.set_usage(usage)
+            self.parser.error("invalid action: %s" % str(action))
