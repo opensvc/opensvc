@@ -59,4 +59,8 @@ cd ..
 
 make package
 
-[ -x $PATH_SCRIPT/release_tbz ] && $PATH_SCRIPT/release_tbz $TBZ
+[ -x $PATH_SCRIPT/release_tbz ] && {
+	$PATH_SCRIPT/release_tbz $TBZ || exit 1
+}
+
+exit 0

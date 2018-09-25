@@ -118,4 +118,8 @@ echo "----- STEP $STEP > building IPS package archive from $PWD/repository -----
 pkgrecv -s $PWD/repository -a -d $P5PNAME opensvc
 cp $P5PNAME /tmp/
 
-[ -x $REPODIR/release_sunos_ips ] && $REPODIR/release_sunos_ips /tmp/$P5PNAME $IPSP
+[ -x $REPODIR/release_sunos_ips ] && {
+	$REPODIR/release_sunos_ips /tmp/$P5PNAME $IPSP || exit 1
+}
+
+exit 0

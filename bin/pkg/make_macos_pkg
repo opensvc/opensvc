@@ -76,6 +76,8 @@ echo "===> Building final package <$FINALPKG>"
 productbuild --distribution $XMLDISTRIB --package-path $PKGLOC --version $VERSION-$RELEASE $MACOSBUILD/../$FINALPKG
 echo "===> Build terminated, package location <$OSVC/tmp/$FINALPKG>"
 
-[ -x $PATH_SCRIPT/release_macos_pkg ] && $PATH_SCRIPT/release_macos_pkg $OSVC/tmp/$FINALPKG
+[ -x $PATH_SCRIPT/release_macos_pkg ] && {
+	$PATH_SCRIPT/release_macos_pkg $OSVC/tmp/$FINALPKG || exit 1
+}
 
 rm -rf $MACOSBUILD

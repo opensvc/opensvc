@@ -114,4 +114,8 @@ sudo rpmbuild --define "_topdir $OSVC/tmp" --clean -ba $SPEC
 RPMFILE=$(ls -1rt $OSVC/tmp/RPMS/noarch | tail -1)
 which rpmlint >/dev/null 2>&1 && rpmlint $OSVC/tmp/RPMS/noarch/$RPMFILE
 
-[ -x $PATH_SCRIPT/release_rpm ] && $PATH_SCRIPT/release_rpm $OSVC/tmp/RPMS/noarch/$RPMFILE
+[ -x $PATH_SCRIPT/release_rpm ] && {
+	$PATH_SCRIPT/release_rpm $OSVC/tmp/RPMS/noarch/$RPMFILE || exit 1
+}
+
+exit 0

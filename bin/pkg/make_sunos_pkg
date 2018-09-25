@@ -184,4 +184,8 @@ rm -f $REPODIR/preinstall
 echo "----- New package available into /tmp/$P"
 cp /tmp/$PKGNAME /tmp/$P && rm /tmp/$PKGNAME
 
-[ -x $REPODIR/release_sunos_pkg ] && $REPODIR/release_sunos_pkg /tmp/$P $IPSP
+[ -x $REPODIR/release_sunos_pkg ] && {
+	$REPODIR/release_sunos_pkg /tmp/$P $IPSP || exit 1
+}
+
+exit 0

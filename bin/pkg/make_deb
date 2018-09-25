@@ -68,4 +68,8 @@ lintian $DEB
 echo
 echo "=> Debian file located here : $DEB"
 
-[ -x $PATH_SCRIPT/release_deb ] && $PATH_SCRIPT/release_deb $DEB
+[ -x $PATH_SCRIPT/release_deb ] && {
+	$PATH_SCRIPT/release_deb $DEB || exit 1
+}
+
+exit 0

@@ -36,4 +36,8 @@ tar cf - $CHROOT_BN | ssh root@$REMOTEHOST "cd /tmp && tar xf -"
 ssh root@$REMOTEHOST "rm -rf /tmp/kits-$V && mkdir /tmp/kits-$V && cd /tmp/$CHROOT_BN && sort OSV100.mi > OSV100.mi && kits OSV100.k . /tmp/kits-$V"
 scp -r root@$REMOTEHOST:/tmp/kits-$V $OSVC/tmp/ || exit 1
 
-[ -x $PATH_SCRIPT/release_kits ] && $PATH_SCRIPT/release_kits $OSVC/tmp/kits-$V
+[ -x $PATH_SCRIPT/release_kits ] && {
+	$PATH_SCRIPT/release_kits $OSVC/tmp/kits-$V || exit 1
+}
+
+exit 0
