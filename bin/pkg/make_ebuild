@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+
+typeset MYSELF="$(readlink -f -- "$0")"
+typeset PATH_SCRIPT="${MYSELF%/*}"
+
+. "$PATH_SCRIPT/make.lib"
+
+set -o nounset -o noclobber
+
+# Try sudo if not running as root
+typeset SUDO=""
+[[ "$(id -u)" = "0" ]] || SUDO="sudo"
+
+#prepare_chroot || exit 1
+
+typeset EBUILD_D="$OSVC/tmp/EBUILD"
+typeset EBUILD="$EBUILD_D/sys-apps/opensvc/opensvc-$VERSION.$RELEASE.ebuild"
+
+mkdir -p "${EBUILD%/*}" || exit 1
+
+#
+# Create the base gentoo structure
+#
+mkdir -p "$EBUILD_D/"{metadata,profiles} || exit 1
+
+[[ -s "$EBUILD_D/profiles/repo_name" ]] || {
+	echo 'opensvc' > "$EBUILD_D/profiles/repo_name"
+}
+[[ -s "$EBUILD_D/metadata/layout.conf" ]] || {
+	cat > "$EBUILD_D/metadata/layout.conf" <<-EOT
+		masters = gentoo
+		auto-sync = false
+	EOT
+}
+
+# Register with system ebuild
+#[ -d "/etc/portage/repos.conf" ] || $SUDO mkdir -p /etc/portage/repos.conf || exit 1
+
+
+# https://devmanual.gentoo.org/function-reference/install-functions/
+# https://devmanual.gentoo.org/ebuild-writing/functions/src_install/
+# https://devmanual.gentoo.org/eclass-reference/python-utils-r1.eclass/
+# https://devmanual.gentoo.org/eclass-reference/git-r3.eclass/
+
+cat <<-EOF >| $EBUILD
+# Copyright 1999-2018 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+EAPI=6
+PYTHON_COMPAT=( python2_{6,7} python3_{4,5,6} )
+
+if [ "\${PV}" == 9999 ] ; then
+	inherit git-r3
+	EGIT_REPO_URI="https://git.opensvc.com/opensvc/.git"
+else
+	SRC_URI="https://repo.opensvc.com/tbz/1.9/opensvc-$VERSION-$RELEASE.tar.bz2"
+fi
+
+DESCRIPTION="$SUMMARY"
+HOMEPAGE="https://opensvc.com"
+
+LICENSE="GPLv2"
+SLOT="0"
+KEYWORDS="amd64 arm arm64 ia64 sparc x86"
+IUSE="bash-completion"
+
+DEPEND=""
+RDEPEND="\${DEPEND}"
+
+pkg_preinst() (
+	$(cat $OSVC/bin/preinstall)
+)
+
+pkg_postinst() {
+	python /usr/share/opensvc/bin/postinstall
+}
+
+pkg_prerm() (
+	$(cat $OSVC/bin/preuninstall)
+)
+
+# tarball does not have opensvc-$VERSION.$RELEASE prefix. Fix for src_unpack
+S="\${WORKDIR}"
+
+src_install() {
+	# Shared and template (non executables)
+	insinto /usr/share/opensvc/bin
+	doins -r usr/share/opensvc/bin/init
+
+	insinto /usr/share/opensvc
+	doins -r usr/share/opensvc/lib
+
+	# Executables
+	exeinto /usr/share/opensvc/bin
+	doexe    usr/share/opensvc/bin/opensvc
+	doexe    usr/share/opensvc/bin/{pre,post}install
+	doexe    usr/share/opensvc/bin/preuninstall
+
+	# Install main user bin. (dobin does not preserve symlink)
+	#dobin    usr/bin/{nodemgr,svcmgr,svcmon}
+	dosym   ../share/opensvc/bin/opensvc /usr/bin/nodemgr
+	dosym   ../share/opensvc/bin/opensvc /usr/bin/svcmgr
+	dosym   ../share/opensvc/bin/opensvc /usr/bin/svcmon
+	dosym   opensvc /usr/share/opensvc/bin/nodemgr
+	dosym   opensvc /usr/share/opensvc/bin/svcmgr
+	dosym   opensvc /usr/share/opensvc/bin/svcmon
+
+	# Local data
+	dodir   /var/log/opensvc
+	insinto /var/lib
+	doins -r var/lib/opensvc
+
+	# Documentation
+	dodoc -r usr/share/doc/opensvc/*
+	gunzip   usr/share/man/man1/*.gz
+	doman    usr/share/man/man1/*
+
+	# Init scripts (done by postinstall)
+	#newinitd bin/init/openrc.init.opensvc
+	#newconfd bin/init/openrc.conf.opensvc
+	#systemd_dounit bin/
+
+}
+EOF
+
+echo "Wrote $EBUILD"
+
+# Create source tar (should publish the released .tar.bz2 into ebuild's SRC_URI)
+(
+	set -o pipefail
+	TARPATH="$($PATH_SCRIPT/make_tar|awk '$1=="create"{print $2}')"
+	[[ $? -ne 0 ]] && {
+		echo >&2 "Error while creating tarball from $PATH_SCRIPT/make_tar"
+		exit 1
+	}
+	bzip2 "$TARPATH"
+
+	# Source local make.conf to have any custom DISTDIR
+	typeset DISTDIR="/usr/portage/distfiles"
+	[[ -s /etc/portage/make.conf ]] && {
+		set +o nounset
+		. /etc/portage/make.conf
+		set -o nounset
+	}
+
+	# For local test and build, copy file locally
+	echo "Copying tarball '$TARPATH' to local '$DISTDIR'"
+	$SUDO cp "$TARPATH.bz2" "$DISTDIR" || {
+		echo >&2 "Unable to copy '$TARPATH.bz2' to '$DISTDIR'"
+		exit 1
+	}
+) || {
+	echo >&2 "Cannot create source data, please check errors..."
+	exit 1
+}
+
+
+# Create ebuild
+$SUDO ebuild $EBUILD manifest clean
+
+# Send PR as per https://wiki.gentoo.org/wiki/Submitting_ebuilds
+[[ -x "$PATH_SCRIPT/release_ebuild" ]] && "$PATH_SCRIPT/release_ebuild" "$EBUILD"
