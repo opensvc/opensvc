@@ -116,8 +116,8 @@ src_install() {
 	doman    usr/share/man/man1/*
 
 	# Init scripts (done by postinstall)
-	#newinitd bin/init/openrc.init.opensvc
-	#newconfd bin/init/openrc.conf.opensvc
+	#newinitd bin/init/opensvc.init.openrc
+	#newconfd bin/init/opensvc.conf.openrc
 	#systemd_dounit bin/
 
 }
