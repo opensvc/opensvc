@@ -1,0 +1,34 @@
+#!/sbin/openrc-run
+# Copyright 1999-2018 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+# default values, unless overridden by conf.d
+: ${OSVC_ROOT_PATH:=/usr/share/opensvc}
+
+
+# https://github.com/OpenRC/openrc/blob/master/service-script-guide.md
+
+depend() {
+	# openrc deps. Report yours with "rc-status -s"
+	need hostname localmount
+	use net dns logger lvm mdadm mdraid zfs-import device-mapper \
+		libvirtd docker
+	before opensvc-services
+	provide opensvc-agent
+	# Agent is not meant to be inside a container (lxc, docker, xen, jail...)
+	keyword -containers
+}
+
+start() {
+	${OSVC_ROOT_PATH}/bin/nodemgr daemon start
+}
+
+stop() {
+	${OSVC_ROOT_PATH}/bin/nodemgr daemon shutdown
+}
+
+status() {
+	${OSVC_ROOT_PATH}/bin/nodemgr daemon status
+	${OSVC_ROOT_PATH}/bin/nodemgr daemon running
+}
+

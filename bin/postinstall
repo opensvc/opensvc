@@ -583,8 +583,8 @@ def install_rc():
 
     if reldata["ID"] in ("gentoo"):
         rc = '/etc/init.d/opensvc'
-        params = '/etc/default/opensvc'
-        src = os.path.join(pathini, 'opensvc.init.debian')
+        params = '/etc/conf.d/opensvc'
+        src = os.path.join(pathini, 'openrc.init.opensvc')
         if systemd_mgmt():
             logit("gentoo with systemd")
             copyrc = False
