@@ -1218,7 +1218,8 @@ class Node(Crypt, ExtConfig):
         head_node.add_column(rcEnv.nodename, color.BOLD)
         head_node.add_column("Value", color.BOLD)
         head_node.add_column("Source", color.BOLD)
-        for key, _data in data.items():
+        for key in sorted(data):
+            _data = data[key]
             node = head_node.add_node()
             if key not in ("targets", "lan", "uids", "gids", "hba", "hardware"):
                 if _data["value"] is None:
