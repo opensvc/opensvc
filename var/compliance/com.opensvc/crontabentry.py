@@ -147,7 +147,7 @@ class CrontabEntry(CompObject):
         out = bdecode(out)
         err = bdecode(err)
         if "no crontab" in err:
-            return RET_OK, '# Created by OpenSVC compliance'
+            return RET_OK, '# Created by OpenSVC compliance\n'
         if p.returncode != 0 :
             err = bdecode(err)
             perror("cannot get %s's crontab: %s" %(user,err.strip('\n')))
