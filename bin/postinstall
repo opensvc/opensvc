@@ -508,6 +508,11 @@ def activate_gentoo(launcher):
 
 def activate_FreeBSD(launcher):
     logit("begin")
+    cmd = ['sysrc', 'opensvc_enable=YES']
+    ret = osrun(' '.join(cmd))
+    if ret > 0:
+        logit("issue met while trying to install opensvc rc launchers", stderr=True)
+        return False
     return True
 
 def activate_Darwin(launcher):

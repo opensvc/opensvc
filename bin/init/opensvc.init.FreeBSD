@@ -2,9 +2,20 @@
 #
 
 # PROVIDE: opensvc
-# REQUIRE: LOGIN sshd cleanvar
-# BEFORE: 
+# REQUIRE: LOGIN FILESYSTEMS sshd cleanvar
 # KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="opensvc"
+desc="OpenSVC agent"
+rcvar=${name}_enable
+
+start_cmd="opensvc_start"
+restart_cmd="opensvc_restart"
+stop_cmd="opensvc_stop"
+status_cmd="opensvc_status"
+extra_commands="status"
 
 DEFAULTS="/etc/defaults/opensvc"
 OSVC_ROOT_PATH="/usr/share/opensvc"
@@ -12,19 +23,26 @@ OSVC_ROOT_PATH="/usr/share/opensvc"
 # Include opensvc defaults if available
 [ -r "$DEFAULTS" ] && . "$DEFAULTS"
 
-case $1 in
-faststart)
+opensvc_start()
+{
         ${OSVC_ROOT_PATH}/bin/nodemgr daemon start
         ${OSVC_ROOT_PATH}/bin/nodemgr pushasset
-	;;
-faststop)
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon shutdown
-	;;
-status)
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon running
-	;;
-restart)
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon restart
-	;;
-esac
+}
 
+opensvc_restart()
+{
+        ${OSVC_ROOT_PATH}/bin/nodemgr daemon restart
+}
+
+opensvc_stop()
+{
+        ${OSVC_ROOT_PATH}/bin/nodemgr daemon shutdown
+}
+
+opensvc_status()
+{
+        ${OSVC_ROOT_PATH}/bin/nodemgr daemon running
+}
+
+load_rc_config $name
+run_rc_command "$1"
