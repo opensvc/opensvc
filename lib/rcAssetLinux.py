@@ -245,7 +245,10 @@ class Asset(rcAsset.Asset):
 
     def _get_os_release(self):
         r = self._get_os_release_os_release()
-        if r and r != "/Linux":
+        if r and r not in (
+           "/Linux",
+           "Linux 7 (Core)" # centos7 poor pretty_name
+        ):
             return r
         files = ['/etc/debian_version',
                  '/etc/vmware-release',
@@ -281,7 +284,7 @@ class Asset(rcAsset.Asset):
                 (out, err, ret) = justcall(['cat', f])
                 if ret != 0:
                     return 'Unknown'
-                return out.split('\n')[0].replace(self._get_os_vendor(), '').strip()
+                return out.split('\n')[0].replace(self._get_os_vendor(), '').replace("GNU/Linux", "").replace("Linux", "").replace("release", "").strip()
         return 'Unknown'
 
     def _get_os_kernel(self):
