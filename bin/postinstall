@@ -560,7 +560,7 @@ def install_params(path2file):
 
 def os_release():
     os_release_f = os.path.join(os.sep, "etc", "os-release")
-    data = {"ID": None}
+    data = {"ID": "==magic1234"}
     if not os.path.exists(os_release_f):
         return data
     with open(os_release_f, "r") as filep:
