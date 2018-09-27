@@ -56,7 +56,7 @@ class Hb(shared.OsvcThread):
         if success:
             self.peers[nodename].last = time.time()
             if not self.peers[nodename].beating:
-                self.log.info("node %s hb status stale => beating", nodename)
+                self.event("hb_beating", data={"nodename": nodename, "hb": {"name": self.name, "id": self.id}})
             self.peers[nodename].beating = True
         self.peers[nodename].success = success
 
@@ -92,9 +92,9 @@ class Hb(shared.OsvcThread):
         if self.peers[nodename].beating != beating:
             change = True
             if beating:
-                self.log.info("node %s hb status stale => beating", nodename)
+                self.event("hb_beating", data={"nodename": nodename, "hb": {"name": self.name, "id": self.id}})
             else:
-                self.log.info("node %s hb status beating => stale", nodename)
+                self.event("hb_stale", data={"nodename": nodename, "hb": {"name": self.name, "id": self.id}}, level="warning")
         self.peers[nodename].beating = beating
         if not beating and self.peers[nodename].last > 0:
             self.forget_peer_data(nodename, change)

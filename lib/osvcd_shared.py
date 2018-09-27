@@ -109,6 +109,8 @@ EVENTS = {
     ("blacklist_add", None): "sender {sender} blacklisted",
     ("crash", "split"): "cluster is split, we don't have quorum: {node_votes}+{arbitrator_votes}/{voting} votes {pro_voters}",
     ("forget_peer", "no_rx"): "no rx thread still receive from node {peer} and maintenance grace period expired. flush its data",
+    ("hb_beating", None): "node {nodename} hb status stale => beating",
+    ("hb_stale", None): "node {nodename} hb status beating => stale",
     ("node_config_change", None): "node config change",
     ("node_freeze", "target"): "freeze node",
     ("node_thaw", None): "thaw node",
