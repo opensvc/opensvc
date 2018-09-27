@@ -135,7 +135,7 @@ class Docker(resContainer.Container):
     @lazy
     def vm_hostname(self):
         """
-        Return an empty string, as we won't need that.
+        The container hostname
         """
         try:
             hostname = self.conf_get("hostname")
@@ -306,6 +306,15 @@ class Docker(resContainer.Container):
                 del args[idx]
                 if len(args) >= idx and not args[idx].startswith("-"):
                     del args[idx]
+
+        if self.vm_hostname:
+            for aname in ("-h", "--hostname"):
+                if aname in args:
+                    idx = args.index(aname)
+                    del args[idx]
+                    if len(args) >= idx and not args[idx].startswith("-"):
+                        del args[idx]
+            args = ["--hostname", self.vm_hostname]
 
         for arg, pos in enumerate(args):
             if arg != '-p':
