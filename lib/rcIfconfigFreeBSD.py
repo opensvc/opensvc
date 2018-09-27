@@ -56,7 +56,7 @@ class ifconfig(rcIfconfig.ifconfig):
 
     def __init__(self, mcast=False):
         rcIfconfig.ifconfig.__init__(self, mcast=mcast)
-        out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
+        out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0].decode()
         self.parse(out)
 
 if __name__ == "__main__":
