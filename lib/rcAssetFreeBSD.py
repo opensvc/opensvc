@@ -76,3 +76,11 @@ class Asset(rcAssetLinux.Asset):
         if len(line) < 2:
             return 'Unknown'
         return line[-1]
+
+    def get_boot_id(self):
+        try:
+            return rcAssetLinux.Asset.get_boot_id(self)
+        except:
+            # /proc might not be mounted
+            return str(os.path.getmtime("/dev"))
+
