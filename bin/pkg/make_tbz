@@ -11,6 +11,9 @@ TAR=opensvc-$VERSION.$RELEASE.tar.gz
 prepare_chroot || exit 1
 
 cd $CHROOT/.. || exit 1
+
+[[ ! -d $DISTFILES_D ]] && mkdir -p $DISTFILES_D
+
 tar czf $DISTFILES_D/$TAR opensvc-$VERSION.$RELEASE || exit 1
 
 cat - <<EOF >Makefile
@@ -24,40 +27,100 @@ cat - <<EOF >Makefile
 PORTNAME=      opensvc
 PORTVERSION=   $VERSION.$RELEASE
 CATEGORIES=    sysutils
-MASTER_SITES=  http://repo.opensvc.com/tgz
+MASTER_SITES=  https://repo.opensvc.com/tgz
 
 MAINTAINER=    admin@opensvc.com
 COMMENT=       $SUMMARY
+LICENSE=	GPLv2
 
 #MAN1=          svcmgr.3
 #MANCOMPRESSED= yes
 
-USE_PYTHON=    2.6+
+USES=python:2.6+
 DEST_DIR=      /
 PREFIX=        /
 NO_BUILD=      yes
+SUB_FILES=	pkg-install pkg-deinstall
 
 do-install:
-	\${PREFIX}/usr/share/opensvc/bin/preinstall
-	\${CP} -a \${WRKSRC}/* \${PREFIX}/
-	\${PREFIX}/usr/share/opensvc/bin/postinstall
+	\${CP} -a \${WRKSRC}/* \${STAGEDIR}/
 
 .include <bsd.port.mk>
 
 EOF
 
+[[ ! -d $CHROOT/../files ]] && mkdir -p $CHROOT/../files
+
+cat - <<-EOF >$CHROOT/../files/pkg-install.in
+#!/bin/sh
+#
+# $FreeBSD$
+#
+
+case \$2 in
+	PRE-INSTALL)
+		echo "===> pre-installation for \$1"
+                $(cat ${CHROOT}/usr/share/opensvc/bin/preinstall | grep -v '#!/bin/sh')
+		echo ""
+		;;
+	POST-INSTALL)
+		echo "===> post-installation for \$1"
+                \${PREFIX}/usr/share/opensvc/bin/postinstall
+		echo ""
+		;;
+	*)
+		exit 64
+		;;
+esac
+
+exit 0
+
+EOF
+
+cat - <<-EOF >$CHROOT/../files/pkg-deinstall.in
+#!/bin/sh
+#
+# $FreeBSD$
+#
+
+case \$2 in
+        DEINSTALL)
+                echo "===> pre-deinstallation for \$1"
+                \${PREFIX}/usr/share/opensvc/bin/preuninstall
+                echo ""
+                ;;
+        POST-DEINSTALL)
+                echo ""
+                ;;
+        *)
+                exit 64
+                ;;
+esac
+
+exit 0
+
+EOF
+
+
 cat - <<-EOF >pkg-descr
 $DESCRIPTION
 
-WWW: http://www.opensvc.com/
+WWW: https://www.opensvc.com/
 EOF
 
 cd $CHROOT
-find opt -type f -o -type l >../pkg-plist
-find opt/opensvc -type d | sed "s/^/@dirrm /" >>../pkg-plist
+find etc usr var -type f -o -type l >../pkg-plist
+find etc usr var -type d | sed "s/^/@dir /" >>../pkg-plist
 cd ..
 
+make makesum
 make package
+
+GENPKGNAME=$(ls -1rt $CHROOT/.. | grep opensvc | tail -1)
+echo
+echo "Package is located here : "
+echo "=>  $CHROOT/../${GENPKGNAME}"
+echo
 
 [ -x $PATH_SCRIPT/release_tbz ] && {
 	$PATH_SCRIPT/release_tbz $TBZ || exit 1

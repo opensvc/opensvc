@@ -2,7 +2,8 @@
 
 ARGS=$1
 
-if [ `uname` = 'SunOS' ]
+OSFLAVOR=`uname`
+if [ $OSFLAVOR = 'SunOS' -o $OSFLAVOR = 'FreeBSD' ]
 then
 	ARGS=0
 fi
