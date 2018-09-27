@@ -1349,6 +1349,16 @@ KEYWORDS = [
     },
     {
         "section": "ip",
+        "rtype": "docker",
+        "keyword": "mode",
+        "at": True,
+        "required": False,
+        "candidates": ["bridge", "dedicated", "macvlan", "ipvlan-l2", "ipvlan-l3"],
+        "text": "The ip link mode. If ipdev is set to a bridge interface the mode defaults to bridge, else defaults to macvlan. ipvlan requires a 4.2+ kernel.",
+        "example": "container#0"
+    },
+    {
+        "section": "ip",
         "rtype": "cni",
         "keyword": "container_rid",
         "at": True,

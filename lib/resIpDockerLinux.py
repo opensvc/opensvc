@@ -12,6 +12,7 @@ class Ip(Res.Ip):
                  rid=None,
                  ipdev=None,
                  ipname=None,
+                 mode=None,
                  mask=None,
                  gateway=None,
                  network=None,
@@ -26,6 +27,7 @@ class Ip(Res.Ip):
                         gateway=gateway,
                         mask=mask,
                         **kwargs)
+        self.mode = mode
         self.network = network
         self.del_net_route = del_net_route
         self.container_rid = str(container_rid)
@@ -150,19 +152,32 @@ class Ip(Res.Ip):
         if self.container_running_elsewhere():
             return 0, "", ""
 
-        if "dedicated" in self.tags:
+        if "dedicated" in self.tags or self.mode == "dedicated":
             self.log.info("dedicated mode")
             return self.startip_cmd_dedicated()
         else:
             return self.startip_cmd_shared()
 
     def startip_cmd_shared(self):
-        if os.path.exists("/sys/class/net/%s/bridge" % self.ipdev):
+        if self.mode is None:
+            if os.path.exists("/sys/class/net/%s/bridge" % self.ipdev):
+                self.log.info("bridge mode")
+                return self.startip_cmd_shared_bridge()
+            else:
+                self.log.info("macvlan mode")
+                return self.startip_cmd_shared_macvlan()
+        elif self.mode == "bridge":
             self.log.info("bridge mode")
             return self.startip_cmd_shared_bridge()
-        else:
+        elif self.mode == "macvlan":
             self.log.info("macvlan mode")
             return self.startip_cmd_shared_macvlan()
+        elif self.mode == "ipvlan-l2":
+            self.log.info("ipvlan-l2 mode")
+            return self.startip_cmd_shared_ipvlan("l2")
+        elif self.mode == "ipvlan-l3":
+            self.log.info("ipvlan-l3 mode")
+            return self.startip_cmd_shared_ipvlan("l3")
 
     def startip_cmd_dedicated(self):
         # assign interface to the nspid
@@ -246,6 +261,57 @@ class Ip(Res.Ip):
         self.ip_wait()
         return 0, "", ""
 
+    def startip_cmd_shared_ipvlan(self, mode):
+        nspid = self.get_nspid()
+
+        tmp_guest_dev = "ph%s%s" % (nspid, self.guest_dev)
+        mtu = self.ip_get_mtu()
+
+        # create a macvlan interface
+        cmd = [rcEnv.syspaths.ip, "link", "add", "link", self.ipdev, "dev", tmp_guest_dev, "mtu", mtu, "type", "ipvlan", "mode", mode]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # activate the parent dev
+        cmd = [rcEnv.syspaths.ip, "link", "set", self.ipdev, "up"]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # assign the macvlan interface to the container namespace
+        cmd = [rcEnv.syspaths.ip, "link", "set", tmp_guest_dev, "netns", nspid]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # rename the tmp guest dev
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # plumb the ip
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # setup default route
+        self.ip_setup_route()
+
+        self.ip_wait()
+        return 0, "", ""
+
+    def ip_get_mtu(self):
+        # get mtu
+        cmd = [rcEnv.syspaths.ip, "link", "show", self.ipdev]
+        ret, out, err = self.call(cmd)
+        if ret != 0:
+            raise ex.excError("failed to get %s mtu: %s" % (self.ipdev, err))
+        mtu = out.split()[4]
+        return mtu
+
     def startip_cmd_shared_macvlan(self):
         nspid = self.get_nspid()
 
@@ -308,6 +374,11 @@ class Ip(Res.Ip):
 
         if self.gateway:
             cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "route", "replace", "default", "via", self.gateway]
+            ret, out, err = self.vcall(cmd)
+            if ret != 0:
+                return ret, out, err
+        else:
+            cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "route", "replace", "default", "dev", self.guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err

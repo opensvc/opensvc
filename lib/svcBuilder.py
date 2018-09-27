@@ -321,6 +321,10 @@ def add_ip(svc, s):
         except ex.OptNotFound as exc:
             kwargs['container_rid'] = exc.default
         try:
+            kwargs['mode'] = svc.conf_get(s, 'mode')
+        except ex.OptNotFound as exc:
+            kwargs['mode'] = exc.default
+        try:
             kwargs['network'] = svc.conf_get(s, 'network')
         except ex.OptNotFound as exc:
             kwargs['network'] = exc.default
