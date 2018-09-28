@@ -665,6 +665,7 @@ class Node(Crypt, ExtConfig):
             return match
 
         def svc_matching(svc, param, op, value):
+            param = param.lstrip(".")
             if param.startswith("$."):
                 from jsonpath_ng import jsonpath
                 from jsonpath_ng.ext import parse
