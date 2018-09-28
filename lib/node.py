@@ -3969,7 +3969,11 @@ class Node(Crypt, ExtConfig):
             {"action": "daemon_blacklist_clear"},
             nodename=self.options.node,
         )
-        print(json.dumps(data, indent=4, sort_keys=True))
+        if data is None:
+            return 1
+        for error in data.get("errors", []):
+             print(error, file=sys.stderr)
+        return data.get("status")
 
     def daemon_blacklist_status(self):
         """
@@ -4050,8 +4054,10 @@ class Node(Crypt, ExtConfig):
             nodename=self.options.node,
         )
         if data is None:
-            raise ex.excError
-        print(json.dumps(data, indent=4, sort_keys=True))
+            return 1
+        for error in data.get("errors", []):
+             print(error, file=sys.stderr)
+        return data.get("status")
 
     def _daemon_stop(self):
         """
