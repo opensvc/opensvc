@@ -25,7 +25,7 @@ DEPRECATED_KEYWORDS = {
   "disk.lvm.vgname": "name",
   "disk.pool.poolname": "name",
   "disk.vg.vgname": "name",
-  "sync.rsync.exclude": "options",
+  "sync.rsync.exclude": None,
   "disk.zpool.poolname": "name",
   "always_on": None,
 }
@@ -39,7 +39,6 @@ REVERSE_DEPRECATED_KEYWORDS = {
   "disk.lvm.name": "vgname",
   "disk.pool.name": "poolname",
   "disk.vg.name": "vgname",
-  "sync.rsync.options": "exclude",
   "disk.zpool.name": "poolname",
 }
 
