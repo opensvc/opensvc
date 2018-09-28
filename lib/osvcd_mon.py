@@ -165,7 +165,6 @@ class Monitor(shared.OsvcThread, Crypt):
                 self.unset_mon_changed()
         self.shortloops = 0
         self.reload_config()
-        self.merge_frozen()
         if self._shutdown:
             if len(self.procs) == 0:
                 self.stop()
@@ -1539,6 +1538,7 @@ class Monitor(shared.OsvcThread, Crypt):
         n_idle = len([1 for node in shared.CLUSTER_DATA.values() if node.get("monitor", {}).get("status") in ("idle", "rejoin") and "services" in node])
         if n_idle >= len(self.cluster_nodes):
             self.end_rejoin_grace_period("now rejoined")
+            self.merge_frozen()
             return False
         now = datetime.datetime.utcnow()
         if now > self.startup + datetime.timedelta(seconds=self.rejoin_grace_period):
@@ -2985,12 +2985,16 @@ class Monitor(shared.OsvcThread, Crypt):
         rejoining the cluster from taking over services that where frozen
         and stopped while we were not alive.
         """
-        if self.rejoin_grace_period_expired:
-            return
         for svc in shared.SERVICES.values():
             if svc.orchestrate == "no":
                 continue
             if len(svc.peers) < 2:
+                continue
+            try:
+                frozen = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname].get("frozen", False)
+                if frozen:
+                    continue
+            except:
                 continue
             if self.service_frozen(svc.svcname):
                 continue
@@ -3005,8 +3009,11 @@ class Monitor(shared.OsvcThread, Crypt):
                 except:
                     continue
                 if frozen:
-                    self.log.info("merge service '%s' frozen state from node '%s'",
-                                  svc.svcname, peer)
+                    self.event("instance_freeze", data={
+                        "reason": "merge_frozen",
+                        "peer": peer,
+                        "svcname": svc.svcname,
+                    })
                     svc.freezer.freeze()
 
     def service_frozen(self, svcname):
