@@ -292,7 +292,7 @@ class Section(object):
             keyword, _ = l
         if rtype:
             fkey = ".".join((self.section, rtype, keyword))
-            if fkey in self.top.deprecated_keywords:
+            if self.top and fkey in self.top.deprecated_keywords:
                 keyword = self.top.deprecated_keywords[fkey]
                 if keyword is None:
                     return
