@@ -18,6 +18,10 @@ class HbMcast(Hb, Crypt):
     heartbeat tx and rx child classes.
     """
     src_addr = None
+    port = None
+    intf = None
+    timeout = None
+    addr = None
 
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
@@ -43,6 +47,12 @@ class HbMcast(Hb, Crypt):
         self._configure()
 
     def _configure(self):
+        prev = {
+            "port": self.port,
+            "addr": self.addr,
+            "intf": self.intf,
+            "timeout": self.timeout
+        }
         try:
             self.port = shared.NODE.conf_get(self.name, "port")
         except ex.OptNotFound as exc:
@@ -66,6 +76,15 @@ class HbMcast(Hb, Crypt):
             self.src_addr = "0.0.0.0"
             self.mreq = struct.pack("4sl", group, socket.INADDR_ANY)
         self.max_handlers = len(self.cluster_nodes) * 4
+
+        # log changes
+        changes = []
+        for key, val in prev.items():
+            new_val = getattr(self, key)
+            if val is not None and val != new_val:
+                changes.append("%s %s => %s" % (key, val, getattr(self, key)))
+        if changes:
+            self.log.info(", ".join(changes))
 
     def set_if(self):
         if self.intf == "any":
@@ -93,11 +112,12 @@ class HbMcastTx(HbMcast):
     def __init__(self, name):
         HbMcast.__init__(self, name, role="tx")
 
-    def run(self):
+    def _configure(self):
+        HbMcast._configure(self)
         try:
-            self.configure()
-        except ex.excAbortAction:
-            return
+            self.sock.close()
+        except:
+            pass
         try:
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
             self.addr = addrinfo[4][0]
@@ -109,8 +129,13 @@ class HbMcastTx(HbMcast):
             self.group = (self.addr, self.port)
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
-            return
+            raise ex.excAbortAction
 
+    def run(self):
+        try:
+            self.configure()
+        except ex.excAbortAction:
+            return
         try:
             while True:
                 self.do()
@@ -156,11 +181,12 @@ class HbMcastRx(HbMcast):
     def __init__(self, name):
         HbMcast.__init__(self, name, role="rx")
 
-    def run(self):
+    def _configure(self):
+        HbMcast._configure(self)
         try:
-            self.configure()
-        except ex.excAbortAction:
-            return
+            self.sock.close()
+        except:
+            pass
         try:
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
             self.addr = addrinfo[4][0]
@@ -170,11 +196,16 @@ class HbMcastRx(HbMcast):
             self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, self.mreq)
             self.sock.bind(('', self.port))
             self.sock.settimeout(2)
+            self.log.info("listening on %s:%s", self.addr, self.port)
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
-            return
+            raise ex.excAbortAction
 
-        self.log.info("listening on %s:%s", self.addr, self.port)
+    def run(self):
+        try:
+            self.configure()
+        except ex.excAbortAction:
+            return
 
         while True:
             self.do()
