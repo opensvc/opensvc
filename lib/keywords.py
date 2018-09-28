@@ -292,7 +292,7 @@ class Section(object):
             keyword, _ = l
         if rtype:
             fkey = ".".join((self.section, rtype, keyword))
-            if self.top and fkey in self.top.deprecated_keywords:
+            if self.top is not None and fkey in self.top.deprecated_keywords:
                 keyword = self.top.deprecated_keywords[fkey]
                 if keyword is None:
                     return
@@ -355,7 +355,7 @@ class KeywordStore(dict):
     def __getitem__(self, key):
         k = str(key)
         if k not in self.sections:
-            return Section(k)
+            return Section(k, top=self)
         return self.sections[k]
 
     def print_templates(self, fmt="text"):
