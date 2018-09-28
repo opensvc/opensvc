@@ -2994,11 +2994,11 @@ class Monitor(shared.OsvcThread, Crypt):
                 continue
             if self.service_frozen(svc.svcname):
                 continue
+            smon = self.get_service_monitor(svc.svcname)
+            if smon.global_expect == "thawed":
+                continue
             for peer in svc.peers:
                 if peer == rcEnv.nodename:
-                    continue
-                smon = self.get_service_monitor(svc.svcname)
-                if smon.global_expect == "thawed":
                     continue
                 try:
                     frozen = shared.CLUSTER_DATA[peer]["services"]["status"][svc.svcname].get("frozen", False)
