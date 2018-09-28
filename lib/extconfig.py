@@ -1158,6 +1158,10 @@ class ExtConfig(object):
         with codecs.open(fpath, "w", "utf8") as ofile:
             ofile.write(buff)
             ofile.flush()
+        report = self._validate_config(fpath)
+        if report["errors"]:
+            os.unlink(fpath)
+            raise ex.excError("the change was not saved")
         shutil.move(fpath, self.paths.cf)
 
     def print_config_data(self, src_config=None, evaluate=False, impersonate=None):
