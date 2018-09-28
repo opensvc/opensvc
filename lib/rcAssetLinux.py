@@ -68,6 +68,7 @@ class Asset(rcAsset.Asset):
             return '0'
 
     def _get_mem_bytes_virsh(self):
+        from converters import convert_size
         cmd = ['virsh', 'nodeinfo']
         out, err, ret = justcall(cmd)
         if ret != 0:
@@ -76,10 +77,10 @@ class Asset(rcAsset.Asset):
         for line in lines:
             if 'Memory size' not in line:
                 continue
-            l = line.split()
+            l = line.split(":", 1)
             if len(l) < 2:
                 continue
-            return l[-2]
+            return str(convert_size(l[-1], _to="MB"))
         return '0'
 
     def _get_mem_bytes_xm(self):
