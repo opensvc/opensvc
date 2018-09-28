@@ -229,7 +229,7 @@ class Module(object):
                     log += err + "\n"
                     print(err, file=sys.stderr)
                     continue
-                _ret, _log = self.do_action_exe(action, [obj, self.context.format_rule_var(var)])
+                _ret, _log = self.do_action_exe(action, rcEnv.python_cmd + [obj, self.context.format_rule_var(var)])
                 if _ret == 1:
                     ret = 1
                 log += _log

@@ -54,7 +54,8 @@ def perror(*args, **kwargs):
     print(*args, **kwargs)
 
 def is_string(s):
-    """ python[23] compatible
+    """
+    Python[23] compatible string test.
     """
     if sys.version_info[0] == 2:
         l = (str, unicode)
@@ -65,14 +66,16 @@ def is_string(s):
     return False
 
 def bdecode(buff):
+    """
+    Convert bytes to string using utf-8 and ascii as a fallback.
+    """
+    if buff is None:
+        return buff
     if sys.version_info[0] < 3:
         return buff
-    else:
-        try:
-            return str(buff, "utf-8")
-        except:
-            return str(buff, "ascii")
-    return buff
+    if type(buff) == str:
+        return buff
+    return buff.decode("utf-8", errors="ignore")
 
 def bencode(buff):
     if sys.version_info[0] < 3:
