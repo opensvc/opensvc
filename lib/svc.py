@@ -3818,7 +3818,7 @@ class Svc(Crypt, ExtConfig):
            action.startswith("collector") or \
            action.startswith("json_"):
             return self.do_print_action(action, options)
-        if action in ACTIONS_NO_LOG or \
+        if rcEnv.dbopensvc and action in ACTIONS_NO_LOG or \
            action.startswith("compliance") or \
            action.startswith("docker") or \
            options.dry_run:
