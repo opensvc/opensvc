@@ -26,6 +26,7 @@ def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
         return {}
     if cwd is None:
         cwd = rcEnv.paths.pathtmp
+    fpath = os.path.realpath(fpath)
 
     import pwd
     try:
@@ -201,8 +202,9 @@ class App(Resource):
         if cmd is None:
             return
         if which(cmd[0]) is None:
-            self.status_log("%s is not executable" % cmd[0])
-            self.set_executable(cmd)
+            fpath = os.path.realpath(cmd[0])
+            self.status_log("%s is not executable" % fpath)
+            self.set_executable(fpath)
 
     def validate_script_path(self, cmd):
         """
@@ -216,7 +218,7 @@ class App(Resource):
         if not cmd[0].startswith('/'):
             cmd[0] = os.path.join(self.svc.paths.initd, cmd[0])
         if os.path.exists(cmd[0]):
-            cmd[0] = os.path.realpath(cmd[0])
+            os.path.realpath(cmd[0])
             return cmd
         raise ex.excError("%s does not exist" % cmd[0])
 
@@ -438,13 +440,13 @@ class App(Resource):
         self.status_log("check reports errors (%d)" % ret)
         return rcStatus.WARN
 
-    def set_executable(self, cmd):
+    def set_executable(self, fpath):
         """
         Switch the script file execution bit to on.
         """
-        if not os.path.exists(cmd[0]):
+        if not os.path.exists(fpath):
             return
-        self.vcall(['chmod', '+x', cmd[0]])
+        self.vcall(['chmod', '+x', fpath])
 
     def run(self, action, cmd, dedicated_log=True, return_out=False):
         """
