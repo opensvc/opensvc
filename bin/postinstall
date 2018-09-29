@@ -508,7 +508,7 @@ def activate_gentoo(launcher):
 
 def activate_FreeBSD(launcher):
     logit("begin")
-    cmd = ['sysrc', 'opensvc_enable=YES']
+    cmd = ['sysrc', '-f', '/etc/rc.conf.d/opensvc', 'opensvc_enable=YES']
     ret = osrun(' '.join(cmd))
     if ret > 0:
         logit("issue met while trying to install opensvc rc launchers", stderr=True)
@@ -1241,6 +1241,9 @@ def convert_to_lsb():
 
 def restart_daemon():
     logit("begin")
+    if sysname == "FreeBSD":
+        logit("FreeBSD design rules compliance : daemon restart disabled")
+        return
     flag = os.path.join(pathvar, "postinstall.restart")
     if not os.path.exists(flag):
         return
@@ -1254,6 +1257,9 @@ def restart_daemon():
 
 def init_secret():
     logit("begin")
+    if sysname == "FreeBSD":
+        logit("FreeBSD design rules compliance : daemon ping disabled")
+        return
     time.sleep(1)
     if sysname == 'Windows':
         cmd = "nodemgr ping --node 127.0.0.1"
