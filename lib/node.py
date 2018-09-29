@@ -2927,6 +2927,10 @@ class Node(Crypt, ExtConfig):
         configuration file fetching method. Run it, and create the
         service symlinks and launchers directory.
         """
+        try:
+            svcname.encode("ascii")
+        except:
+            raise ex.excError("the service name must be ascii-encodable")
         if isinstance(svcname, list):
             if len(svcname) != 1:
                 raise ex.excError("only one service must be specified")
