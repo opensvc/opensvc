@@ -24,6 +24,7 @@ RELAY_LOCK = threading.RLock()
 
 class Listener(shared.OsvcThread, Crypt):
     sock_tmo = 1.0
+    events_grace_period = True
 
     def setup_sock(self):
         try:
@@ -143,6 +144,18 @@ class Listener(shared.OsvcThread, Crypt):
             self.threads.append(thr)
 
     def janitor_events(self):
+        """
+        Send queued events to all subscribed clients.
+
+        Don't dequeue messages during the first 2 seconds of the listener lifetime,
+        so clients have a chance to reconnect after a daemon restart and loose an
+        event.
+        """
+        if self.events_grace_period:
+            if time.time() > self.created + 2:
+                self.events_grace_period = False
+            else:
+                return
         done = []
         while True:
             try:
