@@ -1,14 +1,19 @@
+sudo: true
 language: python
+branches:
+    only:
+      - master
 matrix:
   include:
   - os: linux
     python: '2.6'
-    sudo: true
   - os: linux
     python: '3.6'
-    sudo: true
 install:
   - pip install -r test-requirements.txt
 script:
   - pylint -E opensvc/lib/*py
   - coverage run --source=opensvc/lib/ -m nose --where opensvc/lib/tests
+after_success:
+  - pip install coveralls==1.0
+  - coveralls
