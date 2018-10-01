@@ -9,11 +9,12 @@ import threading
 import codecs
 import time
 import select
+import shutil
 from subprocess import Popen, PIPE
 
 import six
-import six.moves.queue as queue 
 import osvcd_shared as shared
+from six.moves import queue
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode, drop_option, chunker
 from converters import convert_size
@@ -778,7 +779,7 @@ class Listener(shared.OsvcThread, Crypt):
                         try:
                             conn.sendall(message)
                         except Exception as exc:
-                            if hasattr(exc, "errno") and exc.errno == 32:
+                            if hasattr(exc, "errno") and getattr(exc, "errno") == 32:
                                 # Broken pipe (client has left)
                                 break
                     if backlog != 0:
