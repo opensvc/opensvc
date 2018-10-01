@@ -77,6 +77,9 @@ class Crypt(object):
     A class implement AES encrypt, decrypt and message padding.
     Used by child classes to authenticate senders on data receive.
     """
+    def __init__(self):
+        self.log = None
+
     @staticmethod
     def _encrypt(message, key, _iv):
         """
@@ -121,9 +124,9 @@ class Crypt(object):
         """
         nodes = None
         if hasattr(self, "get_node"):
-            config = self.get_node().config
+            config = getattr(self, "get_node")().config
         else:
-            config = self.config
+            config = getattr(self, "config")
         try:
             nodes = config.get("cluster", "nodes").split()
         except Exception as exc:
@@ -138,7 +141,7 @@ class Crypt(object):
             nodes = [rcEnv.nodename]
 
         if hasattr(self, "get_node"):
-            node = self.get_node()
+            node = getattr(self, "get_node")()
         elif hasattr(self, "write_config"):
             node = self
         else:
@@ -158,9 +161,9 @@ class Crypt(object):
         """
         nodes = []
         if hasattr(self, "get_node"):
-            config = self.get_node().config
+            config = getattr(self, "get_node")().config
         else:
-            config = self.config
+            config = getattr(self, "config")
         try:
             nodes = config.get("cluster", "drpnodes").split()
         except Exception as exc:
@@ -174,15 +177,15 @@ class Crypt(object):
         configuration. If not set, return "default".
         """
         if hasattr(self, "get_node"):
-            config = self.get_node().config
+            config = getattr(self, "get_node")().config
         else:
-            config = self.config
+            config = getattr(self, "config")
         try:
             return config.get("cluster", "name").lower()
         except Exception as exc:
             pass
         if hasattr(self, "node"):
-            node = self.node
+            node = getattr(self, "node")
         elif hasattr(self, "write_config"):
             node = self
         else:
@@ -202,16 +205,16 @@ class Crypt(object):
         If not already set generate and store a random one.
         """
         if hasattr(self, "get_node"):
-            config = self.get_node().config
+            config = getattr(self, "get_node")().config
         else:
-            config = self.config
+            config = getattr(self, "config")
         try:
             key = config.get("cluster", "secret")
             return self.prepare_key(key)
         except Exception as exc:
             pass
         if hasattr(self, "node"):
-            node = self.node
+            node = getattr(self, "node")
         elif hasattr(self, "write_config"):
             node = self
         else:
@@ -232,7 +235,7 @@ class Crypt(object):
         """
         if hasattr(self, "get_node"):
             # svc
-            node = self.get_node()
+            node = getattr(self, "get_node")()
         elif hasattr(self, "write_config"):
             # node
             node = self
@@ -376,7 +379,7 @@ class Crypt(object):
             if sender_id in BLACKLIST:
                 BLACKLIST[sender_id] += 1
                 if count == BLACKLIST_THRESHOLD:
-                    self.event( "blacklist_add", level="warning", data={
+                    getattr(self, "event")("blacklist_add", level="warning", data={
                         "sender": sender_id,
                     })
             else:
@@ -410,9 +413,9 @@ class Crypt(object):
         Get the listener address and port from node.conf.
         """
         if hasattr(self, "get_node"):
-            config = self.get_node().config
+            config = getattr(self, "get_node")().config
         else:
-            config = self.config
+            config = getattr(self, "config")
         if nodename == rcEnv.nodename:
             if not config.has_section("listener"):
                 return "127.0.0.1", rcEnv.listener_port
