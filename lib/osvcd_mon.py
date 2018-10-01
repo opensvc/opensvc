@@ -15,7 +15,6 @@ import shutil
 import re
 import threading
 from subprocess import Popen, PIPE
-from distutils.version import LooseVersion
 
 import osvcd_shared as shared
 import rcExceptions as ex
@@ -1354,7 +1353,7 @@ class Monitor(shared.OsvcThread):
         # start fill-up the current slaves that might have holes due to
         # previous scaling while some nodes where overloaded
         n_current_slaves = len(current_slaves)
-        current_slaves = sorted(current_slaves, key=LooseVersion)
+        current_slaves = sorted(current_slaves, key=lambda x: int(x.split(".")[0]))
         for slavename in current_slaves:
             slave = shared.SERVICES[slavename]
             if slave.flex_max_nodes >= width:
@@ -1406,7 +1405,7 @@ class Monitor(shared.OsvcThread):
     def service_orchestrator_scaler_down_flex(self, svc, missing, current_slaves):
         to_remove = []
         excess = -missing
-        for slavename in sorted(current_slaves, key=LooseVersion, reverse=True):
+        for slavename in sorted(current_slaves, key=lambda x: int(x.split(".")[0]), reverse=True):
             slave = shared.SERVICES[slavename]
             n_slots = slave.flex_min_nodes
             if n_slots > excess:
@@ -1432,7 +1431,7 @@ class Monitor(shared.OsvcThread):
         n_current_slaves = len(current_slaves)
         new_slaves_list = [str(n_current_slaves+idx)+"."+svc.svcname for idx in range(slaves_count)]
 
-        to_add = sorted(new_slaves_list, key=LooseVersion)
+        to_add = sorted(new_slaves_list, key=lambda x: int(x.split(".")[0]))
         to_add = [[svcname, None] for svcname in to_add]
         delta = "add " + ",".join([elem[0] for elem in to_add])
         self.log.info("scale service %s: %s", svc.svcname, delta)
@@ -1446,7 +1445,7 @@ class Monitor(shared.OsvcThread):
         n_current_slaves = len(current_slaves)
         slaves_list = [str(n_current_slaves-1-idx)+"."+svc.svcname for idx in range(slaves_count)]
 
-        to_remove = sorted(slaves_list, key=LooseVersion)
+        to_remove = sorted(slaves_list, key=lambda x: int(x.split(".")[0]))
         to_remove = [svcname for svcname in to_remove]
         delta = "delete " + ",".join([elem[0] for elem in to_remove])
         self.log.info("scale service %s: %s", svc.svcname, delta)
