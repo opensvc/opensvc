@@ -16,6 +16,7 @@ class Hb(shared.OsvcThread):
     Heartbeat parent class
     """
     default_hb_period = 5
+    timeout = None
 
     def __init__(self, name, role=None):
         shared.OsvcThread.__init__(self)
@@ -23,6 +24,22 @@ class Hb(shared.OsvcThread):
         self.id = name + "." + role
         self.log = logging.getLogger(rcEnv.nodename+".osvcd."+self.id)
         self.peers = {}
+        self.reset_stats()
+
+    def push_stats(self, _bytes=-1):
+        if _bytes < 0:
+            self.stats.errors += 1
+        else:
+            self.stats.beats += 1
+            self.stats.bytes += _bytes
+
+    def reset_stats(self):
+        self.stats = Storage({
+            "since": time.time(),
+            "beats": 0,
+            "bytes": 0,
+            "errors": 0,
+        })
 
     def status(self, **kwargs):
         data = shared.OsvcThread.status(self, **kwargs)

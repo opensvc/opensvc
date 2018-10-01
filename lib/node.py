@@ -20,9 +20,13 @@ import time
 import re
 
 import six
-from six.moves.urllib.request import Request, urlopen
-from six.moves.urllib.error import HTTPError
-from six.moves.urllib.parse import urlencode
+try:
+    from six.moves.urllib.request import Request, urlopen
+    from six.moves.urllib.error import HTTPError
+    from six.moves.urllib.parse import urlencode
+except ImportError:
+    # pylint false positive
+    pass
 
 import svcBuilder
 import xmlrpcClient
@@ -39,7 +43,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         list_services
 from converters import *
 from comm import Crypt
-from extconfig import ExtConfig
+from extconfig import ExtConfigMixin
 
 if six.PY2:
     BrokenPipeError = IOError
@@ -96,7 +100,7 @@ UNPRIVILEGED_ACTIONS = [
     "collector_cli",
 ]
 
-class Node(Crypt, ExtConfig):
+class Node(Crypt, ExtConfigMixin):
     """
     Defines a cluster node.  It contain list of Svc.
     Implements node-level actions and checks.
@@ -105,7 +109,7 @@ class Node(Crypt, ExtConfig):
         return self.nodename
 
     def __init__(self):
-        ExtConfig.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
+        ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.config = None
         self.auth_config = None
         self.clouds = None
@@ -1560,12 +1564,6 @@ class Node(Crypt, ExtConfig):
 
         tree.print()
 
-    def push_stats_fs_u(self, l, sync=True):
-        args = [l[0], l[1]]
-        if self.auth_node:
-            args += [(rcEnv.uuid, rcEnv.nodename)]
-        self.proxy.insert_stats_fs_u(*args)
-
     def push_disks_data(self):
         if self.svcs is None:
             self.build_services()
@@ -2275,7 +2273,7 @@ class Node(Crypt, ExtConfig):
         Returns a random password.
         """
         import string
-        chars = string.letters + string.digits + r'+/'
+        chars = string.ascii_letters + string.digits + r'+/'
         assert 256 % len(chars) == 0
         pwd_len = 16
         return ''.join(chars[ord(c) % len(chars)] for c in os.urandom(pwd_len))
@@ -2623,7 +2621,10 @@ class Node(Crypt, ExtConfig):
         if os.path.exists(fpath):
             with open(fpath, "r") as ofile:
                 buff = ofile.read()
-            data = self.decrypt(buff)[1]["data"]
+            nodename, data = self.decrypt(buff)
+            if data is None:
+                raise ex.excError("no data")
+            data = data["data"]
             try:
                 return base64.urlsafe_b64decode(data)
             except TypeError:
@@ -2815,7 +2816,7 @@ class Node(Crypt, ExtConfig):
             raise exc
         except IOError as exc:
             if hasattr(exc, "reason"):
-                raise ex.excError(exc.reason)
+                raise ex.excError(getattr(exc, "reason"))
             raise ex.excError(str(exc))
         data = json.loads(ufile.read().decode("utf-8"))
         ufile.close()
@@ -2927,14 +2928,15 @@ class Node(Crypt, ExtConfig):
         configuration file fetching method. Run it, and create the
         service symlinks and launchers directory.
         """
-        try:
-            svcname.encode("ascii")
-        except:
-            raise ex.excError("the service name must be ascii-encodable")
         if isinstance(svcname, list):
             if len(svcname) != 1:
                 raise ex.excError("only one service must be specified")
             svcname = svcname[0]
+
+        try:
+            svcname.encode("ascii")
+        except Exception:
+            raise ex.excError("the service name must be ascii-encodable")
 
         data = None
         if sys.stdin and not sys.stdin.isatty():
@@ -3195,7 +3197,7 @@ class Node(Crypt, ExtConfig):
     def print_config_data(self, src_config=None, evaluate=False, impersonate=None):
         if src_config is None:
             src_config = self.config
-        return ExtConfig.print_config_data(self, src_config=src_config,
+        return ExtConfigMixin.print_config_data(self, src_config=src_config,
                                            evaluate=evaluate,
                                            impersonate=impersonate)
 
@@ -3242,21 +3244,21 @@ class Node(Crypt, ExtConfig):
         try:
             reload(version)
             return version.version
-        except:
+        except (NameError, AttributeError):
             pass
 
         try:
             import imp
             imp.reload(version)
             return version.version
-        except:
+        except (AttributeError, UnboundLocalError):
             pass
 
         try:
             import importlib
             importlib.reload(version)
             return version.version
-        except:
+        except (AttributeError, UnboundLocalError):
             pass
         if which("git"):
             cmd = ["git", "--git-dir", os.path.join(rcEnv.paths.pathsvc, ".git"),
@@ -4093,7 +4095,7 @@ class Node(Crypt, ExtConfig):
             # daemon stopped.
             # Detect this situation and stop the daemon ourselves.
             if self.daemon_active_systemd():
-                data = self.daemon_stop_systemd()
+                self.daemon_stop_systemd()
             else:
                 if self._daemon_running():
                     data = self._daemon_stop()

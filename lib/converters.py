@@ -6,7 +6,7 @@ import shlex
 
 try:
     NUMERIC_TYPES = (int, float, long)
-except:
+except NameError:
     NUMERIC_TYPES = (int, float)
 
 def convert_shlex(s):

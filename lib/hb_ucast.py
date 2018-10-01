@@ -30,11 +30,7 @@ class HbUcast(Hb):
         return data
 
     def configure(self):
-        self.stats = Storage({
-            "beats": 0,
-            "bytes": 0,
-            "errors": 0,
-        })
+        self.reset_stats()
         self._configure()
 
     def reconfigure(self):
@@ -43,7 +39,7 @@ class HbUcast(Hb):
     def _configure(self):
         self.peer_config = {}
         if hasattr(self, "node"):
-            config = self.node.config
+            config = getattr(self, "node").config
         else:
             config = self.config
         try:
@@ -126,16 +122,15 @@ class HbUcastTx(HbUcast):
             sock.connect((config.addr, config.port))
             sock.sendall((message+"\0").encode())
             self.set_last(nodename)
-            self.stats.beats += 1
-            self.stats.bytes += message_bytes
+            self.push_stats(message_bytes)
         except socket.timeout as exc:
-            self.stats.errors += 1
+            self.push_stats()
             if self.get_last(nodename).success:
                 self.log.warning("send to %s (%s:%d) timeout", nodename,
                                  config.addr, config.port)
             self.set_last(nodename, success=False)
         except socket.error as exc:
-            self.stats.errors += 1
+            self.push_stats()
             if self.get_last(nodename).success:
                 self.log.warning("send to %s (%s:%d) error: %s", nodename,
                                config.addr, config.port, str(exc))
@@ -207,7 +202,6 @@ class HbUcastRx(HbUcast):
     def handle_client(self, conn, addr):
         try:
             self._handle_client(conn, addr)
-            self.stats.beats += 1
         finally:
             conn.close()
 
@@ -216,12 +210,12 @@ class HbUcastRx(HbUcast):
         buff_size = 4096
         while True:
             chunk = conn.recv(buff_size)
-            self.stats.bytes += len(chunk)
             if chunk:
                 chunks.append(chunk)
             if not chunk or chunk.endswith(b"\x00"):
                 break
         data = six.b("").join(chunks)
+        self.push_stats(len(data))
         del chunks
 
         nodename, data = self.decrypt(data, sender_id=addr[0])
@@ -232,7 +226,7 @@ class HbUcastRx(HbUcast):
             # decrypt passed, trust it is a new node
             self.add_cluster_node(nodename)
         if data is None:
-            self.stats.errors += 1
+            self.push_stats()
             self.set_beating(nodename)
             return
         try:

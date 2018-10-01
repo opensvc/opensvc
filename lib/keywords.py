@@ -9,6 +9,7 @@ import copy
 from textwrap import TextWrapper
 
 from rcGlobalEnv import rcEnv
+import rcExceptions as ex
 
 class MissKeyNoDefault(Exception):
     pass
@@ -403,7 +404,7 @@ class KeywordStore(dict):
         kwargs = {}
         for keyword in self.all_keys(cat, rtype):
             try:
-                kwargs[keyword.name] = self.conf_get(s, keyword.name)
+                kwargs[keyword.name] = self.conf_get(cat, keyword.name)
             except ex.RequiredOptNotFound:
                 raise
             except ex.OptNotFound as exc:

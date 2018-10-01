@@ -156,7 +156,10 @@ def lock_nowait(lockfile=None, intent=None):
             # acquire lock
             fcntl.fcntl(lockfd, fcntl.F_SETFD, flags)
         elif os.name == 'nt':
-            import msvcrt
+            try:
+                import msvcrt
+            except ImportError:
+                raise
             size = os.path.getsize(lockfile)
             msvcrt.locking(lockfd, msvcrt.LK_RLCK, size)
 

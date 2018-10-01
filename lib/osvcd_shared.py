@@ -433,6 +433,7 @@ class OsvcThread(threading.Thread, Crypt):
         global SMON_DATA
         instance = self.get_service_instance(svcname, rcEnv.nodename)
         if instance and not instance.get("resources", {}) and \
+           status != "scaling" and \
            (global_expect not in ("frozen", "thawed", "aborted", "unset", "deleted", "purged") or \
            (global_expect is None and local_expect is None and status=="idle")):
             # skip slavers, wrappers, scalers
