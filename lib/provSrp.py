@@ -3,6 +3,7 @@ from rcGlobalEnv import rcEnv
 import os
 import socket
 import rcExceptions as ex
+from rcUtilities import which
 
 class Prov(provisioning.Prov):
     def __init__(self, r):
