@@ -108,7 +108,7 @@ class Prov(provisioning.Prov):
         """
         data = []
         for devpath in glob.glob(pattern):
-            dev = self.node.devtree.get_dev_by_devpath(devpath)
+            dev = self.r.svc.node.devtree.get_dev_by_devpath(devpath)
             if dev is None:
                 continue
             data.append(dev.alias)
