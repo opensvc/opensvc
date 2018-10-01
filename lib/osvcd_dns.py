@@ -246,7 +246,7 @@ class Dns(shared.OsvcThread, Crypt):
                    self.txt_record(parameters) + \
                    self.cname_record(parameters)
 
-            return self._action_list(qname, lookup=True)
+            return self._action_list(qname)
         return []
 
     def action_list(self, parameters):
@@ -309,7 +309,7 @@ class Dns(shared.OsvcThread, Crypt):
         qname = parameters.get("qname").lower()
         if qname != self.zone:
             return []
-        return zone_ns_records(self.zone)
+        return self.zone_ns_records(self.zone)
 
     def zone_ns_records(self, zonename):
         data = []
@@ -404,7 +404,8 @@ class Dns(shared.OsvcThread, Crypt):
                             continue
                         if addr != ref:
                             continue
-                        if "hostname" in resource:
+                        hostname = resource.get("info", {}).get("hostname")
+                        if hostname:
                             names.append("%s.%s.%s.svc.%s." % (hostname, svcname, app, self.cluster_name))
                         names.append("%s.%s.svc.%s." % (svcname, app, self.cluster_name))
         return names

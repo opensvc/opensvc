@@ -12,7 +12,8 @@ import json
 from subprocess import Popen, PIPE
 
 import six
-import six.moves.queue as queue
+from six.moves import queue
+
 import rcExceptions as ex
 from rcConfigParser import RawConfigParser
 from rcUtilities import lazy, unset_lazy, is_string
