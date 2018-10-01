@@ -14,7 +14,10 @@ class check(checks.check):
         return ''
 
     def do_check(self):
-        import win32api
+        try:
+            import win32api
+        except ImportError:
+            return []
         cmd = ['df', '-lP']
         r = []
         for drive in get_drives():
