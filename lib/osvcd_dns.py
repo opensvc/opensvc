@@ -15,7 +15,6 @@ import six
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import lazy, bdecode
-from comm import Crypt
 
 PTR_SUFFIX = ".in-addr.arpa."
 PTR_SUFFIX_LEN = 14
@@ -27,7 +26,7 @@ if six.PY2:
 else:
     MAKEFILE_KWARGS = {"buffering": None}
 
-class Dns(shared.OsvcThread, Crypt):
+class Dns(shared.OsvcThread):
     sock_tmo = 1.0
 
     def run(self):

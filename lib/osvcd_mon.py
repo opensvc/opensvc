@@ -20,7 +20,6 @@ from distutils.version import LooseVersion
 import osvcd_shared as shared
 import rcExceptions as ex
 import json_delta
-from comm import Crypt
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode, purge_cache, fsum
 from svcBuilder import build, fix_exe_link
@@ -57,7 +56,7 @@ LEADER_ABORT_STATES = (
     ("start failed", "placed@"),
 )
 
-class Monitor(shared.OsvcThread, Crypt):
+class Monitor(shared.OsvcThread):
     """
     The monitoring thread collecting local service states and taking decisions.
     """

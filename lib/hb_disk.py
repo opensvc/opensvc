@@ -13,11 +13,10 @@ import time
 import osvcd_shared as shared
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage
-from comm import Crypt
 from hb import Hb
 from rcUtilities import bdecode
 
-class HbDisk(Hb, Crypt):
+class HbDisk(Hb):
     """
     A class factorizing common methods and properties for the disk
     heartbeat tx and rx child classes.

@@ -9,10 +9,9 @@ import contextlib
 import osvcd_shared as shared
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage
-from comm import Crypt
 from hb import Hb
 
-class HbRelay(Hb, Crypt):
+class HbRelay(Hb):
     """
     A class factorizing common methods and properties for the relay
     heartbeat tx and rx child classes.

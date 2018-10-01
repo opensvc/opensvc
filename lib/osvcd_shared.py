@@ -20,6 +20,7 @@ from rcUtilities import lazy, unset_lazy, is_string
 from rcGlobalEnv import rcEnv, Storage
 from freezer import Freezer
 from converters import convert_duration, convert_boolean
+from comm import Crypt
 
 # disable orchestration if a peer announces a different compat version than ours
 COMPAT_VERSION = 5
@@ -179,7 +180,7 @@ def wake_scheduler():
 # Base Thread class
 #
 #############################################################################
-class OsvcThread(threading.Thread):
+class OsvcThread(threading.Thread, Crypt):
     """
     Thread class with a stop() method. The thread itself has to check
     regularly for the stopped() condition.
@@ -188,6 +189,7 @@ class OsvcThread(threading.Thread):
 
     def __init__(self):
         super(OsvcThread, self).__init__()
+        self.log = None
         self._stop_event = threading.Event()
         self._node_conf_event = threading.Event()
         self.created = time.time()

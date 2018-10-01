@@ -18,12 +18,11 @@ from six.moves import queue
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import bdecode, drop_option, chunker
 from converters import convert_size
-from comm import Crypt
 
 RELAY_DATA = {}
 RELAY_LOCK = threading.RLock()
 
-class Listener(shared.OsvcThread, Crypt):
+class Listener(shared.OsvcThread):
     sock_tmo = 1.0
     events_grace_period = True
 

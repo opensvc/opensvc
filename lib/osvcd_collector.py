@@ -9,10 +9,9 @@ import time
 
 import osvcd_shared as shared
 import rcExceptions as ex
-from comm import Crypt
 from rcGlobalEnv import rcEnv
 
-class Collector(shared.OsvcThread, Crypt):
+class Collector(shared.OsvcThread):
     update_interval = 300
     min_update_interval = 10
     min_ping_interval = 60

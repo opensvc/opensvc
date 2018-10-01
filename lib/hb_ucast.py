@@ -9,10 +9,9 @@ import six
 import rcExceptions as ex
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
-from comm import Crypt
 from hb import Hb
 
-class HbUcast(Hb, Crypt):
+class HbUcast(Hb):
     """
     A class factorizing common methods and properties for the unicast
     heartbeat tx and rx child classes.
