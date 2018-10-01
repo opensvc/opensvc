@@ -71,5 +71,7 @@ def send_arp(ifname, address):
     ether_socket.close()
 
 if __name__ == "__main__":
-    send_arp(*sys.argv[1:])
+    ifname = sys.argv[1]
+    address = sys.argv[2]
+    send_arp(ifname, address)
 
