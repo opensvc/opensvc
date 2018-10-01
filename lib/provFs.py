@@ -18,7 +18,7 @@ class Prov(provisioning.Prov):
             return True
         if self.mkfs_dev is None:
             return True
-        cmd = self.info + [self.mkfs_dev]
+        cmd = getattr(self, "info") + [self.mkfs_dev]
         out, err, ret = justcall(cmd)
         if ret == 0:
             return True
@@ -123,13 +123,13 @@ class Prov(provisioning.Prov):
             return
 
         if hasattr(self, "do_mkfs"):
-            self.do_mkfs()
+            getattr(self, "do_mkfs")()
         elif hasattr(self, "mkfs"):
             try:
                 opts = self.r.svc.conf_get(self.r.rid, "mkfs_opt")
             except:
                 opts = []
-            cmd = self.mkfs + opts + [self.mkfs_dev]
+            cmd = getattr(self, "mkfs") + opts + [self.mkfs_dev]
             (ret, out, err) = self.r.vcall(cmd)
             if ret != 0:
                 self.r.log.error('Failed to format %s'%self.mkfs_dev)
