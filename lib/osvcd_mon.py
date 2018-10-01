@@ -66,6 +66,7 @@ class Monitor(shared.OsvcThread, Crypt):
     max_shortloops = 30
     default_stdby_nb_restart = 2
     arbitrators_data = None
+    last_arbitrator_ping = 0
 
     def __init__(self):
         shared.OsvcThread.__init__(self)
