@@ -25,6 +25,7 @@ class checks(check):
 
     def __init__(self, svcs=[]):
         self.svcs = svcs
+        self.node = None
         self.register('Fs', 'Usage')
         self.register('Fs', 'Inode')
         self.register('Vg', 'Usage')
