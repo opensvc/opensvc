@@ -15,14 +15,18 @@
 
 """
 
-import win32service
-import win32serviceutil
-import win32api
-import win32con
-import win32event
-import win32evtlogutil
+try:
+    import win32service
+    import win32serviceutil
+    import win32api
+    import win32con
+    import win32event
+    import win32evtlogutil
+    import servicemanager
+except ImportError:
+    # to please pylint we run on a non-windows os
+    raise
 import os
-import servicemanager
 import sys
 
 from osvcd import Daemon
