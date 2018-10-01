@@ -2,6 +2,7 @@ import re
 import checks
 from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
+from converters import convert_size
 
 class check(checks.check):
     def __init__(self, svcs=[]):
@@ -9,24 +10,6 @@ class check(checks.check):
         self.zpcache = {}
 
     chk_type = "fs_u"
-
-    def convert(self, s):
-        s = s.replace(',', '.').upper()
-        if s == "0":
-            return 0
-        if len(s) < 2:
-            raise
-        if s.endswith('T'):
-            s = float(s[:-1])*1024*1024*1024
-        elif s.endswith('G'):
-            s = float(s[:-1])*1024*1024
-        elif s.endswith('M'):
-            s = float(s[:-1])*1024
-        elif s.endswith('K'):
-            s = float(s[:-1])
-        else:
-            raise
-        return s
 
     def get_zonepath(self, name):
         if name in self.zpcache:
@@ -73,14 +56,14 @@ class check(checks.check):
             if "osvc_sync_" in l[0]:
                 # do not report osvc sync snapshots fs usage
                 continue
-            used = self.convert(l[1])
-            avail = self.convert(l[2])
+            used = convert_size(l[1])
+            avail = convert_size(l[2])
             total = used + avail
-            pct = used / total * 100
+            pct = round(used / total * 100)
             svcname = self.find_svc(l[0], l[3])
             r.append({
                       'chk_instance': l[0],
-                      'chk_value': str(pct),
+                      'chk_value': str(pct)+"%",
                       'chk_svcname': svcname,
                      })
             r.append({
