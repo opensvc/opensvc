@@ -2419,6 +2419,9 @@ class Monitor(shared.OsvcThread, Crypt):
                 else:
                     data[svcname] = self.service_status_fallback(svcname)
 
+            if data[svcname] is None:
+                continue
+
             # update the frozen instance attribute
             with shared.SERVICES_LOCK:
                 data[svcname]["frozen"] = shared.SERVICES[svcname].frozen()
