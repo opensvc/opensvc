@@ -1,0 +1,17 @@
+# OpenSVC startup and wrapper configuration file
+#
+# You may need to adapt parameters to fit your environment
+# This file is not modified during software upgrades
+# If empty, default settings are used in the init script
+
+
+#
+
+#
+# Wrapper configuration
+#
+#OSVC_ROOT_PATH=/opt/opensvc
+#OSVC_PYTHON=python
+#LD_LIBRARY_PATH=
+#LD_PRELOAD=
+
