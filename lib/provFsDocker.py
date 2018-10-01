@@ -5,11 +5,6 @@ import provisioning
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 
-if rcEnv.paths.pathcomposvc not in sys.path:
-    sys.path.append(rcEnv.paths.pathcomposvc)
-
-from file import CompFiles
-
 class Prov(provisioning.Prov):
     def __init__(self, r):
         provisioning.Prov.__init__(self, r)
