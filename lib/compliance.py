@@ -10,7 +10,7 @@ from subprocess import *
 
 import six
 import rcExceptions as ex
-from rcGlobalEnv import rcEnv
+from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import is_exe, justcall, banner, is_string, fcache
 from rcColor import color, colorize, formatter
 
@@ -29,6 +29,10 @@ class Module(object):
         self.autofix = autofix
         self.python_link_d = os.path.dirname(sys.executable)
         self.ordering = 0
+        self.rset_md5 = ""
+        self.ruleset = None
+        self.context = None
+        self.options = Storage()
 
         dl = os.listdir(comp_dir)
         match = []
@@ -826,6 +830,8 @@ class Compliance(object):
             l = self.node.collector.call('comp_list_moduleset', self.options.moduleset)
         if l is None:
             return
+        if isinstance(l, dict) and l.get("ret", 0) != 0:
+            raise ex.excError(l.get("msg", ""))
         print('\n'.join(l))
 
     def compliance_list_module(self):
