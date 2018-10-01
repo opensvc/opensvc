@@ -653,7 +653,7 @@ def install_rc():
         src = os.path.join(pathini, 'opensvc.init.OSF1')
         activate = activate_OSF1
     elif sysname == "FreeBSD":
-        rc = '/etc/rc.d/opensvc'
+        rc = '/usr/local/etc/rc.d/opensvc'
         params = '/etc/defaults/opensvc'
         src = os.path.join(pathini, 'opensvc.init.FreeBSD')
         activate = activate_FreeBSD
@@ -1227,9 +1227,6 @@ def convert_to_lsb():
 
 def restart_daemon():
     logit("begin")
-    if sysname == "FreeBSD":
-        logit("FreeBSD design rules compliance : daemon restart disabled")
-        return
     flag = os.path.join(pathvar, "postinstall.restart")
     if not os.path.exists(flag):
         return
@@ -1243,9 +1240,6 @@ def restart_daemon():
 
 def init_secret():
     logit("begin")
-    if sysname == "FreeBSD":
-        logit("FreeBSD design rules compliance : daemon ping disabled")
-        return
     time.sleep(1)
     if sysname == 'Windows':
         cmd = "nodemgr ping --node 127.0.0.1"

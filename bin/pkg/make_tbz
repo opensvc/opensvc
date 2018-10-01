@@ -63,7 +63,14 @@ case \$2 in
 		;;
 	POST-INSTALL)
 		echo "===> post-installation for \$1"
-                \${PREFIX}/usr/share/opensvc/bin/postinstall
+                mkdir -p /etc/opensvc /var/log/opensvc /var/tmp/opensvc /var/lib/opensvc /var/lib/opensvc/lock
+                cp -f /usr/share/opensvc/bin/init/opensvc.init.FreeBSD /usr/local/etc/rc.d/opensvc
+                if [ ! -f /etc/defaults/opensvc ]; then
+                    cp -f /usr/share/opensvc/bin/init/opensvc.defaults.parameters /etc/defaults/opensvc
+                fi
+		echo ""
+		echo "If you want to enable OpenSVC at boot time, please use the command below :"
+		echo "# sysrc -f /etc/rc.conf.d/opensvc opensvc_enable=YES"
 		echo ""
 		;;
 	*)
@@ -87,7 +94,15 @@ case \$2 in
                 ;;
         POST-DEINSTALL)
                 echo "===> post-deinstallation for \$1"
-                rm -f /etc/rc.d/opensvc /etc/rc.conf.d/opensvc
+                rm -f /usr/local/etc/rc.d/opensvc
+                echo ""
+                if [ -f /etc/rc.conf.d/opensvc ]; then
+                    echo "You may want to remove file /etc/rc.conf.d/opensvc manually"
+                fi
+                echo ""
+                if [ -f /etc/defaults/opensvc ]; then
+                    echo "You may want to remove file /etc/defaults/opensvc manually"
+                fi
                 echo ""
                 ;;
         *)
