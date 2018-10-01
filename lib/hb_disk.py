@@ -43,11 +43,7 @@ class HbDisk(Hb):
 
     def configure(self):
         self.dev = None
-        self.stats = Storage({
-            "beats": 0,
-            "bytes": 0,
-            "errors": 0,
-        })
+        self.reset_stats()
         self._configure()
 
     def reconfigure(self):
@@ -56,7 +52,7 @@ class HbDisk(Hb):
     def _configure(self):
         self.peer_config = {}
         if hasattr(self, "node"):
-            config = self.node.config
+            config = getattr(self, "node").config
         else:
             config = self.config
 
@@ -267,11 +263,10 @@ class HbDiskTx(HbDisk):
         try:
             self.write_slot(slot, data, fo=fo)
             self.set_last()
-            self.stats.beats += 1
-            self.stats.bytes += message_bytes
+            self.push_stats(message_bytes)
             #self.log.info("written to %s slot %s", self.dev, slot)
         except Exception as exc:
-            self.stats.errors += 1
+            self.push_stats()
             if self.get_last().success:
                 self.log.error("write to %s slot %d error: %s", self.dev,
                                self.peer_config[rcEnv.nodename]["slot"], exc)
@@ -348,11 +343,10 @@ class HbDiskRx(HbDisk):
                     continue
                 self.last_updated[nodename] = updated
                 self.store_rx_data(_data, nodename)
-                self.stats.beats += 1
-                self.stats.bytes += len(slot_data)
+                self.push_stats(len(slot_data))
                 self.set_last(nodename)
             except Exception as exc:
-                self.stats.errors += 1
+                self.push_stats()
                 if self.get_last(nodename).success:
                     self.log.error("read from %s slot %d (%s) error: %s", self.dev,
                                    data.slot, nodename, str(exc))

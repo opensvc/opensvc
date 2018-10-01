@@ -21,6 +21,7 @@ class HbMcast(Hb):
     intf = None
     timeout = None
     addr = None
+    sock = None
 
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
@@ -35,11 +36,7 @@ class HbMcast(Hb):
         return data
 
     def configure(self):
-        self.stats = Storage({
-            "beats": 0,
-            "bytes": 0,
-            "errors": 0,
-        })
+        self.reset_stats()
         self._configure()
 
     def reconfigure(self):
@@ -113,10 +110,11 @@ class HbMcastTx(HbMcast):
 
     def _configure(self):
         HbMcast._configure(self)
-        try:
-            self.sock.close()
-        except:
-            pass
+        if self.sock:
+            try:
+                self.sock.close()
+            except:
+                pass
         try:
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
             self.addr = addrinfo[4][0]
@@ -156,15 +154,14 @@ class HbMcastTx(HbMcast):
         try:
             sent = self.sock.sendto((message+"\0").encode(), self.group)
             self.set_last()
-            self.stats.beats += 1
-            self.stats.bytes += message_bytes
+            self.push_stats(message_bytes)
         except socket.timeout as exc:
-            self.stats.errors += 1
+            self.push_stats()
             if self.get_last().success:
                 self.log.warning("send timeout")
             self.set_last(success=False)
         except socket.error as exc:
-            self.stats.errors += 1
+            self.push_stats()
             if self.get_last().success:
                 self.log.warning("send error: %s", exc)
             self.set_last(success=False)
@@ -182,10 +179,11 @@ class HbMcastRx(HbMcast):
 
     def _configure(self):
         HbMcast._configure(self)
-        try:
-            self.sock.close()
-        except:
-            pass
+        if self.sock:
+            try:
+                self.sock.close()
+            except:
+                pass
         try:
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
             self.addr = addrinfo[4][0]
@@ -219,8 +217,7 @@ class HbMcastRx(HbMcast):
 
         try:
             data, addr = self.sock.recvfrom(shared.MAX_MSG_SIZE)
-            self.stats.beats += 1
-            self.stats.bytes += len(data)
+            self.push_stats(len(data))
         except socket.timeout:
             self.set_peers_beating()
             return
@@ -241,7 +238,7 @@ class HbMcastRx(HbMcast):
             # decrypt passed, trust it is a new node
             self.add_cluster_node(nodename)
         if data is None:
-            self.stats.errors += 1
+            self.push_stats()
             self.set_beating(nodename)
             return
         try:

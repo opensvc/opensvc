@@ -29,11 +29,7 @@ class HbRelay(Hb):
         return data
 
     def configure(self):
-        self.stats = Storage({
-            "beats": 0,
-            "bytes": 0,
-            "errors": 0,
-        })
+        self.reset_stats()
         self._configure()
 
     def reconfigure(self):
@@ -42,7 +38,7 @@ class HbRelay(Hb):
     def _configure(self):
         self.peer_config = {}
         if hasattr(self, "node"):
-            config = self.node.config
+            config = getattr(self, "node").config
         else:
             config = self.config
 
@@ -106,11 +102,10 @@ class HbRelayTx(HbRelay):
         try:
             self.send(message)
             self.set_last()
-            self.stats.beats += 1
-            self.stats.bytes += message_bytes
+            self.push_stats(message_bytes)
             #self.log.info("written to %s slot %s", self.dev, slot)
         except Exception as exc:
-            self.stats.errors += 1
+            self.push_stats()
             if self.get_last().success:
                 self.log.error("send to relay error: %s", exc)
             self.set_last(success=False)
@@ -181,10 +176,10 @@ class HbRelayRx(HbRelay):
                     continue
                 self.last_updated[nodename] = updated
                 self.store_rx_data(_data, nodename)
-                self.stats.beats += 1
+                self.push_stats(len(_data))
                 self.set_last(nodename)
             except Exception as exc:
-                self.stats.errors += 1
+                self.push_stats()
                 if self.get_last(nodename).success:
                     self.log.error("read from relay %s slot %s error: %s", self.relay,
                                    nodename, str(exc))
