@@ -1,6 +1,10 @@
 import node
-import pythoncom
-import wmi
+
+try:
+    import pythoncom
+    import wmi
+except ImportError:
+    raise
 
 class Node(node.Node):
     def shutdown(self):
