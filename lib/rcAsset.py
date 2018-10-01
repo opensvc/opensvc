@@ -25,7 +25,7 @@ class Asset(object):
             try:
                 s = self._get_mem_bytes()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "mem",
@@ -44,7 +44,7 @@ class Asset(object):
             try:
                 s = self._get_mem_banks()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "mem banks",
@@ -62,7 +62,7 @@ class Asset(object):
             try:
                 s = self._get_mem_slots()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "mem slots",
@@ -80,7 +80,7 @@ class Asset(object):
             try:
                 s = self._get_os_vendor()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "os vendor",
@@ -98,7 +98,7 @@ class Asset(object):
             try:
                 s = self._get_os_release()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "os release",
@@ -116,7 +116,7 @@ class Asset(object):
             try:
                 s = self._get_os_kernel()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "os kernel",
@@ -134,7 +134,7 @@ class Asset(object):
             try:
                 s = self._get_os_arch()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "os arch",
@@ -152,7 +152,7 @@ class Asset(object):
             try:
                 s = self._get_cpu_freq()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "cpu freq",
@@ -170,7 +170,7 @@ class Asset(object):
             try:
                 s = self._get_cpu_threads()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "cpu threads",
@@ -188,7 +188,7 @@ class Asset(object):
             try:
                 s = self._get_cpu_cores()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "cpu cores",
@@ -206,7 +206,7 @@ class Asset(object):
             try:
                 s = self._get_cpu_dies()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "cpu dies",
@@ -224,7 +224,7 @@ class Asset(object):
             try:
                 s = self._get_cpu_model()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "cpu model",
@@ -242,7 +242,7 @@ class Asset(object):
             try:
                 s = self._get_serial()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "serial",
@@ -260,7 +260,7 @@ class Asset(object):
             try:
                 s = self._get_bios_version()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "bios version",
@@ -278,7 +278,7 @@ class Asset(object):
             try:
                 s = self._get_sp_version()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "sp version",
@@ -296,7 +296,7 @@ class Asset(object):
             try:
                 s = self._get_enclosure()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "enclosure",
@@ -314,7 +314,7 @@ class Asset(object):
             try:
                 s = self._get_tz()
                 source = self.s_probe
-            except Exception as e:
+            except AttributeError:
                 pass
         return {
             "title": "timezone",
@@ -340,7 +340,7 @@ class Asset(object):
             try:
                 s = self._get_connect_to()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "listener address",
@@ -396,7 +396,7 @@ class Asset(object):
             try:
                 s = self._get_manufacturer()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "manufacturer",
@@ -414,7 +414,7 @@ class Asset(object):
             try:
                 s = self._get_model()
                 source = self.s_probe
-            except:
+            except AttributeError:
                 pass
         return {
             "title": "model",
@@ -509,21 +509,21 @@ class Asset(object):
     def get_hba(self):
         try:
             hba = self._get_hba()
-        except:
+        except AttributeError:
             hba = []
         return hba
 
     def get_targets(self):
         try:
             s = self._get_targets()
-        except:
+        except AttributeError:
             s = []
         return s
 
     def get_hardware(self):
         try:
             s = self._get_hardware()
-        except:
+        except AttributeError:
             s = []
         return s
 
