@@ -39,7 +39,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         list_services
 from converters import *
 from comm import Crypt
-from extconfig import ExtConfig
+from extconfig import ExtConfigMixin
 
 if six.PY2:
     BrokenPipeError = IOError
@@ -96,7 +96,7 @@ UNPRIVILEGED_ACTIONS = [
     "collector_cli",
 ]
 
-class Node(Crypt, ExtConfig):
+class Node(Crypt, ExtConfigMixin):
     """
     Defines a cluster node.  It contain list of Svc.
     Implements node-level actions and checks.
@@ -105,7 +105,7 @@ class Node(Crypt, ExtConfig):
         return self.nodename
 
     def __init__(self):
-        ExtConfig.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
+        ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.config = None
         self.auth_config = None
         self.clouds = None
@@ -3195,7 +3195,7 @@ class Node(Crypt, ExtConfig):
     def print_config_data(self, src_config=None, evaluate=False, impersonate=None):
         if src_config is None:
             src_config = self.config
-        return ExtConfig.print_config_data(self, src_config=src_config,
+        return ExtConfigMixin.print_config_data(self, src_config=src_config,
                                            evaluate=evaluate,
                                            impersonate=impersonate)
 

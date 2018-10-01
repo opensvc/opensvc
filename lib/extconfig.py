@@ -14,7 +14,7 @@ from rcGlobalEnv import rcEnv
 
 SECRETS = []
 
-class ExtConfig(object):
+class ExtConfigMixin(object):
     def __init__(self, default_status_groups=None):
         self.ref_cache = {}
         self.default_status_groups = default_status_groups
@@ -567,7 +567,7 @@ class ExtConfig(object):
 
         if _section == "node" and hasattr(self, "svcname"):
             # go fetch the reference in the node.conf [node] section
-            if self.node is None:
+            if not hasattr(self, "node") or getattr(self, "node") is None:
                 from node import Node
                 self.node = Node()
             try:
@@ -940,7 +940,7 @@ class ExtConfig(object):
         The validate config core method.
         Returns a dict with the list of syntax warnings and errors.
         """
-        import six.moves.configparser as ConfigParser
+        from six.moves import configparser as ConfigParser
 
         ret = {
             "errors": 0,

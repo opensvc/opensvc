@@ -30,7 +30,7 @@ import rcLogger
 import node
 from rcScheduler import Scheduler, SchedOpts, sched_action
 from comm import Crypt
-from extconfig import ExtConfig
+from extconfig import ExtConfigMixin
 
 if six.PY2:
     BrokenPipeError = IOError
@@ -386,7 +386,7 @@ def _master_action(func):
             func(self)
     return _func
 
-class Svc(Crypt, ExtConfig):
+class Svc(Crypt, ExtConfigMixin):
     """
     A OpenSVC service class.
     A service is a collection of resources.
@@ -395,7 +395,7 @@ class Svc(Crypt, ExtConfig):
     """
 
     def __init__(self, svcname=None, node=None, cf=None):
-        ExtConfig.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
+        ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.type = "hosted"
         self.svcname = svcname
         self.node = node
