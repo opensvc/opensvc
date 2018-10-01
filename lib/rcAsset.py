@@ -1,7 +1,6 @@
 import os
 import datetime
 import codecs
-from subprocess import *
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
@@ -624,8 +623,7 @@ class Asset(object):
     def get_last_boot(self):
         os.environ["LANG"] = "C"
         cmd = ["/usr/bin/uptime"]
-        p = Popen(cmd, stdout=PIPE)
-        out, err = p.communicate()
+        out, err, ret = justcall(cmd)
         l = out.split()
 
         i = 0
