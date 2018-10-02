@@ -2,14 +2,19 @@ import os
 import sys
 import platform
 import datetime
+
+try:
+    import ctypes
+    import wmi
+    import pythoncom
+except ImportError:
+    raise
+
 from rcUtilities import justcall, which, try_decode
 from rcUtilitiesWindows import get_registry_value
 import rcAsset
-import ctypes
-import wmi
 from rcDiskInfoWindows import diskInfo
 from converters import convert_size
-import pythoncom
 
 class MEMORYSTATUSEX(ctypes.Structure):
     _fields_ = [("dwLength", ctypes.c_uint),
@@ -25,8 +30,7 @@ class MEMORYSTATUSEX(ctypes.Structure):
     def __init__(self):
         # have to initialize this to the size of MEMORYSTATUSEX
         self.dwLength = 2*4 + 7*8     # size = 2 ints, 7 longs
-        return super(MEMORYSTATUSEX, self).__init__()
-
+        super(MEMORYSTATUSEX, self).__init__()
 
 class Asset(rcAsset.Asset):
     def __init__(self, node):
@@ -61,7 +65,10 @@ class Asset(rcAsset.Asset):
         return 'Windows'
 
     def _get_os_release(self):
-        v = sys.getwindowsversion()
+        try:
+            v = sys.getwindowsversion()
+        except AttributeError:
+            return "Unknown"
         product = {
          1: 'Workstation',
          2: 'Domain Controller',
@@ -75,7 +82,10 @@ class Asset(rcAsset.Asset):
         return s
 
     def _get_os_kernel(self):
-        v = sys.getwindowsversion()
+        try:
+            v = sys.getwindowsversion()
+        except AttributeError:
+            return "Unknown"
         return ".".join(map(str, [v.major, v.minor, v.build]))
 
     def _get_os_arch(self):
