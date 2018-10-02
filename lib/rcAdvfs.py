@@ -33,6 +33,7 @@ stock_systemes@osvc_sync
 	DMAPI        : off
     """
     def __init__(self, lines):
+        self.domain = None
         for line in lines:
             if not line.startswith('\t'):
                 self.name = line.strip()
@@ -106,7 +107,7 @@ class Fdmn(object):
         self.free = 0
 
         cmd = ['showfdmn', name]
-        out, err, ret = call(cmd)
+        ret, out, err = call(cmd)
         if ret != 0:
             raise ExInit()
         d = {}
@@ -135,13 +136,14 @@ class Fdmn(object):
                 pass
 
         cmd = ['showfsets', '-k', name]
-        out, err, ret = call(cmd)
+        ret, out, err = call(cmd)
         if ret != 0:
             raise ExInit()
         lines = out.split('\n')
         n_lines = len(lines)
         if n_lines == 0:
             return
+        h = 0
         for i, line in enumerate(lines):
             if i != 0 and not line.startswith('\t') or i == n_lines - 1:
                 f = Fset(lines[h:i])
