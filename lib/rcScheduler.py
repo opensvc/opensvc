@@ -107,7 +107,11 @@ def sched_action(func):
             options = Storage()
         if action in self.sched.scheduler_actions:
             self.sched.action_timestamps(action, options.rid)
-        ret = func(self, action, options)
+        try:
+            ret = func(self, action, options)
+        except ex.excAbortAction:
+            # finer-grained locking can raise that to cancel the task
+            return 0
         if ret == 0 and action in self.sched.scheduler_actions:
             self.sched.action_timestamps(action, options.rid, success=True)
         return ret
