@@ -539,29 +539,15 @@ def install_params(path2file):
         logit("file %s already present"%path2file)
         return
 
+    src = os.path.join(pathini, 'opensvc.defaults.parameters')
+
     try:
-        f = open(path2file, "w")
+        logit("writing new <%s>"%path2file)
+        shutil.copy(src, path2file)
+        os.chmod(path2file, p0644)
     except:
         import traceback
         traceback.print_exc()
-    else:
-        logit("writing new <%s>"%path2file)
-        f.write("# OpenSVC startup and wrapper configuration file\n")
-        f.write("#\n")
-        f.write("# You may need to adapt parameters to fit your environment\n")
-        f.write("# This file is not modified during software upgrades\n")
-        f.write("# If empty, default settings are used in the init script\n\n\n")
-        f.write("#\n")
-        f.write("\n")
-        f.write("#\n")
-        f.write("# Wrapper configuration\n")
-        f.write("#\n")
-        f.write("#OSVC_ROOT_PATH=/opt/opensvc\n")
-        f.write("#OSVC_PYTHON=python\n")
-        f.write("#LD_LIBRARY_PATH=\n")
-        f.write("#LD_PRELOAD=\n")
-        f.write("\n")
-        f.close()
 
 def os_release():
     os_release_f = os.path.join(os.sep, "etc", "os-release")
@@ -667,7 +653,7 @@ def install_rc():
         src = os.path.join(pathini, 'opensvc.init.OSF1')
         activate = activate_OSF1
     elif sysname == "FreeBSD":
-        rc = '/etc/rc.d/opensvc'
+        rc = '/usr/local/etc/rc.d/opensvc'
         params = '/etc/defaults/opensvc'
         src = os.path.join(pathini, 'opensvc.init.FreeBSD')
         activate = activate_FreeBSD
@@ -1241,9 +1227,6 @@ def convert_to_lsb():
 
 def restart_daemon():
     logit("begin")
-    if sysname == "FreeBSD":
-        logit("FreeBSD design rules compliance : daemon restart disabled")
-        return
     flag = os.path.join(pathvar, "postinstall.restart")
     if not os.path.exists(flag):
         return
@@ -1257,9 +1240,6 @@ def restart_daemon():
 
 def init_secret():
     logit("begin")
-    if sysname == "FreeBSD":
-        logit("FreeBSD design rules compliance : daemon ping disabled")
-        return
     time.sleep(1)
     if sysname == 'Windows':
         cmd = "nodemgr ping --node 127.0.0.1"
