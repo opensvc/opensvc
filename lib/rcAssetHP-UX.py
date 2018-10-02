@@ -227,8 +227,10 @@ class Asset(rcAsset.Asset):
         return out.strip()
 
     def __get_hba(self):
-        if hasattr(self, "hba"):
-            return self.hba
+        try:
+            return getattr(self, "hba")
+        except AttributeError:
+            pass
         self.hba = []
         cmd = ['/usr/sbin/ioscan', '-FunC', 'fc']
         out, err, ret = justcall(cmd)
