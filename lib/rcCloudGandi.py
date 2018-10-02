@@ -26,10 +26,10 @@ class Cloud(rcCloud.Cloud):
         return ''
 
     def cloud_id(self):
-        return mode
+        return self.mode
 
     def app_cloud_id(self):
-        return mode
+        return self.mode
 
     def list_svcnames(self):
         l = []
@@ -37,7 +37,7 @@ class Cloud(rcCloud.Cloud):
         try:
             vapps = self.driver.list_nodes()
         except socket.error as e:
-            raise ex.excExecError("error connecting to %s cloud manager"%s)
+            raise ex.excError("error connecting to %s cloud manager" % self.cid)
         for vapp in vapps:
             __id = '.'.join((vapp.name, _id))
             for vm in vapp.extra['vms']:
