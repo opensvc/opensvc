@@ -105,7 +105,7 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
         if self.check_lxc():
             self.r.log.info("container is already created")
             return
-        name = self.setup_lxc_config()
+        self.setup_lxc_config()
         with open(os.path.join(rcEnv.paths.pathlog, "%s.console.log"%self.vm_name), "a+") as f:
             f.write("")
         cmd = ['lxc-create', '-n', self.vm_name, '-f', self.config]
@@ -146,7 +146,7 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
             return
         import sys
         try:
-            self.r.svc.node.urlretrieve(template, self.template_local)
+            self.r.svc.node.urlretrieve(self.template, self.template_local)
         except IOError as e:
             self.r.log.error("download failed", ":", e)
             try:
