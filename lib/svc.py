@@ -895,8 +895,10 @@ class Svc(Crypt, ExtConfigMixin):
         """
         Purge the json status dump
         """
-        if os.path.exists(self.status_data_dump):
+        try:
             os.unlink(self.status_data_dump)
+        except Exception:
+            pass
 
     def purge_status_last(self):
         """
