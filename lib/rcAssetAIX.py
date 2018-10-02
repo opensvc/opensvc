@@ -1,13 +1,15 @@
 import os
 import datetime
-from rcUtilities import justcall, which
-from rcGlobalEnv import rcEnv
+
 import rcAsset
+import rcExceptions as ex
+from rcUtilities import justcall
+from rcGlobalEnv import rcEnv
 
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         rcAsset.Asset.__init__(self, node)
-        (out, err, ret) = justcall(['prtconf'])
+        out, err, ret = justcall(['prtconf'])
         if ret != 0:
             self.prtconf = []
         else:
@@ -18,7 +20,7 @@ class Asset(rcAsset.Asset):
         cmd = ["prtconf", "-L"]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise
+            raise ex.excError(err)
         if '-1' in out:
             return False
         return True
@@ -64,14 +66,14 @@ class Asset(rcAsset.Asset):
 
     def _get_os_release(self):
         cmd = ["oslevel", "-s"]
-        (out, err, ret) = justcall(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             return 'Unknown'
         return out.strip()
 
     def _get_os_kernel(self):
         cmd = ["oslevel", "-r"]
-        (out, err, ret) = justcall(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             return 'Unknown'
         return out.strip()
