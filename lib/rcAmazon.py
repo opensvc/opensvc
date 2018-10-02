@@ -26,7 +26,10 @@ class AmazonMixin(object):
     def get_instance_id(self):
         if self.instance_id is not None:
             return self.instance_id
-        import httplib
+        try:
+            import httplib
+        except ImportError:
+            raise ex.excError("the httplib module is required")
         c = httplib.HTTPConnection("instance-data")
         c.request("GET", "/latest/meta-data/instance-id")
         self.instance_id = c.getresponse().read()
