@@ -4666,7 +4666,7 @@ class Node(Crypt, ExtConfigMixin):
         """
         OS-specific implementations
         """
-        pass
+        return
 
     def stats(self):
         data = {}
