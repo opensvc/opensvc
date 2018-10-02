@@ -5,6 +5,7 @@ class Cloud(object):
     def __init__(self, s, auth):
         self.cid = s
         self.auth = auth
+        self.driver = None
 
     def list_svcnames(self):
          print("todo")
