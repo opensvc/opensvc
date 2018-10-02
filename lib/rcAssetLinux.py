@@ -204,8 +204,8 @@ class Asset(rcAsset.Asset):
                     return 'Red Hat'
         if os.path.exists('/etc/alpine-release'):
             return "Alpine"
-        if os.release.name:
-            return os.release.name
+        if self.os_release.name:
+            return self.os_release.name
         return 'Unknown'
 
     def _get_os_release_lsb(self):
@@ -594,14 +594,14 @@ class Asset(rcAsset.Asset):
         if ret != 0:
             return []
         devs = []
-        dev = None
+        dev = {}
         path = []
         cla = []
         desc = []
         for line in out.splitlines():
             if line.strip() == "Memory Device":
                 # new mem device
-                if dev is not None:
+                if dev:
                     dev["path"] = " ".join(path)
                     dev["class"] = " ".join(cla)
                     dev["description"] = " ".join(desc)
@@ -656,11 +656,11 @@ class Asset(rcAsset.Asset):
         if ret != 0:
             return []
         devs = []
-        dev = None
+        dev = {}
         for line in out.splitlines():
             if re.match("^\w", line):
                 # new pci device
-                if dev is not None:
+                if dev:
                     devs.append(dev)
                 words = line.split()
                 path = words.pop(0)
@@ -676,7 +676,7 @@ class Asset(rcAsset.Asset):
                 }
             elif "Kernel driver in use:" in line:
                 dev["driver"] = line[line.index(":")+1:].strip()
-        if dev is not None:
+        if dev:
             devs.append(dev)
         return devs
                 
