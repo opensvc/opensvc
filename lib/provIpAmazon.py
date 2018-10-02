@@ -42,7 +42,7 @@ class Prov(provisioning.Prov):
         if not self.r.svc.config.get(self.r.rid, "docker_daemon_ip"):
             return
         try:
-            args = self.svc.conf_get('DEFAULT', 'docker_daemon_args')
+            args = self.r.svc.conf_get('DEFAULT', 'docker_daemon_args')
         except ex.OptNotFound as exc:
             args = exc.default
         args += ["--ip", self.r.ipname]
@@ -59,7 +59,7 @@ class Prov(provisioning.Prov):
 
         eni = self.r.get_network_interface()
         if eni is None:
-            raise ex.excError("could not find ec2 network interface for %s" % self.ipdev)
+            raise ex.excError("could not find ec2 network interface for %s" % self.r.ipdev)
 
         ips1 = set(self.r.get_instance_private_addresses())
         data = self.r.aws([
