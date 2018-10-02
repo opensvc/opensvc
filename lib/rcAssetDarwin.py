@@ -1,8 +1,10 @@
 import os
 import datetime
+
+import rcAsset
+import rcExceptions as ex
 from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
-import rcAsset
 
 class Asset(rcAsset.Asset):
     def __init__(self, node):
@@ -44,7 +46,7 @@ class Asset(rcAsset.Asset):
         elif unit == 'MB':
             pass
         else:
-            raise
+            raise ex.excError("unexpected memory format")
         return str(size)
 
     def _get_mem_banks(self):
