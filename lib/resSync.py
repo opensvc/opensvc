@@ -156,7 +156,10 @@ class Sync(Res.Resource, Scheduler):
             raise ex.excAbortAction
 
     def _status(self, **kwargs):
-        data = self.svc.node._daemon_status()
+        try:
+            data = self.svc.node._daemon_status()
+        except Exception:
+            data = None
         try:
             svcnames = data["monitor"]["services"]
         except (KeyError, TypeError):
