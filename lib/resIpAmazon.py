@@ -3,12 +3,12 @@ import os
 import rcStatus
 from rcGlobalEnv import rcEnv
 import rcExceptions as ex
-from rcAmazon import Amazon
+from rcAmazon import AmazonMixin
 from rcUtilities import getaddr
 
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
-class Ip(resIp.Ip, Amazon):
+class Ip(resIp.Ip, AmazonMixin):
     def __init__(self,
                  rid=None,
                  ipname=None,

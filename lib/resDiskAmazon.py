@@ -5,9 +5,9 @@ import time
 import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import *
-from rcAmazon import Amazon
+from rcAmazon import AmazonMixin
 
-class Disk(resDisk.Disk, Amazon):
+class Disk(resDisk.Disk, AmazonMixin):
     def __init__(self,
                  rid=None,
                  type="disk.vg",

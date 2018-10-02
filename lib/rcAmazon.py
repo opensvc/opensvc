@@ -2,14 +2,14 @@ import json
 from rcUtilities import which, justcall
 import rcExceptions as ex
 
-class Amazon(object):
+class AmazonMixin(object):
     instance_id = None
     instance_data = None
 
     def aws(self, cmd, verbose=True):
-        if hasattr(self.svc, "aws") and which(self.svc.aws) is not None:
+        try:
             _cmd = [self.svc.aws]
-        else:
+        except AttributeError:
             _cmd = ["aws"]
         _cmd += ["--output=json"]
         if hasattr(self.svc, "aws_profile"):
