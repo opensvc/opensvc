@@ -4,7 +4,7 @@ import time
 import os
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall
+from rcUtilities import justcall, lazy
 from rcUtilitiesLinux import check_ping
 import resContainer
 
@@ -114,37 +114,31 @@ class CloudVm(resContainer.Container):
         return out, err, ret
 
     def get_subnet(self):
-        c = self.get_cloud()
-        for subnet in c.driver.ex_list_subnets():
+        for subnet in self.cloud.driver.ex_list_subnets():
             if subnet.name == self.subnet_name:
                 return subnet
         raise ex.excError("%s subnet not found"%self.subnet_name)
 
     def get_size(self):
-        c = self.get_cloud()
-        for size in c.driver.list_sizes():
+        for size in self.cloud.driver.list_sizes():
             if size.id == self.size_id:
                 return size
-        raise ex.excError("%s size not found"%self.size_name)
+        raise ex.excError("%s size not found"%self.size_id)
 
-    def get_cloud(self):
-        if hasattr(self, 'cloud'):
-            return self.cloud
+    @lazy
+    def cloud(self):
         c = self.svc.node.cloud_get(self.cloud_id)
-        self.cloud = c
-        return self.cloud
+        return c
 
     def get_node(self):
-        c = self.get_cloud()
-        l = c.list_nodes()
+        l = self.cloud.list_nodes()
         for n in l:
             if n.name == self.name:
                 return n
         return
 
     def get_image(self, image_id):
-        c = self.get_cloud()
-        l = c.driver.list_images(ex_image_ids=[image_id])
+        l = self.cloud.driver.list_images(ex_image_ids=[image_id])
         d = {}
         for image in l:
             if image.id == image_id:
@@ -153,8 +147,7 @@ class CloudVm(resContainer.Container):
         raise ex.excError("image %s not found" % image_id)
 
     def has_image(self, image_id):
-        c = self.get_cloud()
-        l = c.driver.list_images([image_id])
+        l = self.cloud.driver.list_images([image_id])
         for image in l:
             if image.id == image_id:
                 return True
@@ -214,7 +207,10 @@ class CloudVm(resContainer.Container):
 	    ERROR = 7
 	    PAUSED = 8
         """
-        from libcloud.compute.types import NodeState
+        try:
+            from libcloud.compute.types import NodeState
+        except ImportError:
+            raise ex.excError("missing required module libcloud.compute.types")
         n = self.get_node()
         if n is None:
             self.provision()
@@ -231,19 +227,17 @@ class CloudVm(resContainer.Container):
             self.wait_for_fn(self.is_up, self.start_timeout, 5)
             return
         elif n.state == NodeState().STOPPED:
-            c = self.get_cloud()
             self.log.info("starting ebs ec2 instance through aws")
-            c.driver.ex_start_node(n)
+            self.cloud.driver.ex_start_node(n)
             self.log.info("wait for container up status")
             self.wait_for_fn(self.is_up, self.start_timeout, 5)
             return
         raise ex.excError("don't know what to do with node in state: %s"%NodeState().tostring(n.state))
 
     def container_reboot(self):
-        c = self.get_cloud()
         n = self.get_node()
         try:
-            c.driver.reboot_node(n)
+            self.cloud.driver.reboot_node(n)
         except Exception as e:
             raise ex.excError(str(e))
 
@@ -267,10 +261,9 @@ class CloudVm(resContainer.Container):
         self.rcmd(cmd)
 
     def container_forcestop(self):
-        c = self.get_cloud()
         n = self.get_node()
         self.log.info("stopping ebs ec2 instance through aws")
-        c.driver.ex_stop_node(n)
+        self.cloud.driver.ex_stop_node(n)
 
     def print_obj(self, n):
         for k in dir(n):
@@ -279,7 +272,10 @@ class CloudVm(resContainer.Container):
             print(k, "=", getattr(n, k))
 
     def is_up(self):
-        from libcloud.compute.types import NodeState
+        try:
+            from libcloud.compute.types import NodeState
+        except ImportError:
+            raise ex.excError("missing required module libcloud.compute.types")
         n = self.get_node()
         if n is not None and n.state == NodeState().RUNNING:
             return True
@@ -291,10 +287,9 @@ class CloudVm(resContainer.Container):
 
     def get_container_info(self):
         self.info = {'vcpus': '0', 'vmem': '0'}
-        c = self.get_cloud()
         n = self.get_node()
         try:
-            size = c.driver.ex_get_size(n.extra['flavorId'])
+            size = self.cloud.driver.ex_get_size(n.extra['flavorId'])
             self.info['vmem'] = str(size.ram)
         except:
             pass
