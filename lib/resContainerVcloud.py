@@ -4,7 +4,7 @@ import time
 import os
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall
+from rcUtilities import qcall, lazy
 from rcUtilitiesLinux import check_ping
 import resContainer
 
@@ -47,7 +47,7 @@ class CloudVm(resContainer.Container):
         self.shared_ip_group = shared_ip_group
 
     def _vm_perform_power_operation(self, vapp_or_vm_id, operation):
-        drv = self.get_cloud().driver
+        drv = self.cloud.driver
         vms = drv._get_vm_elements(vapp_or_vm_id)
         for vm in vms:
             path = get_url_path(vm.get('href'))
@@ -60,32 +60,26 @@ class CloudVm(resContainer.Container):
             res = drv.connection.request(path)
 
     def get_size(self):
-        c = self.get_cloud()
-        for size in c.driver.list_sizes():
+        for size in self.cloud.driver.list_sizes():
             if size.name == self.size_name:
                 return size
         raise ex.excError("%s size not found"%self.size_name)
 
-    def get_cloud(self):
-        if hasattr(self, 'cloud'):
-            return self.cloud
-        c = self.svc.node.cloud_get(self.cloud_id)
-        self.cloud = c
-        return self.cloud
+    @lazy
+    def cloud(self):
+        return self.svc.node.cloud_get(self.cloud_id)
 
     def get_vapp(self):
-        c = self.get_cloud()
         try:
-            vapp = c.driver.ex_find_node(self.vapp)
+            vapp = self.cloud.driver.ex_find_node(self.vapp)
         except Exception as e:
             print(e)
             raise
         return vapp
 
     def get_node(self):
-        c = self.get_cloud()
         try:
-            vapp = c.driver.ex_find_node(self.vapp)
+            vapp = self.cloud.driver.ex_find_node(self.vapp)
             vms = vapp.extra['vms']
         except Exception as e:
             print(e)
@@ -102,8 +96,7 @@ class CloudVm(resContainer.Container):
         return save_name
 
     def purge_saves(self):
-        c = self.get_cloud()
-        l = c.driver.list_images()
+        l = self.cloud.driver.list_images()
         d = {}
         for image in l:
             if image.name.startswith(self.save_name):
@@ -114,7 +107,7 @@ class CloudVm(resContainer.Container):
              self.log.info("no previous save image to delete")
         for k in sorted(d.keys())[:-1]:
              self.log.info("delete previous save image %s"%d[k].name)
-             c.driver.ex_delete_image(d[k])
+             self.cloud.driver.ex_delete_image(d[k])
 
     def get_last_save(self):
         return self.get_image(self.save_name)
@@ -124,8 +117,7 @@ class CloudVm(resContainer.Container):
         return self.get_image(template)
 
     def get_image(self, name):
-        c = self.get_cloud()
-        l = c.driver.list_images()
+        l = self.cloud.driver.list_images()
         d = {}
         for image in l:
             if image.name == name:
@@ -140,8 +132,7 @@ class CloudVm(resContainer.Container):
         return last
 
     def has_image(self, name):
-        c = self.get_cloud()
-        l = c.driver.list_images()
+        l = self.cloud.driver.list_images()
         for image in l:
             if image.name == name:
                 return True
@@ -187,7 +178,6 @@ class CloudVm(resContainer.Container):
         self.wait_for_startup()
 
     def container_start(self):
-        c = self.get_cloud()
         n = self.get_node()
         self.log.info("power on container %s"%self.name)
         self._vm_perform_power_operation(n['id'], 'powerOn')
@@ -209,7 +199,6 @@ class CloudVm(resContainer.Container):
             self.wait_for_shutdown()
 
     def container_stop(self):
-        c = self.get_cloud()
         n = self.get_node()
         self.log.info("shutdown container %s"%self.name)
         self._vm_perform_power_operation(n['id'], 'shutdown')
@@ -221,7 +210,6 @@ class CloudVm(resContainer.Container):
             print(k, "=", getattr(n, k))
 
     def container_save(self):
-        c = self.get_cloud()
         n = self.get_node()
         save_name = self.get_save_name()
         if self.has_image(save_name):
@@ -232,13 +220,13 @@ class CloudVm(resContainer.Container):
             return
         self.log.info("save new image %s"%save_name)
         try:
-            image = c.driver.ex_save_image(n, save_name)
+            image = self.cloud.driver.ex_save_image(n, save_name)
         except Exception as e:
             raise ex.excError(str(e))
         import time
         delay = 5
         for i in range(self.save_timeout//delay):
-            img = c.driver.ex_get_image(image.id)
+            img = self.cloud.driver.ex_get_image(image.id)
             if img.extra['status'] != 'SAVING':
                 break
             time.sleep(delay)
@@ -246,7 +234,6 @@ class CloudVm(resContainer.Container):
             raise ex.excError("save failed, image status %s"%img.extra['status'])
 
     def container_forcestop(self):
-        c = self.get_cloud()
         n = self.get_node()
         self.log.info("power off container %s"%self.name)
         self._vm_perform_power_operation(n['id'], 'powerOff')
@@ -259,9 +246,8 @@ class CloudVm(resContainer.Container):
 
     def get_container_info(self):
         self.info = {'vcpus': '0', 'vmem': '0'}
-        c = self.get_cloud()
         n = self.get_node()
-        top = c.driver._get_vm_elements(n['id'])[0]
+        top = self.cloud.driver._get_vm_elements(n['id'])[0]
         def recurse(x, info={}, desc=None):
             if x.tag == '{http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData}Description':
                 desc = x.text
