@@ -35,6 +35,9 @@ class diskInfo(rcDiskInfo.diskInfo):
         cmd = ["hwmgr", "show", "scsi", "-type", "disk", "-active", "-full"]
         out, err, ret = justcall(cmd)
         path_count = -1
+        id = None
+        dev = None
+        wwid = None
         for e in out.split('\n'):
             if len(e) == 0:
                 continue
