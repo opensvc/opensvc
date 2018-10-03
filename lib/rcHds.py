@@ -184,6 +184,7 @@ class Arrays(object):
 
 class Array(object):
     def __init__(self, name, url, username, password, bin=None):
+        self.node = None
         self.keys = ['array', 'lu', 'arraygroup', 'port', 'pool']
         self.name = name
         self.model = name.split(".")[0]
@@ -548,6 +549,7 @@ class Array(object):
         out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.excError(err)
+        return
 
     def add_map(self, devnum=None, mappings=None, lun=None, **kwargs):
         if devnum is None:
@@ -747,6 +749,7 @@ def do_action(action, array_name=None, node=None, **kwargs):
     ret = getattr(array, action)(**kwargs)
     if ret is not None:
         print(json.dumps(ret, indent=4))
+    return ret
 
 def main(argv, node=None):
     parser = OptParser(prog=PROG, options=OPT, actions=ACTIONS,
@@ -754,7 +757,7 @@ def main(argv, node=None):
                        global_options=GLOBAL_OPTS)
     options, action = parser.parse_args(argv)
     kwargs = vars(options)
-    do_action(action, node=node, **kwargs)
+    return do_action(action, node=node, **kwargs)
 
 if __name__ == "__main__":
     try:
