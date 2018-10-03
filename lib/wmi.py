@@ -1,4 +1,4 @@
-# pylint: skip-file
+# pylint: disable-all
 
 """
 Windows Management Instrumentation (WMI) is Microsoft's answer to

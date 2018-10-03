@@ -1,4 +1,4 @@
-# pylint: skip-file
+# pylint: disable-all
 #
 # Copyright (c) 2010-2018 Benjamin Peterson
 #

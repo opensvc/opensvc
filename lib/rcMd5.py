@@ -1,4 +1,4 @@
-# pylint: skip-file
+# pylint: disable-all
 
 """
 /* MD5C.C - RSA Data Security, Inc., MD5 message-digest algorithm
