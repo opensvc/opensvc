@@ -172,7 +172,7 @@ class Disk(resDisk.Disk, AmazonMixin):
         if len(glob.glob("/dev/xvd*")) > 0:
             self.dev_prefix = "/dev/xvd"
         else:
-            self.get_dev_prefix = "/dev/sd"
+            self.dev_prefix = "/dev/sd"
         return self.dev_prefix
 
     def mangle_devpath(self, dev):
