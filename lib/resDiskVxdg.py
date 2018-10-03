@@ -19,6 +19,7 @@ class Disk(resDisk.Disk):
                               type='disk.vxdg',
                               **kwargs)
         self.label = "vxdg "+str(name)
+        self.sub_devs_cache = set()
 
     def vxprint(self):
         cmd = ["vxprint", "-g", self.name]
