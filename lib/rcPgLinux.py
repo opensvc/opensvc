@@ -69,7 +69,7 @@ def set_task(o, t):
         with open(path, 'w') as f:
             f.write(pid)
     except Exception as e:
-        if hasattr(e, "errno") and e.errno == 28:
+        if hasattr(e, "errno") and getattr(e, "errno") == 28:
             # No space left on device
             # means the cgroup has not been initialized with caps yet
             pass
