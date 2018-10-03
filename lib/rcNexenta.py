@@ -4,9 +4,9 @@ import base64
 import os
 
 import rcExceptions as ex
-import six.moves.configparser as ConfigParser
-from six.moves.urllib.request import Request, urlopen
-from six.moves.urllib.error import HTTPError, URLError
+from six.moves import configparser as ConfigParser
+from six.moves.urllib.request import Request, urlopen # pylint: disable=import-error
+from six.moves.urllib.error import HTTPError, URLError # pylint: disable=import-error
 from rcGlobalEnv import rcEnv
 
 class logger(object):
@@ -220,7 +220,7 @@ class Nexenta(object):
         if data['error'] is not None:
             raise ex.excError(data["error"])
         for zvol in data['result']:
-            self.object_type_cache[folder] = "zvol"
+            self.object_type_cache[zvol] = "zvol"
         return data['result']
 
     def object_type(self, o):
