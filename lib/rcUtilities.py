@@ -89,7 +89,7 @@ def eval_expr(expr):
                 return True
         elif isinstance(node, ast.Attribute):
             raise TypeError("strings with dots need quoting")
-        elif hasattr(ast, "NameConstant") and isinstance(node, ast.NameConstant):
+        elif hasattr(ast, "NameConstant") and isinstance(node, getattr(ast, "NameConstant")):
             return node.value
         else:
             raise TypeError("unsupported node type %s" % type(node))
@@ -224,11 +224,7 @@ def is_string(s):
     """
     python[23] compatible string-type test
     """
-    if six.PY2:
-        l = (str, unicode)
-    else:
-        l = (str)
-    if isinstance(s, l):
+    if isinstance(s, six.string_types):
         return True
     return False
 
@@ -335,8 +331,8 @@ def justcall(argv=['/bin/false'], stdin=None):
     try:
         process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
     except Exception as exc:
-        if exc.errno == 2:
-            return ("", "", 1)
+        if hasattr(exc, "errno") and getattr(exc, "errno") == 2:
+            return "", "", 1
     stdout, stderr = process.communicate(input=None)
     return bdecode(stdout), bdecode(stderr), process.returncode
 
@@ -910,7 +906,7 @@ def term_width():
     try:
         # python 3.3+
         return os.get_terminal_size().columns
-    except:
+    except AttributeError:
         pass
     if rcEnv.sysname == "Windows":
         return default
