@@ -12,7 +12,7 @@ class Srp(resContainer.Container):
         return [self.export_file]
 
     def get_rootfs(self):
-        return self.get_state()['state']
+        return self.get_status()['state']
 
     def rcp_from(self, src, dst):
         rootfs = self.get_rootfs()
@@ -243,7 +243,7 @@ class Srp(resContainer.Container):
 
     @lazy
     def export_file(self):
-        return os.path.join(self.var_d, name + '.xml')
+        return os.path.join(self.var_d, self.name + '.xml')
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
