@@ -65,7 +65,7 @@ class Fs(resources.Resource):
             return 0
         cmd = self.svc.dockerlib.docker_cmd + ["volume", "create", "--name", self.volname]
         if self.options:
-            cmd += options
+            cmd += self.options
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
