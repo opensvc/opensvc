@@ -34,6 +34,9 @@ class Resource(object):
     Resource drivers parent class
     """
     default_optional = False
+    refresh_provisioned_on_provision = False
+    refresh_provisioned_on_unprovision = False
+
     def __init__(self,
                  rid=None,
                  type=None,
@@ -258,7 +261,7 @@ class Resource(object):
             return
         if action != "run":
             return
-        self.confirm()
+        getattr(self, "confirm")()
 
     def action_main(self, action):
         """
@@ -950,7 +953,9 @@ class Resource(object):
             data.append(["tags", " ".join(self.tags)])
         if hasattr(self, "_info"):
             try:
-                data += self._info()
+                data += getattr(self, "_info")()
+            except AttributeError:
+                pass
             except Exception as e:
                 print(e, file=sys.stderr)
         return self.fmt_info(data)
@@ -1092,11 +1097,7 @@ class Resource(object):
             return
         if self.prov is None:
             return
-        if hasattr(self, "refresh_provisioned_on_provision"):
-            refresh = self.refresh_provisioned_on_provision
-        else:
-            refresh = False
-        if self.is_provisioned(refresh=refresh) is True:
+        if self.is_provisioned(refresh=self.refresh_provisioned_on_provision) is True:
             self.log.info("%s already provisioned", self.label)
         else:
             self.prov.provisioner()
@@ -1116,11 +1117,7 @@ class Resource(object):
             return
         if self.prov is None:
             return
-        if hasattr(self, "refresh_provisioned_on_unprovision"):
-            refresh = self.refresh_provisioned_on_unprovision
-        else:
-            refresh = False
-        if self.is_provisioned(refresh=refresh) is False:
+        if self.is_provisioned(refresh=self.refresh_provisioned_on_unprovision) is False:
             self.log.info("%s already unprovisioned", self.label)
         else:
             self.prov.unprovisioner()
