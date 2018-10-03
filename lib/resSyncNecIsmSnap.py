@@ -183,7 +183,3 @@ class syncNecIsmSnap(resSync.Sync):
         if len(self.svcstatus) == 0:
             self.refresh_svcstatus()
 
-    def __str__(self):
-        return "%s array_name=%s devs=%s" % (resSync.Sync.__str__(self),\
-                self.array_name, str(self.devs))
-
