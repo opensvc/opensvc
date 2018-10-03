@@ -6,7 +6,7 @@ import pwd
 import grp
 import stat
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_string
+from rcUtilities import is_string, lazy
 import rcExceptions as ex
 
 class Disk(resDisk.Disk):
@@ -42,14 +42,13 @@ class Disk(resDisk.Disk):
                 continue
             print(k, "=", getattr(n, k))
 
-    def get_cloud(self):
-        if hasattr(self, 'cloud'):
-            return self.cloud
+    @lazy
+    def cloud(self):
         try:
-            self.cloud = self.svc.node.cloud_get(self.cloud_id)
+            cloud = self.svc.node.cloud_get(self.cloud_id)
         except ex.excInitError as e:
             raise ex.excError(str(e))
-        return self.cloud
+        return cloud
 
     def get_uid(self):
         self.uid = self.user
@@ -112,8 +111,7 @@ class Disk(resDisk.Disk):
         except ex.excError as e:
             raise ex.excError("can't find cloud node to list volumes (%s)"%str(e))
 
-        c = self.get_cloud()
-        disks = c.driver._node_info(node.id)['disks']
+        disks = self.cloud.driver._node_info(node.id)['disks']
         for disk in disks:
             if disk['name'] == self.name:
                 return True
@@ -136,13 +134,12 @@ class Disk(resDisk.Disk):
             return rcStatus.DOWN
 
     def get_node(self):
-        c = self.get_cloud()
         if self.node is not None:
             n = self.node
         else:
             n = rcEnv.nodename
         try:
-            nodes = c.driver.list_nodes()
+            nodes = self.cloud.driver.list_nodes()
         except Exception as e:
             raise ex.excError(str(e))
         for node in nodes:
@@ -151,8 +148,7 @@ class Disk(resDisk.Disk):
         raise ex.excError()
 
     def get_disk(self):
-        c = self.get_cloud()
-        disks = c.driver.ex_list_disks()
+        disks = self.cloud.driver.ex_list_disks()
         _disk = None
         for disk in disks:
             if disk.name == self.name:
@@ -182,15 +178,14 @@ class Disk(resDisk.Disk):
             return
 
         self.log.info("attach gandi volume %s"%self.name)
-        c = self.get_cloud()
-        c.driver.ex_node_attach_disk(node, disk)
+        self.cloud.driver.ex_node_attach_disk(node, disk)
         self.can_rollback = True
 
     def do_stop(self):
         try:
             node = self.get_node()
         except ex.excError as e:
-            raise ex.excError("can't find cloud node to detach volume %s from"%(self.name, str(e)))
+            raise ex.excError("can't find cloud node to detach volume %s from: %s"%(self.name, str(e)))
 
         try:
             disk = self.get_disk()
@@ -207,8 +202,7 @@ class Disk(resDisk.Disk):
             return
 
         self.log.info("detach gandi volume %s"%self.name)
-        c = self.get_cloud()
-        c.driver.ex_node_detach_disk(node, disk)
+        self.cloud.driver.ex_node_detach_disk(node, disk)
 
     def shutdown(self):
         pass
