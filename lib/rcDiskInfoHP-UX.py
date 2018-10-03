@@ -34,8 +34,11 @@ class diskInfo(rcDiskInfo.diskInfo):
                 self.h[alias] = dict(wwid=wwid, vid=vid, pid=pid, size=size)
 
     def load_ioscan(self, refresh=False):
-        if hasattr(self, "ioscan") and not refresh:
-            return self.ioscan
+        if not refresh:
+            try:
+                return getattr(self, "ioscan")
+            except AttributeError:
+                pass
         cmd = ['/usr/sbin/ioscan', '-FunNC', 'disk']
         out, err, ret = justcall(cmd)
         if ret != 0:
