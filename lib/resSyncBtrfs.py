@@ -318,7 +318,7 @@ class SyncBtrfs(resSync.Sync):
         try:
             self.dst_btrfs[node].snapshot(self.dst_snap_sent, self.dst, readonly=False)
         except rcBtrfs.ExistError:
-            self.log.error('%s should not exist'%snap)
+            self.log.error("%s should not exist on node %s", self.dst_snap_sent, node)
             raise ex.excError()
         except rcBtrfs.ExecError:
             self.log.error("failed to install snapshot %s on node %s"%(self.dst, node))
@@ -409,8 +409,8 @@ class SyncBtrfs(resSync.Sync):
 
     def check_remote(self, node):
         rs = self.get_remote_state(node)
-        if self.snap1_uuid != rs['uuid']:
-            self.log.error("%s last update uuid doesn't match snap1 uuid"%(node))
+        if self.snap_uuid != rs['uuid']:
+            self.log.error("%s last update uuid doesn't match snap uuid"%(node))
             raise ex.excError
 
     def get_remote_state(self, node):
