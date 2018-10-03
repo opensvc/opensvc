@@ -23,10 +23,10 @@ class HpVm(resContainer.Container):
                                         guestos=guestos,
                                         osvc_root_path=osvc_root_path,
                                         **kwargs)
-        self.vg = resVgHpVm.Vg(
-          rid = 'vmdg#'+self.rid,
-          name = 'vmdg_'+self.name,
-          container_name = self.name
+        self.vg = resDiskHpVm.Disk(
+            rid = 'vmdg#'+self.rid,
+            name = 'vmdg_'+self.name,
+            container_name = self.name
         )
 
     def on_add(self):
@@ -44,8 +44,6 @@ class HpVm(resContainer.Container):
             a.append(guest)
         if os.path.exists(uuid):
             a.append(uuid)
-        if len(files) > 0:
-            a += files
         return a
 
     def ping(self):
