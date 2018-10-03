@@ -207,8 +207,10 @@ class Kvm(resContainer.Container):
         return devs
 
     def devmap(self):
-        if hasattr(self, "devmapping"):
-            return self.devmapping
+        try:
+            return getattr(self, "devmapping")
+        except AttributeError:
+            pass
 
         self.devmapping = []
 
