@@ -2,7 +2,7 @@ from rcUtilities import which, justcall
 import rcExceptions as ex
 import os
 
-class Nec(object):
+class NecMixin(object):
     """
     BV OS Types
     ===========
@@ -213,7 +213,7 @@ SV Information
                 data['State'] = line.split(': ')[1]
             elif line.startswith('Reserve Area'):
                 data['Reserve Area'] = line.split(': ')[1]
-            elif line.split(":", 1)[0] in bv_os_types:
+            elif line.split(":", 1)[0] in self.bv_os_types:
                 data['sv'].append(line[line.index(':')+1:])
         return data
 
@@ -297,7 +297,7 @@ SV Information
 
 
 
-class NecIsms(Nec):
+class NecIsms(NecMixin):
     def __init__(self, objects=[]):
         self.objects = objects
         if len(objects) > 0:
@@ -316,7 +316,7 @@ class NecIsms(Nec):
         cmd = ['iSMvollist', '-r']
         out, err, ret = justcall(cmd)
 
-class NecIsm(Nec):
+class NecIsm(NecMixin):
     def __init__(self, name):
         self.keys = ['all']
         self.name = name
