@@ -64,9 +64,7 @@ class App(resApp.App):
             return self._check_simple()
 
     def stop(self):
-        ret = resApp.App.stop(self)
-        if ret is not None:
-            return ret
+        resApp.App.stop(self)
         match = self.get_running(with_children=self.kill=="tree")
         if not match:
             self.log.info("already stopped")
