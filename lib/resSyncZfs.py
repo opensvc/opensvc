@@ -367,8 +367,8 @@ class SyncZfs(resSync.Sync):
 
     def check_remote(self, node):
         rs = self.get_remote_state(node)
-        if self.snap1_uuid != rs['uuid']:
-            self.log.error("%s last update uuid doesn't match snap1 uuid"%(node))
+        if self.snap_uuid != rs['uuid']:
+            self.log.error("%s last update uuid doesn't match snap uuid"%(node))
             raise ex.excError
 
     def get_remote_state(self, node):
