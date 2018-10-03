@@ -221,7 +221,7 @@ class Rsync(resSync.Sync):
             """ The pre_action() has provided us with a better source
                 to sync from. Use that
             """
-            src = self.alt_src
+            src = getattr(self, "alt_src")
         else:
             src = self.src
 
