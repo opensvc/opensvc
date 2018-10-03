@@ -22,7 +22,7 @@ if TERM:
 import atexit
 import fnmatch
 
-import six.moves.configparser as ConfigParser
+from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from six.moves import input
 from rcGlobalEnv import Storage
@@ -46,7 +46,7 @@ try:
     import docutils.parsers
     import docutils.parsers.rst
     has_docutils = True
-except:
+except ImportError:
     has_docutils = False
 
 progname = "opensvc-cli"
@@ -143,10 +143,17 @@ ls_info = {
 #
 try:
     requests.packages.urllib3.disable_warnings()
-except:
+except AttributeError:
     pass
 
 class Cmd(object):
+    command = "undef"
+    desc = ""
+    parser = None
+    candidates_path = {}
+    api_candidates = False
+    parser_options = []
+
     # color codes
     PURPLE = '\033[95m'
     CYAN = '\033[96m'
@@ -890,7 +897,7 @@ class CmdSysreport(Cmd):
         for fpath, d in data["data"]["blocks"].items():
             print(self.colorize("path: " + fpath, c=self.DARKCYAN))
             if d["secure"]:
-                print(self.colorize("visible: by node responsibles", c=self.DARKRED))
+                print(self.colorize("visible: by node responsibles", c=self.RED))
             else:
                 print(self.colorize("visible: by everyone", c=self.DARKCYAN))
             print()
@@ -993,14 +1000,19 @@ class CmdFilter(Cmd):
         if options.list is None:
             return
         p = "/filters"
-        o = CmdLs(self.cli).cmd(p)
+        CmdLs(self.cli).cmd(p)
 
     def show_filter(self, options):
         if options.show is None or options.filter is None:
             return
-        o = CmdShow(self.cli)
-        data = o.get_data("/filters/"+options.filter)
-        o.print_filter(options.filter, data)
+        _path = "/filters/"+options.filter
+        r = requests.get(self.cli.api+_path, auth=self.cli.auth, verify=not self.cli.insecure)
+        validate_response(r)
+        data = json.loads(bdecode(r.content))
+        self.print_filter(data["data"][0])
+
+    def print_filter(self, data):
+        print(ls_info.get("filters").get("fmt") % data)
 
     def create_filter(self, options):
         if options.create is None:
@@ -1125,7 +1137,7 @@ class CmdFilterset(Cmd):
         if options.list is None:
             return
         p = "/filtersets"
-        o = CmdLs(self.cli).cmd(p)
+        CmdLs(self.cli).cmd(p)
 
     def show_filterset(self, options):
         if options.show is None or options.filterset is None:
@@ -1262,7 +1274,7 @@ class CmdModuleset(Cmd):
         if options.list is None:
             return
         p = "/compliance/modulesets"
-        o = CmdLs(self.cli).cmd(p)
+        CmdLs(self.cli).cmd(p)
 
     def show_moduleset(self, options):
         if options.show is None:
@@ -1412,7 +1424,7 @@ class CmdModule(Cmd):
         if options.list is None or options.moduleset is None:
             return
         p = "/compliance/modulesets/%s/modules" % options.moduleset
-        o = CmdLs(self.cli).cmd(p)
+        CmdLs(self.cli).cmd(p)
 
     def add_module(self, options):
         if options.add is None or options.moduleset is None or options.module is None:
@@ -1523,7 +1535,7 @@ class CmdVariable(Cmd):
         if options.list is None or options.ruleset is None:
             return
         p = "/compliance/rulesets/%s/variables" % options.ruleset
-        o = CmdLs(self.cli).cmd(p)
+        CmdLs(self.cli).cmd(p)
 
     def add_variable(self, options):
         if options.add is None or options.ruleset is None or options.variable is None:
@@ -1782,7 +1794,7 @@ class CmdRuleset(Cmd):
         if options.list is None:
             return
         p = "/compliance/rulesets"
-        o = CmdLs(self.cli).cmd(p)
+        CmdLs(self.cli).cmd(p)
 
     def show_ruleset(self, options):
         if options.show is None:
@@ -2374,7 +2386,10 @@ class Cli(object):
         self.auth = (self.user, self.password)
 
         if self.insecure and InsecureRequestWarning is not None:
-            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+            try:
+                requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+            except AttributeError:
+                pass
 
         self.host = self.api.replace("https://", "").replace("http://", "")
         if "/" in self.host:
