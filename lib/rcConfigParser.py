@@ -2,7 +2,7 @@ from __future__ import print_function
 import sys
 
 import six
-import six.moves.configparser as ConfigParser
+from six.moves import configparser as ConfigParser
 
 ParsingError = ConfigParser.ParsingError
 NoOptionError = ConfigParser.NoOptionError
@@ -20,9 +20,9 @@ if six.PY2:
             if self._defaults:
                 fp.write("[%s]\n" % ConfigParser.DEFAULTSECT)
                 for (key, value) in self._defaults.items():
-                    if not isinstance(value, (str, unicode)):
+                    if not isinstance(value, six.string_types):
                         value = str(value)
-                    if not isinstance(value, unicode):
+                    if not isinstance(value, six.text_type):
                         value = value.decode(encoding)
                     fp.write("%s = %s\n" % (key, value.replace('\n', '\n\t')))
                 fp.write("\n")
@@ -31,9 +31,9 @@ if six.PY2:
                 for (key, value) in self._sections[section].items():
                     if key == "__name__":
                         continue
-                    if not isinstance(value, (str, unicode)):
+                    if not isinstance(value, six.string_types):
                         value = str(value)
-                    if not isinstance(value, unicode):
+                    if not isinstance(value, six.text_type):
                         value = value.decode(encoding)
                     if (value is not None) or (self._optcre == self.OPTCRE):
                         key = " = ".join((key, value.replace('\n', '\n\t')))
