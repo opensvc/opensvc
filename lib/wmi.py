@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 """
 Windows Management Instrumentation (WMI) is Microsoft's answer to
 the DMTF's Common Information Model. It allows you to query just
