@@ -33,6 +33,7 @@ class DevRelation(object):
         self.parent = parent
         self.used = used
         self.used_set = False
+        self.tree = None
 
     def set_used(self, used):
         self.used_set = True
@@ -80,6 +81,7 @@ class Dev(object):
         self.alias = devname
         self.size = size
         self.devtype = devtype
+        self.tree = None
 
         # list of relations
         self.parents = []
