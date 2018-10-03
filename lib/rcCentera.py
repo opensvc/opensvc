@@ -4,7 +4,7 @@ import os
 import tempfile
 from subprocess import *
 
-import six.moves.configparser as ConfigParser
+from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from rcUtilities import which
 from rcGlobalEnv import rcEnv

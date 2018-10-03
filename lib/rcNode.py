@@ -2,7 +2,7 @@ import os
 import sys
 
 import six
-import six.moves.configparser as ConfigParser
+from six.moves import configparser as ConfigParser
 from rcGlobalEnv import rcEnv
 
 def node_get_node_env():

@@ -1,6 +1,6 @@
 import os
 
-import six.moves.configparser as ConfigParser
+from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, which
