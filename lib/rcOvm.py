@@ -1,5 +1,7 @@
 import os
 import subprocess
+from six.moves import configparser as ConfigParser
+
 from rcUtilities import which, call
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
@@ -13,7 +15,6 @@ class Ovm(object):
             import logging
             self.log = logging.getLogger('OVM')
 
-        import ConfigParser
         cf = rcEnv.paths.authconf
         self.conf = ConfigParser.RawConfigParser()
         self.conf.read(cf)
