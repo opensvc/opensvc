@@ -55,8 +55,11 @@ class Disk(resDisk.Disk):
         self.modprobe_done = True
 
     def showmapped(self, refresh=False):
-        if not refresh and hasattr(self, "mapped_data"):
-            return self.mapped_data
+        if not refresh:
+            try:
+                return getattr(self, "mapped_data")
+            except AttributeError:
+                pass
         self.modprobe()
         cmd = ["rbd", "showmapped", "--format", "json"]
         out, err, ret = justcall(cmd)
