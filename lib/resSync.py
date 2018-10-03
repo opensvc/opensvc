@@ -70,7 +70,7 @@ class Sync(Res.Resource, Scheduler):
             Zero is a infinite interval
         """
         if delay == 0:
-            raise
+            raise ex.excError("sync_max_delay cannot be 0")
         limit = ts + datetime.timedelta(minutes=delay)
         if comp == "more" and datetime.datetime.now() < limit:
             return False
@@ -99,11 +99,19 @@ class Sync(Res.Resource, Scheduler):
         Verify the remote fs is mounted. Some sync resource might want to abort in
         this case.
         """
-        if self.dstfs is None:
+        try:
+            dst = getattr(self, "dst")
+        except AttributeError:
+            raise ex.excError("the 'dst' attribute is not set")
+        try:
+            dstfs = getattr(self, "dstfs")
+        except AttributeError:
+            raise ex.excError("the 'dstfs' attribute is not set")
+        if dstfs is None:
             # No dstfs check has been configured. Assume the admin knows better.
             return True
         ruser = self.svc.node.get_ruser(node)
-        cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', 'LANG=C', 'df', self.dstfs]
+        cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', 'LANG=C', 'df', dstfs]
         (ret, out, err) = self.call(cmd, cache=True, errlog=False)
         if ret != 0:
             raise ex.excError
@@ -119,8 +127,8 @@ class Sync(Res.Resource, Scheduler):
                                  ^
                                  no separator !
         """
-        if self.dstfs+'(' not in out and self.dstfs not in out.split():
-            self.log.error("The destination fs %s is not mounted on node %s. refuse to sync %s to protect parent fs"%(self.dstfs, node, self.dst))
+        if dstfs+'(' not in out and dstfs not in out.split():
+            self.log.error("The destination fs %s is not mounted on node %s. refuse to sync %s to protect parent fs"%(dstfs, node, dst))
             return False
         return True
 
@@ -154,6 +162,12 @@ class Sync(Res.Resource, Scheduler):
             else:
                 self.log.info("won't sync a PRD service running on a !PRD node")
             raise ex.excAbortAction
+
+    def sync_status(self, *args, **kwargs):
+        """
+        Placeholder
+        """
+        return rcStatus.UNDEF
 
     def _status(self, **kwargs):
         try:
