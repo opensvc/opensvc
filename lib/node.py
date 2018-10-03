@@ -4666,7 +4666,7 @@ class Node(Crypt, ExtConfigMixin):
         """
         OS-specific implementations
         """
-        return
+        return {}
 
     def stats(self):
         data = {}
@@ -4676,7 +4676,7 @@ class Node(Crypt, ExtConfigMixin):
             # None < 0 == True
             pass
         meminfo = self.stats_meminfo()
-        if meminfo is not None:
+        if isinstance(meminfo, dict):
             data.update(meminfo)
         data["score"] = self.score(data)
         return data
