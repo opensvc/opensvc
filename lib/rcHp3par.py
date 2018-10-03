@@ -8,13 +8,13 @@ import re
 import datetime
 from subprocess import *
 
-import six.moves.configparser as ConfigParser
+from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import cache, clear_cache, justcall, which
-from six.moves.urllib.request import Request, urlopen
-from six.moves.urllib.error import HTTPError
-from six.moves.urllib.parse import urlencode
+from six.moves.urllib.request import Request, urlopen, build_opener # pylint: disable=import-error
+from six.moves.urllib.error import HTTPError # pylint: disable=import-error
+from six.moves.urllib.parse import urlencode # pylint: disable=import-error
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin
@@ -215,11 +215,6 @@ class Hp3par(object):
         if p.returncode != 0:
             if "The authenticity of the storage system cannot be established." in err:
                  raise ex.excError("3par connection error. array ssl cert is not trusted. open interactive session to trust it.")
-            if ("Connection closed by remote host" in err or "Too many local CLI connections." in err) and retry > 0:
-                if log:
-                    self.log.info("3par connection refused. try #%d" % retry)
-                time.sleep(1)
-                return self._rcmd(_cmd, cmd, log=log, retry=retry-1)
             if log:
                 if len(out) > 0: self.log.info(out)
                 if len(err) > 0: self.log.error(err)
