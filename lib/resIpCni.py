@@ -51,7 +51,7 @@ class Ip(Res.Ip):
         pass
 
     @lazy
-    def label(self):
+    def label(self): # pylint: disable=method-hidden
         intf = self.get_ipdev()
         label = self.network if self.network else ""
         if intf and len(intf.ipaddr) > 0:

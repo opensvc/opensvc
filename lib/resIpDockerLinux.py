@@ -303,15 +303,6 @@ class Ip(Res.Ip):
         self.ip_wait()
         return 0, "", ""
 
-    def ip_get_mtu(self):
-        # get mtu
-        cmd = [rcEnv.syspaths.ip, "link", "show", self.ipdev]
-        ret, out, err = self.call(cmd)
-        if ret != 0:
-            raise ex.excError("failed to get %s mtu: %s" % (self.ipdev, err))
-        mtu = out.split()[4]
-        return mtu
-
     def startip_cmd_shared_macvlan(self):
         nspid = self.get_nspid()
 
