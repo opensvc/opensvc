@@ -20,6 +20,7 @@ class Disk(resDisk.Disk):
                           type='disk.vg',
                           **kwargs)
         self.label = 'fdmn ' + name
+        self.sub_devs_cache = set()
 
     def sub_devs_name(self):
         return os.path.join(self.var_d, 'sub_devs')
@@ -81,7 +82,7 @@ class Disk(resDisk.Disk):
 
     def _sub_devs(self):
         # return cache if initialized
-        if len(self.sub_devs_cache) > 0 :
+        if len(self.sub_devs_cache) > 0:
             return self.sub_devs_cache
 
         if not os.path.exists("/etc/fdmns/"+self.name):
