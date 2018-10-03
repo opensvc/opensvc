@@ -9,7 +9,7 @@ import rcGce
 
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
-class Ip(resIp.Ip, rcGce.Gce):
+class Ip(resIp.Ip, rcGce.GceMixin):
     def __init__(self,
                  rid=None,
                  ipname=None,

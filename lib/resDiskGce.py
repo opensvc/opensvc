@@ -7,7 +7,7 @@ from rcGlobalEnv import *
 from rcUtilities import justcall
 import rcGce
 
-class Disk(resDisk.Disk, rcGce.Gce):
+class Disk(resDisk.Disk, rcGce.GceMixin):
     def __init__(self,
                  rid=None,
                  type="disk.gce",

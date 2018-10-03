@@ -1,7 +1,7 @@
 from rcUtilities import is_string, justcall
 import json
 
-class Gce(object):
+class GceMixin(object):
     valid_auth = False
 
     def gce_auth(self):
