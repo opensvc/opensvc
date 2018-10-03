@@ -20,13 +20,14 @@ class interface:
         a += [' flag_running = ' + str(self.flag_running)]
         a += [' flag_multicast = ' + str(self.flag_multicast)]
         a += [' flag_loopback = ' + str(self.flag_loopback)]
-        if hasattr(self, 'groupname'):
+        if self.groupname:
             a += [' groupname = ' + str(self.groupname)]
         return '\n'.join(a)
 
     def __init__(self, name):
         self.name = name
         # defaults
+        self.groupname = ''
         self.link_encap = ''
         self.scope = ''
         self.bcast = ''
