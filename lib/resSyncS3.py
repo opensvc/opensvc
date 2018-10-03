@@ -1,14 +1,15 @@
 import os
+import time
+import datetime
+import glob
+from subprocess import *
+from six.moves import configparser as ConfigParser
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall
-from subprocess import *
+import resSync
 import rcExceptions as ex
 import rcStatus
-import time
-import datetime
-import resSync
-import glob
 
 class syncS3(resSync.Sync):
     def __init__(self,
@@ -110,7 +111,7 @@ class syncS3(resSync.Sync):
           list all saves in S3 for this resource
         """
         if not refresh and hasattr(self, "ls_cache"):
-            return self.ls_cache
+            return getattr(self, "ls_cache")
         cmd = ["aws", "s3", "ls", "s3://"+self.bucket+"/"+self.svc.svcname+"/"]
         out, err, ret = justcall(cmd)
         if ret != 0:
@@ -133,7 +134,6 @@ class syncS3(resSync.Sync):
         return self.ls_cache
 
     def get_creds_from_aws(self):
-        import ConfigParser
         aws_cf_f = "/root/.aws/config"
         try:
             aws_cf = ConfigParser.RawConfigParser()
