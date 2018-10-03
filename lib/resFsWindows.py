@@ -70,10 +70,10 @@ class Mount(Res.Mount):
 
     def get_volume(self, refresh=False):
         if not refresh and hasattr(self, "volume"):
-            return self.volume
+            return getattr(self, "volume")
         l = self.svc.wmi.Win32_Volume()
         for v in l:
-	    print("DBG devid %s " % v.DeviceId)
+            print("DBG devid %s " % v.DeviceId)
             if v.DeviceId == self.device:
                 # cache result
                 self.volume = v
@@ -92,16 +92,16 @@ class Mount(Res.Mount):
         return rcMounts.Mounts(wmi=self.svc.wmi).has_mount(self.device, self.mount_point)
 
     def start(self):
-	if self.is_online(self.device) is True:
-	    self.log.info("fs(%s %s) is already online"%(self.device, self.mount_point))
+        if self.is_online(self.device) is True:
+            self.log.info("fs(%s %s) is already online"%(self.device, self.mount_point))
         if self.is_up() is True:
             self.log.info("fs(%s %s) is already mounted"%(self.device, self.mount_point))
             return 0
-	ret = mount(self)
-	if ret != 0:
-	    return 1
+        ret = mount(self)
+        if ret != 0:
+            return 1
         self.can_rollback = True
-	return 0
+        return 0
 
     def stop(self):
         if self.is_up() is False:
