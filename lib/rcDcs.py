@@ -4,7 +4,7 @@ import os
 import uuid
 from xml.etree.ElementTree import XML, fromstring
 
-import six.moves.configparser as ConfigParser
+from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, which
@@ -111,8 +111,10 @@ class Dcs(object):
                      'dcspoolmember']
 
     def get_domain(self):
-        if hasattr(self, 'domain'):
-            return self.domain
+        try:
+            return getattr(self, "domain")
+        except AttributeError:
+            pass
         buff = self.get_dcsservergroup()
         for line in buff.split('\n'):
             if not line.startswith('Alias'):
