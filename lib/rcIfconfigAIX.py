@@ -1,12 +1,11 @@
 from subprocess import *
-from rcUtilities import hexmask_to_dotted
+from rcUtilities import hexmask_to_dotted, cache
 
 import rcIfconfig
 
 class ifconfig(rcIfconfig.ifconfig):
     def get_mac(self, intf):
-        buff = self.get_netstat_in()
-        for line in buff.split("\n"):
+        for line in self.get_netstat_in().split("\n"):
             l = line.split()
             if len(l) < 4:
                 continue
@@ -19,15 +18,13 @@ class ifconfig(rcIfconfig.ifconfig):
             return l[3].replace('.', ':')
         return ""
 
+    @cache("netstat.in")
     def get_netstat_in(self):
-        if hasattr(self, "netstat_in_cache"):
-            return self.netstat_in_cache
         cmd = ['netstat', '-in']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
             return ""
-        self.netstat_in_cache = out
         return out
 
     def parse(self, out):
