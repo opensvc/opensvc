@@ -62,7 +62,7 @@ class Vbox(resContainer.Container):
             return False
         return True
 
-    def state(self, nodename):
+    def state(self, nodename=None):
         cmd = ['VBoxManage', 'list', 'runningvms']
         if nodename is not None:
             cmd = rcEnv.rsh.split() + [nodename] + cmd
