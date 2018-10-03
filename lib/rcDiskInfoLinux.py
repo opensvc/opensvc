@@ -2,13 +2,15 @@ from __future__ import print_function
 import sys
 import os
 import re
-from rcUtilities import justcall, which
+import json
+import math
+import glob
+
+from rcUtilities import justcall, which, lazy
 from rcUtilitiesLinux import udevadm_settle
 import rcDiskInfo
-import math
 from rcGlobalEnv import rcEnv
 import rcDevTreeVeritas
-import glob
 
 class diskInfo(rcDiskInfo.diskInfo):
     disk_ids = {}
@@ -42,22 +44,18 @@ class diskInfo(rcDiskInfo.diskInfo):
             return self.prefix_local(dev.replace('/dev/','').replace('/','!'))
         return id
 
-    def get_gce_instance_data(self):
-        if hasattr(self, "cache_instance_data"):
-            return self.cache_instance_data
+    @lazy
+    def gce_instance_data(self):
         cmd = ["gcloud", "compute", "instances", "describe", "-q", "--format", "json", rcEnv.nodename]
         out, err, ret = justcall(cmd)
-        import json
-        self.cache_instance_data = json.loads(out)
-        return self.cache_instance_data
+        return json.loads(out)
 
     def gce_disk_id(self, dev):
         if "Google_PersistentDisk_" in dev:
             devname = dev.split("Google_PersistentDisk_")[-1]
         else:
             devname = dev.split("google-")[-1]
-        gce_instance_data = self.get_gce_instance_data()
-        for disk in gce_instance_data["disks"]:
+        for disk in self.gce_instance_data["disks"]:
             if disk["deviceName"] != devname:
                 continue
             i = disk["source"].index("/project")
