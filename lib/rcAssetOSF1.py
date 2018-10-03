@@ -48,10 +48,7 @@ class Asset(rcAsset.Asset):
         return ' '.join(l[2:4])
 
     def _get_os_kernel(self):
-        try:
-            from distutils.version import LooseVersion as V
-        except ImportError:
-            return 'Unknown'
+        from distutils.version import LooseVersion as V # pylint: disable=no-name-in-module,import-error
         cmd = ['dupatch', '-track', '-type', 'kit', '-nolog']
         out, err, ret = _justcall(cmd)
         l = []

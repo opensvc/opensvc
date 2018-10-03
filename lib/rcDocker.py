@@ -5,7 +5,8 @@ The module implementing the DockerLib class.
 """
 import os
 import errno
-from distutils.version import LooseVersion as V
+import distutils
+from distutils.version import LooseVersion as V # pylint: disable=no-name-in-module,import-error
 
 import json
 import re
