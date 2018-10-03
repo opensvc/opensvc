@@ -54,7 +54,7 @@ class Docker(resContainer.Container):
         return container_name.replace('#', '.')
 
     @lazy
-    def name(self):
+    def name(self): # pylint: disable=method-hidden
         return self.container_name
 
     @lazy
@@ -79,7 +79,7 @@ class Docker(resContainer.Container):
             return
 
     @lazy
-    def label(self):
+    def label(self): # pylint: disable=method-hidden
         if self.docker_service:
             return "docker service " + "@".join((
                 self.service_name,

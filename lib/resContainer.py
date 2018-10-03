@@ -30,7 +30,7 @@ class Container(Res.Resource):
         try:
             self.name = name
         except AttributeError:
-            # label is a lazy prop of the child class
+            # name is a lazy prop of the child class
             pass
         try:
             self.label = name
@@ -110,7 +110,7 @@ class Container(Res.Resource):
     def wait_for_ping(self):
         if hasattr(self, 'ping'):
             self.log.info("wait for container ping")
-            self.wait_for_fn(self.ping, self.start_timeout, 2)
+            self.wait_for_fn(getattr(self, "ping"), self.start_timeout, 2)
 
     def wait_for_operational(self):
         self.log.info("wait for container operational")
@@ -141,7 +141,7 @@ class Container(Res.Resource):
         if len(nodes) == 0:
             return
         for node in nodes:
-            if self.is_up_on(node):
+            if getattr(self, "is_up_on")(node):
                 return node
         return
 
@@ -208,7 +208,7 @@ class Container(Res.Resource):
             self.container_forcestop()
             self.wait_for_shutdown()
         if hasattr(self, "post_container_stop"):
-            self.post_container_stop()
+            getattr(self, "post_container_stop")()
 
     def check_capabilities(self):
         #print("TODO: check_capabilities(self)")
