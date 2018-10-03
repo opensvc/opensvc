@@ -1,7 +1,9 @@
-from rcUtilities import justcall, which
-import rcExceptions as ex
 import os
 import socket
+import six
+
+from rcUtilities import justcall, which
+import rcExceptions as ex
 
 class Nsr(object):
     def __init__(self):
@@ -31,7 +33,7 @@ class Nsr(object):
             else:
                 ip = client
             lines[li] = ip + line[i:]
-        return unicode('\n'.join(lines), errors='ignore')
+        return six.text_type('\n'.join(lines), errors='ignore')
 
 
 if __name__ == "__main__":
