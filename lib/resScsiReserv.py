@@ -87,6 +87,7 @@ class ScsiReserv(Res.Resource):
 
     def get_reservation_key(self, disk):
         raise ex.MissImpl
+        return
 
     def disk_reserved(self, disk):
         raise ex.MissImpl
@@ -205,7 +206,7 @@ class ScsiReserv(Res.Resource):
                 r += self.ack_unit_attention(d)
                 if not self.disk_reserved(d):
                     continue
-                r += self.disk_clear_reservation(d)
+                r += getattr(self, "disk_clear_reservation")(d)
             except ex.excScsiPrNotsupported as exc:
                 self.log.error(str(exc))
                 continue
@@ -247,7 +248,7 @@ class ScsiReserv(Res.Resource):
         if not self.scsireserv_supported():
             return
         r = 0
-        if hasattr(self, 'disk_clear_reservation'):
+        if hasattr(self, "disk_clear_reservation"):
             r += self.clear()
         else:
             r += self.release()
