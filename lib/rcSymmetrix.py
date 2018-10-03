@@ -6,8 +6,8 @@ import os
 import json
 import time
 
-import six.moves.configparser as ConfigParser
 import rcExceptions as ex
+from six.moves import configparser as ConfigParser
 from xml.etree.ElementTree import XML, fromstring
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import justcall, which
@@ -282,7 +282,7 @@ class Arrays(object):
             yield(array)
 
 
-class Sym(object):
+class SymMixin(object):
     def __init__(self, sid, symcli_path, symcli_connect, username, password):
         self.keys = [
             'sym_info',
@@ -297,6 +297,7 @@ class Sym(object):
             'sym_disk_info',
             'sym_diskgroup_info',
         ]
+        self.node = None
         self.sid = sid
         self.symcli_path = symcli_path
         self.symcli_connect = symcli_connect
@@ -603,9 +604,9 @@ class Sym(object):
                     sgs &= _sgs
         return sgs
 
-class Vmax(Sym):
+class Vmax(SymMixin):
     def __init__(self, sid, symcli_path, symcli_connect, username, password):
-        Sym.__init__(self, sid, symcli_path, symcli_connect, username, password)
+        SymMixin.__init__(self, sid, symcli_path, symcli_connect, username, password)
         self.keys += [
             'sym_ig_aclx',
             'sym_pg_aclx',
@@ -1105,18 +1106,18 @@ class Vmax(Sym):
         return ret
 
 
-class Dmx(Sym):
-    def __init__(self, sid):
-        Sym.__init__(self, sid)
+class Dmx(SymMixin):
+    def __init__(self, *args, **kwargs):
+        SymMixin.__init__(self, *args, **kwargs)
         self.keys += ['sym_maskdb']
 
         if 'SYMCLI_DB_FILE' in os.environ:
             dir = os.path.dirname(os.environ['SYMCLI_DB_FILE'])
             # flat format
-            self.maskdb = os.path.join(dir, sid+'.bin')
+            self.maskdb = os.path.join(dir, self.sid+'.bin')
             if not os.path.exists(self.maskdb):
                 # emc grab format
-                self.maskdb = os.path.join(dir, sid, 'symmaskdb_backup.bin')
+                self.maskdb = os.path.join(dir, self.sid, 'symmaskdb_backup.bin')
             if not os.path.exists(self.maskdb):
                 print("missing file %s"%self.maskdb, file=sys.stderr)
         else:
@@ -1154,6 +1155,7 @@ def do_action(action, array_name=None, node=None, **kwargs):
     ret = getattr(array, action)(**kwargs)
     if ret is not None:
         print(json.dumps(ret, indent=4))
+    return ret
 
 def main(argv, node=None):
     parser = OptParser(prog=PROG, options=OPT, actions=ACTIONS,
@@ -1161,7 +1163,7 @@ def main(argv, node=None):
                        global_options=GLOBAL_OPTS)
     options, action = parser.parse_args(argv)
     kwargs = vars(options)
-    do_action(action, node=node, **kwargs)
+    return do_action(action, node=node, **kwargs)
 
 if __name__ == "__main__":
     try:
