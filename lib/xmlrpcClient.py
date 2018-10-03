@@ -269,7 +269,7 @@ class Collector(object):
                 'status',
                 'cron']
         vals = []
-        last = None
+        last = []
         for line in lines.split(';;EOL\n'):
             if line.count(';;') != 4:
                 continue

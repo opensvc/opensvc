@@ -12,8 +12,8 @@ import sys
 import os
 import platform
 import socket
-import uuid
 import time
+from uuid import uuid4
 
 class Storage(dict):
     __setattr__ = dict.__setitem__
@@ -22,7 +22,7 @@ class Storage(dict):
     __getattr__ = dict.get
     __repr__ = lambda self: '<Storage %s>' % dict.__repr__(self)
     __getstate__ = lambda self: None
-    __copy__ = lambda self: Storage(self)
+    __copy__ = lambda self: Storage(self) # pylint: disable=undefined-variable
 
 def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
     o = Storage()
@@ -102,7 +102,8 @@ def create_or_update_dir(d):
 class rcEnv:
     """Class to store globals
     """
-    session_uuid = str(uuid.uuid4())
+    uuid = ""
+    session_uuid = str(uuid4())
     initial_env = os.environ.copy()
     os.environ["OSVC_SESSION_UUID"] = session_uuid
     node_env = ""
