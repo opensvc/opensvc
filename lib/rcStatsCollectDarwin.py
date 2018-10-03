@@ -17,10 +17,10 @@ def collect(node):
         cmd = ['df', '-lkP']
         (out, err, ret) = justcall(cmd)
         if ret != 0:
-            return self.undef
+            return
         lines = out.split('\n')
         if len(lines) < 2:
-            return self.undef
+            return
         vals = []
         for line in lines[1:]:
             l = line.split()
@@ -87,5 +87,7 @@ def collect(node):
                 ))+'\n')
     
     
-    node.collector.call('push_stats_fs_u', fs_u())
+    data = fs_u()
+    if data:
+        node.collector.call('push_stats_fs_u', data)
     mem_u()
