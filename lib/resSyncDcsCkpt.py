@@ -185,10 +185,3 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
             ts = datetime.datetime.fromtimestamp(0)
         return ts
 
-    def __str__(self):
-        return "%s dcs=%s manager=%s pairs=%s" % (
-                 resSync.Sync.__str__(self),
-                 ' '.join(self.dcs),
-                 ' '.join(self.manager),
-                 str(pairs))
-
