@@ -1,5 +1,4 @@
-from subprocess import *
-from rcUtilities import which, cidr_to_dotted
+from rcUtilities import which, cidr_to_dotted, justcall
 from rcGlobalEnv import rcEnv
 
 import rcIfconfig
@@ -202,11 +201,11 @@ class ifconfig(rcIfconfig.ifconfig):
     def get_mcast(self):
         if which('netstat'):
             cmd = ['netstat', '-gn']
-            out = Popen(cmd, stdout=PIPE).communicate()[0].decode()
+            out, _, _ = justcall(cmd)
             return self.parse_mcast_netstat(out)
         elif which(rcEnv.syspaths.ip):
             cmd = [rcEnv.syspaths.ip, 'maddr']
-            out = Popen(cmd, stdout=PIPE).communicate()[0].decode()
+            out, _, _ = justcall(cmd)
             return self.parse_mcast_ip(out)
 
     def parse_mcast_netstat(self, out):
@@ -263,10 +262,12 @@ class ifconfig(rcIfconfig.ifconfig):
         if ip_out:
             self.parse_ip(ip_out)
         elif which(rcEnv.syspaths.ip):
-            out = Popen([rcEnv.syspaths.ip, 'addr'], stdout=PIPE).communicate()[0].decode()
+            cmd = [rcEnv.syspaths.ip, 'addr']
+            out, _, _ = justcall(cmd)
             self.parse_ip(out)
         else:
-            out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0].decode()
+            cmd = ['ifconfig', '-a']
+            out, _, _ = justcall(cmd)
             self.parse_ifconfig(out)
 
 if __name__ == "__main__":
