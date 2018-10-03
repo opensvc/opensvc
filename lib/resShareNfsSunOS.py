@@ -12,7 +12,7 @@ class Share(Resource):
         cmd = ["share", "-F", "nfs", "-A"]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            return self.data
+            return ""
         for line in out.splitlines():
             words = line.split()
             if len(words) != 3:

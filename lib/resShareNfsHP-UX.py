@@ -10,7 +10,7 @@ class Share(Resource):
 
     def get_opts(self):
         if not os.path.exists(self.sharetab):
-            return self.data
+            return ""
         with open(self.sharetab, 'r') as f:
             buff = f.read()
         for line in buff.split('\n'):
