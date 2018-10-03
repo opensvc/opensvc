@@ -1,5 +1,6 @@
 import os
 import logging
+from six.moves import configparser as ConfigParser
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
@@ -227,7 +228,6 @@ class syncEvasnap(resSync.Sync):
         return s.strip('-')
 
     def prereq(self):
-        import ConfigParser
         if not os.path.exists(self.conf):
             raise ex.excError("missing %s"%self.conf)
         self.config = ConfigParser.RawConfigParser()

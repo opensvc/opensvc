@@ -1,6 +1,8 @@
 import os
-import rcExceptions as ex
 import subprocess
+from six.moves import configparser as ConfigParser
+
+import rcExceptions as ex
 import resSync
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
@@ -32,7 +34,6 @@ class SyncDcs(resSync.Sync):
         self.get_active_manager()
         if self.active_manager is None:
             raise ex.excError("no active manager")
-        import ConfigParser
         if not os.path.exists(self.conf):
             raise ex.excError("missing %s"%self.conf)
         self.config = ConfigParser.RawConfigParser()
