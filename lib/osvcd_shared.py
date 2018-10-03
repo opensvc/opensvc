@@ -334,10 +334,13 @@ class OsvcThread(threading.Thread, Crypt):
         try:
             config = RawConfigParser()
             with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as filep:
-                if six.PY3:
-                    config.read_file(filep)
-                else:
-                    config.readfp(filep)
+                try:
+                    if six.PY3:
+                        config.read_file(filep)
+                    else:
+                        config.readfp(filep)
+                except AttributeError:
+                    raise
         except Exception as exc:
             self.log.info("error loading config: %s", exc)
             raise ex.excAbortAction()
