@@ -169,7 +169,7 @@ class ScsiReserv(Res.Resource):
         for d in self.devs:
             try:
                 r += self.ack_unit_attention(d)
-                key = self.get_reservation_key(d)
+                key = self.get_reservation_key(d) # pylint: disable=assignment-from-none
                 if key is None:
                     r += self.disk_reserve(d)
                 elif key == self.hostid:
@@ -219,7 +219,7 @@ class ScsiReserv(Res.Resource):
         r = rcStatus.Status()
         for d in self.devs:
             try:
-                key = self.get_reservation_key(d)
+                key = self.get_reservation_key(d) # pylint: disable=assignment-from-none
                 if key is None:
                     self.log.debug("disk %s is not reserved" % d)
                     r += rcStatus.DOWN
