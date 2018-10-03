@@ -48,8 +48,10 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         return size
 
     def get_dm(self):
-        if hasattr(self, 'dm_h'):
-            return self.dm_h
+        try:
+            return getattr(self, "dm_h")
+        except AttributeError:
+            pass
         self.dm_h = {}
         self._dm_h = {}
         if not os.path.exists("/dev/mapper"):
@@ -100,8 +102,10 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         return None
 
     def get_wwid(self):
-        if hasattr(self, 'wwid_h'):
-            return self.wwid_h
+        try:
+            return getattr(self, 'wwid_h')
+        except AttributeError:
+            pass
         self.wwid_h = {}
         self.wwid_h.update(self.get_wwid_native())
         self.wwid_h.update(self.get_mp_powerpath())
@@ -127,8 +131,10 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         return self.wwid_h
 
     def get_mp(self):
-        if hasattr(self, 'mp_h'):
-            return self.mp_h
+        try:
+            return getattr(self, 'mp_h')
+        except AttributeError:
+            pass
         self.mp_h = {}
         self.mp_h.update(self.get_mp_native())
         self.mp_h.update(self.get_mp_powerpath())
@@ -147,6 +153,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         if len(lines) < 1:
             return {}
         dev = None
+        name = None
         paths = []
         mp_h = {}
         for line in lines:
@@ -195,8 +202,10 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
         return mp_h
 
     def get_md(self):
-        if hasattr(self, 'md_h'):
-            return self.md_h
+        try:
+            return getattr(self, "md_h")
+        except AttributeError:
+            pass
         fpath = "/proc/mdstat"
         self.md_h = {}
         try:
@@ -293,8 +302,10 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             d.set_devpath("/dev/"+s)
 
     def get_lv_linear(self):
-        if hasattr(self, 'lv_linear'):
-            return self.lv_linear
+        try:
+            return getattr(self, "lv_linear")
+        except AttributeError:
+            pass
         self.lv_linear = {}
         if not which(rcEnv.syspaths.dmsetup):
             return self.lv_linear
