@@ -496,7 +496,7 @@ class Svc(Crypt, ExtConfigMixin):
         return var_d
 
     @lazy
-    def log(self):
+    def log(self): # pylint: disable=method-hidden
         return rcLogger.initLogger(rcEnv.nodename+"."+self.svcname)
 
     @lazy
