@@ -14,11 +14,6 @@ import rcExceptions as ex
 import rcColor
 from node import Node
 
-try:
-    from version import version
-except:
-    version = "dev"
-
 CLEAREOL = "\x1b[K"
 CLEAREOLNEW = "\x1b[K\n"
 CLEAREOS = "\x1b[J"
@@ -26,60 +21,62 @@ CURSORHOME = "\x1b[H"
 
 EVENT = threading.Event()
 
-__ver = prog + " version " + version
-__usage = prog + \
-    " [ OPTIONS ]\n" \
-    "\n" \
-    "Flags:\n" \
-    "  O  up\n" \
-    "  o  stdby up\n" \
-    "  X  down\n" \
-    "  x  stdby down\n" \
-    "  !  warn\n" \
-    "  P  unprovisioned\n" \
-    "  *  frozen\n" \
-    "  ^  leader node or service placement non-optimal"
-parser = optparse.OptionParser(version=__ver, usage=__usage)
-parser.add_option("--color", default="auto",
-                  action="store", dest="color",
-                  help="colorize output. possible values are : auto=guess based "
-                       "on tty presence, always|yes=always colorize, never|no="
-                       "never colorize")
-parser.add_option("--node", action="store", dest="node",
-                  help="The node to send a request to. If not specified the "
-                       "local node is targeted."),
-parser.add_option("-w", "--watch", default=False,
-                  action="store_true", dest="watch",
-                  help="refresh the information every --interval.")
-parser.add_option("-i", "--interval", default=2, action="store",
-                  dest="interval", type="int",
-                  help="with --watch, set the refresh interval.")
-parser.add_option(
-    "-s", "--service", default=None,
-    action="store", dest="parm_svcs",
-    help="A service selector expression ``[!]<expr>[<sep>[!]<expr>]`` where:\n\n"
-         "- ``!`` is the expression negation operator\n\n"
-         "- ``<sep>`` can be:\n\n"
-         "  - ``,`` OR expressions\n\n"
-         "  - ``+`` AND expressions\n\n"
-         "- ``<expr>`` can be:\n\n"
-         "  - a shell glob on service names\n\n"
-         "  - ``<param><op><value>`` where:\n\n"
-         "    - ``<param>`` can be:\n\n"
-         "      - ``<rid>:``\n\n"
-         "      - ``<group>:``\n\n"
-         "      - ``<rid>.<key>``\n\n"
-         "      - ``<group>.<key>``\n\n"
-         "    - ``<op>`` can be:\n\n"
-         "      - ``<``  ``>``  ``<=``  ``>=``  ``=``\n\n"
-         "      - ``~`` with regexp value\n\n"
-         "Examples:\n\n"
-         "- ``*dns,ha*+app.timeout>1``\n\n"
-         "- ``ip:+task:``\n\n"
-         "- ``!*excluded``\n\n"
-         "Note:\n\n"
-         "- ``!`` usage requires single quoting the expression to prevent "
-         "shell history expansion")
+def setup_parser(node):
+    __ver = prog + " version " + node.agent_version
+    __usage = prog + \
+        " [ OPTIONS ]\n" \
+        "\n" \
+        "Flags:\n" \
+        "  O  up\n" \
+        "  o  stdby up\n" \
+        "  X  down\n" \
+        "  x  stdby down\n" \
+        "  !  warn\n" \
+        "  P  unprovisioned\n" \
+        "  *  frozen\n" \
+        "  ^  leader node or service placement non-optimal"
+    parser = optparse.OptionParser(version=__ver, usage=__usage)
+    parser.add_option("--color", default="auto",
+                      action="store", dest="color",
+                      help="colorize output. possible values are : auto=guess based "
+                           "on tty presence, always|yes=always colorize, never|no="
+                           "never colorize")
+    parser.add_option("--node", action="store", dest="node",
+                      help="The node to send a request to. If not specified the "
+                           "local node is targeted."),
+    parser.add_option("-w", "--watch", default=False,
+                      action="store_true", dest="watch",
+                      help="refresh the information every --interval.")
+    parser.add_option("-i", "--interval", default=2, action="store",
+                      dest="interval", type="int",
+                      help="with --watch, set the refresh interval.")
+    parser.add_option(
+        "-s", "--service", default=None,
+        action="store", dest="parm_svcs",
+        help="A service selector expression ``[!]<expr>[<sep>[!]<expr>]`` where:\n\n"
+             "- ``!`` is the expression negation operator\n\n"
+             "- ``<sep>`` can be:\n\n"
+             "  - ``,`` OR expressions\n\n"
+             "  - ``+`` AND expressions\n\n"
+             "- ``<expr>`` can be:\n\n"
+             "  - a shell glob on service names\n\n"
+             "  - ``<param><op><value>`` where:\n\n"
+             "    - ``<param>`` can be:\n\n"
+             "      - ``<rid>:``\n\n"
+             "      - ``<group>:``\n\n"
+             "      - ``<rid>.<key>``\n\n"
+             "      - ``<group>.<key>``\n\n"
+             "    - ``<op>`` can be:\n\n"
+             "      - ``<``  ``>``  ``<=``  ``>=``  ``=``\n\n"
+             "      - ``~`` with regexp value\n\n"
+             "Examples:\n\n"
+             "- ``*dns,ha*+app.timeout>1``\n\n"
+             "- ``ip:+task:``\n\n"
+             "- ``!*excluded``\n\n"
+             "Note:\n\n"
+             "- ``!`` usage requires single quoting the expression to prevent "
+             "shell history expansion")
+    return parser
 
 def events(node, nodename):
     for msg in node.daemon_events(nodename):
@@ -92,6 +89,7 @@ def start_events_thread(node, nodename):
     return thr
 
 def _main(node, argv=None):
+    parser = setup_parser(node)
     (options, args) = parser.parse_args(argv)
     node.check_privs(argv)
     rcColor.use_color = options.color
