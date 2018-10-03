@@ -31,7 +31,7 @@ class Jail(resContainer.Container):
             f.close()
 
     def container_start(self):
-        cmd = ['jail', '-c', 'name='+self.basename, 'path='+self.jailroot,
+        cmd = ['jail', '-c', 'name='+self.name, 'path='+self.jailroot,
                'host.hostname='+self.name]
         if len(self.ips) > 0:
             cmd += ['ip4.addr='+','.join(self.ips)]
@@ -44,7 +44,7 @@ class Jail(resContainer.Container):
             raise ex.excError
 
     def container_stop(self):
-        cmd = ['jail', '-r', self.basename]
+        cmd = ['jail', '-r', self.name]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
