@@ -3,9 +3,10 @@ from __future__ import print_function
 import sys
 import os
 import json
+import logging
 from optparse import Option
+from six.moves import configparser as ConfigParser
 
-import six.moves.configparser as ConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv, Storage
 from rcUtilities import justcall
@@ -19,7 +20,7 @@ except ImportError:
 
 try:
     requests.packages.urllib3.disable_warnings()
-except:
+except AttributeError:
     pass
 verify = False
 
@@ -254,6 +255,7 @@ class Arrays(object):
 
 class Array(object):
     def __init__(self, name, api, username, password):
+        self.node = None
         self.name = name
         self.api = api
         self.username = username
@@ -267,6 +269,7 @@ class Array(object):
 
         self.tg_portname = {}
         self.ig_portname = {}
+        self.log = logging.getLogger(rcEnv.nodename+".array.xtremio."+self.name)
 
     def convert_ids(self, data):
         if data is None:
@@ -293,9 +296,9 @@ class Array(object):
         response = requests.delete(uri, params=params, data=json.dumps(data),
                                    auth=self.auth, verify=verify,
                                    headers=headers)
-        if response.status_code == 200:
-            return
-        raise ex.excError(response.content)
+        if response.status_code != 200:
+            raise ex.excError(response.content)
+        return
 
     def put(self, uri, params=None, data=None):
         if data is None:
@@ -307,9 +310,9 @@ class Array(object):
             uri = self.api + uri
         response = requests.put(uri, params=params, data=json.dumps(data), auth=self.auth,
                                 verify=verify, headers=headers)
-        if response.status_code == 200:
-            return
-        raise ex.excError(response.content)
+        if response.status_code != 200:
+            raise ex.excError(response.content)
+        return
 
     def post(self, uri, params=None, data=None):
         if data is None:
