@@ -9,6 +9,7 @@ import datetime
 import subprocess
 from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
+from converters import convert_size
 
 def collect(node):
     now = str(datetime.datetime.now())
@@ -189,29 +190,13 @@ def collect(node):
             if "osvc_sync_" in l[0]:
                 # do not report osvc sync snapshots fs usage
                 continue
-            used = convert(l[1])
+            used = convert_size(l[1], _to="KB")
             if l[2] == '0':
                 l[2] = '0K'
-            avail = convert(l[2])
+            avail = convert_size(l[2], _to="KB")
             total = used + avail
             pct = used / total * 100
             vals.append([now, node.nodename, l[0], str(total), str(pct)])
         return vals
-
-    def convert(s):
-        s = s.replace(',', '.')
-        if len(s) < 2:
-            raise
-        if s.endswith('T'):
-            s = float(s[:-1])*1024*1024*1024
-        elif s.endswith('G'):
-            s = float(s[:-1])*1024*1024
-        elif s.endswith('M'):
-            s = float(s[:-1])*1024
-        elif s.endswith('K'):
-            s = float(s[:-1])
-        else:
-            raise
-        return s
 
     node.collector.call('push_stats_fs_u', fs_u())
