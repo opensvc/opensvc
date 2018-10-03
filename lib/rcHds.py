@@ -549,7 +549,7 @@ class Array(object):
         out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.excError(err)
-        return
+        return {}
 
     def add_map(self, devnum=None, mappings=None, lun=None, **kwargs):
         if devnum is None:

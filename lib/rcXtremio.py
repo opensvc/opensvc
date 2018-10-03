@@ -298,7 +298,7 @@ class Array(object):
                                    headers=headers)
         if response.status_code != 200:
             raise ex.excError(response.content)
-        return
+        return 0
 
     def put(self, uri, params=None, data=None):
         if data is None:
