@@ -17,6 +17,7 @@ class Mount:
 
 class Mounts:
     src_dir_devs_cache = {}
+    df_one_cmd = []
 
     def __init__(self):
         """ OS dependent """
@@ -25,7 +26,7 @@ class Mounts:
     def __iter__(self):
         return iter(self.mounts)
 
-    def match_mount(self):
+    def match_mount(self, *args, **kwargs):
         """ OS dependent """
         pass
 
