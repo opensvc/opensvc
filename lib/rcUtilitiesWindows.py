@@ -17,7 +17,7 @@ def check_ping(addr, timeout=5, count=1):
     return False
 
 def get_registry_value(key, subkey, value):
-    import _winreg
+    import _winreg # pylint: disable=import-error
     key = getattr(_winreg, key)
     handle = _winreg.OpenKey(key, subkey)
     (value, type) = _winreg.QueryValueEx(handle, value)
@@ -26,7 +26,7 @@ def get_registry_value(key, subkey, value):
 def get_drives():
     drives = []
     bitmask = windll.kernel32.GetLogicalDrives()
-    for letter in string.uppercase:
+    for letter in string.ascii_uppercase:
         if bitmask & 1:
             drives.append(letter)
         bitmask >>= 1
