@@ -19,7 +19,7 @@ except ImportError:
 
 try:
     requests.packages.urllib3.disable_warnings()
-except:
+except AttributeError:
     pass
 
 VERIFY = False
