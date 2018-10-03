@@ -31,7 +31,7 @@ class FsDir(Res.Resource):
         self.perm = perm
 
     @lazy
-    def label(self):
+    def label(self): # pylint: disable=method-hidden
         if self.path:
             return "dir " + self.path
         else:

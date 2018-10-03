@@ -52,7 +52,7 @@ class Mount(Res.Resource):
         return self.conf_get("dev")
 
     @lazy
-    def label(self):
+    def label(self): # pylint: disable=method-hidden
         if self.device is None:
             label = self.svc._get(self.rid+".dev", evaluate=False)
         else:
@@ -178,6 +178,12 @@ class Mount(Res.Resource):
             return False
 
         return True
+
+    def is_up(self):
+        """
+        Placeholder
+        """
+        return
 
     def _status(self, verbose=False):
         if self.is_up():

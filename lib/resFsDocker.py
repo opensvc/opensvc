@@ -19,7 +19,7 @@ class Fs(resources.Resource):
         self.options = options
 
     @lazy
-    def label(self):
+    def label(self): # pylint: disable=method-hidden
         return "%s volume %s" % (self.driver, self.volname)
 
     def _status(self, verbose=False):
