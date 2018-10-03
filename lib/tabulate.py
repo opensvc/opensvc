@@ -15,15 +15,14 @@ if python_version_tuple()[0] < "3":
     _none_type = type(None)
     _int_type = int
     _float_type = float
-    _text_type = unicode
     _binary_type = str
 else:
     _none_type = type(None)
     _int_type = int
     _float_type = float
-    _text_type = str
     _binary_type = bytes
 
+_text_type = six.text_type
 __all__ = ["tabulate"]
 __version__ = "0.6"
 
