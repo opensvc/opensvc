@@ -226,7 +226,7 @@ class CompFileInc(CompObject):
             for line in lines:
                 if re.match(ck['check'], line):
                     m += 1
-                    if len(ck['add']) > 0 and line == ck['add']:
+                    if len(ck['add']) > 0:
                         pinfo("line '%s' found in '%s'" %(line, ck['path']))
                         ok += 1
                     if m > 1:
