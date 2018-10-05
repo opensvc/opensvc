@@ -281,7 +281,7 @@ def check_privs():
     if env.get("OSVC_SERVICE_LINK"):
         l[0] = os.path.join(rcEnv.paths.pathetc, env.get("OSVC_SERVICE_LINK"))
     else:
-        l[0] = os.path.basename(l[0]).replace(".py", "")
+        l[0] = os.path.join(rcEnv.paths.pathbin, os.path.basename(l[0]).replace(".py", ""))
     if which("sudo"):
         os.execvpe("sudo", ["sudo"] + l, env=env)
     elif which("pfexec"):
