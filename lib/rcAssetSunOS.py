@@ -97,11 +97,12 @@ class Asset(rcAsset.Asset):
         (out, err, ret) = justcall(['/usr/sbin/psrinfo', '-pv'])
         if ret != 0:
             return '0'
+        prev = ""
         for w in out.split():
             if 'MHz)' in w:
                 return prev
             prev = w
-        (out, err, ret) = justcall(['kstat', 'cpu_info'])
+        out, err, ret = justcall(['kstat', 'cpu_info'])
         if ret != 0:
             return '0'
         l = out.split()

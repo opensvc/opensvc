@@ -1055,10 +1055,13 @@ def read_cf(fpath, defaults=None):
     if not os.path.exists(fpath):
         return config
     with codecs.open(fpath, "r", "utf8") as ofile:
-        if six.PY3:
-            config.read_file(ofile)
-        else:
-            config.readfp(ofile)
+        try:
+            if six.PY3:
+                config.read_file(ofile)
+            else:
+                config.readfp(ofile)
+        except AttributeError:
+            raise
     return config
 
 def drop_option(option, cmd, drop_value=False):

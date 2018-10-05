@@ -11,10 +11,13 @@ def node_get_node_env():
     if not os.path.exists(rcEnv.paths.nodeconf):
         return 'TST'
     with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as f:
-        if six.PY3:
-            config.read_file(f)
-        else:
-            config.readfp(f)
+        try:
+            if six.PY3:
+                config.read_file(f)
+            else:
+                config.readfp(f)
+        except AttributeError:
+            raise
     if config.has_section('node'):
         if config.has_option('node', 'env'):
             return config.get('node', 'env')
