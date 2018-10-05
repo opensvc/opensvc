@@ -4,6 +4,7 @@ The module defining the app.simple resource class.
 
 import os
 import subprocess
+import hashlib
 from datetime import datetime
 
 import resApp
@@ -32,25 +33,40 @@ class App(resApp.App):
         else:
             return rcStatus.UP
 
-    def get_running(self, with_children=False):
-        cmd = ["pgrep", "-f", " ".join(self.get_cmd("start"))]
-        out, err, ret = justcall(cmd)
+    def ps_pids_e(self, pids):
+        """
+        When a lot of services and/or a lot of app.simple resources run the
+        same program, caching effective.
+        """
+        cmd = [rcEnv.syspaths.ps, "-p", pids, "e"]
+        out, _, _ = justcall(cmd)
+        return out
+
+    def get_matching(self, cmd):
+        out, err, ret = justcall(["pgrep", "-f", cmd])
         if ret != 0:
             return []
+        pids = ",".join(out.split())
+        if not pids:
+            return []
+        return self.ps_pids_e(pids).splitlines()
+
+    def get_running(self, with_children=False):
+        lines = self.get_matching(" ".join(self.get_cmd("start")))
         match = []
-        for pid in out.split():
-            cmd2 = [rcEnv.syspaths.ps, "-p", pid, "e"]
-            out, _, _ = justcall(cmd2)
-            words = out.split()
+        for line in lines:
+            words = line.split()
+            if not words or words[0] == "PID":
+                continue
             if "OPENSVC_SVC_ID="+self.svc.id not in words:
                 continue
             if "OPENSVC_RID="+self.rid not in words:
                 continue
-            match.append(pid)
-        if with_children:
+            match.append(words[0])
+        if with_children or not match:
             return match
         # exclude child processes
-        cmd += ["-P", ",".join(match)]
+        cmd = ["pgrep", "-P", ",".join(match)]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return match
