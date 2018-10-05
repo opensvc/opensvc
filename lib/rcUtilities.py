@@ -906,7 +906,7 @@ def term_width():
     try:
         # python 3.3+
         return os.get_terminal_size().columns
-    except AttributeError:
+    except (AttributeError, OSError):
         pass
     if rcEnv.sysname == "Windows":
         return default
