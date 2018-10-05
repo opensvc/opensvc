@@ -575,6 +575,7 @@ class App(Resource):
             kwargs["shell"] = True
         if "env" in kwargs:
             kwargs["env"]["OPENSVC_RID"] = self.rid
+            kwargs["env"]["OPENSVC_SVCNAME"] = self.svc.svcname
         return kwargs
 
     def _run_cmd_dedicated_log(self, action, cmd):
