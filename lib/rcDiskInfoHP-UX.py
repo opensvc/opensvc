@@ -6,9 +6,6 @@ class diskInfo(rcDiskInfo.diskInfo):
     legacy_size_cache = {}
     legacy_wwid_cache = {}
 
-    def __init__(self):
-        self.load_cache()
-
     def load_cache(self):
         self.load_aliases()
 
@@ -108,6 +105,8 @@ class diskInfo(rcDiskInfo.diskInfo):
         self.h[dev] = dict(wwid=wwid, vid=vid, pid=pid, size=size)
 
     def get(self, dev, type):
+        if not self.h:
+            self.load_cache()
         if dev not in self.h:
             self.scan(dev)
         return self.h[dev][type]
