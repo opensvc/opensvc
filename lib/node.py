@@ -2885,8 +2885,7 @@ class Node(Crypt, ExtConfigMixin):
                 pass
         self.install_svc_conf_from_file(svcname, tmpfpath, restore)
 
-    @staticmethod
-    def install_svc_conf_from_file(svcname, fpath, restore=False):
+    def install_svc_conf_from_file(self, svcname, fpath, restore=False):
         """
         Installs a local template as the service configuration file.
         """
@@ -2908,7 +2907,7 @@ class Node(Crypt, ExtConfigMixin):
 
         from svc import Svc
         import uuid
-        svc = Svc(svcname, cf=tmpfpath)
+        svc = Svc(svcname, cf=tmpfpath, node=self)
         try:
             svc.conf_get("DEFAULT", "id")
             svc._unset("DEFAULT", "id")
