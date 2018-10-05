@@ -1,4 +1,4 @@
-# pylint: disable-all
+# pylint: skip-file
 
 """
 /* MD5C.C - RSA Data Security, Inc., MD5 message-digest algorithm
@@ -60,8 +60,8 @@ def I(x, y, z): return((y) ^ ((x) | (~z)))
 #/* ROTATE_LEFT rotates x left n bits.
 
 def ROTATE_LEFT(x, n):
-    x = x & 0xffffffffL   # make shift unsigned
-    return (((x) << (n)) | ((x) >> (32-(n)))) & 0xffffffffL
+    x = x & 0xffffffff   # make shift unsigned
+    return (((x) << (n)) | ((x) >> (32-(n)))) & 0xffffffff
 
 #/* FF, GG, HH, and II transformations for rounds 1, 2, 3, and 4.
 #Rotation is separate from addition to prevent recomputation.
@@ -93,11 +93,11 @@ def II(a, b, c, d, x, s, ac):
 
 class md5:
     def __init__(self, initial=None):
-        self.count = 0L
-        self.state = (0x67452301L,
-                      0xefcdab89L,
-                      0x98badcfeL,
-                      0x10325476L,)
+        self.count = 0
+        self.state = (0x67452301,
+                      0xefcdab89,
+                      0x98badcfe,
+                      0x10325476,)
         self.buffer = ""
         if initial:
             self.update(initial)
@@ -142,7 +142,7 @@ class md5:
     def final(self):
 
 ##  /* Save number of bits */
-        bits = Encode((self.count & 0xffffffffL, self.count>>32), 8)
+        bits = Encode((self.count & 0xffffffff, self.count>>32), 8)
 
 ##  /* Pad out to 56 mod 64.
 
@@ -247,10 +247,10 @@ class md5:
         c = II (c, d, a, b, x[ 2], S43, 0x2ad7d2bb)#; /* 63 */
         b = II (b, c, d, a, x[ 9], S44, 0xeb86d391)#; /* 64 */
 
-        self.state = (0xffffffffL & (state[0] + a),
-                      0xffffffffL & (state[1] + b),
-                      0xffffffffL & (state[2] + c),
-                      0xffffffffL & (state[3] + d),)
+        self.state = (0xffffffff & (state[0] + a),
+                      0xffffffff & (state[1] + b),
+                      0xffffffff & (state[2] + c),
+                      0xffffffff & (state[3] + d),)
 
 ##  /* Zeroize sensitive information.
 
@@ -271,7 +271,7 @@ def Decode(input, len):
     return list(res)
 
 def test():
-    print(`md5("/dev/sda").digest().encode('hex')`)
+    print(repr(md5("/dev/sda").digest().encode('hex')))
     #from md5 import new
     #print(`new("/dev/sda").digest()`)
 
