@@ -2843,7 +2843,7 @@ class Node(Crypt, ExtConfigMixin):
                 ofile.write(chunk)
         ufile.close()
 
-    def install_svc_conf_from_templ(self, svcname, template):
+    def install_svc_conf_from_templ(self, svcname, template, restore=False):
         """
         Download a provisioning template from the collector's rest api,
         and installs it as the service configuration file.
@@ -2863,9 +2863,9 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("service has an empty configuration")
         with open(fpath, "w") as ofile:
             ofile.write(data["data"][0]["tpl_definition"].replace("\\n", "\n").replace("\\t", "\t"))
-        self.install_svc_conf_from_file(svcname, fpath)
+        self.install_svc_conf_from_file(svcname, fpath, restore)
 
-    def install_svc_conf_from_uri(self, svcname, fpath):
+    def install_svc_conf_from_uri(self, svcname, fpath, restore=False):
         """
         Download a provisioning template from an arbitrary uri,
         and installs it as the service configuration file.
@@ -2883,26 +2883,44 @@ class Node(Crypt, ExtConfigMixin):
                 os.unlink(tmpfpath)
             except OSError:
                 pass
-        self.install_svc_conf_from_file(svcname, tmpfpath)
+        self.install_svc_conf_from_file(svcname, tmpfpath, restore)
 
     @staticmethod
-    def install_svc_conf_from_file(svcname, fpath):
+    def install_svc_conf_from_file(svcname, fpath, restore=False):
         """
         Installs a local template as the service configuration file.
         """
         if not os.path.exists(fpath):
             raise ex.excError("%s does not exists" % fpath)
 
-        import shutil
-
-        # install the configuration file in etc/
         src_cf = os.path.realpath(fpath)
         dst_cf = os.path.join(rcEnv.paths.pathetc, svcname+'.conf')
-        if dst_cf != src_cf:
-            shutil.copy2(src_cf, dst_cf)
+        if dst_cf == src_cf:
+            return
+
+        import tempfile
+        tmpf = tempfile.NamedTemporaryFile()
+        tmpfpath = tmpf.name
+        tmpf.close()
+
+        import shutil
+        shutil.copy2(src_cf, tmpfpath)
+
+        from svc import Svc
+        import uuid
+        svc = Svc(svcname, cf=tmpfpath)
+        try:
+            svc.conf_get("DEFAULT", "id")
+            svc._unset("DEFAULT", "id")
+        except ex.OptNotFound:
+            pass
+        svc.validate_config(tmpfpath)
+
+        # install the configuration file in etc/
+        shutil.move(tmpfpath, dst_cf)
 
     @staticmethod
-    def install_svc_conf_from_data(svcname, data):
+    def install_svc_conf_from_data(svcname, data, restore=False):
         """
         Installs a service configuration file from section, keys and values
         fed from a data structure.
@@ -2914,6 +2932,9 @@ class Node(Crypt, ExtConfigMixin):
             if section_name != "DEFAULT":
                 config.add_section(section_name)
             for key, value in section.items():
+                if not restore:
+                    if section_name == "DEFAULT" and key == "id":
+                        continue
                 config.set(section_name, key, value)
         try:
             with open(fpath, 'w') as ofile:
@@ -2922,7 +2943,7 @@ class Node(Crypt, ExtConfigMixin):
             print("failed to write %s"%fpath, file=sys.stderr)
             raise Exception()
 
-    def install_service(self, svcname, fpath=None, template=None):
+    def install_service(self, svcname, fpath=None, template=None, restore=False):
         """
         Pick a collector's template, arbitrary uri, or local file service
         configuration file fetching method. Run it, and create the
@@ -2960,19 +2981,19 @@ class Node(Crypt, ExtConfigMixin):
 
         ret = 0
         if data is not None:
-            self.install_svc_conf_from_data(svcname, data)
+            self.install_svc_conf_from_data(svcname, data, restore)
         elif template is not None:
             if "://" in template:
-                self.install_svc_conf_from_uri(svcname, template)
+                self.install_svc_conf_from_uri(svcname, template, restore)
             elif os.path.exists(template):
-                self.install_svc_conf_from_file(svcname, template)
+                self.install_svc_conf_from_file(svcname, template, restore)
             else:
-                self.install_svc_conf_from_templ(svcname, template)
+                self.install_svc_conf_from_templ(svcname, template, restore)
         elif fpath is not None:
             if "://" in fpath:
-                self.install_svc_conf_from_uri(svcname, fpath)
+                self.install_svc_conf_from_uri(svcname, fpath, restore)
             else:
-                self.install_svc_conf_from_file(svcname, fpath)
+                self.install_svc_conf_from_file(svcname, fpath, restore)
         else:
             ret = 2
 

@@ -122,7 +122,8 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
     ret = 0
     try:
         ret = node.install_service(svcnames, fpath=options.config,
-                                   template=options.template)
+                                   template=options.template,
+                                   restore=options.restore)
     except Exception as exc:
         print(str(exc), file=sys.stderr)
         return 1

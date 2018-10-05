@@ -259,6 +259,10 @@ OPT = Storage({
              "or update. The ``type`` key point the driver group name, and "
              "the ``rtype`` key the driver name (translated to type in the "
              "configuration file section)."),
+    "restore": Option(
+        "--restore", default=False,
+        action="store_true", dest="restore",
+        help="Keep the same service id as the template or config file referenced by the create action. The default behaviour is to generate a new id."),
     "rid": Option(
         "--rid", default=None,
         action="store", dest="parm_rid",
@@ -912,6 +916,7 @@ ACTIONS = {
                 OPT.interactive,
                 OPT.provision,
                 OPT.resource,
+                OPT.restore,
                 OPT.template,
             ],
         },

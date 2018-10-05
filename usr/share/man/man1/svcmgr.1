@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-09\-25
+.TH SVCMGR 1 2018\-10\-05
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -11101,6 +11101,9 @@ Provision the service resources after config file creation. Defaults to False.
 .TP
 .B --resource=RESOURCE
 A resource definition in json dictionary format fed to create or update. The 'type' key point the driver group name, and the 'rtype' key the driver name (translated to type in the configuration file section).
+.TP
+.B --restore
+Keep the same service id as the template or config file referenced by the create action. The default behaviour is to generate a new id.
 .TP
 .B --template=PARM_TEMPLATE
 The configuration file template name or id, served by the collector, to use when creating or installing a service.
