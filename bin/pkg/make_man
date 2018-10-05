@@ -156,8 +156,9 @@ def do_svcmon():
     long_desc = """In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \\fBsvcmon\\fP program prints the digested cluster and services status."""
 
     import svcmon
-    parser = svcmon.parser
-    svcmon.parser.formatter = ManPageFormatter()
+    from node import Node
+    parser = svcmon.setup_parser(Node())
+    parser.formatter = ManPageFormatter()
     parser.formatter.set_parser(parser)
     parser.formatter.deprecated_options = []
     synopsis = parser.get_usage()
