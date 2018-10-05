@@ -73,6 +73,14 @@ Inputs:
     Help: The line installed if the check pattern is not found in the file.
     Type: string
   -
+    Id: strict_fmt
+    Label: Strict Format
+    DisplayModeLabel: strict fmt
+    LabelCss: action16
+    Help: Consider a line matching the check regexp invalid if the line is not strictly the same as fmt.
+    Type: boolean
+    Default: True
+  -
     Id: ref
     Label: URL to format
     DisplayModeLabel: ref
@@ -204,9 +212,9 @@ class CompFileInc(CompObject):
             else:
                 val = False
                 r |= RET_ERR
-            self.checks.append({'check':d['check'], 'path':d['path'], 'add':c, 'valid':val})
+            self.checks.append({'check':d['check'], 'path':d['path'], 'add':c, 'valid':val, 'strict_fmt': d.get('strict_fmt', True)})
         if 'replace' in d and d['replace'] is not None:
-            self.replaces.append({'replace':d['replace'], 'path':d['path'], 'add':c})
+            self.replaces.append({'replace':d['replace'], 'path':d['path'], 'add':c, 'strict_fmt': d.get('strict_fmt', True)})
         return r
         
     def check(self):
@@ -226,9 +234,12 @@ class CompFileInc(CompObject):
             for line in lines:
                 if re.match(ck['check'], line):
                     m += 1
-                    if len(ck['add']) > 0 and line == ck['add']:
-                        pinfo("line '%s' found in '%s'" %(line, ck['path']))
-                        ok += 1
+                    if len(ck['add']) > 0:
+                        if ck["strict_fmt"] and line != ck["add"]:
+                            perror("pattern '%s' found in %s but not strictly equal to target" % (ck['check'], ck['path']))
+                        else:
+                            pinfo("line '%s' found in '%s'" %(line, ck['path']))
+                            ok += 1
                     if m > 1:
                         perror("duplicate match of pattern '%s' in '%s'"%(ck['check'], ck['path']))
                         pr |= RET_ERR
@@ -303,7 +314,7 @@ class CompFileInc(CompObject):
                 if re.match(ck['check'], line):
                     m += 1
                     if m == 1:
-                        if line != ck['add']:
+                        if ck["strict_fmt"] and line != ck['add']:
                             # rewrite line
                             pinfo("rewrite %s:%d:'%s', new content: '%s'" %(ck['path'], i, line, ck['add']))
                             lines[i] = ck['add']
