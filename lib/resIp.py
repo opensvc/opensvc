@@ -85,7 +85,7 @@ class Ip(Res.Resource):
         Contribute resource key/val pairs to the service's resinfo.
         """
         if self.ipname is None:
-            return
+            return []
         try:
             self.getaddr()
         except ex.excError:
