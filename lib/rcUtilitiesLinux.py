@@ -34,13 +34,37 @@ def dev_to_paths(dev, log=None):
     paths = ["/dev/"+os.path.basename(_name) for _name in glob.glob("/sys/block/%s/slaves/*" % name)]
     return paths
 
-def dev_is_ro(dev):
+def dev_set_rw(dev, log=None):
+    cmd = ["blockdev", "--setrw", dev]
+    if log:
+        log.info(" ".join(cmd))
+    out, err, ret = justcall(cmd)
+    if ret != 0:
+        raise ex.excError(err)
+
+def dev_is_ro_ioctl(dev):
+    cmd = ["blockdev", "--getro", dev]
+    out, err, ret = justcall(cmd)
+    if ret != 0:
+        raise ex.excError(err)
+    if out.strip() == "1":
+        return True
+    return False
+
+def dev_is_ro_sysfs(dev):
     dev = dev.replace('/dev/', '')
     sysdev = "/sys/block/%s/ro"%dev
     with open(sysdev, 'r') as s:
         buff = s.read()
     if buff.strip() == "1":
         return True
+    return False
+
+def dev_is_ro(dev):
+    try:
+        return dev_is_ro_ioctl(dev)
+    except:
+        return dev_is_ro_sysfs(dev)
 
 def dev_rescan(dev, log=None):
     dev = dev.replace('/dev/', '')
@@ -81,11 +105,20 @@ def promote_dev_rw(dev, log=None):
     count = 0
     for _dev in dev_to_paths(dev, log=log):
        if dev_is_ro(_dev):
-           dev_rescan(_dev, log=log)
+           try:
+               dev_set_rw(_dev, log=log)
+           except:
+               dev_rescan(_dev, log=log)
            wait_for_dev_ready(_dev, log=log)
            count += 1
     if count > 0:
-        refresh_multipath(dev, log=log)
+        if dev.startswith("/dev/dm-"):
+            try:
+               dev_set_rw(dev, log=log)
+            except:
+               refresh_multipath(dev, log=log)
+        else:
+            refresh_multipath(dev, log=log)
 
 def loop_is_deleted(dev):
     if not which(rcEnv.syspaths.losetup):
