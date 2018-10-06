@@ -231,8 +231,9 @@ class Asset(rcAsset.Asset):
         if not r:
             return
         v = self._get_os_vendor()
+        pattern = re.compile(v, flags=re.I)
         if v:
-            r = re.sub(v, "", r, flags=re.I)
+            r = pattern.sub("", r)
         return r.strip()
 
     def _get_os_release_debian_version(self):
