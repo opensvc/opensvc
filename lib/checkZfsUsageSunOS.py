@@ -56,8 +56,8 @@ class check(checks.check):
             if "osvc_sync_" in l[0]:
                 # do not report osvc sync snapshots fs usage
                 continue
-            used = convert_size(l[1])
-            avail = convert_size(l[2])
+            used = convert_size(l[1], _to="KB")
+            avail = convert_size(l[2], _to="KB")
             total = used + avail
             pct = round(used / total * 100)
             svcname = self.find_svc(l[0], l[3])
