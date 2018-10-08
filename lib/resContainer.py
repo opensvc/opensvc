@@ -108,13 +108,30 @@ class Container(Res.Resource):
         self.wait_for_fn(self.is_up, self.start_timeout, 2)
 
     def wait_for_ping(self):
+        """
+        Wait for container to become alive, using a ping test.
+        Also verify the container has not died since judged started.
+        """
+        def fn():
+            if not self.is_up():
+                return False
+            return getattr(self, "ping")()
         if hasattr(self, 'ping'):
             self.log.info("wait for container ping")
-            self.wait_for_fn(getattr(self, "ping"), self.start_timeout, 2)
+            self.wait_for_fn(fn, self.start_timeout, 2)
 
     def wait_for_operational(self):
+        """
+        Wait for container to become operational, using a driver-specific
+        test (usually ssh).
+        Also verify the container has not died since judged started.
+        """
+        def fn():
+            if not self.is_up():
+                return False
+            return self.operational()
         self.log.info("wait for container operational")
-        self.wait_for_fn(self.operational, self.start_timeout, 2)
+        self.wait_for_fn(fn, self.start_timeout, 2)
 
     def wait_for_shutdown(self):
         self.log.info("wait for down status")
