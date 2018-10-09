@@ -22,7 +22,8 @@ from freezer import Freezer
 from converters import convert_duration, convert_boolean
 from comm import Crypt
 
-# disable orchestration if a peer announces a different compat version than ours
+# disable orchestration if a peer announces a different compat version than
+# ours
 COMPAT_VERSION = 5
 
 # the event queue to feed to clients listening for changes
@@ -144,12 +145,14 @@ EVENTS = {
     ("scale_down", None): "exceeds {delta} instance to reach scale target {instance.scale}",
 }
 
+
 def wake_heartbeat_tx():
     """
     Notify the heartbeat tx thread to do they periodic job immediatly
     """
     with HB_TX_TICKER:
         HB_TX_TICKER.notify_all()
+
 
 def wake_monitor(reason="unknown", immediate=False):
     """
@@ -161,6 +164,7 @@ def wake_monitor(reason="unknown", immediate=False):
         if immediate:
             MON_TICKER.notify_all()
 
+
 def wake_collector():
     """
     Notify the scheduler thread to do they periodic job immediatly
@@ -168,12 +172,14 @@ def wake_collector():
     with COLLECTOR_TICKER:
         COLLECTOR_TICKER.notify_all()
 
+
 def wake_scheduler():
     """
     Notify the scheduler thread to do they periodic job immediatly
     """
     with SCHED_TICKER:
         SCHED_TICKER.notify_all()
+
 
 #############################################################################
 #
@@ -249,20 +255,21 @@ class OsvcThread(threading.Thread, Crypt):
                 state = "terminated"
         data = Storage({
             "state": state,
-            "created": datetime.datetime.utcfromtimestamp(self.created)\
+            "created": datetime.datetime.utcfromtimestamp(self.created)
                                .strftime(JSON_DATEFMT),
         })
         return data
 
     def has_proc(self, cmd):
         for proc in self.procs:
-             if proc.cmd == cmd:
-                 return True
+            if proc.cmd == cmd:
+                return True
         return False
 
     def push_proc(self, proc,
-                  on_success=None, on_success_args=None, on_success_kwargs=None,
-                  on_error=None, on_error_args=None, on_error_kwargs=None,
+                  on_success=None, on_success_args=None,
+                  on_success_kwargs=None, on_error=None,
+                  on_error_args=None, on_error_kwargs=None,
                   cmd=None):
         """
         Enqueue a structure including a Popen() result and the success and
@@ -397,8 +404,8 @@ class OsvcThread(threading.Thread, Crypt):
                 if status != NMON_DATA.status:
                     self.log.info(
                         "node monitor status change: %s => %s",
-                        NMON_DATA.status if \
-                            NMON_DATA.status else "none",
+                        NMON_DATA.status if
+                        NMON_DATA.status else "none",
                         status
                     )
                 NMON_DATA.status = status
@@ -410,8 +417,8 @@ class OsvcThread(threading.Thread, Crypt):
                 if local_expect != NMON_DATA.local_expect:
                     self.log.info(
                         "node monitor local expect change: %s => %s",
-                        NMON_DATA.local_expect if \
-                            NMON_DATA.local_expect else "none",
+                        NMON_DATA.local_expect if
+                        NMON_DATA.local_expect else "none",
                         local_expect
                     )
                 NMON_DATA.local_expect = local_expect
@@ -422,8 +429,8 @@ class OsvcThread(threading.Thread, Crypt):
                 if global_expect != NMON_DATA.global_expect:
                     self.log.info(
                         "node monitor global expect change: %s => %s",
-                        NMON_DATA.global_expect if \
-                            NMON_DATA.global_expect else "none",
+                        NMON_DATA.global_expect if
+                        NMON_DATA.global_expect else "none",
                         global_expect
                     )
                 NMON_DATA.global_expect = global_expect
@@ -437,8 +444,19 @@ class OsvcThread(threading.Thread, Crypt):
         instance = self.get_service_instance(svcname, rcEnv.nodename)
         if instance and not instance.get("resources", {}) and \
            status != "scaling" and \
-           (global_expect not in ("frozen", "thawed", "aborted", "unset", "deleted", "purged") or \
-           (global_expect is None and local_expect is None and status=="idle")):
+           (
+               global_expect not in (
+                   "frozen",
+                   "thawed",
+                   "aborted",
+                   "unset",
+                   "deleted",
+                   "purged"
+               ) or (
+                   global_expect is None and local_expect is None and
+                   status == "idle"
+               )
+           ):
             # skip slavers, wrappers, scalers
             return
         with SMON_DATA_LOCK:
@@ -454,21 +472,23 @@ class OsvcThread(threading.Thread, Crypt):
                     self.log.info(
                         "service %s monitor status change: %s => %s",
                         svcname,
-                        SMON_DATA[svcname].status if \
-                            SMON_DATA[svcname].status else "none",
+                        SMON_DATA[svcname].status if
+                        SMON_DATA[svcname].status else "none",
                         status
                     )
                     if SMON_DATA[svcname].status is not None and \
                        "failed" in SMON_DATA[svcname].status and \
                        (status is None or "failed" not in status):
-                        # the placement might become "leader" after transition from
-                        # "failed" to "not-failed". recompute asap so the orchestrator
-                        # won't take an undue "stop_instance" decision.
+                        # the placement might become "leader" after transition
+                        # from "failed" to "not-failed". recompute asap so the
+                        # orchestrator won't take an undue "stop_instance"
+                        # decision.
                         reset_placement = True
                 SMON_DATA[svcname].status = status
                 SMON_DATA[svcname].status_updated = time.time()
                 if reset_placement:
-                    SMON_DATA[svcname].placement = self.get_service_placement(svcname)
+                    SMON_DATA[svcname].placement = \
+                        self.get_service_placement(svcname)
 
             if local_expect:
                 if local_expect == "unset":
@@ -477,8 +497,8 @@ class OsvcThread(threading.Thread, Crypt):
                     self.log.info(
                         "service %s monitor local expect change: %s => %s",
                         svcname,
-                        SMON_DATA[svcname].local_expect if \
-                            SMON_DATA[svcname].local_expect else "none",
+                        SMON_DATA[svcname].local_expect if
+                        SMON_DATA[svcname].local_expect else "none",
                         local_expect
                     )
                 SMON_DATA[svcname].local_expect = local_expect
@@ -490,16 +510,16 @@ class OsvcThread(threading.Thread, Crypt):
                     self.log.info(
                         "service %s monitor global expect change: %s => %s",
                         svcname,
-                        SMON_DATA[svcname].global_expect if \
-                            SMON_DATA[svcname].global_expect else "none",
+                        SMON_DATA[svcname].global_expect if
+                        SMON_DATA[svcname].global_expect else "none",
                         global_expect
                     )
                 SMON_DATA[svcname].global_expect = global_expect
                 SMON_DATA[svcname].global_expect_updated = time.time()
 
             if reset_retries and "restart" in SMON_DATA[svcname]:
-                self.log.info("service %s monitor resources restart count reset",
-                              svcname)
+                self.log.info("service %s monitor resources restart count "
+                              "reset", svcname)
                 del SMON_DATA[svcname]["restart"]
 
             if stonith:
@@ -509,8 +529,8 @@ class OsvcThread(threading.Thread, Crypt):
                     self.log.info(
                         "service %s monitor stonith change: %s => %s",
                         svcname,
-                        SMON_DATA[svcname].stonith if \
-                            SMON_DATA[svcname].stonith else "none",
+                        SMON_DATA[svcname].stonith if
+                        SMON_DATA[svcname].stonith else "none",
                         stonith
                     )
                 SMON_DATA[svcname].stonith = stonith
@@ -558,11 +578,13 @@ class OsvcThread(threading.Thread, Crypt):
         eid = data.get("data", {}).get("id")
         self.log.info("execute %s hook: %s", eid, " ".join(cmd))
         try:
-            proc = Popen(cmd, stdout=None, stderr=None, stdin=PIPE, close_fds=True)
+            proc = Popen(cmd, stdout=None, stderr=None, stdin=PIPE,
+                         close_fds=True)
             proc.stdin.write(json.dumps(data).encode())
             proc.stdin.close()
         except Exception as exc:
-            self.log.error("%s hook %s execution error: %s", eid, " ".join(cmd), exc)
+            self.log.error("%s hook %s execution error: %s", eid,
+                           " ".join(cmd), exc)
             return
         return proc
 
@@ -575,7 +597,8 @@ class OsvcThread(threading.Thread, Crypt):
         _cmd = [] + rcEnv.python_cmd
         _cmd += [os.path.join(rcEnv.paths.pathlib, "nodemgr.py")]
         self.log.info("execute: nodemgr %s", " ".join(cmd))
-        proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=None, close_fds=True, env=env)
+        proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=None,
+                     close_fds=True, env=env)
         return proc
 
     def service_command(self, svcname, cmd, stdin=None, local=True):
@@ -594,7 +617,8 @@ class OsvcThread(threading.Thread, Crypt):
             _stdin = PIPE
         else:
             _stdin = None
-        proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=_stdin, close_fds=True, env=env)
+        proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=_stdin,
+                     close_fds=True, env=env)
         if stdin:
             proc.stdin.write(stdin.encode())
         return proc
@@ -621,14 +645,18 @@ class OsvcThread(threading.Thread, Crypt):
     @lazy
     def maintenance_grace_period(self):
         if self.config.has_option("node", "maintenance_grace_period"):
-            return convert_duration(self.config.get("node", "maintenance_grace_period"))
+            return convert_duration(
+                self.config.get("node", "maintenance_grace_period")
+            )
         else:
             return 60
 
     @lazy
     def rejoin_grace_period(self):
         if self.config.has_option("node", "rejoin_grace_period"):
-            return convert_duration(self.config.get("node", "rejoin_grace_period"))
+            return convert_duration(
+                self.config.get("node", "rejoin_grace_period")
+            )
         else:
             return 90
 
@@ -657,11 +685,13 @@ class OsvcThread(threading.Thread, Crypt):
 
     def split_handler(self):
         if not self.quorum:
-            self.duplog("info", "cluster is split, ignore as cluster.quorum is "
+            self.duplog("info",
+                        "cluster is split, ignore as cluster.quorum is "
                         "false", msgid="quorum disabled")
             return
         if self.freezer.node_frozen():
-            self.duplog("info", "cluster is split, ignore as the node is frozen",
+            self.duplog("info",
+                        "cluster is split, ignore as the node is frozen",
                         msgid="quorum disabled")
             return
         total = len(self.cluster_nodes) + len(NODE.arbitrators)
@@ -679,7 +709,7 @@ class OsvcThread(threading.Thread, Crypt):
             "node_votes": live,
             "arbitrator_votes": n_extra_votes,
             "voting": total,
-            "pro_voters": [nodename for nodename in CLUSTER_DATA] + extra_votes,
+            "pro_voters": [nod for nod in CLUSTER_DATA] + extra_votes,
         })
         # give a little time for log flush
         time.sleep(2)
@@ -699,8 +729,9 @@ class OsvcThread(threading.Thread, Crypt):
             return
         if self.in_maintenance_grace_period(nmon):
             if change:
-                self.log.info("preserve node %s data in %s since %d (grace %s)",
-                              nodename, nmon.status, time.time()-nmon.status_updated,
+                self.log.info("preserve node %s data in %s since %d "
+                              "(grace %s)", nodename, nmon.status,
+                              time.time()-nmon.status_updated,
                               self.maintenance_grace_period)
             return
         nmon_status = nmon.status
@@ -757,7 +788,9 @@ class OsvcThread(threading.Thread, Crypt):
         """
         try:
             with CLUSTER_DATA_LOCK:
-                return Storage(CLUSTER_DATA[nodename]["services"]["status"][svcname])
+                return Storage(
+                    CLUSTER_DATA[nodename]["services"]["status"][svcname]
+                )
         except KeyError:
             return
 
@@ -803,7 +836,13 @@ class OsvcThread(threading.Thread, Crypt):
                     continue
                 if data == "unknown":
                     continue
-                if discard_preserved and data.get("monitor", {}).get("status") in ("maintenance", "upgrade", "init", "shutting"):
+                if discard_preserved and \
+                   data.get("monitor", {}).get("status") in (
+                       "maintenance",
+                       "upgrade",
+                       "init",
+                       "shutting",
+                   ):
                     continue
                 if discard_frozen and data.get("frozen", False):
                     # node frozen
@@ -811,7 +850,11 @@ class OsvcThread(threading.Thread, Crypt):
                 instance = self.get_service_instance(svc.svcname, nodename)
                 if instance is None:
                     continue
-                if discard_start_failed and instance["monitor"]["status"] in ("start failed", "place failed"):
+                if discard_start_failed and \
+                   instance["monitor"]["status"] in (
+                       "start failed",
+                       "place failed"
+                   ):
                     continue
                 if "avail" not in instance:
                     # deleting
@@ -820,7 +863,8 @@ class OsvcThread(threading.Thread, Crypt):
                     continue
                 if discard_unprovisioned and instance.provisioned is False:
                     continue
-                if discard_constraints_violation and not instance.get("constraints", True):
+                if discard_constraints_violation and \
+                   not instance.get("constraints", True):
                     continue
                 if discard_overloaded and self.node_overloaded(nodename):
                     continue
@@ -868,18 +912,24 @@ class OsvcThread(threading.Thread, Crypt):
             candidates = self.placement_candidates(svc)
         if len(candidates) == 0:
             if not silent:
-                self.duplog("info", "placement constraints prevent us from starting "
-                            "service %(svcname)s on any node", svcname=svc.svcname)
+                self.duplog("info",
+                            "placement constraints prevent us from starting "
+                            "service %(svcname)s on any node",
+                            svcname=svc.svcname)
             return False
         if rcEnv.nodename not in candidates:
             if not silent:
-                self.duplog("info", "placement constraints prevent us from starting "
-                            "service %(svcname)s on this node", svcname=svc.svcname)
+                self.duplog("info",
+                            "placement constraints prevent us from starting "
+                            "service %(svcname)s on this node",
+                            svcname=svc.svcname)
             return False
         if len(candidates) == 1:
             if not silent:
-                self.duplog("info", "we have the greatest placement priority for "
-                            "service %(svcname)s (alone)", svcname=svc.svcname)
+                self.duplog("info",
+                            "we have the greatest placement priority for "
+                            "service %(svcname)s (alone)",
+                            svcname=svc.svcname)
             return True
 
         ranks = self.placement_ranks(svc, candidates=candidates)
@@ -888,23 +938,27 @@ class OsvcThread(threading.Thread, Crypt):
         elif svc.topology == "failover":
             if rcEnv.nodename == ranks[0]:
                 if not silent:
-                    self.duplog("info", "we have the highest '%(placement)s' "
-                                "placement priority for failover service %(svcname)s",
+                    self.duplog("info",
+                                "we have the highest '%(placement)s' "
+                                "placement priority for failover service "
+                                "%(svcname)s",
                                 placement=svc.placement, svcname=svc.svcname)
                 return True
             else:
                 if not silent:
-                    self.duplog("info", "node %(nodename)s is alive and has a higher "
-                                  "'%(placement)s' placement priority for "
-                                  "failover service %(svcname)s",
-                                  nodename=ranks[0], placement=svc.placement,
-                                  svcname=svc.svcname)
+                    self.duplog("info",
+                                "node %(nodename)s is alive and has a higher "
+                                "'%(placement)s' placement priority for "
+                                "failover service %(svcname)s",
+                                nodename=ranks[0], placement=svc.placement,
+                                svcname=svc.svcname)
                 return False
         elif svc.topology == "flex":
             index = ranks.index(rcEnv.nodename) + 1
             if not silent:
-                self.duplog("info", "we have the %(idx)d/%(mini)d '%(placement)s'"
-                            " placement priority for flex service %(svcname)s",
+                self.duplog("info",
+                            "we have the %(idx)d/%(mini)d '%(placement)s' "
+                            "placement priority for flex service %(svcname)s",
                             idx=index, mini=svc.flex_min_nodes,
                             placement=svc.placement, svcname=svc.svcname)
             if index <= svc.flex_min_nodes:
@@ -927,7 +981,8 @@ class OsvcThread(threading.Thread, Crypt):
             h = hashlib.md5()
             h.update(s.encode())
             return h.digest()
-        return [nodename for nodename in sorted(candidates, key=lambda x: fn(svc.svcname+x))]
+        return [nodename for nodename in
+                sorted(candidates, key=lambda x: fn(svc.svcname+x))]
 
     def placement_ranks_score(self, svc, candidates, silent=False):
         data = []
@@ -959,10 +1014,12 @@ class OsvcThread(threading.Thread, Crypt):
         return [nodename for nodename, _ in sorted(data, key=lambda x: x[1])]
 
     def placement_ranks_nodes_order(self, svc, candidates, silent=False):
-        return [nodename for nodename in svc.ordered_peers if nodename in candidates]
+        return [nodename for nodename in svc.ordered_peers
+                if nodename in candidates]
 
     def placement_ranks_shift(self, svc, candidates, silent=False):
-        ranks = self.placement_ranks_nodes_order(svc, candidates, silent=silent) * 2
+        ranks = self.placement_ranks_nodes_order(svc, candidates,
+                                                 silent=silent) * 2
         n_candidates = len(candidates)
         if n_candidates == 0:
             idx = 0
@@ -975,18 +1032,18 @@ class OsvcThread(threading.Thread, Crypt):
         Get oldest generation of the local dataset on peers.
         """
         if nodename is None:
-             gens = LOCAL_GEN.values()
-             if len(gens) == 0:
-                 return 0, 0
-             gen = min(gens)
-             num = len(gens)
-             ##self.log.info("oldest gen is %d amongst %d nodes", gen, num)
+            gens = LOCAL_GEN.values()
+            if len(gens) == 0:
+                return 0, 0
+            gen = min(gens)
+            num = len(gens)
+            # self.log.info("oldest gen is %d amongst %d nodes", gen, num)
         else:
-             if nodename not in LOCAL_GEN:
-                 return 0, 0
-             gen = LOCAL_GEN.get(nodename, 0)
-             num = 1
-             ##self.log.info("gen on node %s is %d", nodename, gen)
+            if nodename not in LOCAL_GEN:
+                return 0, 0
+            gen = LOCAL_GEN.get(nodename, 0)
+            num = 1
+            # self.log.info("gen on node %s is %d", nodename, gen)
         return gen, num
 
     def purge_log(self):
@@ -997,7 +1054,7 @@ class OsvcThread(threading.Thread, Crypt):
         else:
             to_remove = [gen for gen in GEN_DIFF if gen < oldest]
         for gen in to_remove:
-            ##self.log.info("purge gen %d", gen)
+            # self.log.info("purge gen %d", gen)
             del GEN_DIFF[gen]
 
     @staticmethod
@@ -1013,7 +1070,7 @@ class OsvcThread(threading.Thread, Crypt):
     def get_gen(inc=False):
         global GEN
         if inc:
-           GEN += 1
+            GEN += 1
         gen = {rcEnv.nodename: GEN}
         gen.update(REMOTE_GEN)
         return gen
@@ -1034,7 +1091,8 @@ class OsvcThread(threading.Thread, Crypt):
 
     def speaker(self):
         for nodename in self.sorted_cluster_nodes:
-            if nodename in CLUSTER_DATA and CLUSTER_DATA[nodename] != "unknown":
+            if nodename in CLUSTER_DATA and \
+               CLUSTER_DATA[nodename] != "unknown":
                 break
         if nodename == rcEnv.nodename:
             return True
@@ -1062,17 +1120,23 @@ class OsvcThread(threading.Thread, Crypt):
             except TypeError:
                 data["service"] = Storage()
             try:
-                data["instance"] = Storage(self.get_service_instance(svcname, rcEnv.nodename))
+                data["instance"] = Storage(
+                    self.get_service_instance(svcname, rcEnv.nodename)
+                )
             except TypeError:
                 data["instance"] = Storage()
             try:
-                data["instance"]["monitor"] = Storage(self.get_service_monitor(svcname))
+                data["instance"]["monitor"] = Storage(
+                    self.get_service_monitor(svcname)
+                )
             except TypeError:
                 data["instance"]["monitor"] = Storage()
             rid = data.get("rid")
             if rid:
                 try:
-                    data["resource"] = Storage(data["instance"].get("resources", {}).get(rid, {}))
+                    data["resource"] = Storage(
+                        data["instance"].get("resources", {}).get(rid, {})
+                    )
                 except TypeError:
                     data["resource"] = Storage()
             try:
@@ -1119,4 +1183,3 @@ class OsvcThread(threading.Thread, Crypt):
         else:
             # log to node.log with no prefix
             getattr(self.log, level)(fmt.format(**fmt_data))
-

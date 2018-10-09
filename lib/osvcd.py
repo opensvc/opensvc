@@ -41,6 +41,7 @@ HEARTBEATS = (
     ("relay", HbRelayTx, HbRelayRx),
 )
 
+
 def fork(func, args=None, kwargs=None):
     """
     A fork daemonizing function.
@@ -90,6 +91,7 @@ def fork(func, args=None, kwargs=None):
 
     sys.exit(0)
 
+
 def forked(func):
     """
     A decorator that runs the decorated function in a detached subprocess
@@ -98,6 +100,7 @@ def forked(func):
     def _func(*args, **kwargs):
         fork(func, args, kwargs)
     return _func
+
 
 #############################################################################
 #
@@ -179,9 +182,11 @@ class Daemon(object):
 
     def lock(self):
         try:
-            self.lockfd = lock(lockfile=rcEnv.paths.daemon_lock, timeout=0, delay=0)
+            self.lockfd = lock(lockfile=rcEnv.paths.daemon_lock, timeout=0,
+                               delay=0)
         except Exception:
-            self.log.error("a daemon is already running, and holding the daemon lock")
+            self.log.error("a daemon is already running, and holding the "
+                           "daemon lock")
             sys.exit(1)
 
     def unlock(self):
@@ -335,7 +340,8 @@ class Daemon(object):
                 self.init_nodeconf()
                 return self.get_config_mtime(first=False)
             else:
-                self.log.warning("failed to get node config mtime: %s", str(exc))
+                self.log.warning("failed to get node config mtime: %s",
+                                 str(exc))
                 return
         return mtime
 
@@ -401,6 +407,7 @@ class Daemon(object):
                 hbs[section_type].append(section)
         return hbs
 
+
 #############################################################################
 #
 # Main
@@ -421,6 +428,7 @@ def optparse():
     )
     return parser.parse_args()
 
+
 def main():
     """
     Start the daemon and catch Exceptions to reap it down cleanly.
@@ -435,6 +443,7 @@ def main():
     except Exception as exc:
         daemon.log.exception(exc)
         daemon.stop()
+
 
 if __name__ == "__main__":
     main()
