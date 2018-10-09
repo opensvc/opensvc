@@ -2,6 +2,8 @@
 Event messages to log, indexed by (event id, reason).
 """
 
+from __future__ import print_function
+
 EVENTS = {
     ("arbitrator_up", None): "arbitrator {arbitrator} is now reachable",
     ("arbitrator_down", None): "arbitrator {arbitrator} is no longer reachable",
@@ -40,3 +42,24 @@ EVENTS = {
     ("scale_up", None): "misses {delta} instance to reach scale target {instance.scale}",
     ("scale_down", None): "exceeds {delta} instance to reach scale target {instance.scale}",
 }
+
+
+def doc():
+    print("Daemon Events")
+    print("*************")
+    print("")
+    for (eid, reason), msg in sorted(EVENTS.items(), key=lambda x: x[0][0]):
+        if reason:
+            title = "Id:%s, Reason:%s" % (eid, reason)
+        else:
+            title = "Id:%s" % eid
+        length = len(title)
+        print(title)
+        print("=" * length)
+        print("")
+        print(msg)
+        print("")
+
+
+if __name__ == "__main__":
+    doc()
