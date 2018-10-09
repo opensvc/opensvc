@@ -145,7 +145,7 @@ class Container(Res.Resource):
         def fn():
             if hasattr(self, "is_up_clear_caches"):
                 getattr(self, "is_up_clear_caches")()
-            return self.is_up()
+            return not self.is_up()
         self.log.info("wait for down status")
         self.wait_for_fn(fn, self.stop_timeout, 2, errmsg="waited too long for shutdown")
 
