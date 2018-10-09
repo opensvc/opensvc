@@ -46,7 +46,7 @@ EVENTS = {
 
 def doc():
     print("Daemon Events")
-    print("*************")
+    print("=============")
     print("")
     for (eid, reason), msg in sorted(EVENTS.items(), key=lambda x: x[0][0]):
         if reason:
@@ -55,7 +55,7 @@ def doc():
             title = "Id ``%s``" % eid
         length = len(title)
         print(title)
-        print("=" * length)
+        print("-" * length)
         print("")
         print(msg)
         print("")
