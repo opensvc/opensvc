@@ -5,11 +5,17 @@ import sys
 import socket
 import threading
 import struct
+import uuid
+import json
 
 import rcExceptions as ex
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv, Storage
+from rcUtilities import chunker, bdecode
 from hb import Hb
+
+MAX_MESSAGES = 100
+MAX_FRAGMENTS = 1000
 
 class HbMcast(Hb):
     """
@@ -22,6 +28,7 @@ class HbMcast(Hb):
     timeout = None
     addr = None
     sock = None
+    max_data = 1000
 
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
@@ -152,7 +159,21 @@ class HbMcastTx(HbMcast):
 
         #self.log.info("sending to %s:%s", self.addr, self.port)
         try:
-            sent = self.sock.sendto((message+"\0").encode(), self.group)
+            idx = 1
+            mid = str(uuid.uuid4())
+            total = message_bytes // self.max_data
+            if message_bytes % self.max_data:
+                total += 1
+            for chunk in chunker(message, self.max_data):
+                payload = (json.dumps({
+                    "id": mid,
+                    "i": idx,
+                    "n": total,
+                    "c": chunk,
+                }) + "\0").encode()
+                sent = self.sock.sendto(payload, self.group)
+                #self.log.info("send %s %d/%d", mid, idx, total)
+                idx += 1
             self.set_last()
             self.push_stats(message_bytes)
         except socket.timeout as exc:
@@ -174,6 +195,8 @@ class HbMcastRx(HbMcast):
     """
     The multicast heartbeat rx class.
     """
+    fragments = {}
+
     def __init__(self, name):
         HbMcast.__init__(self, name, role="rx")
 
@@ -212,6 +235,11 @@ class HbMcastRx(HbMcast):
                 sys.exit(0)
 
     def do(self):
+        def handle(data, addr):
+            thr = threading.Thread(target=self.handle_client, args=(data, addr))
+            thr.start()
+            self.threads.append(thr)
+
         self.reload_config()
         self.janitor_threads()
 
@@ -221,13 +249,56 @@ class HbMcastRx(HbMcast):
         except socket.timeout:
             self.set_peers_beating()
             return
+
         if len(self.threads) >= self.max_handlers:
             self.log.warning("drop message received from %s: too many running handlers (%d)",
                              addr, self.max_handlers)
+            self.fragments = {}
             return
-        thr = threading.Thread(target=self.handle_client, args=(data, addr))
-        thr.start()
-        self.threads.append(thr)
+
+        try:
+            payload = json.loads(bdecode(data).rstrip("\0\x00"))
+        except (ValueError, TypeError) as exc:
+            # old format ? try decrypt. will blacklist if failed.
+            handle(data, addr)
+            return
+
+        try:
+            mid = payload["id"]
+            chunk = payload["c"]
+            idx = payload["i"]
+            total = payload["n"]
+        except KeyError:
+            return
+
+        # verify message DoS
+        if addr not in self.fragments:
+            self.fragments[addr] = {}
+        elif len(self.fragments[addr]) > MAX_MESSAGES:
+            self.log.warning("too many pending messages. purge")
+            self.fragments[addr] = {}
+
+        # verify fragment DoS
+        if mid not in self.fragments[addr]:
+            self.fragments[addr][mid] = {}
+        elif len(self.fragments[addr][mid]) > MAX_FRAGMENTS:
+            self.log.warning("too many pending message fragments. purge")
+            del self.fragments[addr][mid]
+            return
+
+        # store fragment
+        self.fragments[addr][mid][idx] = chunk
+
+        if len(self.fragments[addr][mid]) != total:
+            # not yet complete
+            return
+
+        #self.log.debug("message %s complete", mid)
+        message = ""
+        for idx in sorted(self.fragments[addr][mid].keys()):
+            message += self.fragments[addr][mid][idx]
+        handle(message, addr)
+        self.fragments[addr] = {}
 
     def handle_client(self, message, addr):
         nodename, data = self.decrypt(message, sender_id=addr[0])
