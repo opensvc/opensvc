@@ -647,7 +647,7 @@ class Node(Crypt, ExtConfigMixin):
             if op in ("<", ">", ">=", "<="):
                 try:
                     current = float(current)
-                except ValueError:
+                except (ValueError, TypeError):
                     return False
             if op == "=":
                 if current.lower() in ("true", "false"):
