@@ -3278,7 +3278,7 @@ class Node(Crypt, ExtConfigMixin):
             import importlib
             importlib.reload(version)
             return version.version
-        except (AttributeError, UnboundLocalError):
+        except (ImportError, AttributeError, UnboundLocalError):
             pass
         if which("git"):
             cmd = ["git", "--git-dir", os.path.join(rcEnv.paths.pathsvc, ".git"),
