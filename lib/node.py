@@ -721,7 +721,7 @@ class Node(Crypt, ExtConfigMixin):
         if op in ("<", ">", ">=", "<="):
             try:
                 value = float(value)
-            except ValueError:
+            except (TypeError, ValueError):
                 return []
         result = []
         for svc in self.svcs:

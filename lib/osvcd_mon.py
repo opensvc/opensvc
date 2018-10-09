@@ -100,7 +100,7 @@ class Monitor(shared.OsvcThread):
             # align float precision (py2/3 use different precision for mtime)
             last_boot_id = "%.02f" % float(last_boot_id)
             boot_id = "%.02f" % float(boot_id)
-        except ValueError:
+        except (TypeError, ValueError):
             pass
         self.log.info("boot id %s, last %s", boot_id, last_boot_id)
         if last_boot_id in (None, boot_id):
