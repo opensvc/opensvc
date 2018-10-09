@@ -50,9 +50,9 @@ def doc():
     print("")
     for (eid, reason), msg in sorted(EVENTS.items(), key=lambda x: x[0][0]):
         if reason:
-            title = "Id:%s, Reason:%s" % (eid, reason)
+            title = "Id ``%s``, Reason ``%s``" % (eid, reason)
         else:
-            title = "Id:%s" % eid
+            title = "Id ``%s``" % eid
         length = len(title)
         print(title)
         print("=" * length)
