@@ -1404,9 +1404,13 @@ class Monitor(shared.OsvcThread):
         delta = "add " + ",".join([elem[0] for elem in to_add])
         self.log.info("scale service %s: %s", svc.svcname, delta)
         self.set_smon(svc.svcname, status="scaling")
-        thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, []))
-        thr.start()
-        self.threads.append(thr)
+        try:
+            thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, []))
+            thr.start()
+            self.threads.append(thr)
+        except RuntimeError as exc:
+            self.log.warning("failed to start a scaling thread for service "
+                             "%s: %s", svc.svcname, exc)
 
     def service_orchestrator_scaler_down_flex(self, svc, missing, current_slaves):
         to_remove = []
@@ -1428,9 +1432,13 @@ class Monitor(shared.OsvcThread):
         delta = "delete " + ",".join(to_remove)
         self.log.info("scale service %s: %s", svc.svcname, delta)
         self.set_smon(svc.svcname, status="scaling")
-        thr = threading.Thread(target=self.scaling_worker, args=(svc, [], to_remove))
-        thr.start()
-        self.threads.append(thr)
+        try:
+            thr = threading.Thread(target=self.scaling_worker, args=(svc, [], to_remove))
+            thr.start()
+            self.threads.append(thr)
+        except RuntimeError as exc:
+            self.log.warning("failed to start a scaling thread for service "
+                             "%s: %s", svc.svcname, exc)
 
     def service_orchestrator_scaler_up_failover(self, svc, missing, current_slaves):
         slaves_count = missing
@@ -1442,9 +1450,13 @@ class Monitor(shared.OsvcThread):
         delta = "add " + ",".join([elem[0] for elem in to_add])
         self.log.info("scale service %s: %s", svc.svcname, delta)
         self.set_smon(svc.svcname, status="scaling")
-        thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, []))
-        thr.start()
-        self.threads.append(thr)
+        try:
+            thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, []))
+            thr.start()
+            self.threads.append(thr)
+        except RuntimeError as exc:
+            self.log.warning("failed to start a scaling thread for service "
+                             "%s: %s", svc.svcname, exc)
 
     def service_orchestrator_scaler_down_failover(self, svc, missing, current_slaves):
         slaves_count = -missing
@@ -1456,9 +1468,13 @@ class Monitor(shared.OsvcThread):
         delta = "delete " + ",".join([elem[0] for elem in to_remove])
         self.log.info("scale service %s: %s", svc.svcname, delta)
         self.set_smon(svc.svcname, status="scaling")
-        thr = threading.Thread(target=self.scaling_worker, args=(svc, [], to_remove))
-        thr.start()
-        self.threads.append(thr)
+        try:
+            thr = threading.Thread(target=self.scaling_worker, args=(svc, [], to_remove))
+            thr.start()
+            self.threads.append(thr)
+        except RuntimeError as exc:
+            self.log.warning("failed to start a scaling thread for service "
+                             "%s: %s", svc.svcname, exc)
 
     def scaling_worker(self, svc, to_add, to_remove):
         threads = []
@@ -1466,12 +1482,16 @@ class Monitor(shared.OsvcThread):
             if svcname in shared.SERVICES:
                 continue
             data = svc.print_config_data()
-            thr = threading.Thread(
-                target=self.service_create_scaler_slave,
-                args=(svcname, svc, data, instances)
-            )
-            thr.start()
-            threads.append(thr)
+            try:
+                thr = threading.Thread(
+                    target=self.service_create_scaler_slave,
+                    args=(svcname, svc, data, instances)
+                )
+                thr.start()
+                threads.append(thr)
+            except RuntimeError as exc:
+                self.log.warning("failed to start a scaling thread for "
+                                 "service %s: %s", svc.svcname, exc)
         for svcname in to_remove:
             if svcname not in shared.SERVICES:
                 continue

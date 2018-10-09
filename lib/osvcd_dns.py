@@ -106,9 +106,13 @@ class Dns(shared.OsvcThread):
             self.stats.sessions.accepted += 1
         except socket.timeout:
             return
-        thr = threading.Thread(target=self.handle_client, args=(conn,))
-        thr.start()
-        self.threads.append(thr)
+        try:
+            thr = threading.Thread(target=self.handle_client, args=(conn,))
+            thr.start()
+            self.threads.append(thr)
+        except RuntimeError as exc:
+            self.log.warning(exc)
+            conn.close()
 
     def handle_client(self, conn):
         conn.settimeout(self.sock_tmo)

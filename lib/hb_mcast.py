@@ -236,9 +236,12 @@ class HbMcastRx(HbMcast):
 
     def do(self):
         def handle(data, addr):
-            thr = threading.Thread(target=self.handle_client, args=(data, addr))
-            thr.start()
-            self.threads.append(thr)
+            try:
+                thr = threading.Thread(target=self.handle_client, args=(data, addr))
+                thr.start()
+                self.threads.append(thr)
+            except RuntimeError as exc:
+                self.log.warning(exc)
 
         self.reload_config()
         self.janitor_threads()

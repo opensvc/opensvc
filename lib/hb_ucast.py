@@ -195,9 +195,13 @@ class HbUcastRx(HbUcast):
             self.log.warning("drop message received from %s: too many running handlers (%d)",
                              addr, self.max_handlers)
             return
-        thr = threading.Thread(target=self.handle_client, args=(conn, addr))
-        thr.start()
-        self.threads.append(thr)
+        try:
+            thr = threading.Thread(target=self.handle_client, args=(conn, addr))
+            thr.start()
+            self.threads.append(thr)
+        except RuntimeError as exc:
+            self.log.warning(exc)
+            conn.close()
 
     def handle_client(self, conn, addr):
         try:

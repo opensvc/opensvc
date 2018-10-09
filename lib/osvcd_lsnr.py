@@ -139,9 +139,13 @@ class Listener(shared.OsvcThread):
                 #self.log.info("accept %s", str(addr))
             except socket.timeout:
                 continue
-            thr = threading.Thread(target=self.handle_client, args=(conn, addr, encrypted))
-            thr.start()
-            self.threads.append(thr)
+            try:
+                thr = threading.Thread(target=self.handle_client, args=(conn, addr, encrypted))
+                thr.start()
+                self.threads.append(thr)
+            except RuntimeError as exc:
+                self.log.warning(exc)
+                conn.close()
 
     def janitor_events(self):
         """

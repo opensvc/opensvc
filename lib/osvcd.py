@@ -267,6 +267,18 @@ class Daemon(object):
             return False
         return True
 
+    def start_thread(self, key, obj, name=None):
+        try:
+            if name is None:
+                self.threads[key] = obj()
+            else:
+                self.threads[key] = obj(name)
+            self.threads[key].start()
+            return True
+        except RuntimeError as exc:
+            self.log.warning("failed to start a %s thread: %s", key, exc)
+            return False
+
     def start_threads(self):
         """
         Reload the node configuration if needed.
@@ -278,38 +290,24 @@ class Daemon(object):
         # a thread can only be started once, allocate a new one if not alive.
         changed = False
         if shared.NODE.dns and self.need_start("dns"):
-            self.threads["dns"] = Dns()
-            self.threads["dns"].start()
-            changed = True
+            changed |= self.start_thread("dns", Dns)
         if self.need_start("listener"):
-            self.threads["listener"] = Listener()
-            self.threads["listener"].start()
-            changed = True
+            changed |= self.start_thread("listener", Listener)
         if shared.NODE and rcEnv.dbopensvc and self.need_start("collector"):
-            self.threads["collector"] = Collector()
-            self.threads["collector"].start()
-            changed = True
+            changed |= self.start_thread("collector", Collector)
         if self.need_start("monitor"):
-            self.threads["monitor"] = Monitor()
-            self.threads["monitor"].start()
-            changed = True
+            changed |= self.start_thread("monitor", Monitor)
         if self.need_start("scheduler"):
-            self.threads["scheduler"] = Scheduler()
-            self.threads["scheduler"].start()
-            changed = True
+            changed |= self.start_thread("scheduler", Scheduler)
 
         for hb_type, txc, rxc in HEARTBEATS:
             for name in self.get_config_hb(hb_type):
                 hb_id = name + ".rx"
                 if self.need_start(hb_id):
-                    self.threads[hb_id] = rxc(name)
-                    self.threads[hb_id].start()
-                    changed = True
+                    changed |= self.start_thread(hb_id, rxc, name)
                 hb_id = name + ".tx"
                 if self.need_start(hb_id):
-                    self.threads[hb_id] = txc(name)
-                    self.threads[hb_id].start()
-                    changed = True
+                    changed |= self.start_thread(hb_id, txc, name)
 
         if config_changed:
             # clean up deleted heartbeats
