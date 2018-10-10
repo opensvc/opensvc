@@ -1163,13 +1163,12 @@ def main(argv, node=None):
                        global_options=GLOBAL_OPTS)
     options, action = parser.parse_args(argv)
     kwargs = vars(options)
-    return do_action(action, node=node, **kwargs)
+    do_action(action, node=node, **kwargs)
 
 if __name__ == "__main__":
     try:
-        ret = main(sys.argv)
+        main(sys.argv)
     except ex.excError as exc:
         print(exc, file=sys.stderr)
-        ret = 1
-    sys.exit(ret)
+        sys.exit(1)
 
