@@ -39,8 +39,31 @@ class Collector(shared.OsvcThread):
                 time.sleep(1)
 
     def get_last_status(self, data):
+        """
+        Identify changes in data
+        """
         last_status = {}
         last_status_changed = []
+
+        def add_parents(_svcname, done=None):
+            """
+            Propagate change to the service parents
+            """
+            if done is None:
+                done = []
+            if _svcname in done:
+                # break recursion loop
+                return
+            for nodename, ndata in data["nodes"].items():
+                for svcname, sdata in ndata.get("services", {}).get("status", {}).items():
+                    slaves = sdata.get("slaves", []) + sdata.get("scaler_slaves", [])
+                    if _svcname not in slaves:
+                        continue
+                    if svcname in last_status_changed:
+                        continue
+                    last_status_changed.append(svcname)
+                    add_parents(svcname, done=done+[_svcname])
+
         for svcname, nodename in self.last_status:
             if data["nodes"].get(nodename, {}).get("services", {}).get("status", {}).get(svcname) is None:
                 last_status_changed += [svcname, svcname+"@"+nodename]
@@ -52,7 +75,9 @@ class Collector(shared.OsvcThread):
                     last_status_changed.append(svcname+"@"+nodename)
                     if svcname not in last_status_changed:
                         last_status_changed.append(svcname)
+                        add_parents(svcname)
                 last_status[(svcname, nodename)] = status_csum
+
         return last_status, last_status_changed
 
     def get_last_config(self, data):
