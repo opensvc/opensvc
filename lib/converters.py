@@ -22,7 +22,7 @@ def convert_integer(s):
     """
     if s is None:
         return
-    return int(s)
+    return int(float(s))
 
 def convert_list(s):
     """
@@ -42,7 +42,7 @@ def convert_list_lower(s):
     if s is None:
         return []
     if isinstance(s, list):
-        return s
+        return [member.lower() for member in s]
     return [member.lower() for member in convert_list(s)]
 
 def convert_list_comma(s):
@@ -54,7 +54,7 @@ def convert_list_comma(s):
         return []
     if isinstance(s, list):
         return s
-    return re.split("\s*,\s*", s.strip())
+    return [word for word in re.split("\s*,\s*", s.strip()) if word != ""]
 
 def convert_set(s):
     """
