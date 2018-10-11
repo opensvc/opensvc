@@ -55,7 +55,7 @@ class Prov(provisioning.Prov):
             return
         if not os.path.exists(self.mnt):
             return False
-        if self.r.fs_type in self.r.netfs:
+        if self.r.fs_type in self.r.netfs + ["tmpfs"]:
             return True
         try:
             self.get_mkfs_dev()
@@ -91,7 +91,7 @@ class Prov(provisioning.Prov):
                     raise ex.excError("unable to find a device associated to %s" % self.mkfs_dev)
 
     def provisioner_fs(self):
-        if self.r.fs_type in self.r.netfs:
+        if self.r.fs_type in self.r.netfs + ["tmpfs"]:
             return
 
         self.dev = self.r.conf_get("dev")
@@ -103,7 +103,7 @@ class Prov(provisioning.Prov):
             os.makedirs(self.mnt)
             self.r.log.info("%s mount point created"%self.mnt)
 
-        if not os.path.exists(self.dev) and self.r.fs_type not in self.r.netfs:
+        if not os.path.exists(self.dev):
             try:
                 self.r.conf_get("vg", verbose=False)
                 self.provision_dev()
@@ -158,18 +158,17 @@ class Prov(provisioning.Prov):
         pass
 
     def unprovisioner(self):
-        if self.r.fs_type in self.r.netfs:
+        if self.r.fs_type in self.r.netfs + ["tmpfs"]:
             return
         self.unprovisioner_fs()
         self.purge_mountpoint()
-        if self.r.fs_type not in self.r.netfs:
-            try:
-                self.r.conf_get("vg", verbose=False)
-                self.unprovision_dev()
-            except ValueError:
-                # keyword not supported (ex. bind mounts)
-                return
-            except ex.OptNotFound:
-                pass
+        try:
+            self.r.conf_get("vg", verbose=False)
+            self.unprovision_dev()
+        except ValueError:
+            # keyword not supported (ex. bind mounts)
+            return
+        except ex.OptNotFound:
+            pass
 
 
