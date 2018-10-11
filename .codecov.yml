@@ -1,0 +1,9 @@
+ignore:
+  - "lib/json_delta"
+  - "lib/jsonpath_ng"
+  - "lib/pyaes"
+  - "lib/ply"
+  - "lib/ipaddress.py"
+  - "lib/six.py"
+  - "lib/tabulate.py"
+  - "lib/wmi.py"
