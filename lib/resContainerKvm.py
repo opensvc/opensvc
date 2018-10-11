@@ -4,7 +4,7 @@ import time
 import os
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, cache, clear_cache
+from rcUtilities import justcall, cache, clear_cache, lazy
 from rcUtilitiesLinux import check_ping
 import resContainer
 
@@ -156,15 +156,13 @@ class Kvm(resContainer.Container):
         tree = ElementTree()
         tree.parse(self.cf)
 
-        """ create the vdisk if it does not exist yet
-        """
+        # create the vdisk if it does not exist yet
         if not os.path.exists(flag_disk_path):
             with open(flag_disk_path, 'w') as f:
                 f.write('')
                 f.close()
 
-        """ check if drp flag is already set up
-        """
+        # check if drp flag is already set up
         for disk in tree.getiterator("disk"):
             e = disk.find('source')
             if e is None:
@@ -174,8 +172,7 @@ class Kvm(resContainer.Container):
                 self.log.info("flag virtual disk already exists")
                 return
 
-        """ add vdisk to the vm xml config
-        """
+        # add vdisk to the vm xml config
         self.log.info("install drp flag virtual disk")
         devices = tree.find("devices")
         e = SubElement(devices, "disk", {'device': 'disk', 'type': 'file'})
@@ -185,17 +182,19 @@ class Kvm(resContainer.Container):
         tree.write(self.cf)
 
     def sub_devs(self):
-        devmapping = self.devmap()
-        devs = set(map(lambda x: x[0], devmapping))
+        devs = set(map(lambda x: x[0], self.devmapping))
         return devs
 
-    def devmap(self):
-        try:
-            return getattr(self, "devmapping")
-        except AttributeError:
-            pass
-
-        self.devmapping = []
+    @lazy
+    def devmapping(self):
+        """
+        Return a list of (src, dst) devices tuples fount in the container
+        conifguration file.
+        """
+        if not os.path.exists(self.cf):
+            # not yet received from peer node ?
+            return []
+        data = []
 
         from xml.etree.ElementTree import ElementTree, SubElement
         tree = ElementTree()
@@ -213,8 +212,8 @@ class Kvm(resContainer.Container):
             if 'dev' not in s.attrib:
                  continue
             dst = s.attrib['dev']
-            self.devmapping.append((src, dst))
-        return self.devmapping
+            data.append((src, dst))
+        return data
 
     def _status(self, verbose=False):
         return resContainer.Container._status(self, verbose=verbose)
