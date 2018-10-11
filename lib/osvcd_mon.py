@@ -1925,7 +1925,7 @@ class Monitor(shared.OsvcThread):
         try:
             instance = self.get_any_service_instance(svcname)
         except IndexError:
-            instance = Storage()
+            instance = None
         if instance is None:
             # during init for example
             return "unknown"
@@ -1994,6 +1994,32 @@ class Monitor(shared.OsvcThread):
             ostatus = "down"
         if "stdby" in ostatus:
             ostatus = "down"
+        try:
+            instance = self.get_any_service_instance(svcname)
+        except IndexError:
+            instance = Storage()
+        if instance is None:
+            # during init for example
+            return "unknown"
+        slaves = instance.get("slaves", [])
+        slaves += instance.get("scaler_slaves", [])
+        if slaves:
+            avails = set([ostatus])
+            for child in slaves:
+                try:
+                    child_status = shared.AGG[child]["overall"]
+                except KeyError:
+                    child_status = "unknown"
+                avails.add(child_status)
+            if avails == set(["n/a"]):
+                return "n/a"
+            avails -= set(["n/a"])
+            if len(avails) == 1:
+                return list(avails)[0]
+            return "warn"
+        elif instance.get("scale") is not None:
+            # scaler without slaves
+            return "n/a"
         return ostatus
 
     def get_agg_frozen(self, svcname):
