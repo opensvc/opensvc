@@ -11,18 +11,23 @@ import osvcd_shared as shared
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
+MAX_QUEUED = 1000
+
 class Collector(shared.OsvcThread):
     update_interval = 300
     min_update_interval = 10
     min_ping_interval = 60
 
-    def run(self):
-        self.log = logging.getLogger(rcEnv.nodename+".osvcd.collector")
-        self.log.info("collector started")
+    def reset(self):
         self.last_comm = None
         self.last_config = {}
         self.last_status = {}
         self.last_status_changed = []
+
+    def run(self):
+        self.log = logging.getLogger(rcEnv.nodename+".osvcd.collector")
+        self.log.info("collector started")
+        self.reset()
 
         while True:
             if self.stopped():
@@ -62,17 +67,28 @@ class Collector(shared.OsvcThread):
         return last_config, last_config_changed
 
     def init_collector(self):
-        if " 127.0.0.1/" in repr(shared.NODE.collector.proxy):
-            shared.NODE.collector.init()
+        if shared.NODE.collector.reinit():
+            self.log.info("the collector is reachable")
+            self.reset()
 
     def do(self):
         self.reload_config()
         self.init_collector()
-        self.run_collector()
-        self.unqueue_xmlrpc()
+        if shared.NODE.collector.disabled():
+            self.queue_limit()
+        else:
+            self.run_collector()
+            self.unqueue_xmlrpc()
         if not self.stopped():
             with shared.COLLECTOR_TICKER:
                 shared.COLLECTOR_TICKER.wait(self.update_interval)
+
+    def queue_limit(self):
+        overlimit = len(shared.COLLECTOR_XMLRPC_QUEUE) - MAX_QUEUED
+        if overlimit > 0:
+            #self.log.warning("drop %d queued messages", overlimit)
+            for _ in range(overlimit):
+                shared.COLLECTOR_XMLRPC_QUEUE.pop()
 
     def unqueue_xmlrpc(self):
         while True:
@@ -88,6 +104,7 @@ class Collector(shared.OsvcThread):
             except Exception as exc:
                 self.log.error("call %s: %s", args[0], exc)
                 time.sleep(0.2)
+                shared.NODE.collector.disable()
 
     def send_containerinfo(self, svcname):
         if svcname not in shared.SERVICES:
@@ -100,6 +117,7 @@ class Collector(shared.OsvcThread):
                 shared.NODE.collector.call("push_containerinfo", shared.SERVICES[svcname])
             except Exception as exc:
                 self.log.error("call push_containerinfo: %s", exc)
+                shared.NODE.collector.disable()
 
     def send_service_config(self, svcname):
         if svcname not in shared.SERVICES:
@@ -110,6 +128,7 @@ class Collector(shared.OsvcThread):
                 shared.NODE.collector.call("push_config", shared.SERVICES[svcname])
             except Exception as exc:
                 self.log.error("call push_config: %s", exc)
+                shared.NODE.collector.disable()
 
     def send_daemon_status(self, data):
         if self.last_status_changed:
@@ -120,6 +139,7 @@ class Collector(shared.OsvcThread):
             shared.NODE.collector.call("push_daemon_status", data, self.last_status_changed)
         except Exception as exc:
             self.log.error("call push_daemon_status: %s", exc)
+            shared.NODE.collector.disable()
         self.last_comm = datetime.datetime.utcnow()
 
     def ping(self):
@@ -128,6 +148,7 @@ class Collector(shared.OsvcThread):
             shared.NODE.collector.call("daemon_ping")
         except Exception as exc:
             self.log.error("call daemon_ping: %s", exc)
+            shared.NODE.collector.disable()
         self.last_comm = datetime.datetime.utcnow()
 
     def get_data(self):

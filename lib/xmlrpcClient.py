@@ -48,6 +48,9 @@ logfile = os.path.join(rcEnv.paths.pathlog, 'xmlrpc.log')
 log = logging.getLogger("xmlrpc")
 log.setLevel(logging.INFO)
 
+LO_ADDR = "127.0.0.1"
+DUMMY_URL = "https://" + LO_ADDR
+
 try:
     fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     filehandler = logging.handlers.RotatingFileHandler(os.path.join(logfile),
@@ -161,7 +164,7 @@ class Collector(object):
             self.proxy_methods = self.proxy.system.listMethods()
         except Exception as exc:
             self.log.error("get dbopensvc methods: %s", exc)
-            self.proxy = get_proxy("https://127.0.0.1/")
+            self.proxy = get_proxy(DUMMY_URL)
             self.proxy_methods = []
         self.log.debug("%d feed methods"%len(self.proxy_methods))
 
@@ -176,7 +179,7 @@ class Collector(object):
             self.comp_proxy_methods = self.comp_proxy.system.listMethods()
         except Exception as exc:
             self.log.error("get dbcompliance methods: %s", exc)
-            self.comp_proxy = get_proxy("https://127.0.0.1/")
+            self.comp_proxy = get_proxy(DUMMY_URL)
             self.comp_proxy_methods = []
         self.log.debug("%d compliance methods"%len(self.comp_proxy_methods))
 
@@ -191,39 +194,65 @@ class Collector(object):
         if rcEnv.dbopensvc is None:
             return
 
+        self.init_feed_proxy()
+        if fn in self.comp_fns:
+            self.init_comp_proxy()
+
+    def init_feed_proxy(self):
         try:
             a = socket.getaddrinfo(rcEnv.dbopensvc_host, None)
             if len(a) == 0:
                 raise Exception
             dbopensvc_ip = a[0][-1][0]
-        except:
+        except Exception:
             self.log.error("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbopensvc_host)
-
-        try:
-            a = socket.getaddrinfo(rcEnv.dbcompliance_host, None)
-            if len(a) == 0:
-                raise Exception
-            dbcompliance_ip = a[0][-1][0]
-        except Exception as exc:
-            self.log.error("init dbcompliance: %s", exc)
-            self.log.error("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbcompliance_host)
-
+            self.proxy = get_proxy(DUMMY_URL)
+            return
         try:
             self.proxy = get_proxy(rcEnv.dbopensvc)
             self.get_methods_dbopensvc()
         except Exception as exc:
             self.log.error("init dbopensvc: %s", exc)
-            self.proxy = get_proxy("https://127.0.0.1/")
-
-        if fn in self.comp_fns:
-            try:
-                self.comp_proxy = get_proxy(rcEnv.dbcompliance)
-                self.get_methods_dbcompliance()
-            except:
-                self.comp_proxy = get_proxy("https://127.0.0.1/")
-
+            self.proxy = get_proxy(DUMMY_URL)
+            return
         self.log.info("feed proxy %s"%str(self.proxy))
+
+    def init_comp_proxy(self):
+        try:
+            a = socket.getaddrinfo(rcEnv.dbcompliance_host, None)
+            if len(a) == 0:
+                raise Exception
+            dbcompliance_ip = a[0][-1][0]
+        except Exception:
+            self.log.error("could not resolve %s to an ip address. disable collector updates."%rcEnv.dbcompliance_host)
+            self.comp_proxy = get_proxy(DUMMY_URL)
+            return
+        try:
+            self.comp_proxy = get_proxy(rcEnv.dbcompliance)
+            self.get_methods_dbcompliance()
+        except:
+            self.comp_proxy = get_proxy(DUMMY_URL)
+            return
         self.log.info("compliance proxy %s"%str(self.comp_proxy))
+
+    def disable(self):
+        self.proxy = None
+
+    def disabled(self):
+        """
+        Example repr():
+            <ServerProxy for 127.0.0.1/RPC2>
+        """
+        return self.proxy is None or LO_ADDR in repr(self.proxy)
+
+    def reinit(self):
+        if self.disabled():
+            self.log.info("disabled")
+            self.init()
+            if not self.disabled():
+                self.log.info("the collector is available. proxies reinitialized")
+                return True
+        return False
 
     def begin_action(self, svcname, action, version, begin, cron):
         args = [['svcname',
