@@ -15,5 +15,5 @@ script:
   - pylint -E lib/*py
   - nosetests --with-coverage lib/tests/test_ci_*.py
 after_success:
-  - pip install coveralls==1.0
-  - coveralls
+  - pip install codecov
+  - codecov
