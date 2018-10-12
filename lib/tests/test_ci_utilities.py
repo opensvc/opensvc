@@ -283,11 +283,11 @@ class TestUtilities:
         assert protected_mount("/bin") == True
         assert protected_mount("/bin/") == True
         assert protected_mount("/mysvc") == True
-        call("mkdir -p /tmp/foo && mount -t tmpfs none /tmp/foo", shell=True)
+        call("mkdir -p /tmp/foo && sudo mount -t tmpfs none /tmp/foo", shell=True)
         assert protected_mount("/tmp/foo") == False
         assert protected_mount("/tmp/foo/") == False
         assert protected_mount("/tmp/foo/a") == False
-        call("umount /tmp/foo && rmdir /tmp/foo", shell=True)
+        call("sudo umount /tmp/foo && rmdir /tmp/foo", shell=True)
 
     def test_protected_dir(self):
         """
