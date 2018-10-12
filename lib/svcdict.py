@@ -1027,7 +1027,7 @@ KEYWORDS = [
     {
         "section": "sync",
         "keyword": "options",
-        "convert": "list",
+        "convert": "shlex",
         "rtype": "s3",
         "at": True,
         "example": "--exclude *.pyc",
