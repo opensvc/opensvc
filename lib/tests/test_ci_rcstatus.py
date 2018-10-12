@@ -5,7 +5,7 @@ import os
 mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, mod_d)
 
-from rcStatus import Status, colorize_status, status_value, status_str
+from rcStatus import Status, colorize_status, status_value, status_str, UP
 import rcColor
 
 rcColor.use_color = "no"
@@ -26,6 +26,18 @@ class TestStatus:
         sta1 = None
         ret = colorize_status(sta1, lpad=0)
         assert ret == "undef"
+
+        sta1 = "warn"
+        ret = colorize_status(sta1, lpad=0)
+        assert ret == "warn"
+
+        sta1 = "n/a"
+        ret = colorize_status(sta1, lpad=0)
+        assert ret == "n/a"
+
+        sta1 = "unsupported"
+        ret = colorize_status(sta1, lpad=0)
+        assert ret == "unsupported"
 
     def test_status_value(self):
         """
@@ -66,7 +78,43 @@ class TestStatus:
         """
         sta1 = Status()
         sta2 = Status("up")
+        sta3 = Status("undef")
+        sta4 = Status("down")
+        sta5 = Status().status = 444
         assert str(sta1 + sta2) == "up"
+        assert str(sta2 + sta3) == "up"
+        assert str(sta2 + sta4) == "warn"
+        assert Status("up").value() == UP
+
+        sta6 = Status("up")
+        sta6.reset()
+        assert str(sta6) == "undef"
+
+        assert Status("up") == Status("up")
+        assert Status("down") != Status("up")
+        assert Status("down") != UP
+        assert UP != Status("down")
+        assert "up" != Status("down")
+        assert "down" == Status("down")
+        assert UP == Status("up")
+        assert Status("down") != "up"
+        assert Status("down") == "down"
+
+        try:
+            sta2 += sta5
+            assert False
+        except AssertionError:
+            raise
+        except Exception:
+            pass
+
+        try:
+            sta5 += sta2
+            assert False
+        except AssertionError:
+            raise
+        except Exception:
+            pass
 
         try:
             sta2 += "foo"

@@ -104,7 +104,6 @@ def colorize_status(status, lpad=10):
         return colorize(fmt % status, color.LIGHTBLUE)
     else:
         return colorize(fmt % status, color.LIGHTBLUE)
-    return fmt % status
 
 def status_value(status):
     """
