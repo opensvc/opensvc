@@ -188,8 +188,8 @@ class Dev(object):
         node_dev = node.add_node()
         node_dev.add_column(self.alias, color.BROWN)
         node_dev.add_column(self.devtype)
-        node_dev.add_column(print_size(self.size))
-        node_dev.add_column(pct)
+        node_dev.add_column(print_size(self.size), align="right")
+        node_dev.add_column(pct, align="right")
         if verbose:
             col = node_dev.add_column()
             for devpath in self.devpath:
@@ -225,9 +225,9 @@ class Dev(object):
         node_dev = node.add_node()
         node_dev.add_column(self.alias, color.BROWN)
         node_dev.add_column(self.devtype)
-        node_dev.add_column(used_s)
-        node_dev.add_column(print_size(self.size))
-        node_dev.add_column(pct)
+        node_dev.add_column(used_s, align="right")
+        node_dev.add_column(print_size(self.size), align="right")
+        node_dev.add_column(pct, align="right")
         if verbose:
             col = node_dev.add_column()
             for devpath in self.devpath:
@@ -290,8 +290,8 @@ class DevTree(object):
         node = ftree.add_node()
         node.add_column(rcEnv.nodename, color.BOLD)
         node.add_column("Type", color.BOLD)
-        node.add_column("Size", color.BOLD)
-        node.add_column("Pct of Parent", color.BOLD)
+        node.add_column("Size", color.BOLD, align="right")
+        node.add_column("Pct of Parent", color.BOLD, align="right")
 
         filtered = devices is not None and len(devices) > 0
         if filtered:
@@ -310,9 +310,9 @@ class DevTree(object):
         node = ftree.add_node()
         node.add_column(rcEnv.nodename, color.BOLD)
         node.add_column("Type", color.BOLD)
-        node.add_column("Parent Use", color.BOLD)
-        node.add_column("Size", color.BOLD)
-        node.add_column("Ratio", color.BOLD)
+        node.add_column("Parent Use", color.BOLD, align="right")
+        node.add_column("Size", color.BOLD, align="right")
+        node.add_column("Ratio", color.BOLD, align="right")
 
         if devices is None:
             devices = set()

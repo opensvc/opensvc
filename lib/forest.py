@@ -175,14 +175,17 @@ def forest(data, columns=1, separator="  ", widths=None):
                 buff += CONT_LAST_NODE
         return buff
 
-    def format_cell(text, width, textcolor, separator):
+    def format_cell(text, width, textcolor, separator, align):
         """
         Format the table cell, happending the separator, coloring the text and
         applying the cell padding for alignment.
         """
         if text in ("", None):
             return " " * width + separator
-        fmt = "%-"+str(width)+"s"
+        if align == "right":
+            fmt = "%"+str(width)+"s"
+        else:
+            fmt = "%-"+str(width)+"s"
         cell = fmt % text
         if textcolor:
             cell = colorize(cell, textcolor)
@@ -219,11 +222,12 @@ def forest(data, columns=1, separator="  ", widths=None):
             for idx, col in enumerate(subnode):
                 text = col.get("text", "")
                 textcolor = col.get("color")
+                align = col.get("align")
                 width = pads[idx]
                 if idx == 0:
                     # adjust for col0 alignment shifting due to the prefix
                     width += depth * 3 - prefix_len
-                buff += format_cell(text, width, textcolor, separator)
+                buff += format_cell(text, width, textcolor, separator, align)
             buff += "\n"
         for idx, child in enumerate(children):
             last = idx == last_child
@@ -249,9 +253,10 @@ def forest(data, columns=1, separator="  ", widths=None):
             for fragment in col:
                 text = fragment.get("text", "")
                 textcolor = fragment.get("color")
+                align = fragment.get("align")
                 if text is None:
                     text = ""
-                lines += [(line, textcolor) for line in wrapped_lines(text, pads[idx])]
+                lines += [(line, textcolor, align) for line in wrapped_lines(text, pads[idx])]
             n_lines += len(lines)
             tmp.append(lines)
             if n_lines > max_lines:
@@ -264,12 +269,13 @@ def forest(data, columns=1, separator="  ", widths=None):
                 except IndexError:
                     break
                 try:
-                    line, textcolor = _tmp[idx]
+                    line, textcolor, align = _tmp[idx]
                 except IndexError:
                     line = ""
                 __data.append({
                     "text": line,
-                    "color": textcolor
+                    "color": textcolor,
+                    "align": align,
                 })
             _data["data"].append(__data)
 
@@ -295,13 +301,14 @@ class Column(object):
         self.idx = idx
         self.node = node
 
-    def add_text(self, text="", color=None):
+    def add_text(self, text="", color=None, align=None):
         """
         Add a phrase to this column.
         """
         self.node.node["data"][self.idx].append({
             "text": text,
-            "color": color
+            "color": color,
+            "align": align,
         })
 
 class Node(object):
@@ -313,7 +320,7 @@ class Node(object):
         self.node_id = node_id
         self.node = self.forest.get_node(node_id)
 
-    def add_column(self, text="", color=None):
+    def add_column(self, text="", color=None, align=None):
         """
         Add and return a column to the node with text and color.
         Extra phrases can be added through the returned Column object.
@@ -322,7 +329,8 @@ class Node(object):
             self.node["data"] = []
         self.node["data"].append([{
             "text": text,
-            "color": color
+            "color": color,
+            "align": align,
         }])
         columns = len(self.node["data"])
         if columns > self.forest.columns:
