@@ -146,7 +146,7 @@ def unset_fcache(self, attr):
     """
     Unset <attr> function cache
     """
-    attr_name = '_lazy_' + attr
+    attr_name = '_fcache_' + attr
     if hasattr(self, attr_name):
         delattr(self, attr_name)
 
@@ -230,10 +230,8 @@ def is_string(s):
 
 def mimport(*args, **kwargs):
     def fmt(s):
-        if len(s) > 1:
+        if len(s) >= 1:
             return s[0].upper()+s[1:].lower()
-        elif len(s) == 1:
-            return s[0].upper()
         else:
             return ""
 
@@ -265,7 +263,7 @@ def ximport(base):
     try:
         m = __import__(mod)
         return m
-    except:
+    except ImportError:
         pass
 
     return __import__(base)
@@ -372,7 +370,7 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
 
     def check_io():
         logged = 0
-        rlist, _, xlist = select.select([rout, rerr], [], [], 0.5)
+        rlist, _, xlist = select.select([rout, rerr], [], [], 0.2)
         if xlist:
             return logged
         for io in rlist:
@@ -400,11 +398,11 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
         ellapsed = time.time() - start
         if timeout and ellapsed > timeout:
             if not terminated:
-                logger.error("execution timeout (%d seconds). send SIGTERM." % timeout)
+                logger.error("execution timeout (%.1f seconds). send SIGTERM." % timeout)
                 proc.terminate()
                 terminated = True
             elif not killed and ellapsed > timeout*2:
-                logger.error("SIGTERM handling timeout (%d seconds). send SIGKILL." % timeout)
+                logger.error("SIGTERM handling timeout (%.1f seconds). send SIGKILL." % timeout)
                 proc.kill()
                 killed = True
 
@@ -454,7 +452,8 @@ def call(argv,
          preexec_fn=None,
          cwd=None,
          env=None):
-    """ return(ret, out,err)
+    """
+    Execute the command using Popen and return (ret, out, err)
     """
     if log is None:
         log = logging.getLogger('CALL')
@@ -552,10 +551,12 @@ def call(argv,
 
     return (ret, buff[0], buff[1])
 
-def qcall(argv=['/bin/false']) :
-    """qcall Launch Popen it args disgarding output and stderr"""
+def qcall(argv=['/bin/false']):
+    """
+    Execute command using Popen with no additional args, disgarding stdout and stderr.
+    """
     if not argv:
-        return (0, '')
+        return 0
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
     process.wait()
     return process.returncode
@@ -584,109 +585,6 @@ def protected_mount(path):
     if mount in PROTECTED_DIRS:
         return True
     return False
-
-def printplus(obj):
-    """
-    Pretty-prints the object passed in.
-
-    """
-    # Dict
-    if isinstance(obj, dict):
-        for k, v in sorted(obj.items()):
-            print("%s: %s" % (str(k), str(v)))
-
-    # List or tuple
-    elif isinstance(obj, list) or isinstance(obj, tuple):
-        for x in obj:
-            print(x)
-
-    # Other
-    else:
-        print(obj)
-
-def cmdline2list(cmdline):
-    """
-    Translate a command line string into a list of arguments, using
-    using the same rules as the MS C runtime:
-
-    1) Arguments are delimited by white space, which is either a
-       space or a tab.
-
-    2) A string surrounded by double quotation marks is
-       interpreted as a single argument, regardless of white space
-       contained within.  A quoted string can be embedded in an
-       argument.
-
-    3) A double quotation mark preceded by a backslash is
-       interpreted as a literal double quotation mark.
-
-    4) Backslashes are interpreted literally, unless they
-       immediately precede a double quotation mark.
-
-    5) If backslashes immediately precede a double quotation mark,
-       every pair of backslashes is interpreted as a literal
-       backslash.  If the number of backslashes is odd, the last
-       backslash escapes the next double quotation mark as
-       described in rule 3.
-    """
-
-    # See
-    # http://msdn.microsoft.com/library/en-us/vccelng/htm/progs_12.asp
-
-    # Step 1: Translate all literal quotes into QUOTE.  Justify number
-    # of backspaces before quotes.
-    tokens = []
-    bs_buf = ""
-    QUOTE = 1 # \", literal quote
-    for c in cmdline:
-        if c == '\\':
-            bs_buf += c
-        elif c == '"' and bs_buf:
-            # A quote preceded by some number of backslashes.
-            num_bs = len(bs_buf)
-            tokens.extend(["\\"] * (num_bs//2))
-            bs_buf = ""
-            if num_bs % 2:
-                # Odd.  Quote should be placed literally in array
-                tokens.append(QUOTE)
-            else:
-                # Even.  This quote serves as a string delimiter
-                tokens.append('"')
-
-        else:
-            # Normal character (or quote without any preceding
-            # backslashes)
-            if bs_buf:
-                # We have backspaces in buffer.  Output these.
-                tokens.extend(list(bs_buf))
-                bs_buf = ""
-
-            tokens.append(c)
-
-    # Step 2: split into arguments
-    result = [] # Array of strings
-    quoted = False
-    arg = [] # Current argument
-    tokens.append(" ")
-    for c in tokens:
-        if c == '"':
-            # Toggle quote status
-            quoted = not quoted
-        elif c == QUOTE:
-            arg.append('"')
-        elif c in (' ', '\t'):
-            if quoted:
-                arg.append(c)
-            else:
-                # End of argument.  Output, if anything.
-                if arg:
-                    result.append(''.join(arg))
-                    arg = []
-        else:
-            # Normal character
-            arg.append(c)
-
-    return result
 
 def action_triggers(self, trigger="", action=None, **kwargs):
     """
@@ -1119,7 +1017,6 @@ def is_service(f):
 def list_services():
     import glob
     if not os.path.exists(rcEnv.paths.pathetc):
-        print("create dir %s"%rcEnv.paths.pathetc)
         os.makedirs(rcEnv.paths.pathetc)
     s = glob.glob(os.path.join(rcEnv.paths.pathetc, '*.conf'))
     s = [os.path.basename(x)[:-5] for x in s]
@@ -1132,8 +1029,3 @@ def list_services():
         l.append(name)
     return l
 
-if __name__ == "__main__":
-    #print("call(('id','-a'))")
-    #(r,output,err)=call(("/usr/bin/id","-a"))
-    #print("status: ", r, "output:", output)
-    pass
