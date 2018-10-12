@@ -3493,13 +3493,19 @@ class Node(Crypt, ExtConfigMixin):
                 topology = ""
             if services[svcname].get("drp", False):
                 topology = "drp " + topology
+
+            # status
             status = colorize_status(data["avail"], lpad=0)
             if data["overall"] == "warn":
                 status += colorize("!", color.BROWN)
             if data["placement"] == "non-optimal":
                 status += colorize("^", color.RED)
+
+            # info
             if data.get("scale") is not None:
                 info = "scaler/%d/%d" % (data["n_up"], data.get("scale"))
+            elif data.get("wrapper"):
+                info = ""
             else:
                 info = topology
                 if data["orchestrate"]:
@@ -3525,17 +3531,23 @@ class Node(Crypt, ExtConfigMixin):
                     else:
                         frozen_icon = ""
                     # avail status unicon
-                    avail = data["nodes"][nodename]["avail"]
-                    if avail == "unknown":
-                        avail_icon = colorize("?", color.RED)
+                    if data["wrapper"]:
+                        avail_icon = ""
                     else:
-                        avail_icon = colorize_status(avail, lpad=0).replace(avail, unicons[avail])
+                        avail = data["nodes"][nodename]["avail"]
+                        if avail == "unknown":
+                            avail_icon = colorize("?", color.RED)
+                        else:
+                            avail_icon = colorize_status(avail, lpad=0).replace(avail, unicons[avail])
                     # overall status unicon
-                    overall = data["nodes"][nodename]["overall"]
-                    if overall == "warn":
-                        overall_icon = colorize_status(overall, lpad=0).replace(overall, unicons[overall])
-                    else:
+                    if data["wrapper"]:
                         overall_icon = ""
+                    else:
+                        overall = data["nodes"][nodename]["overall"]
+                        if overall == "warn":
+                            overall_icon = colorize_status(overall, lpad=0).replace(overall, unicons[overall])
+                        else:
+                            overall_icon = ""
                     # mon status
                     smon = data["nodes"][nodename]["mon"]
                     if smon == "idle":
@@ -3553,10 +3565,13 @@ class Node(Crypt, ExtConfigMixin):
                     else:
                         global_expect = ""
                     # leader
-                    if data["nodes"][nodename]["placement"] == "leader":
-                        leader = colorize("^", color.LIGHTBLUE)
-                    else:
+                    if data["wrapper"]:
                         leader = ""
+                    else:
+                        if data["nodes"][nodename]["placement"] == "leader":
+                            leader = colorize("^", color.LIGHTBLUE)
+                        else:
+                            leader = ""
                     # provisioned
                     if data["nodes"][nodename]["provisioned"] is False:
                         provisioned = colorize("P", color.RED)
@@ -3917,7 +3932,9 @@ class Node(Crypt, ExtConfigMixin):
                             "nodes": {},
                             "slaves": set(),
                             "n_up": 0,
+                            "resources": set(),
                         })
+                    services[svcname]["resources"] |= set(_data["resources"].keys())
                     slaves = _data.get("slaves", [])
                     scale = _data.get("scale")
                     if scale:
@@ -3945,6 +3962,11 @@ class Node(Crypt, ExtConfigMixin):
                         "provisioned": _data.get("provisioned"),
                     }
                     services[svcname].slaves |= set(slaves)
+                    services[svcname]["wrapper"] = (
+                        services[svcname].resources == set() and 
+                        services[svcname].slaves != set() and
+                        scale is None
+                    )
                 try:
                     # hint we have missing instances
                     for svcname, cnf in data["monitor"]["nodes"][node]["services"]["config"].items():
