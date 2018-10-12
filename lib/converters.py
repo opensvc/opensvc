@@ -199,7 +199,7 @@ def convert_size(s, _to='', _round=1, default_unit=''):
 
     try:
         start_idx = l.index(unit)
-    except:
+    except ValueError:
         raise ValueError("convert size error: unsupported unit in %s" % s)
 
     for i in range(start_idx):
@@ -231,7 +231,7 @@ def convert_size(s, _to='', _round=1, default_unit=''):
         size = (size // _round) * _round
     return size
 
-def print_size(size, unit="MB", compact=False):
+def print_size(size, unit="MB", compact=False, precision=3):
     unit = unit.upper()
     if unit.endswith("B"):
         suffix = "B"
@@ -245,24 +245,31 @@ def print_size(size, unit="MB", compact=False):
     else:
         metric = ""
         mult = 1024
-    units = ['', 'K', 'M', 'G', 'T', 'E']
-    units_index = {'':0, 'K':1, 'M':2, 'G':3, 'T':4, 'E':5}
+    units = ['', 'K', 'M', 'G', 'T', 'E', 'Z', 'Y']
+    units_index = {'':0, 'K':1, 'M':2, 'G':3, 'T':4, 'E':5, 'Z':6, 'Y': 7}
     size = float(size)
     if unit not in units:
         raise ValueError("unsupported unit: %s" % unit)
     sep = "" if compact else " "
     suffix = "" if compact else suffix
     roundup = False
+    done = False
     for u in units[units_index[unit]:]:
         if size == 0:
             return "0"
         u = u.lower() if compact else u
-        if size < 0.95 * mult:
-            return '%d%s%s%s%s' % (size+1 if roundup else size, sep, u, metric, suffix)
-        elif size < mult:
-            roundup = True
+        if size < mult:
+            done = True
+            break
         size = size/mult
-    return '%d%s%s%s%s' % (size, sep, u, metric, suffix)
+    if not done:
+        size *= mult
+    ufmt = "%d"
+    for exp in range(0, precision - 1):
+        if size < 10**(exp+1):
+            ufmt = "%." + str(precision - 1 - exp) + "f"
+            break
+    return (ufmt+'%s%s%s%s') % (size, sep, u, metric, suffix)
 
 def convert_speed(s, _to='', _round=1, default_unit=''):
     try:
@@ -274,18 +281,4 @@ def convert_speed(s, _to='', _round=1, default_unit=''):
 
 def convert_speed_kps(s, _round=1):
     return convert_speed(s, _to="KB", _round=_round, default_unit='K')
-
-if __name__ == "__main__":
-    #print(convert_size("10000 KiB", _to='MiB', _round=3))
-    #print(convert_size("10M", _to='', _round=4096))
-    for s in (1, "1", "1w1d1h1m1s", "1d", "1d1w", "2m2s", "Ad", "1dd", "-1", "-1s"):
-        try:
-            print(s, "=>", convert_duration(s, _to="d"))
-        except ValueError as exc:
-            print(exc)
-    for s in (3000, "3000 kb/s", "3000 k/s", "3000k"):
-        try:
-            print(s, "=>", convert_speed_kps(s))
-        except ValueError as exc:
-            print(exc)
 
