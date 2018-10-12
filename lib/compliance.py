@@ -10,7 +10,8 @@ from subprocess import *
 
 import six
 import rcExceptions as ex
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 from rcUtilities import is_exe, justcall, banner, is_string, fcache
 from rcColor import color, colorize, formatter
 

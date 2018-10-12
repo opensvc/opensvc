@@ -8,7 +8,8 @@ from optparse import Option
 from six.moves import configparser as ConfigParser
 
 import rcExceptions as ex
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 from rcUtilities import justcall
 from converters import convert_size
 from rcOptParser import OptParser

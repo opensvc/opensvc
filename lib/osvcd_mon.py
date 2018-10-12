@@ -19,7 +19,8 @@ from subprocess import Popen, PIPE
 import osvcd_shared as shared
 import rcExceptions as ex
 import json_delta
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 from rcUtilities import bdecode, purge_cache, fsum
 from svcBuilder import build, fix_exe_link
 from freezer import Freezer

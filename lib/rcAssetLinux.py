@@ -2,7 +2,7 @@ import os
 import re
 import datetime
 from rcUtilities import justcall, which, bdecode, lazy
-from rcGlobalEnv import Storage
+from storage import Storage
 import rcAsset
 
 def is_container():

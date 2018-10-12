@@ -30,7 +30,8 @@ except ImportError:
 
 import svcBuilder
 import xmlrpcClient
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 import rcLogger
 import rcExceptions as ex
 import rcConfigParser

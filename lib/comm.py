@@ -15,7 +15,8 @@ import select
 import six
 import pyaes
 import rcExceptions as ex
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 from rcUtilities import lazy, bdecode
 
 if six.PY3:

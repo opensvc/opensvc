@@ -4,7 +4,8 @@ import sys
 import re
 import glob
 
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 from rcNode import discover_node
 import rcLogger
 import resSyncRsync

@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import checks
 from rcUtilities import justcall
-from rcGlobalEnv import Storage
+from storage import Storage
 
 class check(checks.check):
     chk_type = "jstat"

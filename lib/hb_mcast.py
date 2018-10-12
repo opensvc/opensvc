@@ -10,7 +10,8 @@ import json
 
 import rcExceptions as ex
 import osvcd_shared as shared
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 from rcUtilities import chunker, bdecode
 from hb import Hb
 

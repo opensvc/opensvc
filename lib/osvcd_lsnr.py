@@ -15,7 +15,8 @@ from subprocess import Popen, PIPE
 import six
 import osvcd_shared as shared
 from six.moves import queue
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 from rcUtilities import bdecode, drop_option, chunker
 from converters import convert_size
 

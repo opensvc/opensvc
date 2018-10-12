@@ -18,7 +18,7 @@ import rcColor
 from svcmgr_parser import SvcmgrOptParser
 import rcExceptions as ex
 from rcUtilities import ximport, check_privs
-from rcGlobalEnv import Storage
+from storage import Storage
 
 def get_docker_argv(argv=None):
     """

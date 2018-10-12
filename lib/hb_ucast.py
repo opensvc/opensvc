@@ -8,7 +8,8 @@ import threading
 import six
 import rcExceptions as ex
 import osvcd_shared as shared
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 from hb import Hb
 
 class HbUcast(Hb):

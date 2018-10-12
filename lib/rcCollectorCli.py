@@ -25,7 +25,7 @@ import fnmatch
 from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from six.moves import input
-from rcGlobalEnv import Storage
+from storage import Storage
 from rcUtilities import bdecode
 from rcColor import formatter
 

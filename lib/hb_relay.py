@@ -8,7 +8,8 @@ import contextlib
 
 import osvcd_shared as shared
 import rcExceptions as ex
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 from hb import Hb
 
 class HbRelay(Hb):

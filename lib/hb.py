@@ -9,7 +9,8 @@ import struct
 
 import json_delta
 import osvcd_shared as shared
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 
 class Hb(shared.OsvcThread):
     """

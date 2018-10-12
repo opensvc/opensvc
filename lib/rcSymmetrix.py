@@ -9,7 +9,8 @@ import time
 import rcExceptions as ex
 from six.moves import configparser as ConfigParser
 from xml.etree.ElementTree import XML, fromstring
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 from rcUtilities import justcall, which
 from converters import convert_size
 from rcOptParser import OptParser

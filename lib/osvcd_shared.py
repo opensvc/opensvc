@@ -17,7 +17,8 @@ from six.moves import queue
 import rcExceptions as ex
 from rcConfigParser import RawConfigParser
 from rcUtilities import lazy, unset_lazy, is_string
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 from freezer import Freezer
 from converters import convert_duration, convert_boolean
 from comm import Crypt

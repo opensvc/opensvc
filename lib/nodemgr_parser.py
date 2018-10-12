@@ -2,7 +2,7 @@
 nodemgr command line actions and options
 """
 import node
-from rcGlobalEnv import Storage
+from storage import Storage
 from rcOptParser import OptParser
 from optparse import Option
 

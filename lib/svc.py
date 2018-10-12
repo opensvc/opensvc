@@ -20,7 +20,8 @@ from resources import Resource
 from resourceset import ResourceSet
 from freezer import Freezer
 import rcStatus
-from rcGlobalEnv import rcEnv, get_osvc_paths, Storage
+from rcGlobalEnv import rcEnv, get_osvc_paths
+from storage import Storage
 from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         try_decode, action_triggers, read_cf, \
                         drop_option, fcache

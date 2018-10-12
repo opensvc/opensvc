@@ -2,7 +2,7 @@
 svcmgr command line actions and options
 """
 import svc
-from rcGlobalEnv import Storage
+from storage import Storage
 from rcOptParser import OptParser
 from optparse import Option
 

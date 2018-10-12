@@ -13,7 +13,8 @@ import re
 
 import six
 import osvcd_shared as shared
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 from rcUtilities import lazy, bdecode
 
 PTR_SUFFIX = ".in-addr.arpa."

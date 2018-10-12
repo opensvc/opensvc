@@ -3,7 +3,8 @@ import json
 
 import resources as Res
 from rcUtilities import which, justcall, lazy
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 import resContainer
 import rcExceptions as ex
 

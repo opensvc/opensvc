@@ -11,7 +11,8 @@ import random
 import logging
 
 import rcExceptions as ex
-from rcGlobalEnv import rcEnv, Storage
+from rcGlobalEnv import rcEnv
+from storage import Storage
 from rcUtilities import is_string
 from rcColor import formatter
 from converters import convert_duration
