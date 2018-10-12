@@ -1,5 +1,5 @@
 import checks
-from rcUtilities import justcall, printplus
+from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
 
 class check(checks.check):
@@ -123,8 +123,3 @@ class check(checks.check):
                       'chk_svcname': self.find_svc(dev),
                      })
         return r
-
-if __name__ == "__main__":
-    paths = check()
-    tab = paths.do_check()
-    printplus(tab)

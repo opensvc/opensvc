@@ -54,10 +54,3 @@ class check(checks.check):
                       'chk_svcname': '',
                      })
         return r
-
-if __name__ == "__main__":
-    from rcUtilities import printplus
-    o = check()
-    tab = o.do_check()
-    printplus(tab)
-
