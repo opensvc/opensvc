@@ -16,7 +16,7 @@ NEXT_NODE = "|- "
 CONT_NODE = "|  "
 CONT_LAST_NODE = "   "
 
-def forest(data, columns=1, separator="  ", widths=None):
+def forest(data, columns=1, separator="  ", widths=None, force_width=None):
     """
     Print a nested dict structure as a tree.
     Each node is considered tabular, with cells content aligned
@@ -62,6 +62,11 @@ def forest(data, columns=1, separator="  ", widths=None):
     `- node2 foo
 
     """
+    if force_width:
+        twidth = force_width
+    else:
+        twidth = term_width() - 4
+
     def get_pads(data, columns, widths=None):
         """
         Analyse data length in data columns and return a list of columns length,
@@ -114,7 +119,6 @@ def forest(data, columns=1, separator="  ", widths=None):
         Given the pads returned by get_pads(), distribute the term width to
         columns.
         """
-        twidth = term_width() - 4
         max_prefix_len = depth * 3
         width = 0
         for pad in pads:
