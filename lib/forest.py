@@ -5,8 +5,8 @@ Forest data representation module.
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import six
 from textwrap import wrap
+import six
 
 from rcUtilities import term_width
 from rcColor import colorize, color
@@ -152,7 +152,7 @@ def forest(data, columns=1, separator="  ", widths=None, force_width=None):
         """
         Return the forest markers as a string for a line.
         """
-        if len(lasts) == 0:
+        if not lasts:
             return ""
         buff = ""
         if subnode_idx == 0:
@@ -305,13 +305,13 @@ class Column(object):
         self.idx = idx
         self.node = node
 
-    def add_text(self, text="", color=None, align=None):
+    def add_text(self, text="", textcolor=None, align=None):
         """
         Add a phrase to this column.
         """
         self.node.node["data"][self.idx].append({
             "text": text,
-            "color": color,
+            "color": textcolor,
             "align": align,
         })
 
@@ -319,12 +319,12 @@ class Node(object):
     """
     The Forest Node object, offering methods to add columns to the node.
     """
-    def __init__(self, forest, node_id):
-        self.forest = forest
+    def __init__(self, head, node_id):
+        self.forest = head
         self.node_id = node_id
         self.node = self.forest.get_node(node_id)
 
-    def add_column(self, text="", color=None, align=None):
+    def add_column(self, text="", textcolor=None, align=None):
         """
         Add and return a column to the node with text and color.
         Extra phrases can be added through the returned Column object.
@@ -333,7 +333,7 @@ class Node(object):
             self.node["data"] = []
         self.node["data"].append([{
             "text": text,
-            "color": color,
+            "color": textcolor,
             "align": align,
         }])
         columns = len(self.node["data"])
@@ -348,21 +348,33 @@ class Node(object):
         return self.forest.add_node(parent_id=self.node_id)
 
     def load(self, data, title=None):
+        """
+        Load data in the node.
+        """
         head = self
         if title:
             head.add_column(title, color.BOLD)
 
         def add_list(head, _data):
+            """
+            Load data structured as list in the node.
+            """
             for val in _data:
                 add_gen(head, val)
 
         def add_dict(head, _data):
+            """
+            Load data structured as dict in the node.
+            """
             for key, val in _data.items():
                 leaf = head.add_node()
                 leaf.add_column(key, color.LIGHTBLUE)
                 add_gen(leaf, val)
 
         def add_gen(head, _data):
+            """
+            Switch between data loaders
+            """
             if isinstance(_data, list):
                 add_list(head, _data)
             elif isinstance(_data, dict):
@@ -405,12 +417,15 @@ class Forest(object):
         self.widths = widths
 
     def print(self):
-        s = forest(self.data, self.columns, separator=self.separator,
-                   widths=self.widths)
+        """
+        Print the forest to stdout.
+        """
+        buff = forest(self.data, self.columns, separator=self.separator,
+                      widths=self.widths)
         try:
-            print(s)
-        except:
-            print(s.encode("utf8", errors="ignore"))
+            print(buff)
+        except Exception:
+            print(buff.encode("utf8", errors="ignore"))
 
     def __str__(self):
         return forest(self.data, self.columns, separator=self.separator,
@@ -444,6 +459,8 @@ class Forest(object):
         return Node(self, node_id)
 
     def load(self, *args, **kwargs):
+        """
+        Load data in the Forest object.
+        """
         head = self.add_node()
         head.load(*args, **kwargs)
-
