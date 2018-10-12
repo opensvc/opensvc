@@ -2,6 +2,7 @@ from __future__ import print_function
 import os
 import sys
 import shutil
+import shlex
 import glob
 import json
 from stat import *
@@ -10,7 +11,7 @@ from subprocess import *
 import six
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, cmdline2list
+from rcUtilities import which
 
 class SysReport(object):
     def __init__(self, node=None, collect_d=None, compress=False):
@@ -230,7 +231,7 @@ class SysReport(object):
         self.full.append(fpath)
 
     def collect_cmd(self, cmd):
-        l = cmdline2list(cmd)
+        l = shlex.split(cmd)
         if len(l) == 0:
             print(" err: syntax error")
             return

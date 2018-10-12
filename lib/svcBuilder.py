@@ -11,7 +11,7 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
-from rcUtilities import cmdline2list, mimport, check_privs, list_services
+from rcUtilities import mimport, check_privs, list_services
 
 if 'PATH' not in os.environ:
     os.environ['PATH'] = ""
@@ -1229,8 +1229,10 @@ def add_mandatory_syncs(svc):
     kwargs['src'] = src
     kwargs['dst'] = dst
     kwargs['options'] = ['-R']+exclude
-    if svc.config.has_option(kwargs['rid'], 'options'):
-        kwargs['options'] += cmdline2list(svc.config.get(kwargs['rid'], 'options'))
+    try:
+        kwargs['options'] += svc.conf_get(kwargs['rid'], 'options')
+    except ex.OptNotFound:
+        pass
     kwargs['target'] = list(target)
     kwargs['internal'] = True
     kwargs['disabled'] = get_disabled(svc, kwargs['rid'])
