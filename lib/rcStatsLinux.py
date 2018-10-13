@@ -1,4 +1,5 @@
 import os
+import re
 import datetime
 from rcUtilities import justcall, which
 import rcStats
@@ -129,7 +130,22 @@ class StatsProvider(rcStats.StatsProvider):
         cmd = ['sar', '-t', '-r', '-f', f, '-s', start, '-e', end]
         buff, err, ret = justcall(cmd)
 
-        if "kbdirty" in buff:
+        if "kbavail" in buff:
+            fmt = 5
+            cols = ['date',
+                    'kbmemfree',
+                    'kbavail',
+                    'kbmemused',
+                    'pct_memused',
+                    'kbbuffers',
+                    'kbcached',
+                    'kbcommit',
+                    'pct_commit',
+                    'kbactive',
+                    'kbinact',
+                    'kbdirty',
+                    'nodename']
+        elif "kbdirty" in buff:
             fmt = 4
             cols = ['date',
                     'kbmemfree',
@@ -179,7 +195,7 @@ class StatsProvider(rcStats.StatsProvider):
 
         n = len(cols) - 1
         lines = []
-        for line in buff.split('\n'):
+        for line in buff.splitlines():
            l = line.split()
            if fmt > 1:
                if len(l) != n:
