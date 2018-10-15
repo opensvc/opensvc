@@ -60,19 +60,19 @@ class Mount(Res.Mount):
 
     def mount(self):
         ret = 0
-	changed = False
+        changed = False
 
         if self.volume.DriveLetter == self.drive:
             self.log.info("drive %s already assigned", self.drive)
         else:
             self.log.info("assign drive %s", self.drive)
             self.volume.DriveLetter = self.drive
-	    changed = True
+            changed = True
 
         if not self.volume.Automount:
             self.log.info("mount volume %s", self.device)
             ret, = self.volume.Mount()
-	    changed = True
+            changed = True
 
         if changed:
             self.can_rollback = True
