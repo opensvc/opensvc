@@ -381,7 +381,7 @@ class Array(object):
         if mappings:
             mappings_data = self.add_map(volume=name, mappings=mappings)
         driver_data["volume"] = self.get_volumes(volume=name)["content"]
-        driver_data["mappings"] = mappings_data.values()
+        driver_data["mappings"] = [val for val in mappings_data.values()]
         results = {
             "driver_data": driver_data,
             "disk_id": driver_data["volume"]["naa-name"],
