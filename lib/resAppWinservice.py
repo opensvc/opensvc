@@ -52,24 +52,42 @@ class App(resApp.App):
         } SERVICE_STATUS, *LPSERVICE_STATUS;
         """
         if self.name is None:
-            return rcStatus.NA
+            raise resApp.StatusNA
         _, state, _, _, _, _, _ = win32serviceutil.QueryServiceStatus(self.name)
         if state == SERVICE_RUNNING:
-            return rcStatus.UP
+            return 0
         if state == SERVICE_STOPPED:
-            return rcStatus.DOWN
+            return 1
         self.status_log(STATUS_STR[state])
-        return rcStatus.WARN
+        raise resApp.StatusWARN
 
     def stop(self):
         if self.name is None:
             return
+        try:
+            if self.is_up() == 1:
+                self.log.info("already down")
+                return
+        except resApp.StatusNA:
+            self.log.info("skip, no name set")
+            return
+        except resApp.StatusWARN:
+            pass
         self.log.info("stop winservice %s", self.name)
         win32serviceutil.StopService(self.name)
 
     def start(self):
         if self.name is None:
             return
+        try:
+            if self.is_up() == 0:
+                self.log.info("already up")
+                return
+        except resApp.StatusNA:
+            self.log.info("skip, no name set")
+            return
+        except resApp.StatusWARN:
+            pass
         self.log.info("start winservice %s", self.name)
         win32serviceutil.StartService(self.name)
 
