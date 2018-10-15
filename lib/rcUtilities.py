@@ -1006,6 +1006,8 @@ def chunker(buff, n):
 def is_service(f):
     if f is None:
         return False
+    if os.path.basename(f) in ["node", "auth"]:
+        return False
     if os.sep not in f:
         f = os.path.join(rcEnv.paths.pathetc, f)
     if os.name != "nt" and os.path.realpath(f) != os.path.realpath(rcEnv.paths.svcmgr):
