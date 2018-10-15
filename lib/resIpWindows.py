@@ -2,6 +2,8 @@
 This module implements the Windows ip resource driver
 """
 
+import time
+
 import resIp as Res
 import rcExceptions as ex
 from rcUtilitiesWindows import check_ping
@@ -13,13 +15,13 @@ class Ip(Res.Ip):
 
     def startip_cmd(self):
         #netsh interface ip add address "Local Area Connection" 33.33.33.33 255.255.255.255
-        if ':' in self.addr:
-            if '.' in self.mask:
+        if ":" in self.addr:
+            if "." in self.mask:
                 self.log.error("netmask parameter is mandatory for ipv6 adresses")
                 raise ex.excError
-            cmd = ['netsh', 'interface', 'ipv6', 'add', 'address', self.ipdev, self.addr, self.mask]
+            cmd = ["netsh", "interface", "ipv6", "add", "address", self.ipdev, self.addr, self.mask]
         else:
-            cmd = ['netsh', 'interface', 'ipv4', 'add', 'address', self.ipdev, self.addr, self.mask]
+            cmd = ["netsh", "interface", "ipv4", "add", "address", self.ipdev, self.addr, self.mask]
 
         ret, out, err = self.vcall(cmd)
         if ret != 0:
@@ -30,13 +32,14 @@ class Ip(Res.Ip):
         for i in range(5, 0, -1):
             if check_ping(self.addr, timeout=1, count=1):
                 return ret, out, err
+            time.sleep(1)
         self.log.error("timed out waiting for ip activation")
         raise ex.excError
 
     def stopip_cmd(self):
-        if ':' in self.addr:
-            cmd = ['netsh', 'interface', 'ipv6', 'delete', 'address', self.ipdev, "addr="+self.addr]
+        if ":" in self.addr:
+            cmd = ["netsh", "interface", "ipv6", "delete", "address", self.ipdev, "addr="+self.addr]
         else:
-            cmd = ['netsh', 'interface', 'ipv4', 'delete', 'address', self.ipdev, "addr="+self.addr]
+            cmd = ["netsh", "interface", "ipv4", "delete", "address", self.ipdev, "addr="+self.addr]
         return self.vcall(cmd)
 
