@@ -100,7 +100,7 @@ class Mount(Res.Mount):
         return True
 
     def is_up(self):
-        return rcMounts.Mounts(wmi=self.svc.node.wmi).has_mount(self.device, self.mount_point)
+        return rcMounts.Mounts(wmi=self.svc.node.wmi).has_mount(self.device_id, self.mount_point)
 
     def start(self):
         if self.is_online():
