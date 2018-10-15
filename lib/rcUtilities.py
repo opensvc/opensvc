@@ -485,7 +485,7 @@ def call(argv,
     if not cache or cmd not in rcEnv.call_cache:
         process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE, close_fds=close_fds, shell=shell, preexec_fn=preexec_fn, cwd=cwd, env=env)
         buff = process.communicate()
-        buff = tuple(map(lambda x: bdecode(x), buff))
+        buff = tuple(map(lambda x: bdecode(x).strip(), buff))
         ret = process.returncode
         if ret == 0:
             if cache:
