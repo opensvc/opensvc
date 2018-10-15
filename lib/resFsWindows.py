@@ -2,6 +2,7 @@ import os
 
 import rcStatus
 from rcGlobalEnv import rcEnv
+from rcUtilities import lazy
 rcMounts = __import__('rcMounts'+rcEnv.sysname)
 import resFs as Res
 import rcExceptions as ex
@@ -27,92 +28,96 @@ def offline_drive(self, driveindex):
         f.write("select disk=%s\n"%driveindex)
         f.write("offline disk\n")
         f.write("exit\n")
-    self.log.info("bring disk %s offline"%driveindex)
+    self.log.info("bring disk %s offline", driveindex)
     cmd = ['diskpart', '/s', diskpart_file]
     (ret, out, err) = self.vcall(cmd)
     if ret != 0:
         raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
 
-def mount(self):
-    v = self.get_volume()
-    letter = self.mountpt_to_driverletter()
-    ret = 0
-    self.log.info("assign drive letter %s to volume %s"%(letter, self.device))
-    v.DriveLetter = letter
-    if not v.Automount:
-        self.log.info("mount volume %s"%self.device)
-        ret, = v.Mount()
-    v = self.get_volume(refresh=True)
-    return ret
-
-def try_umount(self):
-    v = self.get_volume()
-    letter = self.mountpt_to_driverletter()
-    self.log.info("unassign drive letter %s from volume %s"%(letter, self.device))
-    v.DriveLetter = None
-    v = self.get_volume(refresh=True)
-    if v.DriveLetter is None:
-        return 0
-    return 1
-
 class Mount(Res.Mount):
-    """ define Windows mount/umount doAction """
+    """
+    The Windows fs class
+    """
 
-    def on_add(self):
-        if hasattr(self.svc, 'wmi'):
-            return
-        import wmi
-        self.svc.wmi = wmi.WMI()
+    @lazy
+    def drive(self):
+        return self.mount_point.split(":", 1)[0] + ":"
 
-    def mountpt_to_driverletter(self):
-        i = self.mount_point.index(':')
-        return self.mount_point[:i+1]
+    @lazy
+    def volume(self):
+        vols = self.svc.node.wmi.Win32_Volume()
+        for vol in vols:
+            if vol.DeviceId == self.device_id:
+                return vol
+        raise ex.excError("volume %s not found" % self.device)
 
-    def get_volume(self, refresh=False):
-        if not refresh and hasattr(self, "volume"):
-            return getattr(self, "volume")
-        l = self.svc.wmi.Win32_Volume()
-        for v in l:
-            print("DBG devid %s " % v.DeviceId)
-            if v.DeviceId == self.device:
-                # cache result
-                self.volume = v
-                return v
-        raise ex.excError("Volume %s not found" % self.device)
+    @lazy
+    def device_id(self):
+        if os.sep not in self.device:
+            return os.sep+os.sep+os.path.join("?", "Volume{%s}" % self.device, "")
+        else:
+            return self.device
+
+    def mount(self):
+        ret = 0
+	changed = False
+
+        if self.volume.DriveLetter == self.drive:
+            self.log.info("drive %s already assigned", self.drive)
+        else:
+            self.log.info("assign drive %s", self.drive)
+            self.volume.DriveLetter = self.drive
+	    changed = True
+
+        if not self.volume.Automount:
+            self.log.info("mount volume %s", self.device)
+            ret, = self.volume.Mount()
+	    changed = True
+
+        if changed:
+            self.can_rollback = True
+            self.unset_lazy("volume")
+
+        return ret
+
+    def try_umount(self):
+        if self.volume.DriveLetter is None:
+            self.log.info("drive %s already unassigned", self.drive)
+            return 0
+        self.log.info("unassign drive %s", self.drive)
+        self.volume.DriveLetter = None
+        self.unset_lazy("volume")
+        if self.volume.DriveLetter is None:
+            return 0
+        return 1
 
     # a completer
     def match_mount(self, i, dev, mnt):
         return True
 
     # a completer
-    def is_online(self, dev):
+    def is_online(self):
         return True
 
     def is_up(self):
-        return rcMounts.Mounts(wmi=self.svc.wmi).has_mount(self.device, self.mount_point)
+        return rcMounts.Mounts(wmi=self.svc.node.wmi).has_mount(self.device, self.mount_point)
 
     def start(self):
-        if self.is_online(self.device) is True:
-            self.log.info("fs(%s %s) is already online"%(self.device, self.mount_point))
-        if self.is_up() is True:
-            self.log.info("fs(%s %s) is already mounted"%(self.device, self.mount_point))
+        if self.is_online():
+            self.log.info("%s is already online", self.device)
+        if self.is_up():
+            self.log.info("%s is already mounted", self.device)
             return 0
-        ret = mount(self)
+        ret = self.mount()
         if ret != 0:
             return 1
-        self.can_rollback = True
         return 0
 
     def stop(self):
         if self.is_up() is False:
-            self.log.info("fs(%s %s) is already umounted"%
-                    (self.device, self.mount_point))
-            return 0
-        ret = try_umount(self)
+            self.log.info("%s is already umounted", self.device)
+            return
+        ret = self.try_umount()
         if ret != 0:
-            raise ex.excError('failed to dismount %s'%self.mount_point)
+            raise ex.excError("failed to umount %s" % self.device)
         return 0
-
-if __name__ == "__main__":
-    for c in (Mount,) :
-        help(c)
