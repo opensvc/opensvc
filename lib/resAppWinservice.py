@@ -2,7 +2,10 @@
 The module defining the app.simple resource class.
 """
 
-import win32serviceutil
+try:
+    import win32serviceutil
+except ImportError:
+    raise
 
 import resApp
 import rcStatus
