@@ -2447,6 +2447,8 @@ class Node(Crypt, ExtConfigMixin):
         """
         Returns True if the action can be run in a subprocess per service
         """
+	if rcEnv.sysname == "Windows":
+	    return False
         if options.parallel and action not in ACTIONS_NO_PARALLEL:
             return True
         return False
@@ -2497,9 +2499,6 @@ class Node(Crypt, ExtConfigMixin):
 
         if self.can_parallel(action, options):
             from multiprocessing import Process
-            if rcEnv.sysname == "Windows":
-                from multiprocessing import set_executable
-                set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
             data.procs = {}
             data.svcs = {}
 
