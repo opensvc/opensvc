@@ -340,7 +340,10 @@ class Ip(Res.Resource):
             self.unlock()
 
         if arp_announce:
-            self.arp_announce()
+            try:
+                self.arp_announce()
+            except AttributeError:
+                self.log.info("arp announce not supported")
 
         try:
             self.dns_update()
