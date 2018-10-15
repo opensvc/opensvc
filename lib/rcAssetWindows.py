@@ -321,3 +321,7 @@ class Asset(rcAsset.Asset):
                 dev["description"] = " ".join(desc)
                 devs.append(dev)
         return devs
+
+if __name__ == "__main__":
+    from node import Node
+    print Asset(Node()).get_boot_id()
