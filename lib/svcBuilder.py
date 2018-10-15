@@ -1862,11 +1862,21 @@ def add_task(svc, s):
     r = resTask.Task(**kwargs)
     svc += r
 
+def add_app_winservice(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs['name'] = svc.conf_get(s, 'name')
+    mod = mimport("res", "app", "winservice")
+    r = mod.App(**kwargs)
+    svc += r
+
 def add_app(svc, s):
     try:
         rtype = svc.conf_get(s, 'type')
     except ex.OptNotFound as exc:
         rtype = exc.default
+
+    if rtype == "winservice":
+        return add_app_winservice(svc, s)
 
     kwargs = init_kwargs(svc, s)
 

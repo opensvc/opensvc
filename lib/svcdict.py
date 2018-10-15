@@ -797,9 +797,16 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "type",
-        "candidates": ("simple", "forking"),
+        "candidates": ("simple", "forking", "winservice"),
         "default": "forking",
         "text": "The app driver to use. 'simple' for foreground-running apps. 'forking' for daemonizing apps."
+    },
+    {
+        "section": "app",
+        "keyword": "name",
+        "rtype": "winservice",
+        "at": True,
+        "text": "The name of the Windows service."
     },
     {
         "section": "app",
