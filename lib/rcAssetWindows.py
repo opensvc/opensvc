@@ -2,6 +2,7 @@ import os
 import sys
 import platform
 import datetime
+import time
 
 try:
     import ctypes
@@ -163,6 +164,11 @@ class Asset(rcAsset.Asset):
                 maps.append((portwwn, tgtportwwn))
         return maps
 
+    def get_boot_id(self):
+        payload = self.w.Win32_PerfFormattedData_PerfOS_System()
+        uptime = payload[-1].SystemUpTime
+        return str((int(time.time()) - int(uptime)) // 2)
+
     def get_last_boot(self):
         payload = self.w.Win32_PerfFormattedData_PerfOS_System()
         uptime = payload[-1].SystemUpTime
@@ -315,3 +321,7 @@ class Asset(rcAsset.Asset):
                 dev["description"] = " ".join(desc)
                 devs.append(dev)
         return devs
+
+if __name__ == "__main__":
+    from node import Node
+    print Asset(Node()).get_boot_id()
