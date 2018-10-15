@@ -14,6 +14,7 @@ import lock
 import json
 import re
 import hashlib
+import locale
 
 import six
 from resources import Resource
@@ -329,7 +330,7 @@ TOPOLOGIES = [
     "flex",
 ]
 
-os.environ['LANG'] = 'C'
+locale.setlocale(locale.LC_ALL, ('C', ''))
 
 def _slave_action(func):
     def need_specifier(self):
@@ -3223,7 +3224,7 @@ class Svc(Crypt, ExtConfigMixin):
             print("%s not found" % editor, file=sys.stderr)
             return 1
         path = self.make_temp_config()
-        os.environ["LANG"] = "en_US.UTF-8"
+        locale.setlocale(locale.LC_ALL, "")
         os.system(' '.join((editor, path)))
         if fsum(path) == fsum(self.paths.cf):
             os.unlink(path)

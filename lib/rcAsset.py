@@ -1,6 +1,7 @@
 import os
 import datetime
 import codecs
+import locale
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
@@ -621,7 +622,7 @@ class Asset(object):
         return str(os.path.getmtime("/proc/1"))
 
     def get_last_boot(self):
-        os.environ["LANG"] = "C"
+        locale.setlocale(locale.LC_ALL, 'C')
         cmd = ["/usr/bin/uptime"]
         out, err, ret = justcall(cmd)
         l = out.split()

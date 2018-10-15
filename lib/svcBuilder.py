@@ -13,11 +13,6 @@ import rcExceptions as ex
 import rcConfigParser
 from rcUtilities import mimport, check_privs, list_services
 
-if 'PATH' not in os.environ:
-    os.environ['PATH'] = ""
-os.environ['LANG'] = 'C'
-os.environ['PATH'] += ':/usr/kerberos/sbin:/usr/kerberos/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin'
-
 def get_tags(svc, section):
     try:
         s = svc.conf_get(section, 'tags')

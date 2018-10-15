@@ -18,6 +18,7 @@ import json
 import socket
 import time
 import re
+import locale
 
 import six
 try:
@@ -49,7 +50,7 @@ from extconfig import ExtConfigMixin
 if six.PY2:
     BrokenPipeError = IOError
 
-os.environ['LANG'] = 'C'
+locale.setlocale(locale.LC_ALL, 'C')
 
 DEFAULT_STATUS_GROUPS = [
     "hb",
