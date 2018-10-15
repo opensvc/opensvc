@@ -330,7 +330,10 @@ TOPOLOGIES = [
     "flex",
 ]
 
-locale.setlocale(locale.LC_ALL, ('C', ''))
+try:
+    locale.setlocale(locale.LC_ALL, ("C", "UTF-8"))
+except locale.Error:
+    pass
 
 def _slave_action(func):
     def need_specifier(self):

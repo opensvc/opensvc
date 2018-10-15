@@ -50,7 +50,10 @@ from extconfig import ExtConfigMixin
 if six.PY2:
     BrokenPipeError = IOError
 
-locale.setlocale(locale.LC_ALL, 'C')
+try:
+    locale.setlocale(locale.LC_ALL, ('C', 'UTF-8'))
+except locale.Error:
+    pass
 
 DEFAULT_STATUS_GROUPS = [
     "hb",
