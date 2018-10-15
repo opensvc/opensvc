@@ -2447,8 +2447,8 @@ class Node(Crypt, ExtConfigMixin):
         """
         Returns True if the action can be run in a subprocess per service
         """
-	if rcEnv.sysname == "Windows":
-	    return False
+        if rcEnv.sysname == "Windows":
+            return False
         if options.parallel and action not in ACTIONS_NO_PARALLEL:
             return True
         return False
