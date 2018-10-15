@@ -34,7 +34,7 @@ class MEMORYSTATUSEX(ctypes.Structure):
 
 class Asset(rcAsset.Asset):
     def __init__(self, node):
-	self.node = node
+        self.node = node
         pythoncom.CoInitialize()
         self.cpuinfo = self.node.wmi.Win32_Processor()
         rcAsset.Asset.__init__(self, node)
@@ -189,9 +189,9 @@ class Asset(rcAsset.Asset):
         return devs
 
     def get_hardware_mem(self):
-        '''
+        """
         Get-WmiObject -Class "win32_PhysicalMemory"
-		instance of Win32_PhysicalMemory
+        instance of Win32_PhysicalMemory
         {
         Attributes = 0;
         BankLabel = "";
@@ -212,7 +212,7 @@ class Asset(rcAsset.Asset):
         Tag = "Physical Memory 0";
         TypeDetail = 2;
         };
-		'''
+        """
         devs = []
         dev = None
         path = []
@@ -247,9 +247,9 @@ class Asset(rcAsset.Asset):
         return devs
 
     def get_hardware_devs(self):
-        '''
+        """
         Get-WmiObject -Class "Win32_PnpSignedDriver"
-		'''
+        """
         devs = []
         dev = None
         path = []
