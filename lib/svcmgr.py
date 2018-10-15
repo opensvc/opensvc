@@ -75,10 +75,15 @@ def do_svcs_action_detached(argv=None):
     try:
         import subprocess
         import signal
-        proc = subprocess.Popen([sys.executable, __file__] + argv,
+        kwargs = {}
+        try:
+            kwargs["preexec_fn"] = os.setsid
+        except AttributeError:
+            pass
+        proc = subprocess.Popen([sys.executable, os.path.abspath(__file__)] + argv,
                                 stdout=None, stderr=None, stdin=None,
                                 close_fds=True, cwd=os.sep,
-                                preexec_fn=os.setsid, env=env)
+                                env=env, **kwargs)
         proc.wait()
         ret = proc.returncode
     except KeyboardInterrupt as exc:

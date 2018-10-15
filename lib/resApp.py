@@ -91,7 +91,8 @@ def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
 
 def preexec(user_uid, user_gid, limits):
     def result():
-        os.setsid()
+        if rcEnv.sysname != "Windows":
+            os.setsid()
         set_rlimits(limits)
         demote(user_uid, user_gid)
     return result
