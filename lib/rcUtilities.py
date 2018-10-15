@@ -804,7 +804,7 @@ def to_cidr(s):
     return s
 
 def term_width():
-    default = 78
+    default = int(os.environ.get("COLUMNS", 78))
     try:
         # python 3.3+
         return os.get_terminal_size().columns
@@ -818,10 +818,6 @@ def term_width():
     m = re.search('columns\s+(?P<columns>\d+);', out)
     if m:
         return int(m.group('columns'))
-    try:
-        return int(os.environ["COLUMNS"])
-    except Exception as e:
-        pass
     return default
 
 def get_cache_d():
