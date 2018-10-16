@@ -1537,6 +1537,8 @@ class Svc(Crypt, ExtConfigMixin):
                     data = self.print_status_data_eval(refresh=refresh)
             except lock.LOCK_EXCEPTIONS as exc:
                 raise ex.excAbortAction(str(exc))
+        else:
+            data["running"] = self.get_running(data["resources"].keys())
 
         if mon_data:
             mon_data = self.get_smon_data()
@@ -1551,8 +1553,6 @@ class Svc(Crypt, ExtConfigMixin):
             except:
                 pass
 
-        if not refresh:
-            data["running"] = self.get_running(data["resources"].keys())
         return data
 
     def get_running(self, rids=None):
