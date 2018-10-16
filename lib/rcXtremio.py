@@ -232,7 +232,7 @@ class Arrays(object):
                 password = conf.get(s, 'password')
                 m += [(name, api, username, password)]
             except:
-                print("error parsing section", s)
+                print("error parsing section", s, file=sys.stderr)
                 pass
         del(conf)
         done = []
