@@ -11,7 +11,6 @@ import json
 import contextlib
 
 import six
-from rcGlobalEnv import rcEnv
 
 class LockNoLockFile(Exception):
     """ no lockfile specified
@@ -137,8 +136,10 @@ def lock_nowait(lockfile=None, intent=None):
         raise LockCreateError("lockfile points to a directory")
 
     try:
-        flags = os.O_RDWR|os.O_CREAT
-        if rcEnv.sysname != 'Windows':
+        flags = os.O_RDWR|os.O_CREAT|os.O_TRUNC
+        if os.name == 'nt':
+            flags |= os.O_TRUNC
+        else:
             flags |= os.O_SYNC
         lockfd = os.open(lockfile, flags, 0o644)
     except Exception as exc:
@@ -160,15 +161,16 @@ def lock_nowait(lockfile=None, intent=None):
                 import msvcrt
             except ImportError:
                 raise
-            size = os.path.getsize(lockfile)
-            msvcrt.locking(lockfd, msvcrt.LK_RLCK, size)
+            msvcrt.locking(lockfd, msvcrt.LK_NBRLCK, 1)
 
         # drop our pid and intent in the lockfile, best effort
         try:
-            os.ftruncate(lockfd, 0)
+            if os.name == "posix":
+                os.ftruncate(lockfd, 0)
             os.write(lockfd, bencode(json.dumps(data)))
             os.fsync(lockfd)
-        except Exception:
+        except Exception as exc:
+            print(exc)
             pass
         return lockfd
     except IOError:
