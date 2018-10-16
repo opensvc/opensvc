@@ -42,8 +42,13 @@ class Asset(rcAsset.Asset):
         ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(self.memstat))
 
     def _get_tz(self):
-        # TODO: return in fmt "+01:00"
-        return
+        """
+        return in fmt "+01:00"
+        """
+        import win32timezone
+        mst = win32timezone.TimeZoneInfo.local()
+        utcoff = datetime.datetime.now(mst).strftime("%z")
+        return utcoff[:3] + ":" + utcoff[3:]
 
     def _get_mem_bytes(self):
         return str(self.memstat.ullTotalPhys // 1024 // 1024)
