@@ -7,6 +7,7 @@ import time
 try:
     import ctypes
     import pythoncom
+    import win32timezone
 except ImportError:
     raise
 
@@ -45,7 +46,6 @@ class Asset(rcAsset.Asset):
         """
         return in fmt "+01:00"
         """
-        import win32timezone
         mst = win32timezone.TimeZoneInfo.local()
         utcoff = datetime.datetime.now(mst).strftime("%z")
         return utcoff[:3] + ":" + utcoff[3:]
