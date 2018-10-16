@@ -2331,10 +2331,10 @@ class Monitor(shared.OsvcThread):
         config = {}
         for cfg in glob.glob(os.path.join(rcEnv.paths.pathetc, "*.conf")):
             svcname = os.path.basename(cfg[:-5])
-            if svcname == "node":
+            if svcname in ("node", "auth"):
                 continue
             linkp = os.path.join(rcEnv.paths.pathetc, svcname)
-            if not os.path.exists(linkp):
+            if os.name == "posix" and not os.path.exists(linkp):
                 continue
             try:
                 mtimestamp = os.path.getmtime(cfg)
