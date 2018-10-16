@@ -12,6 +12,8 @@ import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
+DEFAULT_TIMEOUT = 300
+
 SERVICE_STOPPED = 1
 SERVICE_START_PENDING = 2
 SERVICE_STOP_PENDING = 3
@@ -39,7 +41,7 @@ class App(resApp.App):
         self.name = name
         resApp.App.__init__(self, rid, type="app.winservice", **kwargs)
 
-    def _check(self):
+    def get_state(self):
         """
         typedef struct _SERVICE_STATUS {
           DWORD dwServiceType;
@@ -51,9 +53,29 @@ class App(resApp.App):
           DWORD dwWaitHint;
         } SERVICE_STATUS, *LPSERVICE_STATUS;
         """
+        _, state, _, _, _, _, _ = win32serviceutil.QueryServiceStatus(self.name)
+        return state
+
+    def get_timeout(self, action):
+        timeout = resApp.App.get_timeout(self, action)
+        if timeout is None:
+            return DEFAULT_TIMEOUT
+        return timeout
+
+    def wait_for_state(self, timeout, target, transition):
+        def fn():
+            state = self.get_state()
+            if state == target:
+                return True
+            if state != transition:
+                raise ex.excError("unexpected state: %s" % STATUS_STR[state])
+            return False
+        self.wait_for_fn(fn, timeout, 1)
+
+    def _check(self):
         if self.name is None:
             raise resApp.StatusNA
-        _, state, _, _, _, _, _ = win32serviceutil.QueryServiceStatus(self.name)
+        state = self.get_state()
         if state == SERVICE_RUNNING:
             return 0
         if state == SERVICE_STOPPED:
@@ -75,6 +97,8 @@ class App(resApp.App):
             pass
         self.log.info("stop winservice %s", self.name)
         win32serviceutil.StopService(self.name)
+	timeout = self.get_timeout("stop")
+        self.wait_for_state(timeout, SERVICE_STOPPED, SERVICE_STOP_PENDING)
 
     def start(self):
         if self.name is None:
@@ -90,4 +114,6 @@ class App(resApp.App):
             pass
         self.log.info("start winservice %s", self.name)
         win32serviceutil.StartService(self.name)
+	timeout = self.get_timeout("stop")
+        self.wait_for_state(timeout, SERVICE_RUNNING, SERVICE_START_PENDING)
 

@@ -1865,6 +1865,22 @@ def add_task(svc, s):
 def add_app_winservice(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs['name'] = svc.conf_get(s, 'name')
+
+    try:
+        kwargs['timeout'] = svc.conf_get(s, 'timeout')
+    except ex.OptNotFound as exc:
+        kwargs['timeout'] = exc.default
+
+    try:
+        kwargs['start_timeout'] = svc.conf_get(s, 'start_timeout')
+    except ex.OptNotFound as exc:
+        kwargs['start_timeout'] = exc.default
+
+    try:
+        kwargs['stop_timeout'] = svc.conf_get(s, 'stop_timeout')
+    except ex.OptNotFound as exc:
+        kwargs['stop_timeout'] = exc.default
+
     mod = mimport("res", "app", "winservice")
     r = mod.App(**kwargs)
     svc += r
