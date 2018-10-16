@@ -685,7 +685,7 @@ class Resource(object):
         return lcall(*args, **kwargs)
 
     @staticmethod
-    def wait_for_fn(func, tmo, delay, errmsg="Waited too long for startup"):
+    def wait_for_fn(func, tmo, delay, errmsg="waited too long for startup"):
         """
         A helper function to execute a test function until it returns True
         or the number of retries is exhausted.
