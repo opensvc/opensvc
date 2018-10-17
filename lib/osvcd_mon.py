@@ -2383,10 +2383,6 @@ class Monitor(shared.OsvcThread):
                     self.log.info("purge deleted service %s", svcname)
                     del shared.SERVICES[svcname]
                     try:
-                        del shared.SMON_DATA[svcname]
-                    except KeyError:
-                        pass
-                    try:
                         del shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]
                     except KeyError:
                         pass
@@ -2699,8 +2695,11 @@ class Monitor(shared.OsvcThread):
             if svcname not in data["services"]["config"]:
                 smon = self.get_service_monitor(svcname)
                 if smon.global_expect is not None:
-                    self.log.info("relay foreign service %s smon", svcname)
-                    del shared.SMON_DATA[svcname]
+                    if smon.global_expect_updated < time.time()+5:
+                        # keep the smon around for a while
+                        self.log.info("relay foreign service %s smon", svcname)
+                    else:
+                        del shared.SMON_DATA[svcname]
                     continue
                 self.log.debug("purge deleted service %s from status data", svcname)
                 try:
