@@ -594,25 +594,33 @@ class Node(Crypt, ExtConfigMixin):
             self.services = None
 
     def _svcs_selector(self, selector):
+        try:
+            data = self._daemon_status(silent=True)
+        except Exception as exc:
+            data = None
+        if data and "monitor" in data:
+            svcnames = [svcname for svcname in data["monitor"]["services"]]
+        else:
+            svcnames = [svc.svcname for svc in self.svcs]
         if selector is None:
-            return [svc.svcname for svc in self.svcs]
+            return svcnames
         elif "," in selector:
             ored_selectors = selector.split(",")
         else:
             ored_selectors = [selector]
         if selector in (None, ""):
-            result = [svc.svcname for svc in self.svcs]
+            result = svcnames
         else:
             result = []
             for _selector in ored_selectors:
-                for svcname in self.__svcs_selector(_selector):
+                for svcname in self.__svcs_selector(_selector, data, svcnames):
                     if svcname not in result:
                         result.append(svcname)
         if len(result) == 0 and re.findall(r"[,\+\*=\^:~><]", selector) == []:
             raise ex.excError("service not found")
         return result
 
-    def __svcs_selector(self, selector):
+    def __svcs_selector(self, selector, data, svcnames):
         """
         Given a selector string, return a list of service names.
         This method only intersect the ANDed elements.
@@ -624,19 +632,19 @@ class Node(Crypt, ExtConfigMixin):
         else:
             anded_selectors = [selector]
         if selector in (None, ""):
-            result = [svc.svcname for svc in self.svcs]
+            result = svcnames
         else:
             result = None
             for _selector in anded_selectors:
-                svcnames = self.___svcs_selector(_selector)
+                _svcnames = self.___svcs_selector(_selector, svcnames)
                 if result is None:
-                    result = svcnames
+                    result = _svcnames
                 else:
-                    common = set(result) & set(svcnames)
+                    common = set(result) & set(_svcnames)
                     result = [svcname for svcname in result if svcname in common]
         return result
 
-    def ___svcs_selector(self, selector):
+    def ___svcs_selector(self, selector, svcnames):
         """
         Given a basic selector string (no AND nor OR), return a list of service
         names.
@@ -719,7 +727,7 @@ class Node(Crypt, ExtConfigMixin):
             return False
 
         if len(elts) == 1:
-            return [svc.svcname for svc in self.svcs if negate ^ fnmatch.fnmatch(svc.svcname, selector)]
+            return [svcname for svcname in svcnames if negate ^ fnmatch.fnmatch(svcname, selector)]
         elif len(elts) != 3:
             return []
         param, op, value = elts

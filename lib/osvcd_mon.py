@@ -2697,6 +2697,11 @@ class Monitor(shared.OsvcThread):
         # purge deleted service instances
         for svcname in list(data["services"]["status"].keys()):
             if svcname not in data["services"]["config"]:
+                smon = self.get_service_monitor(svcname)
+                if smon.global_expect is not None:
+                    self.log.info("relay foreign service %s smon", svcname)
+                    del shared.SMON_DATA[svcname]
+                    continue
                 self.log.debug("purge deleted service %s from status data", svcname)
                 try:
                     del data["services"]["status"][svcname]

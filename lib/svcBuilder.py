@@ -2213,14 +2213,15 @@ def build_services(status=None, svcnames=None, create_instance=False,
         svcnames = list_services()
         missing_svcnames = []
     else:
-        all_svcnames = list_services()
-        missing_svcnames = sorted(list(set(svcnames) - set(all_svcnames)))
+        local_svcnames = list_services()
+        missing_svcnames = sorted(list(set(svcnames) - set(local_svcnames)))
         for m in missing_svcnames:
             if create_instance:
                 services[m] = svc.Svc(m, node=node)
             else:
-                errors.append("%s: service does not exist" % m)
-        svcnames = list(set(svcnames) & set(all_svcnames))
+                # foreign service
+                services[m] = svc.Svc(m, node=node, volatile=True)
+        svcnames = list(set(svcnames) & set(local_svcnames))
 
     setup_logging(svcnames)
 

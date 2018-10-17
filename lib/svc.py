@@ -399,12 +399,13 @@ class Svc(Crypt, ExtConfigMixin):
     and sync.
     """
 
-    def __init__(self, svcname=None, node=None, cf=None):
+    def __init__(self, svcname=None, node=None, cf=None, volatile=False):
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.type = "hosted"
         self.svcname = svcname
         self.node = node
         self.hostid = rcEnv.nodename
+        self.volatile = volatile
         self.paths = Storage(
             exe=os.path.join(rcEnv.paths.pathetc, self.svcname),
             cf=os.path.join(rcEnv.paths.pathetc, self.svcname+'.conf'),
@@ -496,13 +497,16 @@ class Svc(Crypt, ExtConfigMixin):
     @lazy
     def var_d(self):
         var_d = os.path.join(rcEnv.paths.pathvar, "services", self.svcname)
-        if not os.path.exists(var_d):
+        if not self.volatile and not os.path.exists(var_d):
             os.makedirs(var_d, 0o755)
         return var_d
 
     @lazy
     def log(self): # pylint: disable=method-hidden
-        return rcLogger.initLogger(rcEnv.nodename+"."+self.svcname)
+        if self.volatile:
+            return logging.getLogger()
+        else:
+            return rcLogger.initLogger(rcEnv.nodename+"."+self.svcname)
 
     @lazy
     def sched(self):
@@ -586,7 +590,8 @@ class Svc(Crypt, ExtConfigMixin):
         except ex.OptNotFound as exc:
             import uuid
             newid = str(uuid.uuid4())
-            self._set("DEFAULT", "id", newid)
+            if not self.volatile:
+                self._set("DEFAULT", "id", newid)
             return newid
 
     @lazy
@@ -1715,6 +1720,8 @@ class Svc(Crypt, ExtConfigMixin):
         return fn(h, data).hexdigest()
 
     def write_status_data(self, data):
+        if self.volatile:
+            return
         data["csum"] = self.csum_status_data(data)
         try:
             with open(self.status_data_dump, "w") as filep:
@@ -2412,13 +2419,15 @@ class Svc(Crypt, ExtConfigMixin):
         Write the on-disk cache of status of the service encapsulated in
         the container identified by <rid>.
         """
+        if self.volatile:
+            return
         self.encap_json_status_cache[rid] = data
         path = self.get_encap_json_status_path(rid)
         directory = os.path.dirname(path)
         if not os.path.exists(directory):
             os.makedirs(directory)
         try:
-            with open(path, 'w') as ofile:
+            with open(path, "w") as ofile:
                 json.dump(data, ofile)
                 ofile.flush()
         except (IOError, OSError, ValueError):
@@ -3753,7 +3762,6 @@ class Svc(Crypt, ExtConfigMixin):
 
     def action(self, action, options=None):
         self.systemd_join_agent_service()
-        self.allow_on_this_node(action)
         try:
             options = self.prepare_options(action, options)
             self.async_action(action)
@@ -3765,6 +3773,7 @@ class Svc(Crypt, ExtConfigMixin):
             if msg:
                 self.log.info(exc)
             return 0
+        self.allow_on_this_node(action)
         if (self.options.cron and action in ("run", "resource_monitor", "sync_all", "status")) or action == "print_schedule":
             self.configure_scheduler()
         try:
@@ -4360,6 +4369,8 @@ class Svc(Crypt, ExtConfigMixin):
         object in self.config write method.
         Also reset the file mode to 644.
         """
+        if self.volatile:
+            return
         import tempfile
         import shutil
         try:
