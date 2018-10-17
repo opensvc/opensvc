@@ -1,7 +1,5 @@
 import node
 
-from rcUtilities import lazy
-
 try:
     import pythoncom
     import wmi
@@ -17,8 +15,8 @@ class Node(node.Node):
         cmd = ["shutdown", "/r", "/f"]
         ret, out, err = self.vcall(cmd)
 
-    @lazy
     def wmi(self):
+        pythoncom.CoInitialize()
         return wmi.WMI()
 
     def stats_meminfo(self):
@@ -28,11 +26,11 @@ class Node(node.Node):
         """
         raw_data = {}
         data = {}
-        pythoncom.CoInitialize()
-        queueinfo = self.wmi.Win32_PerfFormattedData_PerfOS_System()
-        swapinfo = self.wmi.Win32_PageFileUsage()
-        meminfo = self.wmi.Win32_ComputerSystem()
-        perfinfo = self.wmi.Win32_PerfRawData_PerfOS_Memory()
+        wmi = self.wmi()
+        queueinfo = wmi.Win32_PerfFormattedData_PerfOS_System()
+        swapinfo = wmi.Win32_PageFileUsage()
+        meminfo = wmi.Win32_ComputerSystem()
+        perfinfo = wmi.Win32_PerfRawData_PerfOS_Memory()
         raw_data["queuelength"] = int(queueinfo[-1].ProcessorQueueLength)
         raw_data["SwapAvailable"] = int(swapinfo[-1].AllocatedBaseSize) - int(swapinfo[-1].CurrentUsage)
         raw_data["SwapTotal"] = int(swapinfo[-1].AllocatedBaseSize)

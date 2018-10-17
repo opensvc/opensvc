@@ -6,7 +6,6 @@ import time
 
 try:
     import ctypes
-    import pythoncom
     import win32timezone
 except ImportError:
     raise
@@ -36,8 +35,8 @@ class MEMORYSTATUSEX(ctypes.Structure):
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         self.node = node
-        pythoncom.CoInitialize()
-        self.cpuinfo = self.node.wmi.Win32_Processor()
+	self.wmi = self.node.wmi()
+        self.cpuinfo = self.wmi.Win32_Processor()
         rcAsset.Asset.__init__(self, node)
         self.memstat = MEMORYSTATUSEX()
         ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(self.memstat))
@@ -54,12 +53,12 @@ class Asset(rcAsset.Asset):
         return str(self.memstat.ullTotalPhys // 1024 // 1024)
 
     def _get_mem_banks(self):
-        md = len(self.node.wmi.WIN32_PhysicalMemory())
+        md = len(self.wmi.WIN32_PhysicalMemory())
         return str(md)
 
     def _get_mem_slots(self):
         n = 0
-        for a in self.node.wmi.WIN32_PhysicalMemoryArray():
+        for a in self.wmi.WIN32_PhysicalMemoryArray():
             n += a.MemoryDevices
         return str(n)
 
@@ -124,17 +123,17 @@ class Asset(rcAsset.Asset):
         return cputype
 
     def _get_enclosure(self):
-        for i in self.node.wmi.Win32_SystemEnclosure():
+        for i in self.wmi.Win32_SystemEnclosure():
             name = i.Name
         return name
 
     def _get_serial(self):
-        for i in self.node.wmi.Win32_ComputerSystemProduct():
+        for i in self.wmi.Win32_ComputerSystemProduct():
             name = i.IdentifyingNumber
         return name
 
     def _get_model(self):
-        for i in self.node.wmi.Win32_ComputerSystemProduct():
+        for i in self.wmi.Win32_ComputerSystemProduct():
             name = i.Name
         return name
 
@@ -169,12 +168,12 @@ class Asset(rcAsset.Asset):
         return maps
 
     def get_boot_id(self):
-        payload = self.node.wmi.Win32_PerfFormattedData_PerfOS_System()
+        payload = self.wmi.Win32_PerfFormattedData_PerfOS_System()
         uptime = payload[-1].SystemUpTime
         return str((int(time.time()) - int(uptime)) // 2)
 
     def get_last_boot(self):
-        payload = self.node.wmi.Win32_PerfFormattedData_PerfOS_System()
+        payload = self.wmi.Win32_PerfFormattedData_PerfOS_System()
         uptime = payload[-1].SystemUpTime
         try:
             last = datetime.datetime.now() - datetime.timedelta(seconds=int(uptime))
@@ -223,7 +222,7 @@ class Asset(rcAsset.Asset):
         path = []
         cla = []
         desc = []
-        payload = self.node.wmi.WIN32_PhysicalMemory()
+        payload = self.wmi.WIN32_PhysicalMemory()
         for a in payload:
             path = []
             cla = []
@@ -260,7 +259,7 @@ class Asset(rcAsset.Asset):
         path = []
         cla = []
         desc = []
-        payload = self.node.wmi.Win32_PnpSignedDriver()
+        payload = self.wmi.Win32_PnpSignedDriver()
         unknowncpt = 0
         for a in payload:
             path = []
