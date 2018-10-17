@@ -504,9 +504,10 @@ class Svc(Crypt, ExtConfigMixin):
     @lazy
     def log(self): # pylint: disable=method-hidden
         if self.volatile:
-            return logging.getLogger()
+            kwargs = {"handlers": ["stream"]}
         else:
-            return rcLogger.initLogger(rcEnv.nodename+"."+self.svcname)
+            kwargs = {}
+        return rcLogger.initLogger(rcEnv.nodename+"."+self.svcname, **kwargs)
 
     @lazy
     def sched(self):
