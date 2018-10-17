@@ -35,7 +35,7 @@ class MEMORYSTATUSEX(ctypes.Structure):
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         self.node = node
-	self.wmi = self.node.wmi()
+        self.wmi = self.node.wmi()
         self.cpuinfo = self.wmi.Win32_Processor()
         rcAsset.Asset.__init__(self, node)
         self.memstat = MEMORYSTATUSEX()
