@@ -641,7 +641,12 @@ class Crypt(object):
                 for nodename in list(reconnect):
                     self.log.debug("reconnect %s", nodename)
                     init_sock(nodename)
-                ready_to_read, _, exceptionals = select.select(socks.keys(), [], socks, 1)
+                _socks = [sock for sock in socks]
+                try:
+                    ready_to_read, _, exceptionals = select.select(_socks, [], _socks, 1)
+                except Exception as exc:
+                    # empty socks
+                    break
                 for sock in ready_to_read:
                     try:
                         rdata = self.recv_messages(sock, cluster_name=cluster_name, secret=secret, use_select=False, encrypted=socks[sock].encrypted, bufsize=1, stream=True)
@@ -653,10 +658,16 @@ class Crypt(object):
                         del socks[sock]
                         continue
                     except socket.error as exc:
-                        if exc.errno == 104:
+                        # [Errno 10054] An existing connection was forcibly closed by the remote host
+                        if exc.errno in (104, 10054):
                             # connection reset by peer
+                            sp = socks[sock]
+                            sock.close()
+                            reconnect.add(sp.nodename)
+                            del socks[sock]
                             time.sleep(PAUSE)
                             continue
+                        raise
                     if rdata is None:
                         continue
                     for message in rdata:
