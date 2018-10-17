@@ -1156,8 +1156,9 @@ class Monitor(shared.OsvcThread):
             elif not self.is_instance_shutdown(instance):
                 thawed_on = self.service_instances_thawed(svc.svcname)
                 if thawed_on:
-                    self.duplog("info", "service %(svcname)s still has thawed instances "
-                                "on nodes %(thawed_on)s, delay shutdown",
+                    self.duplog("info", "service %(svcname)s still has thawed "
+                                "instances on nodes %(thawed_on)s, delay "
+                                "shutdown",
                                 svcname=svc.svcname,
                                 thawed_on=", ".join(thawed_on))
                 else:
@@ -2259,6 +2260,11 @@ class Monitor(shared.OsvcThread):
             for nodename in shared.CLUSTER_DATA:
                 try:
                     if svcname in shared.CLUSTER_DATA[nodename]["services"]["status"]:
+                        try:
+                            shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]["avail"]
+                        except KeyError:
+                            # foreign
+                            continue
                         if discard_empty and shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]:
                             continue
                         instances[nodename] = shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]
@@ -2695,7 +2701,7 @@ class Monitor(shared.OsvcThread):
             if svcname not in data["services"]["config"]:
                 smon = self.get_service_monitor(svcname)
                 if smon.global_expect is not None:
-                    if smon.global_expect_updated < time.time()+5:
+                    if time.time() < smon.global_expect_updated + 3:
                         # keep the smon around for a while
                         self.log.info("relay foreign service %s smon", svcname)
                     else:
