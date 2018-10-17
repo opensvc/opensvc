@@ -76,7 +76,7 @@ class Asset(rcAsset.Asset):
         s = v.Caption
         s = s.replace('Microsoft', '')
         s = s.replace('Windows', '')
-	s = s.strip()
+        s = s.strip()
         return s
 
     def _get_os_kernel(self):
