@@ -896,8 +896,6 @@ class Scheduler(object):
             timestamp_d = os.path.join(rcEnv.paths.pathvar, "node", "scheduler")
         else:
             timestamp_d = os.path.join(rcEnv.paths.pathvar, "services", self.name, "scheduler")
-        if not os.path.exists(timestamp_d):
-            os.makedirs(timestamp_d)
         fpath = os.path.join(timestamp_d, fname)
         if success:
             fpath += ".success"
