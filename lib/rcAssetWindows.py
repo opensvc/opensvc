@@ -70,19 +70,13 @@ class Asset(rcAsset.Asset):
 
     def _get_os_release(self):
         try:
-            v = sys.getwindowsversion()
+            v = self.wmi.Win32_OperatingSystem()[0]
         except AttributeError:
             return "Unknown"
-        product = {
-         1: 'Workstation',
-         2: 'Domain Controller',
-         3: 'Server',
-        }
-        s = platform.release()
-        s = s.replace('Server', ' Server')
-        s = s.replace('ServerR', ' Server R')
-        s = s.replace('Workstation', ' Workstation')
-        s += " %s" % v.service_pack
+        s = v.Caption
+        s = s.replace('Microsoft', '')
+        s = s.replace('Windows', '')
+	s = s.strip()
         return s
 
     def _get_os_kernel(self):
