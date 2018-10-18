@@ -1,9 +1,13 @@
+from __future__ import print_function
+import os
+import sys
 import time
 
 try:
     import pythoncom
     import wmi
     import win32serviceutil
+    import _winreg
 except ImportError:
     raise
 
@@ -50,10 +54,13 @@ class Node(node.Node):
         return data
 
     def daemon_start_native(self):
+        self.set_upgrade_envvar()
         try:
             win32serviceutil.StartService(WINSVCNAME)
         except Exception as exc:
             raise ex.excError(str(exc))
+        finally:
+            self.unset_upgrade_envvar()
 
         def fn():
             _, state, _, _, _, _, _ = win32serviceutil.QueryServiceStatus(WINSVCNAME)
@@ -72,3 +79,31 @@ class Node(node.Node):
             win32serviceutil.StopService(WINSVCNAME)
         except Exception as exc:
             raise ex.excError(str(exc))
+
+    def unset_upgrade_envvar(self):
+        path = r"SYSTEM\CurrentControlSet\Services\%s\Environment" % WINSVCNAME
+        reg = _winreg.ConnectRegistry(None, _winreg.HKEY_LOCAL_MACHINE)
+        try:
+            key = _winreg.OpenKey(reg, path, 0, _winreg.KEY_WRITE)
+            _winreg.DeleteValue(key, "OPENSVC_AGENT_UPGRADE")
+            _winreg.CloseKey(key)
+        except Exception as exc:
+            if exc.errno == 2:
+                # key does not exist
+                return
+            raise
+        finally:
+            _winreg.CloseKey(reg)
+
+    def set_upgrade_envvar(self):
+        if not os.environ.get("OPENSVC_AGENT_UPGRADE"):
+            return
+        path = r"SYSTEM\CurrentControlSet\Services\%s\Environment" % WINSVCNAME
+        reg = _winreg.ConnectRegistry(None, _winreg.HKEY_LOCAL_MACHINE)
+        key = _winreg.CreateKeyEx(reg, path, 0, _winreg.KEY_WRITE)
+        try:   
+            _winreg.SetValue(key, "OPENSVC_AGENT_UPGRADE", _winreg.REG_SZ, "1") 
+        except EnvironmentError:                                  
+            raise ex.excError("failed to set OPENSVC_AGENT_UPGRADE=1 in %s" % path)
+        _winreg.CloseKey(key)
+        _winreg.CloseKey(reg)
