@@ -37,10 +37,10 @@ def collect(node=None):
         r'\PhysicalDisk(_Total)\Disk Write Bytes/sec',
         r'\PhysicalDisk(_Total)\Disk Reads/sec',
         r'\PhysicalDisk(_Total)\Disk Writes/sec',
-        r'\Network Adapter(*)\Bytes Received/sec',
-        r'\Network Adapter(*)\Bytes Sent/sec',
-        r'\Network Adapter(*)\Packets Received/sec',
-        r'\Network Adapter(*)\Packets Sent/sec',
+#        r'\Network Adapter(*)\Bytes Received/sec',
+#        r'\Network Adapter(*)\Bytes Sent/sec',
+#        r'\Network Adapter(*)\Packets Received/sec',
+#        r'\Network Adapter(*)\Packets Sent/sec',
     ]
     fmts = [
         "double",
@@ -49,12 +49,12 @@ def collect(node=None):
         "double",
         "double",
         "double",
-        "double",
-        "double",
-        "double",
-        "double",
+#        "double",
+#        "double",
+#        "double",
+#        "double",
     ]
-    mon = get_perf_data(counters, fmts=fmts, delay=2000)
+    mon = get_perf_data(counters, fmts=fmts, delay=2000, english=True)
     data["mon"] = {
         "pt": mon[0],
     }
@@ -65,7 +65,6 @@ def collect(node=None):
         "r": mon[2],
         "w": mon[3],
     }
-    print(mon)
 
     stats_d = os.path.join(rcEnv.paths.pathvar, "stats")
     stats_p = os.path.join(stats_d, 'sa%d' % now.day)
