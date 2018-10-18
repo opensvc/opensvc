@@ -1,33 +1,20 @@
 import os
 import datetime
 
+from rcGlobalEnv import rcEnv
+from converters import convert_datetime
+
 class StatsProvider(object):
     def __init__(self, interval=2880, stats_dir=None, stats_start=None, stats_end=None):
         self.stats_dir = stats_dir
         self.interval = interval
-
-        if stats_end is None:
-            self.stats_end = datetime.datetime.now()
-        else:
-            self.stats_end = datetime.datetime.strptime(stats_end,"%Y-%m-%d %H:%M")
-
-        if stats_start is None:
-            self.stats_start = self.stats_end - datetime.timedelta(minutes=interval)
-        else:
-            self.stats_start = datetime.datetime.strptime(stats_start,"%Y-%m-%d %H:%M")
-            delta = self.stats_end - self.stats_start
-            interval = delta.days * 1440 + delta.seconds // 60
-
-        # discard seconds
-        self.stats_start -= datetime.timedelta(seconds=self.stats_start.second)
-        self.stats_end -= datetime.timedelta(seconds=self.stats_end.second)
-
-        x, self.nodename, x, x, x = os.uname()
+        self.init_period(stats_start, stats_end, interval)
+        self.nodename = rcEnv.nodename
+        one_minute = datetime.timedelta(minutes=1)
+        one_day = datetime.timedelta(days=1)
 
         self.minutes_first_day = 60*self.stats_end.hour + self.stats_end.minute + 1
 
-        one_minute = datetime.timedelta(minutes=1)
-        one_day = datetime.timedelta(days=1)
         self.ranges = []
         i = 0
         end = self.stats_end
@@ -42,6 +29,24 @@ class StatsProvider(object):
                 self.ranges.append((start, end))
             end = start - one_minute
         #print(self.stats_end, interval, [x.strftime("%Y-%m-%d %H:%M:%S")+" - "+y.strftime("%Y-%m-%d %H:%M:%S") for x, y in self.ranges])
+
+    def init_period(self, stats_start, stats_end, interval):
+        if stats_end is None:
+            self.stats_end = datetime.datetime.now()
+        else:
+            self.stats_end = convert_datetime(stats_end)
+
+        if stats_start is None:
+            self.stats_start = self.stats_end - datetime.timedelta(minutes=interval)
+        else:
+            self.stats_start = convert_datetime(stats_start)
+            delta = self.stats_end - self.stats_start
+            interval = delta.days * 1440 + delta.seconds // 60
+
+        # discard seconds
+        self.stats_start -= datetime.timedelta(seconds=self.stats_start.second)
+        self.stats_end -= datetime.timedelta(seconds=self.stats_end.second)
+
 
     def get(self, fname):
         lines = []
