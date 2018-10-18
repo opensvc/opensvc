@@ -4164,6 +4164,12 @@ class Node(Crypt, ExtConfigMixin):
     def daemon_start(self):
         if self.options.thr_id:
             return self.daemon_start_thread()
+        return self.daemon_start_native()
+
+    def daemon_start_native(self):
+        """
+        Can be overloaded by node<os>
+        """
         if self.daemon_handled_by_systemd():
             return self.daemon_start_systemd()
         return os.system(sys.executable+" "+os.path.join(rcEnv.paths.pathlib, "osvcd.py"))

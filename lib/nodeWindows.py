@@ -1,10 +1,16 @@
-import node
+import time
 
 try:
     import pythoncom
     import wmi
+    import win32serviceutil
 except ImportError:
     raise
+
+import node
+import rcExceptions as ex
+
+WINSVCNAME = "OsvcAgent"
 
 class Node(node.Node):
     def shutdown(self):
@@ -43,3 +49,26 @@ class Node(node.Node):
         data["load_15m"] = raw_data["queuelength"]
         return data
 
+    def daemon_start_native(self):
+        try:
+            win32serviceutil.StartService(WINSVCNAME)
+        except Exception as exc:
+            raise ex.excError(str(exc))
+
+        def fn():
+            _, state, _, _, _, _, _ = win32serviceutil.QueryServiceStatus(WINSVCNAME)
+            if state == 4:
+                return True
+            return False
+
+        for step in range(5):
+            if fn():
+                return
+            time.sleep(1)
+        raise ex.excError("waited too long for startup")
+
+    def daemon_stop_native(self):
+        try:
+            win32serviceutil.StopService(WINSVCNAME)
+        except Exception as exc:
+            raise ex.excError(str(exc))

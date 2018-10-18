@@ -72,7 +72,9 @@ class OsvcAgent(win32serviceutil.ServiceFramework):
                 break
             else:
                 #servicemanager.LogInfoMsg("%s - ALIVE"%self._svc_name_)
-                self.daemon.loop()
+                if not self.daemon.loop():
+                    # stopped through listener
+                    break
                 pass
 
 def ctrlHandler(ctrlType):
