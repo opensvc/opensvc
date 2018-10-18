@@ -3,11 +3,34 @@ Converters, used by arguments and config file parsers.
 """
 import re
 import shlex
+import datetime
 
 try:
     NUMERIC_TYPES = (int, float, long)
 except NameError:
     NUMERIC_TYPES = (int, float)
+
+def convert_datetime(s):
+    if s is None:
+        return
+    if isinstance(s, datetime.datetime):
+        return s
+    if isinstance(s, datetime.date):
+        return datetime.datetime(s)
+    s = str(s)
+    mask = "1970-01-01 00:00:00"
+    length = len(s)
+    if length > 19:
+        s = s[:19]
+    try:
+        s = s + mask[length:]
+    except IndexError:
+        raise ValueError("unsupported datetime format %s. expect YYYY-MM-DD "
+	                 "HH:MM:SS, or right trimmed substring of")
+    s = re.sub("\s+", ".", s)
+    s = s.replace(":", ".")
+    s = s.replace("-", ".")
+    return datetime.datetime.strptime(s, "%Y.%m.%d.%H.%M.%S")
 
 def convert_shlex(s):
     if s is None:
@@ -281,4 +304,3 @@ def convert_speed(s, _to='', _round=1, default_unit=''):
 
 def convert_speed_kps(s, _round=1):
     return convert_speed(s, _to="KB", _round=_round, default_unit='K')
-
