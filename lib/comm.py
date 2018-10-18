@@ -6,7 +6,6 @@ import base64
 import json
 import os
 import socket
-import sys
 import threading
 import zlib
 import time
@@ -14,15 +13,16 @@ import select
 
 import six
 import pyaes
-import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from rcUtilities import lazy, bdecode
 
 if six.PY3:
-    to_bytes = lambda x: bytes(x, "utf-8") if not isinstance(x, bytes) else x
+    def to_bytes(x):
+        return bytes(x, "utf-8") if not isinstance(x, bytes) else x
 else:
-    to_bytes = lambda x: bytes(x) if not isinstance(x, bytes) else x
+    def to_bytes(x):
+        return bytes(x) if not isinstance(x, bytes) else x
 
 SOCK_TMO = 0.2
 PAUSE = 0.2
@@ -35,19 +35,25 @@ BLACKLIST_LOCK = threading.RLock()
 # new messages
 BLACKLIST_THRESHOLD = 5
 
+
 class SockReset(Exception):
     pass
 
+
 try:
     from Crypto.Cipher import AES
+
     def _encrypt(message, key, _iv):
         """
         Low level encrypter.
         """
-        message = pyaes.util.append_PKCS7_padding(zlib.compress(message.encode()))
+        message = pyaes.util.append_PKCS7_padding(
+            zlib.compress(message.encode())
+        )
         obj = AES.new(key, AES.MODE_CBC, _iv)
         ciphertext = obj.encrypt(message)
         return ciphertext
+
     def _decrypt(ciphertext, key, _iv):
         """
         Low level decrypter.
@@ -60,18 +66,24 @@ except ImportError:
         """
         Low level encrypter.
         """
-        obj = pyaes.Encrypter(pyaes.AESModeOfOperationCBC(to_bytes(key), iv=_iv))
+        obj = pyaes.Encrypter(
+            pyaes.AESModeOfOperationCBC(to_bytes(key), iv=_iv)
+        )
         ciphertext = obj.feed(zlib.compress(message.encode()))
         ciphertext += obj.feed()
         return ciphertext
+
     def _decrypt(ciphertext, key, _iv):
         """
         Low level decrypter.
         """
-        obj = pyaes.Decrypter(pyaes.AESModeOfOperationCBC(to_bytes(key), iv=_iv))
+        obj = pyaes.Decrypter(
+           pyaes.AESModeOfOperationCBC(to_bytes(key), iv=_iv)
+        )
         message = obj.feed(ciphertext)
         message += obj.feed()
         return zlib.decompress(message)
+
 
 class Crypt(object):
     """
@@ -380,9 +392,13 @@ class Crypt(object):
             if sender_id in BLACKLIST:
                 BLACKLIST[sender_id] += 1
                 if count == BLACKLIST_THRESHOLD:
-                    getattr(self, "event")("blacklist_add", level="warning", data={
-                        "sender": sender_id,
-                    })
+                    getattr(self, "event")(
+                        "blacklist_add",
+                        level="warning",
+                        data={
+                            "sender": sender_id,
+                        }
+                    )
             else:
                 BLACKLIST[sender_id] = 1
 
@@ -453,7 +469,9 @@ class Crypt(object):
             return
         return data[0]
 
-    def recv_messages(self, sock, cluster_name=None, secret=None, use_select=True, encrypted=True, bufsize=65536, stream=False):
+    def recv_messages(self, sock, cluster_name=None, secret=None,
+                      use_select=True, encrypted=True, bufsize=65536,
+                      stream=False):
         """
         Receive, decrypt and return a message from a socket.
         """
@@ -487,8 +505,9 @@ class Crypt(object):
             return
         for message in data.split(sep):
             if encrypted:
-                nodename, message = self.decrypt(data, cluster_name=cluster_name,
-                                                 secret=secret)
+                nodename, message = self.decrypt(
+                    data, cluster_name=cluster_name, secret=secret
+                )
             else:
                 message = self.msg_decode(data)
             messages.append(message)
@@ -531,8 +550,8 @@ class Crypt(object):
                         # 11  EBUSY
                         # 146 EREFUSED
                         # 149 EALREADY
-                        # Resource temporarily unavailable (daemon busy, overflow)
-                        # Give it a little time, and make sure we don't short loop
+                        # Resource temporarily unavailable (busy, overflow)
+                        # Retry, and make sure we don't short loop
                         sock.close()
                         time.sleep(PAUSE)
                         continue
@@ -552,7 +571,10 @@ class Crypt(object):
                 elapsed = 0
                 while True:
                     try:
-                        return self.recv_message(sock, cluster_name=cluster_name, secret=secret, encrypted=sp.encrypted)
+                        return self.recv_message(
+                            sock, cluster_name=cluster_name, secret=secret,
+                            encrypted=sp.encrypted
+                        )
                     except socket.timeout:
                         if timeout > 0 and elapsed > timeout:
                             return {"status": 1, "err": "timeout"}
@@ -560,7 +582,8 @@ class Crypt(object):
                         elapsed += SOCK_TMO + PAUSE
         except socket.error as exc:
             if not silent:
-                self.log.error("daemon send to %s error: %s", sp.to_s, str(exc))
+                self.log.error("daemon send to %s error: %s",
+                               sp.to_s, str(exc))
             return {"status": 1, "error": str(exc)}
         finally:
             sock.close()
@@ -588,7 +611,10 @@ class Crypt(object):
                 return
             sock.sendall(message)
             while True:
-                data = self.recv_messages(sock, cluster_name=cluster_name, secret=secret, encrypted=sp.encrypted, bufsize=1)
+                data = self.recv_messages(
+                    sock, cluster_name=cluster_name, secret=secret,
+                    encrypted=sp.encrypted, bufsize=1
+                )
                 if data is None:
                     return
                 for message in data:
@@ -607,7 +633,8 @@ class Crypt(object):
         if nodenames in (None, [None], "", [""]):
             nodenames = [rcEnv.nodename]
         else:
-            nodenames = [nodename for nodename in nodenames if nodename not in (None, "")]
+            nodenames = [nodename for nodename in nodenames
+                         if nodename not in (None, "")]
 
         socks = {}
         reconnect = set()
@@ -631,7 +658,8 @@ class Crypt(object):
                     self.log.debug("reconnected %s", nodename)
                     reconnect.remove(nodename)
             except socket.error as exc:
-                self.log.debug("daemon send to %s error: %s", sp.to_s, str(exc))
+                self.log.debug("daemon send to %s error: %s",
+                               sp.to_s, str(exc))
 
         for nodename in nodenames:
             init_sock(nodename)
@@ -643,13 +671,17 @@ class Crypt(object):
                     init_sock(nodename)
                 _socks = [sock for sock in socks]
                 try:
-                    ready_to_read, _, exceptionals = select.select(_socks, [], _socks, 1)
+                    rsock, _, esock = select.select(_socks, [], _socks, 1)
                 except Exception as exc:
                     # empty socks
                     break
-                for sock in ready_to_read:
+                for sock in rsock:
                     try:
-                        rdata = self.recv_messages(sock, cluster_name=cluster_name, secret=secret, use_select=False, encrypted=socks[sock].encrypted, bufsize=1, stream=True)
+                        rdata = self.recv_messages(
+                            sock, cluster_name=cluster_name, secret=secret,
+                            use_select=False, encrypted=socks[sock].encrypted,
+                            bufsize=1, stream=True
+                        )
                     except SockReset:
                         sp = socks[sock]
                         self.log.debug("lost stream with %s", sp.nodename)
@@ -658,7 +690,8 @@ class Crypt(object):
                         del socks[sock]
                         continue
                     except socket.error as exc:
-                        # [Errno 10054] An existing connection was forcibly closed by the remote host
+                        # [Errno 10054] An existing connection was forcibly
+                        #               closed by the remote host
                         if exc.errno in (104, 10054):
                             # connection reset by peer
                             sp = socks[sock]
@@ -672,11 +705,10 @@ class Crypt(object):
                         continue
                     for message in rdata:
                         yield message
-                for sock in exceptionals:
+                for sock in esock:
                     del socks[sock]
                 if len(socks) == 0:
                     break
         finally:
             for sock in socks:
                 sock.close()
-
