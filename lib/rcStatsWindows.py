@@ -51,12 +51,12 @@ class StatsProvider(rcStats.StatsProvider):
         def get(day):
             _data = []
             sa = self.sarfile(day)
-            if not os.path.exists(sa):
+            if not sa:
                 return []
             with open(sa, "r") as fd:
                 for line in fd.readlines():
                     __data = json.loads(line)
-		    ts = convert_datetime(__data["ts"])
+                    ts = convert_datetime(__data["ts"])
                     if ts < start or ts > end:
                         continue
                     _data.append(__data)
@@ -95,8 +95,8 @@ class StatsProvider(rcStats.StatsProvider):
                data["ts"],
                "all",
                usr,
-	       0,
-	       0,
+               0,
+               0,
                idle,
                rcEnv.nodename
            ])
