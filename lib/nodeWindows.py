@@ -88,7 +88,7 @@ class Node(node.Node):
             _winreg.DeleteValue(key, "OPENSVC_AGENT_UPGRADE")
             _winreg.CloseKey(key)
         except Exception as exc:
-            if exc.errno == 2:
+            if hasattr(exc, "errno") and getattr(exc, "errno") == 2:
                 # key does not exist
                 return
             raise
