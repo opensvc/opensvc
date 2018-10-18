@@ -53,8 +53,14 @@ class OsvcAgent(win32serviceutil.ServiceFramework):
             (self._svc_name_, '')
         )
         os.chdir(os.path.join(os.path.dirname(__file__), ".."))
-        daemon = Daemon()
+        self.daemon = Daemon()
+        self.daemon.lock()
+        try:
+            self.loop_forever()
+        finally:
+            self.daemon.unlock()
 
+    def loop_forever(self):
         while True:
             # Wait for service stop signal, if I timeout, loop again
             rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)
@@ -62,11 +68,11 @@ class OsvcAgent(win32serviceutil.ServiceFramework):
             if rc == win32event.WAIT_OBJECT_0:
                 # Stop signal encountered
                 servicemanager.LogInfoMsg("%s - STOPPED"%self._svc_name_)
-                daemon.stop()
+                self.daemon.stop()
                 break
             else:
                 #servicemanager.LogInfoMsg("%s - ALIVE"%self._svc_name_)
-                daemon.loop()
+                self.daemon.loop()
                 pass
 
 def ctrlHandler(ctrlType):
