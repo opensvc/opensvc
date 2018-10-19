@@ -260,13 +260,11 @@ def mimport(*args, **kwargs):
 
 def ximport(base):
     mod = base + rcEnv.sysname
-    try:
-        m = __import__(mod)
-        return m
-    except ImportError:
-        pass
-
-    return __import__(base)
+    fpath = os.path.join(rcEnv.paths.pathlib, mod+".py")
+    if not os.path.exists(fpath):
+        return __import__(base)
+    m = __import__(mod)
+    return m
 
 def check_privs():
     if os.name == 'nt':
