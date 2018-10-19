@@ -3,7 +3,7 @@ import resIpSunOS as Res
 import rcExceptions as ex
 from subprocess import *
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, to_cidr, bdecode, justcall
+from rcUtilities import which, to_cidr, justcall
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
 class Ip(Res.Ip):
@@ -41,8 +41,8 @@ class Ip(Res.Ip):
         out += o
         err += e
         cmd = ['ipadm', 'show-addr', '-p', '-o', 'state', self.stacked_dev ]
-        p = Popen(cmd, stdin=None, stdout=PIPE, stderr=PIPE, close_fds=True)
-        _out = bdecode(p.communicate()[0]).strip().split("\n")
+        _out, _, _ = justcall(cmd)
+        _out = _out.strip().split("\n")
         if len(_out) > 0:
             self.log.info("skip delete-ip because addrs still use the ip")
             return ret, out, err
@@ -71,18 +71,17 @@ class Ip(Res.Ip):
 
     def get_smf_status(self, fmri):
         cmd = ["/usr/bin/svcs", "-H", "-o", "state", fmri]
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
+        out, err, ret = justcall(cmd)
+        if ret != 0:
             return "undef"
-        return bdecode(out).strip()
+        return out.strip()
 
     def startip_cmd(self):
         self.wait_net_smf()
         ret, out, err = (0, '', '')
         cmd = ['ipadm', 'show-if', '-p', '-o', 'state', self.stacked_dev]
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-        _out = bdecode(p.communicate()[0]).strip().split("\n")
+        _out, err, ret = justcall(cmd)
+        _out = _out.strip().split("\n")
         if len(_out) == 0:
             cmd=['ipadm', 'create-ip', '-t', self.stacked_dev ]
             r, o, e = self.vcall(cmd)
