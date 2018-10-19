@@ -583,42 +583,40 @@ class Node(Crypt, ExtConfigMixin):
         Given a selector string, return a list of service names.
         This exposed method only aggregates ORed elements.
         """
+        try:
+            data = self._daemon_status(silent=True)["monitor"]
+        except Exception as exc:
+            data = None
         if os.environ.get("OSVC_SERVICE_LINK"):
             return [os.environ.get("OSVC_SERVICE_LINK")]
-        if selector is None:
-            return list_services()
+        if selector is None or "*" in selector.split(","):
+            if data is None:
+                return list_services()
+            else:
+                return [svcname for svcname in data["services"]]
         if is_service(selector):
             return [selector]
         self.build_services()
         try:
-            return self._svcs_selector(selector)
+            return self._svcs_selector(selector, data)
         finally:
             del self.services
             self.services = None
 
-    def _svcs_selector(self, selector):
-        try:
-            data = self._daemon_status(silent=True)
-        except Exception as exc:
-            data = None
-        if data and "monitor" in data:
-            svcnames = [svcname for svcname in data["monitor"]["services"]]
+    def _svcs_selector(self, selector, data=None):
+        if data and "services" in data:
+            svcnames = [svcname for svcname in data["services"]]
         else:
             svcnames = [svc.svcname for svc in self.svcs]
-        if selector is None:
-            return svcnames
-        elif "," in selector:
+        if "," in selector:
             ored_selectors = selector.split(",")
         else:
             ored_selectors = [selector]
-        if selector in (None, ""):
-            result = svcnames
-        else:
-            result = []
-            for _selector in ored_selectors:
-                for svcname in self.__svcs_selector(_selector, data, svcnames):
-                    if svcname not in result:
-                        result.append(svcname)
+        result = []
+        for _selector in ored_selectors:
+            for svcname in self.__svcs_selector(_selector, data, svcnames):
+                if svcname not in result:
+                    result.append(svcname)
         if len(result) == 0 and re.findall(r"[,\+\*=\^:~><]", selector) == []:
             raise ex.excError("service not found")
         return result
@@ -628,8 +626,8 @@ class Node(Crypt, ExtConfigMixin):
         Given a selector string, return a list of service names.
         This method only intersect the ANDed elements.
         """
-        if selector is None:
-            return
+        if selector in (None, ""):
+            return []
         elif "+" in selector:
             anded_selectors = selector.split("+")
         else:
