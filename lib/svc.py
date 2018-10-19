@@ -1114,38 +1114,6 @@ class Svc(Crypt, ExtConfigMixin):
         except:
             pass
 
-    def validate_mon_action(self, action):
-        if action in ("freeze", "abort"):
-            return
-        if self.options.local:
-            return
-        data = self.get_smon_data()
-        if data is None:
-            return
-        for nodename, _data in data["instances"].items():
-            status = _data.get("status", "unknown")
-            if status != "idle" and "failed" not in status:
-                raise ex.excError("instance on node %s in %s state"
-                                  "" % (nodename, status))
-        global_expect = data.get("service", {}).get("global_expect")
-        if global_expect is not None:
-            raise ex.excAbortAction("service has already been asked to reach "
-                                    "the %s global state" % global_expect)
-
-        if action in ("start", "stop"):
-            data = self.node._daemon_status()
-            if self.svcname not in data["monitor"]["services"]:
-                return
-            avail = data["monitor"]["services"][self.svcname]["avail"]
-            if action == "start" and avail == "up":
-                raise ex.excAbortAction("the service is already started.")
-            elif action == "stop" and avail in ("down", "stdby down"):
-                raise ex.excAbortAction("the service is already stopped.")
-            if avail in ("n/a", "undef"):
-                raise ex.excError("the service is in '%s' aggregated avail "
-                                  "status. the daemons won't honor this "
-                                  "request, so don't submit it." % avail)
-
     def started_on(self):
         nodenames = []
         data = self.get_smon_data()
@@ -2738,10 +2706,37 @@ class Svc(Crypt, ExtConfigMixin):
         self.daemon_mon_action(action, wait=wait, timeout=timeout)
         raise ex.excAbortAction()
 
+    def daemon_log_result(self, ret, raise_on_errors=True):
+        if ret is None:
+            return
+        info = ret.get("info", [])
+        if info is None:
+            info = []
+        elif not isinstance(info, list):
+            info = [info]
+        for line in info:
+            if not line:
+                continue
+            self.log.info(line)
+
+        errors = ret.get("error", [])
+        if errors is None:
+            errors = []
+        if not isinstance(errors, list):
+            errors = [errors]
+        for line in errors:
+            if not line:
+                continue
+            self.log.error(line)
+        if errors:
+            raise ex.excError
+        status = ret.get("status")
+        if status not in (None, 0):
+            raise ex.excError
+
     def daemon_mon_action(self, action, wait=None, timeout=None, svcname=None):
         if svcname is None:
             svcname = self.svcname
-        self.validate_mon_action(action)
         global_expect = ACTION_ASYNC[action]["target"]
         if action == "delete" and self.options.unprovision:
             global_expect = "purged"
@@ -2756,11 +2751,8 @@ class Svc(Crypt, ExtConfigMixin):
         elif action == "takeover":
             dst = self.destination_node_sanity_checks(rcEnv.nodename)
             global_expect += dst
-        self.set_service_monitor(global_expect=global_expect, svcname=svcname)
-        if svcname == self.svcname:
-            self.log.info("%s action requested", action)
-        else:
-            self.log.info("%s action requested on service %s", action, svcname)
+        ret = self.set_service_monitor(global_expect=global_expect, svcname=svcname)
+        self.daemon_log_result(ret)
         if wait is None:
             wait = self.options.wait
         if timeout is None:
@@ -3770,12 +3762,14 @@ class Svc(Crypt, ExtConfigMixin):
             options = self.prepare_options(action, options)
             self.async_action(action)
         except ex.excError as exc:
-            self.log.error(exc)
+            msg = str(exc)
+            if msg:
+                self.log.error(msg)
             return 1
         except ex.excAbortAction as exc:
             msg = str(exc)
             if msg:
-                self.log.info(exc)
+                self.log.info(msg)
             return 0
         self.allow_on_this_node(action)
         if (self.options.cron and action in ("run", "resource_monitor", "sync_all", "status")) or action == "print_schedule":
@@ -5171,9 +5165,11 @@ class Svc(Crypt, ExtConfigMixin):
                 {"action": "set_service_monitor", "options": options},
                 nodename=self.options.node,
                 silent=True,
+                with_result=True,
             )
             if data and data["status"] != 0:
                 self.log.warning("set monitor status failed")
+            return data
         except Exception as exc:
             self.log.warning("set monitor status failed: %s", str(exc))
 

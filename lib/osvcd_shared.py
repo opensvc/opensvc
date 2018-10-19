@@ -757,6 +757,28 @@ class OsvcThread(threading.Thread, Crypt):
             return
 
     @staticmethod
+    def get_service_instances(svcname, discard_empty=False):
+        """
+        Return the specified service status structures on all nodes.
+        """
+        instances = {}
+        with CLUSTER_DATA_LOCK:
+            for nodename in CLUSTER_DATA:
+                try:
+                    if svcname in CLUSTER_DATA[nodename]["services"]["status"]:
+                        try:
+                            CLUSTER_DATA[nodename]["services"]["status"][svcname]["avail"]
+                        except KeyError:
+                            # foreign
+                            continue
+                        if discard_empty and CLUSTER_DATA[nodename]["services"]["status"][svcname]:
+                            continue
+                        instances[nodename] = CLUSTER_DATA[nodename]["services"]["status"][svcname]
+                except KeyError:
+                    continue
+        return instances
+
+    @staticmethod
     def get_service_agg(svcname):
         """
         Return the specified service aggregated status structure.

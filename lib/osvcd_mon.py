@@ -2251,28 +2251,6 @@ class Monitor(shared.OsvcThread):
         return data
 
     @staticmethod
-    def get_service_instances(svcname, discard_empty=False):
-        """
-        Return the specified service status structures on all nodes.
-        """
-        instances = {}
-        with shared.CLUSTER_DATA_LOCK:
-            for nodename in shared.CLUSTER_DATA:
-                try:
-                    if svcname in shared.CLUSTER_DATA[nodename]["services"]["status"]:
-                        try:
-                            shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]["avail"]
-                        except KeyError:
-                            # foreign
-                            continue
-                        if discard_empty and shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]:
-                            continue
-                        instances[nodename] = shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]
-                except KeyError:
-                    continue
-        return instances
-
-    @staticmethod
     def get_any_service_instance(svcname):
         """
         Return the specified service status structure on any node.

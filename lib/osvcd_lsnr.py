@@ -14,6 +14,7 @@ from subprocess import Popen, PIPE
 
 import six
 import osvcd_shared as shared
+import rcExceptions as ex
 from six.moves import queue
 from rcGlobalEnv import rcEnv
 from storage import Storage
@@ -511,7 +512,7 @@ class Listener(shared.OsvcThread):
     def action_set_service_monitor(self, nodename, **kwargs):
         svcname = kwargs.get("svcname")
         if svcname is None:
-            return {"error": "no svcname specified", "status": 1}
+            return {"error": ["no svcname specified"], "status": 1}
         status = kwargs.get("status")
         local_expect = kwargs.get("local_expect")
         global_expect = kwargs.get("global_expect")
@@ -520,14 +521,53 @@ class Listener(shared.OsvcThread):
         svcnames = set([svcname])
         if global_expect != "scaled":
             svcnames |= self.get_service_slaves(svcname)
+        errors = []
+        info = []
         for svcname in svcnames:
+            try:
+                self.validate_global_expect(svcname, global_expect)
+            except ex.excAbortAction as exc:
+                info.append(str(exc))
+            except ex.excError as exc:
+                errors.append(str(exc))
+            else:
+                info.append("service %s target state set to %s" % (svcname, global_expect))
             self.set_smon(
                 svcname, status=status,
                 local_expect=local_expect, global_expect=global_expect,
                 reset_retries=reset_retries,
                 stonith=stonith,
             )
-        return {"status": 0}
+        ret = {"status": 0}
+        if info:
+            ret["info"] = info
+        if errors:
+            ret["error"] = errors
+        return ret
+
+    def validate_global_expect(self, svcname, global_expect):
+        if global_expect is None:
+            return
+        if global_expect in ("frozen", "aborted"):
+            return
+        instances = self.get_service_instances(svcname)
+        if not instances:
+            raise ex.excError("service does not exist")
+        for nodename, _data in instances.items():
+            status = _data.get("monitor", {}).get("status", "unknown")
+            if status != "idle" and "failed" not in status:
+                raise ex.excError("%s instance on node %s in %s state"
+                                  "" % (svcname, nodename, status))
+
+        if global_expect not in ("started", "stopped"):
+            return
+        agg = Storage(shared.AGG.get(svcname, {}))
+        if global_expect == "started" and agg.avail == "up":
+            raise ex.excAbortAction("service %s is already started" % svcname)
+        elif global_expect == "stopped" and agg.avail in ("down", "stdby down", "stdby up"):
+            raise ex.excAbortAction("service %s is already stopped" % svcname)
+        if agg.avail in ("n/a", "undef"):
+            raise ex.excAbortAction()
 
     def action_set_node_monitor(self, nodename, **kwargs):
         status = kwargs.get("status")
