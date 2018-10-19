@@ -41,7 +41,7 @@ class Asset(rcAsset.Asset):
         ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(self.memstat))
         self.init()
 
-    def init():
+    def init(self):
         self.wmi = self.node.wmi()
 
     def _get_tz(self):
