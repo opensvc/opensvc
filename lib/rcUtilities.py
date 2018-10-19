@@ -329,11 +329,9 @@ def justcall(argv=['/bin/false'], stdin=None):
     The 'close_fds' value is autodectected (true on unix, false on windows).
     Returns (stdout, stderr, returncode)
     """
-    env = dict(os.environ)
-    env['LC_ALL'] = 'C'
     try:
         process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE,
-                        close_fds=close_fds, env=env)
+                        close_fds=close_fds)
         stdout, stderr = process.communicate(input=None)
         return bdecode(stdout), bdecode(stderr), process.returncode
     except Exception as exc:
@@ -560,10 +558,7 @@ def qcall(argv=['/bin/false']):
     """
     if not argv:
         return 0
-    env = dict(os.environ)
-    env['LC_ALL'] = 'C'
-    process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds,
-                    env=env)
+    process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
     process.wait()
     return process.returncode
 

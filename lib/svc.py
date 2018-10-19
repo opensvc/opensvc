@@ -335,6 +335,9 @@ try:
 except locale.Error:
     pass
 
+if os.name == "posix":
+    os.environ["LANG"] = "C"
+
 def _slave_action(func):
     def need_specifier(self):
         """

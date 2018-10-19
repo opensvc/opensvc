@@ -55,6 +55,9 @@ try:
 except locale.Error:
     pass
 
+if os.name == "posix":
+    os.environ["LANG"] = "C"
+
 DEFAULT_STATUS_GROUPS = [
     "hb",
     "arbitrator",
