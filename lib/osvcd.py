@@ -28,6 +28,7 @@ from hb_ucast import HbUcastRx, HbUcastTx
 from hb_mcast import HbMcastRx, HbMcastTx
 from hb_disk import HbDiskRx, HbDiskTx
 from hb_relay import HbRelayRx, HbRelayTx
+from comm import CRYPTO_MODULE
 
 node_mod = ximport('node')
 
@@ -215,7 +216,8 @@ class Daemon(object):
         Loop over the daemon tasks until notified to stop.
         """
         shared.NODE = node_mod.Node()
-        self.log.info("daemon started, version %s", shared.NODE.agent_version)
+        self.log.info("daemon started, version %s, crypto mod %s",
+                      shared.NODE.agent_version, CRYPTO_MODULE)
         while self.loop():
             with DAEMON_TICKER:
                 DAEMON_TICKER.wait(DAEMON_INTERVAL)

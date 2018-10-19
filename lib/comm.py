@@ -42,6 +42,8 @@ class SockReset(Exception):
 
 try:
     from Crypto.Cipher import AES
+    from Crypto import __version__ as version
+    CRYPTO_MODULE = "pycrypto %s" % version
 
     def _encrypt(message, key, _iv):
         """
@@ -62,6 +64,8 @@ try:
         message = obj.decrypt(ciphertext)
         return zlib.decompress(pyaes.util.strip_PKCS7_padding(message))
 except ImportError:
+    CRYPTO_MODULE = "fallback"
+
     def _encrypt(message, key, _iv):
         """
         Low level encrypter.
