@@ -36,10 +36,13 @@ class MEMORYSTATUSEX(ctypes.Structure):
 class Asset(rcAsset.Asset):
     def __init__(self, node):
         self.node = node
-        self.wmi = self.node.wmi()
         rcAsset.Asset.__init__(self, node)
         self.memstat = MEMORYSTATUSEX()
         ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(self.memstat))
+        self.init()
+
+    def init():
+        self.wmi = self.node.wmi()
 
     def _get_tz(self):
         """
@@ -91,6 +94,7 @@ class Asset(rcAsset.Asset):
 
     @lazy
     def cpuinfo(self):
+        self.init()
         data = self.wmi.Win32_Processor()
         ret = Storage({
             "NumberOfCores": 0,
@@ -171,6 +175,7 @@ class Asset(rcAsset.Asset):
         return str((int(time.time()) - int(uptime)) // 2)
 
     def get_last_boot(self):
+        self.init()
         payload = self.wmi.Win32_PerfFormattedData_PerfOS_System()
         uptime = payload[-1].SystemUpTime
         try:
