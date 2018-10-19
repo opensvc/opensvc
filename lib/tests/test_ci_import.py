@@ -14,7 +14,7 @@ class TestImport:
         import rcExceptions as ex
 
         for fpath in glob.glob(mod_d+"/*.py"):
-            if "Win" in fpath or "wmi" in fpath or "osvcd_win" in fpath:
+            if "win" in fpath.lower() or "wmi" in fpath or "osvcd_win" in fpath:
                 continue
             if "rcMd5" in fpath:
                 continue

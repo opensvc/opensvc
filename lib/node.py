@@ -4177,8 +4177,6 @@ class Node(Crypt, ExtConfigMixin):
     def daemon_start_thread(self):
         options = {}
         options["thr_id"] = self.options.thr_id
-        if os.environ.get("OPENSVC_AGENT_UPGRADE"):
-            options["upgrade"] = True
         data = self.daemon_send(
             {"action": "daemon_start", "options": options},
             nodename=self.options.node,

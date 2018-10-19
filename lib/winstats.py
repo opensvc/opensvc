@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 '''
     Windows Stats - (C) 2013-2017 Mike Miller, fix: Qian Deng
     A simple pip-able Windows status retrieval module with no additional
