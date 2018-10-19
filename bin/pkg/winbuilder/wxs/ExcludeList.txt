@@ -20,3 +20,5 @@
 .env
 .log
 .coveragerc
+.codecov.yml
+.travis.yml
