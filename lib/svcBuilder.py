@@ -2201,8 +2201,6 @@ def build_services(status=None, svcnames=None, create_instance=False,
     if svcnames is None:
         svcnames = []
 
-    check_privs()
-
     errors = []
     services = {}
 

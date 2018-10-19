@@ -17,7 +17,7 @@ import rcStatus
 import rcColor
 from svcmgr_parser import SvcmgrOptParser
 import rcExceptions as ex
-from rcUtilities import ximport, check_privs
+from rcUtilities import ximport
 from storage import Storage
 
 def get_docker_argv(argv=None):
@@ -237,13 +237,6 @@ def _main(node, argv=None):
     if action != "create":
         try:
             node.build_services(**build_kwargs)
-        except IOError as exc:
-            if exc.errno == errno.EACCES:
-                check_privs()
-                return 1
-            if len(str(exc)) > 0:
-                print(exc, file=sys.stderr)
-            build_err = True
         except ex.excError as exc:
             if len(str(exc)) > 0:
                 print(exc, file=sys.stderr)
@@ -290,17 +283,13 @@ def main(argv=None):
         print(exc, file=sys.stderr)
         return 1
 
+    node.check_privs()
+
     try:
         ret = _main(node, argv=argv)
     except ex.excError as exc:
         print(exc, file=sys.stderr)
         return 1
-    except IOError as exc:
-        if exc.errno == errno.EACCES:
-            check_privs()
-            return 1
-        else:
-            raise
     except KeyboardInterrupt:
         return 1
     finally:
