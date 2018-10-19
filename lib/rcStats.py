@@ -10,8 +10,8 @@ class StatsProvider(object):
         self.interval = interval
         self.init_period(stats_start, stats_end, interval)
         self.nodename = rcEnv.nodename
-        one_minute = datetime.timedelta(minutes=1)
-        one_day = datetime.timedelta(days=1)
+        self.one_minute = datetime.timedelta(minutes=1)
+        self.one_day = datetime.timedelta(days=1)
 
         self.minutes_first_day = 60*self.stats_end.hour + self.stats_end.minute + 1
 
@@ -20,14 +20,14 @@ class StatsProvider(object):
         end = self.stats_end
 
         while end > self.stats_start:
-            start = end - one_day
+            start = end - self.one_day
             if start < self.stats_start:
                 start = self.stats_start
             if start.day != end.day:
                 start = end - datetime.timedelta(hours=end.hour, minutes=end.minute)
             if start != end:
                 self.ranges.append((start, end))
-            end = start - one_minute
+            end = start - self.one_minute
         #print(self.stats_end, interval, [x.strftime("%Y-%m-%d %H:%M:%S")+" - "+y.strftime("%Y-%m-%d %H:%M:%S") for x, y in self.ranges])
 
     def init_period(self, stats_start, stats_end, interval):
