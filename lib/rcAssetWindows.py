@@ -15,6 +15,7 @@ from rcUtilitiesWindows import get_registry_value
 import rcAsset
 from rcDiskInfoWindows import diskInfo
 from converters import convert_size
+from storage import Storage
 
 class MEMORYSTATUSEX(ctypes.Structure):
     _fields_ = [("dwLength", ctypes.c_uint),
@@ -39,10 +40,6 @@ class Asset(rcAsset.Asset):
         rcAsset.Asset.__init__(self, node)
         self.memstat = MEMORYSTATUSEX()
         ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(self.memstat))
-
-    @lazy
-    def cpuinfo(self):
-        return self.wmi.Win32_Processor()
 
     def _get_tz(self):
         """
@@ -92,32 +89,36 @@ class Asset(rcAsset.Asset):
     def _get_os_arch(self):
         return platform.uname()[4]
 
+    @lazy
+    def cpuinfo(self):
+        data = self.wmi.Win32_Processor()
+        ret = Storage({
+            "NumberOfCores": 0,
+        })
+        for p in data:
+            try:
+                ret.NumberOfCores += p.NumberOfCores,
+            except Exception:
+                ret.NumberOfCores += 1
+            if ret.SocketDesignation is None:
+                ret.SocketDesignation = p.SocketDesignation
+            if ret.Name is None:
+                ret.Name = p.Name
+            if ret.MaxClockSpeed is None:
+                ret.MaxClockSpeed = p.MaxClockSpeed
+        return ret
+
     def _get_cpu_freq(self):
-        for i in self.cpuinfo:
-            cpuspeed = i.MaxClockSpeed
-        return str(cpuspeed)
+        return str(self.cpuinfo.MaxClockSpeed)
 
     def _get_cpu_cores(self):
-        n = 0
-        for p in self.cpuinfo:
-            try:
-                cores = p.NumberOfCores
-            except:
-                cores = 1
-            n += cores
-        return str(n)
+        return str(self.cpuinfo.NumberOfCores)
 
     def _get_cpu_dies(self):
-        s = set()
-        for p in self.cpuinfo:
-            s.add(p.SocketDesignation)
-        n = len(s)
-        return str(n)
+        return str(self.cpuinfo.SocketDesignation)
 
     def _get_cpu_model(self):
-        for i in self.cpuinfo:
-            cputype = i.Name
-        return cputype
+        return str(self.cpuinfo.Name)
 
     def _get_enclosure(self):
         for i in self.wmi.Win32_SystemEnclosure():
