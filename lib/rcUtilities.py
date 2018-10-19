@@ -329,8 +329,11 @@ def justcall(argv=['/bin/false'], stdin=None):
     The 'close_fds' value is autodectected (true on unix, false on windows).
     Returns (stdout, stderr, returncode)
     """
+    env = dict(os.environ)
+    env['LC_ALL'] = 'C'
     try:
-        process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
+        process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE,
+                        close_fds=close_fds, env=env)
         stdout, stderr = process.communicate(input=None)
         return bdecode(stdout), bdecode(stderr), process.returncode
     except Exception as exc:
@@ -465,7 +468,7 @@ def call(argv,
         cmd = argv
     else:
         cmd = ' '.join(argv)
-     
+
     if not shell and which(argv[0]) is None:
         log.error("%s does not exist or not in path or is not executable"%
                   argv[0])
@@ -557,7 +560,10 @@ def qcall(argv=['/bin/false']):
     """
     if not argv:
         return 0
-    process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
+    env = dict(os.environ)
+    env['LC_ALL'] = 'C'
+    process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds,
+                    env=env)
     process.wait()
     return process.returncode
 
@@ -924,9 +930,9 @@ def purge_cache_expired():
     cache_d = os.path.join(rcEnv.paths.pathvar, "cache")
     if not os.path.exists(cache_d) or not os.path.isdir(cache_d):
         return
-    for d in os.listdir(cache_d): 
+    for d in os.listdir(cache_d):
         d = os.path.join(cache_d, d)
-        if not os.path.isdir(d) or not os.stat(d).st_ctime < time.time()-(21600): 
+        if not os.path.isdir(d) or not os.stat(d).st_ctime < time.time()-(21600):
             # session more recent than 6 hours
             continue
         try:
