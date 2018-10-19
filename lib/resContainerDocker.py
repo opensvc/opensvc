@@ -314,7 +314,7 @@ class Docker(resContainer.Container):
                     del args[idx]
                     if len(args) >= idx and not args[idx].startswith("-"):
                         del args[idx]
-            args = ["--hostname", self.vm_hostname]
+            args += ["--hostname", self.vm_hostname]
 
         for arg, pos in enumerate(args):
             if arg != '-p':
