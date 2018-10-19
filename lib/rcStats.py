@@ -5,13 +5,14 @@ from rcGlobalEnv import rcEnv
 from converters import convert_datetime
 
 class StatsProvider(object):
+    one_minute = datetime.timedelta(minutes=1)
+    one_day = datetime.timedelta(days=1)
+
     def __init__(self, interval=2880, stats_dir=None, stats_start=None, stats_end=None):
         self.stats_dir = stats_dir
         self.interval = interval
         self.init_period(stats_start, stats_end, interval)
         self.nodename = rcEnv.nodename
-        self.one_minute = datetime.timedelta(minutes=1)
-        self.one_day = datetime.timedelta(days=1)
 
         self.minutes_first_day = 60*self.stats_end.hour + self.stats_end.minute + 1
 
