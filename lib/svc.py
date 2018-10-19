@@ -5396,3 +5396,13 @@ class Svc(Crypt, ExtConfigMixin):
             return 1
         print("uploaded as https://sfx.opensvc.com%s" % loc)
 
+    def skip_config_section(self, rid):
+        if rid == "DEFAULT":
+            return False
+        self.init_resources()
+        if self.encap and rid not in self.resources_by_id:
+            return True
+        if not self.encap and rid in self.encap_resources:
+            return True
+        return False
+

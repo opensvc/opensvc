@@ -984,12 +984,12 @@ class ExtConfigMixin(object):
                 return 1
             return 0
 
-        def get_val(key, section, option):
+        def get_val(key, section, option, verbose=True):
             """
             Fetch the value and convert it to the expected type.
             """
             _option = option.split("@")[0]
-            value = self.conf_get(section, _option, config=config)
+            value = self.conf_get(section, _option, config=config, verbose=verbose)
             return value
 
         def check_candidates(key, section, option, value):
@@ -1025,14 +1025,20 @@ class ExtConfigMixin(object):
                 err += 1
                 return err
             try:
-                value = get_val(key, section, option)
+                value = get_val(key, section, option, verbose=False)
             except ValueError as exc:
                 self.log.warning(str(exc))
                 return 0
             except ex.OptNotFound:
                 return 0
             except ex.RequiredOptNotFound:
-                return 1
+                if hasattr(self, "svcname"):
+                    # no need to err here: already caught by svc build
+                    return err
+                else:
+                    self.log.error("%s.%s is mandatory" % (section, option))
+                    err += 1
+                    return err
             err += check_candidates(key, section, option, value)
             return err
 
@@ -1121,9 +1127,9 @@ class ExtConfigMixin(object):
                 ret["errors"] += svc.init_resources()
             return ret
 
+        ret = validate_build(path, ret)
         ret = validate_default_options(config, ret)
         ret = validate_resources_options(config, ret)
-        ret = validate_build(path, ret)
 
         return ret
 
@@ -1164,6 +1170,9 @@ class ExtConfigMixin(object):
             raise ex.excError("the change was not saved")
         shutil.move(fpath, self.paths.cf)
 
+    def skip_config_section(self, section):
+        return False
+
     def print_config_data(self, src_config=None, evaluate=False, impersonate=None):
         """
         Return a simple dict (OrderedDict if possible), fed with the
@@ -1202,6 +1211,8 @@ class ExtConfigMixin(object):
             return data
         edata = {}
         for section, _data in data.items():
+            if self.skip_config_section(section):
+                continue
             edata[section] = {}
             keys = []
             for key in _data:
@@ -1210,7 +1221,7 @@ class ExtConfigMixin(object):
                     continue
                 try:
                     val = self.conf_get(section, key, impersonate=impersonate)
-                except ex.OptNotFound:
+                except (ex.RequiredOptNotFound, ex.OptNotFound):
                     continue
                 except ValueError:
                     pass
