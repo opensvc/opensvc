@@ -211,13 +211,16 @@ class Daemon(object):
         with open(rcEnv.paths.daemon_pid, "w") as ofile:
             ofile.write(pid)
 
+    def init(self):
+        shared.NODE = node_mod.Node()
+        self.log.info("daemon started, version %s, crypto mod %s",
+                      shared.NODE.agent_version, CRYPTO_MODULE)
+
     def loop_forever(self):
         """
         Loop over the daemon tasks until notified to stop.
         """
-        shared.NODE = node_mod.Node()
-        self.log.info("daemon started, version %s, crypto mod %s",
-                      shared.NODE.agent_version, CRYPTO_MODULE)
+        self.init()
         while self.loop():
             with DAEMON_TICKER:
                 DAEMON_TICKER.wait(DAEMON_INTERVAL)

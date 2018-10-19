@@ -54,6 +54,7 @@ class OsvcAgent(win32serviceutil.ServiceFramework):
         )
         os.chdir(os.path.join(os.path.dirname(__file__), ".."))
         self.daemon = Daemon()
+        self.daemon.init()
         self.daemon.lock()
         try:
             self.loop_forever()
