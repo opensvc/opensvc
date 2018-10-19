@@ -17,7 +17,7 @@ import rcStatus
 import rcColor
 from svcmgr_parser import SvcmgrOptParser
 import rcExceptions as ex
-from rcUtilities import ximport
+from rcUtilities import ximport, check_privs
 from storage import Storage
 
 def get_docker_argv(argv=None):
@@ -283,7 +283,7 @@ def main(argv=None):
         print(exc, file=sys.stderr)
         return 1
 
-    node.check_privs()
+    check_privs()
 
     try:
         ret = _main(node, argv=argv)
