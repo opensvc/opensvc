@@ -96,9 +96,8 @@ class Asset(rcAsset.Asset):
     def cpuinfo(self):
         self.init()
         data = self.wmi.Win32_Processor()
-        ret = Storage({
-            "NumberOfCores": 0,
-        })
+        ret = Storage()
+        ret.NumberOfCores = 0
         for p in data:
             try:
                 ret.NumberOfCores += p.NumberOfCores,
