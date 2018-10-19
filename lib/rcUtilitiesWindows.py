@@ -4,6 +4,10 @@ from rcUtilities import justcall
 import string
 from ctypes import windll
 
+try:
+    from six.moves import winreg
+except ImportError:
+    pass
 
 def check_ping(addr, timeout=5, count=1):
     ping = 'ping.exe'
@@ -17,10 +21,9 @@ def check_ping(addr, timeout=5, count=1):
     return False
 
 def get_registry_value(key, subkey, value):
-    import _winreg # pylint: disable=import-error
-    key = getattr(_winreg, key)
-    handle = _winreg.OpenKey(key, subkey)
-    (value, type) = _winreg.QueryValueEx(handle, value)
+    key = getattr(winreg, key)
+    handle = winreg.OpenKey(key, subkey)
+    value, type = winreg.QueryValueEx(handle, value)
     return value
 
 def get_drives():

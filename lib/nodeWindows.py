@@ -7,7 +7,7 @@ try:
     import pythoncom
     import wmi
     import win32serviceutil
-    import _winreg
+    from six.moves import winreg
 except ImportError:
     raise
 
@@ -82,28 +82,28 @@ class Node(node.Node):
 
     def unset_upgrade_envvar(self):
         path = r"SYSTEM\CurrentControlSet\Services\%s\Environment" % WINSVCNAME
-        reg = _winreg.ConnectRegistry(None, _winreg.HKEY_LOCAL_MACHINE)
+        reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
         try:
-            key = _winreg.OpenKey(reg, path, 0, _winreg.KEY_WRITE)
-            _winreg.DeleteValue(key, "OPENSVC_AGENT_UPGRADE")
-            _winreg.CloseKey(key)
+            key = winreg.OpenKey(reg, path, 0, winreg.KEY_WRITE)
+            winreg.DeleteValue(key, "OPENSVC_AGENT_UPGRADE")
+            winreg.CloseKey(key)
         except Exception as exc:
             if hasattr(exc, "errno") and getattr(exc, "errno") == 2:
                 # key does not exist
                 return
             raise
         finally:
-            _winreg.CloseKey(reg)
+            winreg.CloseKey(reg)
 
     def set_upgrade_envvar(self):
         if not os.environ.get("OPENSVC_AGENT_UPGRADE"):
             return
         path = r"SYSTEM\CurrentControlSet\Services\%s\Environment" % WINSVCNAME
-        reg = _winreg.ConnectRegistry(None, _winreg.HKEY_LOCAL_MACHINE)
-        key = _winreg.CreateKeyEx(reg, path, 0, _winreg.KEY_WRITE)
-        try:   
-            _winreg.SetValue(key, "OPENSVC_AGENT_UPGRADE", _winreg.REG_SZ, "1") 
-        except EnvironmentError:                                  
+        reg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
+        key = winreg.CreateKeyEx(reg, path, 0, winreg.KEY_WRITE)
+        try:
+            winreg.SetValue(key, "OPENSVC_AGENT_UPGRADE", winreg.REG_SZ, "1")
+        except EnvironmentError:
             raise ex.excError("failed to set OPENSVC_AGENT_UPGRADE=1 in %s" % path)
-        _winreg.CloseKey(key)
-        _winreg.CloseKey(reg)
+        winreg.CloseKey(key)
+        winreg.CloseKey(reg)

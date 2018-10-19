@@ -10,7 +10,7 @@ try:
 except ImportError:
     raise
 
-from rcUtilities import justcall, which, try_decode
+from rcUtilities import justcall, which, try_decode, lazy
 from rcUtilitiesWindows import get_registry_value
 import rcAsset
 from rcDiskInfoWindows import diskInfo
@@ -36,10 +36,13 @@ class Asset(rcAsset.Asset):
     def __init__(self, node):
         self.node = node
         self.wmi = self.node.wmi()
-        self.cpuinfo = self.wmi.Win32_Processor()
         rcAsset.Asset.__init__(self, node)
         self.memstat = MEMORYSTATUSEX()
         ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(self.memstat))
+
+    @lazy
+    def cpuinfo(self):
+        return self.wmi.Win32_Processor()
 
     def _get_tz(self):
         """
