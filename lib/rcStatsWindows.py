@@ -55,7 +55,10 @@ class StatsProvider(rcStats.StatsProvider):
                 return []
             with open(sa, "r") as fd:
                 for line in fd.readlines():
-                    __data = json.loads(line)
+                    try:
+                        __data = json.loads(line)
+                    except ValueError:
+                        continue
                     ts = convert_datetime(__data["ts"])
                     if ts < start or ts > end:
                         continue
