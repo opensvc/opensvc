@@ -2,11 +2,14 @@ from __future__ import print_function
 
 import os
 import sys
-import platform
 
 import six
 import rcExceptions as ex
 from rcUtilities import is_string
+
+if os.name == "nt":
+    import colorama
+    colorama.init()
 
 use_color = "auto"
 
@@ -94,13 +97,7 @@ def ansi_colorize(s, c=None):
         return s
     return c + s + color.END
 
-def win_colorize(s, c=None):
-    return s
-
-if platform.system() == 'Windows':
-    colorize = win_colorize
-else:
-    colorize = ansi_colorize
+colorize = ansi_colorize
 
 def colorize_json(s):
     import re

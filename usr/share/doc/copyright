@@ -40,6 +40,10 @@ Files: usr/share/opensvc/lib/winstats.py
 Copyright: 2013-2017, Mike Miller
 License: GPL-3+
 
+Files: usr/share/opensvc/lib/colorama/*
+Copyright: 2010, Jonathan Hartley
+License: BSD
+
 License: GPL-2+
  This package is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
