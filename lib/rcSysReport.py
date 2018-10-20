@@ -13,6 +13,8 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
 
+POSIX = os.name == "posix"
+
 class SysReport(object):
     def __init__(self, node=None, collect_d=None, compress=False):
         self.todo = [
@@ -113,19 +115,23 @@ class SysReport(object):
         with open(self.collect_stat, "w") as f:
             f.write(json.dumps(l, sort_keys=True, separators=[", ", ": "], indent=4))
 
+    def check_cf_perms(self, fpath):
+        s = os.stat(fpath)
+        mode = s[ST_MODE]
+        if mode & S_IWOTH:
+            raise PermissionError("skip %s config file: file mode is insecure ('other' has write permission)" % fpath)
+        if s.st_uid != self.root_uid or s.st_gid != self.root_gid:
+            raise PermissionError("skip %s config file: file ownership is insecure (must be owned by root)" % fpath)
+
     def merge_todo(self):
         for root, dnames, fnames in os.walk(self.sysreport_conf_d):
             for fname in fnames:
                 fpath = os.path.join(self.sysreport_conf_d, fname)
-                s = os.stat(fpath)
-                mode = s[ST_MODE]
-                if mode & S_IWOTH:
-                    print("skip %s config file: file mode is insecure ('other' has write permission)" % fpath)
+                try:
+                    self.check_cf_perms(fpath)
+                except PermissionError as exc:
+                    print(exc, file=sys.stderr)
                     continue
-                if s.st_uid != self.root_uid or s.st_gid != self.root_gid:
-                    print("skip %s config file: file ownership is insecure (must be owned by root)" % fpath)
-                    continue
-
                 with open(fpath, 'r') as f:
                     buff = f.read()
                 for line in buff.split("\n"):
@@ -216,6 +222,7 @@ class SysReport(object):
         fname = fname.replace('%','(pct)')
         fname = fname.replace('"','(dquote)')
         fname = fname.replace("'",'(squote)')
+        fname = fname.replace("\\",'(bslash)')
         return fname
 
     def write(self, fpath, buff):
@@ -230,19 +237,28 @@ class SysReport(object):
             f.write(buff)
         self.full.append(fpath)
 
+    def get_exe(self, fpath):
+        if not os.path.exists(fpath):
+            raise ValueError("not found (%s)" % fpath)
+        if which(fpath) is None:
+            raise ValueError("not executable (%s)" % fpath)
+        return fpath
+
     def collect_cmd(self, cmd):
-        l = shlex.split(cmd)
+        l = shlex.split(cmd, posix=POSIX)
         if len(l) == 0:
-            print(" err: syntax error")
+            print(" err: syntax error", file=sys.stderr)
             return
-        if not os.path.exists(l[0]):
-            return
-        if which(l[0]) is None:
-            print(" err: not executable")
+        if os.sep not in l[0]:
+            print(" err: full path required for commands (%s)" % l[0], file=sys.stderr)
+        try:
+            self.get_exe(l[0])
+        except ValueError as exc:
+            print(" err: %s" % str(exc), file=sys.stderr)
             return
         fname = self.cmdlist2fname(l)
         cmd_d = os.path.join(self.collect_cmd_d, fname)
-        p = Popen(l, stdout=PIPE, stderr=STDOUT, close_fds=True)
+        p = Popen(l, stdout=PIPE, stderr=STDOUT, close_fds=POSIX)
         out, err = p.communicate()
         if six.PY3:
             out = out.decode("utf-8")
@@ -288,12 +304,19 @@ class SysReport(object):
                 #print("  change %s stat info"%fpath)
                 return
 
+    def dst_d(self, base_d, fpath):
+        """
+        Return the full path of the collect dir that will host
+        fpath
+        """
+        return base_d + os.path.dirname(fpath)
+
     def collect_file(self, fpath):
         if not os.path.exists(fpath):
             return
         if os.path.islink(fpath):
             return
-        dst_d = self.collect_file_d + os.path.dirname(fpath)
+        dst_d = self.dst_d(self.collect_file_d, fpath)
         fname = os.path.basename(fpath)
         dst_f = os.path.join(dst_d, fname)
         if os.path.isdir(dst_f):
@@ -406,7 +429,7 @@ class SysReport(object):
         tar = tarfile.open(tmpf, mode=self.tarmode)
         for fpath in l:
             if len(fpath) < n:
-                print(" err: can not archive", fpath, "(fpath too short)")
+                print(" err: can not archive", fpath, "(fpath too short)", file=sys.stderr)
                 continue
             tar.add(fpath[n:])
         tar.close()
