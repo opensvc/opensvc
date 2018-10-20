@@ -119,9 +119,9 @@ class SysReport(object):
         s = os.stat(fpath)
         mode = s[ST_MODE]
         if mode & S_IWOTH:
-            raise PermissionError("skip %s config file: file mode is insecure ('other' has write permission)" % fpath)
+            raise ValueError("skip %s config file: file mode is insecure ('other' has write permission)" % fpath)
         if s.st_uid != self.root_uid or s.st_gid != self.root_gid:
-            raise PermissionError("skip %s config file: file ownership is insecure (must be owned by root)" % fpath)
+            raise ValueError("skip %s config file: file ownership is insecure (must be owned by root)" % fpath)
 
     def merge_todo(self):
         for root, dnames, fnames in os.walk(self.sysreport_conf_d):
@@ -129,7 +129,7 @@ class SysReport(object):
                 fpath = os.path.join(self.sysreport_conf_d, fname)
                 try:
                     self.check_cf_perms(fpath)
-                except PermissionError as exc:
+                except ValueError as exc:
                     print(exc, file=sys.stderr)
                     continue
                 with open(fpath, 'r') as f:
