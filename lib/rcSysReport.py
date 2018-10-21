@@ -103,8 +103,8 @@ class SysReport(object):
                 pass
         return stat
 
-    def write_stat(self):
-        if not self.stat_changed:
+    def write_stat(self, force=False):
+        if not force and not self.stat_changed:
             return
         self._write_stat()
 
@@ -185,9 +185,9 @@ class SysReport(object):
 
         # find deleted
         dst_files = self.find_files(self.collect_file_d)
-        n = len(self.collect_file_d)
-        dst_files = map(lambda x: x[n:], dst_files)
-        self.deleted = set(dst_files) - self.files - set(["/stat"])
+        dst_files = self.rel_paths(self.collect_file_d, dst_files, posix=False)
+        files = self.rel_paths("", self.files, posix=False)
+        self.deleted = set(dst_files) - set(files) - set([os.sep+"stat"])
 
         # order file lists
         self.files = sorted(list(self.files))
@@ -202,6 +202,7 @@ class SysReport(object):
                     self.changed.append(self.collect_stat)
                 if self.collect_stat not in self.full:
                     self.full.append(self.collect_stat)
+        self.deleted = self.rel_paths("", self.deleted, posix=True)
 
     def cmdlist2fname(self, l):
         fname = '(space)'.join(l)
@@ -229,8 +230,6 @@ class SysReport(object):
         try:
             with open(fpath, 'r') as f:
                 pbuff = f.read()
-            if buff != pbuff:
-                self.changed.append(fpath)
         except IOError:
             self.changed.append(fpath)
         with open(fpath, 'w') as f:
@@ -370,7 +369,7 @@ class SysReport(object):
             return 1
         self.collect()
         self.delete_collected(self.deleted)
-        self.write_stat()
+        self.write_stat(force=force)
         self.send(force)
 
     def collect(self):
@@ -386,14 +385,25 @@ class SysReport(object):
         for fpath in sorted(self.deleted):
             print("  "+fpath)
 
+    def collected(self):
+        return self.rel_paths(self.collect_d, self.full)
+
+    def rel_paths(self, base, fpaths, posix=True):
+        if base:
+            n = len(base)+1
+        else:
+            n = 0
+        return [x[n:] for x in fpaths]
+
     def send(self, force=False):
         if force:
             to_send = self.full
             lstree_data = self.node.collector.call(self.lstree_rpc)
             if lstree_data is None:
                 raise ex.excError("can not get lstree from collector")
-            n = len(self.collect_d)+1
-            self.deleted = sorted(list(set(lstree_data) - set("file/stat") - set(map(lambda x: x[n:], self.full))))
+            lstree_data = self.rel_paths("", lstree_data, posix=True)
+            collected = self.rel_paths("", self.collected(), posix=True)
+            self.deleted = sorted(list(set(lstree_data) - set(os.sep+"stat") - set(collected)))
         else:
             to_send = self.changed
             self.changed_report()
@@ -415,6 +425,10 @@ class SysReport(object):
 
         if tmpf is not None:
             os.unlink(tmpf)
+
+    @staticmethod
+    def mangle_sep(fpath):
+        return fpath
 
     def archive(self, l):
         import tarfile
