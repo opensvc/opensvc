@@ -235,7 +235,11 @@ class SysReport(object):
             return
         else:
             self.full.append(fpath)
-        if pbuff != buff:
+        if POSIX:
+            diff = pbuff != buff
+        else:
+            diff = pbuff != buff.replace("\r", "\n")
+        if diff:
             self.changed.append(fpath)
             with open(fpath, 'w') as f:
                 f.write(buff)
