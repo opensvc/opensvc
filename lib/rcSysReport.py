@@ -232,9 +232,13 @@ class SysReport(object):
                 pbuff = f.read()
         except IOError:
             self.changed.append(fpath)
-        with open(fpath, 'w') as f:
-            f.write(buff)
-        self.full.append(fpath)
+            return
+        else:
+            self.full.append(fpath)
+        if pbuff != buff:
+            self.changed.append(fpath)
+            with open(fpath, 'w') as f:
+                f.write(buff)
 
     def get_exe(self, fpath):
         if not os.path.exists(fpath):
@@ -390,7 +394,7 @@ class SysReport(object):
 
     def rel_paths(self, base, fpaths, posix=True):
         if base:
-            n = len(base)+1
+            n = len(base)
         else:
             n = 0
         return [x[n:] for x in fpaths]
