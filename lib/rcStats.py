@@ -46,7 +46,7 @@ class StatsProvider(object):
 
         # discard seconds
         self.stats_start -= datetime.timedelta(seconds=self.stats_start.second)
-        self.stats_end -= datetime.timedelta(seconds=self.stats_end.second)
+        self.stats_end += datetime.timedelta(seconds=60-self.stats_end.second)
 
 
     def get(self, fname):
