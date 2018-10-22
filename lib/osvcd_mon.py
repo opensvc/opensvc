@@ -793,7 +793,7 @@ class Monitor(shared.OsvcThread):
         for crid, cdata in instance.get("encap", {}).items():
             if cdata.get("frozen"):
                 continue
-            resources = cdata.get("resources", [])
+            resources = cdata.get("resources", {})
             mon_rids = []
             stdby_rids = []
             for rid, resource in resources.items():
