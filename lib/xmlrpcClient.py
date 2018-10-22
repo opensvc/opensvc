@@ -576,11 +576,12 @@ class Collector(object):
             return
         else:
             print("Pushing %d packages information."%n)
-        if len(vals[0]) >= 5:
+        n_fields = len(vals[0])
+        if n_fields >= 5:
             vars.append('pkg_type')
-        if len(vals[0]) >= 6:
+        if n_fields >= 6:
             vars.append('pkg_install_date')
-        if len(vals[0]) >= 7:
+        if n_fields >= 7:
             vars.append('pkg_sig')
         args = [vars, vals]
         args += [(rcEnv.uuid, rcEnv.nodename)]
