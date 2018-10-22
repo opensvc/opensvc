@@ -1,15 +1,52 @@
 import os
-from rcUtilities import call, which
-from rcGlobalEnv import rcEnv
 import datetime
+from collections import namedtuple
 from stat import *
+
+from rcUtilities import justcall, which
+from rcGlobalEnv import rcEnv
 
 def listpkg_dummy():
     print("pushpkg not supported on this system")
+    cmd = ['true']
     return []
 
+def listpkg_snap():
+    """
+    Example:
+
+        Name      Version    Rev   Tracking  Publisher   Notes
+        core      16-2.35.4  5662  stable    canonical*  core
+        inkscape  0.92.3     4274  stable    inkscape*   -
+        skype     8.32.0.44  60    stable    skype*      classic
+
+    """
+    if not which("snap"):
+        return
+    cmd = ["snap", "list", "--unicode=never", "--color=never"]
+    out, err, ret = justcall(cmd)
+    lines = []
+    for line in out.splitlines():
+        if line.startswith('Name'):
+            header = namedtuple("header", line)
+            continue
+        _data = header._make(line.split())
+        lines.append([
+            rcEnv.nodename,
+            _data.Name,
+            "%s rev %s" % (_data.Version, _data.Rev),
+            "",
+            "snap",
+            "",
+        ])
+    print(lines)
+    return lines
+
 def listpkg_rpm():
-    (ret, out, err) = call(cmd, errlog=False, cache=True)
+    if not which("rpm"):
+        return
+    cmd = ['rpm', '-qai', '--queryformat=XX%{n} %{v}-%{r} %{arch} rpm %{installtime}\n']
+    out, err, ret = justcall(cmd)
     lines = []
     for line in out.split('\n'):
         if line.startswith('Signature'):
@@ -30,7 +67,10 @@ def listpkg_rpm():
     return lines
 
 def listpkg_deb():
-    (ret, out, err) = call(cmd, errlog=False, cache=True)
+    if not which("dpkg"):
+        return
+    cmd = ['dpkg', '-l']
+    out, err,ret = justcall(cmd)
     lines = []
     arch = ""
     for line in out.splitlines():
@@ -49,15 +89,11 @@ def listpkg_deb():
         lines.append(x)
     return lines
 
-if which('dpkg') is not None:
-    cmd = ['dpkg', '-l']
-    listpkg = listpkg_deb
-elif which('rpm') is not None:
-    cmd = ['rpm', '-qai', '--queryformat=XX%{n} %{v}-%{r} %{arch} rpm %{installtime}\n']
-    listpkg = listpkg_rpm
-else:
-    cmd = ['true']
-    listpkg = listpkg_dummy
+def listpkg():
+    data = listpkg_deb()
+    data += listpkg_rpm()
+    data += listpkg_snap()
+    return data
 
 def listpatch():
     return []
