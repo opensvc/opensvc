@@ -1,6 +1,8 @@
 import os
 import datetime
 import re
+import json
+from six.moves.urllib.parse import quote
 from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
 import rcAsset
@@ -72,19 +74,24 @@ class Asset(rcAsset.Asset):
             return lines[0]
         if self.osver < 11.:
             return lines[0]
-        else:
-            (out, err, ret) = justcall(['pkg', 'info', 'entire'])
-            if ret != 0:
-                return 'Unknown'
-            nfo = out.split('\n')
-            for l in nfo:
-                if 'Version: ' in l:
-                    if 'SRU' in l:
-                        return ' '.join([lines[0], 'SRU', l.split()[6].strip(')')])
-                    elif lines[0] in l:
-                        return l.split()[4].strip(')')
+        try:
+            with open("/var/pkg/state/installed/catalog.summary.C", "r") as filep:
+                data = json.load(filep)
+            version = data["solaris"]["entire"][0]["version"]
+            fpath = "/var/pkg/cache/publisher/solaris/pkg/entire/%s/manifest.set" % quote(version)
+            with open(fpath, "r") as filep:
+                buff = filep.read()
+            for l in buff.splitlines():
+                if 'set name=pkg.human-version' in l:
+                    hv = l.split('"')[-2]
+                    if 'SRU' in hv:
+                        return ' '.join([lines[0], 'SRU', hv.split()[-1]])
+                    elif lines[0] in hv:
+                        return hv.split()[-1]
                     else:
-                        return ' '.join([lines[0], l.split()[4]])
+                        return ' '.join([lines[0], hv.split()[-1]])
+        except Exception:
+            pass
         return 'Unknown'
 
     def _get_os_arch(self):
