@@ -349,13 +349,33 @@ class Listener(shared.OsvcThread):
                 data[thr_id] = thread.status(**kwargs)
         return data
 
+    def svc_shutdown(self):
+        """
+        Care with locks
+        """
+        # use a long waitlock to maximize chances to wait for user-submitted
+        # commands to finish
+        cmd = [rcEnv.paths.svcmgr, "--service", "*", "shutdown", "--local",
+               "--parallel", "--waitlock=5m"]
+        proc = Popen(cmd, stdin=None, stdout=None, stderr=None, close_fds=True)
+        proc.communicate()
+
+
     def action_daemon_shutdown(self, nodename, **kwargs):
         self.log.info("shutdown daemon requested")
         with shared.THREADS_LOCK:
             shared.THREADS["scheduler"].stop()
             mon = shared.THREADS["monitor"]
         try:
-            mon.shutdown()
+            self.set_nmon("shutting")
+            mon.kill_procs()
+            self.svc_shutdown()
+
+            # send a last status to peers so they can takeover asap
+            mon.update_hb_data()
+
+            mon._shutdown = True
+            shared.wake_monitor("services shutdown done")
         except Exception as exc:
             self.log.exception(exc)
 

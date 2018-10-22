@@ -181,26 +181,6 @@ class Monitor(shared.OsvcThread):
         self.update_hb_data()
         shared.wake_collector()
 
-    def shutdown(self):
-        """
-        Care with locks, this method runs in a lsnr client thread
-        """
-        self.set_nmon("shutting")
-        self.kill_procs()
-
-        # use a long waitlock to maximize chances to wait for user-submitted
-        # commands to finish
-        cmd = [rcEnv.paths.svcmgr, "--service", "*", "shutdown", "--local",
-               "--parallel", "--waitlock=5m"]
-        proc = Popen(cmd, stdin=None, stdout=None, stderr=None, close_fds=True)
-        proc.communicate()
-
-        # send a last status to peers so they can takeover asap
-        self.update_hb_data()
-
-        self._shutdown = True
-        shared.wake_monitor("services shutdown terminated")
-
     #########################################################################
     #
     # Service config exchange
