@@ -4734,7 +4734,11 @@ class Node(Crypt, ExtConfigMixin):
         except:
             # None < 0 == True
             pass
-        meminfo = self.stats_meminfo()
+        try:
+            meminfo = self.stats_meminfo()
+        except OSError as exc:
+            self.log.error("failed to get mem/swap info: %s", exc)
+            meminfo = None
         if isinstance(meminfo, dict):
             data.update(meminfo)
         data["score"] = self.score(data)
