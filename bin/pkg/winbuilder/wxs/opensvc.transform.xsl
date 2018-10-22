@@ -12,16 +12,16 @@
   </xsl:template>
 
   <xsl:output method="xml" indent="yes" />
-  <!-- PythonService.exe Search Python Service Executable -->
-  <xsl:key name="pythonservice" match="wix:Component[contains(wix:File/@Source, 'PythonService.exe')]" use="@Id" />
+  <!-- Search Python Service Executable -->
+  <xsl:key name="pythonservice" match="wix:Component[contains(wix:File/@Source, 'pythonservice.exe')]" use="@Id" />
   
-  <!-- PythonService.exe Search Python Service Executable -->
+  <!-- Search postinstall script -->
   <xsl:key name="vIdToReplace" match="wix:File[contains(@Source, '\bin\postinstall.cmd')]" use="@Id" />
 
-  <!-- PythonService.exe Remove file component -->
+  <!-- Remove file component -->
   <xsl:template match="wix:Component[key('pythonservice', @Id)]" />
 
-  <!-- PythonService.exe  Remove componentsrefs referencing components -->
+  <!-- Remove componentsrefs referencing components -->
   <xsl:template match="wix:ComponentRef[key('pythonservice', @Id)]" />  
 
   <xsl:template match="node()[key('vIdToReplace', @Id)]">

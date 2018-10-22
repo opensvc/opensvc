@@ -95,11 +95,11 @@ Section "Visual C++ 2008 Runtime" SEC02
            ${LogText} "[SEC02] VCRedist is not installed"
            SetOverwrite on
            #run runtime installation tool
-           DetailPrint "Installing Microsoft Visual C++ 2008 SP1 Redistributable Package (x86)"
-           ${LogText} "[SEC02] Will trigger vcredist_x86.exe installation"
-           ExecWait '"$INSTDIR\tmp\vcredist_x86.exe" /q /norestart' $0
+           DetailPrint "Installing Microsoft Visual C++ 2015 Redistributable Package (x64)"
+           ${LogText} "[SEC02] Will trigger Visual C++ 2015 Redistributable Package installation"
+           ExecWait '"$INSTDIR\tmp\mu_visual_cpp_redistributable_for_visual_studio_2015_update_1_x64_7277229.exe" /q /norestart' $0
            Call CheckReturnCode
-           ${LogText} "[SEC02] vcredist_x86.exe installation done"
+           ${LogText} "[SEC02] Visual C++ 2015 Redistributable Package installation done"
            DetailPrint "Done"
        ${EndIf}
   ${LogText} "[SEC02] End"

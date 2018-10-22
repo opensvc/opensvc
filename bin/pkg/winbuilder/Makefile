@@ -13,7 +13,7 @@ the environment. OSVCMAKEVERSION and OSVCMAKERELEASE have to be defined.
 !endif
 
 # App Info
-PRJMANUFACTURER=OpenSVC SARL
+PRJMANUFACTURER=OpenSVC
 PRJBUILDER=Arnaud Veron
 PRJNAME=OpenSVC
 PRJFWRULE1NAME=OpenSVC Listener
@@ -45,7 +45,7 @@ TEMPO=C:\windows\temp\ExcludeList.txt
 
 OUTDIR=$(OSVCBUILD)\wix
 WXSDIR=$(OSVCBUILD)\wxs
-VCREDISTX86=$(OSVCBUILD)\kits\vcredist
+VCREDISTX64=$(OSVCBUILD)\kits\vcredist
 PYTHON=$(OSVCBUILD)\kits\winpython\python
 
 XSLFILE=$(WXSDIR)\opensvc.transform.xsl
@@ -73,8 +73,8 @@ copy:
 		@copy  "$(EXCLUDEFILE)" $(TEMPO)
 		@echo =^> Copying OpenSVC sources to build directory
 		@xcopy "$(OSVCROOT)" "$(OSVCPKGROOT)" /s /i /q /exclude:$(TEMPO)
-		@echo =^> Copying Visual C++ 2008 Redist installer to build directory
-        @xcopy "$(VCREDISTX86)" "$(OSVCNSIS)\tmp" /s /i /q
+		@echo =^> Copying Microsoft Visual C++ 2015 Redistributable installer to build directory
+        @xcopy "$(VCREDISTX64)" "$(OSVCNSIS)\tmp" /s /i /q
 		@echo =^> Copying Python distribution to build directory
 		@xcopy "$(PYTHON)" "$(OSVCPKGROOT)\python" /s /i /q
 		@del /s /q "$(OSVCPKGROOT)\python\*.pyc" 2>nul
