@@ -190,9 +190,14 @@ class Daemon(object):
                            "daemon lock")
             sys.exit(1)
 
+    def set_last_shutdown(self):
+        with open(rcEnv.paths.last_shutdown, "w") as filep:
+            filep.write("")
+
     def unlock(self):
         if self.lockfd:
             unlock(self.lockfd)
+        self.set_last_shutdown()
 
     def _run(self):
         """

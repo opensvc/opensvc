@@ -2999,25 +2999,33 @@ class Monitor(shared.OsvcThread):
         data["services"] = self.get_agg_services()
         return data
 
+    def get_last_shutdown(self):
+        try:
+            return os.path.getmtime(rcEnv.paths.last_shutdown)
+        except Exception:
+            return 0
+
     def merge_frozen(self):
         """
-        This method is only called during the rejoin grace period.
+        This method is only called at the end of the rejoin grace period.
 
         It freezes the local services instances for services that have
         a live remote instance frozen. This prevents a node
         rejoining the cluster from taking over services that where frozen
         and stopped while we were not alive.
         """
+        last_shutdown = self.get_last_shutdown()
         for svc in shared.SERVICES.values():
             if svc.orchestrate == "no":
                 continue
             if len(svc.peers) < 2:
                 continue
             try:
-                frozen = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname].get("frozen", False)
-                if frozen:
-                    continue
+                instance = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]
             except:
+                continue
+            frozen = instance.get("frozen", False)
+            if frozen:
                 continue
             if self.service_frozen(svc.svcname):
                 continue
@@ -3028,10 +3036,12 @@ class Monitor(shared.OsvcThread):
                 if peer == rcEnv.nodename:
                     continue
                 try:
-                    frozen = shared.CLUSTER_DATA[peer]["services"]["status"][svc.svcname].get("frozen", False)
+                    instance = shared.CLUSTER_DATA[peer]["services"]["status"][svc.svcname]
                 except:
                     continue
-                if frozen:
+                updated = instance.get("monitor", {}).get("status_updated", 0)
+                frozen = instance.get("frozen", False)
+                if frozen and updated > last_shutdown:
                     self.event("instance_freeze", data={
                         "reason": "merge_frozen",
                         "peer": peer,
