@@ -1133,6 +1133,7 @@ class Monitor(shared.OsvcThread):
                     "reason": "target",
                     "svcname": svc.svcname,
                 })
+                self.service_freeze(svc.svcname)
             elif not self.is_instance_shutdown(instance):
                 thawed_on = self.service_instances_thawed(svc.svcname)
                 if thawed_on:
