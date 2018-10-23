@@ -351,17 +351,29 @@ class Listener(shared.OsvcThread):
 
     def svc_shutdown(self):
         """
-        Care with locks
+        Shutdown all local service instances. Do not freeze them, so they
+        can be orchestrated after reboot (the CRM interprets the
+        OSVC_ACTION_ORIGIN env var as "disable pre-shutdown freeze").
+
+        Use a long waitlock to maximize chances to wait for user-submitted
+        commands to finish
         """
-        # use a long waitlock to maximize chances to wait for user-submitted
-        # commands to finish
-        cmd = [rcEnv.paths.svcmgr, "--service", "*", "shutdown", "--local",
-               "--parallel", "--waitlock=5m"]
-        proc = Popen(cmd, stdin=None, stdout=None, stderr=None, close_fds=True)
+        env = os.environ.copy()
+        env["OSVC_ACTION_ORIGIN"] = "daemon"
+        cmd = rcEnv.python_cmd + [
+            os.path.join(rcEnv.paths.pathlib, "svcmgr.py"),
+            "--service", "*", "shutdown", "--local",
+            "--parallel", "--waitlock=5m"
+        ]
+        proc = Popen(cmd, stdin=None, stdout=None, stderr=None, close_fds=True,
+                     env=env)
         proc.communicate()
 
 
     def action_daemon_shutdown(self, nodename, **kwargs):
+        """
+        Care with locks
+        """
         self.log.info("shutdown daemon requested")
         with shared.THREADS_LOCK:
             shared.THREADS["scheduler"].stop()
