@@ -919,11 +919,14 @@ class Monitor(shared.OsvcThread):
             if ranks == []:
                 return
             nodename = ranks[0]
-            if nodename == rcEnv.nodename:
-                # natural leader
-                pass
-            else:
+            if nodename != rcEnv.nodename:
+                # after loosing the placement leader status, the smon state
+                # may need a reset
+                if smon.status in ("ready", "wait parents"):
+                    self.set_smon(svc.svcname, "idle")
+                # not natural leader, skip orchestration
                 return
+            # natural leader, let orchestration unroll
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
         if smon.global_expect in ("started", "placed"):
             allowed_status = ("down", "stdby down", "stdby up", "warn")
@@ -1016,8 +1019,13 @@ class Monitor(shared.OsvcThread):
             except ValueError:
                 return
             if rcEnv.nodename not in ranks[:svc.flex_min_nodes]:
-                # not a natural leader, skip orchestration
+                # after loosing the placement leader status, the smon state
+                # may need a reset
+                if smon.status in ("ready", "wait parents"):
+                    self.set_smon(svc.svcname, "idle")
+                # natural not a leader, skip orchestration
                 return
+            # natural leader, let orchestration unroll
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
         up_nodes = self.up_service_instances(svc.svcname)
         n_up = len(up_nodes)
