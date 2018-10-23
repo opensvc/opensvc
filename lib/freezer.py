@@ -15,13 +15,23 @@ class Freezer(object):
 
     def frozen(self, strict=False):
         """
-        Return True if the service frozen file flag is present.
+        If strict, return the mtime if the service frozen file flag is present.
+
+        If not strict, return the mtime of either, in turn, the service frozen
+        file if present, or the node frozen file mtime if present.
+
+        Return 0 if the service is not frozen.
         """
-        if os.path.exists(self.flag):
-            return True
-        if not strict and os.path.exists(self.node_flag):
-            return True
-        return False
+        try:
+            return os.path.getmtime(self.flag)
+        except (OSError, IOError):
+            pass
+        if not strict:
+            try:
+                return os.path.getmtime(self.node_flag)
+            except (OSError, IOError):
+                pass
+        return 0
 
     def freeze(self):
         """
@@ -43,11 +53,15 @@ class Freezer(object):
 
     def node_frozen(self):
         """
-        Return True if the node frozen file flag is present.
+        Return the mtime of the node frozen file if present.
+
+        Return 0 if the node is not frozen.
         """
-        if os.path.exists(self.node_flag):
-            return True
-        return False
+        try:
+            return os.path.getmtime(self.node_flag)
+        except (OSError, IOError):
+            pass
+        return 0
 
     def node_freeze(self):
         """

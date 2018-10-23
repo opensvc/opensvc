@@ -21,12 +21,12 @@ class TestFreezer:
         Freezer, not strict
         """
         ret = Freezer("unittest").frozen()
-        assert ret == 1
+        assert ret
 
     def test_02(self):
         """
         Freezer, strict
         """
         ret = Freezer("unittest").frozen(strict=True)
-        assert ret == 0
+        assert not ret
 

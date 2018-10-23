@@ -653,7 +653,7 @@ class Monitor(shared.OsvcThread):
     def resources_orchestrator(self, svcname, svc):
         if svc is None:
             return
-        if self.service_frozen(svcname) or self.freezer.node_frozen():
+        if self.instance_frozen(svcname) or self.freezer.node_frozen():
             #self.log.info("resource %s orchestrator out (frozen)", svc.svcname)
             return
         if svc.disabled:
@@ -799,7 +799,7 @@ class Monitor(shared.OsvcThread):
             self.event("node_thaw", data={"reason": "upgrade"})
             self.freezer.node_thaw()
             self.unfreeze_when_all_nodes_joined = False
-            node_frozen = False
+            node_frozen = 0
         if nmon.status != "idle":
             return
         self.set_nmon_g_expect_from_status()
@@ -888,7 +888,7 @@ class Monitor(shared.OsvcThread):
                 self.set_smon(svc.svcname, local_expect="unset")
             else:
                 return
-        if self.service_frozen(svc.svcname) or self.freezer.node_frozen():
+        if self.instance_frozen(svc.svcname) or self.freezer.node_frozen():
             #self.log.info("service %s orchestrator out (frozen)", svc.svcname)
             return
         if not self.rejoin_grace_period_expired:
@@ -1114,7 +1114,7 @@ class Monitor(shared.OsvcThread):
         """
         instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
         if smon.global_expect == "frozen":
-            if self.service_frozen(svc.svcname) is False:
+            if not self.instance_frozen(svc.svcname):
                 self.event("instance_freeze", {
                     "reason": "target",
                     "svcname": svc.svcname,
@@ -1122,7 +1122,7 @@ class Monitor(shared.OsvcThread):
                 })
                 self.service_freeze(svc.svcname)
         elif smon.global_expect == "thawed":
-            if self.service_frozen(svc.svcname):
+            if self.instance_frozen(svc.svcname):
                 self.event("instance_thaw", {
                     "reason": "target",
                     "svcname": svc.svcname,
@@ -1136,7 +1136,7 @@ class Monitor(shared.OsvcThread):
             elif smon.status == "wait children":
                 self.set_smon(svc.svcname, status="idle")
 
-            if not self.service_frozen(svc.svcname):
+            if not self.instance_frozen(svc.svcname):
                 self.event("instance_freeze", {
                     "reason": "target",
                     "svcname": svc.svcname,
@@ -1159,7 +1159,7 @@ class Monitor(shared.OsvcThread):
             elif smon.status == "wait children":
                 self.set_smon(svc.svcname, status="idle")
 
-            if not self.service_frozen(svc.svcname):
+            if not self.instance_frozen(svc.svcname):
                 self.log.info("freeze service %s", svc.svcname)
                 self.event("instance_freeze", {
                     "reason": "target",
@@ -1180,7 +1180,7 @@ class Monitor(shared.OsvcThread):
                     })
                     self.service_stop(svc.svcname)
         elif smon.global_expect == "started":
-            if self.service_frozen(svc.svcname):
+            if self.instance_frozen(svc.svcname):
                 self.event("instance_thaw", {
                     "reason": "target",
                     "svcname": svc.svcname,
@@ -1232,7 +1232,7 @@ class Monitor(shared.OsvcThread):
         elif smon.global_expect == "placed":
             # refresh smon for placement attr change caused by a clear
             smon = self.get_service_monitor(svc.svcname)
-            if self.service_frozen(svc.svcname):
+            if self.instance_frozen(svc.svcname):
                 self.event("instance_thaw", {
                     "reason": "target",
                     "svcname": svc.svcname,
@@ -1261,7 +1261,7 @@ class Monitor(shared.OsvcThread):
                 discard_constraints_violation=False,
                 discard_start_failed=False
             )
-            if self.service_frozen(svc.svcname):
+            if self.instance_frozen(svc.svcname):
                 self.event("instance_thaw", {
                     "reason": "target",
                     "svcname": svc.svcname,
@@ -1560,6 +1560,7 @@ class Monitor(shared.OsvcThread):
         if now > self.startup + datetime.timedelta(seconds=self.rejoin_grace_period):
             self.end_rejoin_grace_period("expired, but some nodes are still "
                                          "unreacheable. freeze node.")
+            self.event("node_freeze", data={"reason": "rejoin_expire"})
             self.freezer.node_freeze()
             return False
         self.duplog("info", "in rejoin grace period", nodename="")
@@ -1896,7 +1897,7 @@ class Monitor(shared.OsvcThread):
                     # sender daemon outdated
                     continue
                 n_instances += 1
-        n_frozen = fstatus_l.count(True)
+        n_frozen = len([True for froz in fstatus_l if froz])
         if n_instances == 0:
             fstatus = 'n/a'
         elif n_frozen == n_instances:
@@ -2509,14 +2510,14 @@ class Monitor(shared.OsvcThread):
     def all_nodes_frozen(self):
         with shared.CLUSTER_DATA_LOCK:
              for data in shared.CLUSTER_DATA.values():
-                 if not data.get("frozen", False):
+                 if not data.get("frozen"):
                      return False
         return True
 
     def all_nodes_thawed(self):
         with shared.CLUSTER_DATA_LOCK:
              for data in shared.CLUSTER_DATA.values():
-                 if data.get("frozen", False):
+                 if data.get("frozen"):
                      return False
         return True
 
@@ -2542,7 +2543,7 @@ class Monitor(shared.OsvcThread):
         instance = self.get_service_instance(svcname, rcEnv.nodename)
         if instance is None:
             return
-        local_frozen = instance.get("frozen", False)
+        local_frozen = instance.get("frozen", 0)
         frozen = shared.AGG[svcname].frozen
         provisioned = shared.AGG[svcname].provisioned
         deleted = self.get_agg_deleted(svcname)
@@ -2784,7 +2785,7 @@ class Monitor(shared.OsvcThread):
                     continue
                 if global_expect is None:
                     continue
-                local_frozen = shared.CLUSTER_DATA[rcEnv.nodename].get("frozen", False)
+                local_frozen = shared.CLUSTER_DATA[rcEnv.nodename].get("frozen", 0)
                 if (global_expect == "frozen" and not local_frozen) or \
                    (global_expect == "thawed" and local_frozen):
                     self.log.info("node %s wants local node %s", nodename, global_expect)
@@ -2836,7 +2837,7 @@ class Monitor(shared.OsvcThread):
             return False
         if global_expect == "stopped":
             local_avail = instance["avail"]
-            local_frozen = instance.get("frozen", False)
+            local_frozen = instance.get("frozen", 0)
             if local_avail not in STOPPED_STATES or not local_frozen:
                 return True
             else:
@@ -2845,7 +2846,7 @@ class Monitor(shared.OsvcThread):
             return not self.get_agg_shutdown(svcname)
         elif global_expect == "started":
             status = shared.AGG[svcname].avail
-            local_frozen = instance.get("frozen", False)
+            local_frozen = instance.get("frozen", 0)
             if status in STOPPED_STATES or local_frozen:
                 return True
             else:
@@ -3015,6 +3016,51 @@ class Monitor(shared.OsvcThread):
             return 0
 
     def merge_frozen(self):
+        last_shutdown = self.get_last_shutdown()
+        self.merge_node_frozen(last_shutdown)
+        self.merge_service_frozen(last_shutdown)
+
+    def merge_node_frozen(self, last_shutdown):
+        """
+        This method is only called at the end of the rejoin grace period.
+
+        It freezes the local services instances for services that have
+        a live remote instance frozen. This prevents a node
+        rejoining the cluster from taking over services that where frozen
+        and stopped while we were not alive.
+        """
+        if len(self.cluster_nodes) < 2:
+            return
+        try:
+            node = shared.CLUSTER_DATA[rcEnv.nodename]
+        except:
+            return
+        frozen = node.get("frozen", 0)
+        if frozen:
+            return
+        if self.freezer.node_frozen():
+            return
+        nmon = self.get_node_monitor()
+        if nmon.global_expect == "thawed":
+            return
+        for peer in self.cluster_nodes:
+            if peer == rcEnv.nodename:
+                continue
+            try:
+                node = shared.CLUSTER_DATA[peer]
+            except:
+                continue
+            frozen = node.get("frozen", 0)
+            if not isinstance(frozen, float):
+                continue
+            if frozen and frozen > last_shutdown:
+                self.event("node_freeze", data={
+                    "reason": "merge_frozen",
+                    "peer": peer,
+                })
+                self.freezer.node_freeze()
+
+    def merge_service_frozen(self, last_shutdown):
         """
         This method is only called at the end of the rejoin grace period.
 
@@ -3033,10 +3079,10 @@ class Monitor(shared.OsvcThread):
                 instance = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcname]
             except:
                 continue
-            frozen = instance.get("frozen", False)
+            frozen = instance.get("frozen", 0)
             if frozen:
                 continue
-            if self.service_frozen(svc.svcname):
+            if self.instance_frozen(svc.svcname):
                 continue
             smon = self.get_service_monitor(svc.svcname)
             if smon.global_expect == "thawed":
@@ -3048,9 +3094,10 @@ class Monitor(shared.OsvcThread):
                     instance = shared.CLUSTER_DATA[peer]["services"]["status"][svc.svcname]
                 except:
                     continue
-                updated = instance.get("monitor", {}).get("status_updated", 0)
-                frozen = instance.get("frozen", False)
-                if frozen and updated > last_shutdown:
+                frozen = instance.get("frozen", 0)
+                if not isinstance(frozen, float):
+                    continue
+                if frozen > last_shutdown:
                     self.event("instance_freeze", data={
                         "reason": "merge_frozen",
                         "peer": peer,
@@ -3058,9 +3105,11 @@ class Monitor(shared.OsvcThread):
                     })
                     svc.freezer.freeze()
 
-    def service_frozen(self, svcname):
+    def instance_frozen(self, svcname, nodename=None):
+        if not nodename:
+            nodename = rcEnv.nodename
         try:
-            return shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]["frozen"]
+            return shared.CLUSTER_DATA[nodename]["services"]["status"][svcname].get("frozen", 0)
         except:
-            return
+            return 0
 

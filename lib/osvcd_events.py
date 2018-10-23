@@ -16,6 +16,8 @@ EVENTS = {
     ("node_freeze", "target"): "freeze node",
     ("node_thaw", None): "thaw node",
     ("node_freeze", "upgrade"): "freeze node for upgrade until the cluster is complete",
+    ("node_freeze", "rejoin_expire"): "freeze node, the cluster is not complete on rejoin grace period expiration",
+    ("node_freeze", "merge_frozen"): "freeze node, node {peer} was frozen while we were down",
     ("node_thaw", "upgrade"): "thaw node after upgrade, the cluster is complete",
     ("max_resource_restart", None): "max restart ({restart}) reached for resource {rid} ({resource.label})",
     ("max_stdby_resource_restart", None): "max restart ({restart}) reached for standby resource {rid} ({resource.label})",

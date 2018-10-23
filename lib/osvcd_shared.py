@@ -828,7 +828,7 @@ class OsvcThread(threading.Thread, Crypt):
                        "shutting",
                    ):
                     continue
-                if discard_frozen and data.get("frozen", False):
+                if discard_frozen and data.get("frozen"):
                     # node frozen
                     continue
                 instance = self.get_service_instance(svc.svcname, nodename)
