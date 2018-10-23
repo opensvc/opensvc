@@ -812,6 +812,8 @@ class OsvcThread(threading.Thread, Crypt):
         * the service instance constraints are eval'ed True (default)
         """
         candidates = []
+        if svc is None:
+            return []
         with CLUSTER_DATA_LOCK:
             for nodename, data in CLUSTER_DATA.items():
                 if nodename not in svc.peers:
