@@ -10,9 +10,17 @@ HowTo :
 -----
 => install wix tools ( http://wixtoolset.org/ - known to work with 3.8, 3.11 )
 => install nsis ( http://nsis.sourceforge.net/ - known to work with 3.0a2, 3.03 )
-=> install Visual C++ 2010 x86 redist files, needed by nmake.exe ( http://www.microsoft.com/en-us/download/details.aspx?id=5555 )
-=> check that kits/vcredist content is OK (expected content is Visual C++ 2008 x86 redist files, not the same file as previous point)
+=> install Visual C++ 2010 x86 redist files, needed by opensvc/bin/pkg/winbuilder/nmake.exe ( http://www.microsoft.com/en-us/download/details.aspx?id=5555 )
+=> install coreutils package from Cygwin (check system PATH is updated with cygwin64\bin folder, you may need to manually set it up)
+=> check that kits/vcredist content is OK (expected content is Visual C++ 2015 U1 x64 redist files, not the same file as previous point)
 => check that kits/winpython content is OK (expected content is a folder named "python" with a ready to use python distrib, cleaned winpython for example)
+   - install Python from a binary distribution (like https://www.python.org/ftp/python/3.6.7/python-3.6.7-amd64.exe)
+   - install PyWin32 from a binary distribution (like https://github.com/mhammond/pywin32/releases/download/b224/pywin32-224.win-amd64-py3.6.exe)
+   - install PyCryptodome module using pip
+      * install Microsoft Visual Studio 2015 Update 3 64 bits Community Edition with C/C++ compilers (default install)
+      * pip install pycryptodome
+      * python -m Crypto.SelfTest
+   - copy the resulting python tree into kits/winpython, under a folder named "python"
 => launch a cmd.exe /V:ON to enable "delayed environment variable expansion"
 => go to folder opensvc\bin\pkg\winbuilder
 => check osvcvar.cmd is setting environment variables OSVCMAKEVERSION and OSVCMAKERELEASE
