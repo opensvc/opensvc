@@ -66,6 +66,14 @@ def dev_is_ro(dev):
     except:
         return dev_is_ro_sysfs(dev)
 
+def need_rescan(dev):
+    try:
+        fd = os.open(dev, os.O_NONBLOCK|os.O_RDWR)
+        os.close(fd)
+        return False
+    except (OSError, IOError):
+        return True
+
 def dev_rescan(dev, log=None):
     dev = dev.replace('/dev/', '')
     sysdev = "/sys/block/%s/device/rescan"%dev
@@ -104,21 +112,29 @@ def wait_for_dev_ready(dev, log=None):
 def promote_dev_rw(dev, log=None):
     count = 0
     for _dev in dev_to_paths(dev, log=log):
+       changed = False
        if dev_is_ro(_dev):
            try:
                dev_set_rw(_dev, log=log)
+               changed = True
            except:
-               dev_rescan(_dev, log=log)
-           wait_for_dev_ready(_dev, log=log)
+               pass
+       if need_rescan(_dev):
+           dev_rescan(_dev, log=log)
+           changed = True
+       if changed:
            count += 1
+           wait_for_dev_ready(_dev, log=log)
+    if dev_is_ro(dev):
+        try:
+            dev_set_rw(dev, log=log)
+        except ex.excError:
+            pass
     if count > 0:
-        if dev.startswith("/dev/dm-"):
-            try:
-               dev_set_rw(dev, log=log)
-            except:
-               refresh_multipath(dev, log=log)
-        else:
+        try:
             refresh_multipath(dev, log=log)
+        except ex.excError:
+            pass
 
 def loop_is_deleted(dev):
     if not which(rcEnv.syspaths.losetup):
