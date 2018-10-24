@@ -33,6 +33,7 @@ class Sync(Res.Resource, Scheduler):
                  sync_max_delay=None,
                  schedule=None,
                  **kwargs):
+        self.pausable = True
         if sync_max_delay is None:
             self.sync_max_delay = 1500
         else:
@@ -170,6 +171,19 @@ class Sync(Res.Resource, Scheduler):
         return rcStatus.UNDEF
 
     def _status(self, **kwargs):
+        if self.paused():
+            return rcStatus.NA
+        return self.sync_status(**kwargs)
+
+    def paused(self):
+        """
+        Return True if the aggregated service status is not up, in which
+        case we don't care about computing a status for the sync resource.
+
+        Drivers with pausable=False are never paused.
+        """
+        if self.pausable:
+            return False
         try:
             data = self.svc.node._daemon_status()
         except Exception:
@@ -178,13 +192,13 @@ class Sync(Res.Resource, Scheduler):
             svcnames = data["monitor"]["services"]
         except (KeyError, TypeError):
             # the daemon is not returning proper status data
-            svcnames = []
+            svcnames = {}
         if self.svc.svcname in svcnames:
-            avail = data["monitor"]["services"][self.svc.svcname]["avail"]
+            avail = svcnames[self.svc.svcname]["avail"]
             if avail != "up":
                 self.status_log("paused, service not up", "info")
-                return rcStatus.NA
-        return self.sync_status(**kwargs)
+                return True
+        return False
 
     @lazy
     def last_stats_file(self):

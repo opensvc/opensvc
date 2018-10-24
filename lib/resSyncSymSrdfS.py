@@ -582,6 +582,7 @@ class syncSymSrdfS(resSync.Sync):
                               type="sync.symsrdfs",
                               **kwargs)
 
+        self.pausable = False
         self.label = "srdf/s symdg %s"%(symdg)
         self.symid = symid
 

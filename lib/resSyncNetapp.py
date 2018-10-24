@@ -279,6 +279,7 @@ class syncNetapp(resSync.Sync):
                               rid=rid,
                               type="sync.netapp",
                               **kwargs)
+        self.pausable = False
         self.label = "netapp %s on %s"%(path, ', '.join(filers.values()))
         self.filers = filers
         self.path = path

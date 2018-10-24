@@ -20,6 +20,7 @@ class syncHp3par(resSync.Sync):
                               rid=rid,
                               type="sync.hp3par",
                               **kwargs)
+        self.pausable = False
         self.array = array
         self.rcg_names = rcg_names
         self.rcg = rcg_names[array]

@@ -230,6 +230,7 @@ class syncNexenta(resSync.Sync):
                               rid=rid,
                               type="sync.nexenta",
                               **kwargs)
+        self.pausable = False
         self.label = "nexenta autosync %s"%name
         self.autosync = name
         self.filers = filers
