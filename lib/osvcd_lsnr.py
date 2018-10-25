@@ -558,24 +558,67 @@ class Listener(shared.OsvcThread):
         for svcname in svcnames:
             try:
                 self.validate_global_expect(svcname, global_expect)
+                self.validate_destination_node(svcname, global_expect)
             except ex.excAbortAction as exc:
                 info.append(str(exc))
             except ex.excError as exc:
                 errors.append(str(exc))
             else:
                 info.append("service %s target state set to %s" % (svcname, global_expect))
-            self.set_smon(
-                svcname, status=status,
-                local_expect=local_expect, global_expect=global_expect,
-                reset_retries=reset_retries,
-                stonith=stonith,
-            )
-        ret = {"status": 0}
+                self.set_smon(
+                    svcname, status=status,
+                    local_expect=local_expect, global_expect=global_expect,
+                    reset_retries=reset_retries,
+                    stonith=stonith,
+                )
+        ret = {"status": len(errors)}
         if info:
             ret["info"] = info
         if errors:
             ret["error"] = errors
         return ret
+
+    def validate_destination_node(self, svcname, global_expect):
+        """
+        For a placed@<dst> <global_expect> (move action) on <svcname>,
+
+        Raise an excError if
+        * the service <svcname> does not exist
+        * the service <svcname> topology is failover and more than 1
+          destination node was specified
+        * the specified destination is not a service candidate node
+        * no destination node specified
+        * an empty destination node is specified in a list of destination
+          nodes
+
+        Raise an excAbortAction if
+        * the avail status of the instance on the destination node is up
+        """
+        try:
+            global_expect, destination_nodes = global_expect.split("@", 1)
+        except ValueError:
+            return
+        instances = self.get_service_instances(svcname)
+        if not instances:
+            raise ex.excError("service does not exist")
+        destination_nodes = destination_nodes.split(",")
+        count = len(destination_nodes)
+        if count == 0:
+            raise ex.excError("no destination node specified")
+        instance = list(instances.values())[0]
+        if count > 1 and instance["topology"] == "failover":
+            raise ex.excError("only one destination node can be specified for "
+                              "a failover service")
+        for destination_node in destination_nodes:
+            if not destination_node:
+                raise ex.excError("empty destination node")
+            if destination_node not in instances:
+                raise ex.excError("destination node %s has no service instance" % \
+                                  destination_node)
+            instance = instances[destination_node]
+            if instance["avail"] == "up":
+                raise ex.excAbortAction("instance on destination node %s is "
+                                        "already up" % destination_node)
 
     def validate_global_expect(self, svcname, global_expect):
         if global_expect is None:
