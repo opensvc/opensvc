@@ -126,6 +126,16 @@ Id ``node_freeze``, Reason ``target``
 
 freeze node
 
+Id ``node_freeze``, Reason ``rejoin_expire``
+--------------------------------------------
+
+freeze node, the cluster is not complete on rejoin grace period expiration
+
+Id ``node_freeze``, Reason ``merge_frozen``
+-------------------------------------------
+
+freeze node, node {peer} was frozen while we were down
+
 Id ``node_freeze``, Reason ``upgrade``
 --------------------------------------
 

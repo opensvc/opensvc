@@ -81,7 +81,11 @@ KEYWORDS = [
         "at": True,
         "default": True,
         "convert": "boolean",
-        "text": "If set to False, the default rollback on action error is inhibited, leaving the service in its half-started state."
+        "text": "If set to False, the default 'rollback on action error' "
+                "behaviour is inhibited, leaving the service in its "
+                "half-started state. The daemon also refuses to takeover "
+                "a service if rollback is disabled and a peer instance is "
+                "'start failed'."
     },
     {
         "section": "DEFAULT",
