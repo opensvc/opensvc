@@ -1974,7 +1974,7 @@ class Svc(Crypt, ExtConfigMixin):
                 data = mon_data["nodes"][nodename]["services"]["status"][self.svcname]
                 avail = data["avail"]
                 node_frozen = mon_data["nodes"][nodename].get("frozen")
-            except KeyError as exc:
+            except (TypeError, KeyError) as exc:
                 avail = "undef"
                 node_frozen = False
                 data = Storage()
