@@ -990,6 +990,8 @@ class Monitor(shared.OsvcThread):
                 return
             if self.peer_warn(svc.svcname):
                 return
+            if svc.disable_rollback and self.peer_start_failed(svc.svcname):
+                return
             peer = self.peer_transitioning(svc.svcname)
             if peer:
                 return
@@ -1851,6 +1853,17 @@ class Monitor(shared.OsvcThread):
             if nodename == rcEnv.nodename:
                 continue
             if instance["monitor"]["status"].endswith("ing"):
+                return nodename
+
+    def peer_start_failed(self, svcname):
+        """
+        Return the nodename of the first peer with the service in a start failed
+        state.
+        """
+        for nodename, instance in self.get_service_instances(svcname).items():
+            if nodename == rcEnv.nodename:
+                continue
+            if instance["monitor"]["status"] == "start failed":
                 return nodename
 
     def better_peers_ready(self, svc):
