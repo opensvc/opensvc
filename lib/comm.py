@@ -419,7 +419,8 @@ class Crypt(object):
                 self.log.info("blacklist cleared")
             elif sender_id in BLACKLIST:
                 del BLACKLIST[sender_id]
-                self.log.info("sender %s removed from blacklist")
+                self.log.info("sender %s removed from blacklist" % \
+                              sender_id)
 
     @staticmethod
     def get_blacklist():
