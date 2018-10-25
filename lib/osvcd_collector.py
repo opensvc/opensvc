@@ -208,6 +208,8 @@ class Collector(shared.OsvcThread):
                 if svcname not in instances_config:
                     # deleted service instance
                     continue
+                if not instances_status[svcname]:
+                    continue
                 if instances_status[svcname].get("encap") is True:
                     continue
                 if nodename not in _data["nodes"]:
