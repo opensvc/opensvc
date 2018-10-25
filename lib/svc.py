@@ -5215,11 +5215,11 @@ class Svc(Crypt, ExtConfigMixin):
             )
         except Exception as exc:
             self.log.error("post service action '%s' on node %s failed: %s",
-                           cmd, nodename, exc)
+                           " ".join(cmd), nodename, exc)
             return 1
         if data is None or data["status"] != 0:
             self.log.error("post service action '%s' on node %s failed",
-                           cmd, nodename)
+                           " ".join(cmd), nodename)
             return 1
         if "data" not in data:
             return 0
