@@ -214,12 +214,14 @@ class Lxc(resContainer.Container):
         raise ex.excError
 
     def get_pid(self):
-        links = []
         cmd = ['lxc-info', '--name', self.name, '-p']
         out, _, ret = justcall(cmd)
         if ret != 0:
-            return []
-        return int(out.split()[-1])
+            return
+        try:
+            return int(out.split()[-1])
+        except IndexError:
+            return
 
     def get_links(self):
         links = []
@@ -463,6 +465,6 @@ class Lxc(resContainer.Container):
         """
         try:
             return "/proc/%d/ns/net" % self.get_pid()
-        except ValueError:
-            raise ex.excError("can't find container pid")
+        except (TypeError, ValueError):
+            return
 
