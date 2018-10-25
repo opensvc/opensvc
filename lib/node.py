@@ -3948,6 +3948,8 @@ class Node(Crypt, ExtConfigMixin):
                 except KeyError:
                     continue
                 for svcname, _data in node_svc_status.items():
+                    if _data is None:
+                        continue
                     if svcnames and svcname not in svcnames:
                         continue
                     if svcname not in services:
