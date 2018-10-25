@@ -3085,9 +3085,16 @@ class Node(Crypt, ExtConfigMixin):
         if nodename is None:
             nodename = rcEnv.nodename
 
-        ops = ("=", ">", "<", "~", ">=", "<=")
+        ops = (">=", "<=", "=", ">", "<", "~")
         oper = None
         val = None
+
+        if path[0] == "!":
+            path = path[1:]
+            neg = True
+        else:
+            neg = False
+
         for op in ops:
             idx = path.rfind(op)
             if idx < 0:
@@ -3109,6 +3116,11 @@ class Node(Crypt, ExtConfigMixin):
 
         def eval_cond(val):
             for match in jsonpath_expr.find(data):
+                if oper is None:
+                    if match.value:
+                        return True
+                    else:
+                        continue
                 obj_class = type(match.value)
                 try:
                     if obj_class == bool:
@@ -3117,6 +3129,9 @@ class Node(Crypt, ExtConfigMixin):
                         val = obj_class(val)
                 except Exception as exc:
                     raise ex.excError("can not convert to a common type")
+                if oper is None:
+                    if match.value:
+                        return True
                 if oper == "=":
                     if match.value == val:
                         return True
@@ -3138,7 +3153,7 @@ class Node(Crypt, ExtConfigMixin):
             return False
 
         data = self._daemon_status()["monitor"]["nodes"]
-        if eval_cond(val):
+        if neg ^ eval_cond(val):
             return
 
         if duration:
@@ -3155,7 +3170,7 @@ class Node(Crypt, ExtConfigMixin):
                 continue
             _nodename = msg.get("nodename")
             json_delta.patch(data[_nodename], msg["data"])
-            if eval_cond(val):
+            if neg ^ eval_cond(val):
                 break
 
     def events(self, nodename=None):
