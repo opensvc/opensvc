@@ -2083,7 +2083,7 @@ class Svc(Crypt, ExtConfigMixin):
         add_scaler_slaves(node_svcname)
         add_slaves(node_svcname)
 
-        print(tree)
+        tree.print()
 
     def get_rset_status(self, groups, refresh=False):
         """
@@ -2619,7 +2619,7 @@ class Svc(Crypt, ExtConfigMixin):
                 for dev in __data:
                     devnode = catnode.add_node()
                     devnode.add_column(dev)
-        print(tree)
+        tree.print()
 
     def devs(self, categories=None):
         """
@@ -3335,7 +3335,7 @@ class Svc(Crypt, ExtConfigMixin):
         return data
 
     def print_resinfo(self):
-        if self.options.format is not None or self.options.jsonpath_filter:
+        if self.options.format is None and not self.options.jsonpath_filter:
             self.print_resinfo_tree()
             return
         data = [[
@@ -3366,7 +3366,7 @@ class Svc(Crypt, ExtConfigMixin):
                 catnode = node.add_node()
                 catnode.add_column(__data[-2], color.LIGHTBLUE)
                 catnode.add_column(__data[-1])
-        print(tree)
+        tree.print()
 
     def push_status(self):
         """

@@ -201,8 +201,6 @@ def forest(data, columns=1, separator="  ", widths=None, force_width=None):
         """
         if width == 0:
             return []
-        if six.PY2 and isinstance(text, str):
-            text = text.decode("utf8")
         return wrap(
             text,
             initial_indent="",
@@ -309,6 +307,10 @@ class Column(object):
         """
         Add a phrase to this column.
         """
+        if not isinstance(text, six.string_types):
+            text = str(text)
+        if six.PY2 and isinstance(text, str):
+            text = text.decode("utf8")
         self.node.node["data"][self.idx].append({
             "text": text,
             "color": textcolor,
@@ -331,6 +333,10 @@ class Node(object):
         """
         if "data" not in self.node:
             self.node["data"] = []
+        if not isinstance(text, six.string_types):
+            text = str(text)
+        if six.PY2 and isinstance(text, str):
+            text = text.decode("utf8")
         self.node["data"].append([{
             "text": text,
             "color": textcolor,
