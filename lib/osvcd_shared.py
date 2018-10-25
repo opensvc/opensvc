@@ -753,7 +753,7 @@ class OsvcThread(threading.Thread, Crypt):
                 return Storage(
                     CLUSTER_DATA[nodename]["services"]["status"][svcname]
                 )
-        except KeyError:
+        except (TypeError, KeyError):
             return
 
     @staticmethod
@@ -768,13 +768,13 @@ class OsvcThread(threading.Thread, Crypt):
                     if svcname in CLUSTER_DATA[nodename]["services"]["status"]:
                         try:
                             CLUSTER_DATA[nodename]["services"]["status"][svcname]["avail"]
-                        except KeyError:
+                        except (TypeError, KeyError):
                             # foreign
                             continue
                         if discard_empty and CLUSTER_DATA[nodename]["services"]["status"][svcname]:
                             continue
                         instances[nodename] = CLUSTER_DATA[nodename]["services"]["status"][svcname]
-                except KeyError:
+                except (TypeError, KeyError):
                     continue
         return instances
 
