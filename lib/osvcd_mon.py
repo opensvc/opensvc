@@ -2249,7 +2249,7 @@ class Monitor(shared.OsvcThread):
                         if svcname not in data:
                             data[svcname] = {}
                         data[svcname][nodename] = Storage(shared.CLUSTER_DATA[nodename]["services"]["config"][svcname])
-                except KeyError:
+                except (TypeError, KeyError):
                     pass
         return data
 
@@ -2954,7 +2954,7 @@ class Monitor(shared.OsvcThread):
                                 continue
                             try:
                                 remote = Storage(shared.CLUSTER_DATA[nodename]["services"]["status"][svc.svcname]["resources"][resource.rid]["provisioned"])
-                            except KeyError:
+                            except (TypeError, KeyError):
                                 continue
                             if remote is None or remote.state is None or remote.mtime is None:
                                 continue

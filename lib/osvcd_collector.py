@@ -198,7 +198,11 @@ class Collector(shared.OsvcThread):
             try:
                 instances_status = data["nodes"][nodename]["services"]["status"]
                 instances_config = data["nodes"][nodename]["services"]["config"]
-            except KeyError:
+            except (TypeError, KeyError):
+                continue
+            if instances_status is None:
+                continue
+            if instances_config is None:
                 continue
             for svcname in list(instances_status.keys()):
                 if svcname not in instances_config:
