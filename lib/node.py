@@ -3059,8 +3059,11 @@ class Node(Crypt, ExtConfigMixin):
         Wait for a condition on the monitor thread data.
         Catch broken pipe.
         """
+        path = self.options.jsonpath_filter
+        nodename = self.options.node
+        duration = self.options.duration
         try:
-            self._wait()
+            self._wait(nodename, path, duration)
         except ex.excSignal:
             return 1
         except (OSError, IOError) as exc:
@@ -3068,7 +3071,7 @@ class Node(Crypt, ExtConfigMixin):
                 # broken pipe
                 return 1
 
-    def _wait(self):
+    def _wait(self, nodename=None, path=None, duration=None):
         """
         Wait for a condition on the monitor thread data
         """
@@ -3076,13 +3079,13 @@ class Node(Crypt, ExtConfigMixin):
         from jsonpath_ng import jsonpath
         from jsonpath_ng.ext import parse
 
-        if self.options.node:
-            nodename = self.options.node
-        else:
+        if not path:
+            return
+
+        if nodename is None:
             nodename = rcEnv.nodename
 
         ops = ("=", ">", "<", "~", ">=", "<=")
-        path = self.options.jsonpath_filter
         oper = None
         val = None
         for op in ops:
@@ -3138,14 +3141,14 @@ class Node(Crypt, ExtConfigMixin):
         if eval_cond(val):
             return
 
-        if self.options.duration:
+        if duration:
             import signal
             from converters import convert_duration
             def alarm_handler(signum, frame):
                 print("timeout", file=sys.stderr)
                 raise ex.excSignal
             signal.signal(signal.SIGALRM, alarm_handler)
-            signal.alarm(convert_duration(self.options.duration))
+            signal.alarm(convert_duration(duration))
 
         for msg in self.daemon_events(nodename):
             if msg.get("kind") != "patch":
