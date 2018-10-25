@@ -1,20 +1,90 @@
 Daemon Events
 =============
 
-Id ``arbitrator_down``
-----------------------
-
-arbitrator {arbitrator} is no longer reachable
-
 Id ``arbitrator_up``
 --------------------
 
 arbitrator {arbitrator} is now reachable
 
+Id ``stdby_resource_restart``
+-----------------------------
+
+start standby resource {rid} ({resource.label}) {resource.status} {resource.log}, try {try}/{restart}
+
+Id ``max_stdby_resource_restart``
+---------------------------------
+
+max restart ({restart}) reached for standby resource {rid} ({resource.label})
+
 Id ``blacklist_add``
 --------------------
 
 sender {sender} blacklisted
+
+Id ``monitor_started``
+----------------------
+
+monitor started
+
+Id ``hb_beating``
+-----------------
+
+node {nodename} hb status stale => beating
+
+Id ``node_config_change``
+-------------------------
+
+node config change
+
+Id ``max_resource_restart``
+---------------------------
+
+max restart ({restart}) reached for resource {rid} ({resource.label})
+
+Id ``resource_toc``
+-------------------
+
+toc for resource {rid} ({resource.label}) {resource.status} {resource.log}
+
+Id ``service_config_installed``
+-------------------------------
+
+config fetched from node {from} is now installed
+
+Id ``node_thaw``
+----------------
+
+thaw node
+
+Id ``hb_stale``
+---------------
+
+node {nodename} hb status beating => stale
+
+Id ``scale_down``
+-----------------
+
+exceeds {delta} instance to reach scale target {instance.scale}
+
+Id ``resource_degraded``
+------------------------
+
+resource {rid} ({resource.label}) degraded to {resource.status} {resource.log}
+
+Id ``resource_restart``
+-----------------------
+
+restart resource {rid} ({resource.label}) {resource.status} {resource.log}, try {try}/{restart}
+
+Id ``arbitrator_down``
+----------------------
+
+arbitrator {arbitrator} is no longer reachable
+
+Id ``scale_up``
+---------------
+
+misses {delta} instance to reach scale target {instance.scale}
 
 Id ``crash``, Reason ``split``
 ------------------------------
@@ -25,16 +95,6 @@ Id ``forget_peer``, Reason ``no_rx``
 ------------------------------------
 
 no rx thread still receive from node {peer} and maintenance grace period expired. flush its data
-
-Id ``hb_beating``
------------------
-
-node {nodename} hb status stale => beating
-
-Id ``hb_stale``
----------------
-
-node {nodename} hb status beating => stale
 
 Id ``instance_abort``, Reason ``target``
 ----------------------------------------
@@ -81,15 +141,15 @@ Id ``instance_start``, Reason ``target``
 
 start {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target
 
-Id ``instance_stop``, Reason ``target``
----------------------------------------
-
-stop {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target
-
 Id ``instance_stop``, Reason ``flex_threshold``
 -----------------------------------------------
 
 stop {instance.topology} {instance.avail} instance to meet threshold constraints: {up}/{instance.flex_min_nodes}-{instance.flex_max_nodes}
+
+Id ``instance_stop``, Reason ``target``
+---------------------------------------
+
+stop {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target
 
 Id ``instance_thaw``, Reason ``target``
 ---------------------------------------
@@ -101,40 +161,20 @@ Id ``instance_unprovision``, Reason ``target``
 
 unprovision {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target
 
-Id ``max_resource_restart``
----------------------------
+Id ``node_freeze``, Reason ``merge_frozen``
+-------------------------------------------
 
-max restart ({restart}) reached for resource {rid} ({resource.label})
-
-Id ``max_stdby_resource_restart``
----------------------------------
-
-max restart ({restart}) reached for standby resource {rid} ({resource.label})
-
-Id ``monitor_started``
-----------------------
-
-monitor started
-
-Id ``node_config_change``
--------------------------
-
-node config change
-
-Id ``node_freeze``, Reason ``target``
--------------------------------------
-
-freeze node
+freeze node, node {peer} was frozen while we were down
 
 Id ``node_freeze``, Reason ``rejoin_expire``
 --------------------------------------------
 
 freeze node, the cluster is not complete on rejoin grace period expiration
 
-Id ``node_freeze``, Reason ``merge_frozen``
--------------------------------------------
+Id ``node_freeze``, Reason ``target``
+-------------------------------------
 
-freeze node, node {peer} was frozen while we were down
+freeze node
 
 Id ``node_freeze``, Reason ``upgrade``
 --------------------------------------
@@ -146,48 +186,8 @@ Id ``node_thaw``, Reason ``upgrade``
 
 thaw node after upgrade, the cluster is complete
 
-Id ``node_thaw``
-----------------
-
-thaw node
-
-Id ``resource_degraded``
-------------------------
-
-resource {rid} ({resource.label}) degraded to {resource.status} {resource.log}
-
-Id ``resource_restart``
------------------------
-
-restart resource {rid} ({resource.label}) {resource.status} {resource.log}, try {try}/{restart}
-
-Id ``resource_toc``
--------------------
-
-toc for resource {rid} ({resource.label}) {resource.status} {resource.log}
-
 Id ``resource_would_toc``, Reason ``no_candidate``
 --------------------------------------------------
 
 would toc for resource {rid} ({resource.label}) {resource.status} {resource.log}, but no node is candidate for takeover.
-
-Id ``scale_down``
------------------
-
-exceeds {delta} instance to reach scale target {instance.scale}
-
-Id ``scale_up``
----------------
-
-misses {delta} instance to reach scale target {instance.scale}
-
-Id ``service_config_installed``
--------------------------------
-
-config fetched from node {from} is now installed
-
-Id ``stdby_resource_restart``
------------------------------
-
-start standby resource {rid} ({resource.label}) {resource.status} {resource.log}, try {try}/{restart}
 

@@ -50,7 +50,7 @@ def doc():
     print("Daemon Events")
     print("=============")
     print("")
-    for (eid, reason), msg in sorted(EVENTS.items(), key=lambda x: x[0][0]):
+    for (eid, reason), msg in sorted(EVENTS.items(), key=lambda x: x[0][0] + x[0][1] if x[0][1] else ""):
         if reason:
             title = "Id ``%s``, Reason ``%s``" % (eid, reason)
         else:
