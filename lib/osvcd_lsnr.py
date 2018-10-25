@@ -594,6 +594,8 @@ class Listener(shared.OsvcThread):
         Raise an excAbortAction if
         * the avail status of the instance on the destination node is up
         """
+        if global_expect is None:
+            return
         try:
             global_expect, destination_nodes = global_expect.split("@", 1)
         except ValueError:
