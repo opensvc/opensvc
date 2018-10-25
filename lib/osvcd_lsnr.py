@@ -584,7 +584,11 @@ class Listener(shared.OsvcThread):
             return
         instances = self.get_service_instances(svcname)
         if not instances:
-            raise ex.excError("service does not exist")
+            if global_expect == "provisioned":
+                # allow provision target state on just-created service
+                return
+            else:
+                raise ex.excError("service does not exist")
         for nodename, _data in instances.items():
             status = _data.get("monitor", {}).get("status", "unknown")
             if status != "idle" and "failed" not in status:
