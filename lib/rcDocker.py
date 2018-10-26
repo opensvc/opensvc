@@ -16,8 +16,6 @@ import rcExceptions as ex
 from rcUtilities import which, justcall, lazy, unset_lazy
 from rcGlobalEnv import rcEnv
 
-os.environ['LANG'] = 'C'
-
 class DockerLib(object):
     """
     Instanciated as the 'dockerlib' Svc lazy attribute, this class abstracts

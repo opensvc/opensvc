@@ -510,7 +510,6 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
 
     def load_fdisk(self):
         self.get_wwid()
-        os.environ["LANG"] = "C"
         p = Popen(["fdisk", "-l"], stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:

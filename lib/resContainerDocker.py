@@ -12,8 +12,6 @@ from rcUtilitiesLinux import check_ping
 from rcUtilities import justcall, lazy
 from rcGlobalEnv import rcEnv
 
-os.environ['LANG'] = 'C'
-
 class Docker(resContainer.Container):
     """
     Docker container resource driver.

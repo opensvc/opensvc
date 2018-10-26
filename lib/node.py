@@ -56,7 +56,7 @@ except locale.Error:
     pass
 
 if os.name == "posix":
-    os.environ["LANG"] = "C"
+    os.environ["LANG"] = "C.UTF-8"
 
 DEFAULT_STATUS_GROUPS = [
     "hb",
