@@ -9,6 +9,9 @@
 ; MUI 2 compatible ------
 !include "MUI2.nsh"
 
+; 64 bits
+!include x64.nsh
+
 # Variables
 Var /GLOBAL VCRedistInstalled
 Var /GLOBAL OSVCInstalled
@@ -31,7 +34,7 @@ Var /GLOBAL NSISLogFile
 
 Name "${PRODUCT_TITLE} ${PRODUCT_VERSION}.${PRODUCT_RELEASE}"
 OutFile "${PRODUCT_NAME}.${PRODUCT_VERSION}.${PRODUCT_RELEASE}.exe"
-InstallDir "$PROGRAMFILES\${PRODUCT_NAME}"
+InstallDir "$PROGRAMFILES64\${PRODUCT_NAME}"
 
 # 3 digits sections expected in PRODUCT_VERSION (example 1.5.1401230658)
 # VIProductVersion is restricted...
@@ -58,6 +61,15 @@ Function .onInit
   ${LogText} "[onInit] Begin"
   ;Check earlier installation
   Call CheckOSVC
+  ;64 bits stuff
+  ${If} ${RunningX64} 
+   ${LogText} "Installer running on 64-bit host"
+   ; disable registry redirection (enable access to 64-bit portion of registry)
+   SetRegView 64
+  ${Else}
+    ${LogText} "Installer is not running on 64-bit host. Aborting."
+    Abort "OpenSVC is only supported on 64 bits systems. Aborting."
+  ${EndIf}
   ${LogText} "[onInit] End"
 FunctionEnd
 
@@ -84,7 +96,7 @@ Section "MainSection" SEC01
   ${LogText} "[SEC01] End"
 SectionEnd
 
-Section "Visual C++ 2008 Runtime" SEC02
+Section "Visual C++ 2015 Runtime" SEC02
   ${LogText} "[SEC02] Begin"
   ${LogText} "[SEC02] Will check for VCRedist already installed"
   Call CheckVCRedist
@@ -97,7 +109,7 @@ Section "Visual C++ 2008 Runtime" SEC02
            #run runtime installation tool
            DetailPrint "Installing Microsoft Visual C++ 2015 Redistributable Package (x64)"
            ${LogText} "[SEC02] Will trigger Visual C++ 2015 Redistributable Package installation"
-           ExecWait '"$INSTDIR\tmp\mu_visual_cpp_redistributable_for_visual_studio_2015_update_1_x64_7277229.exe" /q /norestart' $0
+           ExecWait '"$INSTDIR\tmp\mu_visual_cpp_redistributable_for_visual_studio_2015_update_1_x64_7277229.exe" /quiet /norestart' $0
            Call CheckReturnCode
            ${LogText} "[SEC02] Visual C++ 2015 Redistributable Package installation done"
            DetailPrint "Done"
@@ -123,20 +135,20 @@ Section "CleanUp" SEC04
 SectionEnd
 
 ;-------------------------------
-; Test if Visual Studio Redistributables 2008 SP1 installed
+; Test if Visual Studio Redistributables 2015 is installed
 ; Returns -1 if there is no VC redistributables installed
 Function CheckVCRedist
    ${LogText} "[CheckVCRedist] Begin"
    StrCpy $VCRedistInstalled "1"
 
    ClearErrors
-   # SP 1
-   ReadRegDword $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{9A25302D-30C0-39D9-BD6F-21E6EC160475}" "Version"
+   # Minimum Runtime
+   ReadRegDword $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{A1C31BA5-5438-3A07-9EEE-A5FB2D0FDE36}" "Version"
    IfErrors 0 VSRedistInstalled
 
-   # SP 1 + ATL Security Update
+   # Additional Runtime
    ClearErrors
-   ReadRegDword $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{1F1C2DFC-2D24-3E06-BCB8-725134ADF989}" "Version"
+   ReadRegDword $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{B0B194F8-E0CE-33FE-AA11-636428A4B73D}" "Version"
    IfErrors 0 VSRedistInstalled
 
    # Runtime not found

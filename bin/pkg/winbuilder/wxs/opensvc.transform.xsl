@@ -32,6 +32,17 @@
     </xsl:copy>
   </xsl:template>
 
+  <!-- ### Adding the Win64-attribute to all Components -->
+  <xsl:template match="wix:Component">
+    <xsl:copy>
+      <xsl:apply-templates select="@*" />
+        <!-- Adding the Win64-attribute as we have a x64 application -->
+        <xsl:attribute name="Win64">yes</xsl:attribute>
+
+        <!-- Now take the rest of the inner tag -->
+        <xsl:apply-templates select="node()" />
+    </xsl:copy>
+  </xsl:template>
   
   
   </xsl:stylesheet>

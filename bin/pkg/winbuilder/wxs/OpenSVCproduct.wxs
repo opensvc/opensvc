@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:firewall="http://schemas.microsoft.com/wix/FirewallExtension" xmlns:contrib="http://wixtoolset.org/wixcontrib/2008">
     <Product Id="*" Codepage="1252" Language="1033" Manufacturer="$(var.PRJMANUFACTURER)" Name="$(var.PRJNAME)" UpgradeCode="BA9484B8-A0E2-4932-9BA1-5C0BE6230443" Version="$(var.PRJVERSION).$(var.PRJRELEASE)">
-        <Package InstallerVersion="300" Compressed="yes" InstallScope="perMachine" InstallPrivileges="elevated" />
+        <Package InstallerVersion="300" Compressed="yes" InstallScope="perMachine" InstallPrivileges="elevated" Platform="x64"/>
         <Media Id="1" Cabinet="$(var.PRJNAME).cab" EmbedCab="yes" />
         <!-- Begin checking for prereqs -->
-        <Condition Message="This application is only supported on Windows 2003 or higher"><![CDATA[Installed OR (VersionNT >= 502) OR (VersionNT64 >= 502)]]></Condition>
+        <Condition Message="This application is only supported on Windows 2008 or higher"><![CDATA[Installed OR (VersionNT=VersionNT64 AND (VersionNT64 >= 600))]]></Condition>
         <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="ProgramFilesFolder">
+            <Directory Id="ProgramFiles64Folder">
                 <Directory Id="INSTALLFOLDER" Name="$(var.PRJNAME)">
-                    <Component Id="SetOsvcSystemPath" Guid="B796104B-03F6-48D2-A3DD-4F0A7A3C74D9" KeyPath="yes">
+                    <Component Id="SetOsvcSystemPath" Guid="B796104B-03F6-48D2-A3DD-4F0A7A3C74D9" KeyPath="yes" Win64="yes">
                         <Environment Id="PATH" Name="PATH" Value="[INSTALLFOLDER]" Permanent="no" Part="last" Action="set" System="yes" />
                     </Component>
                     <Directory Id="python" Name="python">
-                        <Component Id="SetOsvcPythonExecPath" Guid="ACA59F44-8443-4BBD-B75B-02535CFA90E6" KeyPath="yes">
+                        <Component Id="SetOsvcPythonExecPath" Guid="ACA59F44-8443-4BBD-B75B-02535CFA90E6" KeyPath="yes" Win64="yes">
                             <Environment Id="PYTHONDLLPATH" Name="PATH" Value="[INSTALLFOLDER]python" Permanent="no" Part="last" Action="set" System="yes" />
                         </Component>
                         <Directory Id="PythonLib" Name="lib">
                             <Directory Id="PythonLibSitePackages" Name="site-packages">
                                 <Directory Id="PythonLibSitePackagesWin32" Name="win32">
-                                    <Component Id="OSVCServiceRegistration" Guid="BA9484B8-A0E2-4932-9BA1-5C0BE6230443">
+                                    <Component Id="OSVCServiceRegistration" Guid="BA9484B8-A0E2-4932-9BA1-5C0BE6230443" Win64="yes">
                                         <File Id="PythonService" Name="$(var.PRJSVCPYEXECBIN)" Source="$(var.OSVCPKGROOT)\$(var.PRJSVCPYEXECPATH)\$(var.PRJSVCPYEXECBIN)" KeyPath="yes" />
                                         <ServiceInstall Id="inst$(var.PRJSVCNAME)" Name="$(var.PRJSVCNAME)" Type="ownProcess" Start="auto" ErrorControl="normal" DisplayName="$(var.PRJSVCDISPLAYNAME)" Description="$(var.PRJSVCDESC)" Vital="yes" />
                                         <RegistryKey Root="HKLM" Key="SYSTEM\CurrentControlSet\Services\$(var.PRJSVCNAME)\PythonClass">
@@ -31,7 +31,7 @@
                         </Directory>
                     </Directory>
                     <Directory Id="lib">
-                        <Component Id="SetOsvcPythonPath" Guid="853207E8-B567-4245-93F9-7008742C3989" KeyPath="yes">
+                        <Component Id="SetOsvcPythonPath" Guid="853207E8-B567-4245-93F9-7008742C3989" KeyPath="yes" Win64="yes">
                             <Environment Id="PYTHONPATH" Name="PYTHONPATH" Value="[INSTALLFOLDER]lib" Permanent="no" Part="last" Action="set" System="yes" />
                         </Component>
                     </Directory>
@@ -48,13 +48,13 @@
         <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
         <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
         <DirectoryRef Id="TARGETDIR">
-            <Component Id="OSVCregistry" Guid="4A02F263-CEB2-47A9-9B39-704B41309B5D">
+            <Component Id="OSVCregistry" Guid="4A02F263-CEB2-47A9-9B39-704B41309B5D" Win64="yes">
                 <RegistryValue Root="HKLM" Key="Software\$(var.PRJNAME)" Name="installed" Type="integer" Value="1" KeyPath="yes" />
                 <RegistryValue Root="HKLM" Key="Software\$(var.PRJNAME)" Name="path" Type="string" Value="[INSTALLFOLDER]" KeyPath="no" />
             </Component>
         </DirectoryRef>
         <DirectoryRef Id="ApplicationProgramsFolder">
-            <Component Id="ApplicationShortcut" Guid="F45574E0-ABBA-4499-9204-7C4752AC4639">
+            <Component Id="ApplicationShortcut" Guid="F45574E0-ABBA-4499-9204-7C4752AC4639" Win64="yes">
                 <Shortcut Id="ApplicationStartMenuShortcut" Name="$(var.PRJNAME) Online Documentation" Description="$(var.PRJNAME)" Target="INSTALLFOLDER" WorkingDirectory="INSTALLFOLDER" />
                 <Shortcut Id="UninstallProduct" Name="Uninstall $(var.PRJNAME)" Target="[SystemFolder]msiexec.exe" Arguments="/x [ProductCode]" Description="Uninstalls $(var.PRJNAME)" />
                 <RemoveFolder Id="INSTALLFOLDER" On="uninstall" />
@@ -74,7 +74,7 @@
             <ComponentRef Id="OSVCServiceRegistration" />
         </Feature>
         <UI />
-        <Component Id="OSVCFwRules" Guid="4AFB6248-7930-4B03-A4CA-8ED8D2215F16" Directory="TARGETDIR">
+        <Component Id="OSVCFwRules" Guid="4AFB6248-7930-4B03-A4CA-8ED8D2215F16" Directory="TARGETDIR" Win64="yes">
             <firewall:FirewallException Id="OSVCFWRULE1" Name="$(var.PRJFWRULE1NAME)" Port="1214" IgnoreFailure="yes" Scope="any" Protocol="tcp" />
         </Component>
         <AdminExecuteSequence />
