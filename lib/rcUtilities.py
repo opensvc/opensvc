@@ -8,6 +8,7 @@ import logging
 import socket
 import select
 import shlex
+import locale
 import re
 import rcExceptions as ex
 from subprocess import Popen, PIPE
@@ -1024,4 +1025,20 @@ def list_services():
             continue
         l.append(name)
     return l
+
+def init_locale():
+    try:
+        locale.setlocale(locale.LC_ALL, ('C', 'UTF-8'))
+    except locale.Error:
+        pass
+    if os.name != "posix":
+        return
+    locales = ["C.UTF-8", "en_US.UTF-8"]
+    for loc in locales:
+        if loc not in locale.locale_alias.values():
+            continue
+        os.environ["LANG"] = loc
+        if locale.getpreferredencoding() == "UTF-8":
+            return
+    raise ex.excError("can not set a C lang with utf8 encoding")
 

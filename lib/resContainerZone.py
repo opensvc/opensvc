@@ -41,7 +41,7 @@ class Zone(resContainer.Container):
                                         **kwargs)
         self.label = name
         self.delete_on_stop = delete_on_stop
-        self.runmethod = [ '/usr/sbin/zlogin', '-S', name ]
+        self.runmethod = ['/usr/sbin/zlogin', name]
         self.zone_cf = "/etc/zones/"+self.name+".xml"
         self.delayed_noaction = True
 

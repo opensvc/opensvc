@@ -25,7 +25,7 @@ from rcGlobalEnv import rcEnv, get_osvc_paths
 from storage import Storage
 from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         try_decode, action_triggers, read_cf, \
-                        drop_option, fcache
+                        drop_option, fcache, init_locale
 from converters import *
 import rcExceptions as ex
 import rcLogger
@@ -330,13 +330,7 @@ TOPOLOGIES = [
     "flex",
 ]
 
-try:
-    locale.setlocale(locale.LC_ALL, ("C", "UTF-8"))
-except locale.Error:
-    pass
-
-if os.name == "posix":
-    os.environ["LANG"] = "C.UTF-8"
+init_locale()
 
 def _slave_action(func):
     def need_specifier(self):

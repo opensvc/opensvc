@@ -42,7 +42,7 @@ from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         call, which, purge_cache_expired, read_cf, unset_lazy, \
                         drop_option, is_string, try_decode, is_service, \
-                        list_services
+                        list_services, init_locale
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -50,13 +50,7 @@ from extconfig import ExtConfigMixin
 if six.PY2:
     BrokenPipeError = IOError
 
-try:
-    locale.setlocale(locale.LC_ALL, ('C', 'UTF-8'))
-except locale.Error:
-    pass
-
-if os.name == "posix":
-    os.environ["LANG"] = "C.UTF-8"
+init_locale()
 
 DEFAULT_STATUS_GROUPS = [
     "hb",
