@@ -4,6 +4,7 @@ import gzip
 import errno
 import logging
 import logging.handlers
+import six
 from rcGlobalEnv import rcEnv
 from subprocess import *
 
@@ -105,6 +106,8 @@ class LoggerHandler(logging.handlers.SysLogHandler):
         try:
             prio = self.priority_names[self.mapPriority(record.levelname)]
             msg = self.format(record)
+            if six.PY2:
+                msg = msg.encode("utf8", errors="ignore")
             syslog.syslog(prio, msg)
         except Exception as exc:
             self.handleError(record)
