@@ -18,6 +18,7 @@ except:
 p0755 = int("0755", 8)
 p0700 = int("0700", 8)
 p0644 = int("0644", 8)
+utf8patterns = ['UTF-8', 'UTF8', 'utf-8', 'utf8']
 
 postinstall_d = sys.path[0]
 if '/catalog/' in postinstall_d:
@@ -531,6 +532,118 @@ def update_file(filename, srctext, replacetext):
         logit(msg, stdout=True)
     fileinput.close()
 
+def get_keyval_in(key, path2f):
+    logit("begin")
+    val = None
+    try:
+        f = open(path2f, 'r')
+        data = f.readlines()
+        f.close()
+    except:
+        f.close()
+        import traceback
+        traceback.print_exc()
+
+    for line in data:
+        if line.startswith(key):
+            val=line.split('=')[-1].strip()
+            logit("found value <%s> for key <%s> in file <%s>"%(val, key, path2f))
+            break
+
+    return val
+
+def is_lang_utf8(file):
+    logit("begin")
+    lang = get_keyval_in('LANG', file)
+    if lang is not None:
+        if any(pattern in lang for pattern in utf8patterns):
+            return True
+    return False
+
+def is_system_locale_utf8():
+    logit("begin")
+    """ check if system locale is utf8
+    """
+    localetmp = pathtmp + '/locale.postinstall'
+    cmd = ['locale', '>', localetmp]
+    ret = osrun(' '.join(cmd))
+    if ret > 0:
+        logit("error while trying to query locale with command <%s>"%(cmd), stderr=True)
+        return False
+    return is_lang_utf8(localetmp)
+
+def is_osvc_locale_utf8(file):
+    logit("begin")
+    """ check if osvc locale is utf8
+    """
+    return is_lang_utf8(file)
+
+def appends2f(str, fname):
+    try:
+        f = open(fname, "a")
+        f.write(str + "\n")
+        f.close()
+        logit("added string <%s> to file <%s>"%(str, fname))
+    except:
+        logit("issue met while trying to append string <%s> to file <%s>"%(str, fname), stderr=True)
+        f.close()
+        import traceback
+        traceback.print_exc()
+
+def find_locale():
+    logit("begin")
+    """ try to identify best utf8 locale
+    """
+    localetmp = pathtmp + '/locale.all'
+    cmd = ['locale', '-a', '>', localetmp]
+    ret = osrun(' '.join(cmd))
+    if ret > 0:
+        logit("error while trying to build locale list with command <%s>"%(cmd), stderr=True)
+        return None
+    
+    try:
+        f = open(localetmp, 'r')
+        data = f.readlines()
+        f.close()
+    except:
+        f.close()
+        import traceback
+        traceback.print_exc()
+
+    candidates = []
+    for l in data:
+        if any(pattern in l for pattern in utf8patterns):
+            candidates.append(l.strip())
+    
+    logit("utf8 locale candidates <%s>"%(candidates))
+    for l in candidates:
+        if l.startswith('C'):
+            return l
+
+    for l in candidates:
+        if l.startswith('en_US'):
+            return l
+
+    for l in candidates:
+        if l.startswith('en_'):
+            return l
+
+    logit("no suitable utf8 locale found")
+    return None
+
+def install_locale(path2file):
+    logit("begin")
+    """ install utf8 locale
+    """
+    lang = get_keyval_in('LANG', path2file)
+    if lang is not None:
+        logit("LANG <%s> already set with non utf8 locale"%(lang), stderr=True)
+    else:
+        locale = find_locale()
+        if locale is not None:
+            appends2f("LANG=" + locale, path2file)
+            appends2f("export LANG", path2file)
+
 def install_params(path2file):
     logit("begin")
     """ install template file with tunable variables
@@ -684,6 +797,12 @@ def install_rc():
     if params is not None and not os.path.exists(params):
         logit("installing default parameters file")
         install_params(params)
+
+    if params is not None:
+        logit("checking locale setup")
+        if not is_system_locale_utf8() and not is_osvc_locale_utf8(params):
+            logit("locale is not utf8")
+            install_locale(params)
 
     activate(src)
 
