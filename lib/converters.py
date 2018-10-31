@@ -304,3 +304,28 @@ def convert_speed(s, _to='', _round=1, default_unit=''):
 
 def convert_speed_kps(s, _round=1):
     return convert_speed(s, _to="KB", _round=_round, default_unit='K')
+
+def print_duration(secs):
+    buff = ""
+    if secs >= 86400:
+        n = secs // 86400
+        secs = secs % 86400
+        buff += "%id" % n
+    if secs >= 3600:
+        n = secs // 3600
+        secs = secs % 3600
+        buff += "%ih" % n
+    if secs >= 60:
+        n = secs // 60
+        secs = secs % 60
+        buff += "%im" % n
+    if secs > 0 or not buff:
+        buff += "%is" % secs
+    return buff
+
+if __name__ == "__main__":
+    print(print_duration(92000))
+    print(print_duration(86400))
+    print(print_duration(9200))
+    print(print_duration(1))
+

@@ -9,6 +9,7 @@ import rcStatus
 import resSync
 from rcZfs import a2pool_dataset, Dataset
 from rcUtilities import bdecode, lazy
+from converters import print_duration
 
 class SyncZfs(resSync.Sync):
     """define zfs sync resource to be zfs send/zfs receive between nodes
@@ -341,7 +342,7 @@ class SyncZfs(resSync.Sync):
             print(e[0], e[1], traceback.print_tb(e[2]))
             return False
         if self.skip_sync(ts):
-            self.status_log("Last sync on %s older than %i minutes"%(ts, self.sync_max_delay))
+            self.status_log("Last sync on %s older than %s" % (ts, print_duration(self.sync_max_delay)))
             return False
         return True
 
@@ -361,7 +362,7 @@ class SyncZfs(resSync.Sync):
             print(e[0], e[1], traceback.print_tb(e[2]))
             return rcStatus.WARN
         if last < now - delay:
-            self.status_log("Last sync on %s older than %i minutes"%(last, self.sync_max_delay))
+            self.status_log("Last sync on %s older than %s" % (last, print_duration(self.sync_max_delay)))
             return rcStatus.WARN
         return rcStatus.UP
 
