@@ -8,7 +8,7 @@ import rcExceptions as ex
 import rcStatus
 import resSync
 from rcZfs import a2pool_dataset, Dataset
-from rcUtilities import bdecode
+from rcUtilities import bdecode, lazy
 
 class SyncZfs(resSync.Sync):
     """define zfs sync resource to be zfs send/zfs receive between nodes
@@ -350,7 +350,7 @@ class SyncZfs(resSync.Sync):
             ls = self.get_local_state()
             now = datetime.datetime.now()
             last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
-            delay = datetime.timedelta(minutes=self.sync_max_delay)
+            delay = datetime.timedelta(seconds=self.sync_max_delay)
         except IOError:
             self.status_log("zfs state file not found")
             return rcStatus.WARN
@@ -372,7 +372,6 @@ class SyncZfs(resSync.Sync):
             raise ex.excError
 
     def get_remote_state(self, node):
-        self.set_statefile()
         cmd1 = ['cat', self.statefile]
         cmd = rcEnv.rsh.split() + [node] + cmd1
         (ret, out, err) = self.call(cmd)
@@ -382,7 +381,6 @@ class SyncZfs(resSync.Sync):
         return self.parse_statefile(out, node=node)
 
     def get_local_state(self):
-        self.set_statefile()
         with open(self.statefile, 'r') as f:
             out = f.read()
         return self.parse_statefile(out)
@@ -394,11 +392,11 @@ class SyncZfs(resSync.Sync):
             raise ex.excError
         self.snap_uuid = out.strip()
 
-    def set_statefile(self):
-        self.statefile = os.path.join(self.var_d, 'zfs_state')
+    @lazy
+    def statefile(self):
+        return os.path.join(self.var_d, 'zfs_state')
 
     def write_statefile(self):
-        self.set_statefile()
         self.get_snap_uuid(self.src_snap_sent)
         self.log.info("update state file with snap uuid %s"%self.snap_uuid)
         with open(self.statefile, 'w') as f:
@@ -411,14 +409,12 @@ class SyncZfs(resSync.Sync):
             raise ex.excError
 
     def push_statefile(self, node):
-        self.set_statefile()
         self._push_statefile(node)
         self.get_peersenders()
         for node in self.peersenders:
             self._push_statefile(node)
 
     def parse_statefile(self, out, node=None):
-        self.set_statefile()
         if node is None:
             node = rcEnv.nodename
         lines = out.strip().split('\n')
