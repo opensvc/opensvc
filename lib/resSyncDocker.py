@@ -7,8 +7,6 @@ from rcGlobalEnv import rcEnv
 import resSync
 import rcExceptions as ex
 
-os.environ['LANG'] = 'C'
-
 class SyncDocker(resSync.Sync):
     def __init__(self,
                  rid=None,

@@ -18,7 +18,6 @@ import json
 import socket
 import time
 import re
-import locale
 
 import six
 try:
@@ -890,7 +889,6 @@ class Node(Crypt, ExtConfigMixin):
             print("%s not found" % editor, file=sys.stderr)
             return 1
         path = self.make_temp_config()
-        os.environ["LANG"] = "en_US.UTF-8"
         os.system(' '.join((editor, path)))
         if fsum(path) == fsum(rcEnv.paths.nodeconf):
             os.unlink(path)
@@ -929,7 +927,6 @@ class Node(Crypt, ExtConfigMixin):
         if not which(editor):
             print("%s not found" % editor, file=sys.stderr)
             return 1
-        os.environ["LANG"] = "en_US.UTF-8"
         return os.system(' '.join((editor, fpath)))
 
     def write_config(self):
