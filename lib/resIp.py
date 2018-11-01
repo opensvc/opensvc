@@ -621,6 +621,18 @@ class Ip(Res.Resource):
 
     def parse_expose(self, expose):
         data = {}
+        if "#" in expose:
+           # expose data via reference
+           resource = self.svc.get_resource(expose)
+           data["port"] = resource.options.port
+           data["protocol"] = resource.options.protocol
+           try:
+               data["host_port"] = resource.options.host_port
+           except AttributeError:
+               pass
+           return data
+
+        # expose data inline
         words = expose.split(":")
         if len(words) == 2:
             try:

@@ -293,7 +293,7 @@ class Ip(Res.Ip):
         data = self.expose_data()
         _data = []
         for expose in data:
-            if "host_port" not in expose:
+            if "host_port" not in expose or not expose["host_port"]:
                 continue
             exdata = {
                 "containerPort": expose["port"],

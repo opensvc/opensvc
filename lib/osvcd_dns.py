@@ -494,11 +494,21 @@ class Dns(shared.OsvcThread):
                         if addr is None:
                             continue
                         for expose in resource.get("info", {}).get("expose", []):
-                            try:
-                                port, proto = re.split("[/-]", expose.split(":")[0])
-                                port = int(port)
-                            except Exception as exc:
-                                continue
+                            if "#" in expose:
+                                # expose data by reference
+                                expose_data = status[svcname].get("resources", {}).get(expose, {}).get("info")
+                                try:
+                                    port = expose_data["port"]
+                                    proto = expose_data["protocol"]
+                                except KeyError:
+                                    continue
+                            else:
+                                # expose data inline
+                                try:
+                                    port, proto = re.split("[/-]", expose.split(":")[0])
+                                    port = int(port)
+                                except Exception as exc:
+                                    continue
                             qnames = set()
                             qnames.add("_%s._%s.%s.%s.svc.%s." % (str(port), proto, _svcname, app, self.cluster_name))
                             try:

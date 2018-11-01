@@ -798,6 +798,88 @@ def add_zpool(svc, s):
 
     svc += r
 
+def add_vhost(svc, s):
+    try:
+        _type = svc.conf_get(s, 'type')
+    except ex.OptNotFound as exc:
+        _type = exc.default
+
+    fname = 'add_vhost_'+_type
+    if fname not in globals():
+        svc.log.error("type '%s' not supported in section %s"%(_type, s))
+    globals()[fname](svc, s)
+
+def add_vhost_envoy(svc, s):
+    kwargs = {"rid": s}
+    kwargs.update(svc.section_kwargs(s, "envoy"))
+    try:
+        m = __import__('resVhostEnvoy')
+    except ImportError:
+        svc.log.error("resVhostEnvoy is not implemented")
+        return
+
+    r = m.Vhost(**kwargs)
+    svc += r
+
+def add_route(svc, s):
+    try:
+        _type = svc.conf_get(s, 'type')
+    except ex.OptNotFound as exc:
+        _type = exc.default
+
+    fname = 'add_route_'+_type
+    if fname not in globals():
+        svc.log.error("type '%s' not supported in section %s"%(_type, s))
+    globals()[fname](svc, s)
+
+def add_route_envoy(svc, s):
+    kwargs = {"rid": s}
+    kwargs.update(svc.section_kwargs(s, "envoy"))
+    try:
+        m = __import__('resRouteEnvoy')
+    except ImportError:
+        svc.log.error("resRouteEnvoy is not implemented")
+        return
+    r = m.Route(**kwargs)
+    svc += r
+
+def add_expose(svc, s):
+    try:
+        _type = svc.conf_get(s, 'type')
+    except ex.OptNotFound as exc:
+        _type = exc.default
+
+    fname = 'add_expose_'+_type
+    if fname not in globals():
+        svc.log.error("type '%s' not supported in section %s"%(_type, s))
+    globals()[fname](svc, s)
+
+def add_expose_envoy(svc, s):
+    kwargs = {"rid": s}
+    kwargs.update(svc.section_kwargs(s, "envoy"))
+    try:
+        m = __import__('resExposeEnvoy')
+    except ImportError:
+        svc.log.error("resExposeEnvoy is not implemented")
+        return
+    r = m.Expose(**kwargs)
+    svc += r
+
+def add_certificate(svc, s):
+    try:
+        rtype = svc.conf_get(s, 'type')
+    except ex.OptNotFound as exc:
+        rtype = exc.default
+    kwargs = {"rid": s}
+    kwargs.update(svc.section_kwargs(s, "tls"))
+    try:
+        mod = mimport("res", "certificate", rtype)
+    except ImportError:
+        svc.log.error("certificate.%s driver is not implemented" % rtype)
+        return
+    r = mod.Certificate(**kwargs)
+    svc += r
+
 def add_share(svc, s):
     _type = svc.conf_get(s, 'type')
 
@@ -2179,6 +2261,10 @@ def add_resources(svc):
         "app",
         "sync",
         "task",
+        "expose",
+        "vhost",
+        "route",
+        "certificate",
     ]
 
     for restype in ordered_restypes:
