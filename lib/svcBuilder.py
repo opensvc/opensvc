@@ -142,10 +142,10 @@ def get_sync_args(svc, s):
     kwargs = {}
     defaults = svc.config.defaults()
 
-    if svc.config.has_option(s, 'sync_max_delay'):
+    try:
         kwargs['sync_max_delay'] = svc.conf_get(s, 'sync_max_delay')
-    elif 'sync_max_delay' in defaults:
-        kwargs['sync_max_delay'] = svc.conf_get('DEFAULT', 'sync_max_delay')
+    except ex.OptNotFound as exc:
+        kwargs['sync_max_delay'] = exc.default
 
     if svc.config.has_option(s, 'schedule'):
         kwargs['schedule'] = svc.conf_get(s, 'schedule')
