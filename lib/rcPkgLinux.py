@@ -22,7 +22,7 @@ def listpkg_snap():
 
     """
     if not which("snap"):
-        return
+        return []
     cmd = ["snap", "list", "--unicode=never", "--color=never"]
     out, err, ret = justcall(cmd)
     lines = []
@@ -39,12 +39,11 @@ def listpkg_snap():
             "snap",
             "",
         ])
-    print(lines)
     return lines
 
 def listpkg_rpm():
     if not which("rpm"):
-        return
+        return []
     cmd = ['rpm', '-qai', '--queryformat=XX%{n} %{v}-%{r} %{arch} rpm %{installtime}\n']
     out, err, ret = justcall(cmd)
     lines = []
@@ -68,7 +67,7 @@ def listpkg_rpm():
 
 def listpkg_deb():
     if not which("dpkg"):
-        return
+        return []
     cmd = ['dpkg', '-l']
     out, err,ret = justcall(cmd)
     lines = []
