@@ -4047,6 +4047,40 @@ class Node(Crypt, ExtConfigMixin):
              print(error, file=sys.stderr)
         return data.get("status")
 
+    def daemon_relay_status(self):
+        """
+        Show the daemon senders blacklist
+        """
+        data = self.daemon_send(
+            {"action": "daemon_relay_status"},
+            nodename=self.options.node,
+        )
+        if self.options.format == "json":
+            print(json.dumps(data, indent=4, sort_keys=True))
+            return
+
+        if data is None:
+            return
+
+        from forest import Forest
+        from rcColor import color
+        from converters import print_duration
+
+        tree = Forest()
+        head = tree.add_node()
+        head.add_column("nodename")
+        head.add_column("last updated")
+        head.add_column("elapsed")
+        now = time.time()
+
+        for nodename, _data in data.items():
+             updated = _data.get("updated", 0)
+             node = head.add_node()
+             node.add_column(nodename, color.BOLD)
+             node.add_column("%s" % datetime.datetime.fromtimestamp(updated).strftime("%Y-%m-%d %H:%M:%S"))
+             node.add_column("%s" % print_duration(now-updated))
+        tree.print()
+
     def daemon_blacklist_status(self):
         """
         Show the daemon senders blacklist

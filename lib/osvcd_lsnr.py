@@ -320,6 +320,15 @@ class Listener(shared.OsvcThread):
                 "updated": RELAY_DATA[_nodename]["updated"],
             }
 
+    def action_daemon_relay_status(self, nodename, **kwargs):
+        data = {}
+        with RELAY_LOCK:
+            for _nodename, _data in RELAY_DATA.items():
+                data[_nodename] = {
+                    "updated": _data.get("updated", 0)
+                }
+        return data
+
     def action_daemon_blacklist_clear(self, nodename, **kwargs):
         """
         Clear the senders blacklist.
