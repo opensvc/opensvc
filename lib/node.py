@@ -4074,7 +4074,10 @@ class Node(Crypt, ExtConfigMixin):
         now = time.time()
 
         for nodename, _data in data.items():
-             updated = _data.get("updated", 0)
+             try:
+                 updated = _data.get("updated", 0)
+             except AttributeError:
+                 continue
              node = head.add_node()
              node.add_column(nodename, color.BOLD)
              node.add_column("%s" % datetime.datetime.fromtimestamp(updated).strftime("%Y-%m-%d %H:%M:%S"))
