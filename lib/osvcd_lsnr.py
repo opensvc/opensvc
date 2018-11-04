@@ -243,7 +243,7 @@ class Listener(shared.OsvcThread):
         self.stats.sessions.clients[addr[0]].auth_validated += 1
         if data is None:
             return
-        result = self.router(nodename, data, conn, encrypted)
+        result = self.router(nodename, data, conn, addr, encrypted)
         if result:
             conn.setblocking(1)
             if encrypted:
@@ -269,7 +269,7 @@ class Listener(shared.OsvcThread):
     # Actions
     #
     #########################################################################
-    def router(self, nodename, data, conn, encrypted):
+    def router(self, nodename, data, conn, addr, encrypted):
         """
         For a request data, extract the requested action and options,
         translate into a method name, and execute this method with options
@@ -286,7 +286,8 @@ class Listener(shared.OsvcThread):
         options = {}
         for key, val in data.get("options", {}).items():
             options[str(key)] = val
-        return getattr(self, fname)(nodename, conn=conn, encrypted=encrypted, **options)
+        return getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
+                                    addr=addr, **options)
 
     def action_run_done(self, nodename, **kwargs):
         svcname = kwargs.get("svcname")
@@ -306,6 +307,7 @@ class Listener(shared.OsvcThread):
             RELAY_DATA[nodename] = {
                 "msg": kwargs.get("msg"),
                 "updated": time.time(),
+                "ipaddr": kwargs.get("addr", [""])[0],
             }
         return {"status": 0}
 
@@ -325,7 +327,8 @@ class Listener(shared.OsvcThread):
         with RELAY_LOCK:
             for _nodename, _data in RELAY_DATA.items():
                 data[_nodename] = {
-                    "updated": _data.get("updated", 0)
+                    "updated": _data.get("updated", 0),
+                    "ipaddr": _data.get("ipaddr", ""),
                 }
         return data
 
