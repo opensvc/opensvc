@@ -329,6 +329,7 @@ class Listener(shared.OsvcThread):
                 data[_nodename] = {
                     "updated": _data.get("updated", 0),
                     "ipaddr": _data.get("ipaddr", ""),
+                    "size": len(_data.get("msg", "")),
                 }
         return data
 

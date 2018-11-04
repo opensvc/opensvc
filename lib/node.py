@@ -4072,6 +4072,7 @@ class Node(Crypt, ExtConfigMixin):
         head.add_column("last updated")
         head.add_column("elapsed")
         head.add_column("ipaddr")
+        head.add_column("size")
         now = time.time()
 
         for nodename, _data in data.items():
@@ -4081,6 +4082,7 @@ class Node(Crypt, ExtConfigMixin):
              node.add_column("%s" % datetime.datetime.fromtimestamp(updated).strftime("%Y-%m-%d %H:%M:%S"))
              node.add_column("%s" % print_duration(now-updated))
              node.add_column("%s" % _data.get("ipaddr", ""))
+             node.add_column("%s" % print_size(_data.get("size", 0), unit="B"))
         tree.print()
 
     def daemon_blacklist_status(self):
