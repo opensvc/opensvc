@@ -21,7 +21,6 @@ def notify(func):
         try:
             return func(self, *args, **kwargs)
         finally:
-            self.log.info("notify done")
             self.notify_done()
     return _func
 
