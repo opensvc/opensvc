@@ -556,7 +556,7 @@ class Asset(object):
                 i = int(l[2])
             except:
                 continue
-            name = repr(l[0]).strip("'")
+            name = l[0]
             d.append({
                 keys[0]: name,
                 keys[1]: l[2]
