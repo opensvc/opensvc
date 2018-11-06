@@ -2069,6 +2069,13 @@ class Node(Crypt, ExtConfigMixin):
         except (OSError, IOError):
             print("failed to unpack", file=sys.stderr)
             return 1
+        upstream_mods_d = os.path.join(tmpp, "com.opensvc")
+        prev_upstream_mods_d = os.path.join(compp, "com.opensvc")
+        if not os.path.exists(upstream_mods_d) and \
+           os.path.exists(prev_upstream_mods_d):
+            print("merge upstream com.opensvc compliance objects")
+            shutil.copytree(prev_upstream_mods_d, upstream_mods_d,
+                            symlinks=True)
         print("install new compliance")
         for root, dirs, files in os.walk(tmpp):
             for fpath in dirs:
