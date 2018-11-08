@@ -2095,9 +2095,15 @@ class Svc(Crypt, ExtConfigMixin):
         The resource monitor action. Refresh important resources at a different
         schedule.
         """
+        changed = False
         for resource in self.get_resources():
             if resource.monitor or resource.nb_restart:
-                resource.status(refresh=True)
+                prev = resource.status()
+                curr = resource.status(refresh=True)
+                if prev != curr:
+                    changed = True
+        if changed:
+            self.update_status_data()
 
     def reboot(self):
         """
