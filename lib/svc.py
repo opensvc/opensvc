@@ -4132,7 +4132,7 @@ class Svc(Crypt, ExtConfigMixin):
         local_expect = None
         if action in ("stop", "shutdown", "unprovision", "delete", "rollback") and not self.command_is_scoped():
             local_expect = "unset"
-            if self.orchestrate == "ha":
+            if self.orchestrate in ("ha", "start"):
                 self.master_freeze()
         try:
             self.set_service_monitor(local_expect=local_expect, status=progress)
