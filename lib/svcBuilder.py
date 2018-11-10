@@ -175,7 +175,7 @@ def add_resource(svc, restype, s):
         return
 
     try:
-        adder = globals()['add_'+restype]
+        adder = globals()["add_"+restype]
     except KeyError:
         return
 
@@ -841,6 +841,28 @@ def add_route_envoy(svc, s):
         svc.log.error("resRouteEnvoy is not implemented")
         return
     r = m.Route(**kwargs)
+    svc += r
+
+def add_hash_policy(svc, s):
+    try:
+        _type = svc.conf_get(s, 'type')
+    except ex.OptNotFound as exc:
+        _type = exc.default
+
+    fname = 'add_hash_policy_'+_type
+    if fname not in globals():
+        svc.log.error("type '%s' not supported in section %s"%(_type, s))
+    globals()[fname](svc, s)
+
+def add_hash_policy_envoy(svc, s):
+    kwargs = {"rid": s}
+    kwargs.update(svc.section_kwargs(s, "envoy"))
+    try:
+        m = __import__('resHashpolicyEnvoy')
+    except ImportError:
+        svc.log.error("resHashpolicyEnvoy is not implemented")
+        return
+    r = m.Hashpolicy(**kwargs)
     svc += r
 
 def add_expose(svc, s):
@@ -2265,6 +2287,7 @@ def add_resources(svc):
         "vhost",
         "route",
         "certificate",
+        "hash_policy",
     ]
 
     for restype in ordered_restypes:
