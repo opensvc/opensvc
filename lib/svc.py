@@ -1647,6 +1647,8 @@ class Svc(Crypt, ExtConfigMixin):
                     _data["optional"] = resource.optional
                 if resource.monitor:
                     _data["monitor"] = resource.monitor
+                if resource.nb_restart:
+                    _data["restart"] = resource.nb_restart
                 if len(log) > 0:
                     _data["log"] = log
                 if len(info) > 0:
@@ -1760,7 +1762,7 @@ class Svc(Crypt, ExtConfigMixin):
         from rcColor import color, colorize, STATUS_COLOR
         from forest import Forest
 
-        def fmt_flags(resource, running):
+        def fmt_flags(resource, idata):
             """
             Format resource flags as a vector of character.
 
@@ -1772,20 +1774,31 @@ class Svc(Crypt, ExtConfigMixin):
             P  Provisioned
             S  Standby
             """
-            flags = ''
-            flags += "R" if resource["rid"] in running else '.'
-            flags += 'M' if resource.get("monitor") else '.'
-            flags += 'D' if resource.get("disable") else '.'
-            flags += 'O' if resource.get("optional") else '.'
-            flags += 'E' if resource.get("encap") else '.'
             provisioned = resource.get("provisioned", {}).get("state")
-            if provisioned is True:
-                flags += '.'
-            elif provisioned is False:
-                flags += 'P'
+
+            rid = resource.get("rid")
+            restart = resource.get("restart", 0)
+            retries = idata.get("monitor", {}).get("restart", {}).get(rid, 0)
+            if not isinstance(restart, int) or restart < 1:
+                restart_flag = "."
             else:
-                flags += '/'
+                remaining_restart = restart - retries
+                if remaining_restart < 0:
+                    remaining_restart = 0
+                if remaining_restart < 10:
+                    restart_flag = str(remaining_restart)
+                else:
+                    restart_flag = "+"
+
+            flags = ""
+            flags += "R" if rid in idata.get("running", []) else "."
+            flags += "M" if resource.get("monitor") else "."
+            flags += "D" if resource.get("disable") else "."
+            flags += "O" if resource.get("optional") else "."
+            flags += "E" if resource.get("encap") else "."
+            flags += "." if provisioned else "P" if provisioned is False else "/"
             flags += 'S' if resource.get("standby") else '.'
+            flags += restart_flag
             return flags
 
         def dispatch_resources(data):
@@ -1814,7 +1827,7 @@ class Svc(Crypt, ExtConfigMixin):
 
             return subsets
 
-        def add_subsets(subsets, node_nodename, running):
+        def add_subsets(subsets, node_nodename, idata):
             done = set()
             def do(group):
                 try:
@@ -1836,7 +1849,7 @@ class Svc(Crypt, ExtConfigMixin):
                     else:
                         node_subset = node_nodename
                     for resource in sorted(subsets[group][subset], key=lambda x: x["rid"]):
-                        add_res_node(resource, node_subset, running=running)
+                        add_res_node(resource, node_subset, idata)
             for group in DEFAULT_STATUS_GROUPS:
                 done.add(group)
                 do(group)
@@ -1916,14 +1929,13 @@ class Svc(Crypt, ExtConfigMixin):
                 print(exc)
                 ers[rid] = {}
 
-        def add_res_node(resource, parent, rid=None, running=None):
+        def add_res_node(resource, parent, idata, rid=None):
             if discard_disabled and resource.get("disable", False):
                 return
-            if rid is None:
-                rid = resource["rid"]
+            rid = resource["rid"]
             node_res = parent.add_node()
             node_res.add_column(rid)
-            node_res.add_column(fmt_flags(resource, running))
+            node_res.add_column(fmt_flags(resource, idata))
             node_res.add_column(resource["status"],
                                 STATUS_COLOR[resource["status"]])
             col = node_res.add_column(resource["label"])
@@ -1949,7 +1961,7 @@ class Svc(Crypt, ExtConfigMixin):
             if rid not in ers or resource["status"] not in ("up", "stdby up", "n/a"):
                 return
 
-            add_subsets(ers[rid], node_res, running)
+            add_subsets(ers[rid], node_res, idata)
 
         def add_instances(node):
             if len(self.peers) < 1:
@@ -2071,7 +2083,7 @@ class Svc(Crypt, ExtConfigMixin):
         node_nodename.add_column()
         node_nodename.add_column(data['avail'], STATUS_COLOR[data['avail']])
         node_nodename.add_column(notice, color.LIGHTBLUE)
-        add_subsets(subsets, node_nodename, data["running"])
+        add_subsets(subsets, node_nodename, data)
         add_parents(node_svcname)
         add_children(node_svcname)
         add_scaler_slaves(node_svcname)
