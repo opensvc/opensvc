@@ -409,7 +409,7 @@ class Monitor(shared.OsvcThread):
             proc=proc,
             on_success="generic_callback",
             on_success_args=[svcname],
-            on_success_kwargs={"status": "idle"},
+            on_success_kwargs={"status": "idle", "local_expect": "unset"},
             on_error="generic_callback",
             on_error_args=[svcname],
             on_error_kwargs={"status": "toc failed"},

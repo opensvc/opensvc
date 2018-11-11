@@ -2245,7 +2245,8 @@ class Svc(Crypt, ExtConfigMixin):
             self.log.error("invalid monitor action '%s'", self.monitor_action)
             return
         self.log.info("start monitor action '%s'", self.monitor_action)
-        time.sleep(2)
+        if self.monitor_action != "freezestop":
+            time.sleep(2)
         getattr(self, self.monitor_action)()
 
     def encap_cmd(self, cmd, verbose=False, error="raise"):
@@ -4130,7 +4131,7 @@ class Svc(Crypt, ExtConfigMixin):
         if progress is None:
             return
         local_expect = None
-        if action in ("stop", "shutdown", "unprovision", "delete", "rollback") and not self.command_is_scoped():
+        if action in ("stop", "shutdown", "unprovision", "delete", "rollback", "toc") and not self.command_is_scoped():
             local_expect = "unset"
             if self.orchestrate in ("ha", "start"):
                 self.master_freeze()
