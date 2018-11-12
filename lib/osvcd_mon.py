@@ -552,7 +552,7 @@ class Monitor(shared.OsvcThread):
                 del data["DEFAULT"][kw]
             except KeyError:
                 pass
-        cmd = ["create"]
+        cmd = ["create", "--config=-"]
         proc = self.service_command(svcname, cmd, stdin=json.dumps(data))
         out, err = proc.communicate()
         if proc.returncode != 0:

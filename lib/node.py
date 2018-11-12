@@ -2970,7 +2970,7 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("the service name must be ascii-encodable")
 
         data = None
-        if sys.stdin and not sys.stdin.isatty():
+        if sys.stdin and fpath in ("-", "/dev/stdin"):
             feed = ""
             for line in sys.stdin.readlines():
                 feed += line
