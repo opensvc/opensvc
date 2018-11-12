@@ -58,7 +58,9 @@ OPT = Storage({
         "--config", default=None,
         action="store", dest="parm_config",
         help="The configuration file to use as template when creating or "
-             "installing a service"),
+             "installing a service. The value can be ``-`` or ``/dev/stdin`` "
+             "to read the json-formatted configuration from stdin, or a file "
+             "path or uri pointing to a ini-formatted configuration."),
     "cron": Option(
         "--cron", default=False,
         action="store_true", dest="cron",

@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-11\-03
+.TH SVCMGR 1 2018\-11\-12
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -11088,7 +11088,7 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --config=PARM_CONFIG
-The configuration file to use as template when creating or installing a service
+The configuration file to use as template when creating or installing a service. The value can be '-' or '/dev/stdin' to read the json-formatted configuration from stdin, or a file path or uri pointing to a ini-formatted configuration.
 .TP
 .B --disable-rollback
 If set, don't try to rollback resources activated before a start action interrupts on error.
