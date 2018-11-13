@@ -207,7 +207,7 @@ class TestSvcmgr:
         The service is frozen after create.
         """
         ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
-        assert ret == 1
+        assert ret > 1
         ret = svcmgr.main(argv=["thaw", "-s", "unittest", "--local"])
         assert ret == 0
 
@@ -223,7 +223,7 @@ class TestSvcmgr:
         The local node is frozen
         """
         ret = nodemgr.main(argv=["frozen"])
-        assert ret == 1
+        assert ret > 0
 
     def test_0153_svc_not_frozen(self):
         """
@@ -293,7 +293,7 @@ class TestSvcmgr:
         The service is frozen
         """
         ret = svcmgr.main(argv=["frozen", "-s", "unittest"])
-        assert ret == 1
+        assert ret > 0
 
     def test_0163_thaw(self):
         """
