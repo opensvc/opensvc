@@ -18,6 +18,7 @@ import rcColor
 from svcmgr_parser import SvcmgrOptParser
 import rcExceptions as ex
 from rcUtilities import ximport, check_privs
+from rcGlobalEnv import rcEnv
 from storage import Storage
 
 def get_docker_argv(argv=None):
@@ -72,6 +73,7 @@ def do_svcs_action_detached(argv=None):
     env = {}
     env.update(os.environ)
     env["OSVC_DETACHED"] = "1"
+    env["OSVC_PARENT_SESSION_UUID"] = rcEnv.session_uuid
     try:
         import subprocess
         import signal

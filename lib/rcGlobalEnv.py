@@ -96,7 +96,11 @@ class rcEnv:
     """Class to store globals
     """
     uuid = ""
-    session_uuid = str(uuid4())
+    if "OSVC_PARENT_SESSION_UUID" in os.environ:
+        # passed from parent forking process: share the session
+        session_uuid = os.environ["OSVC_PARENT_SESSION_UUID"]
+    else:
+        session_uuid = str(uuid4())
     initial_env = os.environ.copy()
     os.environ["OSVC_SESSION_UUID"] = session_uuid
     node_env = ""
