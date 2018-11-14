@@ -1093,6 +1093,7 @@ class OsvcThread(threading.Thread, Crypt):
         """
         evt = {
             "nodename": rcEnv.nodename,
+            "ts": time.time(),
             "kind": "event",
         }
         if not isinstance(data, dict):

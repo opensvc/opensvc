@@ -2711,6 +2711,7 @@ class Monitor(shared.OsvcThread):
         shared.EVENT_Q.put({
             "nodename": rcEnv.nodename,
             "kind": "patch",
+            "ts": time.time(),
             "data": diff,
         })
 
