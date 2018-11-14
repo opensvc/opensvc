@@ -149,10 +149,10 @@ class Monitor(shared.OsvcThread):
         """
         with shared.SERVICES_LOCK:
             for svcname in shared.SERVICES:
-                 try:
-                     shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
-                 except Exception as exc:
-                     continue
+                try:
+                    shared.SERVICES[svcname] = build(svcname, node=shared.NODE)
+                except Exception as exc:
+                    continue
 
     def do(self):
         terminated_procs = self.janitor_procs()
@@ -197,12 +197,8 @@ class Monitor(shared.OsvcThread):
             with shared.SERVICES_LOCK:
                 if svcname not in shared.SERVICES:
                     new_service = True
-            instances = self.get_service_instances(svcname, rcEnv.nodename)
-            for instance in instances:
-                # block config file exchange while any instance is being deleted
-                global_expect = instance.get("monitor", {}).get("global_expect")
-                if global_expect in ("purged", "deleted"):
-                    continue
+            if self.has_instance_with(svcname, global_expect=["purged", "deleted"]):
+                continue
             if rcEnv.nodename not in data:
                 # need to check if we should have this config ?
                 new_service = True
@@ -305,8 +301,10 @@ class Monitor(shared.OsvcThread):
             return
 
         try:
-            shared.SERVICES[svcname].print_status_data_eval(mon_data=False,
-                                                            refresh=True)
+            svc = shared.SERVICES[svcname]
+            if not os.path.exists(svc.paths.cf):
+                return
+            svc.print_status_data_eval(mon_data=False, refresh=True)
         except Exception:
             # can happen when deleting the service
             pass
@@ -2216,6 +2214,17 @@ class Monitor(shared.OsvcThread):
                 self.get_service_instances(svcname).items() if \
                 not instance.get("frozen")]
 
+    def has_instance_with(self, svcname, global_expect=None):
+        """
+        Return True if an instance of the specified service is in the
+        specified state.
+        """
+        nodenames = []
+        for nodename, instance in self.get_service_instances(svcname).items():
+            if global_expect and instance.get("monitor", {}).get("global_expect") in global_expect:
+                return True
+        return False
+
     @staticmethod
     def get_local_svcnames():
         """
@@ -2239,18 +2248,22 @@ class Monitor(shared.OsvcThread):
         """
         data = {}
         with shared.CLUSTER_DATA_LOCK:
-            for nodename in shared.CLUSTER_DATA:
+            for nodename, ndata in shared.CLUSTER_DATA.items():
                 try:
-                    for svcname in shared.CLUSTER_DATA[nodename]["services"]["config"]:
-                        if svcname not in shared.CLUSTER_DATA[nodename]["services"]["status"] or \
-                           "avail" not in shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]:
-                            # deleting
-                            continue
-                        if svcname not in data:
-                            data[svcname] = {}
-                        data[svcname][nodename] = Storage(shared.CLUSTER_DATA[nodename]["services"]["config"][svcname])
+                    configs = ndata["services"]["config"]
                 except (TypeError, KeyError):
-                    pass
+                    continue
+                for svcname, config in configs.items():
+                    try:
+                        sdata = shared.CLUSTER_DATA[nodename]["services"]["status"]
+                    except (TypeError, KeyError):
+                        continue
+                    if "avail" not in sdata:
+                        # deleting
+                        continue
+                    if svcname not in data:
+                        data[svcname] = {}
+                    data[svcname][nodename] = Storage(config)
         return data
 
     @staticmethod
@@ -2397,8 +2410,10 @@ class Monitor(shared.OsvcThread):
         self.log.info("slow path service status eval: %s", svcname)
         try:
             with shared.SERVICES_LOCK:
-                return shared.SERVICES[svcname].print_status_data(mon_data=False,
-                                                                  refresh=True)
+                svc = shared.SERVICES[svcname]
+                if not os.path.exists(svc.paths.cf):
+                    return
+                return svc.print_status_data(mon_data=False, refresh=True)
         except KeyboardInterrupt:
             return
         except Exception as exc:
@@ -2971,6 +2986,8 @@ class Monitor(shared.OsvcThread):
                                 changed = True
                     if changed:
                         try:
+                            if not os.path.exists(svc.paths.cf):
+                                return
                             svc.print_status_data_eval(mon_data=False,
                                                        refresh=True)
                         except Exception:
