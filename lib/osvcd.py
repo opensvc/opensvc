@@ -322,12 +322,11 @@ class Daemon(object):
         if config_changed:
             # clean up deleted heartbeats
             thr_ids = list(self.threads.keys())
-            sections = self.config.sections()
             for thr_id in thr_ids:
                 if not thr_id.startswith("hb#"):
                     continue
                 name = thr_id.replace(".tx", "").replace(".rx", "")
-                if name in sections:
+                if self.hb_enabled(name):
                     continue
                 self.log.info("heartbeat %s removed from configuration. stop "
                               "thread %s", name, thr_id)
@@ -409,12 +408,23 @@ class Daemon(object):
                 section_type = self.config.get(section, "type")
             except Exception:
                 continue
+            try:
+                disabled = shared.NODE.conf_get(section, "disable")
+            except ex.OptNotFound as exc:
+                disabled = exc.default
+            if disabled:
+                continue
             if section_type not in hbs:
                 hbs[section_type] = [section]
             else:
                 hbs[section_type].append(section)
         return hbs
 
+    def hb_enabled(self, name):
+        for names in self.config_hbs.values():
+            if name in names:
+                return True
+        return False
 
 #############################################################################
 #
