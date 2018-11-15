@@ -373,8 +373,8 @@ def _activate_systemd(systemdsvc):
                 shutil.copyfile(src, dst)
                 os.chmod(dst, p0644)
                 installed = True
-            except Exception as exc:
-                logit("issue met while trying to install systemd unit file: %s"%str(exc), stderr=True)
+            except:
+                logit("issue met while trying to install systemd unit file", stderr=True)
 
     if installed is not True:
         logit("issue met while trying to identify suitable systemd unit file location", stderr=True)
