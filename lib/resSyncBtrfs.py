@@ -6,6 +6,7 @@ import rcExceptions as ex
 import rcStatus
 import resSync
 from rcUtilities import justcall
+from converters import print_duration
 import rcBtrfs
 
 class SyncBtrfs(resSync.Sync):
@@ -382,7 +383,7 @@ class SyncBtrfs(resSync.Sync):
             print(e[0], e[1], traceback.print_tb(e[2]))
             return False
         if self.skip_sync(ts):
-            self.status_log("Last sync on %s older than %i minutes"%(ts, self.sync_max_delay))
+            self.status_log("Last sync on %s older than %s"%(ts, print_duration(self.sync_max_delay)))
             return False
         return True
 
@@ -392,7 +393,7 @@ class SyncBtrfs(resSync.Sync):
             ls = self.get_local_state()
             now = datetime.datetime.now()
             last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
-            delay = datetime.timedelta(minutes=self.sync_max_delay)
+            delay = datetime.timedelta(seconds=self.sync_max_delay)
         except IOError:
             self.status_log("btrfs state file not found")
             return rcStatus.WARN
@@ -403,7 +404,7 @@ class SyncBtrfs(resSync.Sync):
             print(e[0], e[1], traceback.print_tb(e[2]))
             return rcStatus.WARN
         if last < now - delay:
-            self.status_log("Last sync on %s older than %i minutes"%(last, self.sync_max_delay))
+            self.status_log("Last sync on %s older than %s"%(last, print_duration(self.sync_max_delay)))
             return rcStatus.WARN
         return rcStatus.UP
 

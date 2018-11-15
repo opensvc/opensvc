@@ -5,6 +5,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which
 from rcUtilitiesLinux import lv_info
 from subprocess import *
+from converters import print_duration
 import rcExceptions as ex
 import rcStatus
 import datetime
@@ -353,7 +354,7 @@ class syncDds(resSync.Sync):
             ls = self.get_local_state()
             now = datetime.datetime.now()
             last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
-            delay = datetime.timedelta(minutes=self.sync_max_delay)
+            delay = datetime.timedelta(seconds=self.sync_max_delay)
         except ex.excError:
             self.status_log("failed to get status")
             return rcStatus.WARN
@@ -367,7 +368,7 @@ class syncDds(resSync.Sync):
             print(e[0], e[1], traceback.print_tb(e[2]))
             return rcStatus.WARN
         if last < now - delay:
-            self.status_log("Last sync on %s older than %i minutes"%(last, self.sync_max_delay))
+            self.status_log("Last sync on %s older than %s"%(last, print_duration(self.sync_max_delay)))
             return rcStatus.WARN
         return rcStatus.UP
 

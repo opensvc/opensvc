@@ -154,7 +154,7 @@ class syncBtrfsSnap(resSync.Sync):
         if len(snaps) > self.keep:
             self.status_log("%s:%s has %d too many snaps" % (label, subvol, len(snaps)-self.keep))
         last = sorted(snaps, reverse=True)[0]
-        limit = datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay)
+        limit = datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay)
         if last < limit:
             self.status_log("%s:%s last snap is too old (%s)" % (label, subvol, last.strftime("%Y-%m-%d %H:%M:%S")))
 

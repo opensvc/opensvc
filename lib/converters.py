@@ -129,6 +129,9 @@ def convert_boolean(s):
         return False
     raise ValueError('convert boolean error: ' + s)
 
+def convert_duration_minute(s):
+    return convert_duration(s, _from="m")
+
 def convert_duration(s, _to="s", _from="s"):
     """
     Convert a string representation of a duration to seconds.

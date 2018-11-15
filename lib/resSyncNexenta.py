@@ -152,7 +152,7 @@ class syncNexenta(resSync.Sync):
             self.save_exc()
             return rcStatus.WARN
 
-        limit = datetime.timedelta(minutes=self.sync_max_delay)
+        limit = datetime.timedelta(seconds=self.sync_max_delay)
         if self.age > limit:
             self.status_log("last sync too old: %s ago"%str(self.age))
             ret = rcStatus.WARN

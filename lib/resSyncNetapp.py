@@ -83,7 +83,7 @@ class syncNetapp(resSync.Sync):
         l = lag.split(":")
         if len(l) != 3:
             raise ex.excError("unexpected lag format")
-        if int(l[0]) * 60 + int(l[1]) > max:
+        if int(l[0]) * 60 * 60 + int(l[1]) * 60 > max:
             return True
         return False
 

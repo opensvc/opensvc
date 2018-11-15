@@ -142,7 +142,7 @@ class syncRadosSnap(resSync.Sync):
 
             if date is None:
                 nosnap.append(image)
-            elif date < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
+            elif date < datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay):
                 expired.append(image)
             else:
                 ok.append(image)

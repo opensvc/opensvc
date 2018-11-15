@@ -46,6 +46,11 @@ Id ``resource_toc``
 
 toc for resource {rid} ({resource.label}) {resource.status} {resource.log}
 
+Id ``service_config_installed``
+-------------------------------
+
+config fetched from node {from} is now installed
+
 Id ``node_thaw``
 ----------------
 
@@ -65,11 +70,6 @@ Id ``resource_degraded``
 ------------------------
 
 resource {rid} ({resource.label}) degraded to {resource.status} {resource.log}
-
-Id ``service_config_installed``
--------------------------------
-
-config fetched from node {from} is now installed
 
 Id ``resource_restart``
 -----------------------

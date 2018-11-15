@@ -758,7 +758,7 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "sync_max_delay",
         "default": "1d",
-        "convert": "duration",
+        "convert": "duration_minute",
         "text": "Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The scheduler task frequency should be set between 'sync_min_delay' and 'sync_max_delay'."
     },
     {
@@ -1291,7 +1291,7 @@ KEYWORDS = [
         "section": "sync",
         "keyword": "sync_max_delay",
         "default": "1d",
-        "convert": "duration",
+        "convert": "duration_minute",
         "text": "Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The scheduler task frequency should be set between 'sync_min_delay' and 'sync_max_delay'."
     },
     {

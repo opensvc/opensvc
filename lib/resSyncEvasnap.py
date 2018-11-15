@@ -183,7 +183,7 @@ class syncEvasnap(resSync.Sync):
             if info_s['oxuid'].lower() != info_d['oxuid'].lower():
                 errlog.append("snapshot %s exists but incorrect parent object uid: %s"%(pair['dst'], info_d['oxuid'].lower()))
                 err |= True
-            if info_d['creationdatetime'] < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
+            if info_d['creationdatetime'] < datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay):
                 errlog.append("snapshot %s too old"%pair['dst'])
                 err |= True
             for mask in pair['mask']:

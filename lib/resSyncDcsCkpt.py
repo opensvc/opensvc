@@ -69,7 +69,7 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
             if info['Failure'] not in ['NoFailure']:
                 errlog.append("checkpoint snapshot %s failure state is %s"%(snap, info['Failure']))
                 err |= True
-            if info['TimeStamp'] < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
+            if info['TimeStamp'] < datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay):
                 errlog.append("checkpoint snapshot %s too old"%snap)
                 err |= True
             log.append("last update on %s"%info['TimeStamp'])
@@ -82,7 +82,7 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
     def nodes_status(self, verbose=False, skip_prereq=False):
         err = False
         ts = self.read_tsfile()
-        if ts < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
+        if ts < datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay):
             self.status_log("checkpoint too old")
             err |= True
         self.status_log("last update on %s"%str(ts))

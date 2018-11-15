@@ -64,14 +64,14 @@ class Sync(Res.Resource, Scheduler):
     def can_sync(self, target):
         return True
 
-    def check_timestamp(self, ts, comp='more', delay=10):
+    def check_timestamp(self, ts, comp='more', delay=600):
         """ Return False if timestamp is fresher than now-interval
             Return True otherwize.
             Zero is a infinite interval
         """
         if delay == 0:
             raise ex.excError("sync_max_delay cannot be 0")
-        limit = ts + datetime.timedelta(minutes=delay)
+        limit = ts + datetime.timedelta(seconds=delay)
         if comp == "more" and datetime.datetime.now() < limit:
             return False
         elif comp == "less" and datetime.datetime.now() < limit:

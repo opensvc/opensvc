@@ -93,7 +93,7 @@ class syncHp3parSnap(resSync.Sync):
                 self.status_log("missing vv: %s" % m)
             r = rcStatus.WARN
 
-        elapsed = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.sync_max_delay)
+        elapsed = datetime.datetime.utcnow() - datetime.timedelta(seconds=self.sync_max_delay)
         for vv in data:
             if self.lastsync_s_to_datetime(vv['CreationTime']) < elapsed:
                 self.status_log("vv %s last sync too old (%s)"%(vv['Name'], vv['CreationTime']))

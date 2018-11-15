@@ -3,6 +3,7 @@ import logging
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, lazy
+from converters import print_duration
 import rcExceptions as ex
 import rcStatus
 import time
@@ -222,8 +223,8 @@ class syncSymclone(resSync.Sync):
         if len(self.active_pairs) not in (len(self.pairs), 0):
             self.status_log("cloneset has %d/%d active devs" % (len(self.active_pairs), len(self.pairs)))
             return rcStatus.WARN
-        elif self.last < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
-            self.status_log("Last sync on %s older than %d minutes"%(self.last, self.sync_max_delay))
+        elif self.last < datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay):
+            self.status_log("Last sync on %s older than %s"%(self.last, print_duration(self.sync_max_delay)))
             return rcStatus.WARN
         else:
             self.status_log("Last sync on %s" % self.last, "info")

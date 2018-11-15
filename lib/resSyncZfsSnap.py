@@ -125,7 +125,7 @@ class syncZfsSnap(resSync.Sync):
         if len(snaps) > self.keep + 1:
             self.status_log("%s has %d too many snaps" % (dataset, len(snaps)-self.keep))
         last = sorted(snaps, reverse=True)[0]
-        limit = datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay)
+        limit = datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay)
         if last < limit:
             self.status_log("%s last snap is too old (%s)" % (dataset, last.strftime("%Y-%m-%d %H:%M:%S")))
 

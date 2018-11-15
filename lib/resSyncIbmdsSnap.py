@@ -3,6 +3,7 @@ import logging
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
+from converters import print_duration
 import rcExceptions as ex
 import rcStatus
 import time
@@ -153,8 +154,8 @@ class syncIbmdsSnap(resSync.Sync):
 
         if self.last is None:
             return rcStatus.WARN
-        elif self.last < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
-            self.status_log("Last sync on %s older than %d minutes"%(self.last, self.sync_max_delay))
+        elif self.last < datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay):
+            self.status_log("Last sync on %s older than %s"%(self.last, print_duration(self.sync_max_delay)))
             return rcStatus.WARN
         elif r == rcStatus.WARN:
             return rcStatus.WARN

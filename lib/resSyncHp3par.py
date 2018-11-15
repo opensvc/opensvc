@@ -258,7 +258,7 @@ class syncHp3par(resSync.Sync):
             self.status_log(str(e))
             return rcStatus.WARN
 
-        elapsed = datetime.datetime.utcnow() - datetime.timedelta(minutes=self.sync_max_delay)
+        elapsed = datetime.datetime.utcnow() - datetime.timedelta(seconds=self.sync_max_delay)
         r = None
         if data['rcg']['Status'] != "Started":
             self.status_log("rcopy group status is not Started (%s)"%data['rcg']['Status'])

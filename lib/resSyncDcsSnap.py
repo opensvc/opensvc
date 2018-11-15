@@ -130,7 +130,7 @@ Internal                 : False
             if info['Failure'] not in ['NoFailure']:
                 errlog.append("snapshot %s failure state is %s"%(snap, info['Failure']))
                 err |= True
-            if info['TimeStamp'] < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
+            if info['TimeStamp'] < datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay):
                 errlog.append("snapshot %s too old"%snap)
                 err |= True
             log.append("last update on %s"%info['TimeStamp'])

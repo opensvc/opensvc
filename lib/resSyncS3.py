@@ -84,7 +84,7 @@ class syncS3(resSync.Sync):
             self.status_log(str(e))
             return rcStatus.WARN
 
-        if self.sync_date(n) < datetime.datetime.now() - datetime.timedelta(minutes=self.sync_max_delay):
+        if self.sync_date(n) < datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay):
             self.status_log("last backup too old (%s)" % last.strftime("%Y-%m-%d %H:%M:%S"))
             return rcStatus.WARN
 
