@@ -57,6 +57,12 @@ else:
     pathini = os.path.join(pathsvc, 'bin', 'init')
     pathusr = os.path.join(pathsvc, 'usr')
 
+def any(iterable):
+    for element in iterable:
+        if element:
+            return True
+    return False
+
 def make_sure_path_exists(path):
     if os.path.exists(path):
         return
