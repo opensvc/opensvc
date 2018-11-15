@@ -4,6 +4,7 @@ Converters, used by arguments and config file parsers.
 import re
 import shlex
 import datetime
+import six
 
 try:
     NUMERIC_TYPES = (int, float, long)
@@ -37,7 +38,10 @@ def convert_shlex(s):
         return
     if isinstance(s, list):
         return s
-    return shlex.split(s)
+    if six.PY2:
+        return shlex.split(s.encode("utf-8"))
+    else:
+        return shlex.split(s)
 
 def convert_integer(s):
     """
