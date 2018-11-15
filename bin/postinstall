@@ -667,7 +667,8 @@ def os_release():
     data = {"ID": "==magic1234"}
     if not os.path.exists(os_release_f):
         return data
-    with open(os_release_f, "r") as filep:
+    filep = open(os_release_f, "r")
+    try:
         for line in filep.readlines():
             line = line.strip("\n")
             try:
@@ -675,6 +676,8 @@ def os_release():
             except:
                 continue
             data[var] = val.strip('"')
+    finally:
+        filep.close()
     return data
 
 def install_rc():
