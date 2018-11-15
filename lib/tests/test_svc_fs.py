@@ -14,8 +14,9 @@ import svc
 import resFsLinux
 import rcExceptions as ex
 import rcLogger
+import uuid
 
-SVCNAME = "unittest"
+SVCNAME = "unittest-" + str(uuid.uuid4())
 
 if platform.uname()[0] != "Linux":
     raise SkipTest
