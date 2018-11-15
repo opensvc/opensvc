@@ -2255,7 +2255,7 @@ class Monitor(shared.OsvcThread):
                     continue
                 for svcname, config in configs.items():
                     try:
-                        sdata = shared.CLUSTER_DATA[nodename]["services"]["status"]
+                        sdata = shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]
                     except (TypeError, KeyError):
                         continue
                     if "avail" not in sdata:
