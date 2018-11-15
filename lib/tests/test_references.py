@@ -10,6 +10,7 @@ sys.path.insert(0, mod_d)
 
 import json
 import socket
+import uuid
 
 try:
     from StringIO import StringIO
@@ -23,6 +24,7 @@ import nodemgr
 
 UNICODE_STRING = "bêh"
 NODENAME=socket.gethostname()
+SVCNAME = "unittest-" + str(uuid.uuid4())
 
 REFS = [
     ("env.ref0", "1 2 3", "1 2 3"),
@@ -49,7 +51,7 @@ class TestReferences:
         """
         Create a trivial service
         """
-        ret = svcmgr.main(argv=["create", "-s", "unittest"])
+        ret = svcmgr.main(argv=["create", "-s", SVCNAME])
         assert ret == 0
 
     def test_002_set_default(self):
@@ -59,7 +61,7 @@ class TestReferences:
         refs = ["--kw", "nodes=%s" % NODENAME]
         for idx, (name, val, exp_val) in enumerate(REFS):
             refs += ["--kw", "%s=%s" % (name, val)]
-        ret = svcmgr.main(argv=["-s", "unittest", "set"] + refs)
+        ret = svcmgr.main(argv=["-s", SVCNAME, "set"] + refs)
         assert ret == 0
 
     def test_003_ref_0(self): self.__get_ref(0)
@@ -81,7 +83,7 @@ class TestReferences:
         try:
             out = StringIO()
             sys.stdout = out
-            ret = svcmgr.main(argv=["-s", "unittest", "get", "--eval", "--kw", name])
+            ret = svcmgr.main(argv=["-s", SVCNAME, "get", "--eval", "--kw", name])
             output = out.getvalue().strip()
         finally:
             sys.stdout = _stdout
@@ -93,7 +95,7 @@ class TestReferences:
         """
         Delete local service instance
         """
-        ret = svcmgr.main(argv=["delete", "-s", "unittest", "--local"])
+        ret = svcmgr.main(argv=["delete", "-s", SVCNAME, "--local"])
         assert ret == 0
 
 
