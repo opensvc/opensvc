@@ -10,7 +10,7 @@
 
 from __future__ import print_function, unicode_literals
 from ._util import compact_json_dumps, TERMINALS, NONTERMINALS
-from ._util import follow_path, in_array, in_object, range
+from ._util import follow_path, in_array, in_object, range, compat_kwargs
 
 import copy
 import bisect
@@ -302,7 +302,7 @@ def keyset_diff(left_struc, right_struc, key, options={}):
     for k in overlap:
         sub_key = key + [k]
         out.extend(diff(left_struc[k], right_struc[k],
-                        key=sub_key, **options))
+                        key=sub_key, **compat_kwargs(options)))
     return out
 
 

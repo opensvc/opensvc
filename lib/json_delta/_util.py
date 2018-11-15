@@ -20,6 +20,14 @@ import codecs
 import itertools
 
 try:
+    (lambda x: x)(**{'x': 0})
+except TypeError:
+    def compat_kwargs(kwargs):
+        return dict((bytes(k), v) for k, v in kwargs.items())
+else:
+    compat_kwargs = lambda kwargs: kwargs
+
+try:
     from itertools import izip as zip
 except ImportError:
     zip = zip

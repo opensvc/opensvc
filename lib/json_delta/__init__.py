@@ -29,8 +29,7 @@ from ._patch import patch
 from ._udiff import udiff
 from ._upatch import upatch
 
-from ._util import _load_and_func
-
+from ._util import _load_and_func, compat_kwargs
 
 def diff(left_struc, right_struc, minimal=None, verbose=True, key=None,
          array_align=True, compare_lengths=True, common_key_threshold=0.0):
@@ -78,7 +77,7 @@ def diff(left_struc, right_struc, minimal=None, verbose=True, key=None,
 
     '''
     return _diff_func(left_struc, right_struc, verbose=verbose, key=key,
-                      **_check_diff_parms(vars()))
+                      **compat_kwargs(_check_diff_parms(vars())))
 
 
 def _check_diff_parms(parms):
@@ -87,9 +86,11 @@ def _check_diff_parms(parms):
     Output is a dict suitable for ``**`` passing to :func:`_diff.diff`.
 
     '''
-    options = dict((k, parms[k]) for k in ('array_align', 'compare_lengths',
-                                     'common_key_threshold')
-               if parms[k] is not None)
+    options = {}
+    for k in ('array_align', 'compare_lengths', 'common_key_threshold'):
+        if parms[k] is None:
+            continue
+        options[k] = parms[k]
     if parms['minimal'] is None:
         return options
 
