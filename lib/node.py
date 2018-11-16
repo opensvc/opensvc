@@ -3645,6 +3645,8 @@ class Node(Crypt, ExtConfigMixin):
             for nodename in nodenames:
                 if nodename not in _data["peers"] or "beating" not in _data["peers"][nodename]:
                     status = "n/a"
+                elif "slot" in _data["peers"][nodename] and _data["peers"][nodename]["slot"] < 0:
+                    status = "undef"
                 elif _data["peers"][nodename]["beating"]:
                     status = "up"
                 else:
