@@ -672,6 +672,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "section": "hb",
         "keyword": "dev",
         "rtype": "disk",
+        "at": True,
         "required": True,
         "text": "The device to write the hearbeats to and read from. It must be dedicated to the daemon use. Its size should be 1M + 1M per cluster node."
     },

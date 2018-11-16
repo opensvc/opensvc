@@ -70,9 +70,12 @@ class HbDisk(Hb):
         else:
             self.timeout = self.DEFAULT_DISK_TIMEOUT
 
-        try:
+        # dev
+        if self.config.has_option(self.name, "dev@"+rcEnv.nodename):
+            new_dev = self.config.get(self.name, "dev@"+rcEnv.nodename)
+        elif self.config.has_option(self.name, "dev"):
             new_dev = self.config.get(self.name, "dev")
-        except Exception:
+        else:
             raise ex.excAbortAction("no %s.dev is not set in node.conf" % self.name)
 
         if not os.path.exists(new_dev):
