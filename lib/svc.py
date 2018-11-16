@@ -316,6 +316,7 @@ ACTIONS_DO_MASTER_AND_SLAVE = [
     "start",
     "startstandby",
     "stop",
+    "toc",
 ]
 
 ACTIONS_NEED_SNAP_TRIGGER = [
@@ -796,7 +797,7 @@ class Svc(Crypt, ExtConfigMixin):
     def action_rid_dependencies(self, action, rid):
         if action in ("provision", "start"):
             action = "start"
-        elif action in ("shutdown", "unprovision", "stop"):
+        elif action in ("shutdown", "unprovision", "stop", "toc"):
             action = "stop"
         else:
             return set()
@@ -809,7 +810,7 @@ class Svc(Crypt, ExtConfigMixin):
     def action_rid_dependency_of(self, action, rid):
         if action in ("provision", "start"):
             action = "start"
-        elif action in ("shutdown", "unprovision", "stop"):
+        elif action in ("shutdown", "unprovision", "stop", "toc"):
             action = "stop"
         else:
             return set()
