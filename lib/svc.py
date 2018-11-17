@@ -4277,22 +4277,10 @@ class Svc(Crypt, ExtConfigMixin):
 
         Return the validated destination node name.
         """
-        if self.topology != "failover":
-            raise ex.excError("this service topology is not 'failover'")
         if destination_node is None:
             destination_node = self.options.destination_node
-        if destination_node is None and len(self.peers) == 2:
-            nodenames = self.started_on()
-            candidates = list(set(self.peers) - set(nodenames))
-            if len(candidates) == 1:
-                destination_node = candidates[0]
         if destination_node is None:
-            raise ex.excError("a destination node must be provided for this action")
-        if destination_node == self.current_node():
-            raise ex.excError("the destination is the source node")
-        if destination_node not in self.nodes:
-            raise ex.excError("the destination node %s is not in the service "
-                              "nodes list" % destination_node)
+            destination_node = "<peer>"
         return destination_node
 
     @_master_action

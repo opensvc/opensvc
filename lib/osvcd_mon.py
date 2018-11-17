@@ -2628,6 +2628,9 @@ class Monitor(shared.OsvcThread):
             if frozen != "thawed":
                 return
             svc = self.get_service(svcname)
+            if svc is None:
+                # foreign
+                return
             candidates = self.placement_candidates(svc, discard_start_failed=False, discard_frozen=False)
             candidates = self.placement_leaders(svc, candidates=candidates)
             peers = self.peers_options(svcname, candidates, ["place failed"])

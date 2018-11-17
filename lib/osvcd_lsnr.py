@@ -571,7 +571,9 @@ class Listener(shared.OsvcThread):
         for svcname in svcnames:
             try:
                 self.validate_global_expect(svcname, global_expect)
-                self.validate_destination_node(svcname, global_expect)
+                new_ge = self.validate_destination_node(svcname, global_expect)
+                if new_ge:
+                    global_expect = new_ge
             except ex.excAbortAction as exc:
                 info.append(str(exc))
             except ex.excError as exc:
@@ -613,27 +615,42 @@ class Listener(shared.OsvcThread):
             global_expect, destination_nodes = global_expect.split("@", 1)
         except ValueError:
             return
+        if global_expect != "placed":
+            return
         instances = self.get_service_instances(svcname)
         if not instances:
             raise ex.excError("service does not exist")
-        destination_nodes = destination_nodes.split(",")
-        count = len(destination_nodes)
-        if count == 0:
-            raise ex.excError("no destination node specified")
-        instance = list(instances.values())[0]
-        if count > 1 and instance["topology"] == "failover":
-            raise ex.excError("only one destination node can be specified for "
-                              "a failover service")
-        for destination_node in destination_nodes:
-            if not destination_node:
-                raise ex.excError("empty destination node")
-            if destination_node not in instances:
-                raise ex.excError("destination node %s has no service instance" % \
-                                  destination_node)
-            instance = instances[destination_node]
-            if instance["avail"] == "up":
-                raise ex.excAbortAction("instance on destination node %s is "
-                                        "already up" % destination_node)
+        if destination_nodes == "<peer>":
+            instance = list(instances.values())[0]
+            if instance.get("topology") == "flex":
+                raise ex.excError("no destination node specified")
+            else:
+                candidates = [nodename for nodename, inst in instances.items() if inst.get("avail") != "up"]
+                count = len(candidates)
+                if count == 0:
+                    raise ex.excError("no candidate destination node")
+                elif count > 1:
+                    raise ex.excError("more than one possible destination node")
+            return "placed@%s" % candidates[0]
+        else:
+            destination_nodes = destination_nodes.split(",")
+            count = len(destination_nodes)
+            if count == 0:
+                raise ex.excError("no destination node specified")
+            instance = list(instances.values())[0]
+            if count > 1 and instance.get("topology") == "failover":
+                raise ex.excError("only one destination node can be specified for "
+                                  "a failover service")
+            for destination_node in destination_nodes:
+                if not destination_node:
+                    raise ex.excError("empty destination node")
+                if destination_node not in instances:
+                    raise ex.excError("destination node %s has no service instance" % \
+                                      destination_node)
+                instance = instances[destination_node]
+                if instance["avail"] == "up":
+                    raise ex.excAbortAction("instance on destination node %s is "
+                                            "already up" % destination_node)
 
     def validate_global_expect(self, svcname, global_expect):
         if global_expect is None:
