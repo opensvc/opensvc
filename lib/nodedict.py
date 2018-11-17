@@ -601,14 +601,6 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
     },
     {
         "section": "hb",
-        "keyword": "disable",
-        "at": True,
-        "convert": "boolean",
-        "default": False,
-        "text": "Disable the heartbeat. Useful with scoping to declare a heartbeat covering only a cluster segment."
-    },
-    {
-        "section": "hb",
         "keyword": "addr",
         "rtype": "unicast",
         "at": True,

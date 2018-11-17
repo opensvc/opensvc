@@ -409,11 +409,11 @@ class Daemon(object):
             except Exception:
                 continue
             try:
-                disabled = shared.NODE.conf_get(section, "disable")
+                hb_nodes = shared.NODE.conf_get(section, "nodes")
+                if rcEnv.nodename not in hb_nodes:
+                    continue
             except ex.OptNotFound as exc:
-                disabled = exc.default
-            if disabled:
-                continue
+                pass
             if section_type not in hbs:
                 hbs[section_type] = [section]
             else:
