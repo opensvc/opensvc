@@ -37,6 +37,7 @@ class HbRelay(Hb):
         self._configure()
 
     def _configure(self):
+        self.get_hb_nodes()
         self.peer_config = {}
         if hasattr(self, "node"):
             config = getattr(self, "node").config
@@ -155,7 +156,7 @@ class HbRelayRx(HbRelay):
 
     def do(self):
         self.reload_config()
-        for nodename in self.cluster_nodes:
+        for nodename in self.hb_nodes:
             if nodename == rcEnv.nodename:
                 continue
             try:

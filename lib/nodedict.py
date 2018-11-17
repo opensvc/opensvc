@@ -670,6 +670,14 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
     },
     {
         "section": "hb",
+        "keyword": "nodes",
+        "at": True,
+        "convert": "list",
+        "default_text": "All nodes.",
+        "text": "The nodes participating to the heartbeat.",
+    },
+    {
+        "section": "hb",
         "keyword": "dev",
         "rtype": "disk",
         "at": True,

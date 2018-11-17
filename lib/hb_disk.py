@@ -51,6 +51,7 @@ class HbDisk(Hb):
         self._configure()
 
     def _configure(self):
+        self.get_hb_nodes()
         self.peer_config = {}
         if hasattr(self, "node"):
             config = getattr(self, "node").config
@@ -174,7 +175,7 @@ class HbDisk(Hb):
         fo.flush()
 
     def load_peer_config(self, fo=None, verbose=True):
-        for nodename in self.cluster_nodes:
+        for nodename in self.hb_nodes:
             if nodename not in self.peer_config:
                 self.peer_config[nodename] = Storage({
                     "slot": -1,
@@ -189,7 +190,8 @@ class HbDisk(Hb):
                 continue
             if nodename not in self.peer_config:
                 continue
-            if self.peer_config[nodename].slot >= 0:
+            if self.peer_config[nodename].slot >= 0 and \
+               slot != self.peer_config[nodename].slot:
                 if verbose:
                     self.log.warning("duplicate slot %d for node %s (first %d)",
                                      slot, nodename,

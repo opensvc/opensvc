@@ -9,6 +9,7 @@ import struct
 
 import json_delta
 import osvcd_shared as shared
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
 
@@ -26,6 +27,14 @@ class Hb(shared.OsvcThread):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd."+self.id)
         self.peers = {}
         self.reset_stats()
+        self.hb_nodes = self.cluster_nodes
+
+    def get_hb_nodes(self):
+        try:
+            self.hb_nodes = [node for node in shared.NODE.conf_get(self.name, "nodes")
+                             if node in self.cluster_nodes]
+        except ex.OptNotFound as exc:
+            self.hb_nodes = self.cluster_nodes
 
     def push_stats(self, _bytes=-1):
         if _bytes < 0:
@@ -45,7 +54,7 @@ class Hb(shared.OsvcThread):
     def status(self, **kwargs):
         data = shared.OsvcThread.status(self, **kwargs)
         data.peers = {}
-        for nodename in self.cluster_nodes:
+        for nodename in self.hb_nodes:
             if nodename == rcEnv.nodename:
                 data.peers[nodename] = {}
                 continue

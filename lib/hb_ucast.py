@@ -38,6 +38,7 @@ class HbUcast(Hb):
         self._configure()
 
     def _configure(self):
+        self.get_hb_nodes()
         self.peer_config = {}
         if hasattr(self, "node"):
             config = getattr(self, "node").config
@@ -48,7 +49,7 @@ class HbUcast(Hb):
         except Exception:
             default_port = self.DEFAULT_UCAST_PORT + 0
 
-        for nodename in self.cluster_nodes:
+        for nodename in self.hb_nodes:
             if nodename not in self.peer_config:
                 if nodename == rcEnv.nodename:
                     default_addr = "0.0.0.0"
@@ -73,7 +74,7 @@ class HbUcast(Hb):
             self.timeout = self.config.getint(self.name, "timeout")
         else:
             self.timeout = self.DEFAULT_UCAST_TIMEOUT
-        self.max_handlers = len(self.cluster_nodes) * 4
+        self.max_handlers = len(self.hb_nodes) * 4
 
 class HbUcastTx(HbUcast):
     """
@@ -227,7 +228,7 @@ class HbUcastRx(HbUcast):
         if nodename is None or nodename == rcEnv.nodename:
             # ignore hb data we sent ourself
             return
-        elif nodename not in self.cluster_nodes:
+        elif nodename not in self.hb_nodes:
             # decrypt passed, trust it is a new node
             self.add_cluster_node(nodename)
         if data is None:

@@ -51,6 +51,7 @@ class HbMcast(Hb):
         self._configure()
 
     def _configure(self):
+        self.get_hb_nodes()
         prev = {
             "port": self.port,
             "addr": self.addr,
@@ -79,7 +80,7 @@ class HbMcast(Hb):
             self.intf = "any"
             self.src_addr = "0.0.0.0"
             self.mreq = struct.pack("4sl", group, socket.INADDR_ANY)
-        self.max_handlers = len(self.cluster_nodes) * 4
+        self.max_handlers = len(self.hb_nodes) * 4
 
         # log changes
         changes = []
@@ -309,7 +310,7 @@ class HbMcastRx(HbMcast):
         if nodename is None or nodename == rcEnv.nodename:
             # ignore hb data we sent ourself
             return
-        elif nodename not in self.cluster_nodes:
+        elif nodename not in self.hb_nodes:
             # decrypt passed, trust it is a new node
             self.add_cluster_node(nodename)
         if data is None:
