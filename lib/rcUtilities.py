@@ -1042,6 +1042,7 @@ def init_locale():
         except locale.Error:
             continue
         os.environ["LANG"] = loc
+        os.environ["LC_NUMERIC"] = "C"
         if locale.getlocale()[1] == "UTF-8":
             return
     #raise ex.excError("can not set a C lang with utf8 encoding")
