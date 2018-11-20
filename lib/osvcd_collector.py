@@ -65,9 +65,24 @@ class Collector(shared.OsvcThread):
                     add_parents(svcname, done=done+[_svcname])
 
         for svcname, nodename in self.last_status:
-            if data["nodes"].get(nodename, {}).get("services", {}).get("status", {}).get(svcname) is None:
-                last_status_changed += [svcname, svcname+"@"+nodename]
+            if svcname is None:
+                # node disappeared
+                if data["nodes"].get(nodename) is None:
+                    last_status_changed += ["@"+nodename]
+            else:
+                # instance disappeared
+                if data["nodes"].get(nodename, {}).get("services", {}).get("status", {}).get(svcname) is None:
+                    last_status_changed += [svcname, svcname+"@"+nodename]
+
         for nodename, ndata in data["nodes"].items():
+            # detect node frozen changes
+            node_frozen = ndata.get("frozen")
+            last_node_frozen = self.last_status.get((None, nodename), {}).get("frozen")
+            if node_frozen != last_node_frozen:
+                last_status_changed.append("@"+nodename)
+            last_status[(None, nodename)] = {"frozen": node_frozen}
+
+            # detect instances status changes
             for svcname, sdata in ndata.get("services", {}).get("status", {}).items():
                 status_csum = sdata.get("csum")
                 prev_status_csum = self.last_status.get((svcname, nodename))
@@ -198,6 +213,7 @@ class Collector(shared.OsvcThread):
             try:
                 instances_status = data["nodes"][nodename]["services"]["status"]
                 instances_config = data["nodes"][nodename]["services"]["config"]
+                node_frozen = data["nodes"][nodename]["frozen"]
             except (TypeError, KeyError):
                 continue
             if instances_status is None:
@@ -219,6 +235,7 @@ class Collector(shared.OsvcThread):
                             "status": {},
                         },
                     }
+                _data["nodes"][nodename]["frozen"] = node_frozen
                 _data["nodes"][nodename]["services"]["status"][svcname] = instances_status[svcname]
                 _data["nodes"][nodename]["services"]["config"][svcname] = instances_config[svcname]
                 _data["services"][svcname] = data["services"][svcname]
