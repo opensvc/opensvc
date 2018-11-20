@@ -114,6 +114,5 @@ class App(resApp.App):
             pass
         self.log.info("start winservice %s", self.name)
         win32serviceutil.StartService(self.name)
-        timeout = self.get_timeout("stop")
+        timeout = self.get_timeout("start")
         self.wait_for_state(timeout, SERVICE_RUNNING, SERVICE_START_PENDING)
-
