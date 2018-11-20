@@ -581,6 +581,7 @@ class Node(Crypt, ExtConfigMixin):
         except Exception as exc:
             data = None
         if os.environ.get("OSVC_SERVICE_LINK"):
+            self.options.single_service = True
             return [os.environ.get("OSVC_SERVICE_LINK")]
         if selector is None or "*" in selector.split(","):
             if data is None:
@@ -588,6 +589,7 @@ class Node(Crypt, ExtConfigMixin):
             else:
                 return [svcname for svcname in data["services"]]
         if is_service(selector):
+            self.options.single_service = True
             return [selector]
         self.build_services()
         try:

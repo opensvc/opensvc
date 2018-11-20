@@ -230,8 +230,6 @@ def _main(node, argv=None):
         options.svcs = expanded_svcs
     else:
         options.svcs = options.svcs.split(",")
-    node.options.single_service = options.svcs is not None and \
-                                  len(options.svcs) == 1
 
     node.set_rlimit()
     build_kwargs = get_build_kwargs(optparser, options, action)
