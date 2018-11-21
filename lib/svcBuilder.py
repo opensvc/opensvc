@@ -328,6 +328,15 @@ def add_ip(svc, s):
             kwargs['del_net_route'] = svc.conf_get(s, 'del_net_route')
         except ex.OptNotFound as exc:
             kwargs['del_net_route'] = exc.default
+        if kwargs['mode'] == "ovs":
+            try:
+                kwargs['vlan_tag'] = svc.conf_get(s, 'vlan_tag')
+            except ex.OptNotFound as exc:
+                kwargs['vlan_tag'] = exc.default
+            try:
+                kwargs['vlan_mode'] = svc.conf_get(s, 'vlan_mode')
+            except ex.OptNotFound as exc:
+                kwargs['vlan_mode'] = exc.default
 
     if rtype == "cni":
         try:

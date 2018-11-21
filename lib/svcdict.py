@@ -1360,10 +1360,32 @@ KEYWORDS = [
     {
         "section": "ip",
         "rtype": "docker",
+        "keyword": "vlan_tag",
+        "depends": [("mode", "ovs")],
+        "at": True,
+        "required": False,
+        "text": "The VLAN tag the switch port will relay.",
+        "example": "44 45"
+    },
+    {
+        "section": "ip",
+        "rtype": "docker",
+        "keyword": "vlan_mode",
+        "candidates": ["access", "native-tagged", "native-untagged"],
+        "depends": [("mode", "ovs")],
+        "at": True,
+        "required": False,
+        "default": "native-untagged",
+        "text": "The VLAN port mode.",
+        "example": "access"
+    },
+    {
+        "section": "ip",
+        "rtype": "docker",
         "keyword": "mode",
         "at": True,
         "required": False,
-        "candidates": ["bridge", "dedicated", "macvlan", "ipvlan-l2", "ipvlan-l3"],
+        "candidates": ["bridge", "dedicated", "macvlan", "ipvlan-l2", "ipvlan-l3", "ovs"],
         "text": "The ip link mode. If ipdev is set to a bridge interface the mode defaults to bridge, else defaults to macvlan. ipvlan requires a 4.2+ kernel.",
         "example": "container#0"
     },

@@ -18,6 +18,8 @@ class Ip(Res.Ip):
                  network=None,
                  del_net_route=False,
                  container_rid=None,
+                 vlan_tag=None,
+                 vlan_mode=None,
                  **kwargs):
         Res.Ip.__init__(self,
                         rid,
@@ -31,6 +33,8 @@ class Ip(Res.Ip):
         self.network = network
         self.del_net_route = del_net_route
         self.container_rid = str(container_rid)
+        self.vlan_tag = vlan_tag
+        self.vlan_mode = vlan_mode
         self.label = str(ipname) + '@' + ipdev + '@' + self.container_rid
         self.tags = self.tags | set(["docker"])
         self.tags.add(container_rid)
@@ -178,6 +182,9 @@ class Ip(Res.Ip):
         elif self.mode == "ipvlan-l3":
             self.log.info("ipvlan-l3 mode")
             return self.startip_cmd_shared_ipvlan("l3")
+        elif self.mode == "ovs":
+            self.log.info("ovs mode")
+            return self.startip_cmd_shared_ovs()
 
     def startip_cmd_dedicated(self):
         # assign interface to the nspid
@@ -213,6 +220,67 @@ class Ip(Res.Ip):
         self.log.info(" ".join(cmd))
         out, err, ret = justcall(cmd)
 
+        return 0, "", ""
+
+    def stopip_cmd_shared_ovs(self):
+        nspid = self.get_nspid()
+        tmp_local_dev = "v%spl%s" % (self.guest_dev, nspid)
+
+        cmd = ["ovs-vsctl", "del-port", self.ipdev, tmp_local_dev]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+        return ret, out, err
+ 
+    def startip_cmd_shared_ovs(self):
+        nspid = self.get_nspid()
+        tmp_guest_dev = "v%spg%s" % (self.guest_dev, nspid)
+        tmp_local_dev = "v%spl%s" % (self.guest_dev, nspid)
+        mtu = self.ip_get_mtu()
+
+        if not which("ovs-vsctl"):
+            raise Exception("ovs-vsctl must be installed")
+
+        # create peer devs
+        cmd = [rcEnv.syspaths.ip, "link", "add", "name", tmp_local_dev, "mtu", mtu, "type", "veth", "peer", "name", tmp_guest_dev, "mtu", mtu]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        cmd = ["ovs-vsctl", "--may-exist", "add-port", self.ipdev, tmp_local_dev, "vlan_mode=%s" % self.vlan_mode]
+        if self.vlan_tag is not None:
+            cmd += ["tag=%s" % self.vlan_tag]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        cmd = [rcEnv.syspaths.ip, "link", "set", tmp_local_dev, "up"]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # assign the interface to the container namespace
+        cmd = [rcEnv.syspaths.ip, "link", "set", tmp_guest_dev, "netns", nspid]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # rename the tmp guest dev
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # plumb ip
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.guest_dev]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            return ret, out, err
+
+        # setup default route
+        self.ip_setup_route()
+
+        self.ip_wait()
         return 0, "", ""
 
     def startip_cmd_shared_bridge(self):
@@ -432,6 +500,13 @@ class Ip(Res.Ip):
             raise ex.excContinueAction("netmask is not set")
         cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]
         ret, out, err = self.vcall(cmd)
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.sandboxkey, "ip", "link", "del", "dev", intf]
+        ret, out, err = self.vcall(cmd)
+
+        if self.mode == "ovs":
+            self.log.info("ovs mode")
+            ret, out, err = self.stopip_cmd_shared_ovs()
+
         self.unset_lazy("sandboxkey")
         return ret, out, err
 
