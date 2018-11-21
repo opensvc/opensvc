@@ -311,7 +311,7 @@ def add_ip(svc, s):
     except ex.OptNotFound as exc:
         kwargs['expose'] = exc.default
 
-    if rtype == "docker":
+    if rtype in ("netns", "docker"):
         try:
             kwargs['container_rid'] = svc.conf_get(s, 'container_rid')
         except ex.OptNotFound as exc:
@@ -360,8 +360,8 @@ def add_ip(svc, s):
     elif zone is not None:
         kwargs['zone'] = zone
         ip = __import__('resIpZone')
-    elif rtype == "docker":
-        ip = __import__('resIpDocker'+rcEnv.sysname)
+    elif rtype in ("netns", "docker"):
+        ip = __import__('resIpNetns'+rcEnv.sysname)
     elif rtype == "cni":
         ip = __import__('resIpCni')
     else:

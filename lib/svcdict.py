@@ -51,6 +51,7 @@ DEPRECATED_SECTIONS = {
   "vdisk": ["disk", "vdisk"],
   "vmdg": ["disk", "vmdg"],
   "vg": ["disk", "vg"],
+  "ip.docker": ["ip", "netns"],
 }
 
 KEYWORDS = [
@@ -1296,7 +1297,7 @@ KEYWORDS = [
     },
     {
         "section": "ip",
-        "rtype": [None, 'crossbow', 'amazon', 'docker', 'gce'],
+        "rtype": [None, "crossbow", "amazon", "gce", "docker", "netns"],
         "keyword": "ipname",
         "required": False,
         "at": True,
@@ -1350,7 +1351,7 @@ KEYWORDS = [
     },
     {
         "section": "ip",
-        "rtype": "docker",
+        "rtype": ["docker", "netns"],
         "keyword": "container_rid",
         "at": True,
         "required": True,
@@ -1359,7 +1360,7 @@ KEYWORDS = [
     },
     {
         "section": "ip",
-        "rtype": "docker",
+        "rtype": ["docker", "netns"],
         "keyword": "vlan_tag",
         "depends": [("mode", "ovs")],
         "at": True,
@@ -1369,7 +1370,7 @@ KEYWORDS = [
     },
     {
         "section": "ip",
-        "rtype": "docker",
+        "rtype": ["docker", "netns"],
         "keyword": "vlan_mode",
         "candidates": ["access", "native-tagged", "native-untagged"],
         "depends": [("mode", "ovs")],
@@ -1381,7 +1382,7 @@ KEYWORDS = [
     },
     {
         "section": "ip",
-        "rtype": "docker",
+        "rtype": ["docker", "netns"],
         "keyword": "mode",
         "at": True,
         "required": False,
@@ -1554,13 +1555,13 @@ KEYWORDS = [
         "section": "ip",
         "keyword": "type",
         "at": True,
-        "candidates": [None, 'crossbow', 'amazon', 'docker', 'gce', 'cni'],
+        "candidates": [None, "crossbow", "amazon", "gce", "cni", "docker", "netns"],
         "text": "The opensvc ip driver name.",
         "example": "crossbow",
     },
     {
         "section": "ip",
-        "rtype": [None, 'crossbow', 'amazon', 'docker', 'gce'],
+        "rtype": [None, "crossbow", "amazon", "gce", "docker", "netns"],
         "keyword": "ipdev",
         "at": True,
         "required": True,
@@ -1586,7 +1587,7 @@ KEYWORDS = [
     },
     {
         "section": "ip",
-        "rtype": "docker",
+        "rtype": ["docker", "netns"],
         "keyword": "del_net_route",
         "at": True,
         "default": False,
@@ -1595,7 +1596,7 @@ KEYWORDS = [
     },
     {
         "section": "ip",
-        "rtype": [None, 'crossbow', 'amazon', 'docker', 'gce'],
+        "rtype": [None, "crossbow", "amazon", "gce", "docker", "netns"],
         "keyword": "netmask",
         "at": True,
         "text": "If an ip is already plumbed on the root interface (in which case the netmask is deduced from this ip). Mandatory if the interface is dedicated to the service (dummy interface are likely to be in this case). The format is either dotted or octal for IPv4, ex: 255.255.252.0 or 22, and octal for IPv6, ex: 64.",
@@ -1603,7 +1604,7 @@ KEYWORDS = [
     },
     {
         "section": "ip",
-        "rtype": [None, 'crossbow', 'amazon', 'docker', 'gce'],
+        "rtype": [None, "crossbow", "amazon", "gce", "docker", "netns"],
         "keyword": "gateway",
         "at": True,
         "text": "A zone ip provisioning parameter used in the sysidcfg formatting. The format is decimal for IPv4, ex: 255.255.252.0, and octal for IPv6, ex: 64.",
@@ -2033,7 +2034,7 @@ KEYWORDS = [
     },
     {
         "section": "container",
-        "rtype": rcEnv.vt_cloud+['ldom', 'hpvm', 'kvm', 'xen', 'vbox', 'ovm', 'esx', 'zone', 'lxd', 'lxc', 'jail', 'vz', 'srp'],
+        "rtype": rcEnv.vt_cloud+["ldom", "hpvm", "kvm", "xen", "vbox", "ovm", "esx", "zone", "lxd", "lxc", "jail", "vz", "srp"],
         "keyword": "start_timeout",
         "convert": "duration",
         "at": True,
@@ -2043,7 +2044,7 @@ KEYWORDS = [
     },
     {
         "section": "container",
-        "rtype": rcEnv.vt_cloud+['ldom', 'hpvm', 'kvm', 'xen', 'vbox', 'ovm', 'esx', 'zone', 'lxd', 'lxc', 'jail', 'vz', 'srp', 'docker'],
+        "rtype": rcEnv.vt_cloud+["ldom", "hpvm", "kvm", "xen", "vbox", "ovm", "esx", "zone", "lxd", "lxc", "jail", "vz", "srp", "docker"],
         "keyword": "stop_timeout",
         "convert": "duration",
         "at": True,
