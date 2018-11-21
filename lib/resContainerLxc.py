@@ -461,10 +461,18 @@ class Lxc(resContainer.Container):
 
     def cni_netns(self):
         """
-        Used by ip.cni
+        Used by ip.cni and ip.docker
         """
         try:
             return "/proc/%d/ns/net" % self.get_pid()
         except (TypeError, ValueError):
             return
+
+    def start(self):
+        resContainer.Container.start(self)
+        self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
+
+    def stop(self):
+        resContainer.Container.stop(self)
+        self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
 
