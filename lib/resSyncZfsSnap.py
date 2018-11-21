@@ -99,12 +99,7 @@ class syncZfsSnap(resSync.Sync):
             except Exception as e:
                 raise ex.excError(str(e))
 
-    def _status_one(self, dataset):
-        try:
-            ds = rcZfs.Dataset(dataset, log=self.log)
-        except Exception as e:
-            self.status_log("%s %s" % (dataset, str(e)))
-            return
+    def get_snaps(self, dataset):
         snaps = []
         for sv in self.list_snaps(dataset):
             s = sv.replace(dataset+"@", "")
@@ -119,12 +114,27 @@ class syncZfsSnap(resSync.Sync):
                 snaps.append(d)
             except Exception as e:
                 pass
+        return snaps
+
+    def last_snap_date(self, snaps):
+        try:
+            return sorted(snaps, reverse=True)[0]
+        except IndexError:
+            return
+
+    def _status_one(self, dataset):
+        try:
+            ds = rcZfs.Dataset(dataset, log=self.log)
+        except Exception as e:
+            self.status_log("%s %s" % (dataset, str(e)))
+            return
+        snaps = self.get_snaps(dataset)
         if len(snaps) == 0:
             self.status_log("%s has no snap" % dataset)
             return
         if len(snaps) > self.keep + 1:
             self.status_log("%s has %d too many snaps" % (dataset, len(snaps)-self.keep))
-        last = sorted(snaps, reverse=True)[0]
+        last = self.last_snap_date(snaps)
         limit = datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay)
         if last < limit:
             self.status_log("%s last snap is too old (%s)" % (dataset, last.strftime("%Y-%m-%d %H:%M:%S")))
@@ -141,18 +151,28 @@ class syncZfsSnap(resSync.Sync):
             return rcStatus.UP
         return rcStatus.WARN
 
-    def can_update(self):
+    def can_update(self, dataset):
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
         if not self.svc.options.force and \
            s['avail'].status not in [rcStatus.UP, rcStatus.NA]:
+            if not self.svc.options.cron:
+                self.log.info("skip snapshot creation on instance not up")
             return False
+        rids = self.svc.options.rid
+        if rids is None:
+            rids = []
+        if self.svc.options.cron or self.rid not in rids:
+            snaps = self.get_snaps(dataset)
+            last = self.last_snap_date(snaps)
+            limit = datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay)
+            if last >= limit:
+                self.log.info("skip: last snap too recent")
+                return False
         return True
 
     def _sync_update(self, dataset):
-        if self.can_update():
+        if self.can_update(dataset):
             self.create_snap(dataset)
-        elif not self.svc.options.cron:
-            self.log.info("skip snapshot creation on instance not up")
         self.remove_snap(dataset)
 
     @resSync.notify

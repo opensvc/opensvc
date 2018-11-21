@@ -81,7 +81,10 @@ class Sync(Res.Resource, Scheduler):
         return True
 
     def skip_sync(self, ts):
-        if not self.svc.options.cron:
+        rids = self.svc.options.get("rid")
+        if rids is None:
+            rids = []
+        if not self.svc.options.cron and self.rid in rids:
             return False
         if self.svc.sched.skip_action_schedule(self.rid, "sync_schedule", last=ts):
             return True
