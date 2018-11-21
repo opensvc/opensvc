@@ -2865,14 +2865,6 @@ KEYWORDS = [
     },
     {
         "section": "route",
-        "keyword": "route_use_websocket",
-        "rtype": ["envoy"],
-        "convert": "boolean",
-        "at": True,
-        "text": "Indicates that a HTTP/1.1 client connection to this particular route should be allowed to upgrade to a WebSocket connection.",
-    },
-    {
-        "section": "route",
         "keyword": "route_timeout",
         "rtype": ["envoy"],
         "at": True,
