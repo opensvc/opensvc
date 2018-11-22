@@ -717,7 +717,7 @@ class Collector(object):
 
     def daemon_ping(self, sync=True):
         args = [(rcEnv.uuid, rcEnv.nodename)]
-        self.proxy.daemon_ping(*args)
+        return self.proxy.daemon_ping(*args)
 
     def push_status(self, svcname, data, sync=True):
         import json

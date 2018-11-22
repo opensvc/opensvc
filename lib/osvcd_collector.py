@@ -182,10 +182,13 @@ class Collector(shared.OsvcThread):
             shared.NODE.collector.disable()
         self.last_comm = datetime.datetime.utcnow()
 
-    def ping(self):
+    def ping(self, data):
         self.log.info("ping the collector")
         try:
-            shared.NODE.collector.call("daemon_ping")
+            result = shared.NODE.collector.call("daemon_ping")
+            if result and result.get("info") == "resync":
+                self.log.info("ping rejected, collector ask for resync")
+                self.send_daemon_status(data)
         except Exception as exc:
             self.log.error("call daemon_ping: %s", exc)
             shared.NODE.collector.disable()
@@ -269,7 +272,7 @@ class Collector(shared.OsvcThread):
                     #self.log.debug("last daemon status too soon: %s", self.last_comm)
                     pass
             elif self.last_comm <= datetime.datetime.utcnow() - datetime.timedelta(seconds=self.min_ping_interval):
-                self.ping()
+                self.ping(data)
             self.last_status = last_status
 
 
