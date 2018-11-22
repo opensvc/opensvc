@@ -41,7 +41,7 @@ from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         call, which, purge_cache_expired, read_cf, unset_lazy, \
                         drop_option, is_string, try_decode, is_service, \
-                        list_services, init_locale, ANSI_ESCAPE
+                        list_services, init_locale, ANSI_ESCAPE, ANSI_ESCAPE_B
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -3742,7 +3742,7 @@ class Node(Crypt, ExtConfigMixin):
             def print_bytes(val):
                 return val.decode("utf-8")+"\n"
             def bare_len(val):
-                val = ANSI_ESCAPE.sub(b'', val)
+                val = ANSI_ESCAPE_B.sub(b'', val)
                 val = bytes(val).decode("utf-8")
                 return len(val)
 

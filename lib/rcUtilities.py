@@ -22,6 +22,7 @@ import ast
 import operator as op
 
 ANSI_ESCAPE = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|H|J|K|G]", re.UNICODE)
+ANSI_ESCAPE_B = re.compile(b"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|H|J|K|G]")
 
 # supported operators in arithmetic expressions
 operators = {
