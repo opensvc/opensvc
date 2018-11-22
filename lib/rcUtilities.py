@@ -21,6 +21,8 @@ import json
 import ast
 import operator as op
 
+ANSI_ESCAPE = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|H|J|K|G]", re.UNICODE)
+
 # supported operators in arithmetic expressions
 operators = {
     ast.Add: op.add,

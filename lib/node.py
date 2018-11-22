@@ -41,7 +41,7 @@ from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         call, which, purge_cache_expired, read_cf, unset_lazy, \
                         drop_option, is_string, try_decode, is_service, \
-                        list_services, init_locale
+                        list_services, init_locale, ANSI_ESCAPE
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -2220,13 +2220,12 @@ class Node(Crypt, ExtConfigMixin):
             n_actions = len(actions)
             if n_actions == 0:
                 break
-            regex = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|K|G]", re.UNICODE)
             data = []
             reftime = time.time()
             for action in actions:
                 ret, out, err = self.dequeue_action(action)
-                out = regex.sub('', out)
-                err = regex.sub('', err)
+                out = ANSI_ESCAPE.sub('', out)
+                err = ANSI_ESCAPE.sub('', err)
                 data.append((action.get('id'), ret, out, err))
                 now = time.time()
                 if now > reftime + 2:
@@ -3735,8 +3734,7 @@ class Node(Crypt, ExtConfigMixin):
             def print_bytes(val):
                 return val+"\n"
             def bare_len(val):
-                ansi_escape = re.compile(r'\x1b[^m]*m')
-                val = ansi_escape.sub('', val)
+                val = ANSI_ESCAPE.sub('', val)
                 val = bytes(val).decode("utf-8")
                 return len(val)
         else:
@@ -3744,8 +3742,7 @@ class Node(Crypt, ExtConfigMixin):
             def print_bytes(val):
                 return val.decode("utf-8")+"\n"
             def bare_len(val):
-                ansi_escape = re.compile(b'\x1b[^m]*m')
-                val = ansi_escape.sub(b'', val)
+                val = ANSI_ESCAPE.sub(b'', val)
                 val = bytes(val).decode("utf-8")
                 return len(val)
 

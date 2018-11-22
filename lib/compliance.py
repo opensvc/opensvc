@@ -12,13 +12,10 @@ import six
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import is_exe, justcall, banner, is_string, fcache
+from rcUtilities import is_exe, justcall, banner, is_string, fcache, ANSI_ESCAPE
 from rcColor import color, colorize, formatter
 
 comp_dir = os.path.join(rcEnv.paths.pathvar, 'compliance')
-
-# ex: \x1b[37;44m\x1b[1mContact List\x1b[0m\n
-regex = re.compile("\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|K|G]", re.UNICODE)
 
 class Module(object):
     pattern = '^S*[0-9]+-*%(name)s$'
@@ -87,7 +84,7 @@ class Module(object):
 
 
     def strip_unprintable(self, s):
-        s = regex.sub('', s)
+        s = ANSI_ESCAPE.sub('', s)
         if six.PY3:
             return s
         else:
