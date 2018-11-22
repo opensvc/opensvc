@@ -85,6 +85,9 @@ class ResourceSet(object):
             types_done.append(resource.type)
             if not hasattr(resource, "pre_action"):
                 continue
+            if self.svc.options.dry_run:
+                self.log.info("pre_action %s" % resource.type)
+                continue
             try:
                 resource.pre_action(action)
             except ex.excAbortAction:
@@ -109,6 +112,9 @@ class ResourceSet(object):
                 continue
             types_done.append(resource.type)
             if not hasattr(resource, "post_action"):
+                continue
+            if self.svc.options.dry_run:
+                self.log.info("post_action %s" % resource.type)
                 continue
             try:
                 resource.post_action(action)
