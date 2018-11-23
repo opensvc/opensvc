@@ -151,10 +151,11 @@ class Drbd(Res.Resource):
         if out in ("Primary", "Secondary"):
             # drbd9
             return out
-        out = out.split('/')
-        if len(out) != 2:
+        try:
+            loc, rem = out.split("\n")[0].split('/')
+        except (IndexError, ValueError, AttributeError):
             raise ex.excError(out)
-        return out[0]
+        return loc
 
     def start_role(self, role):
         cur_role = self.get_role()
