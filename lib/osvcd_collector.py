@@ -84,7 +84,9 @@ class Collector(shared.OsvcThread):
 
             # detect instances status changes
             for svcname, sdata in ndata.get("services", {}).get("status", {}).items():
-                status_csum = sdata.get("csum")
+                status_csum = sdata.get("csum") + \
+                    str(sdata.get("monitor", {}).get("status_updated")) + \
+                    str(sdata.get("monitor", {}).get("global_status_updated"))
                 prev_status_csum = self.last_status.get((svcname, nodename))
                 if status_csum != prev_status_csum:
                     last_status_changed.append(svcname+"@"+nodename)
