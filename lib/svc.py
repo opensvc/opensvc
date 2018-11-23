@@ -3175,6 +3175,9 @@ class Svc(Crypt, ExtConfigMixin):
         if self.options.format is not None or self.options.jsonpath_filter:
             return self.print_config_data(evaluate=self.options.eval,
                                           impersonate=self.options.impersonate)
+        if not os.path.exists(self.paths.cf):
+            raise ex.excError("service %s is not installed on this node" % \
+                              self.svcname)
         from rcColor import print_color_config
         print_color_config(self.paths.cf)
 

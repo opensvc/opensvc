@@ -2536,7 +2536,9 @@ class Node(Crypt, ExtConfigMixin):
                             data.outs[svc.svcname] = ret
                     elif action.startswith("print_"):
                         self.print_data(ret)
-                        ret = 0
+                        if isinstance(ret, dict):
+                            if "error" in ret:
+                                err += 1
                     else:
                         if ret is None:
                             ret = 0
