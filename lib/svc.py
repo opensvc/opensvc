@@ -4234,6 +4234,10 @@ class Svc(Crypt, ExtConfigMixin):
                 runlog = "do "+" ".join(sys.argv[1:])
                 runlog = runlog.replace("-s %s "%self.svcname, "")
                 runlog = runlog.replace("--service %s "%self.svcname, "")
+                if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
+                    runlog += " (daemon origin)"
+                else:
+                    runlog += " (user origin)"
                 self.log.info(runlog, {"f_stream": False})
         except IndexError:
             pass
