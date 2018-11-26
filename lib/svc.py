@@ -4477,10 +4477,6 @@ class Svc(Crypt, ExtConfigMixin):
             rids = ['DEFAULT']
 
         for rid in rids:
-            if rid != 'DEFAULT' and not self.config.has_section(rid):
-                self.log.error("service %s has no resource %s", self.svcname, rid)
-                continue
-
             if disable:
                 self.log.info("set %s.disable = true", rid)
                 lines = self.set_line(lines, rid, "disable", "true")
@@ -4494,6 +4490,8 @@ class Svc(Crypt, ExtConfigMixin):
             #
             if rid == "DEFAULT":
                 items = self.config.defaults().items()
+            elif not self.config.has_section(rid):
+                items = {}
             else:
                 items = self.config.items(rid)
             for option, value in items:
