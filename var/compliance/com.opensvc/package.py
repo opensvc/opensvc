@@ -134,7 +134,7 @@ class CompPackages(CompObject):
             raise NotApplicable()
 
         self.load_reloc()
-        self.packages = map(lambda x: x.strip(), self.packages)
+        self.packages = [pkg.strip() for pkg in self.packages]
         self.expand_pkgnames()
         self.installed_packages = self.get_installed_packages()
 
@@ -157,7 +157,7 @@ class CompPackages(CompObject):
                 pkgname = pkgname[1:]
             else:
                 prefix = ''
-            l += map(lambda x: prefix+x, self.expand_pkgname(pkgname, prefix))
+            l += [prefix+x for x in self.expand_pkgname(pkgname, prefix)]
         self.packages = l
 
     def expand_pkgname(self, pkgname, prefix):
@@ -210,6 +210,7 @@ zlib                                                               ALL  @@R:zlib
     def aix_expand_pkgname_rpm(self, pkgname, prefix=''):
         import fnmatch
         l = []
+        _pkgname = ""
         for line in self.nimcache:
             line = line.strip()
             if len(line) == 0:
@@ -264,7 +265,7 @@ zlib                                                               ALL  @@R:zlib
         lines = lines[i+1:]
         l = []
         for line in lines:
-            words = map(lambda x: x.strip(), line.split(" | "))
+            words = [x.strip() for x in line.split(" | ")]
             if len(words) != 5:
                 continue
             _status, _repo, _name, _version, _arch = words
@@ -376,7 +377,7 @@ zlib                                                               ALL  @@R:zlib
         return l
 
     def hp_del_pkg(self, pkg):
-        perror("TODO:", __fname__)
+        perror("TODO: hp_del_pkg")
         return RET_ERR
 
     def hp_fix_pkg(self, pkg):
@@ -428,7 +429,7 @@ zlib                                                               ALL  @@R:zlib
 
     def get_temp_dir(self):
         if hasattr(self, "tmpd"):
-            return self.tmpd
+            return getattr(self, "tmpd")
         candidates = ["/tmp", "/var/tmp", "/root"]
         free = {}
         for c in candidates:
@@ -451,13 +452,13 @@ zlib                                                               ALL  @@R:zlib
         fname = os.path.join(dname, "file")
         try:
             self.urllib.urlretrieve(pkg_name, fname)
-        except IOError:
+        except IOError as exc:
             try:
                 os.unlink(fname)
                 os.unlink(dname)
             except:
                 pass
-            raise Exception("download failed: %s" % str(e))
+            raise Exception("download failed: %s" % str(exc))
         import tarfile
         os.chdir(dname)
         try:
