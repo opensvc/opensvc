@@ -436,6 +436,10 @@ class ExtConfigMixin(object):
             val = self.svcname
         elif _ref == "short_svcname" and hasattr(self, "svcname"):
             val = self.svcname.split(".")[0]
+        elif _ref == "scaler_svcname" and hasattr(self, "svcname"):
+            val = re.sub("[0-9]+\.", "", self.svcname)
+        elif _ref == "scaler_short_svcname" and hasattr(self, "svcname"):
+            val = re.sub("[0-9]+\.", "", self.svcname.split(".")[0])
         elif _ref == "rid" and hasattr(self, "svcname"):
             val = section
         elif _ref == "rindex" and hasattr(self, "svcname"):
