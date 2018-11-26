@@ -143,6 +143,8 @@ class syncHp3par(resSync.Sync):
             return
         self.stoprcopygroup()
         self.setrcopygroup_reverse()
+        if rcEnv.nodename in self.svc.nodes:
+            self.sync_resume()
 
     def start_splitted(self):
         self.setrcopygroup_failover()
