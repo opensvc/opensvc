@@ -449,7 +449,7 @@ class Monitor(shared.OsvcThread):
             on_success_kwargs={"status": "idle", "local_expect": "unset"},
             on_error="generic_callback",
             on_error_args=[svcname],
-            on_error_kwargs={"status": "shutdown failed"},
+            on_error_kwargs={"status": "shutdown failed", "local_expect": "unset"},
         )
 
     def service_delete(self, svcname):
@@ -623,7 +623,7 @@ class Monitor(shared.OsvcThread):
     #
     #########################################################################
     def orchestrator(self):
-        if shared.NMON_DATA.status in ("init", "shutting"):
+        if shared.NMON_DATA.status == "init":
             return
 
         # node
@@ -650,6 +650,8 @@ class Monitor(shared.OsvcThread):
         self.sync_services_conf()
 
     def resources_orchestrator(self, svcname, svc):
+        if shared.NMON_DATA.status == "shutting":
+            return
         if svc is None:
             return
         if self.instance_frozen(svcname) or self.freezer.node_frozen():
@@ -791,6 +793,8 @@ class Monitor(shared.OsvcThread):
                 self.service_startstandby_resources(svc.svcname, stdby_rids, slave=crid)
 
     def node_orchestrator(self):
+        if shared.NMON_DATA.status == "shutting":
+            return
         self.orchestrator_auto_grace()
         nmon = self.get_node_monitor()
         node_frozen = self.freezer.node_frozen()
@@ -833,7 +837,9 @@ class Monitor(shared.OsvcThread):
                 return
         status = shared.AGG[svc.svcname].avail
         self.set_smon_g_expect_from_status(svc.svcname, smon, status)
-        if smon.global_expect:
+        if shared.NMON_DATA.status == "shutting":
+            self.service_orchestrator_shutting(svc, smon, status)
+        elif smon.global_expect:
             self.service_orchestrator_manual(svc, smon, status)
         else:
             self.service_orchestrator_auto(svc, smon, status)
@@ -1107,6 +1113,27 @@ class Monitor(shared.OsvcThread):
                     "up": n_up,
                 })
                 self.service_stop(svc.svcname)
+
+    def service_orchestrator_shutting(self, svc, smon, status):
+        """
+        Take actions to shutdown all local services instances marked with
+        local_expect == "shutdown", even if frozen.
+
+        Honor parents/children sequencing.
+        """
+        instance = self.get_service_instance(svc.svcname, rcEnv.nodename)
+        if smon.local_expect == "shutdown":
+            if smon.status in ("shutdown", "shutdown failed"):
+                return
+            if self.is_instance_shutdown(instance):
+                self.set_smon(svc.svcname, local_expect="unset")
+                return
+            if not self.children_down(svc):
+                self.set_smon(svc.svcname, status="wait children")
+                return
+            elif smon.status == "wait children":
+                self.set_smon(svc.svcname, status="idle")
+            self.service_shutdown(svc.svcname)
 
     def service_orchestrator_manual(self, svc, smon, status):
         """
@@ -2654,7 +2681,7 @@ class Monitor(shared.OsvcThread):
             if data[svcname]["avail"] == "up" and \
                shared.SMON_DATA[svcname].global_expect is None and \
                shared.SMON_DATA[svcname].status == "idle" and \
-               shared.SMON_DATA[svcname].local_expect != "started":
+               shared.SMON_DATA[svcname].local_expect not in ("started", "shutdown"):
                 self.log.info("service %s monitor local_expect change "
                               "%s => %s", svcname,
                               shared.SMON_DATA[svcname].local_expect, "started")

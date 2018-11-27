@@ -375,26 +375,14 @@ class Listener(shared.OsvcThread):
                 data[thr_id] = thread.status(**kwargs)
         return data
 
-    def svc_shutdown(self):
-        """
-        Shutdown all local service instances. Do not freeze them, so they
-        can be orchestrated after reboot (the CRM interprets the
-        OSVC_ACTION_ORIGIN env var as "disable pre-shutdown freeze").
-
-        Use a long waitlock to maximize chances to wait for user-submitted
-        commands to finish
-        """
-        env = os.environ.copy()
-        env["OSVC_ACTION_ORIGIN"] = "daemon"
-        cmd = rcEnv.python_cmd + [
-            os.path.join(rcEnv.paths.pathlib, "svcmgr.py"),
-            "--service", "*", "shutdown", "--local",
-            "--parallel", "--waitlock=5m"
-        ]
-        proc = Popen(cmd, stdin=None, stdout=None, stderr=None, close_fds=True,
-                     env=env)
-        proc.communicate()
-
+    def wait_shutdown(self):
+        def still_shutting():
+            for svcname, smon in shared.SMON_DATA.items():
+                if smon.local_expect == "shutdown":
+                    return True
+            return False
+        while still_shutting():
+            time.sleep(1)
 
     def action_daemon_shutdown(self, nodename, **kwargs):
         """
@@ -407,7 +395,9 @@ class Listener(shared.OsvcThread):
         try:
             self.set_nmon("shutting")
             mon.kill_procs()
-            self.svc_shutdown()
+            for svcname in shared.SMON_DATA:
+                self.set_smon(svcname, local_expect="shutdown")
+            self.wait_shutdown()
 
             # send a last status to peers so they can takeover asap
             mon.update_hb_data()
