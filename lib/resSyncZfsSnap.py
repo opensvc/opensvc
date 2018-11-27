@@ -164,9 +164,8 @@ class syncZfsSnap(resSync.Sync):
         if self.svc.options.cron or self.rid not in rids:
             snaps = self.get_snaps(dataset)
             last = self.last_snap_date(snaps)
-            limit = datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay)
-            if last >= limit:
-                self.log.info("skip: last snap too recent")
+            if self.svc.sched.skip_action_schedule(self.rid, "sync_schedule", last=last):
+                self.log.info("skip: not in allowed schedule")
                 return False
         return True
 
