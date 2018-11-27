@@ -3849,15 +3849,24 @@ class Svc(Crypt, ExtConfigMixin):
            action.startswith("collector") or \
            action.startswith("json_"):
             return self.do_print_action(action, options)
+        if self.published_action(action, options):
+            self.setup_environ(action=action)
+            err = self.do_logged_action(action, options)
+        else:
+            err = self.do_action(action, options)
+        return err
+
+    def published_action(self, action, options):
+        if self.volatile:
+            return False
+        if not os.path.exists(self.paths.cf):
+            return False
         if rcEnv.dbopensvc is None or action in ACTIONS_NO_LOG or \
            action.startswith("compliance") or \
            action.startswith("docker") or \
            options.dry_run:
-            err = self.do_action(action, options)
-        else:
-            self.setup_environ(action=action)
-            err = self.do_logged_action(action, options)
-        return err
+            return False
+        return True
 
     def do_print_action(self, action, options):
         """
