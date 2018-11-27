@@ -27,6 +27,7 @@ RELAY_LOCK = threading.RLock()
 class Listener(shared.OsvcThread):
     sock_tmo = 1.0
     events_grace_period = True
+    sockmap = {}
 
     def setup_sock(self):
         try:
@@ -75,6 +76,16 @@ class Listener(shared.OsvcThread):
         self.log.info("listening on %s", rcEnv.paths.dnsuxsock)
         self.sockmap[self.sockux.fileno()] = self.sockux
 
+    def setup_socks(self):
+        for sock in self.sockmap.values():
+            try:
+                sock.close()
+            except socket.error:
+                pass
+        self.sockmap = {}
+        self.setup_sock()
+        self.setup_sockux()
+
     def run(self):
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.listener")
         self.events_clients = []
@@ -88,13 +99,15 @@ class Listener(shared.OsvcThread):
                 })
             }),
         })
-        self.sockmap = {}
-        self.setup_sock()
-        self.setup_sockux()
+
+        self.setup_socks()
 
         while True:
             try:
                 self.do()
+            except socket.error as exc:
+                self.log.warning(exc)
+                self.setup_socks()
             except Exception as exc:
                 self.log.exception(exc)
             if self.stopped():
@@ -206,10 +219,10 @@ class Listener(shared.OsvcThread):
                 chunk = conn.recv(buff_size)
             else:
                 self.log.warning("timeout waiting for data from client %s", addr[0])
-                break
+                return
             if ready[2]:
                 self.log.debug("exceptional condition on socket with client %s", addr[0])
-                break
+                return
             self.stats.sessions.rx += len(chunk)
             self.stats.sessions.clients[addr[0]].rx += len(chunk)
             if chunk:
