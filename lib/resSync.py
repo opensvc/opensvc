@@ -181,7 +181,7 @@ class Sync(Res.Resource, Scheduler):
 
         Drivers with pausable=False are never paused.
         """
-        if self.pausable:
+        if not self.pausable:
             return False
         try:
             data = self.svc.node._daemon_status()
