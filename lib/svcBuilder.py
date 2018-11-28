@@ -1262,6 +1262,11 @@ def add_container_docker(svc, s):
         pass
 
     try:
+        kwargs['rm'] = svc.conf_get(s, 'rm')
+    except ex.OptNotFound as exc:
+        kwargs['rm'] = exc.default
+
+    try:
         kwargs['docker_service'] = svc.conf_get(s, 'docker_service')
     except ex.OptNotFound as exc:
         kwargs['docker_service'] = exc.default

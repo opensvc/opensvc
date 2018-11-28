@@ -25,6 +25,7 @@ class Docker(resContainer.Container):
                  run_command=None,
                  run_args=None,
                  docker_service=False,
+                 rm=False,
                  guestos="Linux",
                  osvc_root_path=None,
                  **kwargs):
@@ -39,6 +40,7 @@ class Docker(resContainer.Container):
         self.run_image = run_image
         self.run_command = run_command
         self.run_args = run_args
+        self.rm = rm
         self.docker_service = docker_service
 
     @lazy
@@ -188,6 +190,7 @@ class Docker(resContainer.Container):
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError(err)
+        self.unset_lazy("container_id")
 
     def service_rm(self):
         """
@@ -314,6 +317,11 @@ class Docker(resContainer.Container):
                         del args[idx]
             args += ["--hostname", self.vm_hostname]
 
+        if self.rm:
+            if "--rm" not in args and \
+               self.svc.dockerlib.docker_min_version("1.13"):
+                args += ["--rm"]
+
         for arg, pos in enumerate(args):
             if arg != '-p':
                 continue
@@ -394,6 +402,8 @@ class Docker(resContainer.Container):
 
     def container_stop(self):
         self.docker('stop')
+        if self.rm:
+            self.container_rm()
 
     def stop(self):
         self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))

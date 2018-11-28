@@ -244,6 +244,17 @@ KEYWORDS = [
     },
     {
         "section": "container",
+        "keyword": "rm",
+        "at": True,
+        "rtype": "docker",
+        "default": False,
+        "convert": "boolean",
+        "candidates": (True, False),
+        "text": "If set to True, add --rm to the docker run args and make sure the instance is removed on resource stop.",
+        "example": False
+    },
+    {
+        "section": "container",
         "keyword": "docker_service",
         "at": True,
         "rtype": "docker",
