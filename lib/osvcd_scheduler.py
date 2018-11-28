@@ -103,9 +103,11 @@ class Scheduler(shared.OsvcThread):
         self.dropped_via_notify -= sigs
 
     def exec_action(self, sigs, cmd):
+        env = os.environ.copy()
+        env["OSVC_ACTION_ORIGIN"] = "daemon"
         kwargs = dict(stdout=self.devnull, stderr=self.devnull,
                       stdin=self.devnull, close_fds=os.name!="nt",
-                      env=os.environ.copy())
+                      env=env)
         try:
             proc = Popen(cmd, **kwargs)
         except KeyboardInterrupt:
