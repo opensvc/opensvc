@@ -178,18 +178,19 @@ class Docker(resContainer.Container):
     def container_rm(self):
         """
         Remove the resource docker instance.
-        Only do if the dockerd is shared.
         """
         if self.docker_service:
             return
-        self.unset_lazy("container_id")
-        if self.container_id is None:
-            self.log.info("container instance is already removed")
-            return
         cmd = self.svc.dockerlib.docker_cmd + ['rm', self.container_name]
-        ret, out, err = self.vcall(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            if "No such container" in err:
+                self.log.info("container instance is already removed")
+            else:
+                self.log.info(" ".join(cmd))
+                raise ex.excError(err)
+        else:
+            self.log.info(" ".join(cmd))
         self.unset_lazy("container_id")
 
     def service_rm(self):
