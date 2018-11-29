@@ -2980,6 +2980,14 @@ class Monitor(shared.OsvcThread):
             placement = shared.AGG[svcname].placement
             frozen = shared.AGG[svcname].frozen
             if placement == "non-optimal" or shared.AGG[svcname].avail != "up" or frozen == "frozen":
+                svc = shared.SERVICES.get(svcname)
+                if svc is None:
+                    return True
+                candidates = self.placement_candidates(svc, discard_start_failed=False, discard_frozen=False)
+                candidates = self.placement_leaders(svc, candidates=candidates)
+                peers = self.peers_options(svcname, candidates, ["place failed"])
+                if not peers and self.non_leaders_stopped(svcname, ["place failed"]):
+                    return False
                 return True
             else:
                 return False
