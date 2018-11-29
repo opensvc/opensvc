@@ -1128,7 +1128,7 @@ class Monitor(shared.OsvcThread):
             if self.is_instance_shutdown(instance):
                 self.set_smon(svc.svcname, local_expect="unset")
                 return
-            if not self.children_down(svc):
+            if not self.local_children_down(svc):
                 self.set_smon(svc.svcname, status="wait children")
                 return
             elif smon.status == "wait children":
@@ -1593,6 +1593,29 @@ class Monitor(shared.OsvcThread):
             return False
         self.duplog("info", "in rejoin grace period", nodename="")
         return True
+
+    def local_children_down(self, svc):
+        missing = []
+        if len(svc.children_and_slaves) == 0:
+            return True
+        for child in svc.children_and_slaves:
+            if child == svc.svcname:
+                continue
+            instance = self.get_service_instance(child, rcEnv.nodename)
+            if not instance:
+                continue
+            avail = instance.get("avail", "unknown")
+            if avail in STOPPED_STATES + ["unknown"]:
+                continue
+            missing.append(child)
+        if len(missing) == 0:
+            self.duplog("info", "service %(svcname)s local children all avail down",
+                        svcname=svc.svcname)
+            return True
+        self.duplog("info", "service %(svcname)s local children still available:"
+                    " %(missing)s", svcname=svc.svcname,
+                    missing=" ".join(missing))
+        return False
 
     def children_down(self, svc):
         missing = []
