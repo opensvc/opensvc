@@ -1026,7 +1026,7 @@ class Scheduler(object):
             self._print_schedule_default()
             return
         data = self._print_schedule_data()
-        if self.svc and len(self.svc.node.svcs) > 1:
+        if self.svc and not self.svc.options.single_service:
             # let the Node object do the formatting (for aggregation)
             return data
         # format ourself
