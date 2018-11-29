@@ -2474,8 +2474,6 @@ class Monitor(shared.OsvcThread):
             except Exception:
                 # preserve previous status data if any (an action may be running)
                 mtime = 0
-                # trigger an async status refresh with no lock wait
-                self.service_status(svcname)
 
             if mtime > last_mtime + 0.0001:
                 try:
