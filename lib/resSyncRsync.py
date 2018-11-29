@@ -131,17 +131,6 @@ class Rsync(resSync.Sync):
         if len(targets) == 0:
             return set()
 
-        #
-        # Accept to sync from here only if the service is up
-        #
-        s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
-        if not self.svc.options.force and \
-           s['avail'].status != rcStatus.UP:
-            if not self.svc.options.cron:
-                self.log.info("skip: reference resources aggregated status is "
-                              "%s" % str(rcStatus.Status(s['avail'].status)))
-            return set()
-
         for node in targets.copy():
             if not status and not self.remote_fs_mounted(node):
                 targets.remove(node)
@@ -196,10 +185,7 @@ class Rsync(resSync.Sync):
     def sync(self, target):
         self.add_resource_files_to_sync()
         if target not in self.target:
-            if not self.svc.options.cron:
-                self.log.info('%s => %s sync not applicable to %s', 
-                              " ".join(self.src), self.dst, target)
-            return 0
+            return
 
         targets = self.nodes_to_sync(target)
 
@@ -271,6 +257,7 @@ class Rsync(resSync.Sync):
             return
 
         self.pre_sync_check_prd_svc_on_non_prd_node()
+        self.pre_sync_check_svc_not_up()
 
         """ Is there at least one node to sync ?
         """
@@ -339,6 +326,7 @@ class Rsync(resSync.Sync):
                                        collect=False)
 
     def sync_nodes(self):
+        self.pre_sync_check_svc_not_up()
         try:
             self.sync("nodes")
         except ex.syncNoFilesToSync:
@@ -351,6 +339,7 @@ class Rsync(resSync.Sync):
             pass
 
     def sync_drp(self):
+        self.pre_sync_check_svc_not_up()
         try:
             self.sync("drpnodes")
         except ex.syncNoFilesToSync:
