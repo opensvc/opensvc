@@ -137,12 +137,12 @@ class Sync(Res.Resource, Scheduler):
             self.log.info("skip service up status check because --force is set")
         else:
             s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
-            if s['avail'].status != rcStatus.UP:
-                if self.svc.options.cron:
-                    self.log.debug("won't sync this resource for a service not up")
-                else:
-                    self.log.info("won't sync this resource for a service not up")
-                raise ex.excAbortAction
+            if s['avail'].status == rcStatus.UP:
+                return
+            if not self.svc.options.cron:
+                self.log.info("skip: reference resources aggregated status"
+                              "is %s" % str(rcStatus.Status(s['avail'].status)))
+            raise ex.excAbortAction
 
     def pre_sync_check_flex_primary(self):
         """ Refuse to sync from a flex non-primary node

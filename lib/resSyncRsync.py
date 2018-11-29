@@ -133,17 +133,13 @@ class Rsync(resSync.Sync):
 
         #
         # Accept to sync from here only if the service is up
-        # Also accept n/a status, because it's what the avail status
-        # ends up to be when only sync#* are specified using --rid
         #
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
         if not self.svc.options.force and \
-           s['avail'].status not in [rcStatus.UP, rcStatus.NA]:
-            if s['avail'].status == rcStatus.WARN:
-                if not self.svc.options.cron:
-                    self.log.info("won't sync this resource service in warn status")
-            elif not self.svc.options.cron:
-                self.log.info("won't sync this resource for a service not up")
+           s['avail'].status != rcStatus.UP:
+            if not self.svc.options.cron:
+                self.log.info("skip: reference resources aggregated status is "
+                              "%s" % str(rcStatus.Status(s['avail'].status)))
             return set()
 
         for node in targets.copy():
