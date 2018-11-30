@@ -35,14 +35,23 @@ class TestSvcmgr:
     def teardown_class(cls):
         pass
 
-    def test_001_svcmgr_print_schedule(self):
+    def test_001_create_empty(self):
+        """
+        Create a trivial service
+        """
+        ret = svcmgr.main(argv=["create", "-s", SVCNAME])
+        assert ret == 0
+        ret = svcmgr.main(argv=["create", "-s", SVCNAME + '2'])
+        assert ret == 0
+
+    def test_002_svcmgr_print_schedule(self):
         """
         Print all services schedules
         """
         ret = svcmgr.main(argv=["-s", "*", "print", "schedule"])
         assert ret == 0
 
-    def test_002_svcmgr_print_schedule_json(self):
+    def test_003_svcmgr_print_schedule_json(self):
         """
         Print all services schedules (json format)
         """
@@ -63,14 +72,14 @@ class TestSvcmgr:
         assert ret == 0
         assert isinstance(data, dict)
 
-    def test_003_svcmgr_print_config(self):
+    def test_004_svcmgr_print_config(self):
         """
         Print all services config
         """
         ret = svcmgr.main(argv=["-s", "*", "print", "config"])
         assert ret == 0
 
-    def test_004_svcmgr_print_config_json(self):
+    def test_005_svcmgr_print_config_json(self):
         """
         Print all services config (json format)
         """
@@ -90,14 +99,14 @@ class TestSvcmgr:
         assert ret == 0
         assert isinstance(json.loads(output), dict)
 
-    def test_005_svcmgr_print_status(self):
+    def test_006_svcmgr_print_status(self):
         """
         Print all services status
         """
         ret = svcmgr.main(argv=["-s", "*", "print", "status"])
         assert ret == 0
 
-    def test_006_svcmgr_print_status_json(self):
+    def test_007_svcmgr_print_status_json(self):
         """
         Print all services status (json format)
         """
@@ -111,20 +120,11 @@ class TestSvcmgr:
         finally:
             sys.stdout = _stdout
 
-        print(output)
+        print(repr(output))
         data = json.loads(output)
 
         assert ret == 0
         assert isinstance(json.loads(output), dict)
-
-    def test_007_create_empty(self):
-        """
-        Create a trivial service
-        """
-        ret = svcmgr.main(argv=["create", "-s", SVCNAME])
-        assert ret == 0
-        ret = svcmgr.main(argv=["create", "-s", SVCNAME + '2'])
-        assert ret == 0
 
     def test_0081_set_default(self):
         """
