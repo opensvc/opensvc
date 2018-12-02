@@ -13,6 +13,8 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
 
+rcifconfig = __import__("rcIfconfig"+rcEnv.sysname)
+
 class Hb(shared.OsvcThread):
     """
     Heartbeat parent class
@@ -128,8 +130,7 @@ class Hb(shared.OsvcThread):
 
     @staticmethod
     def get_ip_address(ifname):
-        mod = __import__("rcIfconfig"+rcEnv.sysname)
-        ifconfig = mod.ifconfig()
+        ifconfig = rcifconfig.ifconfig()
         intf = ifconfig.interface(ifname)
         if isinstance(intf.ipaddr, list):
             addr = intf.ipaddr[0]
