@@ -53,13 +53,14 @@ class Ip(Res.Ip):
     @lazy
     def label(self): # pylint: disable=method-hidden
         intf = self.get_ipdev()
-        label = self.network if self.network else ""
+        label = "cni "
+        label += self.network if self.network else ""
         if intf and len(intf.ipaddr) > 0:
-            label += " %s/%s" % (intf.ipaddr[0], intf.mask[0])
+            label += " %s/%s" % (intf.ipaddr[0], to_cidr(intf.mask[0]))
         elif intf and len(intf.ip6addr) > 0:
             label += " %s/%s" % (intf.ip6addr[0], intf.ip6mask[0])
         if self.ipdev:
-            label += "@%s" % self.ipdev
+            label += " %s" % self.ipdev
         if self.expose:
             label += " %s" % " ".join(self.expose)
         return label

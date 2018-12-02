@@ -35,7 +35,7 @@ class Ip(Res.Ip):
         self.container_rid = str(container_rid)
         self.vlan_tag = vlan_tag
         self.vlan_mode = vlan_mode
-        self.label = str(ipname) + '@' + ipdev + '@' + self.container_rid
+        self.label = "netns %s %s/%s %s@%s" % (mode if mode else "bridge", ipname, to_cidr(mask), ipdev, self.container_rid)
         self.tags = self.tags | set(["docker"])
         self.tags.add(container_rid)
 
@@ -114,9 +114,7 @@ class Ip(Res.Ip):
         ifconfig = self.get_docker_ifconfig()
         if ifconfig is None:
             return False
-        if ifconfig.has_param("ipaddr", self.addr):
-            return True
-        return False
+        return Res.Ip._is_up(self, ifconfig)
 
     def get_docker_interface(self):
         ifconfig = self.get_docker_ifconfig()

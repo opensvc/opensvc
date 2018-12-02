@@ -5,13 +5,17 @@ from __future__ import unicode_literals
 
 import os
 import re
+import time
 
 import resources as Res
-from rcGlobalEnv import rcEnv
-from rcUtilities import qcall, which, getaddr, lazy
-from converters import convert_duration
+import ipaddress
+import lock
 import rcStatus
 import rcExceptions as ex
+from rcGlobalEnv import rcEnv
+from rcUtilities import qcall, which, getaddr, lazy, to_cidr
+from converters import convert_duration
+from arp import send_arp
 
 IFCONFIG_MOD = __import__('rcIfconfig'+rcEnv.sysname)
 
@@ -34,11 +38,13 @@ class Ip(Res.Resource):
         self.ipname = ipname
         self.mask = mask
         self.gateway = gateway
-        self.set_label()
         self.lockfd = None
         self.stacked_dev = None
         self.addr = None
         self.expose = expose
+
+    def on_add(self):
+        self.set_label()
 
     @lazy
     def dns_name_suffix(self):
@@ -52,7 +58,16 @@ class Ip(Res.Resource):
         """
         Set the resource label property.
         """
-        self.label = str(self.ipname) + '@' + self.ipdev
+        try:
+             self.get_mask()
+        except ex.excError:
+             pass
+        try:
+            self.getaddr()
+            addr = self.addr
+        except ex.excError:
+            addr = self.ipname
+        self.label = "%s/%s %s" % (addr, self.mask, self.ipdev)
 
     def status_info(self):
         """
@@ -74,7 +89,6 @@ class Ip(Res.Resource):
         if self.gateway:
             data["gateway"] = self.gateway
         if self.mask is not None:
-            from rcUtilities import to_cidr
             data["mask"] = to_cidr(self.mask)
         if self.expose:
             data["expose"] = self.expose
@@ -90,7 +104,6 @@ class Ip(Res.Resource):
             self.getaddr()
         except ex.excError:
             pass
-        from rcUtilities import to_cidr
         data = [
             ["ipaddr", self.addr],
             ["ipname", self.ipname],
@@ -184,7 +197,6 @@ class Ip(Res.Resource):
         """
         if ':' in self.addr or self.ipdev in ("lo", "lo0"):
             return
-        from arp import send_arp
         self.log.info("send gratuitous arp to announce %s is at %s", self.addr, self.ipdev)
         send_arp(self.ipdev, self.addr)
 
@@ -230,9 +242,32 @@ class Ip(Res.Resource):
         Return True if the ip is plumbed.
         """
         ifconfig = self.get_ifconfig()
-        if ifconfig.has_param("ipaddr", self.addr) is not None or \
-           ifconfig.has_param("ip6addr", self.addr) is not None:
-            self.log.debug("%s@%s is up", self.addr, self.ipdev)
+        return self._is_up(ifconfig)
+
+    def _is_up(self, ifconfig):
+        intf = ifconfig.has_param("ipaddr", self.addr)
+        if intf is not None and isinstance(intf.ipaddr, list):
+            idx = intf.ipaddr.index(self.addr)
+            current_mask = to_cidr(intf.mask[idx])
+            if current_mask != to_cidr(self.mask):
+                self.status_log("current mask %s, expected %s" %
+                                (current_mask, to_cidr(self.mask)))
+            ref_dev = intf.name.split(":")[0]
+            if self.type == "ip" and ref_dev != self.ipdev:
+                self.status_log("current dev %s, expected %s" %
+                                (ref_dev, self.ipdev))
+            return True
+        intf = ifconfig.has_param("ip6addr", self.addr)
+        if intf is not None:
+            idx = intf.ipaddr.index(self.addr)
+            current_mask = to_cidr(intf.ip6mask[idx])
+            if current_mask != to_cidr(self.mask):
+                self.status_log("current mask %s, expected %s" %
+                                (current_mask, to_cidr(self.mask)))
+            ref_dev = intf.name.split(":")[0]
+            if self.type == "ip" and ref_dev != self.ipdev:
+                self.status_log("current dev %s, expected %s" %
+                                (ref_dev, self.ipdev))
             return True
         self.log.debug("%s@%s is down", self.addr, self.ipdev)
         return False
@@ -271,7 +306,6 @@ class Ip(Res.Resource):
         Acquire the startip lock, protecting against allocation of the same
         ipdev stacked device to multiple resources or multiple services.
         """
-        import lock
         timeout = convert_duration(self.svc.options.waitlock)
         if timeout < 0:
             timeout = 120
@@ -306,7 +340,6 @@ class Ip(Res.Resource):
         """
         Release the startip lock.
         """
-        import lock
         lock.unlock(self.lockfd)
 
     @staticmethod
@@ -350,11 +383,9 @@ class Ip(Res.Resource):
         except ex.excError as exc:
             self.log.error(str(exc))
 
-    def start_locked(self):
-        """
-        The start codepath fragment protected by the startip lock.
-        """
-        ifconfig = self.get_ifconfig()
+    def get_mask(self, ifconfig=None):
+        if ifconfig is None:
+            ifconfig = self.get_ifconfig()
         if self.mask is None:
             intf = ifconfig.interface(self.ipdev)
             if intf is None:
@@ -367,6 +398,13 @@ class Ip(Res.Resource):
                 self.mask = self.mask[0]
             else:
                 raise ex.excError("No netmask set on parent interface %s" % self.ipdev)
+
+    def start_locked(self):
+        """
+        The start codepath fragment protected by the startip lock.
+        """
+        ifconfig = self.get_ifconfig()
+        self.mask = self.get_mask(ifconfig)
         if 'noalias' in self.tags:
             self.stacked_dev = self.ipdev
         else:
@@ -473,7 +511,6 @@ class Ip(Res.Resource):
             self.log.error("failed")
             raise ex.excError
 
-        import time
         tmo = 15
         idx = 0
         for idx in range(tmo):
@@ -491,8 +528,6 @@ class Ip(Res.Resource):
         """
         if rcEnv.dbopensvc is None:
             return
-
-        import ipaddress
 
         try:
             self.conf_get("ipname")
