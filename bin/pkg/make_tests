@@ -11,6 +11,9 @@
 # run "test_031" in /opt/opensvc/lib/tests/test_provision.py
 # nosetests -w /opt/opensvc/lib/tests --tests=test_provision:Test.test_031
 
+# to display stdout while running tests, add --nocapture option
+# nosetests --nocapture -w /opt/opensvc/lib/tests --tests=test_provision:Test.test_031
+
 VERSION="$1"
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(which -- $0 || echo $0));pwd)"
 PYTHONPATH=$PATH_SCRIPT/../../lib
