@@ -2413,7 +2413,7 @@ class Monitor(shared.OsvcThread):
                 if last_config is not None:
                     self.log.info("service %s configuration change" % svcname)
                 try:
-                    status_mtime = os.stat(shared.SERVICES[svcname].status_data_dump).st_mtime
+                    status_mtime = os.path.getmtime(shared.SERVICES[svcname].status_data_dump)
                     if mtimestamp > status_mtime:
                         self.log.info("service %s refresh instance status older than config", svcname)
                         self.service_status(svcname)
