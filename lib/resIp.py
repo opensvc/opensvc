@@ -404,7 +404,7 @@ class Ip(Res.Resource):
         The start codepath fragment protected by the startip lock.
         """
         ifconfig = self.get_ifconfig()
-        self.mask = self.get_mask(ifconfig)
+        self.get_mask(ifconfig)
         if 'noalias' in self.tags:
             self.stacked_dev = self.ipdev
         else:
