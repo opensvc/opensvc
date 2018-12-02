@@ -10,6 +10,7 @@ import codecs
 import time
 import select
 import shutil
+import traceback
 from subprocess import Popen, PIPE
 
 import six
@@ -478,7 +479,6 @@ class Listener(shared.OsvcThread):
         try:
             return shared.NODE.print_config_data()
         except Exception as exc:
-            import traceback
             return {"status": "1", "error": str(exc), "traceback": traceback.format_exc()}
 
     def _action_get_node_config_file(self, nodename, **kwargs):
@@ -505,7 +505,6 @@ class Listener(shared.OsvcThread):
         try:
             return shared.SERVICES[svcname].print_config_data(evaluate=evaluate, impersonate=impersonate)
         except Exception as exc:
-            import traceback
             return {"status": "1", "error": str(exc), "traceback": traceback.format_exc()}
 
     def _action_get_service_config_file(self, nodename, **kwargs):
