@@ -33,7 +33,7 @@ Outputs:
     Dest: compliance variable
     Type: json
     Format: dict
-    Class: authkey
+    Class: self_signed_cert
 
 Inputs:
   -
