@@ -23,11 +23,27 @@ class Ip(Res.Ip):
                         mask=mask,
                         gateway=gateway,
                         **kwargs)
-        self.label = self.label + "/" + self.ipdevExt
         if not which('ipadm'):
             raise ex.excInitError("crossbow ips are not supported on this system")
         if 'noalias' not in self.tags:
             self.tags.add('noalias')
+
+    def set_label(self):
+        """
+        Set the resource label property.
+        """
+        try:
+             self.get_mask()
+        except ex.excError:
+             pass
+        try:
+            self.getaddr()
+            addr = self.addr
+        except ex.excError:
+            addr = self.ipname
+        self.label = "%s/%s %s/%s" % (addr, to_cidr(self.mask), self.ipdev, self.ipdevExt)
+        if self.ipname != addr:
+            self.label += " " + self.ipname
 
     def stopip_cmd(self):
         ret, out, err = (0, '', '')

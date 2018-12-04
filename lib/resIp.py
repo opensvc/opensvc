@@ -68,6 +68,8 @@ class Ip(Res.Resource):
         except ex.excError:
             addr = self.ipname
         self.label = "%s/%s %s" % (addr, self.mask, self.ipdev)
+        if self.ipname != addr:
+            self.label += " " + self.ipname
 
     def status_info(self):
         """
@@ -246,9 +248,12 @@ class Ip(Res.Resource):
 
     def _is_up(self, ifconfig):
         intf = ifconfig.has_param("ipaddr", self.addr)
-        if intf is not None and isinstance(intf.ipaddr, list):
-            idx = intf.ipaddr.index(self.addr)
-            current_mask = to_cidr(intf.mask[idx])
+        if intf is not None:
+            if isinstance(intf.ipaddr, list):
+                idx = intf.ipaddr.index(self.addr)
+                current_mask = to_cidr(intf.mask[idx])
+            else:
+                current_mask = to_cidr(intf.mask)
             if current_mask != to_cidr(self.mask):
                 self.status_log("current mask %s, expected %s" %
                                 (current_mask, to_cidr(self.mask)))
@@ -259,8 +264,11 @@ class Ip(Res.Resource):
             return True
         intf = ifconfig.has_param("ip6addr", self.addr)
         if intf is not None:
-            idx = intf.ipaddr.index(self.addr)
-            current_mask = to_cidr(intf.ip6mask[idx])
+            if isinstance(intf.ip6addr, list):
+                idx = intf.ip6addr.index(self.addr)
+                current_mask = to_cidr(intf.ip6mask[idx])
+            else:
+                current_mask = to_cidr(intf.ip6mask)
             if current_mask != to_cidr(self.mask):
                 self.status_log("current mask %s, expected %s" %
                                 (current_mask, to_cidr(self.mask)))
@@ -269,7 +277,6 @@ class Ip(Res.Resource):
                 self.status_log("current dev %s, expected %s" %
                                 (ref_dev, self.ipdev))
             return True
-        self.log.debug("%s@%s is down", self.addr, self.ipdev)
         return False
 
     def allow_start(self):
