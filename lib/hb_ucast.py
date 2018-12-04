@@ -4,6 +4,7 @@ Unicast Heartbeat module
 import sys
 import socket
 import threading
+import time
 
 import six
 import rcExceptions as ex
