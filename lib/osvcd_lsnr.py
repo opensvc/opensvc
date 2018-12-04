@@ -627,13 +627,21 @@ class Listener(shared.OsvcThread):
             if instance.get("topology") == "flex":
                 raise ex.excError("no destination node specified")
             else:
-                candidates = [nodename for nodename, inst in instances.items() if inst.get("avail") != "up"]
-                count = len(candidates)
+                nodes = [node for node, inst in instances.items() \
+                       if inst.get("avail") == "up"]
+                count = len(nodes)
+                if count != 1:
+                    raise ex.excError("no source node")
+                nodes = [node for node, inst in instances.items() \
+                              if inst.get("avail") != "up"]
+                count = len(nodes)
                 if count == 0:
                     raise ex.excError("no candidate destination node")
                 elif count > 1:
-                    raise ex.excError("more than one possible destination node")
-            return "placed@%s" % candidates[0]
+                    raise ex.excError("more than one possible "
+                                      "destination node: %s" %
+                                      ", ".join(nodes))
+                return "placed@%s" % nodes[0]
         else:
             destination_nodes = destination_nodes.split(",")
             count = len(destination_nodes)
