@@ -181,6 +181,8 @@ class Docker(resContainer.Container):
         """
         if self.docker_service:
             return
+        if not self.svc.dockerlib.docker_running():
+            return
         cmd = self.svc.dockerlib.docker_cmd + ['rm', self.container_name]
         out, err, ret = justcall(cmd)
         if ret != 0:
