@@ -133,8 +133,14 @@ class Dataset(object):
         if not self.exists():
             return True
         cmd = [rcEnv.syspaths.zfs, 'destroy'] + options + [self.name]
-        ret, _, _ = vcall(cmd, log=self.log)
+        if self.log:
+            self.log.info(" ".join(cmd))
+        _, err, ret = justcall(cmd)
         if ret == 0:
+            return True
+        elif "could not find any snapshot" in err:
+            return True
+        elif "dataset does not exist" in err:
             return True
         else:
             return False
