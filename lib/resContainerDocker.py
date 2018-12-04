@@ -185,7 +185,9 @@ class Docker(resContainer.Container):
         out, err, ret = justcall(cmd)
         if ret != 0:
             if "No such container" in err:
-                self.log.info("container instance is already removed")
+                pass
+            elif "removal" in err and "already in progress" in err:
+                pass
             else:
                 self.log.info(" ".join(cmd))
                 raise ex.excError(err)
