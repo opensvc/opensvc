@@ -12,13 +12,17 @@ from rcGlobalEnv import rcEnv
 from storage import Storage
 from hb import Hb
 
+DEFAULT_UCAST_PORT = 10000
+DEFAULT_UCAST_TIMEOUT = 15
+
 class HbUcast(Hb):
     """
     A class factorizing common methods and properties for the unicast
     heartbeat tx and rx child classes.
     """
-    DEFAULT_UCAST_PORT = 10000
-    DEFAULT_UCAST_TIMEOUT = 15
+    config_change = False
+    timeout = None
+    peer_config = None
 
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
@@ -39,7 +43,7 @@ class HbUcast(Hb):
 
     def _configure(self):
         self.get_hb_nodes()
-        self.peer_config = {}
+        peer_config = {}
         if hasattr(self, "node"):
             config = getattr(self, "node").config
         else:
@@ -47,33 +51,43 @@ class HbUcast(Hb):
         try:
             default_port = config.getint(self.name, "port")
         except Exception:
-            default_port = self.DEFAULT_UCAST_PORT + 0
+            default_port = DEFAULT_UCAST_PORT + 0
 
+        # peers
         for nodename in self.hb_nodes:
-            if nodename not in self.peer_config:
+            if nodename not in peer_config:
                 if nodename == rcEnv.nodename:
                     default_addr = "0.0.0.0"
                 else:
                     default_addr = nodename
-                self.peer_config[nodename] = Storage({
+                peer_config[nodename] = Storage({
                     "addr": default_addr,
                     "port": default_port,
                 })
             if config.has_option(self.name, "addr@"+nodename):
-                self.peer_config[nodename].addr = \
+                peer_config[nodename].addr = \
                     config.get(self.name, "addr@"+nodename)
             if config.has_option(self.name, "port@"+nodename):
-                self.peer_config[nodename].port = \
+                peer_config[nodename].port = \
                     config.getint(self.name, "port@"+nodename)
+
+        if peer_config != self.peer_config:
+            self.config_change = True
+            self.peer_config = peer_config
 
         # timeout
         if self.config.has_option(self.name, "timeout@"+rcEnv.nodename):
-            self.timeout = \
+            timeout = \
                 self.config.getint(self.name, "timeout@"+rcEnv.nodename)
         elif self.config.has_option(self.name, "timeout"):
-            self.timeout = self.config.getint(self.name, "timeout")
+            timeout = self.config.getint(self.name, "timeout")
         else:
-            self.timeout = self.DEFAULT_UCAST_TIMEOUT
+            timeout = DEFAULT_UCAST_TIMEOUT
+
+        if timeout != self.timeout:
+            self.config_change = True
+            self.timeout = timeout
+
         self.max_handlers = len(self.hb_nodes) * 4
 
 class HbUcastTx(HbUcast):
@@ -151,20 +165,29 @@ class HbUcastRx(HbUcast):
 
     def _configure(self):
         HbUcast._configure(self)
+        if not self.config_change:
+            return
+        self.config_change = False
         if self.sock:
             self.log.debug("close socket")
             self.sock.close()
-        try:
-            self.log.debug("bind socket")
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.sock.bind((self.peer_config[rcEnv.nodename].addr,
-                            self.peer_config[rcEnv.nodename].port))
-            self.sock.listen(5)
-            self.sock.settimeout(2)
-        except socket.error as exc:
-            self.log.error("init error: %s", str(exc))
-            raise ex.excAbortAction
+        self.log.debug("bind socket")
+        for _ in range(3):
+            try:
+                self.configure_listener()
+                return
+            except socket.error as exc:
+                time.sleep(1)
+        self.log.error("init error: %s", str(exc))
+        raise ex.excAbortAction
+
+    def configure_listener(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind((self.peer_config[rcEnv.nodename].addr,
+                        self.peer_config[rcEnv.nodename].port))
+        self.sock.listen(5)
+        self.sock.settimeout(2)
 
     def run(self):
         try:
