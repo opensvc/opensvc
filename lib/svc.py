@@ -3249,7 +3249,6 @@ class Svc(Crypt, ExtConfigMixin):
             print("%s not found" % editor, file=sys.stderr)
             return 1
         path = self.make_temp_config()
-        locale.setlocale(locale.LC_ALL, "")
         os.system(' '.join((editor, path)))
         if fsum(path) == fsum(self.paths.cf):
             os.unlink(path)
