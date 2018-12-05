@@ -592,7 +592,7 @@ class Asset(rcAsset.Asset):
 
     def get_hardware_mem(self):
         out, err, ret = justcall(["dmidecode", "-t", "memory"])
-        if ret != 0:
+        if ret != 0 or "SMBIOS nor DMI" in out:
             return []
         devs = []
         dev = {}
