@@ -9,7 +9,7 @@ import resContainer
 import rcExceptions as ex
 import rcStatus
 from rcUtilitiesLinux import check_ping
-from rcUtilities import justcall, lazy
+from rcUtilities import justcall, lazy, drop_option, has_option, get_option
 from rcGlobalEnv import rcEnv
 
 class Docker(resContainer.Container):
@@ -21,11 +21,13 @@ class Docker(resContainer.Container):
     def __init__(self,
                  rid,
                  name="",
-                 run_image=None,
+                 image=None,
                  run_command=None,
                  run_args=None,
                  docker_service=False,
-                 rm=False,
+                 entrypoint=None,
+                 rm=None,
+                 net=None,
                  guestos="Linux",
                  osvc_root_path=None,
                  **kwargs):
@@ -37,10 +39,12 @@ class Docker(resContainer.Container):
                                         osvc_root_path=osvc_root_path,
                                         **kwargs)
         self.user_defined_name = name
-        self.run_image = run_image
+        self.image = image
         self.run_command = run_command
         self.run_args = run_args
+        self.entrypoint = entrypoint
         self.rm = rm
+        self.net = net
         self.docker_service = docker_service
 
     @lazy
@@ -166,7 +170,7 @@ class Docker(resContainer.Container):
             return
         cmd = self.svc.dockerlib.docker_cmd + ['service', 'create', '--name='+self.service_name]
         cmd += self._add_run_args()
-        cmd += [self.run_image]
+        cmd += [self.image]
         if self.run_command is not None and self.run_command != "":
             cmd += self.run_command.split()
         ret, out, err = self.vcall(cmd)
@@ -227,11 +231,11 @@ class Docker(resContainer.Container):
                 if self.container_id is None:
                     self.unset_lazy("container_id")
                 if self.container_id is None:
-                    if self.svc.dockerlib.get_run_image_id(self) is None:
-                        self.svc.dockerlib.docker_login(self.run_image)
+                    if self.svc.dockerlib.get_image_id(self) is None:
+                        self.svc.dockerlib.docker_login(self.image)
                     cmd += ['run', '-d', '--name='+self.container_name]
                     cmd += self._add_run_args()
-                    cmd += [self.run_image]
+                    cmd += [self.image]
                     if self.run_command is not None and self.run_command != "":
                         cmd += self.run_command.split()
                 else:
@@ -302,30 +306,42 @@ class Docker(resContainer.Container):
 
     def _add_run_args(self):
         if self.run_args is None:
-            return []
-        args = shlex.split(self.run_args)
+            args = []
+        else:
+            args = shlex.split(self.run_args)
 
         # drop user specified --name. we set ours already
-        for aname in ("-n", "--name"):
-            if aname in args:
-                idx = args.index(aname)
-                del args[idx]
-                if len(args) >= idx and not args[idx].startswith("-"):
-                    del args[idx]
+        args = drop_option("--name", args, drop_value=True)
+        args = drop_option("-n", args, drop_value=True)
 
         if self.vm_hostname:
-            for aname in ("-h", "--hostname"):
-                if aname in args:
-                    idx = args.index(aname)
-                    del args[idx]
-                    if len(args) >= idx and not args[idx].startswith("-"):
-                        del args[idx]
+            args = drop_option("--hostname", args, drop_value=True)
+            args = drop_option("-h", args, drop_value=True)
             args += ["--hostname", self.vm_hostname]
 
+        if self.entrypoint:
+            args = drop_option("--entrypoint", args, drop_value=True)
+            args += ["--entrypoint", self.entrypoint]
+
+        if self.net:
+            args = drop_option("--net", args, drop_value=True)
+            args = drop_option("--network", args, drop_value=True)
+            if self.net.startswith("container#"):
+                res = self.svc.get_resource(self.net)
+                if res is None:
+                    raise ex.excError("resource %s, referenced in %s.net, does not exist" % (self.net, self.rid))
+                args += ["--net=container:"+res.container_name]
+            else:
+                args += ["--net="+self.net]
+        elif not has_option("--net", args):
+            args += ["--net=none"]
+
         if self.rm:
-            if "--rm" not in args and \
+            if has_option("--rm", args) and \
                self.svc.dockerlib.docker_min_version("1.13"):
                 args += ["--rm"]
+        elif self.rm is False:
+            drop_option("--rm", args, drop_value=False)
 
         for arg, pos in enumerate(args):
             if arg != '-p':
@@ -349,12 +365,13 @@ class Docker(resContainer.Container):
         if not self.svc.dockerlib.docker_min_version("1.13") and "--rm" in args:
             del args[args.index("--rm")]
 
-        def dns_opts():
-            if not self.svc.node.dns or "--dns" in self.run_args:
+        def dns_opts(args):
+            if not self.svc.node.dns or "--dns" in args:
                 return []
-            if "--net=container:" in self.run_args or "--net container:" in self.run_args:
+            net = get_option("--net", args, boolean=False)
+            if net and net.startswith("container:"):
                 return []
-            if "--net=host" in self.run_args or "--net host" in self.run_args:
+            if net == "host":
                 return []
             l = []
             for dns in self.svc.node.dns:
@@ -363,7 +380,7 @@ class Docker(resContainer.Container):
                 l += ["--dns-search", search]
             return l
 
-        args += dns_opts()
+        args += dns_opts(args)
         return args
 
     def _parent_cgroup_name(self):
@@ -434,6 +451,12 @@ class Docker(resContainer.Container):
         Return keys to contribute to resinfo.
         """
         data = self.svc.dockerlib._info()
+        data.append([self.rid, "run_args", " ".join(self._add_run_args())])
+        data.append([self.rid, "run_command", str(self.run_command)])
+        data.append([self.rid, "rm", str(self.rm)])
+        data.append([self.rid, "net", str(self.net)])
+        if not self.docker_service:
+            data.append([self.rid, "container_name", str(self.container_name)])
         return data
 
     def wanted_nodes_count(self):
@@ -524,7 +547,7 @@ class Docker(resContainer.Container):
         if self.swarm_node_role() != "leader":
             return
         try:
-            run_image_id = self.svc.dockerlib.get_run_image_id(self, pull=False)
+            image_id = self.svc.dockerlib.get_image_id(self, pull=False)
         except ValueError as exc:
             self.status_log(str(exc))
             return
@@ -534,15 +557,15 @@ class Docker(resContainer.Container):
             return
         running_image_id = inspect['Spec']['TaskTemplate']['ContainerSpec']['Image']
         running_image_id = self.svc.dockerlib.repotag_to_image_id(running_image_id)
-        if run_image_id is None:
-            self.status_log("image '%s' is not pulled yet."%(self.run_image))
-        elif run_image_id != running_image_id:
+        if image_id is None:
+            self.status_log("image '%s' is not pulled yet."%(self.image))
+        elif image_id != running_image_id:
             self.status_log("the service is configured with image '%s' "
-                            "instead of '%s'"%(running_image_id, run_image_id))
+                            "instead of '%s'"%(running_image_id, image_id))
 
     def _status_container_image(self):
         try:
-            run_image_id = self.svc.dockerlib.get_run_image_id(self, pull=False)
+            image_id = self.svc.dockerlib.get_image_id(self, pull=False)
         except ValueError as exc:
             self.status_log(str(exc))
             return
@@ -551,11 +574,11 @@ class Docker(resContainer.Container):
         except Exception:
             return
         running_image_id = inspect['Image']
-        if run_image_id is None:
-            self.status_log("image '%s' is not pulled yet."%(self.run_image))
-        elif run_image_id != running_image_id:
+        if image_id is None:
+            self.status_log("image '%s' is not pulled yet."%(self.image))
+        elif image_id != running_image_id:
             self.status_log("the current container is based on image '%s' "
-                            "instead of '%s'"%(running_image_id, run_image_id))
+                            "instead of '%s'"%(running_image_id, image_id))
 
     def _status(self, verbose=False):
         try:

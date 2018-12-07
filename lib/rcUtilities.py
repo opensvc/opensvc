@@ -964,6 +964,33 @@ def read_cf(fpath, defaults=None):
             raise
     return config
 
+def has_option(option, cmd):
+    """
+    Return True if <option> is set in the <cmd> shlex list.
+    """
+    for word in cmd:
+        if word == option:
+            return True
+        if word.startswith(option+"="):
+            return True
+    return False
+
+def get_option(option, cmd, boolean=False):
+    """
+    Get an <option> value in the <cmd> shlex list.
+    """
+    if boolean and option not in cmd:
+        return False
+    for i, word in enumerate(cmd):
+        if word == option:
+            if boolean:
+                return True
+            else:
+                return cmd[i+1]
+        if word.startswith(option+"="):
+            return word.split("=", 1)[-1]
+    return
+
 def drop_option(option, cmd, drop_value=False):
     """
     Drop an option, and its value if requested, from an argv

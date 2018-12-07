@@ -382,45 +382,45 @@ class DockerLib(object):
         out = justcall(cmd)[0]
         return out.replace('\n', ' ').split()
 
-    def get_run_image_id(self, resource, run_image=None, pull=True):
+    def get_image_id(self, resource, image=None, pull=True):
         """
         Return the full docker image id
         """
-        if run_image is None and hasattr(resource, "run_image"):
-            run_image = resource.run_image
-        if len(run_image) == 12 and re.match('^[a-f0-9]*$', run_image):
-            return run_image
-        if run_image.startswith("sha256:"):
-            return run_image
+        if image is None and hasattr(resource, "image"):
+            image = resource.image
+        if len(image) == 12 and re.match('^[a-f0-9]*$', image):
+            return image
+        if image.startswith("sha256:"):
+            return image
 
         try:
-            image_name, image_tag = run_image.split(':')
+            image_name, image_tag = image.split(':')
         except ValueError:
-            image_name = run_image
+            image_name = image
             image_tag = "latest"
 
         if self.docker_min_version("1.13"):
-            data = self.docker_image_inspect(run_image)
+            data = self.docker_image_inspect(image)
             if data is None:
                 if not pull:
                     return
-                self.docker_pull(run_image)
-                data = self.docker_image_inspect(run_image)
+                self.docker_pull(image)
+                data = self.docker_image_inspect(image)
             if data is None:
-                raise ValueError("image %s not pullable" % run_image)
+                raise ValueError("image %s not pullable" % image)
             return data["Id"]
 
         cmd = self.docker_cmd + ['images', '--no-trunc', image_name]
         results = justcall(cmd)
         if results[2] != 0:
-            return run_image
+            return image
         for line in results[0].splitlines():
             elements = line.split()
             if len(elements) < 3:
                 continue
             if elements[1] == image_tag:
                 return elements[2]
-        return run_image
+        return image
 
     def login_as_service_args(self):
         args = ["-u", self.svc.svcname+"@"+rcEnv.nodename]
@@ -520,11 +520,11 @@ class DockerLib(object):
 
         # referenced images
         for resource in self.svc.get_resources("container.docker"):
-            image_id = self.get_run_image_id(resource, pull=False)
+            image_id = self.get_image_id(resource, pull=False)
             if image_id is None:
                 continue
             images_done.append(image_id)
-            data.append([resource.rid, "run_image", resource.run_image])
+            data.append([resource.rid, "image", resource.image])
             data.append([resource.rid, "docker_image_id", image_id])
             data.append([resource.rid, "docker_instance_id", resource.container_id])
 
@@ -542,13 +542,13 @@ class DockerLib(object):
         Return the container resource docker image name if possible,
         else return the image id.
         """
-        if ':' in resource.run_image:
-            return resource.run_image
+        if ':' in resource.image:
+            return resource.image
         if self.images is None:
-            return resource.run_image
-        if resource.run_image in self.images:
-            return self.images[resource.run_image]
-        return resource.run_image
+            return resource.image
+        if resource.image in self.images:
+            return self.images[resource.image]
+        return resource.image
 
     def docker_inspect(self, container_id):
         """

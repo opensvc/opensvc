@@ -1249,7 +1249,7 @@ def add_container_lxc(svc, s):
 def add_container_docker(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s, default_name=None))
-    kwargs['run_image'] = svc.conf_get(s, 'run_image')
+    kwargs['image'] = svc.conf_get(s, 'image')
 
     try:
         kwargs['run_command'] = svc.conf_get(s, 'run_command')
@@ -1265,6 +1265,16 @@ def add_container_docker(svc, s):
         kwargs['rm'] = svc.conf_get(s, 'rm')
     except ex.OptNotFound as exc:
         kwargs['rm'] = exc.default
+
+    try:
+        kwargs['entrypoint'] = svc.conf_get(s, 'entrypoint')
+    except ex.OptNotFound as exc:
+        kwargs['entrypoint'] = exc.default
+
+    try:
+        kwargs['net'] = svc.conf_get(s, 'net')
+    except ex.OptNotFound as exc:
+        kwargs['net'] = exc.default
 
     try:
         kwargs['docker_service'] = svc.conf_get(s, 'docker_service')

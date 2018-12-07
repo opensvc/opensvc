@@ -28,6 +28,7 @@ DEPRECATED_KEYWORDS = {
   "sync.rsync.exclude": None,
   "disk.zpool.poolname": "name",
   "always_on": None,
+  "container.docker.run_image": "image",
 }
 
 # supported => deprecated
@@ -36,6 +37,7 @@ REVERSE_DEPRECATED_KEYWORDS = {
   "DEFAULT.env": "service_type",
   "DEFAULT.hard_affinity": "affinity",
   "DEFAULT.hard_anti_affinity": "anti_affinity",
+  "container.docker.image": "run_image",
   "disk.lvm.name": "vgname",
   "disk.pool.name": "poolname",
   "disk.vg.name": "vgname",
@@ -244,14 +246,30 @@ KEYWORDS = [
     },
     {
         "section": "container",
+        "keyword": "entrypoint",
+        "at": True,
+        "rtype": "docker",
+        "text": "The script or binary executed in the container. Args must be set in :kw:`run_command`.",
+        "example": "/bin/sh"
+    },
+    {
+        "section": "container",
         "keyword": "rm",
         "at": True,
         "rtype": "docker",
-        "default": False,
+        "default": None,
         "convert": "boolean",
-        "candidates": (True, False),
+        "candidates": (True, False, None),
         "text": "If set to True, add --rm to the docker run args and make sure the instance is removed on resource stop.",
         "example": False
+    },
+    {
+        "section": "container",
+        "keyword": "net",
+        "at": True,
+        "rtype": "docker",
+        "text": "Sets the docker run --net argument. The default is ``none`` if --net is not specified in run_args, meaning the container will have a private netns other containers can share. A ip.netns or ip.cni resource can configure an ip address in this container. A container with netns=container#0 will share the container#9 netns. In this case agent format a --net=container:<name of container#1 docker instance>.",
+        "example": "container#0"
     },
     {
         "section": "container",
@@ -274,7 +292,7 @@ KEYWORDS = [
     },
     {
         "section": "container",
-        "keyword": "run_image",
+        "keyword": "image",
         "at": True,
         "required": True,
         "rtype": "docker",

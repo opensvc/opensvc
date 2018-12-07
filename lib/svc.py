@@ -4756,7 +4756,7 @@ class Svc(Crypt, ExtConfigMixin):
             for idx, arg in enumerate(argv):
                 if arg in ("%images%", "{images}"):
                     del argv[idx]
-                    images = list(set([resource.run_image for resource in containers
+                    images = list(set([resource.image for resource in containers
                                        if not resource.skip and not resource.is_disabled()]))
                     for image in images:
                         argv.insert(idx, image)

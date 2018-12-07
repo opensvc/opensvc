@@ -11,6 +11,11 @@ Id ``stdby_resource_restart``
 
 start standby resource {rid} ({resource.label}) {resource.status} {resource.log}, try {try}/{restart}
 
+Id ``service_config_installed``
+-------------------------------
+
+config fetched from node {from} is now installed
+
 Id ``max_stdby_resource_restart``
 ---------------------------------
 
@@ -60,11 +65,6 @@ Id ``scale_down``
 -----------------
 
 exceeds {delta} instance to reach scale target {instance.scale}
-
-Id ``service_config_installed``
--------------------------------
-
-config fetched from node {from} is now installed
 
 Id ``resource_degraded``
 ------------------------

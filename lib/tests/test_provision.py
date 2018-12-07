@@ -215,7 +215,7 @@ class Test:
         ret = svcmgr.main(argv=["-s", SVCNAME, "set",
                                 "--kw", "docker_daemon_private=false",
                                 "--kw", "container#0.type=docker",
-                                "--kw", "container#0.run_image=alpine:latest",
+                                "--kw", "container#0.image=alpine:latest",
                                 "--kw", "container#0.run_args=-it --net=none",
                                 "--kw", "container#0.run_command=/bin/sh",
                                ])
@@ -265,7 +265,7 @@ class Test:
         ret = svcmgr.main(argv=["-s", SVCNAME, "set",
                                 "--kw", "docker_daemon_private=false",
                                 "--kw", "container#0.type=docker",
-                                "--kw", "container#0.run_image=alpine:latest",
+                                "--kw", "container#0.image=alpine:latest",
                                 "--kw", "container#0.run_args=-it --net=none",
                                 "--kw", "container#0.run_command=/bin/sh",
                                 "--kw", "ip#0.type=docker",
