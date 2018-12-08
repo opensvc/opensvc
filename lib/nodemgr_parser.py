@@ -63,11 +63,16 @@ OPT = Storage({
         "--config", default=None, action="store", dest="config",
         help="Specify a user-specific collector api connection "
              "configuration file. Defaults to '~/.opensvc-cli'."),
+    "cluster": Option(
+        "--cluster", default=False,
+        action="store_true", dest="cluster",
+        help="If set, the action is executed on all cluster nodes via each "
+             "node's listener."),
     "cron": Option(
         "--cron", default=False,
         action="store_true", dest="cron",
-        help="If set, the action is actually executed only if the scheduling"
-             "constraints are satisfied."),
+        help="If set, the action is actually executed impersonating the "
+             "scheduler thread."),
     "debug": Option(
         "--debug", default=False,
         action="store_true", dest="debug",
@@ -332,6 +337,7 @@ ASYNC_OPTS = [
 DAEMON_OPTS = [
     OPT.local,
     OPT.node,
+    OPT.cluster,
 ]
 
 ACTIONS = {
@@ -379,6 +385,7 @@ ACTIONS = {
             "msg": "Ping a cluster node or arbitrator node. The ping "
                    "validates the remote is functional.",
             "options": [
+                OPT.cluster,
                 OPT.node,
             ]
         },

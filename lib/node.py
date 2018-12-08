@@ -45,6 +45,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
+from lock import LOCK_EXCEPTIONS
 
 if six.PY2:
     BrokenPipeError = IOError
@@ -73,6 +74,7 @@ REMOTE_ACTIONS = [
     "shutdown",
     "thaw",
     "updatepkg",
+    "updatecomp",
 ]
 
 ACTIONS_NO_PARALLEL = [
@@ -1048,7 +1050,6 @@ class Node(Crypt, ExtConfigMixin):
             self.async_action(action)
         except ex.excAbortAction:
             return 0
-        from lock import LOCK_EXCEPTIONS
         try:
             return self._action(action, options)
         except LOCK_EXCEPTIONS as exc:
@@ -3372,6 +3373,7 @@ class Node(Crypt, ExtConfigMixin):
     def prepare_async_cmd(self):
         cmd = sys.argv[1:]
         cmd = drop_option("--node", cmd, drop_value=True)
+        cmd = drop_option("--cluster", cmd, drop_value=False)
         return cmd
 
     def async_action(self, action, timeout=None, wait=None):
@@ -3388,8 +3390,16 @@ class Node(Crypt, ExtConfigMixin):
         if self.options.node is not None and self.options.node != "" and \
            action in REMOTE_ACTIONS:
             cmd = self.prepare_async_cmd()
-            sync = action not in ("reboot", "shutdown", "updatepkg")
+            sync = action not in ("reboot", "shutdown", "updatepkg", "updatecomp")
             ret = self.daemon_node_action(cmd, sync=sync)
+            if ret == 0:
+                raise ex.excAbortAction()
+            else:
+                raise ex.excError()
+        if self.options.cluster and action in REMOTE_ACTIONS:
+            cmd = self.prepare_async_cmd()
+            sync = action not in ("reboot", "shutdown", "updatepkg", "updatecomp")
+            ret = self.daemon_cluster_action(cmd, sync=sync)
             if ret == 0:
                 raise ex.excAbortAction()
             else:
@@ -4157,15 +4167,25 @@ class Node(Crypt, ExtConfigMixin):
         return 0
 
     def ping(self):
+        if self.options.cluster:
+            ret = 0
+            for node in self.sorted_cluster_nodes:
+                if self.ping_node(node):
+                    ret = 1
+            return ret
+        else:
+            return self.ping_node(self.options.node)
+
+    def ping_node(self, node):
         try:
-            ret = self._ping(self.options.node)
+            ret = self._ping(node)
         except ex.excError as exc:
             print(exc)
             ret = 2
         if ret == 0:
-            print("%s is alive" % self.options.node)
+            print("%s is alive" % node)
         elif ret == 1:
-            print("%s is not alive" % self.options.node)
+            print("%s is not alive" % node)
         return ret
 
     def daemon_shutdown(self):
@@ -4571,6 +4591,13 @@ class Node(Crypt, ExtConfigMixin):
                 raise ex.excError("set monitor status failed")
         except Exception as exc:
             raise ex.excError("set monitor status failed: %s" % str(exc))
+
+    def daemon_cluster_action(self, cmd, sync=True):
+        ret = 0
+        for node in self.sorted_cluster_nodes:
+            if self.daemon_node_action(cmd, nodename=node, sync=sync):
+                ret = 1
+        return ret
 
     def daemon_node_action(self, cmd, nodename=None, sync=True):
         """
