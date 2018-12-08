@@ -179,6 +179,14 @@ class Docker(resContainer.Container):
         self.unset_lazy("service_id")
         self.svc.dockerlib.get_running_service_ids(refresh=True)
 
+    def wait_for_removed(self):
+        def removed():
+            self.unset_lazy("container_id")
+            if self.container_id:
+                return False
+            return True
+        self.wait_for_fn(removed, 10, 1, errmsg="waited too long for container removal")
+
     def container_rm(self):
         """
         Remove the resource docker instance.
@@ -193,7 +201,7 @@ class Docker(resContainer.Container):
             if "No such container" in err:
                 pass
             elif "removal" in err and "already in progress" in err:
-                pass
+                self.wait_for_removed()
             else:
                 self.log.info(" ".join(cmd))
                 raise ex.excError(err)
