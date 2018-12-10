@@ -110,8 +110,13 @@ class SystemdUnitState(CompObject):
         if unit in self.unit_data:
             return self.unit_data[unit]
         cmd = ["systemctl", "show", unit]
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        out, _ = p.communicate()
+        try:
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+            out, _ = p.communicate()
+        except OSError as exc:
+            if exc.errno == 2:
+                raise NotApplicable("systemd_unit_state: systemctl is not installed")
+
         out = bdecode(out)
         data = {}
         for line in out.splitlines():
@@ -131,6 +136,11 @@ class SystemdUnitState(CompObject):
             perror("invalid rule: no unit name")
             return RET_NA
         data = self.show(name)
+        if data.get("LoadState") == "not-found":
+            if verbose:
+                pinfo("systemd_unit_state: %s not found")
+            return RET_OK
+
         if "mask" in rule:
             if rule["mask"]:
                 if data["LoadState"] != "masked":
