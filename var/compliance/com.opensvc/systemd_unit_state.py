@@ -96,7 +96,7 @@ class SystemdUnitState(CompObject):
         return self.systemctl("disable", unit)
 
     def systemctl(self, action, unit):
-        cmd = ["systemctl", action, unit]
+        cmd = ["systemctl", action, unit, "--now"]
         pinfo("systemd_unit_state:", " ".join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         _, err = p.communicate()
