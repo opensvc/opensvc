@@ -213,7 +213,7 @@ class Module(object):
 
     def do_action_automodule(self, action):
         log = ''
-        ret = 0
+        rets = set()
 
         self.setup_env()
         for rset in self.ruleset.values():
@@ -232,14 +232,21 @@ class Module(object):
                     print(err, file=sys.stderr)
                     continue
                 _ret, _log = self.do_action_exe(action, rcEnv.python_cmd + [obj, self.context.format_rule_var(var)])
-                if _ret == 1:
-                    ret = 1
+                rets.add(_ret)
                 log += _log
                 if action == "fix" and _ret not in (0, 2):
                     # stop at frist error in a 'fix' action
                     break
 
         self.reset_env()
+        if rets == set([0]):
+            ret = 0
+        elif rets == set([0, 2]):
+            ret = 0
+        elif rets == set([2]):
+            ret = 2
+        else:
+            ret = 1
         return ret, log
 
     def get_obj(self, var_class):
