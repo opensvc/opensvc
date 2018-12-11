@@ -185,6 +185,14 @@ KEYWORDS = [
     },
     {
         "section": "node",
+        "keyword": "pkg_format",
+        "example": "tar",
+        "candidates": ["tar", "auto"],
+        "default": "auto",
+        "text": "Force usage of a package format. Only the tar format can be forced."
+    },
+    {
+        "section": "node",
         "keyword": "repo",
         "example": "http://opensvc.repo.corp",
         "text": """Set the uri of the opensvc agent package repository and compliance modules gzipped tarball repository. This parameter is used by the 'nodemgr updatepkg' and 'nodemgr updatecomp' commands.

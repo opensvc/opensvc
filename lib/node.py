@@ -2101,7 +2101,16 @@ class Node(Crypt, ExtConfigMixin):
         except Exception:
             branch = ""
 
-        modname = 'rcUpdatePkg'+rcEnv.sysname
+        try:
+            pkg_format = self.conf_get("node", "pkg_format")
+        except ex.OptNotFound as exc:
+            pkg_format = exc.default
+
+        if pkg_format == "tar":
+            modname = 'rcUpdatePkgOSF1'
+        else:
+            modname = 'rcUpdatePkg'+rcEnv.sysname
+
         if not os.path.exists(os.path.join(rcEnv.paths.pathlib, modname+'.py')):
             print("updatepkg not implemented on", rcEnv.sysname, file=sys.stderr)
             return 1
