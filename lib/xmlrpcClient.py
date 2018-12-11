@@ -512,7 +512,7 @@ class Collector(object):
                  service["used"],
                  disk["vendor"],
                  disk["model"],
-                 service["dg"],
+                 disk["dg"],
                  rcEnv.nodename,
                  service["region"],
             ])
@@ -524,7 +524,7 @@ class Collector(object):
                  disk["size"] - disk["used"],
                  disk["vendor"],
                  disk["model"],
-                 "",
+                 disk["dg"],
                  rcEnv.nodename,
                  0,
             ])

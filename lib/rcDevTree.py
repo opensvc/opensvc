@@ -82,6 +82,7 @@ class Dev(object):
         self.size = size
         self.devtype = devtype
         self.tree = None
+        self.dg = ""
 
         # list of relations
         self.parents = []

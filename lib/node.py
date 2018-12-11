@@ -1535,6 +1535,7 @@ class Node(Crypt, ExtConfigMixin):
         tree = Forest()
         head_node = tree.add_node()
         head_node.add_column(rcEnv.nodename, color.BOLD)
+        head_node.add_column("DiskGroup", color.BOLD)
         head_node.add_column("Size.Used", color.BOLD)
         head_node.add_column("Vendor", color.BOLD)
         head_node.add_column("Model", color.BOLD)
@@ -1550,6 +1551,7 @@ class Node(Crypt, ExtConfigMixin):
         for disk_id, disk in data["disks"].items():
             disk_node = disks_node.add_node()
             disk_node.add_column(disk_id, color.LIGHTBLUE)
+            disk_node.add_column(disk["dg"])
             disk_node.add_column(print_size(disk["size"]))
             disk_node.add_column(disk["vendor"])
             disk_node.add_column(disk["model"])
@@ -1557,16 +1559,19 @@ class Node(Crypt, ExtConfigMixin):
             for svcname, service in disk["services"].items():
                 svc_node = disk_node.add_node()
                 svc_node.add_column(svcname, color.LIGHTBLUE)
+                svc_node.add_column(disk["dg"])
                 svc_node.add_column(print_size(service["used"]))
 
             if disk["used"] < disk["size"]:
                 svc_node = disk_node.add_node()
                 svc_node.add_column(rcEnv.nodename, color.LIGHTBLUE)
+                svc_node.add_column(disk["dg"])
                 svc_node.add_column(print_size(disk["size"] - disk["used"]))
 
         for disk_id, disk in data["served_disks"].items():
             disk_node = disks_node.add_node()
             disk_node.add_column(disk_id, color.LIGHTBLUE)
+            disk_node.add_column(disk["dg"])
             disk_node.add_column(print_size(disk["size"]))
             disk_node.add_column(disk["vdisk_id"])
 
@@ -1585,13 +1590,6 @@ class Node(Crypt, ExtConfigMixin):
         for svc in self.svcs:
             # hash to add up disk usage inside a service
             for r in svc.get_resources():
-                if hasattr(r, "name"):
-                    disk_dg = r.name
-                elif hasattr(r, "dev"):
-                    disk_dg = r.dev
-                else:
-                    disk_dg = r.rid
-
                 if hasattr(r, 'devmap') and hasattr(r, 'vm_hostname'):
                     for dev_id, vdev_id in r.devmap():
                         try:
@@ -1623,11 +1621,13 @@ class Node(Crypt, ExtConfigMixin):
                             continue
                         if disk_id.startswith(rcEnv.nodename+".loop"):
                             continue
-                        disk_size = self.devtree.get_dev_by_devpath(d).size
+                        dev = self.devtree.get_dev_by_devpath(d)
+                        disk_size = dev.size
 
                         if disk_id not in data["disks"]:
                             data["disks"][disk_id] = {
                                 "size": disk_size,
+                                "dg": dev.dg,
                                 "vendor": self.diskinfo.disk_vendor(d),
                                 "model": self.diskinfo.disk_model(d),
                                 "used": 0,
@@ -1638,12 +1638,10 @@ class Node(Crypt, ExtConfigMixin):
                             data["disks"][disk_id]["services"][svc.svcname] = {
                                 "svcname": svc.svcname,
                                 "used": used,
-                                "dg": disk_dg,
                                 "region": region
                             }
                         else:
                             # consume space at service level
-                            data["disks"][disk_id]["services"][svc.svcname]["dg"] = "multi"
                             data["disks"][disk_id]["services"][svc.svcname]["used"] += used
                             if data["disks"][disk_id]["services"][svc.svcname]["used"] > disk_size:
                                 data["disks"][disk_id]["services"][svc.svcname]["used"] = disk_size
@@ -1679,10 +1677,12 @@ class Node(Crypt, ExtConfigMixin):
             if disk_id in data["disks"]:
                 continue
 
-            disk_size = self.devtree.get_dev_by_devpath(devpath).size
+            dev = self.devtree.get_dev_by_devpath(devpath)
+            disk_size = dev.size
 
             data["disks"][disk_id] = {
                 "size": disk_size,
+                "dg": dev.dg,
                 "vendor": self.diskinfo.disk_vendor(devpath),
                 "model": self.diskinfo.disk_model(devpath),
                 "used": 0,

@@ -267,6 +267,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                 member_ratio = 1.0 * m.size / self.zpool_size[poolname]
                 d.add_parent(m.devname)
                 m.add_child(zfsname)
+                m.dg = poolname
                 self.set_relation_used(m.devname, zfsname, int(used*member_ratio))
 
     def read_size(self, s):

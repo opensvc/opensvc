@@ -279,6 +279,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
 
             s = mapname.replace('--', ':').replace('-', '/').replace(':','-')
             if "/" in s:
+                d.dg = s.split("/", 1)[0]
                 d.set_devpath('/dev/'+s)
             wwid = self.get_map_wwid(mapname)
             if wwid is not None:
@@ -464,6 +465,10 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                 continue
             size = self.get_size(holderpath)
             devtype = self.dev_type(holdername)
+            if d.dg == "" and holdername in self._dm_h:
+                alias = self._dm_h[holdername]
+                s = alias.replace('--', ':').replace('-', '/').replace(':','-')
+                d.dg = s.split("/", 1)[0]
             d.add_child(holdername, size, devtype)
 
         # add lv aliases
@@ -472,6 +477,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
             d.set_alias(alias)
             d.set_devpath('/dev/mapper/'+alias)
             s = alias.replace('--', ':').replace('-', '/').replace(':','-')
+            d.dg = s.split("/", 1)[0]
             d.set_devpath('/dev/'+s)
 
         # add slaves
