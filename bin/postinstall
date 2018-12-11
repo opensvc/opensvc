@@ -361,29 +361,43 @@ def activate_systemd(launcher):
         _activate_systemd(systemdsvc)
 
 def _activate_systemd(systemdsvc):
-    systemd_unit_path = [
-        '/usr/lib/systemd/system/',
-    ]
 
     if not os.path.islink('/lib') and os.path.isdir('/lib/systemd/system'):
-        systemd_unit_path = ['/lib/systemd/system']
+        systemd_unit_path = '/lib/systemd/system'
+    else:
+        systemd_unit_path = '/usr/lib/systemd/system'
+
+    systemd_unit_paths = [
+        systemd_unit_path,
+        '/etc/systemd/system/',
+    ]
 
     installed = False
-    for path in systemd_unit_path:
+    for path in systemd_unit_paths:
         if os.path.exists(os.path.dirname(path)):
             # populate systemd tree with opensvc unit file
             src = os.path.join(pathini, "systemd."+systemdsvc)
             dst = os.path.join(path, systemdsvc)
-            logit("installing %s systemd unit file in %s"%(systemdsvc, path), stdout=True)
             try:
                 shutil.copyfile(src, dst)
                 os.chmod(dst, p0644)
                 installed = True
-            except:
-                logit("issue met while trying to install systemd unit file", stderr=True)
+                break
+            except IOError as exc:
+                if exc.errno == 30:
+                    continue
+                logit("issue met while trying to install systemd unit file: %s"%str(exc), stderr=True)
+            except OSError as exc:
+                if exc.errno == 30:
+                    continue
+                logit("issue met while trying to install systemd unit file: %s"%str(exc), stderr=True)
+            except Exception as exc:
+                logit("issue met while trying to install systemd unit file: %s"%str(exc), stderr=True)
 
     if installed is not True:
         logit("issue met while trying to identify suitable systemd unit file location", stderr=True)
+    else:
+        logit("installing %s systemd unit file in %s"%(systemdsvc, path), stdout=True)
 
     # reset paths in ExecStart and ExecStop
     osrun("sed -i 's@/usr/share/opensvc/bin@"+pathbin+"@' "+dst)
@@ -397,6 +411,8 @@ def _activate_systemd(systemdsvc):
 
     # enable opensvc agent startup through systemd
     logit("enabling systemd configuration")
+    cmd = ['systemctl', '-q', 'disable', systemdsvc]
+    ret = osrun(' '.join(cmd))
     cmd = ['systemctl', '-q', 'enable', systemdsvc]
     ret = osrun(' '.join(cmd))
     if ret > 0:
