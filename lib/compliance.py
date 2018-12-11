@@ -239,7 +239,7 @@ class Module(object):
                     break
 
         self.reset_env()
-        if rets == set([0]):
+        if rets == set([0]) or rets == set():
             ret = 0
         elif rets == set([0, 2]):
             ret = 0
