@@ -409,15 +409,17 @@ class Node(Crypt, ExtConfigMixin):
 
     @lazy
     def dnsnodes(self):
-        import socket
         nodes = []
         for ip in self.dns:
             try:
-                node = socket.gethostbyaddr(ip)[0]
+                data = socket.gethostbyaddr(ip)
+                names = [data[0]] + data[1]
             except Exception as exc:
-                node = None
-            if node in self.cluster_nodes:
-                nodes.append(node)
+                names = []
+            for node in names:
+                if node in self.cluster_nodes:
+                    nodes.append(node)
+                    break
         return nodes
 
     @lazy
