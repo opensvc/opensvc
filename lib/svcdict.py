@@ -229,6 +229,7 @@ KEYWORDS = [
     {
         "section": "container",
         "keyword": "type",
+        "inheritance": "leaf",
         "at": True,
         "candidates": rcEnv.vt_supported,
         "text": "The type of container.",
@@ -831,6 +832,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "type",
+        "inheritance": "leaf",
         "candidates": ("simple", "forking", "winservice"),
         "default": "forking",
         "text": "The app driver to use. 'simple' for foreground-running apps. 'forking' for daemonizing apps."
@@ -1033,6 +1035,7 @@ KEYWORDS = [
     {
         "section": "sync",
         "keyword": "type",
+        "inheritance": "leaf",
         "candidates": ["rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "symsnap", "hp3par", "hp3parsnap", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "zfssnap", "btrfssnap", "rados", "s3"],
         "default": "rsync",
         "text": "Point a sync driver to use."
@@ -1583,6 +1586,7 @@ KEYWORDS = [
     {
         "section": "ip",
         "keyword": "type",
+        "inheritance": "leaf",
         "at": True,
         "candidates": [None, "crossbow", "amazon", "gce", "cni", "docker", "netns"],
         "text": "The opensvc ip driver name.",
@@ -1642,6 +1646,7 @@ KEYWORDS = [
     {
         "section": "disk",
         "keyword": "type",
+        "inheritance": "leaf",
         "at": True,
         "default": "vg",
         "candidates": ["disk", "veritas", "vxdg", "vxvol", "raw", "rados", "md", "drbd", "loop", "zpool", "pool", "raw", "vmdg", "vdisk", "lvm", "vg", "lv", "amazon", "gce"],
@@ -2132,6 +2137,7 @@ KEYWORDS = [
     {
         "section": "share",
         "keyword": "type",
+        "inheritance": "leaf",
         "candidates": ["nfs"],
         "text": "The type of share.",
         "required": True,
@@ -2218,6 +2224,7 @@ KEYWORDS = [
     {
         "section": "fs",
         "keyword": "type",
+        "inheritance": "leaf",
         "at": True,
         "required": True,
         "strict_candidates": False,
@@ -2713,6 +2720,7 @@ KEYWORDS = [
     {
         "section": "expose",
         "keyword": "type",
+        "inheritance": "leaf",
         "at": True,
         "candidates": ["envoy", "gobetween"],
         "text": "The type of expose.",
@@ -2811,6 +2819,7 @@ KEYWORDS = [
     {
         "section": "vhost",
         "keyword": "type",
+        "inheritance": "leaf",
         "at": True,
         "candidates": ["envoy"],
         "text": "The type of vhost.",
@@ -2838,6 +2847,7 @@ KEYWORDS = [
     {
         "section": "route",
         "keyword": "type",
+        "inheritance": "leaf",
         "at": True,
         "candidates": ["envoy"],
         "text": "The type of route.",
@@ -2959,6 +2969,7 @@ KEYWORDS = [
     {
         "section": "hash_policy",
         "keyword": "type",
+        "inheritance": "leaf",
         "candidates": ["envoy"],
         "text": "The type of hash policy.",
         "default": "envoy",
@@ -3004,6 +3015,7 @@ KEYWORDS = [
     {
         "section": "certificate",
         "keyword": "type",
+        "inheritance": "leaf",
         "at": True,
         "candidates": ["tls"],
         "text": "The type of certificate.",
