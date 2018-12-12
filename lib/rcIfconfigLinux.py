@@ -59,6 +59,7 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.flag_running = False
                 i.flag_multicast = False
                 i.flag_loopback = False
+                i.flag_no_carrier = False
 
                 self.intf.append(i)
 
@@ -80,6 +81,8 @@ class ifconfig(rcIfconfig.ifconfig):
                                 i.flag_multicast = True
                             if 'LOOPBACK' == w:
                                 i.flag_loopback = True
+                            if 'NO-CARRIER' == w:
+                                i.flag_no_carrier = True
 
                     prev = w
             elif line.strip().startswith("link"):
@@ -165,6 +168,7 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.flag_running = False
                 i.flag_multicast = False
                 i.flag_loopback = False
+                i.flag_no_carrier = False
             elif 'encap:' in w:
                 (null, i.link_encap) = w.split(':')
             elif 'Scope:' in w:
@@ -194,6 +198,8 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.flag_multicast = True
             if 'LOOPBACK' == w:
                 i.flag_loopback = True
+            if 'NO-CARRIER' == w:
+                i.flag_no_carrier = True
 
             prevprev = prev
             prev = w

@@ -46,7 +46,10 @@ class Ip(Res.Ip):
             else:
                 if self.stacked_dev is None:
                     return 1, "", "no stacked dev found"
-                cmd = ['ifconfig', self.stacked_dev, 'down']
+                if ":" in self.stacked_dev:
+                    cmd = ['ifconfig', self.stacked_dev, 'down']
+                else:
+                    cmd = [rcEnv.syspaths.ip, "addr", "del", '/'.join([self.addr, to_cidr(self.mask)]), "dev", self.ipdev]
         else:
             cmd = [rcEnv.syspaths.ip, "addr", "del", '/'.join([self.addr, to_cidr(self.mask)]), "dev", self.ipdev]
         return self.vcall(cmd)

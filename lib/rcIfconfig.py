@@ -20,6 +20,7 @@ class interface:
         a += [' flag_running = ' + str(self.flag_running)]
         a += [' flag_multicast = ' + str(self.flag_multicast)]
         a += [' flag_loopback = ' + str(self.flag_loopback)]
+        a += [' flag_no_carrier = ' + str(self.flag_no_carrier)]
         if self.groupname:
             a += [' groupname = ' + str(self.groupname)]
         return '\n'.join(a)
@@ -43,6 +44,7 @@ class interface:
         self.flag_running = False
         self.flag_multicast = False
         self.flag_loopback = False
+        self.flag_no_carrier = False
 
 class ifconfig(object):
     def add_interface(self, name):

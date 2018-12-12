@@ -177,11 +177,12 @@ class Ip(Res.Resource):
                 return rcStatus.WARN
         ifconfig = IFCONFIG_MOD.ifconfig()
         intf = ifconfig.interface(self.ipdev)
-        if intf is None and "dedicated" not in self.tags:
+        mode = getattr(self, "mode") if hasattr(self, "mode") else None
+        if intf is None and "dedicated" not in self.tags and mode != "dedicated":
             self.status_log("interface %s not found" % self.ipdev)
             return rcStatus.DOWN
         try:
-            if self.is_up():
+            if self.is_up() and self.has_carrier(intf) is not False:
                 return rcStatus.UP
             else:
                 return rcStatus.DOWN
@@ -246,6 +247,17 @@ class Ip(Res.Resource):
         ifconfig = self.get_ifconfig()
         return self._is_up(ifconfig)
 
+    def has_carrier(self, intf):
+        if intf is None:
+            return
+        mode = getattr(self, "mode") if hasattr(self, "mode") else None
+        if "dedicated" in self.tags or mode == "dedicated":
+            return
+        if intf.flag_no_carrier:
+            self.status_log("no carrier")
+            return False
+        return True
+
     def _is_up(self, ifconfig):
         intf = ifconfig.has_param("ipaddr", self.addr)
         if intf is not None:
@@ -288,6 +300,9 @@ class Ip(Res.Resource):
             raise ex.IpAlreadyUp(self.addr)
         ifconfig = IFCONFIG_MOD.ifconfig()
         intf = ifconfig.interface(self.ipdev)
+        if self.has_carrier(intf) is False and not self.svc.options.force:
+            self.log.error("interface %s no-carrier.", self.ipdev)
+            raise ex.IpDevDown(self.ipdev)
         if intf is None:
             self.log.error("interface %s not found. Cannot stack over it.", self.ipdev)
             raise ex.IpDevDown(self.ipdev)
