@@ -4870,7 +4870,10 @@ class Node(Crypt, ExtConfigMixin):
         """
         data = {}
         for section in self.conf_sections("hook"):
-            command = tuple(self.conf_get(section, "command"))
+            try:
+                command = tuple(self.conf_get(section, "command"))
+            except Exception:
+                continue
             events = self.conf_get(section, "events")
             for event in events:
                 if event not in data:
