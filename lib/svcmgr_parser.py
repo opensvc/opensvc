@@ -544,14 +544,15 @@ ACTIONS = {
         "print_status": {
             "msg": "Display the service status, with a detailed view of the local "
                    "instance.\n\n"
-                   "Resources Flags:\n"
-                   "* ``R``  Running\n"
-                   "* ``M``  Monitored\n"
-                   "* ``D``  Disabled\n"
-                   "* ``O``  Optional\n"
-                   "* ``E``  Encap\n"
-                   "* ``P``  Provisioned\n"
-                   "* ``S``  Standby\n"
+                   "Resources Flags:\n\n"
+                   "(1) ``R``   Running,           ``.`` Not Running\n\n"
+                   "(2) ``M``   Monitored,         ``.`` Not Monitored\n\n"
+                   "(3) ``D``   Disabled,          ``.`` Enabled\n\n"
+                   "(4) ``O``   Optional,          ``.`` Not Optional\n\n"
+                   "(5) ``E``   Encap,             ``.`` Not Encap\n\n"
+                   "(6) ``P``   Provisioned,       ``.`` Not Provisioned\n\n"
+                   "(7) ``S``   Standby,           ``.`` Not Standby\n\n"
+                   "(8) ``<n>`` Remaining Restart, ``+`` if more than 10,  ``.``   No Restart\n\n"
                    "",
             "options": [
                 OPT.filter,

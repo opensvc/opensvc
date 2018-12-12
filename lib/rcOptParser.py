@@ -149,10 +149,12 @@ class OptParser(object):
             preamble = ""
         wrapper = textwrap.TextWrapper(width=self.width-self.indent, replace_whitespace=False)
         text = preamble + self.actions[section][action]["msg"]
-        for line in wrapper.wrap(text):
-            for _line in line.splitlines():
-                desc += self.subsequent_indent+_line.replace("``", "`")+"\n"
-        desc += '\n'
+        text = text.replace("``", "`")
+        for phrase in text.splitlines():
+            for line in wrapper.wrap(phrase):
+                for _line in line.splitlines():
+                    desc += self.subsequent_indent+_line
+            desc += '\n'
 
         if options:
             desc += self.format_options(section, action)

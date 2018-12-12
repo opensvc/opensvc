@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-11\-12
+.TH SVCMGR 1 2018\-12\-12
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -15,7 +15,6 @@ In the OpenSVC infrastructure, the node is an operating system instance with an 
 .RS
 
 Acknowledge an action error on the service. An acknowlegment can be completed by --author (defaults to root@nodename) and --comment.
-
 
 .TP
 .B --author=AUTHOR
@@ -110,7 +109,6 @@ Show this help message and exit.
 .RS
 
 Acknowledge an unavailability period. The period is specified by :opt:`--begin` :opt:`--end` or :opt:`--begin` :opt:`--duration`. :opt:`--begin` defaults to now.
-
 
 .TP
 .B --author=AUTHOR
@@ -218,7 +216,6 @@ Show this help message and exit.
 
 Display service alerts.
 
-
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -312,7 +309,6 @@ Show this help message and exit.
 .RS
 
 Display asset information known to the collector.
-
 
 .TP
 .B --filter=JSONPATH_FILTER
@@ -408,7 +404,6 @@ Show this help message and exit.
 
 Display service checks.
 
-
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -503,7 +498,6 @@ Show this help message and exit.
 
 Create a new tag.
 
-
 .TP
 .B --tag=TAG
 The tag name, as shown by :cmd:`svcmgr collector list tags`.
@@ -594,7 +588,6 @@ Show this help message and exit.
 .RS
 
 Display service disks.
-
 
 .TP
 .B --filter=JSONPATH_FILTER
@@ -689,7 +682,6 @@ Show this help message and exit.
 .RS
 
 Display the service events during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago.
-
 
 .TP
 .B --begin=BEGIN
@@ -791,7 +783,6 @@ Show this help message and exit.
 
 List actions on the service, Whatever the node, during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago.
 
-
 .TP
 .B --begin=BEGIN
 A begin date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action applies to.
@@ -892,7 +883,6 @@ Show this help message and exit.
 
 List all available tags. Use :opt:`--like` to filter the output.
 
-
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -989,7 +979,6 @@ Show this help message and exit.
 .RS
 
 List acknowledged periods for the service.
-
 
 .TP
 .B --author=AUTHOR
@@ -1091,7 +1080,6 @@ Show this help message and exit.
 
 Log a message in the collector service log.
 
-
 .TP
 .B --message=MESSAGE
 The message to send to the collector for logging.
@@ -1182,7 +1170,6 @@ Show this help message and exit.
 .RS
 
 Display network information known to the collector for each service ip.
-
 
 .TP
 .B --filter=JSONPATH_FILTER
@@ -1277,7 +1264,6 @@ Show this help message and exit.
 .RS
 
 Show actions detailed log. A single action is specified by --id. A range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago.
-
 
 .TP
 .B --begin=BEGIN
@@ -1382,7 +1368,6 @@ Show this help message and exit.
 
 List all service tags.
 
-
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1477,7 +1462,6 @@ Show this help message and exit.
 
 Set a service tag (pointed by --tag).
 
-
 .TP
 .B --tag=TAG
 The tag name, as shown by :cmd:`svcmgr collector list tags`.
@@ -1568,7 +1552,6 @@ Show this help message and exit.
 .RS
 
 Unset a service tag (pointed by --tag).
-
 
 .TP
 .B --tag=TAG
@@ -1663,7 +1646,6 @@ Show this help message and exit.
 
 Attach rulesets specified by :opt:`--ruleset` and modulesets specified by :opt:`--moduleset` to this service. Attached modulesets are scheduled for check or autofix.
 
-
 .TP
 .B --moduleset=MODULESET
 Specify the modulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
@@ -1757,7 +1739,6 @@ Show this help message and exit.
 .RS
 
 Run compliance checks or fixes, depending on the autofix module property values.
-
 
 .TP
 .B --attach
@@ -1865,7 +1846,6 @@ Show this help message and exit.
 
 Run compliance checks.
 
-
 .TP
 .B --attach
 Attach the modulesets specified in a compliance run.
@@ -1969,7 +1949,6 @@ Show this help message and exit.
 
 Detach rulesets specified by :opt:`--ruleset` and modulesets specified by :opt:`--moduleset` from this service. Detached modulesets are no longer scheduled for check and autofix.
 
-
 .TP
 .B --moduleset=MODULESET
 Specify the modulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
@@ -2064,7 +2043,6 @@ Show this help message and exit.
 
 Show the environment variables set during a compliance module run.
 
-
 .TP
 .B --module=MODULE
 Specify the modules to limit the run to. The modules must be in already attached modulesets.
@@ -2158,7 +2136,6 @@ Show this help message and exit.
 .RS
 
 Run compliance fixes.
-
 
 .TP
 .B --attach
@@ -2263,7 +2240,6 @@ Show this help message and exit.
 
 Verify compliance fixes prerequisites.
 
-
 .TP
 .B --attach
 Attach the modulesets specified in a compliance run.
@@ -2367,7 +2343,6 @@ Show this help message and exit.
 
 List available compliance modulesets. Setting :opt:`--moduleset f%` limits the resultset to modulesets matching the `f%` pattern.
 
-
 .TP
 .B --moduleset=MODULESET
 Specify the modulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
@@ -2458,7 +2433,6 @@ Show this help message and exit.
 .RS
 
 List available compliance rulesets. Setting :opt:`--ruleset f%` limits the scope to rulesets matching the `f%` pattern.
-
 
 .TP
 .B --ruleset=RULESET
@@ -2551,7 +2525,6 @@ Show this help message and exit.
 
 Show compliance rules applying to this service.
 
-
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -2640,7 +2613,6 @@ Show this help message and exit.
 
 Show compliance rules applying to this service.
 
-
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -2728,7 +2700,6 @@ Show this help message and exit.
 .RS
 
 Show compliance modules status.
-
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
@@ -2822,7 +2793,6 @@ Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Abort the action asynchronously done by the cluster daemons.
 
-
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -2910,7 +2880,6 @@ Show this help message and exit.
 .RS
 
 Clean up actions executed before the daemon starts. For example scsi reservation release and vg tags removal. Never execute this action manually.
-
 
 .TP
 .B --dry-run
@@ -3044,7 +3013,6 @@ Show this help message and exit.
 
 Clear the monitor status of the service on the node pointed by --node. If --node is not specified, all nodes are cleared. This command can be used to reactivate service orchestration blocked by a failed status like `start failed`.
 
-
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
@@ -3144,7 +3112,6 @@ Show this help message and exit.
 .RS
 
 Disable resources specified by :opt:`--rid` in services specified by :opt:`--service`. Specifying no resource disables the whole service.
-
 
 .TP
 .B --rid=PARM_RID
@@ -3253,7 +3220,6 @@ Show this help message and exit.
 .RS
 
 Update the collector dns records for the service. The managed dns record is <svcname>.<app>.<collector domain>`.
-
 
 .TP
 .B --dry-run
@@ -3387,7 +3353,6 @@ Show this help message and exit.
 
 Wrap the docker client command, setting automatically the socket parameter to join the service-private docker daemon. The {as_service}, {images} and {instances} words in the wrapped command are replaced by, respectively, the registry login username/password/email parameters to log as a service using <svcname>@<nodename> as the username and the node uuid as password (which is what is expected when the opensvc collector is used as the JWT manager for the registry), the set of docker instance names and images for container resources passing the --tags, --rid and --subsets filters. This is useful to remove all instances of a service or all instances of resources with a tag like 'frontend'. Note the opensvc filters must be positioned before the docker command in the arguments list.
 
-
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -3475,7 +3440,6 @@ Show this help message and exit.
 .RS
 
 Enable resources specified by :opt:`--rid` in services specified by :opt:`--service`. Specifying no resource enables the whole service.
-
 
 .TP
 .B --rid=PARM_RID
@@ -3587,7 +3551,6 @@ Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Block orchestration on the service.
 
-
 .TP
 .B --time=TIME
 A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
@@ -3697,7 +3660,6 @@ Show this help message and exit.
 
 Report on the current blocking of orchestration on the service.
 
-
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -3787,7 +3749,6 @@ Show this help message and exit.
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Stop the service on its current node and start on the node chosen by the placement policy.
-
 
 .TP
 .B --dry-run
@@ -3930,7 +3891,6 @@ Show this help message and exit.
 
 Display the service logs. All service instances logs are aggregated.
 
-
 .TP
 .B --backlog=BACKLOG
 A size expression limiting the volume of data fetched from the log file tail. Default is 10k.
@@ -4034,7 +3994,6 @@ Show this help message and exit.
 
 List the service names with a local instance. Most useful to test a service selector expression before running an action.
 
-
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -4128,7 +4087,6 @@ Show this help message and exit.
 .RS
 
 Live migrate the service to the remote node. --to <node> specify the remote node to migrate the service to.
-
 
 .TP
 .B --dry-run
@@ -4276,7 +4234,6 @@ Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Ask the daemon to orchestrate a stop of the service instances running on nodes not in the specified target, and start instances on the specified target nodes. The target is specified by :opt:`--to <nodename>,<nodename>`.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -4421,7 +4378,6 @@ Show this help message and exit.
 
 Freeze the tasks of a process group.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -4553,7 +4509,6 @@ Show this help message and exit.
 .RS
 
 Kill the tasks of a process group.
-
 
 .TP
 .B --dry-run
@@ -4687,7 +4642,6 @@ Show this help message and exit.
 
 Thaw the tasks of a process group.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -4819,7 +4773,6 @@ Show this help message and exit.
 .RS
 
 Execute the postsync method of the resource driver for each local service instance resource. These methods usually take appropriate action based on var files received from the primary node.
-
 
 .TP
 .B --dry-run
@@ -4953,7 +4906,6 @@ Show this help message and exit.
 
 Execute the presync method of the resource driver for each local service instance resource. These methods usually update var files needing replication on other nodes.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -5086,7 +5038,6 @@ Show this help message and exit.
 
 Print the list of base devices the local service instance or the specified resources are layered on.
 
-
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -5201,7 +5152,6 @@ Show this help message and exit.
 
 Display the service local configuration file modification time
 
-
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -5289,7 +5239,6 @@ Show this help message and exit.
 .RS
 
 Aggregate the information of :cmd:`print base devs`, :cmd:`print sub devs` and :cmd:`print exposed devs`.
-
 
 .TP
 .B --filter=JSONPATH_FILTER
@@ -5405,7 +5354,6 @@ Show this help message and exit.
 
 Print the list of devices the local service instance or the specified resources expose.
 
-
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -5520,7 +5468,6 @@ Show this help message and exit.
 
 Display a specific service resource status, pointed by --rid
 
-
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -5632,7 +5579,6 @@ Show this help message and exit.
 
 Print the service tasks schedule.
 
-
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -5731,13 +5677,22 @@ Show this help message and exit.
 Display the service status, with a detailed view of the local instance.
 
 Resources Flags:
-* `R`  Running
-* `M`  Monitored
-* `D`  Disabled
-* `O`  Optional
-* `E`  Encap
-* `P`  Provisioned
-* `S`  Standby
+
+(1) `R`   Running,           `.` Not Running
+
+(2) `M`   Monitored,         `.` Not Monitored
+
+(3) `D`   Disabled,          `.` Enabled
+
+(4) `O`   Optional,          `.` Not Optional
+
+(5) `E`   Encap,             `.` Not Encap
+
+(6) `P`   Provisioned,       `.` Not Provisioned
+
+(7) `S`   Standby,           `.` Not Standby
+
+(8) `<n>` Remaining Restart, `+` if more than 10,  `.`   No Restart
 
 
 .TP
@@ -5842,7 +5797,6 @@ Show this help message and exit.
 .RS
 
 Print the list of devices the local service instance or the specified resources are layered on.
-
 
 .TP
 .B --filter=JSONPATH_FILTER
@@ -5959,7 +5913,6 @@ Show this help message and exit.
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Provision the service. Leave the service in frozen, stdby up state.
-
 
 .TP
 .B --time=TIME
@@ -6102,7 +6055,6 @@ Show this help message and exit.
 
 Report the status of scsi3 persistent reservations on scsi disks held by the local service instance.
 
-
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -6190,7 +6142,6 @@ Show this help message and exit.
 .RS
 
 Pull a service configuration from the collector, overwritting the currently installed one.
-
 
 .TP
 .B --disable-rollback
@@ -6286,7 +6237,6 @@ Show this help message and exit.
 
 Push service configuration to the collector.
 
-
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -6378,7 +6328,6 @@ Show this help message and exit.
 
 Push service configuration to the containers hosting an encapsulated service.
 
-
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -6469,7 +6418,6 @@ Show this help message and exit.
 .RS
 
 Push the local service instance resources and application launchers info key/value pairs the collector.
-
 
 .TP
 .B --cron
@@ -6565,7 +6513,6 @@ Show this help message and exit.
 
 Push service instance status to the collector synchronously.
 
-
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -6653,7 +6600,6 @@ Show this help message and exit.
 .RS
 
 Refresh the monitored resource status. This action is scheduleable, usually every minute.
-
 
 .TP
 .B --dry-run
@@ -6790,7 +6736,6 @@ Show this help message and exit.
 
 Chain a local service instance stop and start
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -6925,7 +6870,6 @@ Show this help message and exit.
 .RS
 
 Chain a local service instance  stop, sync_resync and start
-
 
 .TP
 .B --dry-run
@@ -7062,7 +7006,6 @@ Show this help message and exit.
 
 Run all tasks, or tasks specified by --rid --tags and --subset, disregarding their schedule.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -7198,7 +7141,6 @@ Show this help message and exit.
 
 Create-provision or delete-unprovision instances to meet service scale target.
 
-
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
@@ -7295,7 +7237,6 @@ Show this help message and exit.
 .RS
 
 Set the resources as provisioned.
-
 
 .TP
 .B --dry-run
@@ -7428,7 +7369,6 @@ Show this help message and exit.
 .RS
 
 Set the resources as unprovisioned.
-
 
 .TP
 .B --dry-run
@@ -7563,7 +7503,6 @@ Show this help message and exit.
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Stop a service, including its standby resources. The log shipping to the collector is synchronous.
-
 
 .TP
 .B --dry-run
@@ -7703,7 +7642,6 @@ Show this help message and exit.
 
 Snooze alerts on the node for :opt:`--duration`
 
-
 .TP
 .B --duration=DURATION
 A duration expression like, '1h10m'.
@@ -7796,7 +7734,6 @@ Show this help message and exit.
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Start a service. The started instances depend on the service placement policy, so the local instance may not start. A failover service is considered started when one instance is started. A flex service is considered started when `<flex_min_nodes>` instances are started.
-
 
 .TP
 .B --dry-run
@@ -7942,7 +7879,6 @@ Show this help message and exit.
 
 Start local service instance resources flagged standby.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -8078,7 +8014,6 @@ Show this help message and exit.
 
 Return the local service instance overall status code.
 
-
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
@@ -8174,7 +8109,6 @@ Show this help message and exit.
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Stop all service instances. The standby resources are not stopped, unless :opt:`--force` is specified.
-
 
 .TP
 .B --dry-run
@@ -8317,7 +8251,6 @@ Show this help message and exit.
 
 Create a tarball archive of config, var and log files, and upload it to the OpenSVC support site.
 
-
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -8407,7 +8340,6 @@ Show this help message and exit.
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Stop the running failover service instance and start the instance on the peer node specified by :opt:`--to <nodename>`.
-
 
 .TP
 .B --dry-run
@@ -8553,7 +8485,6 @@ Show this help message and exit.
 
 Chain sync nodes, sync drp and sync update.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -8689,7 +8620,6 @@ Show this help message and exit.
 
 Break the disk replication of sync.dcsckpt, sync.hp3par, sync.ibmdssnap, sync.netapp, sync.symclone, sync.symsrdf resources.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -8821,7 +8751,6 @@ Show this help message and exit.
 .RS
 
 Run the synchronization method of each local service instance sync resource, targetting the drp nodes.
-
 
 .TP
 .B --dry-run
@@ -8955,7 +8884,6 @@ Show this help message and exit.
 
 Establish disk replication of sync.symsrdf resources.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -9087,7 +9015,6 @@ Show this help message and exit.
 .RS
 
 Trigger a full copy of the volume to its target.
-
 
 .TP
 .B --dry-run
@@ -9221,7 +9148,6 @@ Show this help message and exit.
 
 Run the synchronization method of each local service instance sync resource, targetting the peer nodes.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -9353,7 +9279,6 @@ Show this help message and exit.
 .RS
 
 Pause replication of sync.netapp and sync.symsrdf resources.
-
 
 .TP
 .B --dry-run
@@ -9487,7 +9412,6 @@ Show this help message and exit.
 
 Trigger a restore of the sync resources data to their target path (DANGEROUS: make sure you understand before running this action).
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -9619,7 +9543,6 @@ Show this help message and exit.
 .RS
 
 Re-establish a broken storage hardware-assisted synchronization.
-
 
 .TP
 .B --dry-run
@@ -9753,7 +9676,6 @@ Show this help message and exit.
 
 Like :cmd:`sync update`, but not triggered by the scheduler (thus adapted for clone/snap operations).
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -9885,7 +9807,6 @@ Show this help message and exit.
 .RS
 
 Revert to the pre-failover data (looses current data).
-
 
 .TP
 .B --dry-run
@@ -10019,7 +9940,6 @@ Show this help message and exit.
 
 Split the disk replication of sync.symsrdf resources.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -10152,7 +10072,6 @@ Show this help message and exit.
 
 Trigger a one-time resync of the volume to its target.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -10284,7 +10203,6 @@ Show this help message and exit.
 .RS
 
 Trigger a one-time checksum-based verify of the volume and its target.
-
 
 .TP
 .B --dry-run
@@ -10419,7 +10337,6 @@ Show this help message and exit.
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Stop the service on its current node and start on the local node.
-
 
 .TP
 .B --dry-run
@@ -10564,7 +10481,6 @@ Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Unblock orchestration on the service.
 
-
 .TP
 .B --time=TIME
 A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
@@ -10675,7 +10591,6 @@ Show this help message and exit.
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Trigger the service instance pre_monitor_action script and monitor_action method. Beware, this might crash or reboot the local node.
-
 
 .TP
 .B --dry-run
@@ -10810,7 +10725,6 @@ Show this help message and exit.
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Shutdown and unprovision all service instances. Beware, data will be lost upon fs and disk unprovisioning.
-
 
 .TP
 .B --time=TIME
@@ -10950,7 +10864,6 @@ Show this help message and exit.
 
 Unsnooze alerts on the node
 
-
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -11040,7 +10953,6 @@ Show this help message and exit.
 .RS
 
 Create a new service.
-
 
 .TP
 .B --dry-run
@@ -11197,7 +11109,6 @@ Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Delete a service, or only the resources specified by :opt:`--rid` on the local service instance.
 
-
 .TP
 .B --time=TIME
 A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
@@ -11342,7 +11253,6 @@ Show this help message and exit.
 
 Edit the service configuration. The new configuration file is actually installed only if it passes validation, so this action is recommended over direct edition.
 
-
 .TP
 .B --discard
 Discard the stashed, invalid, configuration file.
@@ -11436,7 +11346,6 @@ Show this help message and exit.
 .RS
 
 Get the raw or evaluated value of a service configuration keyword.
-
 
 .TP
 .B --dry-run
@@ -11611,7 +11520,6 @@ Show this help message and exit.
 
 Display the service current configuration.
 
-
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -11712,7 +11620,6 @@ Show this help message and exit.
 
 Display the service resource and env section key/val pairs pushed to the collector.
 
-
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -11806,7 +11713,6 @@ Show this help message and exit.
 .RS
 
 Set a service configuration parameter
-
 
 .TP
 .B --dry-run
@@ -11990,7 +11896,6 @@ Show this help message and exit.
 
 Unset a node configuration keyword.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -12158,7 +12063,6 @@ Show this help message and exit.
 
 Update definitions in an existing service configuration file.
 
-
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -12299,7 +12203,6 @@ Show this help message and exit.
 .RS
 
 Check the section names and keywords are valid.
-
 
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
