@@ -2469,6 +2469,8 @@ class Node(Crypt, ExtConfigMixin):
         """
         if rcEnv.sysname == "Windows":
             return False
+        if len(self.svcs) < 2:
+            return False
         if options.parallel and action not in ACTIONS_NO_PARALLEL:
             return True
         return False
