@@ -370,8 +370,9 @@ class Docker(resContainer.Container):
                     raise ex.excError("source dir of mapping %s does not "
                                       "exist" % (volarg))
         if self.svc.dockerlib.docker_min_version("1.7") and \
-           not self.docker_service and self.svc.dockerlib.docker_daemon_private:
-            args += ["--cgroup-parent", self._parent_cgroup_name()]
+           not self.docker_service:
+            if self.svc.dockerlib.docker_info.get("CgroupDriver") == "cgroupfs":
+                args += ["--cgroup-parent", self._parent_cgroup_name()]
         if not self.svc.dockerlib.docker_min_version("1.13") and "--rm" in args:
             del args[args.index("--rm")]
 

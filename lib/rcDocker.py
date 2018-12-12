@@ -93,9 +93,8 @@ class DockerLib(object):
             self.compat_docker_pid_file = os.path.join(rcEnv.paths.pathvar, self.svc.svcname, 'docker.pid')
         else:
             self.docker_pid_file = None
-            lines = [line for line in self.docker_info.splitlines() if "Root Dir" in line]
             try:
-                self.docker_data_dir = lines[0].split(":")[-1].strip()
+                self.docker_data_dir = self.docker_info["DockerRootDir"]
             except IndexError:
                 self.docker_data_dir = None
 
@@ -316,8 +315,12 @@ class DockerLib(object):
             self.docker_exe
         except ex.excInitError:
             return ""
-        cmd = [self.docker_exe, "info"]
-        return justcall(cmd)[0]
+        cmd = [self.docker_exe, "info", "--format", "{{json .}}"]
+        try:
+            data = json.loads(justcall(cmd)[0])
+        except ValueError:
+            data = {}
+        return data
 
     @lazy
     def docker_version(self):
@@ -828,7 +831,7 @@ class DockerLib(object):
         """
         Return True if the docker daemon is running.
         """
-        if self.docker_info == "":
+        if self.docker_info == {}:
             return False
         return True
 
