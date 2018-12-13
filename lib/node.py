@@ -2481,7 +2481,7 @@ class Node(Crypt, ExtConfigMixin):
         Returns True if the action returns data from multiple sources (nodes
         or services) to arrange for display.
         """
-        if action.startswith("print_") and options.format == "json":
+        if action.startswith("print_") and "json" in options.format:
             return True
         if action.startswith("json_"):
             return True
@@ -3507,7 +3507,7 @@ class Node(Crypt, ExtConfigMixin):
             return
 
         from rcColor import colorize, color, unicons
-        if self.options.format == "json" or self.options.jsonpath_filter:
+        if "json" in self.options.format or self.options.jsonpath_filter:
             self.print_data(data)
             return
 
