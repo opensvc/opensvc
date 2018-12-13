@@ -67,6 +67,8 @@ def do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
     for i in range(tries):
         try:
             return _do_call(fn, args, kwargs, log, proxy, mode=mode)
+        except socket.timeout:
+            max_wait = 1
         except Exception as e:
             s = str(e)
             if "retry" in s:
