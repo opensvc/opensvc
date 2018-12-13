@@ -17,7 +17,7 @@ class Ip(Res.Ip):
                  gateway=None,
                  network=None,
                  del_net_route=False,
-                 container_rid=None,
+                 netns=None,
                  vlan_tag=None,
                  vlan_mode=None,
                  **kwargs):
@@ -32,12 +32,12 @@ class Ip(Res.Ip):
         self.mode = mode
         self.network = network
         self.del_net_route = del_net_route
-        self.container_rid = str(container_rid)
+        self.container_rid = str(netns)
         self.vlan_tag = vlan_tag
         self.vlan_mode = vlan_mode
         self.label = "netns %s %s/%s %s@%s" % (mode if mode else "bridge", ipname, to_cidr(mask), ipdev, self.container_rid)
         self.tags = self.tags | set(["docker"])
-        self.tags.add(container_rid)
+        self.tags.add(self.container_rid)
 
     def on_add(self):
         self.svc.register_dependency("start", self.rid, self.container_rid)

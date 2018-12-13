@@ -31,7 +31,7 @@ class Ip(Res.Ip):
                  ipname=None,
                  ipdev=None,
                  network=None,
-                 container_rid=None,
+                 netns=None,
                  expose=None,
                  **kwargs):
         Res.Ip.__init__(self,
@@ -42,10 +42,10 @@ class Ip(Res.Ip):
                         expose=expose,
                         **kwargs)
         self.network = network
-        self.container_rid = container_rid
-        if container_rid:
+        self.container_rid = netns
+        if self.container_rid:
             self.tags = self.tags | set(["docker"])
-            self.tags.add(container_rid)
+            self.tags.add(self.container_rid)
 
     def set_label(self):
         pass

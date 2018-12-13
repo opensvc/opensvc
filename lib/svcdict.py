@@ -29,6 +29,9 @@ DEPRECATED_KEYWORDS = {
   "disk.zpool.poolname": "name",
   "always_on": None,
   "container.docker.run_image": "image",
+  "ip.docker.container_rid": "netns",
+  "ip.netns.container_rid": "netns",
+  "ip.cni.container_rid": "netns",
 }
 
 # supported => deprecated
@@ -42,6 +45,9 @@ REVERSE_DEPRECATED_KEYWORDS = {
   "disk.pool.name": "poolname",
   "disk.vg.name": "vgname",
   "disk.zpool.name": "poolname",
+  "ip.docker.netns": "container_rid",
+  "ip.netns.netns": "container_rid",
+  "ip.cni.netns": "container_rid",
 }
 
 DEPRECATED_SECTIONS = {
@@ -1384,7 +1390,7 @@ KEYWORDS = [
     {
         "section": "ip",
         "rtype": ["docker", "netns"],
-        "keyword": "container_rid",
+        "keyword": "netns",
         "at": True,
         "required": True,
         "text": "The resource id of the container to plumb the ip into.",
@@ -1425,14 +1431,6 @@ KEYWORDS = [
     {
         "section": "ip",
         "rtype": "cni",
-        "keyword": "container_rid",
-        "at": True,
-        "text": "The resource id of the container to plumb the ip into.",
-        "example": "container#0"
-    },
-    {
-        "section": "ip",
-        "rtype": "cni",
         "keyword": "network",
         "at": True,
         "required": True,
@@ -1454,7 +1452,7 @@ KEYWORDS = [
     {
         "section": "ip",
         "rtype": "cni",
-        "keyword": "container_rid",
+        "keyword": "netns",
         "at": True,
         "required": False,
         "text": "The resource id of the container to plug into the CNI network.",
