@@ -3646,6 +3646,13 @@ class Node(Crypt, ExtConfigMixin):
             for child in sorted(list(data.get("slaves", []))):
                 load_svc(child, prefix=prefix+" ")
 
+        def fmt_proc(_data):
+            cpu = _data.get("proc", {}).get("cpu")
+            try:
+                return "%.1f%% " % cpu
+            except Exception:
+                return ""
+
         def load_hb(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
@@ -3665,7 +3672,7 @@ class Node(Crypt, ExtConfigMixin):
             line = [
                 " "+colorize(key, color.BOLD),
                 state,
-                config,
+                fmt_proc(_data) + config,
                 "|",
             ]
             for nodename in nodenames:
@@ -3692,7 +3699,7 @@ class Node(Crypt, ExtConfigMixin):
             out.append((
                 " "+colorize(key, color.BOLD),
                 state,
-                status,
+                fmt_proc(_data) + status,
             ))
 
         def load_listener(key, _data):
@@ -3703,7 +3710,7 @@ class Node(Crypt, ExtConfigMixin):
             out.append((
                 " "+colorize(key, color.BOLD),
                 state,
-                _data["config"]["addr"]+":"+str(_data["config"]["port"]),
+                fmt_proc(_data) + _data["config"]["addr"]+":"+str(_data["config"]["port"]),
             ))
 
         def load_scheduler(key, _data):
@@ -3720,7 +3727,7 @@ class Node(Crypt, ExtConfigMixin):
             out.append((
                 " "+colorize(key, color.BOLD),
                 state,
-                status,
+                fmt_proc(_data) + status,
             ))
 
         def load_collector(key, _data):
@@ -3731,7 +3738,7 @@ class Node(Crypt, ExtConfigMixin):
             line = [
                 " "+colorize(key, color.BOLD),
                 state,
-                "",
+                fmt_proc(_data),
                 "|",
             ]
             for nodename in nodenames:
@@ -3752,6 +3759,7 @@ class Node(Crypt, ExtConfigMixin):
             out.append((
                 " "+colorize(key, color.BOLD),
                 state,
+                fmt_proc(_data),
             ))
 
         if six.PY2:
@@ -4891,3 +4899,25 @@ class Node(Crypt, ExtConfigMixin):
                 return ofile.read()
         except Exception:
             return
+
+    @staticmethod
+    def cpu_time(stat_path='/proc/stat'):
+        return 0.0
+
+    @staticmethod
+    def pid_cpu_time(pid):
+        return 0.0
+
+    def pid_usage(self, pid, prev):
+        if pid is None:
+            return 0.0
+        try:
+            cpu_time = self.cpu_time()
+            pid_cpu_time = self.pid_cpu_time(pid)
+            cpu = (pid_cpu_time - prev.pid_cpu_time) / (cpu_time - prev.cpu_time) * 100
+        except Exception as exc:
+            cpu = 0.0
+        prev.cpu_time = cpu_time
+        prev.pid_cpu_time = pid_cpu_time
+        return cpu
+
