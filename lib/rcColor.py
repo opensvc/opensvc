@@ -130,6 +130,28 @@ def format_json(d):
         kwargs["ensure_ascii"] = True
         print(colorize_json(json.dumps(d, **kwargs)))
 
+def format_flat_json(d):
+    out = {}
+
+    def flatten(x, name=''):
+        if isinstance(x, dict):
+            for a, v in x.items():
+                a = str(a)
+                if "#" in a or "." in a or "$" in a:
+                    a = "'"+a+"'"
+                flatten(v, name="%s.%s" % (name, a))
+        elif isinstance(x, list):
+            i = 0
+            for a in x:
+                flatten(a, name="%s[%d]" % (name, i))
+                i += 1
+        else:
+            out[name] = x
+
+    flatten(d)
+    for k, v in out.items():
+        print(k, "=", v)
+
 def format_table(d):
     from rcPrintTable import print_table_tabulate
     print_table_tabulate(d)
@@ -274,6 +296,8 @@ def formatter(fn):
         _fmt_kwargs = {}
         if fmt == "json":
             _fmt = format_json
+        elif fmt == "flat_json":
+            _fmt = format_flat_json
         elif fmt == "table":
             _fmt = format_table
         elif fmt == "csv":
