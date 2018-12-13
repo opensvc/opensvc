@@ -43,6 +43,19 @@ def convert_shlex(s):
     else:
         return shlex.split(s)
 
+def convert_expanded_shlex(s):
+    args = convert_shlex(s)
+    if s is None:
+        return
+    new_args = []
+    for arg in args:
+        if arg and len(arg) > 2 and "=" not in arg and arg[0] == "-" and arg[1] != "-":
+            for flag in arg[1:]:
+                new_args.append("-"+flag)
+        else:
+            new_args.append(arg)
+    return new_args
+
 def convert_integer(s):
     """
     Return <s> cast to int.
@@ -132,6 +145,15 @@ def convert_boolean(s):
     if s in false_vals:
         return False
     raise ValueError('convert boolean error: ' + s)
+
+def convert_tristate(s):
+    """
+    A tri-state returns None for None, True for true values,
+    False for false values.
+    """
+    if s is None:
+        return
+    return convert_boolean(s)
 
 def convert_duration_minute(s):
     return convert_duration(s, _from="m")
