@@ -7,6 +7,7 @@ import threading
 import struct
 import uuid
 import json
+import time
 
 import rcExceptions as ex
 import osvcd_shared as shared
@@ -51,6 +52,10 @@ class HbMcast(Hb):
         self._configure()
 
     def _configure(self):
+        pass
+
+    def apply_changes(self):
+        changed = False
         self.get_hb_nodes()
         prev = {
             "port": self.port,
@@ -86,10 +91,13 @@ class HbMcast(Hb):
         changes = []
         for key, val in prev.items():
             new_val = getattr(self, key)
-            if val is not None and val != new_val:
-                changes.append("%s %s => %s" % (key, val, getattr(self, key)))
+            if val != new_val:
+                changed = True
+                if val is not None:
+                    changes.append("%s %s => %s" % (key, val, new_val))
         if changes:
             self.log.info(", ".join(changes))
+        return changed
 
     def set_if(self):
         if self.intf == "any":
@@ -118,7 +126,9 @@ class HbMcastTx(HbMcast):
         HbMcast.__init__(self, name, role="tx")
 
     def _configure(self):
-        HbMcast._configure(self)
+        changed = self.apply_changes()
+        if not changed:
+            return
         if self.sock:
             try:
                 self.sock.close()
@@ -138,6 +148,7 @@ class HbMcastTx(HbMcast):
             raise ex.excAbortAction
 
     def run(self):
+        self.set_tid()
         try:
             self.configure()
         except ex.excAbortAction:
@@ -203,27 +214,36 @@ class HbMcastRx(HbMcast):
         HbMcast.__init__(self, name, role="rx")
 
     def _configure(self):
-        HbMcast._configure(self)
+        changed = self.apply_changes()
+        if not changed:
+            return
         if self.sock:
             try:
                 self.sock.close()
             except:
                 pass
-        try:
-            addrinfo = socket.getaddrinfo(self.addr, None)[0]
-            self.addr = addrinfo[4][0]
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.set_if()
-            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, self.mreq)
-            self.sock.bind(('', self.port))
-            self.sock.settimeout(2)
-            self.log.info("listening on %s:%s", self.addr, self.port)
-        except socket.error as exc:
-            self.log.error("init error: %s", str(exc))
-            raise ex.excAbortAction
+        for _ in range(3):
+            try:
+                self.configure_listener()
+                return
+            except socket.error as exc:
+                time.sleep(1)
+        self.log.error("init error: %s", str(exc))
+        raise ex.excAbortAction
+
+    def configure_listener(self):
+        addrinfo = socket.getaddrinfo(self.addr, None)[0]
+        self.addr = addrinfo[4][0]
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.set_if()
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, self.mreq)
+        self.sock.bind(('', self.port))
+        self.sock.settimeout(2)
+        self.log.info("listening on %s:%s", self.addr, self.port)
 
     def run(self):
+        self.set_tid()
         try:
             self.configure()
         except ex.excAbortAction:
