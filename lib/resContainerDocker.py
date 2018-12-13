@@ -236,6 +236,8 @@ class Docker(resContainer.Container):
                 self.service_create()
                 return
             else:
+                if self.rm:
+                    self.container_rm()
                 if self.container_id is None:
                     self.unset_lazy("container_id")
                 if self.container_id is None:
