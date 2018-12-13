@@ -468,8 +468,13 @@ class Dns(shared.OsvcThread):
                                 names[name] = set()
                             names[name].add(addr)
         for i, ip in enumerate(shared.NODE.dns):
-            dns = "%s.%s." % (shared.NODE.dnsnodes[i].split(".")[0], self.cluster_name)
-            names[dns] = set([ip])
+            try:
+                dns = "%s.%s." % (shared.NODE.dnsnodes[i].split(".")[0], self.cluster_name)
+                names[dns] = set([ip])
+            except IndexError:
+                self.log.warning("dns (%s) and dnsnodes (%s) are not aligned"
+                                 "" % (shared.NODE.dns, shared.NODE.dnsnodes))
+                break
         self.set_cache("a", names)
         return names
 
