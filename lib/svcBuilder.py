@@ -1249,39 +1249,74 @@ def add_container_lxc(svc, s):
 def add_container_docker(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s, default_name=None))
-    kwargs['image'] = svc.conf_get(s, 'image')
+    kwargs["image"] = svc.conf_get(s, "image")
 
     try:
-        kwargs['run_command'] = svc.conf_get(s, 'run_command')
+        kwargs["run_command"] = svc.conf_get(s, "run_command")
     except ex.OptNotFound as exc:
         pass
 
     try:
-        kwargs['run_args'] = svc.conf_get(s, 'run_args')
+        kwargs["run_args"] = svc.conf_get(s, "run_args")
     except ex.OptNotFound as exc:
         pass
 
     try:
-        kwargs['rm'] = svc.conf_get(s, 'rm')
+        kwargs["rm"] = svc.conf_get(s, "rm")
     except ex.OptNotFound as exc:
-        kwargs['rm'] = exc.default
+        kwargs["rm"] = exc.default
 
     try:
-        kwargs['entrypoint'] = svc.conf_get(s, 'entrypoint')
+        kwargs["entrypoint"] = svc.conf_get(s, "entrypoint")
     except ex.OptNotFound as exc:
-        kwargs['entrypoint'] = exc.default
+        kwargs["entrypoint"] = exc.default
 
     try:
-        kwargs['netns'] = svc.conf_get(s, 'netns')
+        kwargs["netns"] = svc.conf_get(s, "netns")
     except ex.OptNotFound as exc:
-        kwargs['netns'] = exc.default
+        kwargs["netns"] = exc.default
 
     try:
-        kwargs['docker_service'] = svc.conf_get(s, 'docker_service')
+        kwargs["userns"] = svc.conf_get(s, "userns")
     except ex.OptNotFound as exc:
-        kwargs['docker_service'] = exc.default
+        kwargs["userns"] = exc.default
 
-    m = __import__('resContainerDocker')
+    try:
+        kwargs["pidns"] = svc.conf_get(s, "pidns")
+    except ex.OptNotFound as exc:
+        kwargs["pidns"] = exc.default
+
+    try:
+        kwargs["ipcns"] = svc.conf_get(s, "ipcns")
+    except ex.OptNotFound as exc:
+        kwargs["ipcns"] = exc.default
+
+    try:
+        kwargs["utsns"] = svc.conf_get(s, "utsns")
+    except ex.OptNotFound as exc:
+        kwargs["utsns"] = exc.default
+
+    try:
+        kwargs["privileged"] = svc.conf_get(s, "privileged")
+    except ex.OptNotFound as exc:
+        kwargs["privileged"] = exc.default
+
+    try:
+        kwargs["interactive"] = svc.conf_get(s, "interactive")
+    except ex.OptNotFound as exc:
+        kwargs["interactive"] = exc.default
+
+    try:
+        kwargs["tty"] = svc.conf_get(s, "tty")
+    except ex.OptNotFound as exc:
+        kwargs["tty"] = exc.default
+
+    try:
+        kwargs["docker_service"] = svc.conf_get(s, "docker_service")
+    except ex.OptNotFound as exc:
+        kwargs["docker_service"] = exc.default
+
+    m = __import__("resContainerDocker")
     r = m.Docker(**kwargs)
     svc += r
 

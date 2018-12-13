@@ -2,7 +2,6 @@
 Docker container resource driver module.
 """
 import os
-import shlex
 
 import resources
 import resContainer
@@ -11,6 +10,18 @@ import rcStatus
 from rcUtilitiesLinux import check_ping
 from rcUtilities import justcall, lazy, drop_option, has_option, get_option
 from rcGlobalEnv import rcEnv
+
+ATTR_MAP = {
+    "privileged": ["HostConfig", "Privileged"],
+    "interactive": ["Config", "OpenStdin"],
+    "tty": ["Config", "Tty"],
+#    "rm": ["HostConfig", "AutoRemove"],
+    "netns": ["HostConfig", "NetworkMode"],
+    "pidns": ["HostConfig", "PidMode"],
+    "ipcns": ["HostConfig", "IpcMode"],
+    "utsns": ["HostConfig", "UTSMode"],
+    "userns": ["HostConfig", "UsernsMode"],
+}
 
 class Docker(resContainer.Container):
     """
@@ -28,6 +39,13 @@ class Docker(resContainer.Container):
                  entrypoint=None,
                  rm=None,
                  netns=None,
+                 userns=None,
+                 pidns=None,
+                 utsns=None,
+                 ipcns=None,
+                 privileged=None,
+                 interactive=None,
+                 tty=None,
                  guestos="Linux",
                  osvc_root_path=None,
                  **kwargs):
@@ -45,6 +63,13 @@ class Docker(resContainer.Container):
         self.entrypoint = entrypoint
         self.rm = rm
         self.netns = netns
+        self.userns = userns
+        self.pidns = pidns
+        self.utsns = utsns
+        self.ipcns = ipcns
+        self.privileged = privileged
+        self.interactive = interactive
+        self.tty = tty
         self.docker_service = docker_service
 
     @lazy
@@ -320,7 +345,7 @@ class Docker(resContainer.Container):
         if self.run_args is None:
             args = []
         else:
-            args = shlex.split(self.run_args)
+            args = [] + self.run_args
 
         # drop user specified --name. we set ours already
         args = drop_option("--name", args, drop_value=True)
@@ -341,19 +366,61 @@ class Docker(resContainer.Container):
             if self.netns.startswith("container#"):
                 res = self.svc.get_resource(self.netns)
                 if res is None:
-                    raise ex.excError("resource %s, referenced in %s.net, does not exist" % (self.netns, self.rid))
+                    raise ex.excError("resource %s, referenced in %s.netns, does not exist" % (self.netns, self.rid))
                 args += ["--net=container:"+res.container_name]
             else:
                 args += ["--net="+self.netns]
         elif not has_option("--net", args):
             args += ["--net=none"]
 
-        if self.rm:
-            if has_option("--rm", args) and \
-               self.svc.dockerlib.docker_min_version("1.13"):
-                args += ["--rm"]
-        elif self.rm is False:
-            drop_option("--rm", args, drop_value=False)
+        if self.pidns:
+            args = drop_option("--pid", args, drop_value=True)
+            if self.pidns.startswith("container#"):
+                res = self.svc.get_resource(self.netns)
+                if res is None:
+                    raise ex.excError("resource %s, referenced in %s.pidns, does not exist" % (self.pidns, self.rid))
+                args += ["--pid=container:"+res.container_name]
+            else:
+                args += ["--pid="+self.pidns]
+
+        if self.ipcns:
+            args = drop_option("--ipc", args, drop_value=True)
+            if self.ipcns.startswith("container#"):
+                res = self.svc.get_resource(self.netns)
+                if res is None:
+                    raise ex.excError("resource %s, referenced in %s.ipcns, does not exist" % (self.ipcns, self.rid))
+                args += ["--ipc=container:"+res.container_name]
+            else:
+                args += ["--ipc="+self.ipcns]
+
+        if self.utsns == "host":
+            args = drop_option("--uts", args, drop_value=True)
+            args += ["--uts=host"]
+
+        if self.userns is not None:
+            args = drop_option("--userns", args, drop_value=True)
+        if self.userns == "host":
+            args += ["--userns=host"]
+
+        if self.privileged is not None:
+            args = drop_option("--privileged", args, drop_value=False)
+        if self.privileged:
+            args += ["--privileged"]
+
+        print(self.interactive)
+        if self.interactive is not None:
+            args = drop_option("--interactive", args, drop_value=False)
+            args = drop_option("-i", args, drop_value=False)
+        if self.interactive:
+            args += ["--interactive"]
+
+        if self.tty is not None:
+            args = drop_option("--tty", args, drop_value=False)
+            args = drop_option("-t", args, drop_value=False)
+        if self.tty:
+            args += ["--tty"]
+
+        drop_option("--rm", args, drop_value=False)
 
         for arg, pos in enumerate(args):
             if arg != '-p':
@@ -477,7 +544,7 @@ class Docker(resContainer.Container):
             return len(self.svc.drpnodes)
 
     def run_args_replicas(self):
-        elements = self.run_args.split()
+        elements = self._add_run_args()
         if "--mode" in elements:
             idx = elements.index("--mode")
             if "=" in elements[idx]:
@@ -591,6 +658,37 @@ class Docker(resContainer.Container):
             self.status_log("the current container is based on image '%s' "
                             "instead of '%s'"%(running_image_id, image_id))
 
+    def _status_inspect(self):
+        def get(path, data=None):
+            if data is None:
+                data = self.svc.dockerlib.docker_inspect(self.container_id)
+            try:
+                return get(path[1:], data[path[0]])
+            except IndexError:
+                return data[path[0]]
+        def validate(attr, path):
+            target = getattr(self, attr)
+            if target is None:
+                return
+            try:
+                if target.startswith("container#"):
+                    res = self.svc.get_resource(target)
+                    target = "container:" + res.container_id
+            except Exception as exc:
+                pass
+            try:
+                current = get(path)
+            except KeyError:
+                print(path, "not found")
+                return
+            if current != target:
+                self.status_log("%s=%s, but %s=%s" % \
+                                (".".join(path), current, attr, target))
+        if get(["State", "Status"]) != "running":
+            return
+        for attr, path in ATTR_MAP.items():
+            validate(attr, path)
+
     def _status(self, verbose=False):
         try:
             self.svc.dockerlib.docker_exe
@@ -623,6 +721,7 @@ class Docker(resContainer.Container):
         else:
             sta = resContainer.Container._status(self, verbose)
             self._status_container_image()
+            self._status_inspect()
 
         return sta
 

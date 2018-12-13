@@ -266,9 +266,8 @@ KEYWORDS = [
         "keyword": "rm",
         "at": True,
         "rtype": "docker",
-        "default": None,
+        "default": False,
         "convert": "boolean",
-        "candidates": (True, False, None),
         "text": "If set to True, add --rm to the docker run args and make sure the instance is removed on resource stop.",
         "example": False
     },
@@ -277,7 +276,68 @@ KEYWORDS = [
         "keyword": "netns",
         "at": True,
         "rtype": "docker",
-        "text": "Sets the docker run --net argument. The default is ``none`` if --net is not specified in run_args, meaning the container will have a private netns other containers can share. A ip.netns or ip.cni resource can configure an ip address in this container. A container with netns=container#0 will share the container#9 netns. In this case agent format a --net=container:<name of container#1 docker instance>.",
+        "text": "Sets the docker run --net argument. The default is ``none`` if --net is not specified in run_args, meaning the container will have a private netns other containers can share. A ip.netns or ip.cni resource can configure an ip address in this container. A container with netns=container#0 will share the container#0 netns. In this case agent format a --net=container:<name of container#0 docker instance>. netns=host shares the host netns.",
+        "example": "container#0"
+    },
+    {
+        "section": "container",
+        "keyword": "userns",
+        "at": True,
+        "rtype": "docker",
+        "candidates": ("host", None),
+        "text": "Sets the docker run --userns argument. If not set, the container will have a private userns other containers can share. A container with userns=host will share the host's userns.",
+        "example": "container#0"
+    },
+    {
+        "section": "container",
+        "keyword": "pidns",
+        "at": True,
+        "rtype": "docker",
+        "text": "Sets the docker run --pid argument. If not set, the container will have a private pidns other containers can share. Usually a pidns sharer will run a google/pause image to reap zombies. A container with pidns=container#0 will share the container#0 pidns. In this case agent format a --pid=container:<name of container#0 docker instance>. Use pidns=host to share the host's pidns.",
+        "example": "container#0"
+    },
+    {
+        "section": "container",
+        "keyword": "ipcns",
+        "at": True,
+        "rtype": "docker",
+        "text": "Sets the docker run --ipc argument. If not set, the docker daemon's default value is used. ipcns=none does not mount /dev/shm. ipcns=private creates a ipcns other containers can not share. ipcns=shareable creates a netns other containers can share. ipcns=container#0 will share the container#0 ipcns.",
+        "example": "container#0"
+    },
+    {
+        "section": "container",
+        "keyword": "utsns",
+        "at": True,
+        "rtype": "docker",
+        "candidates": (None, "host"),
+        "text": "Sets the docker run --uts argument. If not set, the container will have a private utsns. A container with utsns=host will share the host's hostname.",
+        "example": "container#0"
+    },
+    {
+        "section": "container",
+        "keyword": "privileged",
+        "at": True,
+        "rtype": "docker",
+        "convert": "tristate",
+        "text": "Give extended privileges to the container.",
+        "example": "container#0"
+    },
+    {
+        "section": "container",
+        "keyword": "interactive",
+        "at": True,
+        "rtype": "docker",
+        "convert": "tristate",
+        "text": "Keep stdin open even if not attached. To use if the container entrypoint is a shell.",
+        "example": "container#0"
+    },
+    {
+        "section": "container",
+        "keyword": "tty",
+        "at": True,
+        "rtype": "docker",
+        "convert": "tristate",
+        "text": "Allocate a pseudo-tty.",
         "example": "container#0"
     },
     {
@@ -321,6 +381,7 @@ KEYWORDS = [
         "keyword": "run_args",
         "at": True,
         "rtype": "docker",
+        "convert": "expanded_shlex",
         "text": "Extra arguments to pass to the docker run command, like volume and port mappings.",
         "example": "-v /opt/docker.opensvc.com/vol1:/vol1:rw -p 37.59.71.25:8080:8080"
     },

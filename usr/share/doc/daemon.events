@@ -46,6 +46,11 @@ Id ``resource_toc``
 
 toc for resource {rid} ({resource.label}) {resource.status} {resource.log}
 
+Id ``service_config_installed``
+-------------------------------
+
+config fetched from node {from} is now installed
+
 Id ``node_thaw``
 ----------------
 
@@ -70,11 +75,6 @@ Id ``resource_restart``
 -----------------------
 
 restart resource {rid} ({resource.label}) {resource.status} {resource.log}, try {try}/{restart}
-
-Id ``service_config_installed``
--------------------------------
-
-config fetched from node {from} is now installed
 
 Id ``arbitrator_down``
 ----------------------
