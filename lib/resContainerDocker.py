@@ -2,6 +2,7 @@
 Docker container resource driver module.
 """
 import os
+import shlex
 
 import resources
 import resContainer
@@ -12,15 +13,37 @@ from rcUtilities import justcall, lazy, drop_option, has_option, get_option
 from rcGlobalEnv import rcEnv
 
 ATTR_MAP = {
-    "privileged": ["HostConfig", "Privileged"],
-    "interactive": ["Config", "OpenStdin"],
-    "tty": ["Config", "Tty"],
-#    "rm": ["HostConfig", "AutoRemove"],
-    "netns": ["HostConfig", "NetworkMode"],
-    "pidns": ["HostConfig", "PidMode"],
-    "ipcns": ["HostConfig", "IpcMode"],
-    "utsns": ["HostConfig", "UTSMode"],
-    "userns": ["HostConfig", "UsernsMode"],
+    "privileged": {
+        "path": ["HostConfig", "Privileged"],
+    },
+    "interactive": {
+        "path": ["Config", "OpenStdin"],
+    },
+    "entrypoint": {
+        "path": ["Config", "Entrypoint"],
+        "mangle_attr": lambda x: shlex.split(x),
+    },
+    "tty": {
+        "path": ["Config", "Tty"],
+    },
+#    "rm": {
+#        "path": ["HostConfig", "AutoRemove"],
+#    },
+    "netns": {
+        "path": ["HostConfig", "NetworkMode"],
+    },
+    "pidns": {
+        "path": ["HostConfig", "PidMode"],
+    },
+    "ipcns": {
+        "path": ["HostConfig", "IpcMode"],
+    },
+    "utsns": {
+        "path": ["HostConfig", "UTSMode"],
+    },
+    "userns": {
+        "path": ["HostConfig", "UsernsMode"],
+    },
 }
 
 class Docker(resContainer.Container):
@@ -666,10 +689,12 @@ class Docker(resContainer.Container):
                 return get(path[1:], data[path[0]])
             except IndexError:
                 return data[path[0]]
-        def validate(attr, path):
+        def validate(attr, data):
             target = getattr(self, attr)
             if target is None:
                 return
+            if "mangle_attr" in data:
+                target = data["mangle_attr"](target)
             try:
                 if target.startswith("container#"):
                     res = self.svc.get_resource(target)
@@ -677,17 +702,16 @@ class Docker(resContainer.Container):
             except Exception as exc:
                 pass
             try:
-                current = get(path)
+                current = get(data["path"])
             except KeyError:
-                print(path, "not found")
                 return
             if current != target:
                 self.status_log("%s=%s, but %s=%s" % \
-                                (".".join(path), current, attr, target))
+                                (".".join(data["path"]), current, attr, target))
         if get(["State", "Status"]) != "running":
             return
-        for attr, path in ATTR_MAP.items():
-            validate(attr, path)
+        for attr, data in ATTR_MAP.items():
+            validate(attr, data)
 
     def _status(self, verbose=False):
         try:
