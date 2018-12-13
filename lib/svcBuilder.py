@@ -313,9 +313,9 @@ def add_ip(svc, s):
 
     if rtype in ("netns", "docker"):
         try:
-            kwargs['container_rid'] = svc.conf_get(s, 'container_rid')
+            kwargs['netns'] = svc.conf_get(s, 'netns')
         except ex.OptNotFound as exc:
-            kwargs['container_rid'] = exc.default
+            kwargs['netns'] = exc.default
         try:
             kwargs['mode'] = svc.conf_get(s, 'mode')
         except ex.OptNotFound as exc:
@@ -344,7 +344,7 @@ def add_ip(svc, s):
         except ex.OptNotFound as exc:
             kwargs['network'] = exc.default
         try:
-            kwargs['container_rid'] = svc.conf_get(s, 'container_rid')
+            kwargs['netns'] = svc.conf_get(s, 'netns')
         except ex.OptNotFound as exc:
             pass
 
@@ -1272,9 +1272,9 @@ def add_container_docker(svc, s):
         kwargs['entrypoint'] = exc.default
 
     try:
-        kwargs['net'] = svc.conf_get(s, 'net')
+        kwargs['netns'] = svc.conf_get(s, 'netns')
     except ex.OptNotFound as exc:
-        kwargs['net'] = exc.default
+        kwargs['netns'] = exc.default
 
     try:
         kwargs['docker_service'] = svc.conf_get(s, 'docker_service')

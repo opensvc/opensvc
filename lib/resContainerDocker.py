@@ -27,7 +27,7 @@ class Docker(resContainer.Container):
                  docker_service=False,
                  entrypoint=None,
                  rm=None,
-                 net=None,
+                 netns=None,
                  guestos="Linux",
                  osvc_root_path=None,
                  **kwargs):
@@ -44,7 +44,7 @@ class Docker(resContainer.Container):
         self.run_args = run_args
         self.entrypoint = entrypoint
         self.rm = rm
-        self.net = net
+        self.netns = netns
         self.docker_service = docker_service
 
     @lazy
@@ -335,16 +335,16 @@ class Docker(resContainer.Container):
             args = drop_option("--entrypoint", args, drop_value=True)
             args += ["--entrypoint", self.entrypoint]
 
-        if self.net:
+        if self.netns:
             args = drop_option("--net", args, drop_value=True)
             args = drop_option("--network", args, drop_value=True)
-            if self.net.startswith("container#"):
-                res = self.svc.get_resource(self.net)
+            if self.netns.startswith("container#"):
+                res = self.svc.get_resource(self.netns)
                 if res is None:
-                    raise ex.excError("resource %s, referenced in %s.net, does not exist" % (self.net, self.rid))
+                    raise ex.excError("resource %s, referenced in %s.net, does not exist" % (self.netns, self.rid))
                 args += ["--net=container:"+res.container_name]
             else:
-                args += ["--net="+self.net]
+                args += ["--net="+self.netns]
         elif not has_option("--net", args):
             args += ["--net=none"]
 
@@ -465,7 +465,7 @@ class Docker(resContainer.Container):
         data.append([self.rid, "run_args", " ".join(self._add_run_args())])
         data.append([self.rid, "run_command", str(self.run_command)])
         data.append([self.rid, "rm", str(self.rm)])
-        data.append([self.rid, "net", str(self.net)])
+        data.append([self.rid, "netns", str(self.netns)])
         if not self.docker_service:
             data.append([self.rid, "container_name", str(self.container_name)])
         return data
