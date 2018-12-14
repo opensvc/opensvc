@@ -29,7 +29,7 @@ class ExtConfigMixin(object):
     def unset(self):
         """
         The 'unset' action entrypoint.
-        Verifies the --param and --value are set, and finally call the _unset
+        Verifies the --param is set, and finally call the _unset
         internal method.
         """
         if self.options.kw:
