@@ -221,7 +221,7 @@ class Ip(Res.Ip):
                 return ret, out, err
 
         # announce
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, os.path.join(rcEnv.paths.pathlib, "arp.py"), self.guest_dev, self.addr]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns] + rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "arp.py"), self.guest_dev, self.addr]
         self.log.info(" ".join(cmd))
         out, err, ret = justcall(cmd)
 
@@ -454,7 +454,7 @@ class Ip(Res.Ip):
                 return ret, out, err
 
         # announce
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, os.path.join(rcEnv.paths.pathlib, "arp.py"), self.guest_dev, self.addr]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns] + rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "arp.py"), self.guest_dev, self.addr]
         self.log.info(" ".join(cmd))
         out, err, ret = justcall(cmd)
 
