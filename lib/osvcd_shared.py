@@ -165,6 +165,8 @@ class OsvcThread(threading.Thread, Crypt):
         self.procs = []
         self.tid = None
         self.thread_stats_data = None
+        self.cpu_time = None
+        self.pid_cpu_time = None
 
         # hash for log dups avoiding
         self.duplog_data = {}
@@ -242,7 +244,6 @@ class OsvcThread(threading.Thread, Crypt):
             self.cpu_time = 0.0
             self.pid_cpu_time = 0.0
         self.thread_stats_data = {"cpu": cpu}
-
 
     def set_tid(self):
         self.tid = NODE.get_tid()
