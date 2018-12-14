@@ -47,9 +47,10 @@ def setup_parser(node):
     parser.add_option("-w", "--watch", default=False,
                       action="store_true", dest="watch",
                       help="refresh the information every --interval.")
-    parser.add_option("-i", "--interval", default=2, action="store",
+    parser.add_option("-i", "--interval", default=0, action="store",
                       dest="interval", type="int",
-                      help="with --watch, set the refresh interval.")
+                      help="with --watch, set the refresh interval. defaults "
+                           "to 0, to refresh on event only.")
     parser.add_option(
         "-s", "--service", default=None,
         action="store", dest="parm_svcs",
@@ -94,6 +95,7 @@ def _main(node, argv=None):
     node.check_privs(argv)
     rcColor.use_color = options.color
     chars = 0
+    last_refresh = 0
 
     if options.parm_svcs:
         expanded_svcs = node.svcs_selector(options.parm_svcs)
@@ -111,11 +113,12 @@ def _main(node, argv=None):
         if outs is not None:
             print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
         while True:
+            now = time.time()
             try:
                 EVENT.wait(0.5)
             except Exception:
                 break
-            if not EVENT.is_set():
+            if not EVENT.is_set() and (not options.interval or now - last_refresh < options.interval):
                 continue
             EVENT.clear()
             if chars == 0:
@@ -126,6 +129,7 @@ def _main(node, argv=None):
             if outs is not None:
                 print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
             # min delay
+            last_refresh = now
             time.sleep(0.2)
     else:
         preamble = ""
