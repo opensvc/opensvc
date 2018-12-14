@@ -88,6 +88,7 @@ class Listener(shared.OsvcThread):
         self.setup_sockux()
 
     def run(self):
+        self.set_tid()
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.listener")
         self.events_clients = []
         self.stats = Storage({

@@ -31,6 +31,7 @@ class Dns(shared.OsvcThread):
     sock_tmo = 1.0
 
     def run(self):
+        self.set_tid()
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.dns")
         self.cache = {}
         if not os.path.exists(rcEnv.paths.dnsuxsockd):

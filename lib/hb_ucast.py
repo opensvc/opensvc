@@ -99,6 +99,7 @@ class HbUcastTx(HbUcast):
         HbUcast.__init__(self, name, role="tx")
 
     def run(self):
+        self.set_tid()
         try:
             self.configure()
         except ex.excAbortAction:
@@ -191,6 +192,7 @@ class HbUcastRx(HbUcast):
         self.sock.settimeout(2)
 
     def run(self):
+        self.set_tid()
         try:
             self.configure()
         except ex.excAbortAction:

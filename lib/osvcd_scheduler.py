@@ -42,6 +42,7 @@ class Scheduler(shared.OsvcThread):
         return data
 
     def run(self):
+        self.set_tid()
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.scheduler")
         self.log.info("scheduler started")
         if hasattr(os, "devnull"):

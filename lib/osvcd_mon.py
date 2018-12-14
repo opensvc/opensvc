@@ -74,6 +74,7 @@ class Monitor(shared.OsvcThread):
         self.last_node_data = None
 
     def run(self):
+        self.set_tid()
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
         self.event("monitor_started")
         self.startup = datetime.datetime.utcnow()

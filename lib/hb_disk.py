@@ -230,6 +230,7 @@ class HbDiskTx(HbDisk):
             self.allocate_slot()
 
     def run(self):
+        self.set_tid()
         try:
             self.configure()
         except ex.excAbortAction as exc:
@@ -289,6 +290,7 @@ class HbDiskRx(HbDisk):
         self.last_updated = {}
 
     def run(self):
+        self.set_tid()
         try:
             self.configure()
         except ex.excAbortAction as exc:

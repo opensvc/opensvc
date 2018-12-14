@@ -1,3 +1,5 @@
+from itertools import islice
+from rcUtilitiesLinux import get_tid
 import node
 
 class Node(node.Node):
@@ -34,3 +36,21 @@ class Node(node.Node):
             data["swap_avail"] = 0
         return data
 
+    @staticmethod
+    def get_tid():
+        return get_tid()
+
+    @staticmethod
+    def cpu_time(stat_path='/proc/stat'):
+        with open(stat_path) as stat_file:
+            cpu_stat_line = next(stat_file)
+        return sum(float(time) for time in
+                islice(cpu_stat_line.split(), 1, 9))
+
+    @staticmethod
+    def pid_cpu_time(pid):
+        stat_path = "/proc/%d/stat" % pid
+        with open(stat_path) as stat_file:
+            cpu_stat_line = next(stat_file)
+        return sum(float(time) for time in
+                islice(cpu_stat_line.split(), 13, 14))

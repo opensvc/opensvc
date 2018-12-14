@@ -1,3 +1,4 @@
+import ctypes
 import os
 import re
 import glob
@@ -8,6 +9,11 @@ from rcUtilities import call, qcall, justcall, which
 import rcExceptions as ex
 
 label_to_dev_cache = {}
+libc = ctypes.cdll.LoadLibrary("libc.so.6")
+SYS_gettid = 186
+
+def get_tid():
+    return libc.syscall(SYS_gettid)
 
 def udevadm_settle():
     if not which("udevadm"):

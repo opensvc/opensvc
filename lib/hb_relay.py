@@ -72,6 +72,7 @@ class HbRelayTx(HbRelay):
         HbRelay._configure(self)
 
     def run(self):
+        self.set_tid()
         self.flags = os.O_RDWR
         try:
             self.configure()
@@ -138,6 +139,7 @@ class HbRelayRx(HbRelay):
         self.last_updated = {}
 
     def run(self):
+        self.set_tid()
         self.flags = os.O_RDWR
         try:
             self.configure()

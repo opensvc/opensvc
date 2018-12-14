@@ -163,6 +163,7 @@ class OsvcThread(threading.Thread, Crypt):
         self.created = time.time()
         self.threads = []
         self.procs = []
+        self.tid = None
 
         # hash for log dups avoiding
         self.duplog_data = {}
@@ -220,7 +221,12 @@ class OsvcThread(threading.Thread, Crypt):
             "created": datetime.datetime.utcfromtimestamp(self.created)
                                .strftime(JSON_DATEFMT),
         })
+        if self.tid:
+            data["tid"] = self.tid
         return data
+
+    def set_tid(self):
+        self.tid = NODE.get_tid()
 
     def has_proc(self, cmd):
         for proc in self.procs:

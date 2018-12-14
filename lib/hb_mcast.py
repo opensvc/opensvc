@@ -148,6 +148,7 @@ class HbMcastTx(HbMcast):
             raise ex.excAbortAction
 
     def run(self):
+        self.set_tid()
         try:
             self.configure()
         except ex.excAbortAction:
@@ -242,6 +243,7 @@ class HbMcastRx(HbMcast):
         self.log.info("listening on %s:%s", self.addr, self.port)
 
     def run(self):
+        self.set_tid()
         try:
             self.configure()
         except ex.excAbortAction:
