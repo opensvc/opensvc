@@ -13,6 +13,10 @@ from rcUtilities import justcall, lazy, drop_option, has_option, get_option
 from rcGlobalEnv import rcEnv
 
 ATTR_MAP = {
+    "hostname": {
+        "attr": "vm_hostname",
+        "path": ["Config", "Hostname"],
+    },
     "privileged": {
         "path": ["HostConfig", "Privileged"],
     },
@@ -682,16 +686,19 @@ class Docker(resContainer.Container):
                             "instead of '%s'"%(running_image_id, image_id))
 
     def _status_inspect(self):
+        try:
+            inspect_data = self.svc.dockerlib.docker_inspect(self.container_id)
+        except Exception:
+            return
         def get(path, data=None):
-            if data is None:
-                data = self.svc.dockerlib.docker_inspect(self.container_id)
             try:
                 return get(path[1:], data[path[0]])
             except IndexError:
                 return data[path[0]]
         def validate(attr, data):
-            target = getattr(self, attr)
-            if target is None:
+            _attr = data.get("attr", attr)
+            target = getattr(self, _attr)
+            if not target:
                 return
             if "mangle_attr" in data:
                 target = data["mangle_attr"](target)
@@ -702,13 +709,13 @@ class Docker(resContainer.Container):
             except Exception as exc:
                 pass
             try:
-                current = get(data["path"])
+                current = get(data["path"], inspect_data)
             except KeyError:
                 return
             if current != target:
                 self.status_log("%s=%s, but %s=%s" % \
                                 (".".join(data["path"]), current, attr, target))
-        if get(["State", "Status"]) != "running":
+        if get(["State", "Status"], inspect_data) != "running":
             return
         for attr, data in ATTR_MAP.items():
             validate(attr, data)
