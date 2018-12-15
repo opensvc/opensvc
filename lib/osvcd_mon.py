@@ -4,7 +4,6 @@ Monitor Thread
 import os
 import sys
 import time
-import datetime
 import codecs
 import glob
 import logging
@@ -77,7 +76,7 @@ class Monitor(shared.OsvcThread):
         self.set_tid()
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
         self.event("monitor_started")
-        self.startup = datetime.datetime.utcnow()
+        self.startup = time.time()
         self.rejoin_grace_period_expired = False
         self.shortloops = 0
         self.unfreeze_when_all_nodes_joined = False
@@ -206,7 +205,7 @@ class Monitor(shared.OsvcThread):
             if new_service:
                 ref_conf = Storage({
                     "csum": "",
-                    "updated": "0",
+                    "updated": 0,
                 })
                 ref_nodename = rcEnv.nodename
             else:
@@ -1585,8 +1584,8 @@ class Monitor(shared.OsvcThread):
             self.end_rejoin_grace_period("now rejoined")
             self.merge_frozen()
             return False
-        now = datetime.datetime.utcnow()
-        if now > self.startup + datetime.timedelta(seconds=self.rejoin_grace_period):
+        now = time.time()
+        if now > self.startup + self.rejoin_grace_period:
             self.end_rejoin_grace_period("expired, but some nodes are still "
                                          "unreacheable. freeze node.")
             self.event("node_freeze", data={"reason": "rejoin_expire"})
@@ -2246,8 +2245,8 @@ class Monitor(shared.OsvcThread):
     #
     #########################################################################
     def status_older_than_cf(self, svcname):
-        status_age = shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("status", {}).get(svcname, {}).get("updated", "0")
-        config_age = shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("config", {}).get(svcname, {}).get("updated", "0")
+        status_age = shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("status", {}).get(svcname, {}).get("updated", 0)
+        config_age = shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("config", {}).get(svcname, {}).get("updated", 0)
         return status_age < config_age
 
     def service_instances_frozen(self, svcname):
@@ -2389,13 +2388,12 @@ class Monitor(shared.OsvcThread):
             if os.name == "posix" and not os.path.exists(linkp):
                 continue
             try:
-                mtimestamp = os.path.getmtime(cfg)
+                config_mtime = os.path.getmtime(cfg)
             except Exception as exc:
                 self.log.warning("failed to get %s mtime: %s", cfg, str(exc))
-                mtimestamp = 0
-            mtime = datetime.datetime.utcfromtimestamp(mtimestamp)
+                config_mtime = 0
             last_config = self.get_last_svc_config(svcname)
-            if last_config is None or mtime > datetime.datetime.strptime(last_config["updated"], shared.DATEFMT):
+            if last_config is None or config_mtime > last_config["updated"]:
                 self.log.debug("compute service %s config checksum", svcname)
                 try:
                     csum = fsum(cfg)
@@ -2415,7 +2413,7 @@ class Monitor(shared.OsvcThread):
                     self.log.info("service %s configuration change" % svcname)
                 try:
                     status_mtime = os.path.getmtime(shared.SERVICES[svcname].status_data_dump)
-                    if mtimestamp > status_mtime:
+                    if config_mtime > status_mtime:
                         self.log.info("service %s refresh instance status older than config", svcname)
                         self.service_status(svcname)
                 except OSError:
@@ -2423,7 +2421,7 @@ class Monitor(shared.OsvcThread):
             with shared.SERVICES_LOCK:
                 scope = sorted(list(shared.SERVICES[svcname].nodes | shared.SERVICES[svcname].drpnodes))
             config[svcname] = {
-                "updated": mtime.strftime(shared.DATEFMT),
+                "updated": config_mtime,
                 "csum": csum,
                 "scope": scope,
             }

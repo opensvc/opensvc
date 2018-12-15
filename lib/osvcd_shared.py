@@ -4,7 +4,6 @@ A module to share variables used by osvcd threads.
 import os
 import sys
 import threading
-import datetime
 import time
 import codecs
 import hashlib
@@ -26,7 +25,7 @@ from osvcd_events import EVENTS
 
 # disable orchestration if a peer announces a different compat version than
 # ours
-COMPAT_VERSION = 5
+COMPAT_VERSION = 6
 
 # the event queue to feed to clients listening for changes
 EVENT_Q = queue.Queue()
@@ -221,8 +220,7 @@ class OsvcThread(threading.Thread, Crypt):
                 state = "terminated"
         data = Storage({
             "state": state,
-            "created": datetime.datetime.utcfromtimestamp(self.created)
-                               .strftime(JSON_DATEFMT),
+            "created": time.time(),
         })
         if self.tid:
             data["tid"] = self.tid

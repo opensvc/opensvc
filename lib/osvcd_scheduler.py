@@ -5,12 +5,12 @@ import os
 import sys
 import logging
 import time
-import datetime
 from subprocess import Popen, PIPE
 
 import osvcd_shared as shared
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from converters import print_duration
 
 ACTIONS_SKIP_ON_UNPROV = [
     "sync_all",
@@ -36,8 +36,8 @@ class Scheduler(shared.OsvcThread):
             "action": action,
             "svcname": svcname,
             "rid": rid,
-            "queued": entry["queued"].strftime(shared.JSON_DATEFMT),
-            "expire": entry["expire"].strftime(shared.JSON_DATEFMT),
+            "queued": entry["queued"],
+            "expire": entry["expire"],
         } for (action, svcname, rid), entry in self.delayed.items()]
         return data
 
@@ -136,9 +136,8 @@ class Scheduler(shared.OsvcThread):
     def promote_queued_action(self, sig, delay):
         if delay == 0 and self.delayed[sig]["delay"] > 0:
             self.log.debug("promote queued action %s from delayed to asap", sig)
-            now = datetime.datetime.utcnow()
             self.delayed[sig]["delay"] = 0
-            self.delayed[sig]["expire"] = now
+            self.delayed[sig]["expire"] = time.time()
 
     def queue_action(self, action, delay=0, svcname=None, rid=None):
         sig = (action, svcname, rid)
@@ -149,8 +148,8 @@ class Scheduler(shared.OsvcThread):
             self.promote_queued_action(sig, delay)
             self.log.debug("drop already queued action %s", sig)
             return
-        now = datetime.datetime.utcnow()
-        exp = now + datetime.timedelta(seconds=delay)
+        now = time.time()
+        exp = now + delay
         self.delayed[sig] = {
             "queued": now,
             "expire": exp,
@@ -171,7 +170,7 @@ class Scheduler(shared.OsvcThread):
         todo = {}
         merge = {}
         open_slots = max(self.max_tasks() - len(self.procs), 0)
-        now = datetime.datetime.utcnow()
+        now = time.time()
         for sig, task in self.delayed.items():
             if task["expire"] > now:
                 continue
@@ -222,9 +221,10 @@ class Scheduler(shared.OsvcThread):
         delayed hash.
         """
         dequeued = []
+        now = time.time()
         for task in self.get_todo():
             cmd = self.format_cmd(task["action"], task["svcname"], task["rids"])
-            self.log.info("run '%s' queued at %s", " ".join(cmd), task["queued"])
+            self.log.info("run '%s' queued %s ago", " ".join(cmd), print_duration(now - task["queued"]))
             self.exec_action(task["sigs"], cmd)
             dequeued += task["sigs"]
         for sig in dequeued:

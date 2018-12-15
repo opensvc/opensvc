@@ -4,7 +4,6 @@ Collector Thread
 import os
 import sys
 import logging
-import datetime
 import time
 
 import osvcd_shared as shared
@@ -183,7 +182,7 @@ class Collector(shared.OsvcThread):
         except Exception as exc:
             self.log.error("call push_daemon_status: %s", exc)
             shared.NODE.collector.disable()
-        self.last_comm = datetime.datetime.utcnow()
+        self.last_comm = time.time()
 
     def ping(self, data):
         self.log.info("ping the collector")
@@ -195,7 +194,7 @@ class Collector(shared.OsvcThread):
         except Exception as exc:
             self.log.error("call daemon_ping: %s", exc)
             shared.NODE.collector.disable()
-        self.last_comm = datetime.datetime.utcnow()
+        self.last_comm = time.time()
 
     def get_data(self):
         """
@@ -263,18 +262,19 @@ class Collector(shared.OsvcThread):
 
         if self.speaker():
             last_status, last_status_changed = self.get_last_status(data)
+            now = time.time()
             self.last_status_changed += last_status_changed
             if self.last_comm is None:
                 self.send_daemon_status(data)
             elif self.last_status_changed != []:
-                if self.last_comm <= datetime.datetime.utcnow() - datetime.timedelta(seconds=self.min_update_interval):
+                if self.last_comm <= now - self.min_update_interval:
                     self.send_daemon_status(data)
                     self.last_status_changed = []
                 else:
                     # avoid storming the collector with daemon status updates
-                    #self.log.debug("last daemon status too soon: %s", self.last_comm)
+                    #self.log.debug("last daemon status too soon: %d", self.last_comm)
                     pass
-            elif self.last_comm <= datetime.datetime.utcnow() - datetime.timedelta(seconds=self.min_ping_interval):
+            elif self.last_comm <= now - self.min_ping_interval:
                 self.ping(data)
             self.last_status = last_status
 

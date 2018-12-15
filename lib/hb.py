@@ -4,7 +4,6 @@
 import logging
 import time
 import socket
-import datetime
 import struct
 
 import json_delta
@@ -69,8 +68,7 @@ class Hb(shared.OsvcThread):
                     "success": True,
                 }))
             data.peers[nodename] = {
-                "last": datetime.datetime.utcfromtimestamp(_data.last)\
-                                         .strftime('%Y-%m-%dT%H:%M:%SZ'),
+                "last": _data.last,
                 "beating": _data.beating,
             }
         return data

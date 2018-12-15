@@ -1567,8 +1567,7 @@ class Svc(Crypt, ExtConfigMixin):
         group_status = self.group_status(refresh=refresh)
 
         data = {
-            "updated": datetime.datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-            "mtime": now,
+            "updated": now,
             "app": self.app,
             "env": self.svc_env,
             "placement": self.placement,
@@ -1696,7 +1695,7 @@ class Svc(Crypt, ExtConfigMixin):
             with open(self.status_data_dump, "w") as filep:
                 json.dump(data, filep)
                 filep.flush()
-            os.utime(self.status_data_dump, (-1, data["mtime"]))
+            os.utime(self.status_data_dump, (-1, data["updated"]))
             self.wake_monitor()
         except Exception as exc:
             self.log.warning("failed to update %s: %s",
