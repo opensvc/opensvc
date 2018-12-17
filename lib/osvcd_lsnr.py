@@ -366,12 +366,6 @@ class Listener(shared.OsvcThread):
         Return a hash indexed by thead id, containing the status data
         structure of each thread.
         """
-        self.log.info("xx here")
-        try:
-            self.log.info("x1 %s", shared.DAEMON.stats())
-            self.log.info("x2 %s", shared.NODE.cpu_time())
-        except Exception as exc:
-            self.log.exception(exc)
         data = {
             "daemon": shared.DAEMON.stats(),
             "node": {
@@ -381,7 +375,6 @@ class Listener(shared.OsvcThread):
             },
             "services": {},
         }
-        self.log.info("xx %s", data)
         with shared.THREADS_LOCK:
             for thr_id, thr in shared.THREADS.items():
                 data[thr_id] = thr.thread_stats()
