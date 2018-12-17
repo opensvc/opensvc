@@ -424,15 +424,18 @@ class Ip(Res.Ip):
         return mtu
 
     def ip_setup_route(self):
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "del", "default"]
-        ret, out, err = self.call(cmd, errlog=False)
-
         cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", self.guest_dev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
-        if self.gateway:
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "list", "default"]
+        ret, out, err = self.call(cmd, errlog=False)
+        if out.startswith("default via"):
+            pass
+        elif out.startswith("default dev") and not self.gateway:
+            pass
+        elif self.gateway:
             cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "replace", "default", "via", self.gateway]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
