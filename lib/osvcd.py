@@ -151,6 +151,7 @@ class Daemon(object):
         """
         The method used as fork-point in the daemon execution mode.
         """
+        self.pid = os.getpid()
         self._run()
 
     def init_nodeconf(self):

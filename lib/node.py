@@ -3528,8 +3528,8 @@ class Node(Crypt, ExtConfigMixin):
         )
         return data
 
-    def daemon_status(self, svcnames=None, preamble="", node=None, stats=False):
-        data = self.daemon_status_str(svcnames=svcnames, preamble=preamble, node=node, stats=stats)
+    def daemon_status(self, svcnames=None, preamble="", node=None):
+        data = self.daemon_status_str(svcnames=svcnames, preamble=preamble, node=node)
         return data
 
     def daemon_status_str(self, svcnames=None, preamble="", node=None, prev_stats_data=None, stats_data=None):
@@ -3697,7 +3697,7 @@ class Node(Crypt, ExtConfigMixin):
 
         def fmt_cpu_usage(get, prev_stats_data, stats_data):
             if prev_stats_data is None:
-                return "     -"
+                return ""
             cpu = 0
             count = 0
             for _node, _stats in stats_data.items():
@@ -3711,7 +3711,7 @@ class Node(Crypt, ExtConfigMixin):
             try:
                 return "%6.1f%%" % (cpu / count)
             except Exception:
-                return ""
+                return "     -"
 
         def fmt_thr_mem_total(key, stats_data):
             return fmt_mem_total(lambda x: x[key]["mem"]["total"], stats_data)
@@ -3733,7 +3733,7 @@ class Node(Crypt, ExtConfigMixin):
             try:
                 return print_size(mem, unit="b", compact=True)
             except Exception:
-                return ""
+                return "     -"
 
         def fmt_thr_cpu_time(key, stats_data):
             return fmt_cpu_time(lambda x: x[key]["cpu"]["time"], stats_data)
@@ -3783,7 +3783,7 @@ class Node(Crypt, ExtConfigMixin):
                 state,
                 fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
                 fmt_thr_cpu_time(key, stats_data),
-                "-",
+                "",
                 config,
                 "|",
             ]
@@ -3814,7 +3814,7 @@ class Node(Crypt, ExtConfigMixin):
                 state,
                 fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
                 fmt_thr_cpu_time(key, stats_data),
-                "-",
+                "",
                 status,
             ))
 
@@ -3829,7 +3829,7 @@ class Node(Crypt, ExtConfigMixin):
                 state,
                 fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
                 fmt_thr_cpu_time(key, stats_data),
-                "-",
+                "",
                 _data["config"]["addr"]+":"+str(_data["config"]["port"]),
             ))
 
@@ -3850,7 +3850,7 @@ class Node(Crypt, ExtConfigMixin):
                 state,
                 fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
                 fmt_thr_cpu_time(key, stats_data),
-                "-",
+                "",
                 status,
             ))
 
@@ -3888,7 +3888,7 @@ class Node(Crypt, ExtConfigMixin):
                 state,
                 fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
                 fmt_thr_cpu_time(key, stats_data),
-                "-",
+                "",
                 "",
                 "|",
             ]
@@ -3913,7 +3913,7 @@ class Node(Crypt, ExtConfigMixin):
                 state,
                 fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
                 fmt_thr_cpu_time(key, stats_data),
-                "-",
+                "",
                 "",
             ))
 
