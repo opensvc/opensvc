@@ -243,7 +243,7 @@ def get_stats(o):
 def get_stats_mem(o):
     data = {}
     _data = {}
-    cgp = get_cgroup_path(o, "memory")
+    cgp = get_cgroup_path(o, "memory", create=False)
     buff = get_sysfs(cgp+"/memory.stat")
     for line in buff.splitlines():
         k, v = line.split()
@@ -253,7 +253,7 @@ def get_stats_mem(o):
 
 def get_stats_cpu(o):
     data = {}
-    cgp = get_cgroup_path(o, "cpu")
+    cgp = get_cgroup_path(o, "cpu", create=False)
     data["time"] = int(get_sysfs(cgp+"/cpuacct.usage")) / 1000000000
     return data
 
