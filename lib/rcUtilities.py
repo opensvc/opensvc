@@ -797,7 +797,9 @@ def dotted_to_cidr(mask):
     return str(cnt)
 
 def to_cidr(s):
-    if '.' in s:
+    if s is None:
+        return s
+    elif '.' in s:
         return dotted_to_cidr(s)
     elif re.match("^(0x)*[0-9a-f]{8}$", s):
         # example: 0xffffff00
