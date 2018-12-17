@@ -503,15 +503,10 @@ class DockerLib(object):
         Return the docker drivers keys conttributed to resinfo.
         """
         data = []
-        lines = self.docker_info.splitlines()
-        for line in lines:
-            elements = line.split(": ")
-            if len(elements) < 2:
-                continue
-            if elements[0] == "Storage Driver":
-                data.append(["", "storage_driver", elements[1]])
-            if elements[0] == "Execution Driver":
-                data.append(["", "exec_driver", elements[1]])
+        if "Driver" in self.docker_info:
+            data.append(["", "storage_driver", self.docker_info["Driver"]])
+        if "ExecutionDriver" in self.docker_info:
+            data.append(["", "exec_driver", self.docker_info["ExecutionDriver"]])
         return data
 
     def _docker_info_images(self):
