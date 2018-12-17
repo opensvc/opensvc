@@ -93,6 +93,8 @@ class Ip(Res.Ip):
         return out.strip()
 
     def startip_cmd(self):
+        if self.mask is None:
+            raise ex.excError("netmask not specified nor guessable")
         self.wait_net_smf()
         ret, out, err = (0, '', '')
         cmd = ['ipadm', 'show-if', '-p', '-o', 'state', self.stacked_dev]
@@ -152,8 +154,10 @@ class Ip(Res.Ip):
         if _addr != self.addr:
             self.status_log("wrong addr: %s" % addr)
             return False
-        if self.mask is not None and _mask != to_cidr(self.mask):
-            self.status_log("wrong mask: %s" % addr)
+        if self.mask is None:
+            self.status_log("netmask not specified nor guessable")
+        elif _mask != to_cidr(self.mask):
+            self.status_log("wrong mask: %s, expected %s" % (_mask, to_cidr(self.mask)))
             return True
         return True
 
