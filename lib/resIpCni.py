@@ -197,6 +197,8 @@ class Ip(Res.Ip):
 
     @lazy
     def netns(self):
+        if self.container is None:
+            return
         return self.container.cni_netns()
 
     @lazy
