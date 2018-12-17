@@ -285,7 +285,6 @@ class Ip(Res.Ip):
         # setup default route
         self.ip_setup_route()
 
-        self.ip_wait()
         return 0, "", ""
 
     def startip_cmd_shared_bridge(self):
@@ -331,7 +330,6 @@ class Ip(Res.Ip):
         # setup default route
         self.ip_setup_route()
 
-        self.ip_wait()
         return 0, "", ""
 
     def startip_cmd_shared_ipvlan(self, mode):
@@ -373,7 +371,6 @@ class Ip(Res.Ip):
         # setup default route
         self.ip_setup_route()
 
-        self.ip_wait()
         return 0, "", ""
 
     def startip_cmd_shared_macvlan(self):
@@ -415,7 +412,6 @@ class Ip(Res.Ip):
         # setup default route
         self.ip_setup_route()
 
-        self.ip_wait()
         return 0, "", ""
 
     def ip_get_mtu(self):
@@ -457,14 +453,6 @@ class Ip(Res.Ip):
         cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns] + rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "arp.py"), self.guest_dev, self.addr]
         self.log.info(" ".join(cmd))
         out, err, ret = justcall(cmd)
-
-    def ip_wait(self):
-        # ip activation may still be incomplete
-        # wait for activation, to avoid startapp scripts to fail binding their listeners
-        for _ in range(15, 0, -1):
-            if check_ping(self.addr, timeout=1, count=1):
-                return
-        raise ex.excError("timed out waiting for ip activation")
 
     def get_nspid(self):
         if self.container.type == "container.docker":
