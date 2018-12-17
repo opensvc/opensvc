@@ -5040,6 +5040,9 @@ class Node(Crypt, ExtConfigMixin):
         self.stats_data = data
         return data
 
+    def get_tid(self):
+        return
+
     def cpu_time(self, stat_path='/proc/stat'):
         return 0.0
 
