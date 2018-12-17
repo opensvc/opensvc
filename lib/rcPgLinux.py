@@ -248,7 +248,7 @@ def get_stats_mem(o):
     for line in buff.splitlines():
         k, v = line.split()
         _data[k] = int(v)
-    data["total"] = _data.get("total_cache") + _data.get("total_rss") + _data.get("total_rss_huge") + _data.get("total_shmem")
+    data["total"] = _data.get("total_cache", 0) + _data.get("total_rss", 0) + _data.get("total_rss_huge", 0) + _data.get("total_shmem", 0)
     return data
 
 def get_stats_cpu(o):
