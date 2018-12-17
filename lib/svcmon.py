@@ -44,6 +44,9 @@ def setup_parser(node):
     parser.add_option("--node", action="store", dest="node",
                       help="The node to send a request to. If not specified the "
                            "local node is targeted."),
+    parser.add_option("--stats", default=False,
+                      action="store_true", dest="stats",
+                      help="refresh the information every --interval.")
     parser.add_option("-w", "--watch", default=False,
                       action="store_true", dest="watch",
                       help="refresh the information every --interval.")
@@ -89,6 +92,21 @@ def start_events_thread(node, nodename):
     thr.start()
     return thr
 
+def get_stats(options, node, svcnames):
+    try:
+        if options.stats:
+            return {
+                node.nodename: node._daemon_stats(svcnames=svcnames, node=options.node)["data"]
+            }
+            return stats_data
+        elif options.cluster_stats:
+            stats_data = node.cluster_stats(svcnames=svcnames)
+            return stats_data
+        else:
+            return None
+    except Exception:
+        return None
+
 def _main(node, argv=None):
     parser = setup_parser(node)
     (options, args) = parser.parse_args(argv)
@@ -110,6 +128,8 @@ def _main(node, argv=None):
         start_events_thread(node, options.node)
         preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
         outs = node.daemon_status_str(svcnames=expanded_svcs, preamble=preamble, node=options.node)
+        stats_data = get_stats(options, node, expanded_svcs)
+        prev_stats_data = None
         if outs is not None:
             print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
         while True:
@@ -125,9 +145,16 @@ def _main(node, argv=None):
                 print(CURSORHOME+CLEAREOS)
                 chars = 1
             preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
-            outs = node.daemon_status_str(svcnames=expanded_svcs, preamble=preamble, node=options.node)
+            prev_stats_data = stats_data
+            stats_data = get_stats(options, node, expanded_svcs)
+            outs = node.daemon_status_str(svcnames=expanded_svcs,
+                                          preamble=preamble,
+                                          node=options.node,
+                                          prev_stats_data=prev_stats_data,
+                                          stats_data=stats_data)
             if outs is not None:
                 print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
+                pass
             # min delay
             last_refresh = now
             time.sleep(0.2)

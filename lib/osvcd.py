@@ -8,6 +8,7 @@ import os
 import threading
 import logging
 import codecs
+import time
 from optparse import OptionParser
 
 import six
@@ -34,6 +35,7 @@ node_mod = ximport('node')
 
 DAEMON_TICKER = threading.Condition()
 DAEMON_INTERVAL = 2
+STATS_INTERVAL = 1
 
 HEARTBEATS = (
     ("multicast", HbMcastTx, HbMcastRx),
@@ -122,6 +124,9 @@ class Daemon(object):
         rcLogger.initLogger(rcEnv.nodename, self.handlers)
         rcLogger.set_namelen(force=30)
         self.log = logging.getLogger(rcEnv.nodename+".osvcd")
+        self.pid = os.getpid()
+        self.stats_data = None
+        self.last_stats_refresh = 0
 
     def stop(self):
         """
@@ -212,7 +217,7 @@ class Daemon(object):
             self.unlock()
 
     def write_pid(self):
-        pid = str(os.getpid())+"\n"
+        pid = str(self.pid)+"\n"
         with open(rcEnv.paths.daemon_pid, "w") as ofile:
             ofile.write(pid)
 
@@ -237,6 +242,37 @@ class Daemon(object):
             self.stop_threads()
             return False
         return True
+
+    def stats(self):
+        now = time.time()
+        if self.stats_data and now - self.last_stats_refresh < STATS_INTERVAL:
+            return self.stats_data
+        self.stats_data = {
+            "cpu": self.cpu_stats(),
+            "mem": self.mem_stats(),
+        }
+        self.last_stats_refresh = now
+        return self.stats_data
+
+    def cpu_stats(self):
+        data = {}
+        try:
+            pid_cpu_time = shared.NODE.pid_cpu_time(self.pid)
+        except Exception as exc:
+            pid_cpu_time = 0.0
+        return {
+            "time": pid_cpu_time,
+        }
+
+    def mem_stats(self):
+        data = {}
+        try:
+            mem_total = shared.NODE.pid_mem_total(self.pid)
+        except Exception as exc:
+            mem_total = 0.0
+        return {
+            "total": shared.NODE.pid_mem_total(self.pid),
+        }
 
     def stop_threads(self):
         """
@@ -453,14 +489,14 @@ def main():
     """
     options, _ = optparse()
     try:
-        daemon = Daemon()
-        daemon.run(daemon=options.daemon)
+        shared.DAEMON = Daemon()
+        shared.DAEMON.run(daemon=options.daemon)
     except (KeyboardInterrupt, ex.excSignal):
-        daemon.log.info("interrupted")
-        daemon.stop()
+        shared.DAEMON.log.info("interrupted")
+        shared.DAEMON.stop()
     except Exception as exc:
-        daemon.log.exception(exc)
-        daemon.stop()
+        shared.DAEMON.log.exception(exc)
+        shared.DAEMON.stop()
 
 
 if __name__ == "__main__":

@@ -103,6 +103,8 @@ UNPRIVILEGED_ACTIONS = [
     "collector_cli",
 ]
 
+STATS_INTERVAL = 30
+
 class Node(Crypt, ExtConfigMixin):
     """
     Defines a cluster node.  It contain list of Svc.
@@ -149,6 +151,8 @@ class Node(Crypt, ExtConfigMixin):
         )
         self.set_collector_env()
         self.log = rcLogger.initLogger(rcEnv.nodename)
+        self.stats_data = {}
+        self.stats_updated = 0
 
     @lazy
     def kwdict(self):
@@ -3173,7 +3177,6 @@ class Node(Crypt, ExtConfigMixin):
 
         if duration:
             import signal
-            from converters import convert_duration
             def alarm_handler(signum, frame):
                 print("timeout", file=sys.stderr)
                 raise ex.excSignal
@@ -3491,11 +3494,45 @@ class Node(Crypt, ExtConfigMixin):
         )
         return data
 
-    def daemon_status(self, svcnames=None, preamble="", node=None):
-        data = self.daemon_status_str(svcnames=svcnames, preamble=preamble, node=node)
+    def cluster_stats(self, svcnames=None):
+        data = {}
+        for node in self.cluster_nodes:
+            try:
+                data[node] = self._daemon_stats(svcnames=svcnames)["data"]
+            except Exception:
+                pass
+        return data
+        
+    def daemon_stats(self, svcnames=None, node=None):
+        if node:
+            daemon_node = node
+        elif self.options.node:
+            daemon_node = self.options.node
+        else:
+            daemon_node = rcEnv.nodename
+        data = self._daemon_stats(svcnames=svcnames, node=daemon_node)
+        if data is None or data.get("status", 0) != 0:
+            return
+        return self.print_data(data["data"])
+
+    def _daemon_stats(self, svcnames=None, silent=False, node=None):
+        data = self.daemon_send(
+            {
+                "action": "daemon_stats",
+                "options": {
+                    "svcnames": svcnames,
+                }
+            },
+            nodename=node,
+            silent=silent,
+        )
         return data
 
-    def daemon_status_str(self, svcnames=None, preamble="", node=None):
+    def daemon_status(self, svcnames=None, preamble="", node=None, stats=False):
+        data = self.daemon_status_str(svcnames=svcnames, preamble=preamble, node=node, stats=stats)
+        return data
+
+    def daemon_status_str(self, svcnames=None, preamble="", node=None, prev_stats_data=None, stats_data=None):
         if node:
             daemon_node = node
         elif self.options.node:
@@ -3528,6 +3565,9 @@ class Node(Crypt, ExtConfigMixin):
         def load_header(title):
             line = [
                 title,
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -3570,6 +3610,9 @@ class Node(Crypt, ExtConfigMixin):
             line = [
                 " "+colorize(prefix+svcname, color.BOLD),
                 status,
+                fmt_svc_cpu_usage(svcname, prev_stats_data, stats_data),
+                fmt_svc_cpu_time(svcname, stats_data),
+                fmt_svc_mem_total(svcname, stats_data),
                 info,
                 "|",
             ]
@@ -3646,16 +3689,80 @@ class Node(Crypt, ExtConfigMixin):
             for child in sorted(list(data.get("slaves", []))):
                 load_svc(child, prefix=prefix+" ")
 
-        def fmt_proc(_data):
-            cpu = _data.get("proc", {}).get("cpu")
+        def fmt_thr_cpu_usage(key, prev_stats_data, stats_data):
+            return fmt_cpu_usage(lambda x: x[key]["cpu"]["time"], prev_stats_data, stats_data)
+
+        def fmt_svc_cpu_usage(key, prev_stats_data, stats_data):
+            return fmt_cpu_usage(lambda x: x["services"][key]["cpu"]["time"], prev_stats_data, stats_data)
+
+        def fmt_cpu_usage(get, prev_stats_data, stats_data):
+            if prev_stats_data is None:
+                return ""
+            cpu = 0
+            count = 0
+            for _node, _stats in stats_data.items():
+                try:
+                    cpu += self.cpu_usage(get, prev_stats_data[_node], _stats)
+                    count += 1
+                except KeyError as exc:
+                    pass
             try:
-                return "%.1f%% " % cpu
+                return "%6.1f%%" % (cpu / count)
             except Exception:
                 return ""
+
+        def fmt_thr_mem_total(key, stats_data):
+            return fmt_mem_total(lambda x: x[key]["mem"]["total"], stats_data)
+
+        def fmt_svc_mem_total(key, stats_data):
+            return fmt_mem_total(lambda x: x["services"][key]["mem"]["total"], stats_data)
+
+        def fmt_mem_total(get, stats_data):
+            if stats_data is None:
+                return ""
+            mem = 0
+            for _data in stats_data.values():
+                try:
+                    mem += get(_data)
+                except KeyError as exc:
+                    pass
+            if mem == 0:
+                return "-"
+            try:
+                return print_size(mem, unit="b", compact=True)
+            except Exception:
+                return ""
+
+        def fmt_thr_cpu_time(key, stats_data):
+            return fmt_cpu_time(lambda x: x[key]["cpu"]["time"], stats_data)
+
+        def fmt_svc_cpu_time(key, stats_data):
+            return fmt_cpu_time(lambda x: x["services"][key]["cpu"]["time"], stats_data)
+
+        def fmt_cpu_time(get, stats_data):
+            if stats_data is None:
+                return ""
+            time = 0
+            for _data in stats_data.values():
+                try:
+                    time += get(_data)
+                except KeyError as exc:
+                    pass
+            try:
+                return print_duration(time)
+            except Exception:
+                return ""
+
+        def fmt_tid(_data):
+            tid = _data.get("tid")
+            if tid:
+                return "/%d" % tid
+            return ""
 
         def load_hb(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
+                state += fmt_tid(_data)
             else:
                 state = colorize(_data["state"], color.RED)
             if "addr" in _data["config"] and "port" in _data["config"]:
@@ -3672,7 +3779,10 @@ class Node(Crypt, ExtConfigMixin):
             line = [
                 " "+colorize(key, color.BOLD),
                 state,
-                fmt_proc(_data) + config,
+                fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
+                fmt_thr_cpu_time(key, stats_data),
+                "-",
+                config,
                 "|",
             ]
             for nodename in nodenames:
@@ -3689,6 +3799,7 @@ class Node(Crypt, ExtConfigMixin):
         def load_monitor(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
+                state += fmt_tid(_data)
             else:
                 state = colorize(_data["state"], color.RED)
             transitions = _data.get("transitions", 0)
@@ -3699,23 +3810,31 @@ class Node(Crypt, ExtConfigMixin):
             out.append((
                 " "+colorize(key, color.BOLD),
                 state,
-                fmt_proc(_data) + status,
+                fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
+                fmt_thr_cpu_time(key, stats_data),
+                "-",
+                status,
             ))
 
         def load_listener(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
+                state += fmt_tid(_data)
             else:
                 state = colorize(_data["state"], color.RED)
             out.append((
                 " "+colorize(key, color.BOLD),
                 state,
-                fmt_proc(_data) + _data["config"]["addr"]+":"+str(_data["config"]["port"]),
+                fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
+                fmt_thr_cpu_time(key, stats_data),
+                "-",
+                _data["config"]["addr"]+":"+str(_data["config"]["port"]),
             ))
 
         def load_scheduler(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
+                state += fmt_tid(_data)
             else:
                 state = colorize(_data["state"], color.RED)
             status = ""
@@ -3727,18 +3846,48 @@ class Node(Crypt, ExtConfigMixin):
             out.append((
                 " "+colorize(key, color.BOLD),
                 state,
-                fmt_proc(_data) + status,
+                fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
+                fmt_thr_cpu_time(key, stats_data),
+                "-",
+                status,
             ))
+
+        def load_daemon():
+            key = "daemon"
+            state = colorize("running", color.GREEN)
+            line = [
+                " "+colorize(key, color.BOLD),
+                "%s/%s" % (state, data.get("pid", "")),
+                fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
+                fmt_thr_cpu_time(key, stats_data),
+                fmt_thr_mem_total(key, stats_data),
+                "",
+                "|",
+            ]
+            for nodename in nodenames:
+                speaker = data["monitor"].get("nodes", {}).get(nodename, {}).get("speaker")
+                if speaker:
+                    status = "up"
+                    status = colorize_status(status, lpad=0).replace(status, unicons[status])
+                else:
+                    status = ""
+                line.append(status)
+            out.append(line)
+
 
         def load_collector(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
+                state += fmt_tid(_data)
             else:
                 state = colorize(_data["state"], color.RED)
             line = [
                 " "+colorize(key, color.BOLD),
                 state,
-                fmt_proc(_data),
+                fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
+                fmt_thr_cpu_time(key, stats_data),
+                "-",
+                "",
                 "|",
             ]
             for nodename in nodenames:
@@ -3754,12 +3903,16 @@ class Node(Crypt, ExtConfigMixin):
         def load_thread(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
+                state += fmt_tid(_data)
             else:
                 state = colorize(_data["state"], color.RED)
             out.append((
                 " "+colorize(key, color.BOLD),
                 state,
-                fmt_proc(_data),
+                fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
+                fmt_thr_cpu_time(key, stats_data),
+                "-",
+                "",
             ))
 
         if six.PY2:
@@ -3779,7 +3932,7 @@ class Node(Crypt, ExtConfigMixin):
                 val = bytes(val).decode("utf-8")
                 return len(val)
 
-        def list_print(data):
+        def list_print(data, right=[2, 3, 4]):
             outs = ""
             if len(data) == 0:
                 return ""
@@ -3795,7 +3948,10 @@ class Node(Crypt, ExtConfigMixin):
             for line in _data:
                 _line = []
                 for i, val in enumerate(line):
-                    val = val + pad*(widths[i]-bare_len(val))
+                    if i in right:
+                        val = pad*(widths[i]-bare_len(val)) + val
+                    else:
+                        val = val + pad*(widths[i]-bare_len(val))
                     _line.append(val)
                 _line = pad.join(_line)
                 outs += print_bytes(_line)
@@ -3819,7 +3975,10 @@ class Node(Crypt, ExtConfigMixin):
                 elif key == "collector":
                     load_collector(key, data[key])
                 else:
-                    load_thread(key, data[key])
+                    try:
+                        load_thread(key, data[key])
+                    except Exception:
+                        pass
 
         def load_metrics():
             load_score()
@@ -3832,6 +3991,9 @@ class Node(Crypt, ExtConfigMixin):
                 return
             line = [
                 colorize(" score", color.BOLD),
+                "",
+                "",
+                "",
                 "",
                 "",
                 "|",
@@ -3847,6 +4009,9 @@ class Node(Crypt, ExtConfigMixin):
                 colorize("  load 15m", color.BOLD),
                 "",
                 "",
+                "",
+                "",
+                "",
                 "|",
             ]
             for nodename in nodenames:
@@ -3858,6 +4023,9 @@ class Node(Crypt, ExtConfigMixin):
                 return
             line = [
                 colorize("  "+key, color.BOLD),
+                "",
+                "",
+                "",
                 "",
                 "",
                 "|",
@@ -3885,6 +4053,9 @@ class Node(Crypt, ExtConfigMixin):
                 return
             line = [
                 colorize(" state", color.BOLD),
+                "",
+                "",
+                "",
                 "",
                 "",
                 "|",
@@ -3915,6 +4086,9 @@ class Node(Crypt, ExtConfigMixin):
                 colorize(" compat", color.BOLD),
                 colorize("warn", color.BROWN),
                 "",
+                "",
+                "",
+                "",
                 "|",
             ]
             for nodename in nodenames:
@@ -3928,6 +4102,9 @@ class Node(Crypt, ExtConfigMixin):
             line = [
                 colorize(" version", color.BOLD),
                 colorize("warn", color.BROWN),
+                "",
+                "",
+                "",
                 "",
                 "|",
             ]
@@ -3955,6 +4132,9 @@ class Node(Crypt, ExtConfigMixin):
             for aid in arbitrators:
                 line = [
                     colorize(" "+arbitrators_name[aid], color.BOLD),
+                    "",
+                    "",
+                    "",
                     "",
                     "",
                     "|",
@@ -4055,6 +4235,7 @@ class Node(Crypt, ExtConfigMixin):
 
         # load data in lists
         load_header("Threads")
+        load_daemon()
         load_threads()
         arbitrators()
         out.append([])
@@ -4103,7 +4284,6 @@ class Node(Crypt, ExtConfigMixin):
 
         from forest import Forest
         from rcColor import color
-        from converters import print_duration
 
         tree = Forest()
         head = tree.add_node()
@@ -4837,8 +5017,13 @@ class Node(Crypt, ExtConfigMixin):
         """
         return {}
 
-    def stats(self):
+    def stats(self, refresh=False):
+        now = time.time()
+        if not refresh and self.stats_data and \
+           self.stats_updated > now - STATS_INTERVAL:
+            return self.stats_data
         data = {}
+        self.stats_updated = now
         try:
             data["load_15m"] = round(os.getloadavg()[2], 1)
         except:
@@ -4852,7 +5037,37 @@ class Node(Crypt, ExtConfigMixin):
         if isinstance(meminfo, dict):
             data.update(meminfo)
         data["score"] = self.score(data)
+        self.stats_data = data
         return data
+
+    def cpu_time(self, stat_path='/proc/stat'):
+        return 0.0
+
+    def pid_cpu_time(self, pid):
+        return 0.0
+
+    def tid_cpu_time(self, tid):
+        return 0.0
+
+    def pid_mem_total(self, pid):
+        return 0.0
+
+    def tid_mem_total(self, tid):
+        return 0.0
+
+    @staticmethod
+    def cpu_usage(get, prev_stats, stats):
+        try:
+            node_cpu_time = stats["node"]["cpu"]["time"]
+            prev_node_cpu_time = prev_stats["node"]["cpu"]["time"]
+            cpu_time = get(stats)
+            prev_cpu_time = get(prev_stats)
+            cpu = (cpu_time - prev_cpu_time) / (node_cpu_time - prev_node_cpu_time) * 100
+        except Exception as exc:
+            cpu = 0.0
+        return cpu
+
+    ##########################################################################
 
     def unset_lazy(self, prop):
         """
@@ -4899,25 +5114,3 @@ class Node(Crypt, ExtConfigMixin):
                 return ofile.read()
         except Exception:
             return
-
-    @staticmethod
-    def cpu_time(stat_path='/proc/stat'):
-        return 0.0
-
-    @staticmethod
-    def pid_cpu_time(pid):
-        return 0.0
-
-    def pid_usage(self, pid, prev):
-        if pid is None:
-            return 0.0
-        try:
-            cpu_time = self.cpu_time()
-            pid_cpu_time = self.pid_cpu_time(pid)
-            cpu = (pid_cpu_time - prev.pid_cpu_time) / (cpu_time - prev.cpu_time) * 100
-        except Exception as exc:
-            cpu = 0.0
-        prev.cpu_time = cpu_time
-        prev.pid_cpu_time = pid_cpu_time
-        return cpu
-

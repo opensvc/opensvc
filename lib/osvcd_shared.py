@@ -106,6 +106,8 @@ COLLECTOR_XMLRPC_QUEUE = []
 RUN_DONE_LOCK = threading.RLock()
 RUN_DONE = set()
 
+# min interval between thread stats refresh
+STATS_INTERVAL = 1
 
 def wake_heartbeat_tx():
     """
@@ -163,9 +165,8 @@ class OsvcThread(threading.Thread, Crypt):
         self.threads = []
         self.procs = []
         self.tid = None
-        self.thread_stats_data = None
-        self.cpu_time = None
-        self.pid_cpu_time = None
+        self.stats_data = None
+        self.last_stats_refresh = 0
 
         # hash for log dups avoiding
         self.duplog_data = {}
@@ -224,24 +225,32 @@ class OsvcThread(threading.Thread, Crypt):
         })
         if self.tid:
             data["tid"] = self.tid
-        if self.thread_stats_data:
-            data["proc"] = self.thread_stats_data
         return data
 
     def thread_stats(self):
         if self.tid is None:
             return
+        now = time.time()
+        if self.stats_data and now - self.last_stats_refresh < STATS_INTERVAL:
+            return self.stats_data
         try:
-            cpu_time = NODE.cpu_time()
-            pid_cpu_time = NODE.pid_cpu_time(self.tid)
-            cpu = (pid_cpu_time - self.pid_cpu_time) / (cpu_time - self.cpu_time) * 100
-            self.cpu_time = cpu_time
-            self.pid_cpu_time = pid_cpu_time
+            tid_cpu_time = NODE.tid_cpu_time(self.tid)
         except Exception as exc:
-            cpu = 0.0
-            self.cpu_time = 0.0
-            self.pid_cpu_time = 0.0
-        self.thread_stats_data = {"cpu": cpu}
+            tid_cpu_time = 0.0
+        try:
+            tid_mem_total = NODE.tid_mem_total(self.tid)
+        except Exception as exc:
+            tid_mem_total = 0
+        self.stats_data = {
+            "cpu": {
+                "time": tid_cpu_time,
+            },
+            "mem": {
+                "total": tid_mem_total,
+            },
+        }
+        self.last_stats_refresh = now
+        return self.stats_data
 
     def set_tid(self):
         self.tid = NODE.get_tid()

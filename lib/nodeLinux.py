@@ -1,5 +1,7 @@
+import os
 from itertools import islice
 from rcUtilitiesLinux import get_tid
+from rcUtilities import lazy
 import node
 
 class Node(node.Node):
@@ -36,21 +38,44 @@ class Node(node.Node):
             data["swap_avail"] = 0
         return data
 
+    @lazy
+    def user_hz(self):
+        return os.sysconf(os.sysconf_names['SC_CLK_TCK'])
+
     @staticmethod
     def get_tid():
         return get_tid()
 
-    @staticmethod
-    def cpu_time(stat_path='/proc/stat'):
+    def cpu_time(self, stat_path='/proc/stat'):
         with open(stat_path) as stat_file:
-            cpu_stat_line = next(stat_file)
+            stat_line = next(stat_file)
         return sum(float(time) for time in
-                islice(cpu_stat_line.split(), 1, 9))
+                islice(stat_line.split(), 1, 9)) / self.user_hz
 
-    @staticmethod
-    def pid_cpu_time(pid):
+    def tid_cpu_time(self, tid):
+        stat_path = "/proc/%d/task/%d/stat" % (tid, tid)
+        with open(stat_path) as stat_file:
+            stat_line = next(stat_file)
+        return sum(float(time) for time in
+                islice(stat_line.split(), 13, 14)) / self.user_hz
+
+    def pid_cpu_time(self, pid):
         stat_path = "/proc/%d/stat" % pid
         with open(stat_path) as stat_file:
-            cpu_stat_line = next(stat_file)
+            stat_line = next(stat_file)
         return sum(float(time) for time in
-                islice(cpu_stat_line.split(), 13, 14))
+                islice(stat_line.split(), 13, 14)) / self.user_hz
+
+    def tid_mem_total(self, tid):
+        stat_path = "/proc/%d/task/%d/statm" % (tid, tid)
+        with open(stat_path) as stat_file:
+            stat_line = next(stat_file)
+        return sum(float(time) for time in
+                islice(stat_line.split(), 2, 5))
+
+    def pid_mem_total(self, pid):
+        stat_path = "/proc/%d/statm" % pid
+        with open(stat_path) as stat_file:
+            stat_line = next(stat_file)
+        return sum(float(time) for time in
+                islice(stat_line.split(), 2, 5))

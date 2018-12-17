@@ -621,6 +621,12 @@ ACTIONS = {
                 OPT.node,
             ],
         },
+        "daemon_stats": {
+            "msg": "Display the daemon stats.",
+            "options": [
+                OPT.node,
+            ],
+        },
         "daemon_start": {
             "msg": "Start the daemon or a daemon thread pointed by :opt:`--thread-id`.",
             "options": DAEMON_OPTS + [

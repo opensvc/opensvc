@@ -331,6 +331,8 @@ TOPOLOGIES = [
     "flex",
 ]
 
+STATS_INTERVAL = 1
+
 init_locale()
 
 def _slave_action(func):
@@ -459,6 +461,8 @@ class Svc(Crypt, ExtConfigMixin):
         self.monitor_action = None
         self.pre_monitor_action = None
         self.lock_timeout = DEFAULT_WAITLOCK
+        self.stats_data = {}
+        self.stats_updated = 0
 
         # merged by the cmdline parser
         self.options = Storage(
@@ -2178,6 +2182,16 @@ class Svc(Crypt, ExtConfigMixin):
             raise
         return mod
 
+    def pg_stats(self):
+        if self.pg is None:
+            return {}
+        now = time.time()
+        if now - self.stats_updated < STATS_INTERVAL:
+            return self.stats_data
+        self.stats_data = self.pg.get_stats(self)
+        self.stats_updated = now
+        return self.stats_data
+        
     def pg_freeze(self):
         """
         Freeze all process of the process groups of the service.

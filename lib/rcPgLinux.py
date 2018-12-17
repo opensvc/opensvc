@@ -234,6 +234,29 @@ def get_cgroup_path(o, t, create=True):
         create_cgroup(cgp, log=log)
     return cgp
 
+def get_stats(o):
+    data = {}
+    data["cpu"] = get_stats_cpu(o)
+    data["mem"] = get_stats_mem(o)
+    return data
+
+def get_stats_mem(o):
+    data = {}
+    _data = {}
+    cgp = get_cgroup_path(o, "memory")
+    buff = get_sysfs(cgp+"/memory.stat")
+    for line in buff.splitlines():
+        k, v = line.split()
+        _data[k] = int(v)
+    data["total"] = _data.get("total_cache") + _data.get("total_rss") + _data.get("total_rss_huge") + _data.get("total_shmem")
+    return data
+
+def get_stats_cpu(o):
+    data = {}
+    cgp = get_cgroup_path(o, "cpu")
+    data["time"] = int(get_sysfs(cgp+"/cpuacct.usage")) / 1000000000
+    return data
+
 def create_cgroup(cgp, log=None):
     log.info("create cgroup %s" % cgp)
     os.makedirs(cgp)

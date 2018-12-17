@@ -361,12 +361,35 @@ class Listener(shared.OsvcThread):
         """
         return {"status": 0, "data": self.get_blacklist()}
 
+    def action_daemon_stats(self, nodename, **kwargs):
+        """
+        Return a hash indexed by thead id, containing the status data
+        structure of each thread.
+        """
+        data = {
+            "daemon": shared.DAEMON.stats(),
+            "node": {
+                "cpu": {
+                    "time": shared.NODE.cpu_time(),
+                 },
+            },
+            "services": {},
+        }
+        with shared.THREADS_LOCK:
+            for thr_id, thr in shared.THREADS.items():
+                data[thr_id] = thr.thread_stats()
+        with shared.SERVICES_LOCK:
+            for svc in shared.SERVICES.values():
+                data["services"][svc.svcname] = svc.pg_stats()
+        return {"status": 0, "data": data}
+
     def action_daemon_status(self, nodename, **kwargs):
         """
         Return a hash indexed by thead id, containing the status data
         structure of each thread.
         """
         data = {
+            "pid": shared.DAEMON.pid,
             "cluster": {
                 "name": self.cluster_name,
                 "id": self.cluster_id,
