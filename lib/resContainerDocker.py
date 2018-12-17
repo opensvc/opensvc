@@ -434,7 +434,6 @@ class Docker(resContainer.Container):
         if self.privileged:
             args += ["--privileged"]
 
-        print(self.interactive)
         if self.interactive is not None:
             args = drop_option("--interactive", args, drop_value=False)
             args = drop_option("-i", args, drop_value=False)
