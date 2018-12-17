@@ -98,10 +98,8 @@ def get_stats(options, node, svcnames):
             return {
                 node.nodename: node._daemon_stats(svcnames=svcnames, node=options.node)["data"]
             }
-            return stats_data
         elif options.cluster_stats:
-            stats_data = node.cluster_stats(svcnames=svcnames)
-            return stats_data
+            return node.cluster_stats(svcnames=svcnames)
         else:
             return None
     except Exception:

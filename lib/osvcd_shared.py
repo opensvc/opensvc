@@ -23,6 +23,9 @@ from converters import convert_duration, convert_boolean
 from comm import Crypt
 from osvcd_events import EVENTS
 
+# a global to store the Daemon() instance
+DAEMON = None
+
 # disable orchestration if a peer announces a different compat version than
 # ours
 COMPAT_VERSION = 6
