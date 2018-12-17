@@ -3697,15 +3697,17 @@ class Node(Crypt, ExtConfigMixin):
 
         def fmt_cpu_usage(get, prev_stats_data, stats_data):
             if prev_stats_data is None:
-                return ""
+                return "     -"
             cpu = 0
             count = 0
             for _node, _stats in stats_data.items():
                 try:
                     cpu += self.cpu_usage(get, prev_stats_data[_node], _stats)
                     count += 1
-                except KeyError as exc:
+                except (KeyError, ValueError) as exc:
                     pass
+            if count == 0:
+                return "     -"
             try:
                 return "%6.1f%%" % (cpu / count)
             except Exception:
@@ -3727,7 +3729,7 @@ class Node(Crypt, ExtConfigMixin):
                 except KeyError as exc:
                     pass
             if mem == 0:
-                return "-"
+                return "     -"
             try:
                 return print_size(mem, unit="b", compact=True)
             except Exception:
@@ -5067,7 +5069,7 @@ class Node(Crypt, ExtConfigMixin):
             prev_cpu_time = get(prev_stats)
             cpu = (cpu_time - prev_cpu_time) / (node_cpu_time - prev_node_cpu_time) * 100
         except Exception as exc:
-            cpu = 0.0
+            raise ValueError
         return cpu
 
     ##########################################################################

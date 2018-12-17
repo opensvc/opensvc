@@ -236,8 +236,14 @@ def get_cgroup_path(o, t, create=True):
 
 def get_stats(o):
     data = {}
-    data["cpu"] = get_stats_cpu(o)
-    data["mem"] = get_stats_mem(o)
+    try:
+        data["cpu"] = get_stats_cpu(o)
+    except Exception:
+        pass
+    try:
+        data["mem"] = get_stats_mem(o)
+    except Exception:
+        pass
     return data
 
 def get_stats_mem(o):
