@@ -35,6 +35,7 @@ ATTR_MAP = {
 #    },
     "netns": {
         "path": ["HostConfig", "NetworkMode"],
+        "cmp": "cmp_netns",
     },
     "pidns": {
         "path": ["HostConfig", "PidMode"],
@@ -684,36 +685,51 @@ class Docker(resContainer.Container):
             self.status_log("the current container is based on image '%s' "
                             "instead of '%s'"%(running_image_id, image_id))
 
+    def cmp_netns(self, current):
+        try:
+            res = self.svc.get_resource(self.netns)
+            target = "container:"+res.container_name
+            if current == target:
+                return
+            target = "container:"+res.container_id
+            if current != target:
+                self.status_log("%s=%s, but %s=%s" % \
+                                (".".join(data["path"]), current, attr, target))
+        except Exception as exc:
+            print(exc)
+            pass
+
     def _status_inspect(self):
         try:
             inspect_data = self.svc.dockerlib.docker_inspect(self.container_id)
         except Exception:
             return
+
         def get(path, data=None):
             try:
                 return get(path[1:], data[path[0]])
             except IndexError:
                 return data[path[0]]
+
         def validate(attr, data):
-            _attr = data.get("attr", attr)
-            target = getattr(self, _attr)
-            if not target:
-                return
-            if "mangle_attr" in data:
-                target = data["mangle_attr"](target)
-            try:
-                if target.startswith("container#"):
-                    res = self.svc.get_resource(target)
-                    target = "container:" + res.container_id
-            except Exception as exc:
-                pass
             try:
                 current = get(data["path"], inspect_data)
             except KeyError:
                 return
+            _attr = data.get("attr", attr)
+            _fn = data.get("cmp")
+            target = getattr(self, _attr)
+            if not target:
+                return
+            if _fn:
+                _fn = getattr(self, _fn)
+                return _fn(current)
+            if "mangle_attr" in data:
+                target = data["mangle_attr"](target)
             if current != target:
                 self.status_log("%s=%s, but %s=%s" % \
                                 (".".join(data["path"]), current, attr, target))
+
         if get(["State", "Status"], inspect_data) != "running":
             return
         for attr, data in ATTR_MAP.items():
