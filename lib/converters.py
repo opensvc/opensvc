@@ -223,7 +223,7 @@ def convert_size(s, _to='', _round=1, default_unit=''):
         return
     if type(s) in NUMERIC_TYPES:
         s = str(s)
-    elif re.match("[0-9]+%(FREE|VG|ORIGIN|PVS|)", s):
+    elif re.match(r"[0-9]+%(FREE|VG|ORIGIN|PVS|)", s):
         # lvm2 size expressions or percentage
         return s
     l = ['', 'K', 'M', 'G', 'T', 'P', 'Z', 'E']

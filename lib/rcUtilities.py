@@ -801,7 +801,7 @@ def to_cidr(s):
         return s
     elif '.' in s:
         return dotted_to_cidr(s)
-    elif re.match("^(0x)*[0-9a-f]{8}$", s):
+    elif re.match(r"^(0x)*[0-9a-f]{8}$", s):
         # example: 0xffffff00
         s = hexmask_to_dotted(s)
         return dotted_to_cidr(s)
