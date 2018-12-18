@@ -130,8 +130,9 @@ OPT = Storage({
     "format": Option(
         "--format", default=None,
         action="store", dest="format",
-        help="Specify a data formatter. Possible values are json, csv"
-             " or table."),
+        help="Specify a data formatter. Possible values are json, flat_json, "
+              "csv or table. csv and table formatters are available only for "
+              "commands returning tabular data."),
     "help": Option(
         "-h", "--help", default=None,
         action="store_true", dest="parm_help",

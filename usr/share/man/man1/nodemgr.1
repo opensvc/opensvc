@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2018\-12\-12
+.TH NODEMGR 1 2018\-12\-18
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -34,7 +34,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -60,7 +60,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -86,7 +86,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -112,7 +112,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -159,7 +159,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -188,7 +188,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -214,7 +214,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -246,7 +246,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -278,7 +278,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -304,7 +304,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -330,7 +330,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -356,7 +356,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -385,7 +385,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -414,7 +414,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -440,7 +440,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -469,7 +469,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -504,7 +504,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -530,7 +530,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -559,7 +559,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -588,7 +588,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -622,7 +622,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -651,7 +651,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -692,7 +692,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -724,7 +724,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -756,7 +756,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -797,7 +797,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -838,7 +838,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -864,7 +864,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -893,7 +893,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -922,7 +922,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -948,7 +948,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -974,7 +974,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1000,7 +1000,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1028,7 +1028,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1056,7 +1056,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1085,7 +1085,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1113,7 +1113,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1142,7 +1142,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1171,7 +1171,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1200,7 +1200,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1232,7 +1232,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1275,7 +1275,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1301,7 +1301,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1339,7 +1339,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1371,7 +1371,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1406,7 +1406,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1435,7 +1435,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1470,7 +1470,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1499,7 +1499,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1534,7 +1534,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1560,7 +1560,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1586,7 +1586,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1621,7 +1621,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1650,7 +1650,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1679,7 +1679,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1722,7 +1722,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1748,7 +1748,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1774,7 +1774,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1809,7 +1809,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1844,7 +1844,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1879,7 +1879,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1914,7 +1914,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1942,7 +1942,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -1974,7 +1974,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2038,7 +2038,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2064,7 +2064,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2090,7 +2090,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2125,7 +2125,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2201,7 +2201,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2262,7 +2262,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2288,7 +2288,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2316,7 +2316,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2342,7 +2342,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2374,7 +2374,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2400,7 +2400,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2429,7 +2429,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2455,7 +2455,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2481,7 +2481,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2507,7 +2507,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2533,7 +2533,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2571,7 +2571,36 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr daemon stats\fP
+.RS
+
+Display the daemon stats.
+
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2600,7 +2629,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2638,7 +2667,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2666,7 +2695,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2695,7 +2724,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2726,7 +2755,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2758,7 +2787,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2790,7 +2819,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2822,7 +2851,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2854,7 +2883,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2883,7 +2912,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2915,7 +2944,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2947,7 +2976,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -2979,7 +3008,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3011,7 +3040,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3043,7 +3072,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3075,7 +3104,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3107,7 +3136,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3139,7 +3168,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3171,7 +3200,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3203,7 +3232,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3235,7 +3264,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3264,7 +3293,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3293,7 +3322,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3331,7 +3360,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3366,7 +3395,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3398,7 +3427,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3430,7 +3459,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3462,7 +3491,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.
@@ -3490,7 +3519,7 @@ Colorize output. Possible values are:
 Increase stream log verbosity up to the debug level.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --filter=JSONPATH_FILTER
 A JSONPath expression to filter a JSON output.

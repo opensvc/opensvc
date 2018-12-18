@@ -292,6 +292,9 @@ def _xform_data_for_json(d):
 def formatter(fn):
     def decorator(*args, **kwargs):
         fmt = args[0].options.format
+        default_fmt = kwargs.get("default_fmt")
+        if fmt is None and default_fmt:
+            fmt = default_fmt
 
         _fmt_kwargs = {}
         if fmt == "json":
@@ -311,7 +314,7 @@ def formatter(fn):
 
         data = fn(*args, **kwargs)
 
-        if fmt == "json":
+        if fmt in ("json", "flat_json"):
             data = xform_data_for_json(data)
         elif fmt in ("table", "csv", "default", None):
             data = xform_data_for_tabular(data)

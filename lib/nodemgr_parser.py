@@ -117,9 +117,11 @@ OPT = Storage({
         action="store_true", dest="force",
         help="Force action, ignore sanity checks."),
     "format": Option(
-        "--format", default=None, action="store", dest="format",
-        help="Specify a data formatter. Possible values are json, csv"
-             " or table."),
+        "--format", default=None,
+        action="store", dest="format",
+        help="Specify a data formatter. Possible values are json, flat_json, "
+              "csv or table. csv and table formatters are available only for "
+              "commands returning tabular data."),
     "hba": Option(
         "--hba", default=None, action="store", dest="hba",
         help="Specify a hba to scan for new block devices. Example: "

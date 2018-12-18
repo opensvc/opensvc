@@ -1,4 +1,4 @@
-.TH SVCMON 1 2018\-12\-12
+.TH SVCMON 1 2018\-12\-18
 .SH NAME
 svcmon - OpenSVC agent's services instances status requesting command.
 .SH SYNOPSIS
@@ -31,11 +31,14 @@ colorize output. possible values are : auto=guess based on tty presence, always|
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
+.B --stats
+refresh the information every --interval.
+.TP
 .B -w, --watch
 refresh the information every --interval.
 .TP
 .B -i INTERVAL, --interval=INTERVAL
-with --watch, set the refresh interval.
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:

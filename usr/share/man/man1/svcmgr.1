@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-12\-12
+.TH SVCMGR 1 2018\-12\-18
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -221,7 +221,7 @@ Display service alerts.
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -315,7 +315,7 @@ Display asset information known to the collector.
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -409,7 +409,7 @@ Display service checks.
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -594,7 +594,7 @@ Display service disks.
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -694,7 +694,7 @@ A end date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action app
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -794,7 +794,7 @@ A end date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action app
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -888,7 +888,7 @@ List all available tags. Use :opt:`--like` to filter the output.
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --like=LIKE
 A data filtering expression. '%' is the multi-character wildcard. '_' is the single-character wildcard. Leading and trailing '%' are automatically set.
@@ -1176,7 +1176,7 @@ Display network information known to the collector for each service ip.
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -1279,7 +1279,7 @@ A end date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action app
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -1373,7 +1373,7 @@ List all service tags.
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -3999,7 +3999,7 @@ List the service names with a local instance. Most useful to test a service sele
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -5043,7 +5043,7 @@ Print the list of base devices the local service instance or the specified resou
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -5245,7 +5245,7 @@ Aggregate the information of :cmd:`print base devs`, :cmd:`print sub devs` and :
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -5359,7 +5359,7 @@ Print the list of devices the local service instance or the specified resources 
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -5473,7 +5473,7 @@ Display a specific service resource status, pointed by --rid
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B -r, --refresh
 Drop status caches and re-evaluate before printing.
@@ -5584,7 +5584,7 @@ Print the service tasks schedule.
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --verbose
 Include more information to some print commands output. For example, add the 'next run' column in the output of :cmd:`svcmgr print schedule`.
@@ -5700,7 +5700,7 @@ Resources Flags:
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --hide-disabled
 Do not include the disabled resources. This option supersedes the :kw:`show_disabled` value in the service configuration.
@@ -5803,7 +5803,7 @@ Print the list of devices the local service instance or the specified resources 
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --rid=PARM_RID
 A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
@@ -11525,7 +11525,7 @@ Display the service current configuration.
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --eval
 If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced. If set with the :cmd:`svcmgr set` action, the current value is evaluated before mangling.
@@ -11625,7 +11625,7 @@ Display the service resource and env section key/val pairs pushed to the collect
 A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
-Specify a data formatter. Possible values are json, csv or table.
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:

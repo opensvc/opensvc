@@ -3900,8 +3900,8 @@ class Svc(Crypt, ExtConfigMixin):
             self.options.format = "json"
             options.format = "json"
 
-        if options.cluster and options.format != "json":
-            raise ex.excError("only the json output format is allowed with --cluster")
+        if options.cluster and options.format not in ("json", "flat_json"):
+            raise ex.excError("only the json and flat_json output formats are allowed with --cluster")
 
         if action.startswith("collector_"):
             from collector import Collector
@@ -3925,7 +3925,7 @@ class Svc(Crypt, ExtConfigMixin):
             results = self.join_cluster_action(**psinfo)
             for nodename in results:
                 results[nodename] = results[nodename][0]
-                if options.format == "json":
+                if options.format in ("json", "flat_json"):
                     try:
                         results[nodename] = json.loads(results[nodename])
                     except (TypeError, ValueError) as exc:

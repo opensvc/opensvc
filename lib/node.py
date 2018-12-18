@@ -1103,14 +1103,12 @@ class Node(Crypt, ExtConfigMixin):
         return ret
 
     @formatter
-    def print_data(self, data):
+    def print_data(self, data, default_fmt=None):
         """
         A dummy method decorated by the formatter function.
         The formatter needs self to access the formatting options, so this
         can't be a staticmethod.
         """
-        fmt = self.options.format if self.options.format else "default"
-        self.log.debug("format data using the %s formatter", fmt)
         return data
 
     def print_schedule(self):
@@ -3513,7 +3511,7 @@ class Node(Crypt, ExtConfigMixin):
         data = self._daemon_stats(svcnames=svcnames, node=daemon_node)
         if data is None or data.get("status", 0) != 0:
             return
-        return self.print_data(data["data"])
+        return self.print_data(data["data"], default_fmt="flat_json")
 
     def _daemon_stats(self, svcnames=None, silent=False, node=None):
         data = self.daemon_send(
