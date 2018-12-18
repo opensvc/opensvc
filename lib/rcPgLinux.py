@@ -203,25 +203,29 @@ def set_mem_cgroup(o):
             raise ex.excError
         set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
 
-def get_cgroup_path(o, t, create=True):
-    o.log.debug("get_cgroup_path : t=%s, create=%s"%(t, create))
-    cgroup_mntpt = get_cgroup_mntpt(t)
+def get_cgroup_relpath(o):
+    if hasattr(o, "type") and o.type == "container.lxc" and \
+       hasattr(o, "name") and not o.capable("cgroup_dir"):
+        return os.path.join("lxc", o.name)
+
     if hasattr(o, "svcname"):
         svcname = o.svcname
     else:
         svcname = o.svc.svcname
+    elements = ["opensvc", svcname]
+    if hasattr(o, "rset") and o.rset is not None:
+        elements.append(o.rset.rid.replace(":", "."))
+    if hasattr(o, "rid") and o.rid is not None:
+        elements.append(o.rid.replace("#", "."))
+    return os.path.join(*elements)
+
+def get_cgroup_path(o, t, create=True):
+    o.log.debug("get_cgroup_path : t=%s, create=%s"%(t, create))
+    cgroup_mntpt = get_cgroup_mntpt(t)
     if cgroup_mntpt is None:
         raise ex.excError("cgroup fs with option %s is not mounted" % t)
-
-    if hasattr(o, "type") and o.type == "container.lxc" and hasattr(o, "name"):
-        cgp = os.path.join(cgroup_mntpt, "lxc", o.name)
-    else:
-        elements = [cgroup_mntpt, "opensvc", svcname]
-        if hasattr(o, "rset") and o.rset is not None:
-            elements.append(o.rset.rid.replace(":", "."))
-        if hasattr(o, "rid") and o.rid is not None:
-            elements.append(o.rid.replace("#", "."))
-        cgp = os.path.join(*elements)
+    relpath = get_cgroup_relpath(o)
+    cgp = os.sep.join([cgroup_mntpt, relpath])
 
     if hasattr(o, "log"):
         log = o.log

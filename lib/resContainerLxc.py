@@ -11,6 +11,10 @@ from rcGlobalEnv import rcEnv
 import resContainer
 import rcExceptions as ex
 
+CAPABILITIES = {
+    "cgroup_dir": "2.1",
+}
+
 class Lxc(resContainer.Container):
     """
      container status transition diagram :
@@ -39,6 +43,17 @@ class Lxc(resContainer.Container):
            |                     |
             ---------------------
     """
+
+    @lazy
+    def lxc_version(self):
+        cmd = ["lxc-info", "--version"]
+        out, _, _ = justcall(cmd)
+        return out.strip()
+
+    def capable(self, cap):
+        if self.lxc_version >= CAPABILITIES.get(cap, "0"):
+            return True
+        return False
 
     def files_to_sync(self):
         # the config file might be in a umounted fs resource
@@ -77,7 +92,10 @@ class Lxc(resContainer.Container):
         self.find_cf()
         outf = '/var/tmp/svc_'+self.name+'_lxc_'+action+'.log'
         if action == 'start':
-            cmd = ['lxc-start', '-d', '-n', self.name, '-o', outf]
+            if self.capable("cgroup_dir"):
+                cmd = ["lxc-start", "-d", "-n", self.name, "-o", outf, "-s", "lxc.cgroup.dir="+self.cgroup_dir]
+            else:
+                cmd = ["lxc-start", "-d", "-n", self.name, "-o", outf]
             if self.cf:
                 cmd += ['-f', self.cf]
         elif action == 'stop':
@@ -251,6 +269,10 @@ class Lxc(resContainer.Container):
 
     def is_up_on(self, nodename):
         return self.is_up(nodename)
+
+    @lazy
+    def cgroup_dir(self):
+        return self.svc.pg.get_cgroup_relpath(self)
 
     def is_up(self, nodename=None):
         if which("lxc-ps"):
