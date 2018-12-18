@@ -15,6 +15,7 @@ EVENTS = {
     ("node_config_change", None): "node config change",
     ("node_freeze", "target"): "freeze node",
     ("node_thaw", None): "thaw node",
+    ("node_freeze", "kern_freeze"): "freeze node due to kernel cmdline flag.",
     ("node_freeze", "upgrade"): "freeze node for upgrade until the cluster is complete",
     ("node_freeze", "rejoin_expire"): "freeze node, the cluster is not complete on rejoin grace period expiration",
     ("node_freeze", "merge_frozen"): "freeze node, node {peer} was frozen while we were down",

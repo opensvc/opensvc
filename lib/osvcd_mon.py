@@ -107,6 +107,7 @@ class Monitor(shared.OsvcThread):
         if last_boot_id in (None, boot_id):
             self.services_init_status()
         else:
+            self.kern_freeze()
             self.services_init_boot()
         shared.NODE.write_boot_id()
 
@@ -3203,3 +3204,12 @@ class Monitor(shared.OsvcThread):
         except:
             return 0
 
+    def kern_freeze(self):
+        try:
+            with open("/proc/cmdline", "r") as ofile:
+                buff = ofile.read()
+        except Exception:
+            return
+        if "osvc.freeze" in buff.split():
+            self.event("node_freeze", data={"reason": "kern_freeze"})
+            self.freezer.node_freeze()
