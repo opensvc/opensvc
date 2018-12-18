@@ -685,7 +685,7 @@ class Docker(resContainer.Container):
             self.status_log("the current container is based on image '%s' "
                             "instead of '%s'"%(running_image_id, image_id))
 
-    def cmp_netns(self, current):
+    def cmp_netns(self, current, data):
         try:
             res = self.svc.get_resource(self.netns)
             target = "container:"+res.container_name
@@ -694,7 +694,7 @@ class Docker(resContainer.Container):
             target = "container:"+res.container_id
             if current != target:
                 self.status_log("%s=%s, but %s=%s" % \
-                                (".".join(data["path"]), current, attr, target))
+                                (".".join(data["path"]), current, data["attr"], target))
         except Exception as exc:
             print(exc)
             pass
@@ -723,7 +723,7 @@ class Docker(resContainer.Container):
                 return
             if _fn:
                 _fn = getattr(self, _fn)
-                return _fn(current)
+                return _fn(current, data)
             if "mangle_attr" in data:
                 target = data["mangle_attr"](target)
             if current != target:
