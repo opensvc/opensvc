@@ -687,7 +687,6 @@ class Docker(resContainer.Container):
                 self.status_log("%s=%s, but %s=%s" % \
                                 (".".join(data["path"]), current, data["attr"], target))
         except Exception as exc:
-            print(exc)
             pass
 
     def _status_inspect(self):
