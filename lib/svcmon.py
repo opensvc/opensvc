@@ -118,6 +118,11 @@ def _main(node, argv=None):
     else:
         expanded_svcs = None
 
+    if options.stats and not options.interval:
+        options.interval = 3
+    if options.interval:
+        options.watch = True
+
     node.options.update({
         "color": options.color,
     })
