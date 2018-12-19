@@ -210,8 +210,7 @@ class Lxc(resContainer.Container):
                 self.log.debug("failed to remove leftover cgroup %s: %s", path, str(exc))
 
     def container_start(self):
-        if not self.svc.create_pg:
-            self.cleanup_cgroup()
+        self.cleanup_cgroup()
         self.set_cpuset_clone_children()
         self.install_cf()
         self.lxc('start')
@@ -425,6 +424,8 @@ class Lxc(resContainer.Container):
                                         guestos=guestos,
                                         osvc_root_path=osvc_root_path,
                                         **kwargs)
+        self.always_pg = True
+        self.label = "lxc " + self.label
 
         self.links = None
         if rcmd is not None:

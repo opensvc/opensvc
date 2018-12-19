@@ -75,6 +75,7 @@ class Resource(object):
         self.sort_key = rid
         self.info_in_status = []
         self.lockfd = None
+        self.always_pg = False
         try:
             self.label = type
         except AttributeError:
@@ -847,7 +848,7 @@ class Resource(object):
         """
         Wrapper function for the process group methods.
         """
-        if not self.svc.create_pg:
+        if not self.svc.create_pg and not self.always_pg:
             return
         if self.svc.pg is None:
             return
@@ -862,7 +863,7 @@ class Resource(object):
         """
         Return True if the resource has its process group frozen
         """
-        if not self.svc.create_pg:
+        if not self.svc.create_pg and not self.always_pg:
             return False
         if self.svc.pg is None:
             return False
@@ -872,7 +873,7 @@ class Resource(object):
         """
         Create a process group if this service asks for it and if possible.
         """
-        if not self.svc.create_pg:
+        if not self.svc.create_pg and not self.always_pg:
             return
         if self.svc.pg is None:
             return

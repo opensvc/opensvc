@@ -2166,6 +2166,11 @@ class Svc(Crypt, ExtConfigMixin):
         elif action == "kill":
             self.pg.kill(self)
 
+    def pg_remove(self):
+        if self.pg is None:
+            return
+        self.pg.remove_pg(self)
+
     @lazy
     def pg(self):
         """
@@ -2898,6 +2903,7 @@ class Svc(Crypt, ExtConfigMixin):
     @_master_action
     def master_stop(self):
         self.sub_set_action(STOP_GROUPS, "stop", xtags=set(["zone", "docker"]))
+        self.pg_remove()
 
     @_slave_action
     def slave_stop(self):
@@ -2920,6 +2926,7 @@ class Svc(Crypt, ExtConfigMixin):
     @_master_action
     def master_shutdown(self):
         self.sub_set_action(STOP_GROUPS, "shutdown", xtags=set(["zone", "docker"]))
+        self.pg_remove()
 
     @_slave_action
     def slave_shutdown(self):
@@ -2928,6 +2935,7 @@ class Svc(Crypt, ExtConfigMixin):
     def unprovision(self):
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(["zone", "docker"]))
         self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone", "docker"]))
+        self.pg_remove()
 
     def provision(self):
         self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone", "docker"]))
@@ -4277,6 +4285,7 @@ class Svc(Crypt, ExtConfigMixin):
         The 'restart' action entrypoint.
         This action translates into 'stop' followed by 'start'
         """
+        self.options.local = True
         self.stop()
         self.log.info("instance stopped, ready for restart.")
         self.start()

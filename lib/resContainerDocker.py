@@ -468,7 +468,7 @@ class Docker(resContainer.Container):
         if self.svc.dockerlib.docker_min_version("1.7") and \
            not self.docker_service:
             if self.svc.dockerlib.docker_info.get("CgroupDriver") == "cgroupfs":
-                args += ["--cgroup-parent", self._parent_cgroup_name()]
+                args += ["--cgroup-parent", self.cgroup_dir]
         if not self.svc.dockerlib.docker_min_version("1.13") and "--rm" in args:
             del args[args.index("--rm")]
 
@@ -490,18 +490,9 @@ class Docker(resContainer.Container):
         args += dns_opts(args)
         return args
 
-    def _parent_cgroup_name(self):
-        """
-        Return the name of the container parent cgroup.
-        Ex: /<svcname>/<rset>/<rid> with invalid character replaced by dots.
-        """
-        return os.path.join(
-            os.sep,
-            "opensvc",
-            self.svc.svcname,
-            self.rset.rid.replace(":", "."),
-            self.rid.replace("#", ".")
-        )
+    @lazy
+    def cgroup_dir(self):
+        return os.sep+self.svc.pg.get_cgroup_relpath(self)
 
     def container_start(self):
         self.docker('start')

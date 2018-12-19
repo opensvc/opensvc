@@ -214,12 +214,12 @@ class Container(Res.Resource):
         self.promote_rw()
         self.getaddr()
         where = self.where_up()
+        self.create_pg()
         if where is not None:
             self.log.info("container %s already started on %s" % (self.label, where))
             return
         if rcEnv.nodename in self.svc.drpnodes:
             self.install_drp_flag()
-        self.create_pg()
         self.container_start()
         self.can_rollback = True
         self.wait_for_startup()

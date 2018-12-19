@@ -8,6 +8,10 @@ from rcUtilities import justcall, cache, clear_cache, lazy
 from rcUtilitiesLinux import check_ping
 import resContainer
 
+CAPABILITIES = {
+    "partitions": "1.0.1",
+}
+
 class Kvm(resContainer.Container):
     def __init__(self,
                  rid,
@@ -38,6 +42,11 @@ class Kvm(resContainer.Container):
     def files_to_sync(self):
         return self.list_kvmconffiles()
 
+    def capable(self, cap):
+        if self.libvirt_version >= CAPABILITIES.get(cap, "0"):
+            return True
+        return False
+
     @cache("virsh.capabilities")
     def capabilities(self):
         cmd = ['virsh', 'capabilities']
@@ -62,14 +71,18 @@ class Kvm(resContainer.Container):
     def is_up_clear_caches(self):
         clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))
 
-    def container_start(self):
-        if not os.path.exists(self.cf):
-            self.log.error("%s not found"%self.cf)
-            raise ex.excError
+    def virsh_define(self):
         cmd = ['virsh', 'define', self.cf]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError
+
+    def container_start(self):
+        self.set_partition()
+        if not os.path.exists(self.cf):
+            self.log.error("%s not found"%self.cf)
+            raise ex.excError
+        self.virsh_define()
         cmd = ['virsh', 'start', self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
@@ -149,12 +162,51 @@ class Kvm(resContainer.Container):
             return False
         return True
 
+    @lazy
+    def cgroup_dir(self):
+        return "/"+self.svc.pg.get_cgroup_relpath(self)
+
+    @lazy
+    def libvirt_version(self):
+        cmd = ["virsh", "--version"]
+        out, _, _ = justcall(cmd)
+        return out.strip()
+
+    def set_partition(self):
+        if not self.capable("partitions"):
+            return
+        self.svc.pg.create_pg(self)
+        from xml.etree.ElementTree import ElementTree, SubElement
+        tree = ElementTree()
+        try:
+            tree.parse(self.cf)
+        except Exception as exc:
+            raise ex.excError("container config parsing error: %s" % exc)
+        root = tree.getroot()
+        if root is None:
+            raise ex.excError("invalid container config %s" % self.cf)
+        resource = root.find("resource")
+        if resource is None:
+            resource = SubElement(root, "resource")
+        part = resource.find("partition")
+        if part is None:
+            print("create part")
+            part = SubElement(resource, "partition")
+        if part.text == self.cgroup_dir:
+            return
+        self.log.info("set resource/partition = %s" % self.cgroup_dir)
+        part.text = self.cgroup_dir
+        tree.write(self.cf)
+
     def install_drp_flag(self):
         flag_disk_path = os.path.join(rcEnv.paths.pathvar, 'drp_flag.vdisk')
 
         from xml.etree.ElementTree import ElementTree, SubElement
         tree = ElementTree()
-        tree.parse(self.cf)
+        try:
+            tree.parse(self.cf)
+        except Exception as exc:
+            raise ex.excError("container config parsing error: %s" % exc)
 
         # create the vdisk if it does not exist yet
         if not os.path.exists(flag_disk_path):
@@ -198,7 +250,10 @@ class Kvm(resContainer.Container):
 
         from xml.etree.ElementTree import ElementTree, SubElement
         tree = ElementTree()
-        tree.parse(self.cf)
+        try:
+            tree.parse(self.cf)
+        except Exception as exc:
+            return data
         for dev in tree.getiterator('disk'):
             s = dev.find('source')
             if s is None:

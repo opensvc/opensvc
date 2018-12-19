@@ -8,6 +8,22 @@ from converters import convert_size
 UNIFIED_MNT = "/sys/fs/cgroup/unified"
 UNIFIED = os.path.exists(UNIFIED_MNT)
 
+CONTROLLERS = [
+    "blkio",
+    "cpu",
+    "cpuacct",
+    "cpuset",
+    "devices",
+    "freezer",
+    "hugetlb",
+    "memory",
+    "net_cls",
+    "perf_event",
+    "pids",
+    "rdma",
+    "systemd",
+]
+
 def get_cgroup_mntpt(t):
     if UNIFIED and t is None:
         return UNIFIED_MNT
@@ -203,20 +219,33 @@ def set_mem_cgroup(o):
             raise ex.excError
         set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
 
+def get_svcname(o):
+    if hasattr(o, "svcname"):
+        svcname = o.svcname
+    else:
+        svcname = o.svc.svcname
+    return svcname
+
+def get_log(o):
+    if hasattr(o, "log"):
+        log = o.log
+    elif hasattr(o, "svc"):
+        log = o.svc.log
+    else:
+        log = None
+    return log
+
 def get_cgroup_relpath(o):
     if hasattr(o, "type") and o.type == "container.lxc" and \
        hasattr(o, "name") and not o.capable("cgroup_dir"):
         return os.path.join("lxc", o.name)
 
-    if hasattr(o, "svcname"):
-        svcname = o.svcname
-    else:
-        svcname = o.svc.svcname
-    elements = ["opensvc", svcname]
+    svcname = get_svcname(o)
+    elements = ["opensvc.slice", svcname+".slice"]
     if hasattr(o, "rset") and o.rset is not None:
-        elements.append(o.rset.rid.replace(":", "."))
+        elements.append(o.rset.rid.replace(":", ".")+".slice")
     if hasattr(o, "rid") and o.rid is not None:
-        elements.append(o.rid.replace("#", "."))
+        elements.append(o.rid.replace("#", ".")+".slice")
     return os.path.join(*elements)
 
 def get_cgroup_path(o, t, create=True):
@@ -226,11 +255,7 @@ def get_cgroup_path(o, t, create=True):
         raise ex.excError("cgroup fs with option %s is not mounted" % t)
     relpath = get_cgroup_relpath(o)
     cgp = os.sep.join([cgroup_mntpt, relpath])
-
-    if hasattr(o, "log"):
-        log = o.log
-    elif hasattr(o, "svc"):
-        log = o.svc.log
+    log = get_log(o)
 
     if not os.path.exists(cgp) and create:
         if hasattr(o, "cleanup_cgroup"):
@@ -267,19 +292,50 @@ def get_stats_cpu(o):
     data["time"] = int(get_sysfs(cgp+"/cpuacct.usage")) / 1000000000
     return data
 
+def remove_pg(o):
+    log = o.log
+    svcname = get_svcname(o)
+    for t in CONTROLLERS:
+        cgp = os.path.join(os.sep, "sys", "fs", "cgroup", t, "opensvc.slice", svcname+".slice")
+        remove_cgroup(cgp, log)
+        cgp = os.path.join(os.sep, "sys", "fs", "cgroup", t, "opensvc", svcname)
+        remove_cgroup(cgp, log)
+
+def remove_cgroup(cgp, log):
+    if not os.path.exists(cgp):
+        return
+    todo = [cgp]
+    for dirpath, subdirs, _ in os.walk(cgp):
+        for subdir in subdirs:
+            path = os.path.join(dirpath, subdir)
+            todo.append(path)
+    for path in sorted(todo, reverse=True):
+        try:
+            os.rmdir(path)
+            #log.info("removed %s", path)
+        except Exception as exc:
+            #print("lingering %s (%s)" % (path, exc))
+            pass
+
 def create_cgroup(cgp, log=None):
-    log.info("create cgroup %s" % cgp)
-    os.makedirs(cgp)
-    set_sysfs(cgp+"/cgroup.clone_children", "1", log=log)
+    try:
+        os.makedirs(cgp)
+    except OSError as exc:
+        if exc.errno == 17:
+            pass
+        else:
+            raise
+    set_sysfs(cgp+"/cgroup.clone_children", "1")
     for parm in ("cpus", "mems"):
         parent_val = get_sysfs(cgp+"/../cpuset."+parm)
         set_sysfs(cgp+"/cpuset."+parm, parent_val, log=log)
 
 def get_sysfs(path):
-    if not os.path.exists(path):
+    try:
+        with open(path, "r") as f:
+            return f.read().rstrip("\n")
+    except Exception:
         return
-    with open(path, "r") as f:
-        return f.read().rstrip("\n")
 
 def set_sysfs(path, val, log=None):
     current_val = get_sysfs(path)
@@ -405,6 +461,13 @@ def create_pg(res):
     _create_pg(res.rset)
     _create_pg(res)
 
+def set_controllers_task(o):
+    for controller in CONTROLLERS:
+        try:
+            set_task(o, controller)
+        except ex.excError:
+            pass
+
 def _create_pg(o):
     if o is None:
         return
@@ -416,11 +479,7 @@ def _create_pg(o):
                 set_task(o, 'systemd')
             except:
                 pass
-        set_task(o, 'cpu')
-        set_task(o, 'cpuset')
-        set_task(o, 'memory')
-        set_task(o, 'blkio')
-        set_task(o, 'freezer')
+        set_controllers_task(o)
         set_cgroup(o, 'cpuset', 'cpuset.cpus', 'cpus')
         set_cgroup(o, 'cpu', 'cpu.shares', 'cpu_shares')
         set_cgroup(o, 'cpuset', 'cpuset.mems', 'mems')
