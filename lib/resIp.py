@@ -413,13 +413,15 @@ class Ip(Res.Resource):
             if intf is None:
                 raise ex.excError("netmask parameter is mandatory with 'noalias' tag")
             self.mask = intf.mask
-        if self.mask == '':
-            raise ex.excError("No netmask set on parent interface %s" % self.ipdev)
-        elif isinstance(self.mask, list):
-            if len(self.mask) > 0:
-                self.mask = self.mask[0]
-            else:
+        if not self.mask:
+            if "noaction" not in self.tags:
+                self.mask = None
                 raise ex.excError("No netmask set on parent interface %s" % self.ipdev)
+        if isinstance(self.mask, list):
+            try:
+                self.mask = self.mask[0]
+            except IndexError:
+                self.mask = None
 
     def start_locked(self):
         """
