@@ -3,6 +3,7 @@ import sys
 import optparse
 import time
 import datetime
+import socket
 import threading
 
 #
@@ -122,17 +123,22 @@ def _main(node, argv=None):
         options.interval = 3
     if options.interval:
         options.watch = True
+    if options.node is None:
+        options.node = socket.gethostname().lower()
 
     node.options.update({
         "color": options.color,
     })
 
+    status_data = node._daemon_status(node=options.node)
+
     if options.watch:
         start_events_thread(node, options.node)
         preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
-        outs = node.daemon_status_str(svcnames=expanded_svcs, preamble=preamble, node=options.node)
         stats_data = get_stats(options, node, expanded_svcs)
         prev_stats_data = None
+        outs = node.format_daemon_status(svcnames=expanded_svcs, preamble=preamble, node=options.node, data=status_data)
+
         if outs is not None:
             print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
         while True:
@@ -141,20 +147,28 @@ def _main(node, argv=None):
                 EVENT.wait(0.5)
             except Exception:
                 break
-            if not EVENT.is_set() and (not options.interval or now - last_refresh < options.interval):
-                continue
+            stats_changed = options.interval and now - last_refresh >= options.interval
+            status_changed = bool(EVENT.is_set())
             EVENT.clear()
+            if not status_changed and not stats_changed:
+                continue
+            if status_changed:
+                status_data = node._daemon_status(node=options.node)
+            if stats_changed:
+                prev_stats_data = stats_data
+                stats_data = get_stats(options, node, expanded_svcs)
             if chars == 0:
                 print(CURSORHOME+CLEAREOS)
                 chars = 1
             preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
-            prev_stats_data = stats_data
-            stats_data = get_stats(options, node, expanded_svcs)
-            outs = node.daemon_status_str(svcnames=expanded_svcs,
-                                          preamble=preamble,
-                                          node=options.node,
-                                          prev_stats_data=prev_stats_data,
-                                          stats_data=stats_data)
+            outs = node.format_daemon_status(
+                svcnames=expanded_svcs,
+                preamble=preamble,
+                node=options.node,
+                data=status_data,
+                prev_stats_data=prev_stats_data,
+                stats_data=stats_data
+            )
             if outs is not None:
                 print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
                 pass
@@ -163,7 +177,7 @@ def _main(node, argv=None):
             time.sleep(0.2)
     else:
         preamble = ""
-        outs = node.daemon_status_str(svcnames=expanded_svcs, preamble=preamble, node=options.node)
+        outs = node.format_daemon_status(svcnames=expanded_svcs, preamble=preamble, node=options.node, data=status_data)
         print(outs)
 
 

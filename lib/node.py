@@ -3527,10 +3527,6 @@ class Node(Crypt, ExtConfigMixin):
         return data
 
     def daemon_status(self, svcnames=None, preamble="", node=None):
-        data = self.daemon_status_str(svcnames=svcnames, preamble=preamble, node=node)
-        return data
-
-    def daemon_status_str(self, svcnames=None, preamble="", node=None, prev_stats_data=None, stats_data=None):
         if node:
             daemon_node = node
         elif self.options.node:
@@ -3541,11 +3537,16 @@ class Node(Crypt, ExtConfigMixin):
         if data is None or data.get("status", 0) != 0:
             return
 
-        from rcColor import colorize, color, unicons
         if self.options.format in ("json", "flat_json") or self.options.jsonpath_filter:
             self.print_data(data)
             return
 
+        return self.format_daemon_status(svcnames=svcnames, preamble=preamble, node=node, data=data)
+
+    def format_daemon_status(self, svcnames=None, preamble="", node=None, data=None, prev_stats_data=None, stats_data=None):
+        if not data:
+            return
+        from rcColor import colorize, color, unicons
         from rcStatus import Status, colorize_status
         out = []
 
@@ -4150,11 +4151,11 @@ class Node(Crypt, ExtConfigMixin):
         # init the services hash
         slave_parents = {}
         if "monitor" in data:
-            for node in nodenames:
-                if node not in data["monitor"]["nodes"]:
+            for _node in nodenames:
+                if _node not in data["monitor"]["nodes"]:
                     continue
                 try:
-                    node_svc_status = data["monitor"]["nodes"][node]["services"]["status"]
+                    node_svc_status = data["monitor"]["nodes"][_node]["services"]["status"]
                 except KeyError:
                     continue
                 for svcname, _data in node_svc_status.items():
@@ -4195,7 +4196,7 @@ class Node(Crypt, ExtConfigMixin):
                     global_expect = _data["monitor"].get("global_expect")
                     if global_expect and "@" in global_expect:
                         global_expect = global_expect[:global_expect.index("@")+1]
-                    services[svcname].nodes[node] = {
+                    services[svcname].nodes[_node] = {
                         "avail": _data.get("avail", "undef"),
                         "overall": _data.get("overall", "undef"),
                         "frozen": _data.get("frozen", False),
@@ -4212,12 +4213,12 @@ class Node(Crypt, ExtConfigMixin):
                     )
                 try:
                     # hint we have missing instances
-                    for svcname, cnf in data["monitor"]["nodes"][node]["services"]["config"].items():
+                    for svcname, cnf in data["monitor"]["nodes"][_node]["services"]["config"].items():
                         if svcname not in services:
                             continue
-                        for _node in cnf.get("scope", []):
-                            if _node not in services[svcname].nodes:
-                                services[svcname].nodes[_node] = None
+                        for __node in cnf.get("scope", []):
+                            if __node not in services[svcname].nodes:
+                                services[svcname].nodes[__node] = None
                 except KeyError:
                     pass
             for svcname, _data in data["monitor"]["services"].items():
