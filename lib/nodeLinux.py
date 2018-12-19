@@ -50,7 +50,7 @@ class Node(node.Node):
         with open(stat_path) as stat_file:
             stat_line = next(stat_file)
         return sum(float(time) for time in
-                islice(stat_line.split(), 1, 9)) / self.user_hz
+                islice(stat_line.split(), 1, None)) / self.user_hz
 
     def tid_cpu_time(self, tid):
         stat_path = "/proc/%d/task/%d/stat" % (tid, tid)
