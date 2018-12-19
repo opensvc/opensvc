@@ -3695,7 +3695,7 @@ class Node(Crypt, ExtConfigMixin):
             return fmt_cpu_usage(lambda x: x["services"][key]["cpu"]["time"], prev_stats_data, stats_data)
 
         def fmt_cpu_usage(get, prev_stats_data, stats_data):
-            if prev_stats_data is None:
+            if prev_stats_data is None or stats_data is None:
                 return ""
             cpu = 0
             count = 0
