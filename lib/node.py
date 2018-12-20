@@ -3544,7 +3544,7 @@ class Node(Crypt, ExtConfigMixin):
         return self.format_daemon_status(svcnames=svcnames, preamble=preamble, node=node, data=data)
 
     def format_daemon_status(self, svcnames=None, preamble="", node=None, data=None, prev_stats_data=None, stats_data=None):
-        if not data:
+        if not data or data.get("status", 0) != 0:
             return
         from rcColor import colorize, color, unicons
         from rcStatus import Status, colorize_status
@@ -3561,16 +3561,25 @@ class Node(Crypt, ExtConfigMixin):
         nodenames = get_nodes()
         services = {}
 
-        def load_header(title):
-            line = [
-                title,
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-            ]
+        def load_header(title=""):
+            if isinstance(title, list):
+                line = title
+            else:
+                line = [
+                    title,
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                ]
             for nodename in nodenames:
                 line.append(colorize(nodename, color.BOLD))
             out.append(line)
@@ -3609,9 +3618,15 @@ class Node(Crypt, ExtConfigMixin):
             line = [
                 " "+colorize(prefix+svcname, color.BOLD),
                 status,
+                fmt_svc_uptime(svcname, stats_data),
+                fmt_svc_tasks(svcname, prev_stats_data),
                 fmt_svc_cpu_usage(svcname, prev_stats_data, stats_data),
                 fmt_svc_cpu_time(svcname, stats_data),
                 fmt_svc_mem_total(svcname, stats_data),
+                fmt_svc_blk_rb(svcname, stats_data),
+                fmt_svc_blk_wb(svcname, stats_data),
+                fmt_svc_blk_rbps(svcname, prev_stats_data, stats_data),
+                fmt_svc_blk_wbps(svcname, prev_stats_data, stats_data),
                 info,
                 "|",
             ]
@@ -3688,6 +3703,76 @@ class Node(Crypt, ExtConfigMixin):
             for child in sorted(list(data.get("slaves", []))):
                 load_svc(child, prefix=prefix+" ")
 
+        def fmt_svc_uptime(key, stats_data):
+            if stats_data is None:
+                return ""
+            total = 0
+            now = time.time()
+            for node, _data in stats_data.items():
+                try:
+                    total += now - _data["services"][key]["created"]
+                except KeyError as exc:
+                    pass
+            try:
+                return print_duration(total)
+            except Exception:
+                return ""
+
+        def fmt_svc_tasks(key, stats_data):
+            if stats_data is None:
+                return ""
+            count = 0
+            total = 0
+            for _data in stats_data.values():
+                try:
+                    total += _data["services"][key]["tasks"]
+                    count += 1
+                except Exception:
+                    pass
+            if not count:
+                return "-"
+            return str(total)
+
+        def speed(get, prev_stats, stats):
+            fmt = "%8s"
+            if stats is None:
+                return ""
+            total = 0
+            for node, _data in stats.items():
+                try:
+                    curr = get(_data)
+                    prev = get(prev_stats[node])
+                    interval = _data["timestamp"] - prev_stats[node]["timestamp"]
+                    total += (curr - prev) / interval
+                except Exception as exc:
+                    raise ValueError
+            if total == 0:
+                return fmt % "-"
+            return fmt % (print_size(total, unit="b", compact=True) + "b/s")
+
+        def fmt_svc_blk_rbps(key, prev_stats_data, stats_data):
+            try:
+                return speed(lambda x: x["services"][key]["blk"]["rb"], prev_stats_data, stats_data)
+            except ValueError:
+                return "-"
+
+        def fmt_svc_blk_wbps(key, prev_stats_data, stats_data):
+            try:
+                return speed(lambda x: x["services"][key]["blk"]["wb"], prev_stats_data, stats_data)
+            except ValueError:
+                return "-"
+
+        def cpu_usage(get, prev_stats, stats):
+            try:
+                node_cpu_time = stats["node"]["cpu"]["time"]
+                prev_node_cpu_time = prev_stats["node"]["cpu"]["time"]
+                cpu_time = get(stats)
+                prev_cpu_time = get(prev_stats)
+                cpu = (cpu_time - prev_cpu_time) / (node_cpu_time - prev_node_cpu_time) * 100
+            except Exception as exc:
+                raise ValueError
+            return cpu
+
         def fmt_thr_cpu_usage(key, prev_stats_data, stats_data):
             return fmt_cpu_usage(lambda x: x[key]["cpu"]["time"], prev_stats_data, stats_data)
 
@@ -3701,7 +3786,7 @@ class Node(Crypt, ExtConfigMixin):
             count = 0
             for _node, _stats in stats_data.items():
                 try:
-                    cpu += self.cpu_usage(get, prev_stats_data[_node], _stats)
+                    cpu += cpu_usage(get, prev_stats_data[_node], _stats)
                     count += 1
                 except (KeyError, ValueError) as exc:
                     pass
@@ -3711,6 +3796,40 @@ class Node(Crypt, ExtConfigMixin):
                 return "%6.1f%%" % (cpu / count)
             except Exception:
                 return "     -"
+
+        def fmt_svc_blk_rb(key, stats_data):
+            return fmt_blk(lambda x: x["services"][key]["blk"]["rb"], stats_data)
+
+        def fmt_svc_blk_wb(key, stats_data):
+            return fmt_blk(lambda x: x["services"][key]["blk"]["wb"], stats_data)
+
+        def fmt_blk(get, stats_data):
+            if stats_data is None:
+                return ""
+            val = 0
+            for _data in stats_data.values():
+                try:
+                    val += get(_data)
+                except KeyError as exc:
+                    pass
+            if val == 0:
+                return "     -"
+            try:
+                return print_size(val, unit="b", compact=True)
+            except Exception:
+                return "     -"
+
+        def fmt_thr_tasks(key, stats_data):
+            if stats_data is None:
+                return ""
+            threads = 0
+            procs = 0
+            for _data in stats_data.values():
+                threads += _data.get(key, {}).get("threads", 0)
+                procs += _data.get(key, {}).get("procs", 0)
+            if not threads and not procs:
+                return ""
+            return "%d/%d" % (threads, procs)
 
         def fmt_thr_mem_total(key, stats_data):
             return fmt_mem_total(lambda x: x[key]["mem"]["total"], stats_data)
@@ -3755,15 +3874,16 @@ class Node(Crypt, ExtConfigMixin):
                 return ""
 
         def fmt_tid(_data):
+            if not stats_data:
+                return ""
             tid = _data.get("tid")
             if tid:
-                return "/%d" % tid
+                return "%d" % tid
             return ""
 
         def load_hb(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
-                state += fmt_tid(_data)
             else:
                 state = colorize(_data["state"], color.RED)
             if "addr" in _data["config"] and "port" in _data["config"]:
@@ -3780,8 +3900,14 @@ class Node(Crypt, ExtConfigMixin):
             line = [
                 " "+colorize(key, color.BOLD),
                 state,
+                fmt_tid(_data),
+                fmt_thr_tasks(key, stats_data),
                 fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
                 fmt_thr_cpu_time(key, stats_data),
+                "",
+                "",
+                "",
+                "",
                 "",
                 config,
                 "|",
@@ -3800,7 +3926,6 @@ class Node(Crypt, ExtConfigMixin):
         def load_monitor(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
-                state += fmt_tid(_data)
             else:
                 state = colorize(_data["state"], color.RED)
             transitions = _data.get("transitions", 0)
@@ -3811,8 +3936,14 @@ class Node(Crypt, ExtConfigMixin):
             out.append((
                 " "+colorize(key, color.BOLD),
                 state,
+                fmt_tid(_data),
+                fmt_thr_tasks(key, stats_data),
                 fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
                 fmt_thr_cpu_time(key, stats_data),
+                "",
+                "",
+                "",
+                "",
                 "",
                 status,
             ))
@@ -3820,14 +3951,19 @@ class Node(Crypt, ExtConfigMixin):
         def load_listener(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
-                state += fmt_tid(_data)
             else:
                 state = colorize(_data["state"], color.RED)
             out.append((
                 " "+colorize(key, color.BOLD),
                 state,
+                fmt_tid(_data),
+                fmt_thr_tasks(key, stats_data),
                 fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
                 fmt_thr_cpu_time(key, stats_data),
+                "",
+                "",
+                "",
+                "",
                 "",
                 _data["config"]["addr"]+":"+str(_data["config"]["port"]),
             ))
@@ -3835,22 +3971,21 @@ class Node(Crypt, ExtConfigMixin):
         def load_scheduler(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
-                state += fmt_tid(_data)
             else:
                 state = colorize(_data["state"], color.RED)
-            status = ""
-            if _data.get("running"):
-                status += "%d run " % _data.get("running")
-            delayed = len(_data.get("delayed", []))
-            if delayed:
-                status += "%d wait" % delayed
             out.append((
                 " "+colorize(key, color.BOLD),
                 state,
+                fmt_tid(_data),
+                fmt_thr_tasks(key, stats_data),
                 fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
                 fmt_thr_cpu_time(key, stats_data),
                 "",
-                status,
+                "",
+                "",
+                "",
+                "",
+                "",
             ))
 
         def load_daemon():
@@ -3858,10 +3993,16 @@ class Node(Crypt, ExtConfigMixin):
             state = colorize("running", color.GREEN)
             line = [
                 " "+colorize(key, color.BOLD),
-                "%s/%s" % (state, data.get("pid", "")),
+                "%s" % state,
+                str(data.get("pid", "")) if stats_data else "",
+                "",
                 fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
                 fmt_thr_cpu_time(key, stats_data),
                 fmt_thr_mem_total(key, stats_data),
+                "",
+                "",
+                "",
+                "",
                 "",
                 "|",
             ]
@@ -3879,14 +4020,19 @@ class Node(Crypt, ExtConfigMixin):
         def load_collector(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
-                state += fmt_tid(_data)
             else:
                 state = colorize(_data["state"], color.RED)
             line = [
                 " "+colorize(key, color.BOLD),
                 state,
+                fmt_tid(_data),
+                fmt_thr_tasks(key, stats_data),
                 fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
                 fmt_thr_cpu_time(key, stats_data),
+                "",
+                "",
+                "",
+                "",
                 "",
                 "",
                 "|",
@@ -3904,14 +4050,17 @@ class Node(Crypt, ExtConfigMixin):
         def load_thread(key, _data):
             if _data["state"] == "running":
                 state = colorize(_data["state"], color.GREEN)
-                state += fmt_tid(_data)
             else:
                 state = colorize(_data["state"], color.RED)
             out.append((
                 " "+colorize(key, color.BOLD),
                 state,
+                fmt_tid(_data),
+                fmt_thr_tasks(key, stats_data),
                 fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
                 fmt_thr_cpu_time(key, stats_data),
+                "",
+                "",
                 "",
                 "",
             ))
@@ -3933,7 +4082,7 @@ class Node(Crypt, ExtConfigMixin):
                 val = bytes(val).decode("utf-8")
                 return len(val)
 
-        def list_print(data, right=[2, 3, 4]):
+        def list_print(data, right=[2, 3, 4, 5, 6, 7, 8, 9, 10]):
             outs = ""
             if len(data) == 0:
                 return ""
@@ -3949,6 +4098,8 @@ class Node(Crypt, ExtConfigMixin):
             for line in _data:
                 _line = []
                 for i, val in enumerate(line):
+                    if widths[i] == 0:
+                        continue
                     if i in right:
                         val = pad*(widths[i]-bare_len(val)) + val
                     else:
@@ -3997,6 +4148,12 @@ class Node(Crypt, ExtConfigMixin):
                 "",
                 "",
                 "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
                 "|",
             ]
             for nodename in nodenames:
@@ -4013,6 +4170,12 @@ class Node(Crypt, ExtConfigMixin):
                 "",
                 "",
                 "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
                 "|",
             ]
             for nodename in nodenames:
@@ -4024,6 +4187,12 @@ class Node(Crypt, ExtConfigMixin):
                 return
             line = [
                 colorize("  "+key, color.BOLD),
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -4054,6 +4223,12 @@ class Node(Crypt, ExtConfigMixin):
                 return
             line = [
                 colorize(" state", color.BOLD),
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -4090,6 +4265,12 @@ class Node(Crypt, ExtConfigMixin):
                 "",
                 "",
                 "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
                 "|",
             ]
             for nodename in nodenames:
@@ -4103,6 +4284,12 @@ class Node(Crypt, ExtConfigMixin):
             line = [
                 colorize(" version", color.BOLD),
                 colorize("warn", color.BROWN),
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -4133,6 +4320,12 @@ class Node(Crypt, ExtConfigMixin):
             for aid in arbitrators:
                 line = [
                     colorize(" "+arbitrators_name[aid], color.BOLD),
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
                     "",
                     "",
                     "",
@@ -4235,7 +4428,21 @@ class Node(Crypt, ExtConfigMixin):
                 services[svcname].placement = _data["placement"]
 
         # load data in lists
-        load_header("Threads")
+        load_header([
+            "Threads",
+            "",
+            "pid/tid" if stats_data else "",
+            "thr/sub" if stats_data else "",
+            "usage" if stats_data else "",
+            "time" if stats_data else "",
+            "rss" if stats_data else "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+        ])
         load_daemon()
         load_threads()
         arbitrators()
@@ -4246,7 +4453,21 @@ class Node(Crypt, ExtConfigMixin):
         load_node_version()
         load_node_state()
         out.append([])
-        load_header("Services")
+        load_header([
+            "Services",
+            "",
+            "since" if stats_data else "",
+            "tasks" if stats_data else "",
+            "usage" if stats_data else "",
+            "time" if stats_data else "",
+            "mem" if stats_data else "",
+            "blkrb" if stats_data else "",
+            "blkwb" if stats_data else "",
+            "blkrbps" if stats_data else "",
+            "blkwbps" if stats_data else "",
+            "",
+            "",
+        ])
         for svcname in sorted(list(services.keys())):
             load_svc(svcname)
 
@@ -5058,18 +5279,6 @@ class Node(Crypt, ExtConfigMixin):
 
     def tid_mem_total(self, tid):
         return 0.0
-
-    @staticmethod
-    def cpu_usage(get, prev_stats, stats):
-        try:
-            node_cpu_time = stats["node"]["cpu"]["time"]
-            prev_node_cpu_time = prev_stats["node"]["cpu"]["time"]
-            cpu_time = get(stats)
-            prev_cpu_time = get(prev_stats)
-            cpu = (cpu_time - prev_cpu_time) / (node_cpu_time - prev_node_cpu_time) * 100
-        except Exception as exc:
-            raise ValueError
-        return cpu
 
     ##########################################################################
 

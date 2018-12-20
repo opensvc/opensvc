@@ -263,35 +263,6 @@ def get_cgroup_path(o, t, create=True):
         create_cgroup(cgp, log=log)
     return cgp
 
-def get_stats(o):
-    data = {}
-    try:
-        data["cpu"] = get_stats_cpu(o)
-    except Exception:
-        pass
-    try:
-        data["mem"] = get_stats_mem(o)
-    except Exception:
-        pass
-    return data
-
-def get_stats_mem(o):
-    data = {}
-    _data = {}
-    cgp = get_cgroup_path(o, "memory", create=False)
-    buff = get_sysfs(cgp+"/memory.stat")
-    for line in buff.splitlines():
-        k, v = line.split()
-        _data[k] = int(v)
-    data["total"] = _data.get("total_cache", 0) + _data.get("total_rss", 0) + _data.get("total_rss_huge", 0) + _data.get("total_shmem", 0)
-    return data
-
-def get_stats_cpu(o):
-    data = {}
-    cgp = get_cgroup_path(o, "cpu", create=False)
-    data["time"] = int(get_sysfs(cgp+"/cpuacct.usage")) / 1000000000
-    return data
-
 def remove_pg(o):
     log = o.log
     svcname = get_svcname(o)
@@ -494,3 +465,104 @@ def _create_pg(o):
         except:
             name = o.rid
         raise ex.excError("process group creation in '%s' cgroup failed: %s"%(name, str(e)))
+
+##############################################################################
+#
+# Cgroup Stats
+#
+##############################################################################
+
+def get_stats_mem(o):
+    data = {}
+    _data = {}
+    cgp = get_cgroup_path(o, "memory", create=False)
+    buff = get_sysfs(cgp+"/memory.stat")
+    for line in buff.splitlines():
+        k, v = line.split()
+        _data[k] = int(v)
+    data["total"] = _data.get("total_cache", 0) + _data.get("total_rss", 0) + _data.get("total_rss_huge", 0) + _data.get("total_shmem", 0)
+    return data
+
+def get_stats_cpu(o):
+    data = {}
+    cgp = get_cgroup_path(o, "cpu", create=False)
+    data["time"] = int(get_sysfs(cgp+"/cpuacct.usage")) / 1000000000
+    return data
+
+def get_stats_blk(o):
+    data = {}
+    cgp = get_cgroup_path(o, "blkio", create=False)
+    if not os.path.exists(cgp):
+        raise ex.excError
+
+    rb = 0
+    wb = 0
+    rio = 0
+    wio = 0
+
+    def get(path, filename):
+        buff = get_sysfs(path+"/" + filename)
+        r = 0
+        w = 0
+        for line in buff.splitlines():
+            l = line.split()
+            try:
+                if l[1] == "Read":
+                    r = int(l[2])
+                elif l[1] == "Write":
+                    w = int(l[2])
+            except IndexError:
+                pass
+        return r, w
+
+    for path, subdirs, _ in os.walk(cgp):
+        if subdirs:
+            continue
+        r, w = get(path, "blkio.throttle.io_serviced")
+        rio += r
+        wio += w
+        r, w = get(path, "blkio.throttle.io_service_bytes")
+        rb += r
+        wb += w
+    return {
+        "r": rio,
+        "w": wio,
+        "rb": rb,
+        "wb": wb,
+    }
+
+def get_stats_tasks(o):
+    cgp = get_cgroup_path(o, "cpu", create=False)
+    if not os.path.exists(cgp):
+        raise ex.excError
+    count = 0
+    for path, subdirs, _ in os.walk(cgp):
+        if subdirs:
+            continue
+        count += len(get_sysfs(path+"/tasks").splitlines())
+    return count
+
+def get_stats_created(o):
+    data = {}
+    cgp = get_cgroup_path(o, "cpu", create=False)
+    return os.path.getmtime(cgp)
+
+STATS = [
+    ("cpu", get_stats_cpu),
+    ("mem", get_stats_mem),
+    ("blk", get_stats_blk),
+    ("tasks", get_stats_tasks),
+    ("created", get_stats_created),
+]
+
+def get_stats(o):
+    """
+    Return all cgroup stats
+    """
+    data = {}
+    for key, fn in STATS:
+        try:
+            data[key] = fn(o)
+        except Exception:
+            pass
+    return data
