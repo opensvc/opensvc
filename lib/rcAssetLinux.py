@@ -595,7 +595,7 @@ class Asset(rcAsset.Asset):
         if ret != 0 or "SMBIOS nor DMI" in out:
             return []
         devs = []
-        dev = None
+        dev = {}
         path = []
         cla = []
         desc = []
@@ -645,7 +645,7 @@ class Asset(rcAsset.Asset):
                 s = line[line.index(":")+1:].strip()
                 if s != "Unknown":
                     desc.append(s)
-        if dev is not None:
+        if dev:
             dev["path"] = " ".join(path)
             dev["class"] = " ".join(cla)
             dev["description"] = " ".join(desc)
