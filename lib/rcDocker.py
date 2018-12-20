@@ -381,6 +381,8 @@ class DockerLib(object):
         """
         The list of running docker instances id.
         """
+        if self.docker_cmd is None:
+            return []
         cmd = self.docker_cmd + ['ps', '-q', '--no-trunc']
         out = justcall(cmd)[0]
         return out.replace('\n', ' ').split()

@@ -283,6 +283,8 @@ class Docker(resContainer.Container):
         """
         Wrap docker commands to honor <action>.
         """
+        if self.svc.dockerlib.docker_cmd is None:
+            raise ex.excError("docker executable not found")
         cmd = self.svc.dockerlib.docker_cmd + []
         if action == 'start':
             if self.docker_service:
