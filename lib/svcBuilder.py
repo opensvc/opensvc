@@ -2155,7 +2155,7 @@ def setup_logging(svcnames):
     rcLogger.max_svcname_len = max_svcname_len
     rcLogger.initLogger(rcEnv.nodename)
 
-def build(name, svcconf=None, node=None):
+def build(name, svcconf=None, node=None, volatile=True):
     """build(name) is in charge of Svc creation
     it return None if service Name is not managed by local node
     else it return new Svc instance
@@ -2167,7 +2167,8 @@ def build(name, svcconf=None, node=None):
     # keep it separate from the framework stuff
     #
     discover_node()
-    svc = svc.Svc(svcname=name, node=node, cf=svcconf)
+    svc = svc.Svc(svcname=name, node=node, cf=svcconf,
+                  volatile=volatile)
 
     try:
         encapnodes = svc.conf_get('DEFAULT', "encapnodes")

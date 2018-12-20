@@ -407,14 +407,16 @@ class ExtConfigMixin(object):
     # config helpers
     #
     #########################################################################
-    def handle_reference(self, ref, scope=False, impersonate=None, config=None, section=None):
+    def handle_reference(self, ref, scope=False, impersonate=None, config=None,
+                         section=None, validation=False):
         if "[" in ref and ref.endswith("]"):
             i = ref.index("[")
             index = ref[i+1:-1]
             ref = ref[:i]
             index = int(self.handle_references(index, scope=scope,
                                                impersonate=impersonate,
-                                               section=section))
+                                               section=section,
+                                               validation=validation))
         else:
             index = None
 
@@ -431,7 +433,11 @@ class ExtConfigMixin(object):
         elif _ref == "short_nodename":
             val = rcEnv.nodename.split(".")[0]
         elif _ref == "id" and hasattr(self, "svcname"):
-            val = self.id
+            if validation:
+                # avoid recursion on set("id", ...) -> validate_config()
+                val = "dummy"
+            else:
+                val = self.id
         elif _ref == "svcname" and hasattr(self, "svcname"):
             val = self.svcname
         elif _ref == "short_svcname" and hasattr(self, "svcname"):
@@ -607,7 +613,8 @@ class ExtConfigMixin(object):
 
         raise ex.excError("%s: unknown reference" % ref)
 
-    def _handle_references(self, s, scope=False, impersonate=None, config=None, section=None, first_step=None):
+    def _handle_references(self, s, scope=False, impersonate=None, config=None,
+                           section=None, first_step=None, validation=False):
         if not is_string(s):
             return s
         done = ""
@@ -623,7 +630,8 @@ class ExtConfigMixin(object):
                 continue
             val = self.handle_reference(ref, scope=scope,
                                         impersonate=impersonate,
-                                        config=config, section=section)
+                                        config=config, section=section,
+                                        validation=validation)
             if val is None:
                 # deferred
                 return
@@ -654,7 +662,8 @@ class ExtConfigMixin(object):
             s = s[:m.start()] + str(val) + s[m.end():]
             return s
 
-    def handle_references(self, s, scope=False, impersonate=None, config=None, section=None):
+    def handle_references(self, s, scope=False, impersonate=None, config=None,
+                          section=None, validation=False):
         cacheable = self.cacheable(s)
         if cacheable:
             key = (str(s), scope, impersonate)
@@ -663,11 +672,14 @@ class ExtConfigMixin(object):
         try:
             val = self._handle_references(s, scope=scope,
                                           impersonate=impersonate,
-                                          config=config, section=section, first_step=True)
+                                          config=config, section=section,
+                                          first_step=True,
+                                          validation=validation)
             val = self._handle_expressions(val)
             val = self._handle_references(val, scope=scope,
                                           impersonate=impersonate,
-                                          config=config, section=section)
+                                          config=config, section=section,
+                                          validation=validation)
         except Exception as e:
             raise
             raise ex.excError("%s: reference evaluation failed: %s"
@@ -976,7 +988,9 @@ class ExtConfigMixin(object):
             """
             value = config.get(section, option)
             try:
-                value = self.handle_references(value, scope=True, config=config, section=section)
+                value = self.handle_references(value, scope=True, config=config,
+                                               section=section,
+                                               validation=True)
             except ex.excError as exc:
                 if not option.startswith("pre_") and \
                    not option.startswith("post_") and \
@@ -1122,7 +1136,7 @@ class ExtConfigMixin(object):
             from svcBuilder import build
             svc = None
             try:
-                svc = build(self.svcname, svcconf=path, node=self.node)
+                svc = build(self.svcname, svcconf=path, node=self.node, volatile=True)
             except Exception as exc:
                 self.log.error("the new configuration causes the following "
                                "build error: %s", str(exc))
