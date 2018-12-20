@@ -2155,7 +2155,7 @@ def setup_logging(svcnames):
     rcLogger.max_svcname_len = max_svcname_len
     rcLogger.initLogger(rcEnv.nodename)
 
-def build(name, svcconf=None, node=None, volatile=True):
+def build(name, svcconf=None, node=None, volatile=False):
     """build(name) is in charge of Svc creation
     it return None if service Name is not managed by local node
     else it return new Svc instance
