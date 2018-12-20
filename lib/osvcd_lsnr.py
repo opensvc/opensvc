@@ -367,6 +367,7 @@ class Listener(shared.OsvcThread):
         structure of each thread.
         """
         data = {
+            "timestamp": time.time(),
             "daemon": shared.DAEMON.stats(),
             "node": {
                 "cpu": {
@@ -380,7 +381,9 @@ class Listener(shared.OsvcThread):
                 data[thr_id] = thr.thread_stats()
         with shared.SERVICES_LOCK:
             for svc in shared.SERVICES.values():
-                data["services"][svc.svcname] = svc.pg_stats()
+                _data = svc.pg_stats()
+                if _data:
+                    data["services"][svc.svcname] = _data
         return {"status": 0, "data": data}
 
     def action_daemon_status(self, nodename, **kwargs):
