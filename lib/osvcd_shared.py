@@ -245,6 +245,8 @@ class OsvcThread(threading.Thread, Crypt):
         except Exception as exc:
             tid_mem_total = 0
         self.stats_data = {
+            "threads": len(self.threads),
+            "procs": len(self.procs),
             "cpu": {
                 "time": tid_cpu_time,
             },
@@ -1173,7 +1175,7 @@ class OsvcThread(threading.Thread, Crypt):
         for hook in hooks:
             proc = self.hook_command(hook, evt)
             if proc:
-                self.push_proc(proc)
+                self.push_proc(proc, cmd=" ".join(hook))
 
         if not level:
             return
