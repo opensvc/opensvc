@@ -178,7 +178,8 @@ def _main(node, argv=None):
     else:
         preamble = ""
         outs = node.format_daemon_status(svcnames=expanded_svcs, preamble=preamble, node=options.node, data=status_data)
-        print(outs)
+        if outs is not None:
+            print(outs)
 
 
 def main(argv=None):
