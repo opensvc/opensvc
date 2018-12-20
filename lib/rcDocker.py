@@ -95,7 +95,7 @@ class DockerLib(object):
             self.docker_pid_file = None
             try:
                 self.docker_data_dir = self.docker_info["DockerRootDir"]
-            except IndexError:
+            except (KeyError, TypeError):
                 self.docker_data_dir = None
 
         try:
