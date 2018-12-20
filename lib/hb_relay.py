@@ -97,6 +97,7 @@ class HbRelayTx(HbRelay):
         return data
 
     def do(self):
+        self.janitor_procs()
         self.reload_config()
         message, message_bytes = self.get_message()
         if message is None:
@@ -157,6 +158,7 @@ class HbRelayRx(HbRelay):
                 shared.HB_TX_TICKER.wait(self.default_hb_period)
 
     def do(self):
+        self.janitor_procs()
         self.reload_config()
         for nodename in self.hb_nodes:
             if nodename == rcEnv.nodename:

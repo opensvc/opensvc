@@ -165,6 +165,7 @@ class HbMcastTx(HbMcast):
             self.log.exception(exc)
 
     def do(self):
+        self.janitor_procs()
         self.reload_config()
         message, message_bytes = self.get_message()
         if message is None:
@@ -266,6 +267,7 @@ class HbMcastRx(HbMcast):
                 self.log.warning(exc)
 
         self.reload_config()
+        self.janitor_procs()
         self.janitor_threads()
 
         try:

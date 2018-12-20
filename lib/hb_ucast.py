@@ -121,6 +121,7 @@ class HbUcastTx(HbUcast):
         return data
 
     def do(self):
+        self.janitor_procs()
         self.reload_config()
         message, message_bytes = self.get_message()
         if message is None:
@@ -211,6 +212,7 @@ class HbUcastRx(HbUcast):
 
     def do(self):
         self.reload_config()
+        self.janitor_procs()
         self.janitor_threads()
 
         try:

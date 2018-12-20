@@ -249,6 +249,7 @@ class HbDiskTx(HbDisk):
             self.log.exception(exc)
 
     def do(self):
+        self.janitor_procs()
         with self.hb_fo() as fo:
             self._do(fo)
 
@@ -318,6 +319,7 @@ class HbDiskRx(HbDisk):
         return [nodename for nodename, data in self.peer_config.items() if data.slot < 0]
 
     def do(self):
+        self.janitor_procs()
         with self.hb_fo() as fo:
             self._do(fo)
 
