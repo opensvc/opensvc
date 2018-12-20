@@ -595,7 +595,7 @@ class Asset(rcAsset.Asset):
         if ret != 0 or "SMBIOS nor DMI" in out:
             return []
         devs = []
-        dev = {}
+        dev = None
         path = []
         cla = []
         desc = []
