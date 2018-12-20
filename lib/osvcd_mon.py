@@ -2447,7 +2447,7 @@ class Monitor(shared.OsvcThread):
         instance = self.get_service_instance(svcname, rcEnv.nodename)
         if instance is None:
             return 0
-        mtime = instance["mtime"]
+        mtime = instance["updated"]
         if mtime is None:
             return 0
         return mtime
