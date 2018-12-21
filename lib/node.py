@@ -3081,7 +3081,7 @@ class Node(Crypt, ExtConfigMixin):
         duration = self.options.duration
         try:
             self._wait(nodename, path, duration)
-        except ex.excSignal:
+        except KeyboardInterrupt:
             return 1
         except (OSError, IOError) as exc:
             if exc.errno == 32:
@@ -3188,7 +3188,7 @@ class Node(Crypt, ExtConfigMixin):
             import signal
             def alarm_handler(signum, frame):
                 print("timeout", file=sys.stderr)
-                raise ex.excSignal
+                raise KeyboardInterrupt
             signal.signal(signal.SIGALRM, alarm_handler)
             signal.alarm(convert_duration(duration))
 
