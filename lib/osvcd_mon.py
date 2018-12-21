@@ -1894,7 +1894,7 @@ class Monitor(shared.OsvcThread):
                continue
             avail = instance["avail"]
             if (avail == "warn" and not smon_status.endswith("ing")) or \
-               avail in STOPPED_STATES:
+               avail in STOPPED_STATES + STARTED_STATES:
                 nodenames.append(nodename)
         return nodenames
 
