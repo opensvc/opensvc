@@ -305,7 +305,7 @@ class Monitor(shared.OsvcThread):
             svc = shared.SERVICES[svcname]
             if not os.path.exists(svc.paths.cf):
                 return
-            svc.print_status_data_eval(mon_data=False, refresh=True)
+            self.service_status_fallback(svc.svcname)
         except Exception:
             # can happen when deleting the service
             pass
@@ -556,6 +556,7 @@ class Monitor(shared.OsvcThread):
         out, err = proc.communicate()
         if proc.returncode != 0:
             self.set_smon(svcname, "create failed")
+        self.service_status_fallback(svcname)
 
         try:
             ret = self.wait_service_config_consensus(svcname, svc.peers)
@@ -563,7 +564,6 @@ class Monitor(shared.OsvcThread):
             self.log.exception(exc)
             return
 
-        self.service_status_fallback(svcname)
         self.set_smon(svcname, global_expect="thawed")
         self.wait_global_expect_change(svcname, "thawed", 600)
 
@@ -2462,17 +2462,25 @@ class Monitor(shared.OsvcThread):
         of svcmgr -s <svcname> json status". As we arrive here when the
         status.json doesn't exist, we don't have to specify --refresh.
         """
-        self.log.info("slow path service status eval: %s", svcname)
+        self.log.info("synchronous service status eval: %s", svcname)
+        cmd = ["status", "--refresh"]
+        proc = self.service_command(svcname, cmd, local=False)
+        self.push_proc(proc=proc)
+        proc.communicate()
+        fpath = os.path.join(rcEnv.paths.pathvar, "services", svcname, "status.json")
+        return self.load_instance_status_cache(fpath)
+
+    @staticmethod
+    def load_instance_status_cache(fpath):
         try:
-            with shared.SERVICES_LOCK:
-                svc = shared.SERVICES[svcname]
-                if not os.path.exists(svc.paths.cf):
+            with open(fpath, 'r') as filep:
+                try:
+                    return json.load(filep)
+                except ValueError as exc:
+                    # json corrupted
                     return
-                return svc.print_status_data(mon_data=False, refresh=True)
-        except KeyboardInterrupt:
-            return
         except Exception as exc:
-            self.log.warning("failed to evaluate service %s status", svcname)
+            # json not found
             return
 
     def get_services_status(self, svcnames):
@@ -2494,35 +2502,28 @@ class Monitor(shared.OsvcThread):
         data = {}
 
         for svcname in svcnames:
-            fpath = os.path.join(rcEnv.paths.pathvar, "services", svcname, "status.json")
+            idata = None
             last_mtime = self.get_last_svc_status_mtime(svcname)
+            fpath = os.path.join(rcEnv.paths.pathvar, "services", svcname, "status.json")
             try:
                 mtime = os.path.getmtime(fpath)
-            except Exception:
+            except Exception as exc:
                 # preserve previous status data if any (an action may be running)
                 mtime = 0
 
             if mtime > last_mtime + 0.0001:
-                try:
-                    with open(fpath, 'r') as filep:
-                        try:
-                            data[svcname] = json.load(filep)
-                            #self.log.info("service %s status reloaded", svcname)
-                        except ValueError as exc:
-                            # json corrupted
-                            pass
-                except Exception as exc:
-                    # json not found
-                    pass
+                # status.json changed
+                #  => load
+                idata = self.load_instance_status_cache(fpath)
 
-            if svcname not in data:
-                if last_mtime > 0:
-                    #self.log.info("service %s status preserved", svcname)
-                    data[svcname] = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]
-                else:
-                    data[svcname] = self.service_status_fallback(svcname)
+            if not idata and last_mtime > 0:
+                # the status.json did not change or failed to load
+                #  => preserve current data
+                idata = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcname]
 
-            if data[svcname] is None:
+            if idata:
+                data[svcname] = idata
+            else:
                 continue
 
             # update the frozen instance attribute
@@ -2880,6 +2881,8 @@ class Monitor(shared.OsvcThread):
 
             # merge every service monitors
             for svcname, instance in shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"].items():
+                if instance is None:
+                    continue
                 current_global_expect = instance["monitor"].get("global_expect")
                 if current_global_expect == "aborted":
                     # refuse a new global expect if aborting
@@ -3052,8 +3055,7 @@ class Monitor(shared.OsvcThread):
                         try:
                             if not os.path.exists(svc.paths.cf):
                                 return
-                            svc.print_status_data_eval(mon_data=False,
-                                                       refresh=True)
+                            self.service_status(svc.svcname)
                         except Exception:
                             # can happen when deleting the service
                             pass
