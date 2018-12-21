@@ -1569,6 +1569,11 @@ class Monitor(shared.OsvcThread):
         nmon = self.get_node_monitor()
         if nmon.status == "rejoin":
             self.set_nmon(status="idle")
+        self.merge_frozen()
+        try:
+            del os.environ["OPENSVC_AGENT_UPGRADE"]
+        except Exception:
+            pass
 
     def orchestrator_auto_grace(self):
         """
@@ -1583,7 +1588,6 @@ class Monitor(shared.OsvcThread):
         n_idle = len([1 for node in shared.CLUSTER_DATA.values() if node.get("monitor", {}).get("status") in ("idle", "rejoin") and "services" in node])
         if n_idle >= len(self.cluster_nodes):
             self.end_rejoin_grace_period("now rejoined")
-            self.merge_frozen()
             return False
         now = time.time()
         if now > self.startup + self.rejoin_grace_period:
@@ -3107,6 +3111,8 @@ class Monitor(shared.OsvcThread):
             return 0
 
     def merge_frozen(self):
+        if os.environ.get("OPENSVC_AGENT_UPGRADE"):
+            return
         last_shutdown = self.get_last_shutdown()
         self.merge_node_frozen(last_shutdown)
         self.merge_service_frozen(last_shutdown)
