@@ -3090,7 +3090,8 @@ class Node(Crypt, ExtConfigMixin):
 
     def _wait(self, nodename=None, path=None, duration=None):
         """
-        Wait for a condition on the monitor thread data
+        Wait for a condition on the monitor thread data or
+        a local event data.
         """
         import json_delta
         from jsonpath_ng import jsonpath
@@ -3131,7 +3132,7 @@ class Node(Crypt, ExtConfigMixin):
         except Exception as exc:
             raise ex.excError(exc)
 
-        def eval_cond(val):
+        def eval_cond(val, data):
             for match in jsonpath_expr.find(data):
                 if oper is None:
                     if match.value:
@@ -3169,8 +3170,18 @@ class Node(Crypt, ExtConfigMixin):
                         return True
             return False
 
-        data = self._daemon_status()["monitor"]["nodes"]
-        if neg ^ eval_cond(val):
+        def match_patch(msg):
+            if neg ^ eval_cond(val, cluster_data):
+                return True
+            return False
+
+        def match_event(msg):
+            if neg ^ eval_cond(val, msg):
+                return True
+            return False
+
+        cluster_data = self._daemon_status()["monitor"]["nodes"]
+        if neg ^ eval_cond(val, cluster_data):
             return
 
         if duration:
@@ -3182,12 +3193,15 @@ class Node(Crypt, ExtConfigMixin):
             signal.alarm(convert_duration(duration))
 
         for msg in self.daemon_events(nodename):
-            if msg.get("kind") != "patch":
-                continue
-            _nodename = msg.get("nodename")
-            json_delta.patch(data[_nodename], msg["data"])
-            if neg ^ eval_cond(val):
-                break
+            kind = msg.get("kind")
+            if kind == "patch":
+                _nodename = msg.get("nodename")
+                json_delta.patch(cluster_data[_nodename], msg["data"])
+                if match_patch(msg):
+                    break
+            elif kind == "event":
+                if match_event(msg):
+                    break
 
     def events(self, nodename=None):
         try:
