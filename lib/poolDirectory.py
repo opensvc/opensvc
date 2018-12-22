@@ -57,9 +57,9 @@ class Pool(pool.Pool):
         if ret != 0:
             return data
         l = out.splitlines()[-1].split()
-        data["free"] = l[3]
-        data["used"] = l[2]
-        data["size"] = l[1]
+        data["free"] = int(l[3])
+        data["used"] = int(l[2])
+        data["size"] = int(l[1])
         data["head"] = self.evaluated_path
         return data
 

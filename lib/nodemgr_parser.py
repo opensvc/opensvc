@@ -600,6 +600,9 @@ ACTIONS = {
     "Node daemon management": {
         "daemon_relay_status": {
             "msg": "Show the daemon relay clients and last update timestamp.",
+            "options": [
+                OPT.node,
+            ],
         },
         "daemon_blacklist_status": {
             "msg": "Show the content of the daemon senders blacklist.",

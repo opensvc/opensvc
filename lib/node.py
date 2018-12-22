@@ -4507,12 +4507,33 @@ class Node(Crypt, ExtConfigMixin):
         """
         Show the daemon senders blacklist
         """
+        secret = None
+        cluster_name = None
+        if self.options.node and self.options.node != rcEnv.nodename:
+            cluster_name = "join"
+            for section in self.config.sections():
+                if not section.startswith("hb#"):
+                    continue
+                try:
+                    relay = self.conf_get(section, "relay")
+                except ex.OptNotFound:
+                    continue
+                if relay != self.options.node:
+                    continue
+                try:
+                    secret = self.conf_get(section, "secret")
+                    break
+                except ex.OptNotFound:
+                    continue
+   
         data = self.daemon_send(
             {"action": "daemon_relay_status"},
             nodename=self.options.node,
+            secret=secret,
+            cluster_name=cluster_name,
         )
-        if self.options.format == "json":
-            print(json.dumps(data, indent=4, sort_keys=True))
+        if self.options.format in ("json", "flat_json") or self.options.jsonpath_filter:
+            self.print_data(data)
             return
 
         if data is None:
@@ -5141,7 +5162,7 @@ class Node(Crypt, ExtConfigMixin):
     @formatter
     def pool_ls(self):
         data = self.pool_ls_data()
-        if self.options.format == "json":
+        if self.options.format in ("json", "flat_json"):
             return data
         print("\n".join([name for name in data]))
 
@@ -5155,7 +5176,7 @@ class Node(Crypt, ExtConfigMixin):
     @formatter
     def pool_status(self):
         data = self.pool_status_data()
-        if self.options.format == "json":
+        if self.options.format in ("json", "flat_json"):
             return data
         from forest import Forest
         from rcColor import color
@@ -5173,7 +5194,11 @@ class Node(Crypt, ExtConfigMixin):
             leaf.add_column(_data["type"])
             leaf.add_column(_data["head"])
             for key in ("size", "used", "free"):
-                leaf.add_column(print_size(_data[key], unit="k", compact=True))
+                if _data[key] < 0:
+                    val = "-"
+                else:
+                    val = print_size(_data[key], unit="k", compact=True)
+                leaf.add_column(val)
         print(tree)
 
     def pool_status_data(self):
@@ -5214,14 +5239,14 @@ class Node(Crypt, ExtConfigMixin):
     @formatter
     def network_ls(self):
         nets = self.network_data()
-        if self.options.format == "json":
+        if self.options.format in ("json", "flat_json"):
             return nets
         print("\n".join([net for net in nets]))
 
     @formatter
     def network_show(self):
         nets = self.network_data()
-        if self.options.format == "json":
+        if self.options.format in ("json", "flat_json"):
             if self.options.id not in nets:
                 return {}
             return nets[self.options.id]
