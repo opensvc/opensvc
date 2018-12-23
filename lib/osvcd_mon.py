@@ -156,15 +156,14 @@ class Monitor(shared.OsvcThread):
                     continue
 
     def do(self):
-        terminated_procs = self.janitor_procs()
-        self.janitor_threads()
-        if terminated_procs == 0 and not self.mon_changed() and self.shortloops < self.max_shortloops:
+        terminated = self.janitor_procs() + self.janitor_threads()
+        changed = self.mon_changed()
+        if terminated == 0 and not changed and self.shortloops < self.max_shortloops:
             self.shortloops += 1
-            if not self.mon_changed():
-                with shared.MON_TICKER:
-                    shared.MON_TICKER.wait(self.monitor_period)
+            with shared.MON_TICKER:
+                shared.MON_TICKER.wait(self.monitor_period)
             return
-        if self.mon_changed():
+        if changed:
             with shared.MON_TICKER:
                 self.log.debug("woken for:")
                 for idx, reason in enumerate(shared.MON_CHANGED):

@@ -331,6 +331,7 @@ class OsvcThread(threading.Thread, Crypt):
             del self.threads[idx]
         if len(self.threads) > 2:
             self.log.debug("threads queue length %d", len(self.threads))
+        return len(done)
 
     @lazy
     def freezer(self):
