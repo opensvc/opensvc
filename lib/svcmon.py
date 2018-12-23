@@ -14,6 +14,7 @@ prog = "svcmon"
 import rcExceptions as ex
 import rcColor
 from node import Node
+from fmt_cluster import format_cluster
 
 CLEAREOL = "\x1b[K"
 CLEAREOLNEW = "\x1b[K\n"
@@ -55,6 +56,12 @@ def setup_parser(node):
                       dest="interval", type="int",
                       help="with --watch, set the refresh interval. defaults "
                            "to 0, to refresh on event only.")
+    parser.add_option("--sections", action="store",
+                      dest="sections",
+                      help="the comma-separated list of sections to display. "
+                           "if not set, all sections are displayed. sections "
+                           "names are: threads,arbitrators,nodes,services.")
+
     parser.add_option(
         "-s", "--service", default=None,
         action="store", dest="parm_svcs",
@@ -134,13 +141,16 @@ def _main(node, argv=None):
 
     if options.watch:
         start_events_thread(node, options.node)
-        preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
+        preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         stats_data = get_stats(options, node, expanded_svcs)
         prev_stats_data = None
-        outs = node.format_daemon_status(svcnames=expanded_svcs, preamble=preamble, node=options.node, data=status_data)
+        outs = format_cluster(svcnames=expanded_svcs, node=options.node,
+                              data=status_data, sections=options.sections)
 
         if outs is not None:
-            print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
+            print(CURSORHOME+preamble+CLEAREOLNEW+CLEAREOL)
+            print(CLEAREOLNEW.join(outs.split("\n"))+CLEAREOS)
+
         while True:
             now = time.time()
             try:
@@ -160,24 +170,25 @@ def _main(node, argv=None):
             if chars == 0:
                 print(CURSORHOME+CLEAREOS)
                 chars = 1
-            preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S\n")
-            outs = node.format_daemon_status(
+            preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            outs = format_cluster(
                 svcnames=expanded_svcs,
-                preamble=preamble,
                 node=options.node,
                 data=status_data,
                 prev_stats_data=prev_stats_data,
-                stats_data=stats_data
+                stats_data=stats_data,
+                sections=options.sections
             )
             if outs is not None:
-                print(CURSORHOME+CLEAREOL+CLEAREOLNEW.join(outs.split("\n"))+CLEAREOL+CLEAREOS)
+                print(CURSORHOME+preamble+CLEAREOLNEW+CLEAREOL)
+                print(CLEAREOLNEW.join(outs.split("\n"))+CLEAREOS)
                 pass
             # min delay
             last_refresh = now
             time.sleep(0.2)
     else:
-        preamble = ""
-        outs = node.format_daemon_status(svcnames=expanded_svcs, preamble=preamble, node=options.node, data=status_data)
+        outs = format_cluster(svcnames=expanded_svcs, node=options.node,
+                              data=status_data, sections=options.sections)
         if outs is not None:
             print(outs)
 
