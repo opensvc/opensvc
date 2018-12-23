@@ -16,6 +16,11 @@ Id ``max_stdby_resource_restart``
 
 max restart ({restart}) reached for standby resource {rid} ({resource.label})
 
+Id ``service_config_installed``
+-------------------------------
+
+config fetched from node {from} is now installed
+
 Id ``blacklist_add``
 --------------------
 
@@ -45,11 +50,6 @@ Id ``resource_toc``
 -------------------
 
 toc for resource {rid} ({resource.label}) {resource.status} {resource.log}
-
-Id ``service_config_installed``
--------------------------------
-
-config fetched from node {from} is now installed
 
 Id ``node_thaw``
 ----------------
@@ -160,6 +160,11 @@ Id ``instance_unprovision``, Reason ``target``
 ----------------------------------------------
 
 unprovision {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target
+
+Id ``node_freeze``, Reason ``kern_freeze``
+------------------------------------------
+
+freeze node due to kernel cmdline flag.
 
 Id ``node_freeze``, Reason ``merge_frozen``
 -------------------------------------------
