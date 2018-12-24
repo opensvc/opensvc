@@ -78,7 +78,10 @@ class Kvm(resContainer.Container):
             raise ex.excError
 
     def container_start(self):
-        self.set_partition()
+        if self.svc.create_pg:
+            self.set_partition()
+        else:
+            self.unset_partition()
         if not os.path.exists(self.cf):
             self.log.error("%s not found"%self.cf)
             raise ex.excError
@@ -171,6 +174,29 @@ class Kvm(resContainer.Container):
         cmd = ["virsh", "--version"]
         out, _, _ = justcall(cmd)
         return out.strip()
+
+    def unset_partition(self):
+        from xml.etree.ElementTree import ElementTree, SubElement
+        tree = ElementTree()
+        try:
+            tree.parse(self.cf)
+        except Exception as exc:
+            raise ex.excError("container config parsing error: %s" % exc)
+        root = tree.getroot()
+        if root is None:
+            raise ex.excError("invalid container config %s" % self.cf)
+        resource = root.find("resource")
+        if resource is None:
+            return
+        part = resource.find("partition")
+        if part is None:
+            return
+        if part.text != self.cgroup_dir:
+            return
+        root.remove(resource)
+        self.log.info("unset resource/partition = %s" % self.cgroup_dir)
+        part.text = self.cgroup_dir
+        tree.write(self.cf)
 
     def set_partition(self):
         if not self.capable("partitions"):
