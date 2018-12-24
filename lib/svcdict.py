@@ -255,6 +255,15 @@ KEYWORDS = [
     },
     {
         "section": "container",
+        "keyword": "detach",
+        "at": True,
+        "rtype": "docker",
+        "default": True,
+        "convert": "boolean",
+        "text": "Run container in background. Set to False only for init containers, alongside start_timeout and the nostatus tag.",
+    },
+    {
+        "section": "container",
         "keyword": "entrypoint",
         "at": True,
         "rtype": "docker",
@@ -373,6 +382,7 @@ KEYWORDS = [
         "keyword": "run_command",
         "at": True,
         "rtype": "docker",
+        "convert": "shlex",
         "text": "The command to execute in the docker container on run.",
         "example": "/opt/tomcat/bin/catalina.sh"
     },

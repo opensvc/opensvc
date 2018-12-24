@@ -1267,6 +1267,11 @@ def add_container_docker(svc, s):
         kwargs["rm"] = exc.default
 
     try:
+        kwargs["detach"] = svc.conf_get(s, "detach")
+    except ex.OptNotFound as exc:
+        kwargs["detach"] = exc.default
+
+    try:
         kwargs["entrypoint"] = svc.conf_get(s, "entrypoint")
     except ex.OptNotFound as exc:
         kwargs["entrypoint"] = exc.default

@@ -3,6 +3,7 @@ Docker container resource driver module.
 """
 import os
 import shlex
+import signal
 
 import resources
 import resContainer
@@ -51,6 +52,9 @@ ATTR_MAP = {
     },
 }
 
+def alarm_handler(signum, frame):
+    raise KeyboardInterrupt
+
 class Docker(resContainer.Container):
     """
     Docker container resource driver.
@@ -64,6 +68,7 @@ class Docker(resContainer.Container):
                  run_command=None,
                  run_args=None,
                  docker_service=False,
+                 detach=True,
                  entrypoint=None,
                  rm=None,
                  netns=None,
@@ -88,6 +93,7 @@ class Docker(resContainer.Container):
         self.image = image
         self.run_command = run_command
         self.run_args = run_args
+        self.detach = detach
         self.entrypoint = entrypoint
         self.rm = rm
         self.netns = netns
@@ -99,6 +105,9 @@ class Docker(resContainer.Container):
         self.interactive = interactive
         self.tty = tty
         self.docker_service = docker_service
+        if not self.detach:
+            self.rm = True
+            self.tags.add("nostatus")
 
     @lazy
     def container_name(self):
@@ -224,8 +233,8 @@ class Docker(resContainer.Container):
         cmd = self.svc.dockerlib.docker_cmd + ['service', 'create', '--name='+self.service_name]
         cmd += self._add_run_args()
         cmd += [self.image]
-        if self.run_command is not None and self.run_command != "":
-            cmd += self.run_command.split()
+        if self.run_command:
+            cmd += self.run_command
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.excError(err)
@@ -287,6 +296,10 @@ class Docker(resContainer.Container):
             raise ex.excError("docker executable not found")
         cmd = self.svc.dockerlib.docker_cmd + []
         if action == 'start':
+            if not self.detach:
+                signal.signal(signal.SIGALRM, alarm_handler)
+                signal.alarm(self.start_timeout)
+
             if self.docker_service:
                 self.service_create()
                 return
@@ -298,11 +311,11 @@ class Docker(resContainer.Container):
                 if self.container_id is None:
                     if self.svc.dockerlib.get_image_id(self) is None:
                         self.svc.dockerlib.docker_login(self.image)
-                    cmd += ['run', '-d', '--name='+self.container_name]
+                    cmd += ['run', '--name='+self.container_name]
                     cmd += self._add_run_args()
                     cmd += [self.image]
-                    if self.run_command is not None and self.run_command != "":
-                        cmd += self.run_command.split()
+                    if self.run_command:
+                        cmd += self.run_command
                 else:
                     cmd += ['start', self.container_id]
         elif action == 'stop':
@@ -376,6 +389,11 @@ class Docker(resContainer.Container):
             args = []
         else:
             args = [] + self.run_args
+
+        args = drop_option("-d", args, drop_value=False)
+        args = drop_option("--detach", args, drop_value=False)
+        if self.detach:
+            args += ["--detach"]
 
         # drop user specified --name. we set ours already
         args = drop_option("--name", args, drop_value=True)
@@ -519,7 +537,16 @@ class Docker(resContainer.Container):
         self.container_rm()
 
     def start(self):
-        self._start()
+        try:
+            self._start()
+        except KeyboardInterrupt:
+            if not self.detach:
+                self.unset_lazy("container_id")
+                self.container_forcestop()
+                self.container_rm()
+                raise ex.excError("timeout")
+            else:
+                raise ex.AbortAction
         self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
 
     def container_stop(self):
@@ -550,7 +577,7 @@ class Docker(resContainer.Container):
         """
         data = self.svc.dockerlib._info()
         data.append([self.rid, "run_args", " ".join(self._add_run_args())])
-        data.append([self.rid, "run_command", str(self.run_command)])
+        data.append([self.rid, "run_command", " ".join(self.run_command)])
         data.append([self.rid, "rm", str(self.rm)])
         data.append([self.rid, "netns", str(self.netns)])
         if not self.docker_service:
