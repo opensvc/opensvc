@@ -1709,7 +1709,7 @@ class Svc(Crypt, ExtConfigMixin):
     def update_status_data(self):
         self.log.debug("update status dump")
         # print_status_data() with from_resource_status_cache=True does a status.json write
-        self.print_status_data(from_resource_status_cache=True)
+        return self.print_status_data(from_resource_status_cache=True)
 
     def env_section_keys_evaluated(self):
         """
@@ -4141,7 +4141,17 @@ class Svc(Crypt, ExtConfigMixin):
             self.running_action = None
             if action not in ACTIONS_NO_STATUS_CHANGE + ACTIONS_CF_CHANGE and \
                not (action == "delete" and not self.command_is_scoped()):
-                self.update_status_data()
+                data = self.print_status_data(refresh=True)
+                if action == "start" and not self.command_is_scoped() and \
+                   data.get("avail") not in ("up", "n/a"):
+                    # catch drivers reporting no error, but instance not
+                    # evaluating as "up", to avoid the daemon entering a
+                    # start loop. This also catches resources going down
+                    # a short time a startup (app.simple for example)
+                    self.log.error("all resources correctly activated "
+                                   "but instance avail status is %s",
+                                   data.get("avail"))
+                    err = 1
             elif action in ACTIONS_CF_CHANGE:
                 self.wake_monitor()
             self.clear_action(action, err)
