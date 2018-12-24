@@ -329,7 +329,7 @@ class App(Resource):
 
         ret = self.run("start", cmd)
         if ret != 0:
-            raise ex.excError()
+            raise ex.excError("exit code %d" % ret)
         self.can_rollback = True
 
     def stop(self):

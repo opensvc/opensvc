@@ -5,6 +5,7 @@ The module defining the app.simple resource class.
 import os
 import subprocess
 import hashlib
+import time
 from datetime import datetime
 
 import resApp
@@ -115,7 +116,13 @@ class App(resApp.App):
         user = kwargs.get("env").get("LOGNAME")
         self.log.info("exec '%s' as user %s", ' '.join(cmd), user)
         try:
-            subprocess.Popen(cmd, **kwargs)
+            proc = subprocess.Popen(cmd, **kwargs)
+            if proc.returncode is not None:
+                return proc.returncode
+            time.sleep(0.2)
+            proc.poll()
+            if proc.returncode is not None:
+                return proc.returncode
             return 0
         except Exception as exc:
             self.log.error("%s", exc)
