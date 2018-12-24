@@ -4143,14 +4143,13 @@ class Svc(Crypt, ExtConfigMixin):
                not (action == "delete" and not self.command_is_scoped()):
                 data = self.print_status_data(refresh=True)
                 if action == "start" and not self.command_is_scoped() and \
-                   data.get("avail") not in ("up", "n/a"):
+                   err == 0 and data.get("avail") not in ("up", "n/a"):
                     # catch drivers reporting no error, but instance not
                     # evaluating as "up", to avoid the daemon entering a
                     # start loop. This also catches resources going down
                     # a short time a startup (app.simple for example)
-                    self.log.error("all resources correctly activated "
-                                   "but instance avail status is %s",
-                                   data.get("avail"))
+                    self.log.error("start action returned 0 but instance "
+                                   "avail status is %s", data.get("avail"))
                     err = 1
             elif action in ACTIONS_CF_CHANGE:
                 self.wake_monitor()
