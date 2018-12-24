@@ -241,6 +241,11 @@ class Docker(resContainer.Container):
         self.unset_lazy("service_id")
         self.svc.dockerlib.get_running_service_ids(refresh=True)
 
+    def wait_for_startup(self):
+        if not self.detach:
+            return
+        resContainer.Container.wait_for_startup(self)
+
     def wait_for_removed(self):
         def removed():
             self.unset_lazy("container_id")
@@ -334,6 +339,8 @@ class Docker(resContainer.Container):
             return 1
 
         ret = self.vcall(cmd, warn_to_info=True)[0]
+        if not self.detach:
+            signal.alarm(0)
         if ret != 0:
             raise ex.excError
 
