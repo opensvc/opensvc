@@ -553,7 +553,7 @@ class Docker(resContainer.Container):
                 self.container_rm()
                 raise ex.excError("timeout")
             else:
-                raise ex.AbortAction
+                raise ex.excAbortAction
         self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
 
     def container_stop(self):
