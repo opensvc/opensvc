@@ -33,12 +33,6 @@ class Esx(resContainer.Container):
             ret, out, err = self.call(['vmware-cmd', self.vmx] + l)
         return ret, out, err
 
-    def list_conffiles(self):
-        return []
-
-    def files_to_sync(self):
-        return self.list_conffiles()
-
     def check_capabilities(self):
         return which('vmware-cmd')
 

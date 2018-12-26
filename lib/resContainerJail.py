@@ -16,9 +16,6 @@ class Jail(resContainer.Container):
                 ip4.addr=192.168.0.208
                 command=/bin/sh /etc/rc
     """
-    def files_to_sync(self):
-        return []
-
     def operational(self):
         return True
 

@@ -156,9 +156,6 @@ class CloudVm(resContainer.Container):
                 self.addr = ip
                 break
 
-    def files_to_sync(self):
-        return []
-
     def check_capabilities(self):
         return True
 

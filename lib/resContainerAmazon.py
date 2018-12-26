@@ -174,9 +174,6 @@ class CloudVm(resContainer.Container):
 
         return 0
 
-    def files_to_sync(self):
-        return []
-
     def check_capabilities(self):
         return True
 
