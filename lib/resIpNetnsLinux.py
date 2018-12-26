@@ -35,7 +35,6 @@ class Ip(Res.Ip):
         self.container_rid = str(netns)
         self.vlan_tag = vlan_tag
         self.vlan_mode = vlan_mode
-        self.label = "netns %s %s/%s %s@%s" % (mode if mode else "bridge", ipname, to_cidr(mask), ipdev, self.container_rid)
         self.tags = self.tags | set(["docker"])
         self.tags.add(self.container_rid)
 
@@ -43,6 +42,17 @@ class Ip(Res.Ip):
         self.svc.register_dependency("start", self.rid, self.container_rid)
         self.svc.register_dependency("start", self.container_rid, self.rid)
         self.svc.register_dependency("stop", self.container_rid, self.rid)
+        self.set_label()
+
+    def set_label(self):
+        """
+        Set the resource label property.
+        """
+        try:
+             self.get_mask()
+        except ex.excError:
+             pass
+        self.label = "netns %s %s/%s %s@%s" % (mode if mode else "bridge", ipname, to_cidr(mask), ipdev, self.container_rid)
 
     @lazy
     def guest_dev(self):

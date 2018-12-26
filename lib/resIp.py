@@ -266,7 +266,9 @@ class Ip(Res.Resource):
                 current_mask = to_cidr(intf.mask[idx])
             else:
                 current_mask = to_cidr(intf.mask)
-            if current_mask != to_cidr(self.mask):
+            if self.mask is None:
+                self.status_log("netmask is not set nor guessable")
+            elif current_mask != to_cidr(self.mask):
                 self.status_log("current mask %s, expected %s" %
                                 (current_mask, to_cidr(self.mask)))
             ref_dev = intf.name.split(":")[0]
