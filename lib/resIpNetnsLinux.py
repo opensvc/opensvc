@@ -29,7 +29,7 @@ class Ip(Res.Ip):
                         gateway=gateway,
                         mask=mask,
                         **kwargs)
-        self.mode = mode
+        self.mode = mode if mode else "bridge"
         self.network = network
         self.del_net_route = del_net_route
         self.container_rid = str(netns)
@@ -52,7 +52,7 @@ class Ip(Res.Ip):
              self.get_mask()
         except ex.excError:
              pass
-        self.label = "netns %s %s/%s %s@%s" % (mode if mode else "bridge", ipname, to_cidr(mask), ipdev, self.container_rid)
+        self.label = "netns %s %s/%s %s@%s" % (self.mode, self.ipname, to_cidr(self.mask), self.ipdev, self.container_rid)
 
     @lazy
     def guest_dev(self):
