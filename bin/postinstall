@@ -518,8 +518,13 @@ def activate_SunOS(launcher):
             os.symlink(rc, l)
     return True
 
-def activate_gentoo(launcher):
+def activate_openrc(launcher):
     logit("begin")
+    cmd = ['rc-update', '--help', '>>/dev/null 2>&1']
+    ret = osrun(' '.join(cmd))
+    if ret == 127:
+        logit("rc-update command not found, skipping opensvc init setup", stdout=True)
+        return False
     cmd = ['rc-update', 'delete', '-a', 'opensvc']
     ret = osrun(' '.join(cmd))
     cmd = ['rc-update', 'add', 'opensvc', 'default']
@@ -720,7 +725,7 @@ def install_rc():
             activate = activate_systemd
         else:
             logit("gentoo with openrc")
-            activate = activate_gentoo
+            activate = activate_openrc
     elif reldata["ID"] in ("ubuntu", "debian") or os.path.exists('/etc/debian_version'):
         rc = '/etc/init.d/opensvc'
         params = '/etc/default/opensvc'
@@ -751,6 +756,11 @@ def install_rc():
         else:
             logit("SuSE with chkconfig (rely on insserv)")
             activate = activate_redhat
+    elif reldata["ID"] in ("alpine") or os.path.exists('/etc/alpine-release'):
+        rc = '/etc/init.d/opensvc'
+        params = '/etc/conf.d/opensvc'
+        src = os.path.join(pathini, 'opensvc.init.openrc')
+        activate = activate_openrc
     elif reldata["ID"] in ("centos", "rhel", "fedora") or os.path.exists('/etc/redhat-release'):
         params = '/etc/sysconfig/opensvc'
         src = os.path.join(pathini, 'opensvc.init.redhat')
