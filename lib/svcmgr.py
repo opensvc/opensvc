@@ -220,8 +220,6 @@ def prepare_options(options):
         opts.namespace = namespace
     elif "OSVC_NAMESPACE" in os.environ:
         opts.namespace = os.environ["OSVC_NAMESPACE"]
-    if opts.namespace == "root":
-        opts.namespace = None
     return opts
 
 def split_env(arg):

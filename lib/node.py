@@ -591,6 +591,8 @@ class Node(Crypt, ExtConfigMixin):
     def filter_ns(paths, namespace):
         if not namespace:
             return paths
+        if namespace == "root":
+            return [path for path in paths if "/" not in path]
         return [path for path in paths if path.startswith(namespace+"/")]
 
     def svcs_selector(self, selector, namespace=None):
@@ -756,7 +758,10 @@ class Node(Crypt, ExtConfigMixin):
             return False
 
         if len(elts) == 1:
-            if "/" in selector:
+            if selector.startswith("root/"):
+                selector = selector[5:]
+                return [path for path in paths if negate ^ ("/" not in path and fnmatch.fnmatch(path, selector))]
+            elif "/" in selector:
                 return [path for path in paths if negate ^ fnmatch.fnmatch(path, selector)]
             else:
                 return [path for path in paths if negate ^ fnmatch.fnmatch(path.split("/")[-1], selector)]

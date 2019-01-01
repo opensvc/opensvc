@@ -1088,10 +1088,12 @@ def is_service(f, namespace=None):
         f = os.path.join(rcEnv.paths.pathetc, f)
     elif f.startswith(os.sep):
         pass
+    elif namespace == "root":
+        f = os.path.join(rcEnv.paths.pathetc, f)
     elif namespace:
         f = os.path.join(rcEnv.paths.pathetcns, namespace, f)
     else:
-        f = os.path.join(rcEnv.paths.pathetcns, f)
+        f = os.path.join(rcEnv.paths.pathetc, f)
     if os.name != "nt" and os.path.realpath(f) != os.path.realpath(rcEnv.paths.svcmgr):
         return
     if not os.path.exists(f + '.conf'):
@@ -1101,7 +1103,7 @@ def is_service(f, namespace=None):
 def list_services(namespace=None):
     makedirs(rcEnv.paths.pathetc)
     l = []
-    if namespace is None:
+    if namespace in (None, "root"):
         s = glob.glob(GLOB_SVC_CONF)
         s = [x[:-5] for x in s]
         for name in s:
@@ -1111,6 +1113,7 @@ def list_services(namespace=None):
             if svcpath is None:
                 continue
             l.append(svcpath)
+    if namespace is None:
         s = glob.glob(GLOB_SVC_CONF_NS)
     else:
         s = glob.glob(os.path.join(rcEnv.paths.pathetcns, namespace, "*.conf"))
