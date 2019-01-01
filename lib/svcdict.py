@@ -1512,6 +1512,16 @@ KEYWORDS = [
     },
     {
         "section": "ip",
+        "keyword": "check_carrier",
+        "at": True,
+        "required": False,
+        "default": True,
+        "convert": "boolean",
+        "text": "Activate the link carrier check. Set to false if ipdev is a backend "
+                       "bridge or switch",
+    },
+    {
+        "section": "ip",
         "keyword": "expose",
         "at": True,
         "required": False,

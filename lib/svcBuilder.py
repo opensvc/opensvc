@@ -11,7 +11,8 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
-from rcUtilities import mimport, check_privs, list_services
+from rcUtilities import mimport, check_privs, list_services, fix_exe_link, \
+                        svc_pathetc, split_svcpath, makedirs
 
 def get_tags(svc, section):
     try:
@@ -310,6 +311,11 @@ def add_ip(svc, s):
         kwargs['expose'] = svc.conf_get(s, 'expose')
     except ex.OptNotFound as exc:
         kwargs['expose'] = exc.default
+
+    try:
+        kwargs['check_carrier'] = svc.conf_get(s, 'check_carrier')
+    except ex.OptNotFound as exc:
+        kwargs['check_carrier'] = exc.default
 
     if rtype in ("netns", "docker"):
         try:
@@ -2145,22 +2151,22 @@ def add_app(svc, s):
     svc += r
 
 
-def setup_logging(svcnames):
+def setup_logging(svcpaths):
     """Setup logging to stream + logfile, and logfile rotation
     class Logger instance name: 'log'
     """
-    max_svcname_len = 0
+    max_svcpath_len = 0
 
-    # compute max svcname length to align logging stream output
-    for svcname in svcnames:
-        n = len(svcname)
-        if n > max_svcname_len:
-            max_svcname_len = n
+    # compute max svcpath length to align logging stream output
+    for svcpath in svcpaths:
+        n = len(svcpath)
+        if n > max_svcpath_len:
+            max_svcpath_len = n
 
-    rcLogger.max_svcname_len = max_svcname_len
+    rcLogger.max_svcpath_len = max_svcpath_len
     rcLogger.initLogger(rcEnv.nodename)
 
-def build(name, svcconf=None, node=None, volatile=False):
+def build(name, namespace=None, svcconf=None, node=None, volatile=False):
     """build(name) is in charge of Svc creation
     it return None if service Name is not managed by local node
     else it return new Svc instance
@@ -2172,8 +2178,8 @@ def build(name, svcconf=None, node=None, volatile=False):
     # keep it separate from the framework stuff
     #
     discover_node()
-    svc = svc.Svc(svcname=name, node=node, cf=svcconf,
-                  volatile=volatile)
+    svc = svc.Svc(svcname=name, namespace=namespace, node=node,
+                  cf=svcconf, volatile=volatile)
 
     try:
         encapnodes = svc.conf_get('DEFAULT', "encapnodes")
@@ -2364,7 +2370,16 @@ def add_resources(svc):
     add_mandatory_syncs(svc)
     return ret
 
-def build_services(status=None, svcnames=None, create_instance=False,
+def strip_root_namespace(svcpaths):
+    l = []
+    for path in svcpaths:
+        if path.startswith("root/"):
+            l.append(path[5:])
+        else:
+            l.append(path)
+    return l
+
+def build_services(status=None, svcpaths=None, create_instance=False,
                    node=None):
     """
     Returns a list of all services of status matching the specified status.
@@ -2372,37 +2387,40 @@ def build_services(status=None, svcnames=None, create_instance=False,
     """
     import svc
 
-    if svcnames is None:
-        svcnames = []
+    if svcpaths is None:
+        svcpaths = []
 
     errors = []
     services = {}
 
-    if isinstance(svcnames, str):
-        svcnames = [svcnames]
+    if isinstance(svcpaths, str):
+        svcpaths = [svcpaths]
 
-    if len(svcnames) == 0:
-        svcnames = list_services()
-        missing_svcnames = []
+    #svcpaths = strip_root_namespace(svcpaths)
+
+    if len(svcpaths) == 0:
+        svcpaths = list_services()
+        missing_svcpaths = []
     else:
-        local_svcnames = list_services()
-        missing_svcnames = sorted(list(set(svcnames) - set(local_svcnames)))
-        for m in missing_svcnames:
+        local_svcpaths = list_services()
+        missing_svcpaths = sorted(list(set(svcpaths) - set(local_svcpaths)))
+        for m in missing_svcpaths:
             if create_instance:
                 services[m] = svc.Svc(m, node=node)
             else:
                 # foreign service
                 services[m] = svc.Svc(m, node=node, volatile=True)
-        svcnames = list(set(svcnames) & set(local_svcnames))
+        svcpaths = list(set(svcpaths) & set(local_svcpaths))
 
-    setup_logging(svcnames)
+    setup_logging(svcpaths)
 
-    for name in svcnames:
+    for svcpath in svcpaths:
+        svcname, namespace = split_svcpath(svcpath)
         try:
-            svc = build(name, node=node)
+            svc = build(svcname, namespace, node=node)
         except (ex.excError, ex.excInitError, ValueError, rcConfigParser.ParsingError) as e:
-            errors.append("%s: %s" % (name, str(e)))
-            svclog = rcLogger.initLogger(rcEnv.nodename+"."+name, handlers=["file", "syslog"])
+            errors.append("%s: %s" % (svcpath, str(e)))
+            svclog = rcLogger.initLogger(rcEnv.nodename+"."+svcpath.replace("/", ".", 1), handlers=["file", "syslog"])
             svclog.error(str(e))
             continue
         except ex.excAbortAction:
@@ -2411,28 +2429,24 @@ def build_services(status=None, svcnames=None, create_instance=False,
             import traceback
             traceback.print_exc()
             continue
-        services[svc.svcname] = svc
+        services[svc.svcpath] = svc
     return [s for _, s in sorted(services.items())], errors
 
-def create(svcname, resources=[], provision=False):
-    if not isinstance(svcname, list):
-        print("ouch, svcname should be a list object", file=sys.stderr)
-        return {"ret": 1}
-    if len(svcname) != 1:
-        print("you must specify a single service name with the 'create' action", file=sys.stderr)
-        return {"ret": 1}
-    svcname = svcname[0]
+def create(svcpath, resources=[], provision=False):
+    svcname, namespace = split_svcpath(svcpath)
     if len(svcname) == 0:
         print("service name must not be empty", file=sys.stderr)
         return {"ret": 1}
-    if svcname in list_services():
+    if svcname in list_services(namespace):
         print("service", svcname, "already exists", file=sys.stderr)
         return {"ret": 1}
-    cf = os.path.join(rcEnv.paths.pathetc, svcname+'.conf')
+    pathetc = svc_pathetc(svcname, namespace)
+    cf = os.path.join(pathetc, svcname+'.conf')
     if os.path.exists(cf):
         import shutil
         print(cf, "already exists. save as "+svcname+".conf.bak", file=sys.stderr)
         shutil.move(cf, os.path.join(rcEnv.paths.pathtmp, svcname+".conf.bak"))
+    makedirs(pathetc)
     try:
         f = open(cf, 'w')
     except:
@@ -2516,38 +2530,5 @@ def create(svcname, resources=[], provision=False):
             conf.set(section, key, val)
 
     conf.write(f)
-    fix_exe_link(svcname)
+    fix_exe_link(svcname, namespace)
     return {"ret": 0, "rid": sections.keys()}
-
-def exe_link_exists(svcname):
-    if os.name != 'posix':
-        return False
-    try:
-        p = os.readlink(os.path.join(rcEnv.paths.pathetc, svcname))
-        if p == rcEnv.paths.svcmgr:
-            return True
-        else:
-            return False
-    except:
-        return False
-
-def fix_exe_link(svcname):
-    """
-    Create the <svcname> -> svcmgr symlink
-    """
-    if os.name != 'posix':
-        return
-    if not os.path.exists(os.path.join(rcEnv.paths.pathetc, svcname+".conf")):
-        return
-    if not exe_link_exists(svcname):
-        from freezer import Freezer
-        Freezer(svcname).freeze()
-    os.chdir(rcEnv.paths.pathetc)
-    try:
-        p = os.readlink(svcname)
-    except:
-        os.symlink(rcEnv.paths.svcmgr, svcname)
-        p = rcEnv.paths.svcmgr
-    if p != rcEnv.paths.svcmgr:
-        os.unlink(svcname)
-        os.symlink(rcEnv.paths.svcmgr, svcname)

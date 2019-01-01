@@ -43,7 +43,8 @@ then
 	BIN="$OSVC_ROOT_PATH/lib/$BASENAME.py"
 else
 	# exec from a service link: add the --service parameter
-	OSVC_SERVICE_LINK=$BASENAME
+	DIRNAME=`dirname $0`
+	OSVC_SERVICE_LINK="`cd $DIRNAME && echo $PWD`/$BASENAME"
 	export OSVC_SERVICE_LINK
 	BIN="$OSVC_ROOT_PATH/lib/svcmgr.py"
 fi

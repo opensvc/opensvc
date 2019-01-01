@@ -41,7 +41,9 @@ from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         call, which, purge_cache_expired, read_cf, unset_lazy, \
                         drop_option, is_string, try_decode, is_service, \
-                        list_services, init_locale, ANSI_ESCAPE
+                        list_services, init_locale, ANSI_ESCAPE, svc_pathetc, \
+                        makedirs, exe_link_exists, fmt_svcpath, \
+                        glob_services_config, split_svcpath
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -165,8 +167,7 @@ class Node(Crypt, ExtConfigMixin):
     @lazy
     def var_d(self):
         var_d = os.path.join(rcEnv.paths.pathvar, "node")
-        if not os.path.exists(var_d):
-            os.makedirs(var_d, 0o755)
+        makedirs(var_d)
         return var_d
 
     @property
@@ -579,7 +580,20 @@ class Node(Crypt, ExtConfigMixin):
         kwargs["log"] = self.log
         return vcall(*args, **kwargs)
 
-    def svcs_selector(self, selector):
+    @staticmethod
+    def strip_ns(paths, namespace):
+        if namespace:
+            return [path.split("/")[-1] for path in paths]
+        else:
+            return paths
+
+    @staticmethod
+    def filter_ns(paths, namespace):
+        if not namespace:
+            return paths
+        return [path for path in paths if path.startswith(namespace+"/")]
+
+    def svcs_selector(self, selector, namespace=None):
         """
         Given a selector string, return a list of service names.
         This exposed method only aggregates ORed elements.
@@ -588,67 +602,78 @@ class Node(Crypt, ExtConfigMixin):
             data = self._daemon_status(silent=True)["monitor"]
         except Exception as exc:
             data = None
-        if os.environ.get("OSVC_SERVICE_LINK"):
+
+        # fully qualified svcname
+        path = is_service(selector, namespace)
+        if path:
             self.options.single_service = True
-            return [os.environ.get("OSVC_SERVICE_LINK")]
+            return [path]
+
+        # full listing and namespace full listing
         if selector is None or "*" in selector.split(","):
-            if data is None:
-                return list_services()
+            if data:
+                paths = [path for path in data["services"]]
+                paths = self.filter_ns(paths, namespace)
             else:
-                return [svcname for svcname in data["services"]]
-        if is_service(selector):
-            self.options.single_service = True
-            return [selector]
-        self.build_services()
+                paths = list_services(namespace)
+            return paths
+
+        # fnmatch on names and service config/status filtering
         try:
-            return self._svcs_selector(selector, data)
+            paths = self._svcs_selector(selector, data, namespace)
         finally:
             del self.services
             self.services = None
+        return paths
 
-    def _svcs_selector(self, selector, data=None):
+    def _svcs_selector(self, selector, data=None, namespace=None):
+        self.build_services()
         if data and "services" in data:
-            svcnames = [svcname for svcname in data["services"]]
+            paths = [path for path in data["services"]]
         else:
-            svcnames = [svc.svcname for svc in self.svcs]
+            paths = [svc.svcpath for svc in self.svcs]
+        paths = self.filter_ns(paths, namespace)
         if "," in selector:
             ored_selectors = selector.split(",")
         else:
             ored_selectors = [selector]
         result = []
         for _selector in ored_selectors:
-            for svcname in self.__svcs_selector(_selector, data, svcnames):
-                if svcname not in result:
-                    result.append(svcname)
-        if len(result) == 0 and re.findall(r"[,\+\*=\^:~><]", selector) == []:
+            for path in self.__svcs_selector(_selector, data, paths, namespace=namespace):
+                if path not in result:
+                    result.append(path)
+        if len(result) == 0 and not re.findall(r"[,\+\*=\^:~><]", selector):
             raise ex.excError("service not found")
         return result
 
-    def __svcs_selector(self, selector, data, svcnames):
+    def __svcs_selector(self, selector, data, paths, namespace=None):
         """
         Given a selector string, return a list of service names.
         This method only intersect the ANDed elements.
         """
         if selector in (None, ""):
             return []
-        elif "+" in selector:
+        path = is_service(selector, namespace)
+        if path:
+            return [path]
+        if "+" in selector:
             anded_selectors = selector.split("+")
         else:
             anded_selectors = [selector]
         if selector in (None, ""):
-            result = svcnames
+            result = paths
         else:
             result = None
             for _selector in anded_selectors:
-                _svcnames = self.___svcs_selector(_selector, svcnames)
+                _paths = self.___svcs_selector(_selector, paths)
                 if result is None:
-                    result = _svcnames
+                    result = _paths
                 else:
-                    common = set(result) & set(_svcnames)
+                    common = set(result) & set(_paths)
                     result = [svcname for svcname in result if svcname in common]
         return result
 
-    def ___svcs_selector(self, selector, svcnames):
+    def ___svcs_selector(self, selector, paths):
         """
         Given a basic selector string (no AND nor OR), return a list of service
         names.
@@ -731,7 +756,10 @@ class Node(Crypt, ExtConfigMixin):
             return False
 
         if len(elts) == 1:
-            return [svcname for svcname in svcnames if negate ^ fnmatch.fnmatch(svcname, selector)]
+            if "/" in selector:
+                return [path for path in paths if negate ^ fnmatch.fnmatch(path, selector)]
+            else:
+                return [path for path in paths if negate ^ fnmatch.fnmatch(path.split("/")[-1], selector)]
         elif len(elts) != 3:
             return []
         param, op, value = elts
@@ -744,7 +772,7 @@ class Node(Crypt, ExtConfigMixin):
         for svc in self.svcs:
             ret = svc_matching(svc, param, op, value)
             if ret ^ negate:
-                result.append(svc.svcname)
+                result.append(svc.svcpath)
 
         return result
 
@@ -755,25 +783,25 @@ class Node(Crypt, ExtConfigMixin):
         the node.
         """
         if self.svcs is not None and \
-           ('svcnames' not in kwargs or \
-           (isinstance(kwargs['svcnames'], list) and len(kwargs['svcnames']) == 0)):
+           ('svcpaths' not in kwargs or \
+           (isinstance(kwargs['svcpaths'], list) and len(kwargs['svcpaths']) == 0)):
             return
 
-        if 'svcnames' in kwargs and \
-           isinstance(kwargs['svcnames'], list) and \
-           len(kwargs['svcnames']) > 0 and \
+        if 'svcpaths' in kwargs and \
+           isinstance(kwargs['svcpaths'], list) and \
+           len(kwargs['svcpaths']) > 0 and \
            self.svcs is not None:
-            svcnames_request = set(kwargs['svcnames'])
-            svcnames_actual = set([s.svcname for s in self.svcs])
-            if len(svcnames_request-svcnames_actual) == 0:
+            svcpaths_request = set(kwargs['svcpaths'])
+            svcpaths_actual = set([s.svcname for s in self.svcs])
+            if len(svcpaths_request-svcpaths_actual) == 0:
                 return
 
         self.services = {}
 
         kwargs["node"] = self
         svcs, errors = svcBuilder.build_services(*args, **kwargs)
-        if 'svcnames' in kwargs:
-            self.check_build_errors(kwargs['svcnames'], svcs, errors)
+        if 'svcpaths' in kwargs:
+            self.check_build_errors(kwargs['svcpaths'], svcs, errors)
 
         opt_status = kwargs.get("status")
         for svc in svcs:
@@ -784,13 +812,13 @@ class Node(Crypt, ExtConfigMixin):
         rcLogger.set_namelen(self.svcs)
 
     @staticmethod
-    def check_build_errors(svcnames, svcs, errors):
+    def check_build_errors(svcpaths, svcs, errors):
         """
         Raise error if the service builder did not return a Svc object for
         each service we requested.
         """
-        if isinstance(svcnames, list):
-            n_args = len(svcnames)
+        if isinstance(svcpaths, list):
+            n_args = len(svcpaths)
         else:
             n_args = 1
         n_svcs = len(svcs)
@@ -805,16 +833,16 @@ class Node(Crypt, ExtConfigMixin):
             msg += "\n".join(["- "+err for err in errors])
         raise ex.excError(msg)
 
-    def rebuild_services(self, svcnames):
+    def rebuild_services(self, svcpaths):
         """
         Delete the list of Svc objects in the Node object and create a new one.
 
         Args:
-          svcnames: add only Svc objects for services specified
+          svcpaths: add only Svc objects for services specified
         """
         del self.services
         self.services = None
-        self.build_services(svcnames=svcnames, node=self)
+        self.build_services(svcpaths=svcpaths, node=self)
 
     def close(self):
         """
@@ -1013,27 +1041,6 @@ class Node(Crypt, ExtConfigMixin):
             # some action don't need self.auth_config
             pass
 
-    def setup_sync_outdated(self):
-        """
-        Return True if any configuration file has changed in the last 10'
-        else return False
-        """
-        import glob
-        setup_sync_flag = os.path.join(self.var_d, 'last_setup_sync')
-        fpaths = glob.glob(os.path.join(rcEnv.paths.pathetc, '*.conf'))
-        if not os.path.exists(setup_sync_flag):
-            return True
-        for fpath in fpaths:
-            try:
-                mtime = os.stat(fpath).st_mtime
-                with open(setup_sync_flag) as ofile:
-                    last = float(ofile.read())
-            except (OSError, IOError):
-                return True
-            if mtime > last:
-                return True
-        return False
-
     def __iadd__(self, svc):
         """
         Implement the Node() += Svc() operation, setting the node backpointer
@@ -1043,7 +1050,7 @@ class Node(Crypt, ExtConfigMixin):
             return self
         if self.services is None:
             self.services = {}
-        self.services[svc.svcname] = svc
+        self.services[svc.svcpath] = svc
         return self
 
     def action(self, action, options=None):
@@ -2059,8 +2066,7 @@ class Node(Crypt, ExtConfigMixin):
         tmpp = os.path.join(rcEnv.paths.pathtmp, 'compliance')
         backp = os.path.join(rcEnv.paths.pathtmp, 'compliance.bck')
         compp = os.path.join(rcEnv.paths.pathvar, 'compliance')
-        if not os.path.exists(compp):
-            os.makedirs(compp, 0o755)
+        makedirs(compp)
         import shutil
         try:
             shutil.rmtree(backp)
@@ -2324,26 +2330,6 @@ class Node(Crypt, ExtConfigMixin):
             lun=self.options.lun,
         )
 
-    def discover(self):
-        """
-        Auto configures services wrapping cloud compute instances
-        """
-        self.cloud_init()
-
-    def cloud_init(self):
-        """
-        Initializes a cloud object for each cloud seaction in the configuration
-        file.
-        """
-        ret = 0
-        for section in self.config.sections():
-            try:
-                self.cloud_init_section(section)
-            except ex.excInitError as exc:
-                print(str(exc), file=sys.stderr)
-                ret |= 1
-        return ret
-
     def cloud_get(self, section):
         """
         Get the cloud object instance handling the config file section passed
@@ -2389,82 +2375,6 @@ class Node(Crypt, ExtConfigMixin):
         self.clouds[section] = cloud
         return cloud
 
-    def cloud_init_section(self, section):
-        """
-        Detects all cloud instances in the section, and init a service for each
-        """
-        cloud = self.cloud_get(section)
-
-        if cloud is None:
-            return
-
-        cloud_id = cloud.cloud_id()
-        svcnames = cloud.list_svcnames()
-
-        self.cloud_purge_services(cloud_id, [x[1] for x in svcnames])
-
-        for vmname, svcname in svcnames:
-            self.cloud_init_service(cloud, vmname, svcname)
-
-    @staticmethod
-    def cloud_purge_services(suffix, svcnames):
-        """
-        Purge a lingering service no longer detected in the cloud.
-        """
-        import glob
-        fpaths = glob.glob(os.path.join(rcEnv.paths.pathetc, '*.conf'))
-        for fpath in fpaths:
-            svcname = os.path.basename(fpath)[:-5]
-            if svcname.endswith(suffix) and svcname not in svcnames:
-                print("purge_service(svcname)", svcname)
-
-    @staticmethod
-    def cloud_init_service(cloud, vmname, svcname):
-        """
-        Init a service for a detected cloud instance.
-        """
-        import glob
-        fpaths = glob.glob(os.path.join(rcEnv.paths.pathetc, '*.conf'))
-        fpath = os.path.join(rcEnv.paths.pathetc, svcname+'.conf')
-        if fpath in fpaths:
-            print(svcname, "is already defined")
-            return
-        print("initialize", svcname)
-
-        defaults = {
-            "app": cloud.app_id(svcname),
-            "mode": cloud.mode,
-            "nodes": rcEnv.nodename,
-            "service_type": "TST",
-            "vm_name": vmname,
-            "cloud_id": cloud.cid,
-        }
-        config = rcConfigParser.RawConfigParser(defaults)
-
-        try:
-            ofile = open(fpath, 'w')
-            config.write(ofile)
-            ofile.close()
-        except:
-            print("failed to write %s"%fpath, file=sys.stderr)
-            raise Exception()
-
-        basename = fpath[:-5]
-        launchers_d = basename + '.dir'
-        launchers_l = basename + '.d'
-        try:
-            os.makedirs(launchers_d)
-        except OSError:
-            pass
-        try:
-            os.symlink(launchers_d, launchers_l)
-        except OSError:
-            pass
-        try:
-            os.symlink(rcEnv.paths.svcmgr, basename)
-        except OSError:
-            pass
-
     def can_parallel(self, action, options):
         """
         Returns True if the action can be run in a subprocess per service
@@ -2501,7 +2411,7 @@ class Node(Crypt, ExtConfigMixin):
         * collection and aggregation of returned data and errors
         """
         if action == "ls":
-            data = sorted([svc.svcname for svc in self.svcs])
+            data = self.strip_ns(sorted([svc.svcpath for svc in self.svcs]), options.namespace)
             if options.format == "json":
                 print(json.dumps(data, indent=4, sort_keys=True))
             else:
@@ -2683,8 +2593,7 @@ class Node(Crypt, ExtConfigMixin):
         for chunk in iter(lambda: f.read(4096), b""):
             buff += chunk
         data = {"data": bdecode(base64.urlsafe_b64encode(buff))}
-        if not os.path.exists(rcEnv.paths.safe):
-            os.makedirs(rcEnv.paths.safe)
+        makedirs(rcEnv.paths.safe)
         with open(fpath, 'w') as df:
             pass
         os.chmod(fpath, 0o0600)
@@ -2873,12 +2782,13 @@ class Node(Crypt, ExtConfigMixin):
                 ofile.write(chunk)
         ufile.close()
 
-    def install_svc_conf_from_templ(self, svcname, template, restore=False):
+    def install_svc_conf_from_templ(self, svcname, namespace, template, restore=False):
         """
         Download a provisioning template from the collector's rest api,
         and installs it as the service configuration file.
         """
-        fpath = os.path.join(rcEnv.paths.pathetc, svcname+'.conf')
+        pathetc = svc_pathetc(svcname, namespace)
+        fpath = os.path.join(pathetc, svcname+'.conf')
         try:
             int(template)
             url = "/provisioning_templates/"+str(template)+"?props=tpl_definition&meta=0"
@@ -2893,9 +2803,9 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("service has an empty configuration")
         with open(fpath, "w") as ofile:
             ofile.write(data["data"][0]["tpl_definition"].replace("\\n", "\n").replace("\\t", "\t"))
-        self.install_svc_conf_from_file(svcname, fpath, restore)
+        self.install_svc_conf_from_file(svcname, namespace, fpath, restore)
 
-    def install_svc_conf_from_uri(self, svcname, fpath, restore=False):
+    def install_svc_conf_from_uri(self, svcname, namespace, fpath, restore=False):
         """
         Download a provisioning template from an arbitrary uri,
         and installs it as the service configuration file.
@@ -2913,17 +2823,18 @@ class Node(Crypt, ExtConfigMixin):
                 os.unlink(tmpfpath)
             except OSError:
                 pass
-        self.install_svc_conf_from_file(svcname, tmpfpath, restore)
+        self.install_svc_conf_from_file(svcname, namespace, tmpfpath, restore)
 
-    def install_svc_conf_from_file(self, svcname, fpath, restore=False):
+    def install_svc_conf_from_file(self, svcname, namespace, fpath, restore=False):
         """
         Installs a local template as the service configuration file.
         """
         if not os.path.exists(fpath):
             raise ex.excError("%s does not exists" % fpath)
 
+        pathetc = svc_pathetc(svcname, namespace)
         src_cf = os.path.realpath(fpath)
-        dst_cf = os.path.join(rcEnv.paths.pathetc, svcname+'.conf')
+        dst_cf = os.path.join(pathetc, svcname+'.conf')
         if dst_cf == src_cf:
             return
 
@@ -2949,12 +2860,13 @@ class Node(Crypt, ExtConfigMixin):
         shutil.move(tmpfpath, dst_cf)
 
     @staticmethod
-    def install_svc_conf_from_data(svcname, data, restore=False):
+    def install_svc_conf_from_data(svcname, namespace, data, restore=False):
         """
         Installs a service configuration file from section, keys and values
         fed from a data structure.
         """
-        fpath = os.path.join(rcEnv.paths.pathetc, svcname+'.conf')
+        pathetc = svc_pathetc(svcname, namespace)
+        fpath = os.path.join(pathetc, svcname+'.conf')
         config = rcConfigParser.RawConfigParser()
 
         for section_name, section in data.items():
@@ -2972,22 +2884,13 @@ class Node(Crypt, ExtConfigMixin):
             print("failed to write %s"%fpath, file=sys.stderr)
             raise Exception()
 
-    def install_service(self, svcname, fpath=None, template=None, restore=False):
+    def install_service(self, svcpath, fpath=None, template=None, restore=False):
         """
         Pick a collector's template, arbitrary uri, or local file service
         configuration file fetching method. Run it, and create the
         service symlinks and launchers directory.
         """
-        if isinstance(svcname, list):
-            if len(svcname) != 1:
-                raise ex.excError("only one service must be specified")
-            svcname = svcname[0]
-
-        try:
-            svcname.encode("ascii")
-        except Exception:
-            raise ex.excError("the service name must be ascii-encodable")
-
+        svcname, namespace = split_svcpath(svcpath)
         data = None
         if sys.stdin and fpath in ("-", "/dev/stdin"):
             feed = ""
@@ -3002,36 +2905,36 @@ class Node(Crypt, ExtConfigMixin):
         if fpath is not None and template is not None:
             raise ex.excError("--config and --template can't both be specified")
 
-        if not svcBuilder.exe_link_exists(svcname):
+        if not exe_link_exists(svcname, namespace):
             # freeze before the installing the config so the daemon never
             # has a chance to consider the new service unfrozen and take undue
             # action before we have the change to modify the service config
-            Freezer(svcname).freeze()
+            Freezer(svcpath).freeze()
 
         ret = 0
         if data is not None:
-            self.install_svc_conf_from_data(svcname, data, restore)
+            self.install_svc_conf_from_data(svcname, namespace, data, restore)
         elif template is not None:
             if "://" in template:
-                self.install_svc_conf_from_uri(svcname, template, restore)
+                self.install_svc_conf_from_uri(svcname, namespace, template, restore)
             elif os.path.exists(template):
-                self.install_svc_conf_from_file(svcname, template, restore)
+                self.install_svc_conf_from_file(svcname, namespace, template, restore)
             else:
-                self.install_svc_conf_from_templ(svcname, template, restore)
+                self.install_svc_conf_from_templ(svcname, namespace, template, restore)
         elif fpath is not None:
             if "://" in fpath:
-                self.install_svc_conf_from_uri(svcname, fpath, restore)
+                self.install_svc_conf_from_uri(svcname, namespace, fpath, restore)
             else:
-                self.install_svc_conf_from_file(svcname, fpath, restore)
+                self.install_svc_conf_from_file(svcname, namespace, fpath, restore)
         else:
             ret = 2
 
-        self.install_service_files(svcname)
+        self.install_service_files(svcname, namespace)
         self.wake_monitor()
         return ret
 
     @staticmethod
-    def install_service_files(svcname):
+    def install_service_files(svcname, namespace=None):
         """
         Given a service name, install the symlink to svcmgr.
         """
@@ -3039,7 +2942,9 @@ class Node(Crypt, ExtConfigMixin):
             return
 
         # install svcmgr link
-        svcmgr_l = os.path.join(rcEnv.paths.pathetc, svcname)
+        pathetc = svc_pathetc(svcname, namespace)
+        makedirs(pathetc)
+        svcmgr_l = os.path.join(pathetc, svcname)
         if not os.path.exists(svcmgr_l):
             os.symlink(rcEnv.paths.svcmgr, svcmgr_l)
         elif os.path.realpath(rcEnv.paths.svcmgr) != os.path.realpath(svcmgr_l):
@@ -3052,8 +2957,7 @@ class Node(Crypt, ExtConfigMixin):
         number of services configured.
         """
         #self.log.debug("len self.svcs <%s>", len(self.svcs))
-        import glob
-        n_conf = len(glob.glob(os.path.join(rcEnv.paths.pathetc, "*.conf")))
+        n_conf = len(glob_services_config())
         proportional_nofile = 64 * n_conf
         if proportional_nofile > nofile:
             nofile = proportional_nofile
@@ -3506,33 +3410,33 @@ class Node(Crypt, ExtConfigMixin):
         )
         return data
 
-    def cluster_stats(self, svcnames=None):
+    def cluster_stats(self, svcpaths=None):
         data = {}
         for node in self.cluster_nodes:
             try:
-                data[node] = self._daemon_stats(svcnames=svcnames)["data"]
+                data[node] = self._daemon_stats(svcpaths=svcpaths)["data"]
             except Exception:
                 pass
         return data
         
-    def daemon_stats(self, svcnames=None, node=None):
+    def daemon_stats(self, svcpaths=None, node=None):
         if node:
             daemon_node = node
         elif self.options.node:
             daemon_node = self.options.node
         else:
             daemon_node = rcEnv.nodename
-        data = self._daemon_stats(svcnames=svcnames, node=daemon_node)
+        data = self._daemon_stats(svcpaths=svcpaths, node=daemon_node)
         if data is None or data.get("status", 0) != 0:
             return
         return self.print_data(data["data"], default_fmt="flat_json")
 
-    def _daemon_stats(self, svcnames=None, silent=False, node=None):
+    def _daemon_stats(self, svcpaths=None, silent=False, node=None):
         data = self.daemon_send(
             {
                 "action": "daemon_stats",
                 "options": {
-                    "svcnames": svcnames,
+                    "svcpaths": svcpaths,
                 }
             },
             nodename=node,
@@ -3540,7 +3444,7 @@ class Node(Crypt, ExtConfigMixin):
         )
         return data
 
-    def daemon_status(self, svcnames=None, node=None):
+    def daemon_status(self, svcpaths=None, node=None):
         if node:
             daemon_node = node
         elif self.options.node:
@@ -3556,7 +3460,7 @@ class Node(Crypt, ExtConfigMixin):
             return
 
         from fmt_cluster import format_cluster
-        return format_cluster(svcnames=svcnames, node=node, data=data)
+        return format_cluster(svcpaths=svcpaths, node=node, data=data)
 
     def daemon_blacklist_clear(self):
         """

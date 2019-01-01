@@ -2,7 +2,7 @@ import os
 import datetime
 import re
 import json
-from six.moves.urllib.parse import quote
+from six.moves.urllib.parse import quote # pylint: disable=import-error
 from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
 import rcAsset

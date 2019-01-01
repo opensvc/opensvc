@@ -219,12 +219,19 @@ def set_mem_cgroup(o):
             raise ex.excError
         set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
 
+def get_namespace(o):
+    if hasattr(o, "namespace"):
+        buff = o.namespace
+    else:
+        buff = o.svc.namespace
+    return buff
+
 def get_svcname(o):
     if hasattr(o, "svcname"):
-        svcname = o.svcname
+        buff = o.svcname
     else:
-        svcname = o.svc.svcname
-    return svcname
+        buff = o.svc.svcname
+    return buff
 
 def get_log(o):
     if hasattr(o, "log"):
@@ -235,17 +242,25 @@ def get_log(o):
         log = None
     return log
 
-def get_cgroup_relpath(o):
+def get_cgroup_svc_relpath(o, suffix=".slice"):
+    svcname = get_svcname(o)
+    namespace = get_namespace(o)
+    elements = ["opensvc" + suffix]
+    if namespace:
+        elements.append(namespace + suffix)
+    elements.append(svcname + suffix)
+    return os.path.join(*elements)
+
+def get_cgroup_relpath(o, suffix=".slice"):
     if hasattr(o, "type") and o.type == "container.lxc" and \
        hasattr(o, "name") and not o.capable("cgroup_dir"):
         return os.path.join("lxc", o.name)
 
-    svcname = get_svcname(o)
-    elements = ["opensvc.slice", svcname+".slice"]
+    elements = [get_cgroup_svc_relpath(o, suffix=suffix)]
     if hasattr(o, "rset") and o.rset is not None:
-        elements.append(o.rset.rid.replace(":", ".")+".slice")
+        elements.append(o.rset.rid.replace(":", ".") + suffix)
     if hasattr(o, "rid") and o.rid is not None:
-        elements.append(o.rid.replace("#", ".")+".slice")
+        elements.append(o.rid.replace("#", ".") + suffix)
     return os.path.join(*elements)
 
 def get_cgroup_path(o, t, create=True):
@@ -265,11 +280,10 @@ def get_cgroup_path(o, t, create=True):
 
 def remove_pg(o):
     log = o.log
-    svcname = get_svcname(o)
     for t in CONTROLLERS:
-        cgp = os.path.join(os.sep, "sys", "fs", "cgroup", t, "opensvc.slice", svcname+".slice")
+        cgp = os.path.join(os.sep, "sys", "fs", "cgroup", t, get_cgroup_svc_relpath(o))
         remove_cgroup(cgp, log)
-        cgp = os.path.join(os.sep, "sys", "fs", "cgroup", t, "opensvc", svcname)
+        cgp = os.path.join(os.sep, "sys", "fs", "cgroup", t, get_cgroup_svc_relpath(o, suffix=""))
         remove_cgroup(cgp, log)
 
 def remove_cgroup(cgp, log):

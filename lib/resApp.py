@@ -184,8 +184,7 @@ class App(Resource):
         """
         Lazy init for the resource lock file path property.
         """
-        lockfile = os.path.join(rcEnv.paths.pathlock, self.svc.svcname)
-        lockfile = ".".join((lockfile, self.rid))
+        lockfile = os.path.join(self.var_d, "lock")
         return lockfile
 
     def validate_on_action(self, cmd):

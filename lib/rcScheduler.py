@@ -126,7 +126,7 @@ class Scheduler(object):
     this class.
     """
     def __init__(self, config_defaults=None, config=None, options=None,
-                 scheduler_actions=None, log=None, name="node", svc=None):
+                 scheduler_actions=None, log=None, svc=None):
         self.config_defaults = config_defaults
         self.config = config
 
@@ -140,33 +140,16 @@ class Scheduler(object):
         else:
             self.options = options
 
-        self.name = name
-        self.svc = svc
         self.log = log
-        self.sched_log_shut = False
-
-    def sched_log(self, task, msg, level):
-        """
-        A logger wrapping method, used to log to the service or node
-        sublogger dedicated to scheduling.
-        """
-        if self.sched_log_shut:
-            return
-
-        try:
-            task = task.replace(self.name + ".", "")
-        except:
-            pass
-
-        log = logging.getLogger(self.log.name+".scheduler")
-        getattr(log, level)(SCHED_FMT % (task, msg))
+        self.svc = svc
+        if svc and not log:
+            self.log = svc.log
 
     def get_next_schedule(self, action, _max=14400):
         """
         Iterate future dates in search for the next date validating
         <action> scheduling constraints.
         """
-        self.sched_log_shut = True
         now = datetime.datetime.now()
         cron = self.options.cron
         self.options.cron = True
@@ -892,10 +875,10 @@ class Scheduler(object):
         Return the full path of the last run timestamp file with the <fname>
         basename.
         """
-        if self.name == "node":
-            timestamp_d = os.path.join(rcEnv.paths.pathvar, "node", "scheduler")
+        if self.svc:
+            timestamp_d = os.path.join(self.svc.var_d, "scheduler")
         else:
-            timestamp_d = os.path.join(rcEnv.paths.pathvar, "services", self.name, "scheduler")
+            timestamp_d = os.path.join(rcEnv.paths.pathvar, "node", "scheduler")
         fpath = os.path.join(timestamp_d, fname)
         if success:
             fpath += ".success"
@@ -992,15 +975,6 @@ class Scheduler(object):
         if schedule_option is None:
             schedule_option = sopt.schedule_option
 
-        def title():
-            """
-            Return a string to use as the task title in log entries.
-            """
-            buff = ".".join((self.name, action))
-            if "#" in section:
-                buff += "." + section
-            return buff
-
         if not self._is_croned():
             # don't update the timestamp file
             return False
@@ -1009,10 +983,8 @@ class Scheduler(object):
         try:
             delay = self.allow_action_schedule(section, schedule_option, fname=fname, now=now)
         except Exception as exc:
-            self.sched_log(title(), str(exc), "debug")
             return True
 
-        #self.sched_log(title(), "run task", "info")
         return delay
 
     def print_schedule(self):

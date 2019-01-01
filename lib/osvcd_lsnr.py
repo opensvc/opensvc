@@ -19,7 +19,7 @@ import rcExceptions as ex
 from six.moves import queue
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import bdecode, drop_option, chunker
+from rcUtilities import bdecode, drop_option, chunker, svc_pathcf
 from converters import convert_size
 
 RELAY_DATA = {}
@@ -305,14 +305,14 @@ class Listener(shared.OsvcThread):
                                     addr=addr, **options)
 
     def action_run_done(self, nodename, **kwargs):
-        svcname = kwargs.get("svcname")
+        svcpath = kwargs.get("svcpath")
         action = kwargs.get("action")
         rids = kwargs.get("rids")
         if not rids is None:
             rids = ",".join(sorted(rids))
         if not action:
             return {"status": 0}
-        sig = (action, svcname, rids)
+        sig = (action, svcpath, rids)
         with shared.RUN_DONE_LOCK:
             shared.RUN_DONE.add(sig)
         return {"status": 0}
@@ -383,7 +383,7 @@ class Listener(shared.OsvcThread):
             for svc in shared.SERVICES.values():
                 _data = svc.pg_stats()
                 if _data:
-                    data["services"][svc.svcname] = _data
+                    data["services"][svc.svcpath] = _data
         return {"status": 0, "data": data}
 
     def action_daemon_status(self, nodename, **kwargs):
@@ -405,7 +405,7 @@ class Listener(shared.OsvcThread):
 
     def wait_shutdown(self):
         def still_shutting():
-            for svcname, smon in shared.SMON_DATA.items():
+            for svcpath, smon in shared.SMON_DATA.items():
                 if smon.local_expect == "shutdown":
                     return True
             return False
@@ -423,8 +423,8 @@ class Listener(shared.OsvcThread):
         try:
             self.set_nmon("shutting")
             mon.kill_procs()
-            for svcname in shared.SMON_DATA:
-                self.set_smon(svcname, local_expect="shutdown")
+            for svcpath in shared.SMON_DATA:
+                self.set_smon(svcpath, local_expect="shutdown")
             self.wait_shutdown()
 
             # send a last status to peers so they can takeover asap
@@ -526,46 +526,46 @@ class Listener(shared.OsvcThread):
             return self._action_get_service_config_file(nodename, **kwargs)
 
     def _action_get_service_config_json(self, nodename, **kwargs):
-        svcname = kwargs.get("svcname")
+        svcpath = kwargs.get("svcpath")
         evaluate = kwargs.get("evaluate")
         impersonate = kwargs.get("impersonate")
         try:
-            return shared.SERVICES[svcname].print_config_data(evaluate=evaluate, impersonate=impersonate)
+            return shared.SERVICES[svcpath].print_config_data(evaluate=evaluate, impersonate=impersonate)
         except Exception as exc:
             return {"status": "1", "error": str(exc), "traceback": traceback.format_exc()}
 
     def _action_get_service_config_file(self, nodename, **kwargs):
-        svcname = kwargs.get("svcname")
-        if not svcname:
-            return {"error": "no svcname specified", "status": 1}
-        if shared.SMON_DATA.get(svcname, {}).get("status") in ("purging", "deleting") or \
-           shared.SMON_DATA.get(svcname, {}).get("global_expect") in ("purged", "deleted"):
+        svcpath = kwargs.get("svcpath")
+        if not svcpath:
+            return {"error": "no svcpath specified", "status": 1}
+        if shared.SMON_DATA.get(svcpath, {}).get("status") in ("purging", "deleting") or \
+           shared.SMON_DATA.get(svcpath, {}).get("global_expect") in ("purged", "deleted"):
             return {"error": "delete in progress", "status": 2}
-        fpath = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
+        fpath = svc_pathcf(svcpath)
         if not os.path.exists(fpath):
             return {"error": "%s does not exist" % fpath, "status": 3}
         mtime = os.path.getmtime(fpath)
         with codecs.open(fpath, "r", "utf8") as filep:
             buff = filep.read()
-        self.log.info("serve service %s config to %s", svcname, nodename)
+        self.log.info("serve service %s config to %s", svcpath, nodename)
         return {"status": 0, "data": buff, "mtime": mtime}
 
     def action_wake_monitor(self, nodename, **kwargs):
-        svcname = kwargs.get("svcname", "<unspecified>")
-        shared.wake_monitor(reason="service %s notification" % svcname)
+        svcpath = kwargs.get("svcpath", "<unspecified>")
+        shared.wake_monitor(reason="service %s notification" % svcpath)
         return {"status": 0}
 
     def action_clear(self, nodename, **kwargs):
-        svcname = kwargs.get("svcname")
-        if svcname is None:
-            return {"error": "no svcname specified", "status": 1}
-        smon = self.get_service_monitor(svcname)
+        svcpath = kwargs.get("svcpath")
+        if svcpath is None:
+            return {"error": "no svcpath specified", "status": 1}
+        smon = self.get_service_monitor(svcpath)
         if smon.status.endswith("ing"):
             return {"info": "skip clear on %s instance" % smon.status, "status": 0}
-        self.set_smon(svcname, status="idle", reset_retries=True)
+        self.set_smon(svcpath, status="idle", reset_retries=True)
         return {"status": 0}
 
-    def get_service_slaves(self, svcname, slaves=None):
+    def get_service_slaves(self, svcpath, slaves=None):
         """
         Recursive lookup of service slaves.
         """
@@ -573,7 +573,7 @@ class Listener(shared.OsvcThread):
             slaves = set()
         for nodename in shared.CLUSTER_DATA:
             try:
-                data = shared.CLUSTER_DATA[nodename]["services"]["status"][svcname]
+                data = shared.CLUSTER_DATA[nodename]["services"]["status"][svcpath]
             except KeyError:
                 continue
             new_slaves = set(data.get("slaves", [])) | set(data.get("scaler_slaves", []))
@@ -584,23 +584,23 @@ class Listener(shared.OsvcThread):
         return slaves
 
     def action_set_service_monitor(self, nodename, **kwargs):
-        svcname = kwargs.get("svcname")
-        if svcname is None:
-            return {"error": ["no svcname specified"], "status": 1}
+        svcpath = kwargs.get("svcpath")
+        if svcpath is None:
+            return {"error": ["no svcpath specified"], "status": 1}
         status = kwargs.get("status")
         local_expect = kwargs.get("local_expect")
         global_expect = kwargs.get("global_expect")
         reset_retries = kwargs.get("reset_retries", False)
         stonith = kwargs.get("stonith")
-        svcnames = set([svcname])
+        svcpaths = set([svcpath])
         if global_expect != "scaled":
-            svcnames |= self.get_service_slaves(svcname)
+            svcpaths |= self.get_service_slaves(svcpath)
         errors = []
         info = []
-        for svcname in svcnames:
+        for svcpath in svcpaths:
             try:
-                self.validate_global_expect(svcname, global_expect)
-                new_ge = self.validate_destination_node(svcname, global_expect)
+                self.validate_global_expect(svcpath, global_expect)
+                new_ge = self.validate_destination_node(svcpath, global_expect)
                 if new_ge:
                     global_expect = new_ge
             except ex.excAbortAction as exc:
@@ -608,9 +608,9 @@ class Listener(shared.OsvcThread):
             except ex.excError as exc:
                 errors.append(str(exc))
             else:
-                info.append("service %s target state set to %s" % (svcname, global_expect))
+                info.append("service %s target state set to %s" % (svcpath, global_expect))
                 self.set_smon(
-                    svcname, status=status,
+                    svcpath, status=status,
                     local_expect=local_expect, global_expect=global_expect,
                     reset_retries=reset_retries,
                     stonith=stonith,
@@ -622,13 +622,13 @@ class Listener(shared.OsvcThread):
             ret["error"] = errors
         return ret
 
-    def validate_destination_node(self, svcname, global_expect):
+    def validate_destination_node(self, svcpath, global_expect):
         """
-        For a placed@<dst> <global_expect> (move action) on <svcname>,
+        For a placed@<dst> <global_expect> (move action) on <svcpath>,
 
         Raise an excError if
-        * the service <svcname> does not exist
-        * the service <svcname> topology is failover and more than 1
+        * the service <svcpath> does not exist
+        * the service <svcpath> topology is failover and more than 1
           destination node was specified
         * the specified destination is not a service candidate node
         * no destination node specified
@@ -646,7 +646,7 @@ class Listener(shared.OsvcThread):
             return
         if global_expect != "placed":
             return
-        instances = self.get_service_instances(svcname)
+        instances = self.get_service_instances(svcpath)
         if not instances:
             raise ex.excError("service does not exist")
         if destination_nodes == "<peer>":
@@ -689,12 +689,12 @@ class Listener(shared.OsvcThread):
                     raise ex.excAbortAction("instance on destination node %s is "
                                             "already up" % destination_node)
 
-    def validate_global_expect(self, svcname, global_expect):
+    def validate_global_expect(self, svcpath, global_expect):
         if global_expect is None:
             return
         if global_expect in ("frozen", "aborted"):
             return
-        instances = self.get_service_instances(svcname)
+        instances = self.get_service_instances(svcpath)
         if not instances:
             if global_expect == "provisioned":
                 # allow provision target state on just-created service
@@ -705,15 +705,15 @@ class Listener(shared.OsvcThread):
             status = _data.get("monitor", {}).get("status", "unknown")
             if status != "idle" and "failed" not in status:
                 raise ex.excError("%s instance on node %s in %s state"
-                                  "" % (svcname, nodename, status))
+                                  "" % (svcpath, nodename, status))
 
         if global_expect not in ("started", "stopped"):
             return
-        agg = Storage(shared.AGG.get(svcname, {}))
+        agg = Storage(shared.AGG.get(svcpath, {}))
         if global_expect == "started" and agg.avail == "up":
-            raise ex.excAbortAction("service %s is already started" % svcname)
+            raise ex.excAbortAction("service %s is already started" % svcpath)
         elif global_expect == "stopped" and agg.avail in ("down", "stdby down", "stdby up"):
-            raise ex.excAbortAction("service %s is already stopped" % svcname)
+            raise ex.excAbortAction("service %s is already stopped" % svcpath)
         if agg.avail in ("n/a", "undef"):
             raise ex.excAbortAction()
 
@@ -826,23 +826,23 @@ class Listener(shared.OsvcThread):
         """
         Execute a CRM command on behalf of a peer node.
         kwargs:
-        * svcname: str
+        * svcpath: str
         * cmd: list
         * sync: boolean
         """
         sync = kwargs.get("sync", True)
         action_mode = kwargs.get("action_mode", True)
-        svcname = kwargs.get("svcname")
-        if svcname is None:
+        svcpath = kwargs.get("svcpath")
+        if svcpath is None:
             self.log.error("node %s requested a service action without "
                            "specifying the service name", nodename)
             return {
                 "status": 1,
             }
         cmd = kwargs.get("cmd")
-        if self.get_service(svcname) is None and "create" not in cmd:
+        if self.get_service(svcpath) is None and "create" not in cmd:
             self.log.warning("discard service action '%s' on a service "
-                             "not installed: %s", " ".join(cmd), svcname)
+                             "not installed: %s", " ".join(cmd), svcpath)
             return {
                 "err": "service not found",
                 "status": 1,
@@ -858,7 +858,7 @@ class Listener(shared.OsvcThread):
         cmd = drop_option("--daemon", cmd)
         if action_mode and "--local" not in cmd:
             cmd.append("--local")
-        cmd = [rcEnv.paths.svcmgr, "-s", svcname] + cmd
+        cmd = [rcEnv.paths.svcmgr, "-s", svcpath] + cmd
         self.log.info("execute service action requested by node %s: %s",
                       nodename, " ".join(cmd))
         if sync:
@@ -888,19 +888,20 @@ class Listener(shared.OsvcThread):
         """
         Send service logs.
         kwargs:
-        * svcname
+        * svcpath
         * conn: the connexion socket to the requester
         * backlog: the number of bytes to send from the tail default is 10k.
                    A negative value means send the whole file.
                    The 0 value means follow the file.
         """
-        svcname = kwargs.get("svcname")
-        if svcname is None:
+        svcpath = kwargs.get("svcpath")
+        svc = self.get_service(svcpath)
+        if svcpath is None or svc is None:
             return {
                 "status": 1,
             }
-        logfile = os.path.join(rcEnv.paths.pathlog, svcname+".log")
-        self._action_logs(nodename, logfile, "service %s" % svcname, **kwargs)
+        logfile = os.path.join(svc.log_d, svc.svcname+".log")
+        self._action_logs(nodename, logfile, "service %s" % svcpath, **kwargs)
 
     def action_node_logs(self, nodename, **kwargs):
         """

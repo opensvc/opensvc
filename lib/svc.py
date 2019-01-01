@@ -25,7 +25,8 @@ from rcGlobalEnv import rcEnv, get_osvc_paths
 from storage import Storage
 from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         try_decode, action_triggers, read_cf, \
-                        drop_option, fcache, init_locale
+                        drop_option, fcache, init_locale, makedirs, \
+                        fmt_svcpath
 from converters import *
 import rcExceptions as ex
 import rcLogger
@@ -399,19 +400,29 @@ class Svc(Crypt, ExtConfigMixin):
     and sync.
     """
 
-    def __init__(self, svcname=None, node=None, cf=None, volatile=False):
+    def __init__(self, svcname=None, namespace=None, node=None, cf=None, volatile=False):
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.type = "hosted"
         self.svcname = svcname
+        self.namespace = namespace.strip("/") if namespace else None
         self.node = node
         self.hostid = rcEnv.nodename
         self.volatile = volatile
+        if self.namespace:
+            self.svcpath = "/".join((self.namespace, svcname))
+            nsetc = os.path.join(rcEnv.paths.pathetc, "namespaces", self.namespace)
+            nstmp = os.path.join(rcEnv.paths.pathtmp, "namespaces", self.namespace)
+        else:
+            self.svcpath = self.svcname
+            nsetc = os.path.join(rcEnv.paths.pathetc)
+            nstmp = os.path.join(rcEnv.paths.pathtmp)
+
         self.paths = Storage(
-            exe=os.path.join(rcEnv.paths.pathetc, self.svcname),
-            cf=os.path.join(rcEnv.paths.pathetc, self.svcname+'.conf'),
-            initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.d'),
-            alt_initd=os.path.join(rcEnv.paths.pathetc, self.svcname+'.dir'),
-            tmp_cf=os.path.join(rcEnv.paths.pathtmp, self.svcname+".conf.tmp")
+            exe=os.path.join(nsetc, self.svcname),
+            cf=os.path.join(nsetc, self.svcname+'.conf'),
+            initd=os.path.join(nsetc, self.svcname+'.d'),
+            alt_initd=os.path.join(nsetc, self.svcname+'.dir'),
+            tmp_cf=os.path.join(nstmp, self.svcname+".conf.tmp")
         )
         if cf:
             self.paths.cf = cf
@@ -436,7 +447,6 @@ class Svc(Crypt, ExtConfigMixin):
         self.running_action = None
 
         # set by the builder
-        self.conf = os.path.join(rcEnv.paths.pathetc, svcname+".conf")
         self.comment = ""
         self.orchestrate = "ha"
         self.topology = "failover"
@@ -498,10 +508,31 @@ class Svc(Crypt, ExtConfigMixin):
 
     @lazy
     def var_d(self):
-        var_d = os.path.join(rcEnv.paths.pathvar, "services", self.svcname)
-        if not self.volatile and not os.path.exists(var_d):
-            os.makedirs(var_d, 0o755)
+        if self.namespace:
+            var_d = os.path.join(rcEnv.paths.pathvar, "namespaces", self.namespace, "services", self.svcname)
+        else:
+            var_d = os.path.join(rcEnv.paths.pathvar, "services", self.svcname)
+        if not self.volatile:
+            makedirs(var_d)
         return var_d
+
+    @lazy
+    def log_d(self):
+        if self.namespace:
+            log_d = os.path.join(rcEnv.paths.pathlog, self.namespace)
+        else:
+            log_d = rcEnv.paths.pathlog
+        if not self.volatile:
+            makedirs(log_d)
+        return log_d
+
+    @lazy
+    def loggerpath(self):
+        if self.namespace:
+            path = rcEnv.nodename+"."+self.namespace+"."+self.svcname
+        else:
+            path = rcEnv.nodename+"."+self.svcname
+        return path
 
     @lazy
     def log(self): # pylint: disable=method-hidden
@@ -509,7 +540,7 @@ class Svc(Crypt, ExtConfigMixin):
             kwargs = {"handlers": ["stream"]}
         else:
             kwargs = {}
-        return rcLogger.initLogger(rcEnv.nodename+"."+self.svcname, **kwargs)
+        return rcLogger.initLogger(self.loggerpath, **kwargs)
 
     @lazy
     def sched(self):
@@ -517,11 +548,9 @@ class Svc(Crypt, ExtConfigMixin):
         Lazy init of the service scheduler.
         """
         return Scheduler(
-            name=self.svcname,
             config_defaults=CONFIG_DEFAULTS,
             options=self.options,
             config=self.config,
-            log=self.log,
             svc=self,
             scheduler_actions={
                 "compliance_auto": SchedOpts(
@@ -578,7 +607,7 @@ class Svc(Crypt, ExtConfigMixin):
         """
         Lazy allocator for the freezer object.
         """
-        return Freezer(self.svcname)
+        return Freezer(self.svcpath)
 
     @lazy
     def compliance(self):
@@ -608,6 +637,11 @@ class Svc(Crypt, ExtConfigMixin):
     def children(self):
         try:
             children = self.conf_get('DEFAULT', "children")
+            for i, child in enumerate(children):
+                if "/" in child:
+                    continue
+                else:
+                    children[i] = fmt_svcpath(child, self.namespace)
         except ex.OptNotFound as exc:
             children = exc.default
         return children
@@ -616,6 +650,11 @@ class Svc(Crypt, ExtConfigMixin):
     def slaves(self):
         try:
             slaves = self.conf_get('DEFAULT', "slaves")
+            for i, slave in enumerate(slaves):
+                if "/" in slave:
+                    continue
+                else:
+                    slaves[i] = fmt_svcpath(slave, self.namespace)
         except ex.OptNotFound as exc:
             slaves = exc.default
         return slaves
@@ -785,7 +824,7 @@ class Svc(Crypt, ExtConfigMixin):
         """
         Order by service name
         """
-        return self.svcname < other.svcname
+        return self.svcpath < other.svcpath
 
     def register_dependency(self, action, _from, _to):
         if action not in self.dependencies:
@@ -1105,7 +1144,7 @@ class Svc(Crypt, ExtConfigMixin):
         Send to the collector the service status after an action, and
         the action log.
         """
-        self.node.daemon_collector_xmlrpc('end_action', self.svcname, action,
+        self.node.daemon_collector_xmlrpc('end_action', self.svcpath, action,
                                           begin, end, self.options.cron,
                                           actionlogfile)
         try:
@@ -1148,7 +1187,7 @@ class Svc(Crypt, ExtConfigMixin):
         elif action.startswith("sync"):
             suffix = "sync"
 
-        lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname)
+        lockfile = os.path.join(self.var_d, "lock.generic")
         if suffix is not None:
             lockfile = ".".join((lockfile, suffix))
 
@@ -1423,7 +1462,7 @@ class Svc(Crypt, ExtConfigMixin):
         """
         The Svc class print formatter.
         """
-        output = self.svcname
+        output = self.svcpath
         for rset in self.resourcesets_by_id.values():
             output += "  [%s]" % str(rset)
         return output
@@ -1454,11 +1493,11 @@ class Svc(Crypt, ExtConfigMixin):
         try:
             mon_data = self.get_mon_data()
             data["compat"] = mon_data["compat"]
-            data["service"] = mon_data["services"][self.svcname]
+            data["service"] = mon_data["services"][self.svcpath]
             data["instances"] = {}
             for nodename in mon_data["nodes"]:
                  try:
-                     data["instances"][nodename] = mon_data["nodes"][nodename]["services"]["status"][self.svcname]["monitor"]
+                     data["instances"][nodename] = mon_data["nodes"][nodename]["services"]["status"][self.svcpath]["monitor"]
                  except KeyError:
                      pass
             return data
@@ -1487,7 +1526,7 @@ class Svc(Crypt, ExtConfigMixin):
         """
         data = None
         try:
-            lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname + ".json.status")
+            lockfile = os.path.join(self.var_d, "lock.json.status")
             with lock.cmlock(timeout=2, delay=1, lockfile=lockfile, intent="status from cache"):
                 if not from_resource_status_cache and \
                    not refresh and \
@@ -1507,7 +1546,7 @@ class Svc(Crypt, ExtConfigMixin):
 
         if data is None:
             # use a different lock to not block the faster "from cache" codepath
-            lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname + ".status")
+            lockfile = os.path.join(self.var_d, "lock.status")
             try:
                 with lock.cmlock(timeout=waitlock, delay=1, lockfile=lockfile, intent="status"):
                     data = self.print_status_data_eval(refresh=refresh)
@@ -1532,10 +1571,10 @@ class Svc(Crypt, ExtConfigMixin):
         return data
 
     def get_running(self, rids=None):
-        lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname)
+        lockfile = os.path.join(self.var_d, "lock.generic")
         running = []
         running += [self._get_running(lockfile).get("rid")]
-        lockfile = os.path.join(rcEnv.paths.pathlock, self.svcname+".sync")
+        lockfile = os.path.join(self.var_d, "lock.sync")
         running += [self._get_running(lockfile).get("rid")]
         if rids is None:
             rids = [r.rid for r in self.get_resources("task")]
@@ -1981,7 +2020,7 @@ class Svc(Crypt, ExtConfigMixin):
             node_child.add_column()
             try:
                 mon_data = self.get_mon_data()
-                data = mon_data["nodes"][nodename]["services"]["status"][self.svcname]
+                data = mon_data["nodes"][nodename]["services"]["status"][self.svcpath]
                 avail = data["avail"]
                 node_frozen = mon_data["nodes"][nodename].get("frozen")
             except (TypeError, KeyError) as exc:
@@ -2005,22 +2044,22 @@ class Svc(Crypt, ExtConfigMixin):
             for parent in self.parents:
                 add_parent(parent, node_parents)
 
-        def add_parent(svcname, node):
+        def add_parent(svcpath, node):
             node_parent = node.add_node()
-            node_parent.add_column(svcname, color.BOLD)
+            node_parent.add_column(svcpath, color.BOLD)
             node_parent.add_column()
             try:
-                svcname, nodename = svcname.split("@")
+                svcpath, nodename = svcpath.split("@")
                 try:
                     mon_data = self.get_mon_data()
-                    avail = mon_data["nodes"][nodename]["services"]["status"][svcname]["avail"]
+                    avail = mon_data["nodes"][nodename]["services"]["status"][svcpath]["avail"]
                 except KeyError:
                     avail = "undef"
             except ValueError:
                 nodename = None
                 try:
                     mon_data = self.get_mon_data()
-                    avail = mon_data["services"][svcname]["avail"]
+                    avail = mon_data["services"][svcpath]["avail"]
                 except KeyError:
                     avail = "undef"
             node_parent.add_column(avail, STATUS_COLOR[avail])
@@ -2051,13 +2090,13 @@ class Svc(Crypt, ExtConfigMixin):
             for child in self.scaler.slaves:
                 add_child(child, node_slaves)
 
-        def add_child(svcname, node):
+        def add_child(svcpath, node):
             node_child = node.add_node()
-            node_child.add_column(svcname, color.BOLD)
+            node_child.add_column(svcpath, color.BOLD)
             node_child.add_column()
             try:
                 mon_data = self.get_mon_data()
-                avail = mon_data["services"][svcname]["avail"]
+                avail = mon_data["services"][svcpath]["avail"]
             except KeyError:
                 avail = "undef"
             node_child.add_column(avail, STATUS_COLOR[avail])
@@ -2364,9 +2403,12 @@ class Svc(Crypt, ExtConfigMixin):
         cmd = drop_option("--slaves", cmd, drop_value=False)
         cmd = drop_option("--slave", cmd, drop_value=True)
 
+        if self.namespace:
+            options += ["--namespace", self.namespace]
+
         paths = get_osvc_paths(osvc_root_path=container.osvc_root_path,
                                sysname=container.guestos)
-        cmd = [paths.svcmgr, '-s', self.svcname] + options + cmd
+        cmd = [paths.svcmgr, '-s', self.svcpath] + options + cmd
         if verbose:
             self.log.info(" ".join(cmd))
 
@@ -2428,8 +2470,7 @@ class Svc(Crypt, ExtConfigMixin):
         self.encap_json_status_cache[rid] = data
         path = self.get_encap_json_status_path(rid)
         directory = os.path.dirname(path)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        makedirs(directory)
         try:
             with open(path, "w") as ofile:
                 json.dump(data, ofile)
@@ -2766,9 +2807,9 @@ class Svc(Crypt, ExtConfigMixin):
         if status not in (None, 0):
             raise ex.excError
 
-    def daemon_mon_action(self, action, wait=None, timeout=None, svcname=None):
-        if svcname is None:
-            svcname = self.svcname
+    def daemon_mon_action(self, action, wait=None, timeout=None, svcpath=None):
+        if svcpath is None:
+            svcpath = self.svcpath
         global_expect = ACTION_ASYNC[action]["target"]
         if action == "delete" and self.options.unprovision:
             global_expect = "purged"
@@ -2783,7 +2824,7 @@ class Svc(Crypt, ExtConfigMixin):
         elif action == "takeover":
             dst = self.destination_node_sanity_checks(rcEnv.nodename)
             global_expect += dst
-        ret = self.set_service_monitor(global_expect=global_expect, svcname=svcname)
+        ret = self.set_service_monitor(global_expect=global_expect, svcpath=svcpath)
         self.daemon_log_result(ret)
         if wait is None:
             wait = self.options.wait
@@ -2806,7 +2847,7 @@ class Svc(Crypt, ExtConfigMixin):
             inprogress = []
             for nodename in data["monitor"]["nodes"]:
                 try:
-                    _data = data["monitor"]["nodes"][nodename]["services"]["status"][svcname]
+                    _data = data["monitor"]["nodes"][nodename]["services"]["status"][svcpath]
                 except (KeyError, TypeError) as exc:
                     continue
                 if _data["monitor"].get("global_expect") is not None:
@@ -2819,12 +2860,12 @@ class Svc(Crypt, ExtConfigMixin):
                 for nodename in prev_global_expect_set - global_expect_set:
                     self.log.info(" work over on %s", nodename)
             if not inprogress and not global_expect_set:
-                if svcname not in data["monitor"]["services"]:
+                if svcpath not in data["monitor"]["services"]:
                     return
                 self.log.info("final status: avail=%s overall=%s frozen=%s",
-                              data["monitor"]["services"][svcname]["avail"],
-                              data["monitor"]["services"][svcname]["overall"],
-                              data["monitor"]["services"][svcname].get("frozen", False))
+                              data["monitor"]["services"][svcpath]["avail"],
+                              data["monitor"]["services"][svcpath]["overall"],
+                              data["monitor"]["services"][svcpath].get("frozen", False))
                 return
             prev_global_expect_set = set(global_expect_set)
             time.sleep(1)
@@ -2834,7 +2875,7 @@ class Svc(Crypt, ExtConfigMixin):
         data = self.node._daemon_status()
         for nodename, _data in data["monitor"]["nodes"].items():
             try:
-                __data = _data["services"]["status"][self.svcname]
+                __data = _data["services"]["status"][self.svcpath]
             except KeyError:
                 continue
             if __data["avail"] == "up":
@@ -3198,7 +3239,7 @@ class Svc(Crypt, ExtConfigMixin):
                                           impersonate=self.options.impersonate)
         if not os.path.exists(self.paths.cf):
             raise ex.excError("service %s is not installed on this node" % \
-                              self.svcname)
+                              self.svcpath)
         from rcColor import print_color_config
         print_color_config(self.paths.cf)
 
@@ -3210,6 +3251,7 @@ class Svc(Crypt, ExtConfigMixin):
         or --recover options.
         """
         import shutil
+        makedirs(os.path.dirname(self.paths.tmp_cf))
         if os.path.exists(self.paths.tmp_cf):
             if self.options.recover:
                 pass
@@ -3362,7 +3404,7 @@ class Svc(Crypt, ExtConfigMixin):
             if "env" not in data:
                 data["env"] = []
             data["env"].append([
-                self.svcname,
+                self.svcpath,
                 rcEnv.nodename,
                 self.topology,
                 "env",
@@ -3410,7 +3452,7 @@ class Svc(Crypt, ExtConfigMixin):
         Push the service instance status to the collector synchronously.
         Usually done asynchronously and automatically by the collector thread.
         """
-        self.node.collector.call('push_status', self.svcname, self.print_status_data(mon_data=False, refresh=True))
+        self.node.collector.call('push_status', self.svcpath, self.print_status_data(mon_data=False, refresh=True))
 
     def push_config(self):
         """
@@ -3480,7 +3522,10 @@ class Svc(Crypt, ExtConfigMixin):
 
         paths = get_osvc_paths(osvc_root_path=container.osvc_root_path,
                                sysname=container.guestos)
-        encap_cf = os.path.join(paths.pathetc, os.path.basename(self.paths.cf))
+        if paths.pathetc == rcEnv.paths.pathetc:
+            encap_cf = self.paths.cf.split(rcEnv.paths.pathetc, 1)[-1]
+        else:
+            encap_cf = self.paths.cf
 
         if out == "":
             # this is what happens when the container is down
@@ -3488,12 +3533,12 @@ class Svc(Crypt, ExtConfigMixin):
 
         if ret == 0:
             encap_mtime = int(float(out.strip()))
-            local_mtime = int(os.stat(self.paths.cf).st_mtime)
+            local_mtime = os.path.getmtime(self.paths.cf)
             if encap_mtime > local_mtime:
                 if hasattr(container, 'rcp_from'):
-                    cmd_results = container.rcp_from(encap_cf, rcEnv.paths.pathetc+'/')
+                    cmd_results = container.rcp_from(encap_cf, self.paths.cf)
                 else:
-                    cmd = rcEnv.rcp.split() + [container.name+':'+encap_cf, rcEnv.paths.pathetc+'/']
+                    cmd = rcEnv.rcp.split() + [container.name+':'+encap_cf, self.paths.cf]
                     cmd_results = justcall(cmd)
                 os.utime(self.paths.cf, (encap_mtime, encap_mtime))
                 self.log.info("fetch %s from %s", encap_cf, container.name)
@@ -3502,6 +3547,13 @@ class Svc(Crypt, ExtConfigMixin):
                 return
             elif encap_mtime == local_mtime:
                 return
+
+        if self.namespace:
+            cmd = ['mkdir', '-p', os.path.dirname(encap_cf)]
+            try:
+                cmd_results = self._encap_cmd(cmd, container=container, push_config=False, fwd_options=False)
+            except ex.excError:
+                raise ex.excError("failed to create namespace in %s" % container.name)
 
         if hasattr(container, 'rcp'):
             cmd_results = container.rcp(self.paths.cf, encap_cf)
@@ -3565,6 +3617,8 @@ class Svc(Crypt, ExtConfigMixin):
         """
         os.environ['OPENSVC_SVCNAME'] = self.svcname
         os.environ['OPENSVC_SVC_ID'] = self.id
+        if self.namespace:
+            os.environ['OPENSVC_NAMESPACE'] = self.namespace
         if action:
             os.environ['OPENSVC_ACTION'] = action
         for resource in self.get_resources():
@@ -3913,7 +3967,7 @@ class Svc(Crypt, ExtConfigMixin):
 
         if action.startswith("collector_"):
             from collector import Collector
-            collector = Collector(options, self.node, self.svcname)
+            collector = Collector(options, self.node, self.svcpath)
             func = getattr(collector, action)
         else:
             func = getattr(self, action)
@@ -4252,7 +4306,7 @@ class Svc(Crypt, ExtConfigMixin):
         begin = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Provision a database entry to store action log later
-        self.node.daemon_collector_xmlrpc("begin_action", self.svcname,
+        self.node.daemon_collector_xmlrpc("begin_action", self.svcpath,
                                           action, self.node.agent_version,
                                           begin, self.options.cron)
 
@@ -4272,6 +4326,8 @@ class Svc(Crypt, ExtConfigMixin):
                 runlog = "do "+" ".join(sys.argv[1:])
                 runlog = runlog.replace("-s %s "%self.svcname, "")
                 runlog = runlog.replace("--service %s "%self.svcname, "")
+                runlog = runlog.replace("-s %s "%self.svcpath, "")
+                runlog = runlog.replace("--service %s "%self.svcpath, "")
                 if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
                     runlog += " (daemon origin)"
                 else:
@@ -4394,19 +4450,19 @@ class Svc(Crypt, ExtConfigMixin):
         pass
 
     def collector_rest_get(self, *args, **kwargs):
-        kwargs["svcname"] = self.svcname
+        kwargs["svcname"] = self.svcpath
         return self.node.collector_rest_get(*args, **kwargs)
 
     def collector_rest_post(self, *args, **kwargs):
-        kwargs["svcname"] = self.svcname
+        kwargs["svcname"] = self.svcpath
         return self.node.collector_rest_post(*args, **kwargs)
 
     def collector_rest_put(self, *args, **kwargs):
-        kwargs["svcname"] = self.svcname
+        kwargs["svcname"] = self.svcpath
         return self.node.collector_rest_put(*args, **kwargs)
 
     def collector_rest_delete(self, *args, **kwargs):
-        kwargs["svcname"] = self.svcname
+        kwargs["svcname"] = self.svcpath
         return self.node.collector_rest_delete(*args, **kwargs)
 
     def write_config(self):
@@ -4580,10 +4636,10 @@ class Svc(Crypt, ExtConfigMixin):
         """
         import glob
         patterns = [
-            os.path.join(rcEnv.paths.pathlog, self.svcname+".log*"),
-            os.path.join(rcEnv.paths.pathlog, self.svcname+".debug.log*"),
-            os.path.join(rcEnv.paths.pathlog, '.'+self.svcname+".log*"),
-            os.path.join(rcEnv.paths.pathlog, '.'+self.svcname+".debug.log*"),
+            os.path.join(self.log_d, self.svcname+".log*"),
+            os.path.join(self.log_d, self.svcname+".debug.log*"),
+            os.path.join(self.log_d, '.'+self.svcname+".log*"),
+            os.path.join(self.log_d, '.'+self.svcname+".debug.log*"),
             os.path.join(self.var_d, "frozen"),
         ]
         for pattern in patterns:
@@ -4597,14 +4653,14 @@ class Svc(Crypt, ExtConfigMixin):
         """
         import shutil
         dpaths = [
-            os.path.join(rcEnv.paths.pathetc, self.svcname+".dir"),
-            os.path.join(rcEnv.paths.pathetc, self.svcname+".d"),
+            self.paths.alt_initd,
+            self.paths.initd,
             os.path.join(self.var_d),
         ]
         fpaths = [
             self.paths.cf,
-            os.path.join(rcEnv.paths.pathetc, self.svcname),
-            os.path.join(rcEnv.paths.pathetc, self.svcname+".d"),
+            self.paths.exe,
+            self.paths.initd,
         ]
         for fpath in fpaths:
             if os.path.exists(fpath) and \
@@ -4882,7 +4938,7 @@ class Svc(Crypt, ExtConfigMixin):
             ofile.write(buff)
             ofile.flush()
         self.log.info("%s pulled", self.paths.cf)
-        self.node.install_service_files(self.svcname)
+        self.node.install_service_files(self.svcname, namespace=self.namespace)
 
         if self.options.provision:
             self.action("provision")
@@ -5072,7 +5128,7 @@ class Svc(Crypt, ExtConfigMixin):
     def placement_optimal(self, data=None):
         if data is None:
             data = self.node._daemon_status()
-        placement = data.get("monitor").get("services").get(self.svcname).get("placement")
+        placement = data.get("monitor").get("services").get(self.svcpath).get("placement")
         if placement == "optimal":
             return True
         return False
@@ -5084,7 +5140,7 @@ class Svc(Crypt, ExtConfigMixin):
     #########################################################################
     def daemon_backlogs(self, nodename):
         options = {
-            "svcname": self.svcname,
+            "svcpath": self.svcpath,
             "backlog": self.options.backlog,
             "debug": self.options.debug,
         }
@@ -5099,7 +5155,7 @@ class Svc(Crypt, ExtConfigMixin):
 
     def daemon_logs(self, nodes=None):
         options = {
-            "svcname": self.svcname,
+            "svcpath": self.svcpath,
             "backlog": 0,
         }
         for lines in self.daemon_get_streams(
@@ -5142,7 +5198,7 @@ class Svc(Crypt, ExtConfigMixin):
 
     def _clear(self, nodename=None):
         options = {
-            "svcname": self.svcname,
+            "svcpath": self.svcpath,
         }
         data = self.daemon_send(
             {"action": "clear", "options": options},
@@ -5159,7 +5215,7 @@ class Svc(Crypt, ExtConfigMixin):
             rids = self.action_rid
         options = {
             "action": action,
-            "svcname": self.svcname,
+            "svcpath": self.svcpath,
             "rids": rids,
         }
         try:
@@ -5180,7 +5236,7 @@ class Svc(Crypt, ExtConfigMixin):
         if self.options.no_daemon:
             return
         options = {
-            "svcname": self.svcname,
+            "svcpath": self.svcpath,
         }
         try:
             data = self.daemon_send(
@@ -5188,7 +5244,8 @@ class Svc(Crypt, ExtConfigMixin):
                 nodename=self.options.node,
                 silent=True,
             )
-            if data and data["status"] != 0:
+            if data and data["status"] != 0 and data.get("errno") != 111:
+                # 111: EREFUSED (ie daemon down)
                 if "error" in data:
                     self.log.warning("wake monitor failed: %s", data["error"])
                 else:
@@ -5196,11 +5253,11 @@ class Svc(Crypt, ExtConfigMixin):
         except Exception as exc:
             self.log.warning("wake monitor failed: %s", str(exc))
 
-    def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None, svcname=None):
-        if svcname is None:
-            svcname = self.svcname
+    def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None, svcpath=None):
+        if svcpath is None:
+            svcpath = self.svcpath
         options = {
-            "svcname": svcname,
+            "svcpath": svcpath,
             "status": status,
             "local_expect": local_expect,
             "global_expect": global_expect,
@@ -5213,7 +5270,8 @@ class Svc(Crypt, ExtConfigMixin):
                 silent=True,
                 with_result=True,
             )
-            if data and data["status"] != 0:
+            if data and data["status"] != 0 and data.get("errno") != 111:
+                # 111: EREFUSED (ie daemon down)
                 self.log.warning("set monitor status failed")
             return data
         except Exception as exc:
@@ -5243,7 +5301,7 @@ class Svc(Crypt, ExtConfigMixin):
 
 
         options = {
-            "svcname": self.svcname,
+            "svcpath": self.svcpath,
             "cmd": cmd,
             "sync": sync,
             "action_mode": action_mode,
@@ -5402,8 +5460,8 @@ class Svc(Crypt, ExtConfigMixin):
         todo = [
           ('INC', os.path.join(rcEnv.paths.pathlog, "node.log")),
           ('INC', os.path.join(rcEnv.paths.pathlog, "xmlrpc.log")),
-          ('INC', os.path.join(rcEnv.paths.pathlog, self.svcname+".log")),
-          ('INC', os.path.join(rcEnv.paths.pathvar, "services", self.svcname)),
+          ('INC', os.path.join(self.log_d, self.svcname+".log")),
+          ('INC', self.var_d),
         ]
 
         import shutil
@@ -5429,7 +5487,7 @@ class Svc(Crypt, ExtConfigMixin):
             files = {"upload": filep}
             headers = {
                 'Content-Type':'application/octet-stream',
-                'Content-Filename':"%s_at_%s.tar.gz" % (self.svcname, rcEnv.nodename),
+                'Content-Filename':"%s_%s_at_%s.tar.gz" % (self.namespace if self.namespace else "", self.svcname, rcEnv.nodename),
                 'Content-length': '%d' % content_size,
                 'Content-Range': 'bytes 0-%d/%d' % (content_size-1, content_size),
                 'Maxlife-Unit':"DAYS",

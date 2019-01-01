@@ -297,9 +297,10 @@ class Container(Res.Resource):
             _svcname = self.svc.svcname[self.svc.svcname.index(".")+1:]
         else:
             _svcname = self.svc.svcname
+        namespace = self.svc.namespace.lower() if self.svc.namespace else "root"
         elems = (
-            "%s.%s.svc.%s" % (_svcname, self.svc.app.lower(), self.svc.cluster_name.lower()),
-            "%s.svc.%s" % (self.svc.app.lower(), self.svc.cluster_name.lower()),
+            "%s.%s.svc.%s" % (_svcname, namespace, self.svc.cluster_name.lower()),
+            "%s.svc.%s" % (namespace, self.svc.cluster_name.lower()),
             "svc.%s" % self.svc.cluster_name.lower(),
         )
         return elems

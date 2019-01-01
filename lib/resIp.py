@@ -32,6 +32,7 @@ class Ip(Res.Resource):
                  gateway=None,
                  type="ip",
                  expose=None,
+                 check_carrier=True,
                  **kwargs):
         Res.Resource.__init__(self, rid, type=type, **kwargs)
         self.ipdev = ipdev
@@ -42,6 +43,7 @@ class Ip(Res.Resource):
         self.stacked_dev = None
         self.addr = None
         self.expose = expose
+        self.check_carrier = check_carrier
 
     def on_add(self):
         self.set_label()
@@ -249,6 +251,8 @@ class Ip(Res.Resource):
 
     def has_carrier(self, intf):
         if intf is None:
+            return
+        if not self.check_carrier:
             return
         mode = getattr(self, "mode") if hasattr(self, "mode") else None
         if "dedicated" in self.tags or mode == "dedicated":
@@ -496,7 +500,7 @@ class Ip(Res.Resource):
             data = self.svc.node.collector_rest_post(
                 "/dns/services/records",
                 post_data,
-                svcname=self.svc.svcname,
+                svcname=self.dns_rec_name(),
             )
         except Exception as exc:
             raise ex.excError("dns update failed: "+str(exc))
@@ -505,6 +509,11 @@ class Ip(Res.Resource):
 
         self.log.info("dns updated")
 
+    def dns_rec_name(self):
+        if self.svc.namespace:
+            return self.svc.svcname
+        else:
+            return "%s.%s" % (self.svc.svcname, self.svc.namespace.lower() if self.svc.namespace else "root")
 
     def stop(self):
         """
@@ -602,7 +611,7 @@ class Ip(Res.Resource):
             data = self.svc.node.collector_rest_post(
                 "/networks/%s/allocate" % network,
                 post_data,
-                svcname=self.svc.svcname,
+                svcname=self.dns_rec_name(),
             )
         except Exception as exc:
             raise ex.excError("ip allocation failed: "+str(exc))
@@ -658,7 +667,7 @@ class Ip(Res.Resource):
             data = self.svc.node.collector_rest_post(
                 "/networks/%s/release" % self.addr,
                 post_data,
-                svcname=self.svc.svcname,
+                svcname=self.dns_rec_name(),
             )
         except Exception as exc:
             raise ex.excError("ip release failed: "+str(exc))

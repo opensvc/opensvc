@@ -17,7 +17,8 @@ import rcStatus
 import rcColor
 from svcmgr_parser import SvcmgrOptParser
 import rcExceptions as ex
-from rcUtilities import ximport, check_privs
+from rcUtilities import ximport, check_privs, svcpath_from_link, \
+                        check_svclink_ns, fmt_svcpath
 from rcGlobalEnv import rcEnv
 from storage import Storage
 
@@ -49,11 +50,9 @@ def get_build_kwargs(optparser, options, action):
     """
     build_kwargs = {}
 
-    if len(set(["svcnames", "status"]) & set(build_kwargs.keys())) == 0:
-        if os.environ.get("OSVC_SERVICE_LINK"):
-            build_kwargs["svcnames"] = [os.environ.get("OSVC_SERVICE_LINK")]
+    if len(set(["svcpaths", "status"]) & set(build_kwargs.keys())) == 0:
         if hasattr(options, "svcs") and options.svcs is not None:
-            build_kwargs["svcnames"] = options.svcs
+            build_kwargs["svcpaths"] = options.svcs
 
     if hasattr(options, "status") and options.status is not None:
         build_kwargs["status"] = [rcStatus.status_value(s) for s in options.status.split(",")]
@@ -61,6 +60,18 @@ def get_build_kwargs(optparser, options, action):
     build_kwargs["create_instance"] = action in ("create", "pull")
 
     return build_kwargs
+
+def expand_svcs(options, node):
+    # selection trough symlink to svcmgr
+    svclink = os.environ.get("OSVC_SERVICE_LINK")
+    if svclink:
+        try:
+            check_svclink_ns(svclink, options.namespace)
+        except ex.excError as exc:
+            print(exc, file=sys.stderr)
+            return []
+        return [svcpath_from_link(svclink)]
+    return node.svcs_selector(options.svcs, options.namespace)
 
 def do_svcs_action_detached(argv=None):
     """
@@ -122,13 +133,26 @@ def do_svcs_action(node, options, action, argv):
             ret = 1
     return ret
 
-def do_svc_create(node, svcnames, action, options, build_kwargs):
+def do_svc_create(node, svcpaths, action, options, build_kwargs):
     """
     Handle service creation command.
     """
     ret = 0
+    if isinstance(svcpaths, list):
+        if len(svcpaths) != 1:
+            raise ex.excError("only one service must be specified")
+        svcpath = svcpaths[0]
+
     try:
-        ret = node.install_service(svcnames, fpath=options.config,
+       svcpath.encode("ascii")
+    except Exception:
+       raise ex.excError("the service name must be ascii-encodable")
+
+    if "/" not in svcpath and options.namespace:
+        svcpath = fmt_svcpath(svcpath, options.namespace)
+
+    try:
+        ret = node.install_service(svcpath, fpath=options.config,
                                    template=options.template,
                                    restore=options.restore)
     except Exception as exc:
@@ -137,7 +161,8 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
 
     if ret == 2:
         # install_service() reports it did nothing
-        data = getattr(svcBuilder, action)(svcnames, options.resource,
+        data = getattr(svcBuilder, action)(svcpath,
+                                           options.resource,
                                            provision=options.provision)
         ret = 0
     else:
@@ -150,7 +175,7 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
 
     # force a refresh of node.svcs
     try:
-        node.rebuild_services(svcnames)
+        node.rebuild_services(svcpaths)
     except ex.excError as exc:
         print(exc, file=sys.stderr)
         ret = 1
@@ -160,7 +185,7 @@ def do_svc_create(node, svcnames, action, options, build_kwargs):
         # setenv changed the service config file
         # we need to rebuild again
         try:
-            node.rebuild_services(svcnames)
+            node.rebuild_services(svcpaths)
         except ex.excError as exc:
             print(exc, file=sys.stderr)
             ret = 1
@@ -183,6 +208,17 @@ def prepare_options(options):
     opts = Storage()
     for key, val in options.__dict__.items():
         opts[key.replace("parm_", "")] = val
+    try:
+        namespace = options.namespace
+    except AttributeError:
+        # svclink parser doesn't include the namespace option
+        namespace = None
+    if namespace:
+        opts.namespace = namespace
+    elif "OSVC_NAMESPACE" in os.environ:
+        opts.namespace = os.environ["OSVC_NAMESPACE"]
+    if opts.namespace == "root":
+        opts.namespace = None
     return opts
 
 def split_env(arg):
@@ -205,7 +241,7 @@ def _main(node, argv=None):
     Execute action-specific codepaths.
     """
     build_err = False
-    svcnames = []
+    svcpaths = []
     ret = 0
 
     argv, docker_argv = get_docker_argv(argv)
@@ -224,7 +260,7 @@ def _main(node, argv=None):
        action != "ls" and options.svcs is None and options.status is None:
         raise ex.excError("no service specified. set --service or --status.")
     if action != "create":
-        expanded_svcs = node.svcs_selector(options.svcs)
+        expanded_svcs = expand_svcs(options, node)
         if options.svcs in (None, "*") and expanded_svcs == []:
             return
         options.svcs = expanded_svcs
@@ -243,22 +279,21 @@ def _main(node, argv=None):
             build_err = True
 
     if node.svcs is not None and len(node.svcs) > 0:
-        svcnames = [svc.svcname for svc in node.svcs]
-    elif action == "create" and "svcnames" in build_kwargs:
-        svcnames = build_kwargs["svcnames"]
+        svcpaths = [svc.svcpath for svc in node.svcs]
+    elif action == "create" and "svcpaths" in build_kwargs:
+        svcpaths = build_kwargs["svcpaths"]
 
-    if len(svcnames) == 0:
+    if len(svcpaths) == 0:
         if action == "ls":
             return
         if not build_err:
-            sys.stderr.write("No service specified. Try:\n"
-                             " svcmgr -s <svcname>[,<svcname>]\n"
-                             " svcmgr --status <status>[,<status>]\n"
-                             " <svcname>\n")
+            sys.stderr.write("No service specified.\n"
+                             "Syntax:\n"
+                             " svcmgr -s <svc selector> [--namespace <ns>]\n")
         return 1
 
     if action == "create":
-        return do_svc_create(node, svcnames, action, options, build_kwargs)
+        return do_svc_create(node, svcpaths, action, options, build_kwargs)
 
     ret = do_svcs_action(node, options, action, argv=argv)
 

@@ -127,7 +127,7 @@ class syncDcsCkpt(resSyncDcs.SyncDcs):
         self.dcscmd(cmd, verbose=True)
 
     def task_name(self, id):
-        return '-'.join((self.svc.svcname, self.rid, id))
+        return self.svc.id
 
     def sync_break(self):
         self.pause_checkpoint()

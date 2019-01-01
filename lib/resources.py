@@ -119,14 +119,14 @@ class Resource(object):
                 key[-1] = ""
             if count == 2:
                 keys[idx] = [
-                    self.svc.svcname,
+                    self.svc.svcpath,
                     self.svc.node.nodename,
                     self.svc.topology,
                     self.rid
                 ] + key
             elif count == 3:
                 keys[idx] = [
-                    self.svc.svcname,
+                    self.svc.svcpath,
                     self.svc.node.nodename,
                     self.svc.topology
                 ] + key
@@ -138,6 +138,8 @@ class Resource(object):
         """
         label = rcEnv.nodename + "."
         if hasattr(self, "svc"):
+            if self.svc.namespace:
+                label += self.svc.namespace + '.'
             label += self.svc.svcname + '.'
 
         if self.rid is None:
@@ -1167,7 +1169,7 @@ class Resource(object):
             # already acquired
             return
 
-        lockfile = os.path.join(rcEnv.paths.pathlock, self.svc.svcname+"."+self.rid)
+        lockfile = os.path.join(self.var_d, "lock")
         if suffix is not None:
             lockfile = ".".join((lockfile, suffix))
 

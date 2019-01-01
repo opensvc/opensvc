@@ -2,7 +2,7 @@ import provisioning
 
 class Prov(provisioning.Prov):
     def is_provisioned(self):
-        return False
+        return True
 
     def start(self):
         self.r._start()

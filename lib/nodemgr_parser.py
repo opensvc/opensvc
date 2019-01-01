@@ -534,11 +534,6 @@ ACTIONS = {
             ],
         },
     },
-    "Service actions": {
-        "discover": {
-            "msg": "Discover vservices accessible from this host. Typically executed on cloud nodes.",
-        },
-    },
     "Node configuration": {
         "print_config": {
             "msg": "Display the node current configuration.",

@@ -209,6 +209,10 @@ OPT = Storage({
         action="store", dest="moduleset",
         help="Specify the modulesets to limit the action to. The special value ``all`` "
              "can be used in conjonction with detach."),
+    "namespace": Option(
+        "--namespace",
+        action="store", dest="namespace",
+        help="The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable."),
     "node": Option(
         "--node", default="",
         action="store", dest="node",
@@ -404,6 +408,7 @@ OPT = Storage({
 })
 
 SVC_SELECT_OPTS = [
+    OPT.namespace,
     OPT.service,
     OPT.status,
 ]

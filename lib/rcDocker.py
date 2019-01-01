@@ -428,12 +428,12 @@ class DockerLib(object):
         return image
 
     def login_as_service_args(self):
-        args = ["-u", self.svc.svcname+"@"+rcEnv.nodename]
+        args = ["-u", self.svc.svcpath+"@"+rcEnv.nodename]
         args += ["-p", self.svc.node.config.get("node", "uuid")]
         if self.docker_min_version("1.12"):
             pass
         elif self.docker_min_version("1.10"):
-            args += ["--email", self.svc.svcname+"@"+rcEnv.nodename]
+            args += ["--email", self.svc.svcpath+"@"+rcEnv.nodename]
         return args
 
     def docker_login(self, ref):
@@ -751,7 +751,7 @@ class DockerLib(object):
         if self.docker_cmd is None:
             raise ex.excError("docker executable not found")
         import lock
-        lockfile = os.path.join(rcEnv.paths.pathlock, self.svc.svcname+'.docker_start')
+        lockfile = os.path.join(self.svc.var_d, "lock.docker_start")
         try:
             lockfd = lock.lock(timeout=15, delay=1, lockfile=lockfile)
         except lock.LOCK_EXCEPTIONS as exc:

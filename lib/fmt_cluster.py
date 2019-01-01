@@ -252,7 +252,7 @@ def print_section(data):
         return ""
     return list_print(data)
 
-def format_cluster(svcnames=None, node=None, data=None, prev_stats_data=None,
+def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                    stats_data=None, sections=None):
     if not data or data.get("status", 0) != 0:
         return
@@ -285,17 +285,17 @@ def format_cluster(svcnames=None, node=None, data=None, prev_stats_data=None,
             line.append(colorize(nodename, color.BOLD))
         out.append(line)
 
-    def load_svc(svcname, prefix=""):
-        if svcname not in services:
+    def load_svc(svcpath, prefix=""):
+        if svcpath not in services:
             return
-        data = services[svcname]
-        if svcname in slave_parents and prefix == "":
+        data = services[svcpath]
+        if svcpath in slave_parents and prefix == "":
             return
         try:
-            topology = services[svcname].topology
+            topology = services[svcpath].topology
         except KeyError:
             topology = ""
-        if services[svcname].get("drp", False):
+        if services[svcpath].get("drp", False):
             topology = "drp " + topology
 
         # status
@@ -317,17 +317,17 @@ def format_cluster(svcnames=None, node=None, data=None, prev_stats_data=None,
             if topology == "flex":
                 info += "/%d/%d" % (data["flex_min_nodes"], data["flex_max_nodes"])
         line = [
-            " "+colorize(prefix+svcname, color.BOLD),
+            " "+colorize(prefix+svcpath, color.BOLD),
             status,
-            fmt_svc_uptime(svcname, stats_data),
-            fmt_svc_tasks(svcname, prev_stats_data),
-            fmt_svc_cpu_usage(svcname, prev_stats_data, stats_data),
-            fmt_svc_cpu_time(svcname, stats_data),
-            fmt_svc_mem_total(svcname, stats_data),
-            fmt_svc_blk_rb(svcname, stats_data),
-            fmt_svc_blk_wb(svcname, stats_data),
-            fmt_svc_blk_rbps(svcname, prev_stats_data, stats_data),
-            fmt_svc_blk_wbps(svcname, prev_stats_data, stats_data),
+            fmt_svc_uptime(svcpath, stats_data),
+            fmt_svc_tasks(svcpath, prev_stats_data),
+            fmt_svc_cpu_usage(svcpath, prev_stats_data, stats_data),
+            fmt_svc_cpu_time(svcpath, stats_data),
+            fmt_svc_mem_total(svcpath, stats_data),
+            fmt_svc_blk_rb(svcpath, stats_data),
+            fmt_svc_blk_wb(svcpath, stats_data),
+            fmt_svc_blk_rbps(svcpath, prev_stats_data, stats_data),
+            fmt_svc_blk_wbps(svcpath, prev_stats_data, stats_data),
             info,
             "|",
         ]
@@ -856,13 +856,13 @@ def format_cluster(svcnames=None, node=None, data=None, prev_stats_data=None,
                 node_svc_status = data["monitor"]["nodes"][_node]["services"]["status"]
             except KeyError:
                 continue
-            for svcname, _data in node_svc_status.items():
+            for svcpath, _data in node_svc_status.items():
                 if _data is None:
                     continue
-                if svcnames and svcname not in svcnames:
+                if svcpaths is not None and svcpath not in svcpaths:
                     continue
-                if svcname not in services:
-                    services[svcname] = Storage({
+                if svcpath not in services:
+                    services[svcpath] = Storage({
                         "drp": _data.get("drp", False),
                         "topology": _data.get("topology", ""),
                         "orchestrate": _data.get("orchestrate"),
@@ -876,25 +876,25 @@ def format_cluster(svcnames=None, node=None, data=None, prev_stats_data=None,
                         "n_up": 0,
                         "resources": set(),
                     })
-                services[svcname]["resources"] |= set(_data["resources"].keys())
+                services[svcpath]["resources"] |= set(_data["resources"].keys())
                 slaves = _data.get("slaves", [])
                 scale = _data.get("scale")
                 if scale:
                     for child in data["monitor"]["services"]:
-                        if re.match("^[0-9]+."+svcname+"$", child) is None:
+                        if re.match("^[0-9]+."+svcpath+"$", child) is None:
                             continue
                         slaves.append(child)
                         if node_svc_status.get(child, {}).get("avail") == "up":
-                            services[svcname].n_up += 1
+                            services[svcpath].n_up += 1
                 for child in slaves:
                     if child not in slave_parents:
-                        slave_parents[child] = set([svcname])
+                        slave_parents[child] = set([svcpath])
                     else:
-                        slave_parents[child] |= set([svcname])
+                        slave_parents[child] |= set([svcpath])
                 global_expect = _data["monitor"].get("global_expect")
                 if global_expect and "@" in global_expect:
                     global_expect = global_expect[:global_expect.index("@")+1]
-                services[svcname].nodes[_node] = {
+                services[svcpath].nodes[_node] = {
                     "avail": _data.get("avail", "undef"),
                     "overall": _data.get("overall", "undef"),
                     "frozen": _data.get("frozen", False),
@@ -903,34 +903,34 @@ def format_cluster(svcnames=None, node=None, data=None, prev_stats_data=None,
                     "placement": _data["monitor"].get("placement", ""),
                     "provisioned": _data.get("provisioned"),
                 }
-                services[svcname].slaves |= set(slaves)
-                services[svcname]["wrapper"] = (
-                    services[svcname].resources == set() and 
-                    services[svcname].slaves != set() and
+                services[svcpath].slaves |= set(slaves)
+                services[svcpath]["wrapper"] = (
+                    services[svcpath].resources == set() and
+                    services[svcpath].slaves != set() and
                     scale is None
                 )
             try:
                 # hint we have missing instances
-                for svcname, cnf in data["monitor"]["nodes"][_node]["services"]["config"].items():
-                    if svcname not in services:
+                for svcpath, cnf in data["monitor"]["nodes"][_node]["services"]["config"].items():
+                    if svcpath not in services:
                         continue
                     for __node in cnf.get("scope", []):
-                        if __node not in services[svcname].nodes:
-                            services[svcname].nodes[__node] = None
+                        if __node not in services[svcpath].nodes:
+                            services[svcpath].nodes[__node] = None
             except KeyError:
                 pass
-        for svcname, _data in data["monitor"]["services"].items():
-            if svcnames and svcname not in svcnames:
+        for svcpath, _data in data["monitor"]["services"].items():
+            if svcpaths is not None and svcpath not in svcpaths:
                 continue
-            if svcname not in services:
-                services[svcname] = Storage({
+            if svcpath not in services:
+                services[svcpath] = Storage({
                     "avail": "undef",
                     "overall": "",
                     "nodes": {}
                 })
-            services[svcname].avail = _data["avail"]
-            services[svcname].overall = _data["overall"]
-            services[svcname].placement = _data["placement"]
+            services[svcpath].avail = _data["avail"]
+            services[svcpath].overall = _data["overall"]
+            services[svcpath].placement = _data["placement"]
 
     def load_services():
         if "services" not in sections:
@@ -950,8 +950,8 @@ def format_cluster(svcnames=None, node=None, data=None, prev_stats_data=None,
             "",
             "",
         ])
-        for svcname in sorted(list(services.keys())):
-            load_svc(svcname)
+        for svcpath in sorted(list(services.keys())):
+            load_svc(svcpath)
 
     # load data in lists
     load_threads()

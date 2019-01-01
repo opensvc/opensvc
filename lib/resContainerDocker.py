@@ -36,19 +36,23 @@ ATTR_MAP = {
 #    },
     "netns": {
         "path": ["HostConfig", "NetworkMode"],
-        "cmp": "cmp_netns",
+        "cmp": "cmp_ns",
     },
     "pidns": {
         "path": ["HostConfig", "PidMode"],
+        "cmp": "cmp_ns",
     },
     "ipcns": {
         "path": ["HostConfig", "IpcMode"],
+        "cmp": "cmp_ns",
     },
     "utsns": {
         "path": ["HostConfig", "UTSMode"],
+        "cmp": "cmp_ns",
     },
     "userns": {
         "path": ["HostConfig", "UsernsMode"],
+        "cmp": "cmp_ns",
     },
 }
 
@@ -116,7 +120,11 @@ class Docker(resContainer.Container):
         """
         if self.user_defined_name:
             return self.user_defined_name
-        container_name = self.svc.svcname+'.'+self.rid
+        if self.svc.namespace:
+            container_name = self.svc.namespace+".."
+        else:
+            container_name = ""
+        container_name += self.svc.svcname+'.'+self.rid
         return container_name.replace('#', '.')
 
     @lazy
@@ -712,7 +720,7 @@ class Docker(resContainer.Container):
             self.status_log("the current container is based on image '%s' "
                             "instead of '%s'"%(running_image_id, image_id))
 
-    def cmp_netns(self, current, data):
+    def cmp_ns(self, current, data):
         try:
             res = self.svc.get_resource(self.netns)
             target = "container:"+res.container_name

@@ -1,25 +1,29 @@
 from __future__ import print_function
 
-import os
-import sys
+import ast
 import datetime
-import time
+import json
+import glob
+import locale
 import logging
+import operator as op
+import os
+import re
 import socket
 import select
 import shlex
-import locale
-import re
-import rcExceptions as ex
-from subprocess import Popen, PIPE
-from rcGlobalEnv import rcEnv
+import sys
+import time
 from functools import wraps
+from subprocess import Popen, PIPE
 
 import six
 import lock
-import json
-import ast
-import operator as op
+import rcExceptions as ex
+from rcGlobalEnv import rcEnv
+
+GLOB_SVC_CONF = os.path.join(rcEnv.paths.pathetc, "*.conf")
+GLOB_SVC_CONF_NS = os.path.join(rcEnv.paths.pathetcns, "*", "*.conf")
 
 ANSI_ESCAPE = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|H|J|K|G]", re.UNICODE)
 ANSI_ESCAPE_B = re.compile(b"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|H|J|K|G]")
@@ -121,11 +125,13 @@ if os.name == 'nt':
 else:
     close_fds = True
 
+
 #############################################################################
 #
 # Cached functions
 #
 #############################################################################
+
 def fcache(fn):
     """
     A decorator for caching the result of a function
@@ -270,6 +276,12 @@ def ximport(base):
     m = __import__(mod)
     return m
 
+def check_svclink_ns(svclink, namespace):
+    if namespace and "/namespaces/%s/" % namespace not in svclink:
+        raise ex.excError("Service link '%s' doesn't belong to namespace '%s'.\n"
+                          "Use a service selector expression to select a "
+                          "service from a foreign namespace." % (os.path.basename(svclink), namespace))
+
 def check_privs():
     if os.name == 'nt':
         return
@@ -278,16 +290,27 @@ def check_privs():
     import copy
     l = copy.copy(sys.argv)
     env = rcEnv.initial_env
-    if env.get("OSVC_SERVICE_LINK"):
-        l[0] = os.path.join(rcEnv.paths.pathetc, env.get("OSVC_SERVICE_LINK"))
+    namespace = env.get("OSVC_NAMESPACE")
+    svclink = env.get("OSVC_SERVICE_LINK")
+    if svclink:
+        path = svcpath_from_link(svclink)
+        try:
+            check_svclink_ns(svclink, namespace)
+        except ex.excError as exc:
+            print(exc, file=sys.stderr)
+            sys.exit(1)
+        l[0] = os.path.join(rcEnv.paths.pathbin, "svcmgr")
+        l.insert(1, "--service=%s" % path)
     else:
         l[0] = os.path.join(rcEnv.paths.pathbin, os.path.basename(l[0]).replace(".py", ""))
+    if namespace and "--namespace" not in l and ("svcmgr" in l[0] or "svcmon" in l[0]):
+        l.insert(1, "--namespace=%s" % namespace)
     if which("sudo"):
         os.execvpe("sudo", ["sudo"] + l, env=env)
     elif which("pfexec"):
         os.execvpe("sudo", ["pfexec"] + l, env=env)
     else:
-        print("Insufficient privileges")
+        print("Insufficient privileges", file=sys.stderr)
         sys.exit(1)
 
 def banner(text, ch='=', length=78):
@@ -708,8 +731,7 @@ def try_decode(string, codecs=['utf8', 'latin1']):
 
 def getaddr_cache_set(name, addr):
     cache_d = os.path.join(rcEnv.paths.pathvar, "cache", "addrinfo")
-    if not os.path.exists(cache_d):
-        os.makedirs(cache_d)
+    makedirs(cache_d)
     cache_f = os.path.join(cache_d, name)
     with open(cache_f, 'w') as f:
         f.write(addr)
@@ -717,8 +739,7 @@ def getaddr_cache_set(name, addr):
 
 def getaddr_cache_get(name):
     cache_d = os.path.join(rcEnv.paths.pathvar, "cache", "addrinfo")
-    if not os.path.exists(cache_d):
-        os.makedirs(cache_d)
+    makedirs(cache_d)
     cache_f = os.path.join(cache_d, name)
     if not os.path.exists(cache_f):
         raise Exception("addrinfo cache empty for name %s" % name)
@@ -863,13 +884,7 @@ def cache(sig):
 
 def cache_fpath(sig):
     cache_d = get_cache_d()
-    if not os.path.exists(cache_d):
-        try:
-            os.makedirs(cache_d)
-        except:
-            # we run unlocked here ...
-            # another process created the dir since we tested ?
-            pass
+    makedirs(cache_d)
     sig = sig.replace("/", "(slash)")
     fpath = os.path.join(cache_d, sig)
     return fpath
@@ -1030,34 +1045,6 @@ def chunker(buff, n):
     for i in range(0, len(buff), n):
         yield buff[i:i+n]
 
-def is_service(f):
-    if f is None:
-        return False
-    if os.path.basename(f) in ["node", "auth"]:
-        return False
-    if os.sep not in f:
-        f = os.path.join(rcEnv.paths.pathetc, f)
-    if os.name != "nt" and os.path.realpath(f) != os.path.realpath(rcEnv.paths.svcmgr):
-        return False
-    if not os.path.exists(f + '.conf'):
-        return False
-    return True
-
-def list_services():
-    import glob
-    if not os.path.exists(rcEnv.paths.pathetc):
-        os.makedirs(rcEnv.paths.pathetc)
-    s = glob.glob(os.path.join(rcEnv.paths.pathetc, '*.conf'))
-    s = [os.path.basename(x)[:-5] for x in s]
-    l = []
-    for name in s:
-        if len(s) == 0:
-            continue
-        if not is_service(os.path.join(rcEnv.paths.pathetc, name)):
-            continue
-        l.append(name)
-    return l
-
 def init_locale():
     try:
         locale.setlocale(locale.LC_ALL, ('C', 'UTF-8'))
@@ -1081,3 +1068,152 @@ def init_locale():
     os.environ["LANG"] = "C"
     os.environ["LC_NUMERIC"] = "C"
 
+#############################################################################
+#
+# Namespaces functions
+#
+#############################################################################
+
+def is_service(f, namespace=None):
+    if f is None:
+        return
+    if f.startswith("root/"):
+        f = f[5:]
+    basename = os.path.basename(f)
+    if basename in ["node", "auth"]:
+        return
+    if basename == f and not namespace:
+        f = os.path.join(rcEnv.paths.pathetc, f)
+    elif f.startswith(os.sep):
+        pass
+    elif namespace:
+        f = os.path.join(rcEnv.paths.pathetcns, namespace, f)
+    else:
+        f = os.path.join(rcEnv.paths.pathetcns, f)
+    if os.name != "nt" and os.path.realpath(f) != os.path.realpath(rcEnv.paths.svcmgr):
+        return
+    if not os.path.exists(f + '.conf'):
+        return
+    return f.replace(rcEnv.paths.pathetcns+os.sep, "").replace(rcEnv.paths.pathetc+os.sep, "")
+
+def list_services(namespace=None):
+    makedirs(rcEnv.paths.pathetc)
+    l = []
+    if namespace is None:
+        s = glob.glob(GLOB_SVC_CONF)
+        s = [x[:-5] for x in s]
+        for name in s:
+            if len(s) == 0:
+                continue
+            svcpath = is_service(name)
+            if svcpath is None:
+                continue
+            l.append(svcpath)
+        s = glob.glob(GLOB_SVC_CONF_NS)
+    else:
+        s = glob.glob(os.path.join(rcEnv.paths.pathetcns, namespace, "*.conf"))
+    n = len(os.path.join(rcEnv.paths.pathetcns, ""))
+    for path in s:
+        path = path[n:-5]
+        if path[-1] == os.sep:
+            continue
+        l.append(path)
+    return l
+
+def glob_services_config():
+    return glob.glob(GLOB_SVC_CONF) + glob.glob(GLOB_SVC_CONF_NS)
+
+def svcpath_from_link(svclink):
+    try:
+        l = svclink.split(os.sep)
+        l = l[l.index("namespaces")+1:]
+        return os.path.join(*l)
+    except Exception as exc:
+        return os.path.basename(svclink)
+
+def split_svcpath(path):
+    path = path.strip("/")
+    if not path:
+        raise ValueError
+    svcname = os.path.basename(path)
+    namespace = os.path.dirname(path)
+    if namespace == "root":
+        namespace = None
+    return svcname, namespace
+
+def svc_pathcf(path, namespace=None):
+    name, _namespace = split_svcpath(path)
+    if namespace:
+        return os.path.join(rcEnv.paths.pathetcns, namespace, name+".conf")
+    elif _namespace:
+        return os.path.join(rcEnv.paths.pathetcns, _namespace, name+".conf")
+    else:
+        return os.path.join(rcEnv.paths.pathetc, name+".conf")
+
+def svc_pathetc(path, namespace=None):
+    return os.path.dirname(svc_pathcf(path, namespace=namespace))
+
+def svc_pathvar(path, relpath=""):
+    name, namespace = split_svcpath(path)
+    if namespace:
+        l = [rcEnv.paths.pathvar, "namespaces", namespace, "services", name]
+    else:
+        l = [rcEnv.paths.pathvar, "services", name]
+    if relpath:
+        l.append(relpath)
+    return os.path.join(*l)
+
+def fmt_svcpath(name, namespace):
+    if namespace:
+        return "/".join((namespace.strip("/"), name))
+    else:
+        return name
+
+def exe_link_exists(svcname, namespace):
+    if os.name != 'posix':
+        return False
+    pathetc = svc_pathetc(svcname, namespace)
+    try:
+        p = os.readlink(os.path.join(pathetc, svcname))
+        if p == rcEnv.paths.svcmgr:
+            return True
+        else:
+            return False
+    except:
+        return False
+
+def fix_exe_link(svcname, namespace):
+    """
+    Create the <svcname> -> svcmgr symlink
+    """
+    if os.name != 'posix':
+        return
+    pathetc = svc_pathetc(svcname, namespace)
+    if not os.path.exists(os.path.join(pathetc, svcname+".conf")):
+        return
+    if not exe_link_exists(svcname, namespace):
+        from freezer import Freezer
+        svcpath = fmt_svcpath(svcname, namespace)
+        Freezer(svcpath).freeze()
+    os.chdir(pathetc)
+    try:
+        p = os.readlink(svcname)
+    except:
+        os.symlink(rcEnv.paths.svcmgr, svcname)
+        p = rcEnv.paths.svcmgr
+    if p != rcEnv.paths.svcmgr:
+        os.unlink(svcname)
+        os.symlink(rcEnv.paths.svcmgr, svcname)
+
+def makedirs(path, mode=0o755):
+    """
+    Wraps os.makedirs with a more restrictive 755 mode and ignore
+    already exists errors.
+    """
+    try:
+        os.makedirs(path, mode)
+    except OSError as exc:
+        if exc.errno == 17:
+            pass
+        else:
+            raise

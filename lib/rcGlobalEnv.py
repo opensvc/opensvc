@@ -30,6 +30,7 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
         o.pathlib = '/usr/share/opensvc/lib'
         o.pathbin = '/usr/bin'
         o.pathetc = '/etc/opensvc'
+        o.pathetcns = '/etc/opensvc/namespaces'
         o.pathlog = '/var/log/opensvc'
         o.pathtmp = '/var/tmp/opensvc'
         o.pathvar = '/var/lib/opensvc'
@@ -42,6 +43,7 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
         o.pathlib = os.path.join(o.pathsvc, 'lib')
         o.pathbin = os.path.join(o.pathsvc, 'bin')
         o.pathetc = os.path.join(o.pathsvc, 'etc')
+        o.pathetcns = os.path.join(o.pathsvc, 'etc', 'namespaces')
         o.pathlog = os.path.join(o.pathsvc, 'log')
         o.pathtmp = os.path.join(o.pathsvc, 'tmp')
         o.pathvar = os.path.join(o.pathsvc, 'var')

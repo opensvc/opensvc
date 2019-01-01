@@ -427,56 +427,61 @@ class ExtConfigMixin(object):
             return_length = False
             _ref = ref
 
+        is_svc = hasattr(self, "svcname")
+        has_node = hasattr(self, "node")
+
         # hardcoded references
         if _ref == "nodename":
             val = rcEnv.nodename
         elif _ref == "short_nodename":
             val = rcEnv.nodename.split(".")[0]
-        elif _ref == "id" and hasattr(self, "svcname"):
+        elif _ref == "namespace" and is_svc:
+            val = self.namespace if self.namespace else "root"
+        elif _ref == "id" and is_svc:
             if validation:
                 # avoid recursion on set("id", ...) -> validate_config()
                 val = "dummy"
             else:
                 val = self.id
-        elif _ref == "svcname" and hasattr(self, "svcname"):
+        elif _ref == "svcname" and is_svc:
             val = self.svcname
-        elif _ref == "short_svcname" and hasattr(self, "svcname"):
+        elif _ref == "short_svcname" and is_svc:
             val = self.svcname.split(".")[0]
-        elif _ref == "scaler_svcname" and hasattr(self, "svcname"):
+        elif _ref == "scaler_svcname" and is_svc:
             val = re.sub("[0-9]+\.", "", self.svcname)
-        elif _ref == "scaler_short_svcname" and hasattr(self, "svcname"):
+        elif _ref == "scaler_short_svcname" and is_svc:
             val = re.sub("[0-9]+\.", "", self.svcname.split(".")[0])
-        elif _ref == "rid" and hasattr(self, "svcname"):
+        elif _ref == "rid" and is_svc:
             val = section
-        elif _ref == "rindex" and hasattr(self, "svcname"):
+        elif _ref == "rindex" and is_svc:
             val = section.split("#")[-1]
         elif _ref == "clusterid":
-            if hasattr(self, "node"):
+            if has_node:
                 val = self.node.cluster_id
             else:
                 val = self.cluster_id
         elif _ref == "clustername":
-            if hasattr(self, "node"):
+            if has_node:
                 val = self.node.cluster_name
             else:
                 val = self.cluster_name
         elif _ref == "clusternodes":
-            if hasattr(self, "node"):
+            if has_node:
                 val = " ".join(self.node.cluster_nodes)
             else:
                 val = " ".join(self.cluster_nodes)
         elif _ref == "clusterdrpnodes":
-            if hasattr(self, "node"):
+            if has_node:
                 val = " ".join(self.node.cluster_drpnodes)
             else:
                 val = " ".join(self.cluster_drpnodes)
         elif _ref == "dns":
-            if hasattr(self, "node"):
+            if has_node:
                 val = " ".join(self.node.dns)
             else:
                 val = " ".join(self.dns)
         elif _ref == "dnsnodes":
-            if hasattr(self, "node"):
+            if has_node:
                 val = " ".join(self.node.dnsnodes)
             else:
                 val = " ".join(self.dnsnodes)
@@ -499,7 +504,7 @@ class ExtConfigMixin(object):
             val = rcEnv.paths.dnsuxsock
         elif _ref.startswith("safe://"):
             try:
-                if hasattr(self, "node"):
+                if has_node:
                     val = self.node.download_from_safe(_ref, svcname=self.svcname)
                 else:
                     val = self.download_from_safe(_ref)

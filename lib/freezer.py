@@ -86,5 +86,8 @@ class Freezer(object):
         self.node_flag = os.path.join(rcEnv.paths.pathvar, "node", "frozen")
         if name == "node":
             self.flag = self.node_flag
+        elif "/" in name:
+            namespace, name = name.split("/", 1)
+            self.flag = os.path.join(rcEnv.paths.pathvar, "namespaces", namespace, "services", name, "frozen")
         else:
             self.flag = os.path.join(rcEnv.paths.pathvar, "services", name, "frozen")

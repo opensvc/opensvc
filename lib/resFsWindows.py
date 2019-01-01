@@ -8,7 +8,7 @@ import resFs as Res
 import rcExceptions as ex
 
 def diskpartfile_name(self):
-    return os.path.join(rcEnv.paths.pathvar, 'diskpart_' + self.svc.svcname)
+    return os.path.join(self.var_d, 'diskpart')
 
 def online_drive(self, driveindex):
     diskpart_file = diskpartfile_name(self) + '_online_disk_' + str(driveindex)

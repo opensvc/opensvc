@@ -29,7 +29,10 @@ class syncS3(resSync.Sync):
         self.snar = snar
 
     def on_add(self):
-        self.prefix = "/" + self.svc.svcname + "/" + self.rid.replace("#",".")
+        if self.svc.namespace:
+            self.prefix = "/".join(("", self.svc.namespace.lower(), self.svc.svcname, self.rid.replace("#",".")))
+        else:
+            self.prefix = "/".join(("", self.svc.svcname, self.rid.replace("#",".")))
         dst = "s3://"+self.bucket + self.prefix
         self.label += " to " + dst
         if self.snar is None:
@@ -112,7 +115,7 @@ class syncS3(resSync.Sync):
         """
         if not refresh and hasattr(self, "ls_cache"):
             return getattr(self, "ls_cache")
-        cmd = ["aws", "s3", "ls", "s3://"+self.bucket+"/"+self.svc.svcname+"/"]
+        cmd = ["aws", "s3", "ls", "s3://"+self.bucket+"/"+os.path.dirname(self.prefix)+"/"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return []

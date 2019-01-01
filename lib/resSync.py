@@ -195,12 +195,12 @@ class Sync(Res.Resource, Scheduler):
         except Exception:
             data = None
         try:
-            svcnames = data["monitor"]["services"]
+            svcpaths = data["monitor"]["services"]
         except (KeyError, TypeError):
             # the daemon is not returning proper status data
-            svcnames = {}
-        if self.svc.svcname in svcnames:
-            avail = svcnames[self.svc.svcname]["avail"]
+            svcpaths = {}
+        if self.svc.svcpath in svcpaths:
+            avail = svcpaths[self.svc.svcpath]["avail"]
             if avail != "up":
                 self.status_log("paused, service not up", "info")
                 return True

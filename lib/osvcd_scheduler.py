@@ -255,12 +255,12 @@ class Scheduler(shared.OsvcThread):
             svc.configure_scheduler()
             svc.options.cron = True
             try:
-                provisioned = shared.AGG[svc.svcname].provisioned
+                provisioned = shared.AGG[svcname].provisioned
             except KeyError:
                 continue
             for action in svc.sched.scheduler_actions:
                 if provisioned is not True and action in ACTIONS_SKIP_ON_UNPROV:
-                    nonprov.append(action+"@"+svc.svcname)
+                    nonprov.append(action+"@"+svcname)
                     continue
                 try:
                     data = svc.sched.validate_action(action)
@@ -272,10 +272,10 @@ class Scheduler(shared.OsvcThread):
                     delay = data
                     rids = None
                 if rids is None:
-                    self.queue_action(action, delay, svc.svcname, rids)
+                    self.queue_action(action, delay, svcname, rids)
                 else:
                     for rid in rids:
-                        self.queue_action(action, delay, svc.svcname, rid)
+                        self.queue_action(action, delay, svcname, rid)
 
         # log a scheduler loop digest
         msg = []

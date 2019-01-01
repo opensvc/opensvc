@@ -24,6 +24,11 @@ else:
     def to_bytes(x):
         return bytes(x) if not isinstance(x, bytes) else x
 
+RETRYABLE = (
+    11,		# EBUSY
+    146,	# EREFUSED
+    149,	# EALREADY
+)
 SOCK_TMO = 0.2
 PAUSE = 0.2
 
@@ -551,10 +556,7 @@ class Crypt(object):
                     sock.connect(sp.to)
                     break
                 except socket.error as exc:
-                    if exc.errno in (11, 146, 149):
-                        # 11  EBUSY
-                        # 146 EREFUSED
-                        # 149 EALREADY
+                    if exc.errno in RETRYABLE:
                         # Resource temporarily unavailable (busy, overflow)
                         # Retry, and make sure we don't short loop
                         sock.close()
@@ -568,7 +570,10 @@ class Crypt(object):
             else:
                 message = self.msg_encode(data)
             if message is None:
-                return {"status": 1, "err": "failed to encrypt message"}
+                return {
+                    "status": 1,
+                    "err": "failed to encrypt message",
+                }
 
             sock.sendall(message)
 
@@ -582,14 +587,22 @@ class Crypt(object):
                         )
                     except socket.timeout:
                         if timeout > 0 and elapsed > timeout:
-                            return {"status": 1, "err": "timeout"}
+                            return {
+                                "status": 1,
+                                "err": "timeout waiting for result",
+                            }
                         time.sleep(PAUSE)
                         elapsed += SOCK_TMO + PAUSE
         except socket.error as exc:
             if not silent:
                 self.log.error("daemon send to %s error: %s",
                                sp.to_s, str(exc))
-            return {"status": 1, "error": str(exc)}
+            return {
+                "status": 1,
+                "error": str(exc),
+                "errno": exc.errno,
+                "retryable": exc.errno in RETRYABLE,
+            }
         finally:
             sock.close()
         return {"status": 0}

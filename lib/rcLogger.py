@@ -6,6 +6,7 @@ import logging
 import logging.handlers
 import six
 from rcGlobalEnv import rcEnv
+from rcUtilities import makedirs
 from subprocess import *
 
 min_name_len = 10
@@ -163,6 +164,8 @@ def initLogger(name, handlers=None):
     log.handlers = []
 
     if "file" in handlers:
+        logdir = os.path.dirname(logfile)
+        makedirs(logdir)
         try:
             fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             filehandler = logging.handlers.RotatingFileHandler(logfile,

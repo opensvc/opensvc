@@ -107,7 +107,7 @@ class SyncDcs(resSync.Sync):
         import uuid
         o = md5()
         o.update(uuid.uuid1().hex)
-        o.update(self.svc.svcname)
+        o.update(self.svc.id)
         self.conn = o.hexdigest()
 
     def __str__(self):

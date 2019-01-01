@@ -129,7 +129,10 @@ class Disk(resDisk.Disk):
         raise ex.excError("unable to find a devpath for md")
 
     def devname(self):
-        return "/dev/md/"+self.svc.svcname.split(".")[0]+"."+self.rid.replace("#", ".")
+        if self.svc.namespace:
+            return "/dev/md/"+self.svc.namespace.lower()+"."+self.svc.svcname.split(".")[0]+"."+self.rid.replace("#", ".")
+        else:
+            return "/dev/md/"+self.svc.svcname.split(".")[0]+"."+self.rid.replace("#", ".")
 
     def devpath(self):
         return "/dev/disk/by-id/md-uuid-"+self.uuid

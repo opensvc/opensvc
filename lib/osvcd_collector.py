@@ -21,7 +21,7 @@ class Collector(shared.OsvcThread):
         self.last_comm = None
         self.last_config = {}
         self.last_status = {}
-        self.last_status_changed = []
+        self.last_status_changed = set()
 
     def run(self):
         self.set_tid()
@@ -43,7 +43,7 @@ class Collector(shared.OsvcThread):
         Identify changes in data
         """
         last_status = {}
-        last_status_changed = []
+        last_status_changed = set()
 
         def add_parents(_svcname, done=None):
             """
@@ -61,25 +61,25 @@ class Collector(shared.OsvcThread):
                         continue
                     if svcname in last_status_changed:
                         continue
-                    last_status_changed.append(svcname)
+                    last_status_changed.add(svcname)
                     add_parents(svcname, done=done+[_svcname])
 
         for svcname, nodename in self.last_status:
             if svcname is None:
                 # node disappeared
                 if data["nodes"].get(nodename) is None:
-                    last_status_changed += ["@"+nodename]
+                    last_status_changed.add("@"+nodename)
             else:
                 # instance disappeared
                 if data["nodes"].get(nodename, {}).get("services", {}).get("status", {}).get(svcname) is None:
-                    last_status_changed += [svcname, svcname+"@"+nodename]
+                    last_status_changed |= set([svcname, svcname+"@"+nodename])
 
         for nodename, ndata in data["nodes"].items():
             # detect node frozen changes
             node_frozen = ndata.get("frozen")
             last_node_frozen = self.last_status.get((None, nodename), {}).get("frozen")
             if node_frozen != last_node_frozen:
-                last_status_changed.append("@"+nodename)
+                last_status_changed.add("@"+nodename)
             last_status[(None, nodename)] = {"frozen": node_frozen}
 
             # detect instances status changes
@@ -89,9 +89,9 @@ class Collector(shared.OsvcThread):
                     str(sdata.get("monitor", {}).get("global_status_updated"))
                 prev_status_csum = self.last_status.get((svcname, nodename))
                 if status_csum != prev_status_csum:
-                    last_status_changed.append(svcname+"@"+nodename)
+                    last_status_changed.add(svcname+"@"+nodename)
                     if svcname not in last_status_changed:
-                        last_status_changed.append(svcname)
+                        last_status_changed.add(svcname)
                         add_parents(svcname)
                 last_status[(svcname, nodename)] = status_csum
 
@@ -174,11 +174,11 @@ class Collector(shared.OsvcThread):
 
     def send_daemon_status(self, data):
         if self.last_status_changed:
-            self.log.info("send daemon status, changed: %s", ", ".join(self.last_status_changed))
+            self.log.info("send daemon status, changed: %s", ", ".join(sorted(list(self.last_status_changed))))
         else:
             self.log.info("send daemon status, resync")
         try:
-            shared.NODE.collector.call("push_daemon_status", data, self.last_status_changed)
+            shared.NODE.collector.call("push_daemon_status", data, list(self.last_status_changed))
         except Exception as exc:
             self.log.error("call push_daemon_status: %s", exc)
             shared.NODE.collector.disable()
@@ -263,13 +263,13 @@ class Collector(shared.OsvcThread):
         if self.speaker():
             last_status, last_status_changed = self.get_last_status(data)
             now = time.time()
-            self.last_status_changed += last_status_changed
+            self.last_status_changed |= last_status_changed
             if self.last_comm is None:
                 self.send_daemon_status(data)
-            elif self.last_status_changed != []:
+            elif self.last_status_changed:
                 if self.last_comm <= now - self.min_update_interval:
                     self.send_daemon_status(data)
-                    self.last_status_changed = []
+                    self.last_status_changed = set()
                 else:
                     # avoid storming the collector with daemon status updates
                     #self.log.debug("last daemon status too soon: %d", self.last_comm)

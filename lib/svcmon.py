@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 import sys
 import optparse
 import time
@@ -46,6 +47,11 @@ def setup_parser(node):
     parser.add_option("--node", action="store", dest="node",
                       help="The node to send a request to. If not specified the "
                            "local node is targeted."),
+    parser.add_option("--namespace", action="store", dest="namespace",
+                      help="The namespace to switch to for the action. "
+                           "Namespaces are cluster partitions. A default "
+                           "namespace can be set for the session setting the "
+                           "OSVC_NAMESPACE environment variable."),
     parser.add_option("--stats", default=False,
                       action="store_true", dest="stats",
                       help="refresh the information every --interval.")
@@ -100,14 +106,14 @@ def start_events_thread(node, nodename):
     thr.start()
     return thr
 
-def get_stats(options, node, svcnames):
+def get_stats(options, node, svcpaths):
     try:
         if options.stats:
             return {
-                node.nodename: node._daemon_stats(svcnames=svcnames, node=options.node)["data"]
+                node.nodename: node._daemon_stats(svcpaths=svcpaths, node=options.node)["data"]
             }
         elif options.cluster_stats:
-            return node.cluster_stats(svcnames=svcnames)
+            return node.cluster_stats(svcpaths=svcpaths)
         else:
             return None
     except Exception:
@@ -121,10 +127,8 @@ def _main(node, argv=None):
     chars = 0
     last_refresh = 0
 
-    if options.parm_svcs:
-        expanded_svcs = node.svcs_selector(options.parm_svcs)
-    else:
-        expanded_svcs = None
+    namespace = options.namespace if options.namespace else os.environ.get("OSVC_NAMESPACE")
+    expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace)
 
     if options.stats and not options.interval:
         options.interval = 3
@@ -144,7 +148,7 @@ def _main(node, argv=None):
         preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         stats_data = get_stats(options, node, expanded_svcs)
         prev_stats_data = None
-        outs = format_cluster(svcnames=expanded_svcs, node=options.node,
+        outs = format_cluster(svcpaths=expanded_svcs, node=options.node,
                               data=status_data, sections=options.sections)
 
         if outs is not None:
@@ -172,7 +176,7 @@ def _main(node, argv=None):
                 chars = 1
             preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             outs = format_cluster(
-                svcnames=expanded_svcs,
+                svcpaths=expanded_svcs,
                 node=options.node,
                 data=status_data,
                 prev_stats_data=prev_stats_data,
@@ -187,7 +191,7 @@ def _main(node, argv=None):
             last_refresh = now
             time.sleep(0.2)
     else:
-        outs = format_cluster(svcnames=expanded_svcs, node=options.node,
+        outs = format_cluster(svcpaths=expanded_svcs, node=options.node,
                               data=status_data, sections=options.sections)
         if outs is not None:
             print(outs)
