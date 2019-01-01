@@ -1077,10 +1077,6 @@ def init_locale():
 def is_service(f, namespace=None):
     if f is None:
         return
-    if f.startswith("root/"):
-        f = f[5:]
-    if f.count("/") > 1:
-        return
     basename = os.path.basename(f)
     if basename in ["node", "auth"]:
         return
