@@ -151,6 +151,9 @@ def do_svc_create(node, svcpaths, action, options, build_kwargs):
     if "/" not in svcpath and options.namespace:
         svcpath = fmt_svcpath(svcpath, options.namespace)
 
+    if svcpath.count("/") > 1:
+        raise ex.excError("invalid namespace name: slash is not allowed.")
+
     try:
         ret = node.install_service(svcpath, fpath=options.config,
                                    template=options.template,
