@@ -116,6 +116,30 @@ class ExtConfigMixin(object):
 
         return lines
 
+    def eval(self):
+        """
+        The 'eval' action entrypoint.
+        Verifies --kw is set, set DEFAULT as section if no section was
+        specified, and finally print the dereferenced and evaluated
+        value.
+        """
+        if self.options.kw and len(self.options.kw) == 1:
+            kw = self.options.kw[0]
+        else:
+            kw = None
+        try:
+            print(self._get(kw, evaluate=True, impersonate=self.options.impersonate))
+        except ex.OptNotFound as exc:
+            print(exc.default)
+        except ex.RequiredOptNotFound as exc:
+            return 1
+        except ex.excError as exc:
+            print(exc, file=sys.stderr)
+            return 1
+        except Exception:
+            return 1
+        return 0
+
     def get(self):
         """
         The 'get' action entrypoint.
@@ -131,7 +155,7 @@ class ExtConfigMixin(object):
         else:
             kw = None
         try:
-            print(self._get(kw, self.options.eval))
+            print(self._get(kw, evaluate=self.options.eval, impersonate=self.options.impersonate))
         except ex.OptNotFound as exc:
             print(exc.default)
         except ex.RequiredOptNotFound as exc:
@@ -143,7 +167,7 @@ class ExtConfigMixin(object):
             return 1
         return 0
 
-    def _get(self, param=None, evaluate=False):
+    def _get(self, param=None, evaluate=False, impersonate=None):
         """
         Verifies the param is set, set DEFAULT as section if no section was
         specified, and finally return,
@@ -166,7 +190,7 @@ class ExtConfigMixin(object):
             if not self.has_default_section:
                 raise ex.OptNotFound("section [%s] not found" % section)
         if evaluate:
-            return self.conf_get(section, option, "string", scope=True)
+            return self.conf_get(section, option, "string", scope=True, impersonate=impersonate)
         else:
             return self.config.get(section, option)
 

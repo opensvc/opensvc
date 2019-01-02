@@ -1,4 +1,4 @@
-.TH SVCMON 1 2018\-12\-24
+.TH SVCMON 1 2019\-01\-02
 .SH NAME
 svcmon - OpenSVC agent's services instances status requesting command.
 .SH SYNOPSIS
@@ -30,6 +30,9 @@ colorize output. possible values are : auto=guess based on tty presence, always|
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B --stats
 refresh the information every --interval.

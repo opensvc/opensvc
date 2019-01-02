@@ -945,6 +945,13 @@ ACTIONS = {
                 OPT.unprovision,
             ],
         },
+        "eval": {
+            "msg": "Evaluate the value of a service configuration keyword.",
+            "options": ACTION_OPTS + [
+                OPT.impersonate,
+                OPT.kw,
+            ],
+        },
         "set": {
             "msg": "Set a service configuration parameter",
             "options": ACTION_OPTS + [
@@ -958,8 +965,7 @@ ACTIONS = {
             ],
         },
         "get": {
-            "msg": "Get the raw or evaluated value of a service "
-                   "configuration keyword.",
+            "msg": "Get the raw value of a service configuration keyword.",
             "options": ACTION_OPTS + [
                 OPT.eval,
                 OPT.impersonate,

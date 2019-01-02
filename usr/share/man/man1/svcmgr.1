@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2018\-12\-24
+.TH SVCMGR 1 2019\-01\-02
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -22,6 +22,9 @@ The acker name to log when acknowledging action log errors
 .TP
 .B --comment=COMMENT
 A comment to log when acknowldging action log error entries.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -129,6 +132,9 @@ A comment to log when acknowldging action log error entries.
 .B --duration=DURATION
 A duration expression like, '1h10m'.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -222,6 +228,9 @@ A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -317,6 +326,9 @@ A JSONPath expression to filter a JSON output.
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -411,6 +423,9 @@ A JSONPath expression to filter a JSON output.
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -501,6 +516,9 @@ Create a new tag.
 .TP
 .B --tag=TAG
 The tag name, as shown by :cmd:`svcmgr collector list tags`.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -595,6 +613,9 @@ A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -696,6 +717,9 @@ A JSONPath expression to filter a JSON output.
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -796,6 +820,9 @@ A JSONPath expression to filter a JSON output.
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -892,6 +919,9 @@ Specify a data formatter. Possible values are json, flat_json, csv or table. csv
 .TP
 .B --like=LIKE
 A data filtering expression. '%' is the multi-character wildcard. '_' is the single-character wildcard. Leading and trailing '%' are automatically set.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -993,6 +1023,9 @@ A end date expressed as 'YYYY-MM-DD hh:mm' limiting the timerange the action app
 .B --comment=COMMENT
 A comment to log when acknowldging action log error entries.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -1083,6 +1116,9 @@ Log a message in the collector service log.
 .TP
 .B --message=MESSAGE
 The message to send to the collector for logging.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -1177,6 +1213,9 @@ A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -1281,6 +1320,9 @@ A JSONPath expression to filter a JSON output.
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -1375,6 +1417,9 @@ A JSONPath expression to filter a JSON output.
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -1466,6 +1511,9 @@ Set a service tag (pointed by --tag).
 .B --tag=TAG
 The tag name, as shown by :cmd:`svcmgr collector list tags`.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -1556,6 +1604,9 @@ Unset a service tag (pointed by --tag).
 .TP
 .B --tag=TAG
 The tag name, as shown by :cmd:`svcmgr collector list tags`.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -1652,6 +1703,9 @@ Specify the modulesets to limit the action to. The special value 'all' can be us
 .TP
 .B --ruleset=RULESET
 Specify the rulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -1759,6 +1813,9 @@ Specify the modulesets to limit the action to. The special value 'all' can be us
 .B --ruleset-date=RULESET_DATE
 Use an historical ruleset, specified by its date.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -1862,6 +1919,9 @@ Specify the modulesets to limit the action to. The special value 'all' can be us
 .B --ruleset-date=RULESET_DATE
 Use an historical ruleset, specified by its date.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -1956,6 +2016,9 @@ Specify the modulesets to limit the action to. The special value 'all' can be us
 .B --ruleset=RULESET
 Specify the rulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -2049,6 +2112,9 @@ Specify the modules to limit the run to. The modules must be in already attached
 .TP
 .B --moduleset=MODULESET
 Specify the modulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -2153,6 +2219,9 @@ Specify the modulesets to limit the action to. The special value 'all' can be us
 .B --ruleset-date=RULESET_DATE
 Use an historical ruleset, specified by its date.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -2256,6 +2325,9 @@ Specify the modulesets to limit the action to. The special value 'all' can be us
 .B --ruleset-date=RULESET_DATE
 Use an historical ruleset, specified by its date.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -2346,6 +2418,9 @@ List available compliance modulesets. Setting :opt:`--moduleset f%` limits the r
 .TP
 .B --moduleset=MODULESET
 Specify the modulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -2438,6 +2513,9 @@ List available compliance rulesets. Setting :opt:`--ruleset f%` limits the scope
 .B --ruleset=RULESET
 Specify the rulesets to limit the action to. The special value 'all' can be used in conjonction with detach.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -2525,6 +2603,9 @@ Show this help message and exit.
 
 Show compliance rules applying to this service.
 
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -2614,6 +2695,9 @@ Show this help message and exit.
 Show compliance rules applying to this service.
 
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -2701,6 +2785,9 @@ Show this help message and exit.
 
 Show compliance modules status.
 
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -2793,6 +2880,9 @@ Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Abort the action asynchronously done by the cluster daemons.
 
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -2926,6 +3016,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -3025,6 +3118,9 @@ Limit the action to the service resources in the specified, comma-separated, sla
 .TP
 .B --slaves
 Limit the action scope to service resources in all slaves.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -3133,6 +3229,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .TP
 .B --subsets=PARM_SUBSETS
 Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -3266,6 +3365,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -3353,6 +3455,9 @@ Show this help message and exit.
 
 Wrap the docker client command, setting automatically the socket parameter to join the service-private docker daemon. The {as_service}, {images} and {instances} words in the wrapped command are replaced by, respectively, the registry login username/password/email parameters to log as a service using <svcname>@<nodename> as the username and the node uuid as password (which is what is expected when the opensvc collector is used as the JWT manager for the registry), the set of docker instance names and images for container resources passing the --tags, --rid and --subsets filters. This is useful to remove all instances of a service or all instances of resources with a tag like 'frontend'. Note the opensvc filters must be positioned before the docker command in the arguments list.
 
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -3461,6 +3566,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .TP
 .B --subsets=PARM_SUBSETS
 Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -3573,6 +3681,9 @@ Limit the action to the service resources in the specified, comma-separated, sla
 .B --slaves
 Limit the action scope to service resources in all slaves.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -3660,6 +3771,9 @@ Show this help message and exit.
 
 Report on the current blocking of orchestration on the service.
 
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -3804,6 +3918,9 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .B --wait
 Wait for asynchronous action termination.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -3907,6 +4024,9 @@ The node to send a request to. If not specified the local node is targeted.
 .B --no-pager
 Do not display the command result in a pager.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -4000,6 +4120,9 @@ A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -4144,6 +4267,9 @@ Wait for asynchronous action termination.
 .TP
 .B --to=PARM_DESTINATION_NODE
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -4291,6 +4417,9 @@ Wait for asynchronous action termination.
 .B --to=PARM_DESTINATION_NODE
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -4422,6 +4551,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -4555,6 +4687,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -4686,6 +4821,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -4819,6 +4957,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -4951,6 +5092,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -5065,6 +5209,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .B --subsets=PARM_SUBSETS
 Limit the action to the resources in the specified, comma-separated, list of subsets.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -5152,6 +5299,9 @@ Show this help message and exit.
 
 Display the service local configuration file modification time
 
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -5267,6 +5417,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .B --subsets=PARM_SUBSETS
 Limit the action to the resources in the specified, comma-separated, list of subsets.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -5381,6 +5534,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .B --subsets=PARM_SUBSETS
 Limit the action to the resources in the specified, comma-separated, list of subsets.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -5492,6 +5648,9 @@ Examples:
   only container#1 and ip#1
 
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -5588,6 +5747,9 @@ Specify a data formatter. Possible values are json, flat_json, csv or table. csv
 .TP
 .B --verbose
 Include more information to some print commands output. For example, add the 'next run' column in the output of :cmd:`svcmgr print schedule`.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -5711,6 +5873,9 @@ Drop status caches and re-evaluate before printing.
 .B --show-disabled
 Include the disabled resources. This option supersedes the :kw:`show_disabled` value in the service configuration.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -5824,6 +5989,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .TP
 .B --subsets=PARM_SUBSETS
 Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -5968,6 +6136,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .B --disable-rollback
 If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -6055,6 +6226,9 @@ Show this help message and exit.
 
 Report the status of scsi3 persistent reservations on scsi disks held by the local service instance.
 
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -6150,6 +6324,9 @@ If set, don't try to rollback resources activated before a start action interrup
 .B --provision
 Provision the service resources after config file creation. Defaults to False.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -6241,6 +6418,9 @@ Push service configuration to the collector.
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -6331,6 +6511,9 @@ Push service configuration to the containers hosting an encapsulated service.
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -6426,6 +6609,9 @@ If set, the action is actually executed only if the schedulingconstraints are sa
 .B --sync
 Use synchronous collector communication. For example, :cmd:`push resinfo --sync` before a compliance run makes sure the pushed data has hit the collector database before the rulesets are contextualized.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -6513,6 +6699,9 @@ Show this help message and exit.
 
 Push service instance status to the collector synchronously.
 
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -6649,6 +6838,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -6783,6 +6975,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .TP
 .B --disable-rollback
 If set, don't try to rollback resources activated before a start action interrupts on error.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -6919,6 +7114,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .B --disable-rollback
 If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -7054,6 +7252,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -7150,6 +7351,9 @@ Execute the service action on the local service instances only, ignoring cluster
 .TP
 .B --to=PARM_DESTINATION_NODE
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -7283,6 +7487,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -7414,6 +7621,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -7555,6 +7765,9 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .B --wait
 Wait for asynchronous action termination.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -7645,6 +7858,9 @@ Snooze alerts on the node for :opt:`--duration`
 .TP
 .B --duration=DURATION
 A duration expression like, '1h10m'.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -7792,6 +8008,9 @@ Wait for asynchronous action termination.
 .B --upto=UPTO
 Start the service up to the specified rid or driver group.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -7927,6 +8146,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .B --disable-rollback
 If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -8020,6 +8242,9 @@ If set, the action is actually executed only if the schedulingconstraints are sa
 .TP
 .B -r, --refresh
 Drop status caches and re-evaluate before printing.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -8164,6 +8389,9 @@ Wait for asynchronous action termination.
 .B --downto=UPTO
 Stop the service down to the specified rid or driver group.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -8251,6 +8479,9 @@ Show this help message and exit.
 
 Create a tarball archive of config, var and log files, and upload it to the OpenSVC support site.
 
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -8398,6 +8629,9 @@ Wait for asynchronous action termination.
 .B --to=PARM_DESTINATION_NODE
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -8533,6 +8767,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -8664,6 +8901,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -8797,6 +9037,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -8928,6 +9171,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -9061,6 +9307,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -9192,6 +9441,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -9325,6 +9577,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -9456,6 +9711,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -9589,6 +9847,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -9720,6 +9981,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -9853,6 +10117,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -9984,6 +10251,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -10117,6 +10387,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -10248,6 +10521,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -10392,6 +10668,9 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .B --wait
 Wait for asynchronous action termination.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -10502,6 +10781,9 @@ Limit the action to the service resources in the specified, comma-separated, sla
 .TP
 .B --slaves
 Limit the action scope to service resources in all slaves.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -10636,6 +10918,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -10777,6 +11062,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -10864,6 +11152,9 @@ Show this help message and exit.
 
 Unsnooze alerts on the node
 
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -11020,6 +11311,9 @@ Keep the same service id as the template or config file referenced by the create
 .B --template=PARM_TEMPLATE
 The configuration file template name or id, served by the collector, to use when creating or installing a service.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -11166,6 +11460,9 @@ On service delete, also remove the service collector-side
 .B --unprovision
 Unprovision the service resources before config files file deletion. Defaults to False.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -11260,6 +11557,174 @@ Discard the stashed, invalid, configuration file.
 .B --recover
 Recover the stashed erroneous configuration file in a :cmd:`svcmgr edit config` command
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the json service status data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.group_status.disk.status=up'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B -c, --cluster
+Execute the action on all cluster nodes. Aggregate the json outputs.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr eval\fP
+.RS
+
+Evaluate the value of a service configuration keyword.
+
+.TP
+.B --dry-run
+Show the action execution plan.
+.TP
+.B -f, --force
+Force action, ignore sanity checks.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
+.B --rid=PARM_RID
+A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
+
+* A resource id
+* A driver group name (app, fs, disk, ...)
+
+Examples:
+
+* 'app'
+  all app resources
+* 'container#1,ip#1'
+  only container#1 and ip#1
+
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
+.TP
+.B --subsets=PARM_SUBSETS
+Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --tags=PARM_TAGS
+A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --impersonate=IMPERSONATE
+Impersonate a peer node when evaluating keywords.
+.TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -11345,7 +11810,7 @@ Show this help message and exit.
 \fBsvcmgr get\fP
 .RS
 
-Get the raw or evaluated value of a service configuration keyword.
+Get the raw value of a service configuration keyword.
 
 .TP
 .B --dry-run
@@ -11432,6 +11897,9 @@ Examples:
 * nodes[0]+=node3
   Preprend node3 to nodes
 
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -11533,6 +12001,9 @@ If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is
 .B --impersonate=IMPERSONATE
 Impersonate a peer node when evaluating keywords.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -11626,6 +12097,9 @@ A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
@@ -11809,6 +12283,9 @@ A list member to drop from the value pointed by :kw:`--param`.
 .B --value=VALUE
 The value to set for the keyword pointed by :opt:`--param`
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -11976,6 +12453,9 @@ An expression like '[<section>.]<keyword>' where
   * a resource id
   * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -12117,6 +12597,9 @@ Provision the service resources after config file creation. Defaults to False.
 .B --resource=RESOURCE
 A resource definition in json dictionary format fed to create or update. The 'type' key point the driver group name, and the 'rtype' key the driver name (translated to type in the configuration file section).
 .TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
@@ -12204,6 +12687,9 @@ Show this help message and exit.
 
 Check the section names and keywords are valid.
 
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
 .B -s PARM_SVCS, --service=PARM_SVCS
 A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:

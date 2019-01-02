@@ -134,6 +134,10 @@ OPT = Storage({
         "--id", default=0,
         action="store", dest="id",
         help="Specify an id to act on."),
+    "impersonate": Option(
+        "--impersonate", default=None,
+        action="store",
+        help="Impersonate a peer node when evaluating keywords."),
     "index": Option(
         "--index", default=None,
         action="store", type="int",
@@ -560,11 +564,18 @@ ACTIONS = {
                 OPT.user,
             ],
         },
+        "eval": {
+            "msg": "Evaluate the value of a service configuration keyword.",
+            "options": [
+                OPT.impersonate,
+                OPT.kw,
+            ],
+        },
         "get": {
-            "msg": "Get the raw or evaluated value of a node "
-                   "configuration keyword.",
+            "msg": "Get the raw value of a node configuration keyword.",
             "options": [
                 OPT.eval,
+                OPT.impersonate,
                 OPT.param,
                 OPT.kw,
             ],
