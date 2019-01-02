@@ -303,6 +303,14 @@ class Asset(rcAsset.Asset):
             for line in f.readlines():
                 if 'cpu MHz' in line:
                     return line.split(':')[1].strip().split('.')[0]
+
+        p_raspbian = '/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq'
+        if os.path.exists(p_raspbian):
+            (out, err, ret) = justcall(['cat', p_raspbian])
+            if ret != 0:
+                return 'Unknown'
+            return out[:-4]
+
         return 'Unknown'
 
     def _get_cpu_cores(self):
@@ -400,12 +408,24 @@ class Asset(rcAsset.Asset):
                 return l.split(':')[-1].strip()
         return 'Unknown'
 
+    def _get_serial_raspbian(self):
+        """ Raspbian serial is in /proc/cpuinfo
+        """
+        (out, err, ret) = justcall(['grep', '^Serial', '/proc/cpuinfo'])
+        if ret != 0:
+            return 'Unknown'
+        lines = out.split('\n')
+        l = lines[0].split(':')
+        return l[1].strip()
+
     def _get_serial(self):
         if self.container:
             return 'n/a'
         serial = self._get_serial_1()
         if serial in ('Unknown', 'Not Specified'):
             serial = self._get_serial_2()
+        if serial in ('Unknown') and self.os_release['id'] == 'raspbian':
+            serial = self._get_serial_raspbian()
         return serial
 
     def _get_bios_version(self):
@@ -468,11 +488,22 @@ class Asset(rcAsset.Asset):
             return ""
         return out.strip()
 
+    def _get_revision_raspbian(self):
+        (out, err, ret) = justcall(['grep', '^Revision', '/proc/cpuinfo'])
+        if ret != 0:
+            return 'Unknown'
+        lines = out.split('\n')
+        l = lines[0].split(':')
+        return l[1].strip()
+
     def _get_model(self):
         if self.container:
             return 'container'
         elif self.xenguest and len(self.dmidecode) < 5:
             return "Xen Virtual Machine (PVM)"
+        elif self.os_release['id'] == 'raspbian':
+            model = self._get_revision_raspbian()
+            return model
         for l in self.dmidecode:
             if 'Product Name:' in l:
                 return l[l.index(":")+1:].strip()
