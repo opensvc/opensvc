@@ -595,15 +595,18 @@ class Node(Crypt, ExtConfigMixin):
             return [path for path in paths if "/" not in path]
         return [path for path in paths if path.startswith(namespace+"/")]
 
-    def svcs_selector(self, selector, namespace=None):
+    def svcs_selector(self, selector, namespace=None, data=None):
         """
         Given a selector string, return a list of service names.
         This exposed method only aggregates ORed elements.
         """
-        try:
-            data = self._daemon_status(silent=True)["monitor"]
-        except Exception as exc:
-            data = None
+        if data is None:
+            try:
+                data = self._daemon_status(silent=True)["monitor"]
+            except Exception as exc:
+                data = None
+        else:
+            data = data["monitor"]
 
         # fully qualified svcname
         path = is_service(selector, namespace)

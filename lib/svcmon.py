@@ -128,7 +128,6 @@ def _main(node, argv=None):
     last_refresh = 0
 
     namespace = options.namespace if options.namespace else os.environ.get("OSVC_NAMESPACE")
-    expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace)
 
     if options.stats and not options.interval:
         options.interval = 3
@@ -146,6 +145,7 @@ def _main(node, argv=None):
     if options.watch:
         start_events_thread(node, options.node)
         preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
         stats_data = get_stats(options, node, expanded_svcs)
         prev_stats_data = None
         outs = format_cluster(svcpaths=expanded_svcs, node=options.node,
@@ -168,6 +168,7 @@ def _main(node, argv=None):
                 continue
             if status_changed:
                 status_data = node._daemon_status(node=options.node)
+                expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
             if stats_changed:
                 prev_stats_data = stats_data
                 stats_data = get_stats(options, node, expanded_svcs)
