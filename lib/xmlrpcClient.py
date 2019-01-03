@@ -99,7 +99,10 @@ def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
         _e = datetime.now()
         _d = _e - _b
         log.error("call %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, exc))
-        raise
+        if hasattr(exc, "faultString"):
+            raise ex.excError(exc.faultString.split(":", 1)[-1])
+        else:
+            raise ex.excError(str(exc))
 
 class Collector(object):
     def call(self, *args, **kwargs):
