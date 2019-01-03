@@ -1077,6 +1077,8 @@ def init_locale():
 def is_service(f, namespace=None):
     if f is None:
         return
+    if f.count("/") == 1 and not f.startswith("/"):
+        f, namespace = split_svcpath(f)
     basename = os.path.basename(f)
     if basename in ["node", "auth"]:
         return
