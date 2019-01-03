@@ -797,7 +797,7 @@ class Node(Crypt, ExtConfigMixin):
            len(kwargs['svcpaths']) > 0 and \
            self.svcs is not None:
             svcpaths_request = set(kwargs['svcpaths'])
-            svcpaths_actual = set([s.svcname for s in self.svcs])
+            svcpaths_actual = set([s.svcpath for s in self.svcs])
             if len(svcpaths_request-svcpaths_actual) == 0:
                 return
 
@@ -1572,9 +1572,9 @@ class Node(Crypt, ExtConfigMixin):
             disk_node.add_column(disk["vendor"])
             disk_node.add_column(disk["model"])
 
-            for svcname, service in disk["services"].items():
+            for svcpath, service in disk["services"].items():
                 svc_node = disk_node.add_node()
-                svc_node.add_column(svcname, color.LIGHTBLUE)
+                svc_node.add_column(svcpath, color.LIGHTBLUE)
                 svc_node.add_column(disk["dg"])
                 svc_node.add_column(print_size(service["used"]))
 
@@ -1650,17 +1650,17 @@ class Node(Crypt, ExtConfigMixin):
                                 "services": {},
                             }
 
-                        if svc.svcname not in data["disks"][disk_id]["services"]:
-                            data["disks"][disk_id]["services"][svc.svcname] = {
-                                "svcname": svc.svcname,
+                        if svc.svcpath not in data["disks"][disk_id]["services"]:
+                            data["disks"][disk_id]["services"][svc.svcpath] = {
+                                "svcname": svc.svcpath,
                                 "used": used,
                                 "region": region
                             }
                         else:
                             # consume space at service level
-                            data["disks"][disk_id]["services"][svc.svcname]["used"] += used
-                            if data["disks"][disk_id]["services"][svc.svcname]["used"] > disk_size:
-                                data["disks"][disk_id]["services"][svc.svcname]["used"] = disk_size
+                            data["disks"][disk_id]["services"][svc.svcpath]["used"] += used
+                            if data["disks"][disk_id]["services"][svc.svcpath]["used"] > disk_size:
+                                data["disks"][disk_id]["services"][svc.svcpath]["used"] = disk_size
 
                         # consume space at disk level
                         data["disks"][disk_id]["used"] += used
@@ -2452,19 +2452,19 @@ class Node(Crypt, ExtConfigMixin):
             if self.can_parallel(action, options):
                 while running() >= self.max_parallel:
                     time.sleep(1)
-                data.svcs[svc.svcname] = svc
-                data.procs[svc.svcname] = Process(
+                data.svcs[svc.svcpath] = svc
+                data.procs[svc.svcpath] = Process(
                     target=self.service_action_worker,
-                    name='worker_'+svc.svcname,
+                    name='worker_'+svc.svcpath,
                     args=[svc, action, options],
                 )
-                data.procs[svc.svcname].start()
+                data.procs[svc.svcpath].start()
             else:
                 try:
                     ret = svc.action(action, options)
                     if need_aggregate:
                         if ret is not None:
-                            data.outs[svc.svcname] = ret
+                            data.outs[svc.svcpath] = ret
                     elif action.startswith("print_"):
                         self.print_data(ret)
                         if isinstance(ret, dict):
@@ -2486,26 +2486,26 @@ class Node(Crypt, ExtConfigMixin):
                     ret = 1
                     err += ret
                     if not need_aggregate:
-                        print("%s: %s" % (svc.svcname, exc), file=sys.stderr)
+                        print("%s: %s" % (svc.svcpath, exc), file=sys.stderr)
                     continue
                 except ex.excSignal:
                     break
 
         if self.can_parallel(action, options):
-            for svcname in data.procs:
-                data.procs[svcname].join()
-                ret = data.procs[svcname].exitcode
+            for svcpath in data.procs:
+                data.procs[svcpath].join()
+                ret = data.procs[svcpath].exitcode
                 if ret > 0:
-                    # r is negative when data.procs[svcname] is killed by signal.
+                    # r is negative when data.procs[svcpath] is killed by signal.
                     # in this case, we don't want to decrement the err counter.
                     err += ret
 
         if need_aggregate:
             if self.options.single_service:
-                svcname = self.svcs[0].svcname
-                if svcname not in data.outs:
+                svcpath = self.svcs[0].svcpath
+                if svcpath not in data.outs:
                     return 1
-                self.print_data(data.outs[svcname])
+                self.print_data(data.outs[svcpath])
             else:
                 self.print_data(data.outs)
 
