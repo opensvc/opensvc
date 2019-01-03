@@ -1328,9 +1328,11 @@ class Monitor(shared.OsvcThread):
 
     def scaler_current_slaves(self, svcpath):
         name, namespace = split_svcpath(svcpath)
-        pattern = "^[0-9]+\." + name + "$"
+        pattern = "[0-9]+\." + name + "$"
         if namespace:
-            pattern = namespace + "/" + pattern
+            pattern = "^" + namespace + "/" + pattern
+        else:
+            pattern = "^" + pattern
         return [slave for slave in shared.SERVICES if re.match(pattern, slave)]
 
     def service_orchestrator_scaler(self, svc):
@@ -1422,7 +1424,7 @@ class Monitor(shared.OsvcThread):
         max_burst = 3
 
         # create services in holes first
-        for slavename in [str(idx)+"."+svc.svcpath for idx in range(n_current_slaves)]:
+        for slavename in [self.scale_svcpath(svc.svcpath, idx) for idx in range(n_current_slaves)]:
             if slavename in current_slaves:
                 continue
             to_add.append([slavename, width])
@@ -1430,7 +1432,7 @@ class Monitor(shared.OsvcThread):
             if slaves_count == 0:
                 break
 
-        to_add += [[str(n_current_slaves+idx)+"."+svc.svcpath, width] for idx in range(slaves_count)]
+        to_add += [[self.scale_svcpath(svc.svcpath, n_current_slaves+idx), width] for idx in range(slaves_count)]
         if left != 0 and len(to_add):
             to_add[-1][1] = left
         to_add = to_add[:max_burst]
@@ -1476,9 +1478,9 @@ class Monitor(shared.OsvcThread):
     def service_orchestrator_scaler_up_failover(self, svc, missing, current_slaves):
         slaves_count = missing
         n_current_slaves = len(current_slaves)
-        new_slaves_list = [str(n_current_slaves+idx)+"."+svc.svcpath for idx in range(slaves_count)]
+        new_slaves_list = [self.scale_svcpath(svc.svcpath, n_current_slaves+idx) for idx in range(slaves_count)]
 
-        to_add = sorted(new_slaves_list, key=lambda x: int(x.split(".")[0]))
+        to_add = sorted(new_slaves_list, key=lambda x: int(x.split("/")[-1].split(".")[0]))
         to_add = [[svcpath, None] for svcpath in to_add]
         delta = "add " + ",".join([elem[0] for elem in to_add])
         self.log.info("scale service %s: %s", svc.svcpath, delta)
@@ -1494,7 +1496,7 @@ class Monitor(shared.OsvcThread):
     def service_orchestrator_scaler_down_failover(self, svc, missing, current_slaves):
         slaves_count = -missing
         n_current_slaves = len(current_slaves)
-        slaves_list = [str(n_current_slaves-1-idx)+"."+svc.svcpath for idx in range(slaves_count)]
+        slaves_list = [self.scale_svcpath(svc.svcpath, n_current_slaves-1-idx) for idx in range(slaves_count)]
 
         to_remove = sorted(slaves_list, key=lambda x: int(x.split(".")[0]))
         to_remove = [svcpath for svcpath in to_remove]

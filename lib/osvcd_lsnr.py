@@ -19,7 +19,8 @@ import rcExceptions as ex
 from six.moves import queue
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import bdecode, drop_option, chunker, svc_pathcf
+from rcUtilities import bdecode, drop_option, chunker, svc_pathcf, \
+                        split_svcpath, fmt_svcpath
 from converters import convert_size
 
 RELAY_DATA = {}
@@ -571,12 +572,22 @@ class Listener(shared.OsvcThread):
         """
         if slaves is None:
             slaves = set()
+        name, namespace = split_svcpath(svcpath)
+
+        def set_ns(svcpath, parent_ns):
+            name, namespace = split_svcpath(svcpath)
+            if namespace:
+                return svcpath
+            else:
+                return fmt_svcpath(name, parent_ns)
+
         for nodename in shared.CLUSTER_DATA:
             try:
                 data = shared.CLUSTER_DATA[nodename]["services"]["status"][svcpath]
             except KeyError:
                 continue
             new_slaves = set(data.get("slaves", [])) | set(data.get("scaler_slaves", []))
+            new_slaves = set([set_ns(slave, namespace) for slave in new_slaves])
             new_slaves -= slaves
             slaves |= new_slaves
             for slave in new_slaves:
@@ -830,6 +841,7 @@ class Listener(shared.OsvcThread):
         * cmd: list
         * sync: boolean
         """
+        print(kwargs)
         sync = kwargs.get("sync", True)
         action_mode = kwargs.get("action_mode", True)
         svcpath = kwargs.get("svcpath")
