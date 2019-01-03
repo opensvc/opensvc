@@ -7,7 +7,7 @@ from converters import print_duration, print_size
 from rcColor import colorize, color, unicons
 from rcGlobalEnv import rcEnv
 from rcStatus import Status, colorize_status
-from rcUtilities import ANSI_ESCAPE, ANSI_ESCAPE_B
+from rcUtilities import ANSI_ESCAPE, ANSI_ESCAPE_B, split_svcpath
 from storage import Storage
 
 DEFAULT_SECTIONS = [
@@ -880,8 +880,13 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                 slaves = _data.get("slaves", [])
                 scale = _data.get("scale")
                 if scale:
+                    svcname, namespace = split_svcpath(svcpath)
+                    if namespace:
+                        pattern = "^"+namespace+"/[0-9]+."+svcname+"$"
+                    else:
+                        pattern = "^[0-9]+."+svcname+"$"
                     for child in data["monitor"]["services"]:
-                        if re.match("^[0-9]+."+svcpath+"$", child) is None:
+                        if re.match(pattern, child) is None:
                             continue
                         slaves.append(child)
                         if node_svc_status.get(child, {}).get("avail") == "up":

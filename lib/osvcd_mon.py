@@ -1394,7 +1394,7 @@ class Monitor(shared.OsvcThread):
         # start fill-up the current slaves that might have holes due to
         # previous scaling while some nodes where overloaded
         n_current_slaves = len(current_slaves)
-        current_slaves = sorted(current_slaves, key=lambda x: int(x.split(".")[0]))
+        current_slaves = self.sort_scaler_slaves(current_slaves, reverse=True)
         for slavename in current_slaves:
             slave = shared.SERVICES[slavename]
             if slave.flex_max_nodes >= width:
@@ -1450,7 +1450,7 @@ class Monitor(shared.OsvcThread):
     def service_orchestrator_scaler_down_flex(self, svc, missing, current_slaves):
         to_remove = []
         excess = -missing
-        for slavename in sorted(current_slaves, key=lambda x: int(x.split(".")[0]), reverse=True):
+        for slavename in self.sort_scaler_slaves(current_slaves, reverse=True):
             slave = shared.SERVICES[slavename]
             n_slots = slave.flex_min_nodes
             if n_slots > excess:
@@ -1475,12 +1475,16 @@ class Monitor(shared.OsvcThread):
             self.log.warning("failed to start a scaling thread for service "
                              "%s: %s", svc.svcpath, exc)
 
+    @staticmethod
+    def sort_scaler_slaves(slaves, reverse=False):
+        return sorted(slaves, key=lambda x: int(x.split("/")[-1].split(".")[0]), reverse=reverse)
+
     def service_orchestrator_scaler_up_failover(self, svc, missing, current_slaves):
         slaves_count = missing
         n_current_slaves = len(current_slaves)
         new_slaves_list = [self.scale_svcpath(svc.svcpath, n_current_slaves+idx) for idx in range(slaves_count)]
 
-        to_add = sorted(new_slaves_list, key=lambda x: int(x.split("/")[-1].split(".")[0]))
+        to_add = self.sort_scaler_slaves(new_slaves_list)
         to_add = [[svcpath, None] for svcpath in to_add]
         delta = "add " + ",".join([elem[0] for elem in to_add])
         self.log.info("scale service %s: %s", svc.svcpath, delta)
@@ -1498,7 +1502,7 @@ class Monitor(shared.OsvcThread):
         n_current_slaves = len(current_slaves)
         slaves_list = [self.scale_svcpath(svc.svcpath, n_current_slaves-1-idx) for idx in range(slaves_count)]
 
-        to_remove = sorted(slaves_list, key=lambda x: int(x.split(".")[0]))
+        to_remove = self.sort_scaler_slaves(slaves_list)
         to_remove = [svcpath for svcpath in to_remove]
         delta = "delete " + ",".join([elem[0] for elem in to_remove])
         self.log.info("scale service %s: %s", svc.svcpath, delta)
@@ -2033,8 +2037,11 @@ class Monitor(shared.OsvcThread):
         slaves = instance.get("slaves", [])
         slaves += instance.get("scaler_slaves", [])
         if slaves:
+            svcname, namespace = split_svcpath(svcpath)
             avails = set([avail])
             for child in slaves:
+                if "/" not in child and namespace:
+                    child = fmt_svcpath(child, namespace)
                 try:
                     child_avail = shared.AGG[child]["avail"]
                 except KeyError:
@@ -2088,8 +2095,11 @@ class Monitor(shared.OsvcThread):
         slaves = instance.get("slaves", [])
         slaves += instance.get("scaler_slaves", [])
         if slaves:
+            svcname, namespace = split_svcpath(svcpath)
             avails = set([ostatus])
             for child in slaves:
+                if "/" not in child and namespace:
+                    child = fmt_svcpath(child, namespace)
                 try:
                     child_status = shared.AGG[child]["overall"]
                 except KeyError:
