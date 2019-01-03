@@ -12,7 +12,6 @@ import sys
 import os
 import errno
 
-import svcBuilder
 import rcStatus
 import rcColor
 from svcmgr_parser import SvcmgrOptParser
@@ -133,76 +132,6 @@ def do_svcs_action(node, options, action, argv):
             ret = 1
     return ret
 
-def do_svc_create(node, svcpaths, action, options, build_kwargs):
-    """
-    Handle service creation command.
-    """
-    ret = 0
-    if isinstance(svcpaths, list):
-        if len(svcpaths) != 1:
-            raise ex.excError("only one service must be specified")
-        svcpath = svcpaths[0]
-
-    try:
-       svcpath.encode("ascii")
-    except Exception:
-       raise ex.excError("the service name must be ascii-encodable")
-
-    if "/" not in svcpath and options.namespace:
-        svcpath = fmt_svcpath(svcpath, options.namespace)
-
-    if svcpath.count("/") > 1:
-        raise ex.excError("invalid namespace name: slash is not allowed.")
-
-    try:
-        ret = node.install_service(svcpath, fpath=options.config,
-                                   template=options.template,
-                                   restore=options.restore)
-    except Exception as exc:
-        print(str(exc), file=sys.stderr)
-        return 1
-
-    if ret == 2:
-        # install_service() reports it did nothing
-        data = getattr(svcBuilder, action)(svcpath,
-                                           options.resource,
-                                           provision=options.provision)
-        ret = 0
-    else:
-        data = {"rid": [], "ret": 0}
-
-    # if the user want to provision a resource defined via configuration
-    # file edition, he will set --rid <rid> or --tag or --subset to point
-    # the update command to it
-    options.rid = ",".join(data.get("rid", []))
-
-    # force a refresh of node.svcs
-    try:
-        node.rebuild_services(svcpaths)
-    except ex.excError as exc:
-        print(exc, file=sys.stderr)
-        ret = 1
-
-    if len(node.svcs) == 1 and action == "create":
-        node.svcs[0].setenv(options.env, options.interactive)
-        # setenv changed the service config file
-        # we need to rebuild again
-        try:
-            node.rebuild_services(svcpaths)
-        except ex.excError as exc:
-            print(exc, file=sys.stderr)
-            ret = 1
-        node.svcs[0].translate_volumes()
-
-    if options.provision:
-        if len(node.svcs) == 1 and action in ("create", "pull"):
-            node.svcs[0].action("provision", options)
-
-    if ret != 0:
-        return ret
-
-    return data["ret"]
-
 def prepare_options(options):
     """
     Prepare and return the options Storage() as expected by the Svc::action
@@ -294,7 +223,7 @@ def _main(node, argv=None):
         return 1
 
     if action == "create":
-        return do_svc_create(node, svcpaths, action, options, build_kwargs)
+        return node.create_service(svcpaths, options)
 
     ret = do_svcs_action(node, options, action, argv=argv)
 

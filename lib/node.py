@@ -2889,7 +2889,8 @@ class Node(Crypt, ExtConfigMixin):
             print("failed to write %s"%fpath, file=sys.stderr)
             raise Exception()
 
-    def install_service(self, svcpath, fpath=None, template=None, restore=False):
+    def install_service(self, svcpath, fpath=None, template=None,
+                        restore=False, resources=[]):
         """
         Pick a collector's template, arbitrary uri, or local file service
         configuration file fetching method. Run it, and create the
@@ -2916,7 +2917,6 @@ class Node(Crypt, ExtConfigMixin):
             # action before we have the change to modify the service config
             Freezer(svcpath).freeze()
 
-        ret = 0
         if data is not None:
             self.install_svc_conf_from_data(svcname, namespace, data, restore)
         elif template is not None:
@@ -2932,11 +2932,10 @@ class Node(Crypt, ExtConfigMixin):
             else:
                 self.install_svc_conf_from_file(svcname, namespace, fpath, restore)
         else:
-            ret = 2
+            self.install_svc_from_args(svcname, namespace, resources)
 
         self.install_service_files(svcname, namespace)
         self.wake_monitor()
-        return ret
 
     @staticmethod
     def install_service_files(svcname, namespace=None):
@@ -2979,6 +2978,169 @@ class Node(Crypt, ExtConfigMixin):
                 self.log.debug("current nofile %d already over minimum %d", _vs, nofile)
         except Exception as exc:
             self.log.debug(str(exc))
+
+    def install_svc_from_args(self, svcname, namespace=None, resources=[]):
+        """
+        Create a new service from resource definitions passed as individual
+        dictionaries in json format.
+        """
+        if len(svcname) == 0:
+            print("service name must not be empty", file=sys.stderr)
+            return {"ret": 1}
+        if svcname in list_services(namespace):
+            print("service", svcname, "already exists", file=sys.stderr)
+            return {"ret": 1}
+        pathetc = svc_pathetc(svcname, namespace)
+        cf = os.path.join(pathetc, svcname+'.conf')
+        if os.path.exists(cf):
+            import shutil
+            print(cf, "already exists. save as "+svcname+".conf.bak", file=sys.stderr)
+            shutil.move(cf, os.path.join(rcEnv.paths.pathtmp, svcname+".conf.bak"))
+        makedirs(pathetc)
+        try:
+            f = open(cf, 'w')
+        except:
+            print("failed to open", cf, "for writing", file=sys.stderr)
+            return {"ret": 1}
+
+        import uuid
+
+        defaults = {
+           "id": str(uuid.uuid4()),
+        }
+        sections = {}
+        rtypes = {}
+
+        for r in resources:
+            try:
+                d = json.loads(r)
+            except:
+                print("can not parse resource:", r, file=sys.stderr)
+                return {"ret": 1}
+            if 'rid' in d:
+                section = d['rid']
+                if '#' not in section:
+                    print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
+                    return {"ret": 1}
+                l = section.split('#')
+                if len(l) != 2:
+                    print(section, "must be formatted as 'rtype#n'", file=sys.stderr)
+                    return {"ret": 1}
+                rtype = l[1]
+                if rtype in rtypes:
+                    rtypes[rtype] += 1
+                else:
+                    rtypes[rtype] = 0
+                del d['rid']
+                if section in sections:
+                    sections[section].update(d)
+                else:
+                    sections[section] = d
+            elif 'rtype' in d and d["rtype"] == "env":
+                del d["rtype"]
+                if "env" in sections:
+                    sections["env"].update(d)
+                else:
+                    sections["env"] = d
+            elif 'rtype' in d and d["rtype"] != "DEFAULT":
+                if 'rid' in d:
+                    del d['rid']
+                rtype = d['rtype']
+                if rtype in rtypes:
+                    section = '%s#%d'%(rtype, rtypes[rtype])
+                    rtypes[rtype] += 1
+                else:
+                    section = '%s#0'%rtype
+                    rtypes[rtype] = 1
+                if section in sections:
+                    sections[section].update(d)
+                else:
+                    sections[section] = d
+            else:
+                if "rtype" in d:
+                    del d["rtype"]
+                defaults.update(d)
+
+        from svcdict import KEYS
+        from keywords import MissKeyNoDefault, KeyInvalidValue
+        try:
+            defaults.update(KEYS.update('DEFAULT', defaults))
+            for section, d in sections.items():
+                sections[section].update(KEYS.update(section, d))
+        except (MissKeyNoDefault, KeyInvalidValue):
+            return {"ret": 1}
+
+        conf = rcConfigParser.RawConfigParser(defaults)
+        for section, d in sections.items():
+            conf.add_section(section)
+            for key, val in d.items():
+                if key == 'rtype':
+                    continue
+                conf.set(section, key, val)
+
+        conf.write(f)
+        self.install_service_files(svcname, namespace)
+        return {"ret": 0, "rid": sections.keys()}
+
+    def create_svcpath(self, svcpaths, namespace):
+        if isinstance(svcpaths, list):
+            if len(svcpaths) != 1:
+                raise ex.excError("only one service must be specified")
+            svcpath = svcpaths[0]
+
+        try:
+           svcpath.encode("ascii")
+        except Exception:
+           raise ex.excError("the service name must be ascii-encodable")
+
+        if "/" not in svcpath and namespace:
+            svcpath = fmt_svcpath(svcpath, namespace)
+
+        if svcpath.count("/") > 1:
+            raise ex.excError("invalid namespace name: slash is not allowed.")
+        return svcpath
+
+    def create_service(self, svcpaths, options):
+        """
+        The "svcmgr create" entrypoint.
+        """
+        ret = 0
+        svcpath = self.create_svcpath(svcpaths, options.namespace)
+
+        try:
+            ret = self.install_service(svcpath, fpath=options.config,
+                                       template=options.template,
+                                       restore=options.restore,
+                                       resources=options.resource)
+        except Exception as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+
+        # force a refresh of self.svcs
+        try:
+            self.rebuild_services(svcpaths)
+        except ex.excError as exc:
+            print(exc, file=sys.stderr)
+            ret = 1
+
+        if len(self.svcs) == 1:
+            self.svcs[0].setenv(options.env, options.interactive)
+            # setenv changed the service config file
+            # we need to rebuild again
+            try:
+                self.rebuild_services(svcpaths)
+            except ex.excError as exc:
+                print(exc, file=sys.stderr)
+                ret = 1
+            self.svcs[0].translate_volumes()
+
+            if options.provision:
+                self.svcs[0].action("provision", options)
+
+        if ret != 0:
+            return ret
+
+        return data["ret"]
 
     def wait(self):
         """
@@ -3423,7 +3585,7 @@ class Node(Crypt, ExtConfigMixin):
             except Exception:
                 pass
         return data
-        
+
     def daemon_stats(self, svcpaths=None, node=None):
         if node:
             daemon_node = node
@@ -3503,7 +3665,7 @@ class Node(Crypt, ExtConfigMixin):
                     break
                 except ex.OptNotFound:
                     continue
-   
+
         data = self.daemon_send(
             {"action": "daemon_relay_status"},
             nodename=self.options.node,

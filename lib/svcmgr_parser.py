@@ -263,8 +263,8 @@ OPT = Storage({
         "--resource", default=[],
         action="append",
         help="A resource definition in json dictionary format fed to create "
-             "or update. The ``type`` key point the driver group name, and "
-             "the ``rtype`` key the driver name (translated to type in the "
+             "or update. The ``rtype`` key point the driver group name, and "
+             "the ``type`` key the driver name (translated to type in the "
              "configuration file section)."),
     "restore": Option(
         "--restore", default=False,
