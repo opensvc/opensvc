@@ -69,6 +69,7 @@ def expand_svcs(options, node):
         except ex.excError as exc:
             print(exc, file=sys.stderr)
             return []
+        node.options.single_service = True
         return [svcpath_from_link(svclink)]
     return node.svcs_selector(options.svcs, options.namespace)
 
