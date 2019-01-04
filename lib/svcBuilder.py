@@ -2420,7 +2420,14 @@ def build_services(status=None, svcpaths=None, create_instance=False,
             svc = build(svcname, namespace, node=node)
         except (ex.excError, ex.excInitError, ValueError, rcConfigParser.ParsingError) as e:
             errors.append("%s: %s" % (svcpath, str(e)))
-            svclog = rcLogger.initLogger(rcEnv.nodename+"."+svcpath.replace("/", ".", 1), handlers=["file", "syslog"])
+            if namespace:
+                log_d = os.path.join(rcEnv.paths.pathlog, namespace)
+                makedirs(log_d)
+            else:
+                log_d = None
+            svclog = rcLogger.initLogger(rcEnv.nodename+"."+svcname,
+                                         directory=log_d,
+                                         handlers=["file", "syslog"])
             svclog.error(str(e))
             continue
         except ex.excAbortAction:

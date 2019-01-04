@@ -2,6 +2,8 @@ from __future__ import print_function
 import socket
 import sys
 import os
+from rcUtilities import split_svcpath
+
 socket.setdefaulttimeout(5)
 
 kwargs = {}
@@ -276,12 +278,13 @@ class Collector(object):
         args += [(rcEnv.uuid, rcEnv.nodename)]
         self.proxy.begin_action(*args)
 
-    def end_action(self, svcname, action, begin, end, cron, alogfile):
+    def end_action(self, svcpath, action, begin, end, cron, alogfile):
         err = 'ok'
         res = None
         res_err = None
         pid = None
         msg = None
+        svcname, namespace = split_svcpath(svcpath)
         with open(alogfile, 'r') as ofile:
             lines = ofile.read()
         try:
@@ -349,7 +352,7 @@ class Collector(object):
                 continue
             
             last = [
-                svcname,
+                svcpath,
                 res_action,
                 rcEnv.nodename,
                 pid,
@@ -388,7 +391,7 @@ class Collector(object):
              'time',
              'status',
              'cron'],
-            [str(svcname),
+            [str(svcpath),
              str(action),
              str(rcEnv.nodename),
              ','.join(map(str, pids)),

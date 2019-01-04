@@ -147,18 +147,18 @@ def set_namelen(svcs=[], force=None):
     namelen = maxlen
     namefmt = "%-"+str(namelen)+"s"
 
-def initLogger(name, handlers=None):
+def initLogger(name, directory=rcEnv.paths.pathlog, handlers=None):
     if handlers is None:
         handlers = DEFAULT_HANDLERS
 
     if name == rcEnv.nodename:
-        logfile = os.path.join(rcEnv.paths.pathlog, "node") + '.log'
+        logfile = os.path.join(directory, "node.log")
     else:
         if name.startswith(rcEnv.nodename):
             _name = name.replace(rcEnv.nodename+".", "", 1)
         else:
             _name = name
-        logfile = os.path.join(rcEnv.paths.pathlog, _name) + '.log'
+        logfile = os.path.join(directory, _name + '.log')
     log = logging.getLogger(name)
     log.propagate = False
     log.handlers = []

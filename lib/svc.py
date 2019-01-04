@@ -532,19 +532,15 @@ class Svc(Crypt, ExtConfigMixin):
 
     @lazy
     def loggerpath(self):
-        if self.namespace:
-            path = rcEnv.nodename+"."+self.namespace+"."+self.svcname
-        else:
-            path = rcEnv.nodename+"."+self.svcname
-        return path
+        return rcEnv.nodename+"."+self.svcname
 
     @lazy
     def log(self): # pylint: disable=method-hidden
         if self.volatile:
-            kwargs = {"handlers": ["stream"]}
+            handlers = ["stream"]
         else:
-            kwargs = {}
-        return rcLogger.initLogger(self.loggerpath, **kwargs)
+            handlers = None
+        return rcLogger.initLogger(self.loggerpath, directory=self.log_d, handlers=handlers)
 
     @lazy
     def sched(self):

@@ -138,8 +138,6 @@ class Resource(object):
         """
         label = rcEnv.nodename + "."
         if hasattr(self, "svc"):
-            if self.svc.namespace:
-                label += self.svc.namespace + '.'
             label += self.svc.svcname + '.'
 
         if self.rid is None:
