@@ -307,6 +307,8 @@ class Listener(shared.OsvcThread):
 
     def action_run_done(self, nodename, **kwargs):
         svcpath = kwargs.get("svcpath")
+        if not svcpath:
+            svcpath = kwargs.get("svcname")
         action = kwargs.get("action")
         rids = kwargs.get("rids")
         if not rids is None:
@@ -528,6 +530,8 @@ class Listener(shared.OsvcThread):
 
     def _action_get_service_config_json(self, nodename, **kwargs):
         svcpath = kwargs.get("svcpath")
+        if not svcpath:
+            svcpath = kwargs.get("svcname")
         evaluate = kwargs.get("evaluate")
         impersonate = kwargs.get("impersonate")
         try:
@@ -537,6 +541,8 @@ class Listener(shared.OsvcThread):
 
     def _action_get_service_config_file(self, nodename, **kwargs):
         svcpath = kwargs.get("svcpath")
+        if not svcpath:
+            svcpath = kwargs.get("svcname")
         if not svcpath:
             return {"error": "no svcpath specified", "status": 1}
         if shared.SMON_DATA.get(svcpath, {}).get("status") in ("purging", "deleting") or \
@@ -553,11 +559,15 @@ class Listener(shared.OsvcThread):
 
     def action_wake_monitor(self, nodename, **kwargs):
         svcpath = kwargs.get("svcpath", "<unspecified>")
+        if not svcpath:
+            svcpath = kwargs.get("svcname")
         shared.wake_monitor(reason="service %s notification" % svcpath)
         return {"status": 0}
 
     def action_clear(self, nodename, **kwargs):
         svcpath = kwargs.get("svcpath")
+        if not svcpath:
+            svcpath = kwargs.get("svcname")
         if svcpath is None:
             return {"error": "no svcpath specified", "status": 1}
         smon = self.get_service_monitor(svcpath)
@@ -596,6 +606,8 @@ class Listener(shared.OsvcThread):
 
     def action_set_service_monitor(self, nodename, **kwargs):
         svcpath = kwargs.get("svcpath")
+        if not svcpath:
+            svcpath = kwargs.get("svcname")
         if svcpath is None:
             return {"error": ["no svcpath specified"], "status": 1}
         status = kwargs.get("status")
@@ -845,6 +857,8 @@ class Listener(shared.OsvcThread):
         sync = kwargs.get("sync", True)
         action_mode = kwargs.get("action_mode", True)
         svcpath = kwargs.get("svcpath")
+        if not svcpath:
+            svcpath = kwargs.get("svcname")
         if svcpath is None:
             self.log.error("node %s requested a service action without "
                            "specifying the service name", nodename)
@@ -907,6 +921,8 @@ class Listener(shared.OsvcThread):
                    The 0 value means follow the file.
         """
         svcpath = kwargs.get("svcpath")
+        if not svcpath:
+            svcpath = kwargs.get("svcname")
         svc = self.get_service(svcpath)
         if svcpath is None or svc is None:
             return {
