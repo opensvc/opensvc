@@ -600,7 +600,7 @@ class Node(Crypt, ExtConfigMixin):
         Given a selector string, return a list of service names.
         This exposed method only aggregates ORed elements.
         """
-        if data is None:
+        if data is None or not data.get("retryable"):
             try:
                 data = self._daemon_status(silent=True)["monitor"]
             except Exception as exc:
