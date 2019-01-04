@@ -141,11 +141,11 @@ def _main(node, argv=None):
     })
 
     status_data = node._daemon_status(node=options.node)
+    expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
 
     if options.watch:
         start_events_thread(node, options.node)
         preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
         stats_data = get_stats(options, node, expanded_svcs)
         prev_stats_data = None
         outs = format_cluster(svcpaths=expanded_svcs, node=options.node,
