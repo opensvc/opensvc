@@ -3111,10 +3111,10 @@ class Node(Crypt, ExtConfigMixin):
         svcpath = self.create_svcpath(svcpaths, options.namespace)
 
         try:
-            ret = self.install_service(svcpath, fpath=options.config,
-                                       template=options.template,
-                                       restore=options.restore,
-                                       resources=options.resource)
+            self.install_service(svcpath, fpath=options.config,
+                                   template=options.template,
+                                   restore=options.restore,
+                                   resources=options.resource)
         except Exception as exc:
             print(str(exc), file=sys.stderr)
             return 1
@@ -3140,10 +3140,7 @@ class Node(Crypt, ExtConfigMixin):
             if options.provision:
                 self.svcs[0].action("provision", options)
 
-        if ret != 0:
-            return ret
-
-        return data["ret"]
+        return ret
 
     def wait(self):
         """
