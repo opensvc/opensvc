@@ -3687,8 +3687,9 @@ class Node(Crypt, ExtConfigMixin):
 
         tree = Forest()
         head = tree.add_node()
-        head.add_column("nodename")
-        head.add_column("last updated")
+        head.add_column("cluster_id/node")
+        head.add_column("cluster_name")
+        head.add_column("last")
         head.add_column("elapsed")
         head.add_column("ipaddr")
         head.add_column("size")
@@ -3699,10 +3700,12 @@ class Node(Crypt, ExtConfigMixin):
                  updated = _data.get("updated", 0)
                  size = _data.get("size", 0)
                  ipaddr = _data.get("ipaddr", "")
+                 cluster_name = _data.get("cluster_name", "")
              except AttributeError:
                  continue
              node = head.add_node()
              node.add_column(nodename, color.BOLD)
+             node.add_column(cluster_name)
              node.add_column("%s" % datetime.datetime.fromtimestamp(updated).strftime("%Y-%m-%d %H:%M:%S"))
              node.add_column("%s" % print_duration(now-updated))
              node.add_column("%s" % ipaddr)

@@ -120,6 +120,8 @@ class HbRelayTx(HbRelay):
         request = {
             "action": "relay_tx",
             "options": {
+                "cluster_name": self.cluster_name,
+                "cluster_id": self.cluster_id,
                 "msg": message,
             },
         }

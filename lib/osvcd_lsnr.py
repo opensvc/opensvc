@@ -321,23 +321,37 @@ class Listener(shared.OsvcThread):
         return {"status": 0}
 
     def action_relay_tx(self, nodename, **kwargs):
+        """
+        Store a relay heartbeat payload emitted by <nodename>.
+        """
+        cluster_id = kwargs.get("cluster_id", "")
+        cluster_name = kwargs.get("cluster_name", "")
+        key = "/".join([cluster_id, nodename])
         with RELAY_LOCK:
-            RELAY_DATA[nodename] = {
+            RELAY_DATA[key] = {
                 "msg": kwargs.get("msg"),
                 "updated": time.time(),
+                "cluster_name": cluster_name,
+                "cluster_id": cluster_id,
                 "ipaddr": kwargs.get("addr", [""])[0],
             }
         return {"status": 0}
 
     def action_relay_rx(self, nodename, **kwargs):
+        """
+        Serve to <nodename> the relay heartbeat payload emitted by the node in
+        <slot>.
+        """
+        cluster_id = kwargs.get("cluster_id", "")
         _nodename = kwargs.get("slot")
+        key = "/".join([cluster_id, _nodename])
         with RELAY_LOCK:
-            if _nodename not in RELAY_DATA:
+            if key not in RELAY_DATA:
                 return {"status": 1, "error": "no data"}
             return {
                 "status": 0,
-                "data": RELAY_DATA[_nodename]["msg"],
-                "updated": RELAY_DATA[_nodename]["updated"],
+                "data": RELAY_DATA[key]["msg"],
+                "updated": RELAY_DATA[key]["updated"],
             }
 
     def action_daemon_relay_status(self, nodename, **kwargs):
@@ -345,6 +359,7 @@ class Listener(shared.OsvcThread):
         with RELAY_LOCK:
             for _nodename, _data in RELAY_DATA.items():
                 data[_nodename] = {
+                    "cluster_name": _data.get("cluster_name", ""),
                     "updated": _data.get("updated", 0),
                     "ipaddr": _data.get("ipaddr", ""),
                     "size": len(_data.get("msg", "")),
