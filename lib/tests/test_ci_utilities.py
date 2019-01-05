@@ -353,7 +353,7 @@ class TestUtilities:
         """
         is_service()
         """
-        assert is_service("magic123") == False
+        assert is_service("magic123") is None
 
     def test_list_services(self):
         """
