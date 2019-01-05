@@ -102,7 +102,7 @@ def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
         _d = _e - _b
         log.error("call %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, exc))
         if hasattr(exc, "faultString"):
-            raise ex.excError(exc.faultString.split(":", 1)[-1])
+            raise ex.excError(getattr(exc, "faultString").split(":", 1)[-1])
         else:
             raise ex.excError(str(exc))
 
