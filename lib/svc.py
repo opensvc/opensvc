@@ -3301,6 +3301,9 @@ class Svc(Crypt, ExtConfigMixin):
         user the --recover or --discard choices for its next edit
         config action.
         """
+        if not os.path.exists(self.paths.cf):
+            raise ex.excError("service %s is not installed on this node" % \
+                              self.svcpath)
         if "EDITOR" in os.environ:
             editor = os.environ["EDITOR"]
         elif os.name == "nt":
