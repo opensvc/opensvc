@@ -610,7 +610,8 @@ class OsvcThread(threading.Thread, Crypt):
         env["OSVC_ACTION_ORIGIN"] = "daemon"
         _cmd = [] + rcEnv.python_cmd
         _cmd += [os.path.join(rcEnv.paths.pathlib, "svcmgr.py")]
-        cmd = ["-s", svcpath] + cmd
+        if svcpath:
+            cmd = ["-s", svcpath] + cmd
         if local:
             cmd += ["--local"]
         self.log.info("execute: svcmgr %s", " ".join(cmd))
