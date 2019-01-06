@@ -868,7 +868,6 @@ class Listener(shared.OsvcThread):
         * cmd: list
         * sync: boolean
         """
-        print(kwargs)
         sync = kwargs.get("sync", True)
         action_mode = kwargs.get("action_mode", True)
         svcpath = kwargs.get("svcpath")
