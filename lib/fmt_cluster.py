@@ -36,9 +36,12 @@ else:
 
 def get_nodes(data):
     try:
-        hb_id = [thr_id for thr_id in data.keys() if thr_id.startswith("hb#")][0]
-        hb = data[hb_id]
-        return sorted(hb["peers"].keys())
+        nodes = set()
+        for thr_id in data.keys():
+            if not thr_id.startswith("hb#"):
+                continue
+            nodes |= set(data.get(thr_id, {}).get("peers", []))
+        return sorted(list(nodes))
     except:
         return [rcEnv.nodename]
 
