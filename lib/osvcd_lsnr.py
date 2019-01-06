@@ -1,6 +1,7 @@
 """
 Listener Thread
 """
+import json
 import os
 import sys
 import socket
@@ -854,6 +855,35 @@ class Listener(shared.OsvcThread):
             }
         else:
             proc = Popen(cmd, stdin=None, close_fds=True)
+            self.push_proc(proc)
+            result = {
+                "status": 0,
+            }
+        return result
+
+    def action_create(self, nodename, **kwargs):
+        """
+        Execute a svcmgr create action, feeding the services definitions
+        passed in <data>.
+        """
+        data = kwargs.get("data")
+        sync = kwargs.get("sync", True)
+        namespace = kwargs.get("namespace")
+        cmd = ["create", "--config=-"]
+        if namespace:
+            cmd.append("--namespace="+namespace)
+        proc = self.service_command(None, cmd, stdin=json.dumps(data))
+        if sync:
+            out, err = proc.communicate()
+            result = {
+                "status": 0,
+                "data": {
+                    "out": bdecode(out),
+                    "err": bdecode(err),
+                    "ret": proc.returncode,
+                },
+            }
+        else:
             self.push_proc(proc)
             result = {
                 "status": 0,
