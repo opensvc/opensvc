@@ -98,7 +98,7 @@ class Module(object):
                 action,
                 self.rset_md5]
         if self.context.svc:
-            vals.append(self.context.svc.svcname)
+            vals.append(self.context.svc.svcpath)
         else:
             vals.append("")
         self.context.action_log_vals.append(vals)
@@ -543,7 +543,7 @@ class Compliance(object):
 
     def get_moduleset(self):
         if self.svc:
-            moduleset = self.node.collector.call('comp_get_svc_data_moduleset', self.svc.svcname)
+            moduleset = self.node.collector.call('comp_get_svc_data_moduleset', self.svc.svcpath)
         else:
             moduleset = self.node.collector.call('comp_get_data_moduleset')
         if moduleset is None:
@@ -558,7 +558,7 @@ class Compliance(object):
 
     def get_current_ruleset(self):
         if self.svc:
-            ruleset = self.node.collector.call('comp_get_svc_ruleset', self.svc.svcname)
+            ruleset = self.node.collector.call('comp_get_svc_ruleset', self.svc.svcpath)
         else:
             ruleset = self.node.collector.call('comp_get_ruleset')
         if ruleset is None:
@@ -591,7 +591,7 @@ class Compliance(object):
     def get_comp_data(self):
         if self.svc:
             return self.node.collector.call('comp_get_svc_data',
-                                            self.svc.svcname,
+                                            self.svc.svcpath,
                                             modulesets=self.options.moduleset.split(','))
         else:
             return self.node.collector.call('comp_get_data',
@@ -735,7 +735,7 @@ class Compliance(object):
         err = False
         for moduleset in modulesets:
             if self.svc:
-                d = self.node.collector.call('comp_attach_svc_moduleset', self.svc.svcname, moduleset)
+                d = self.node.collector.call('comp_attach_svc_moduleset', self.svc.svcpath, moduleset)
             else:
                 d = self.node.collector.call('comp_attach_moduleset', moduleset)
             if d is None:
@@ -752,7 +752,7 @@ class Compliance(object):
         err = False
         for moduleset in modulesets:
             if self.svc:
-                d = self.node.collector.call('comp_detach_svc_moduleset', self.svc.svcname, moduleset)
+                d = self.node.collector.call('comp_detach_svc_moduleset', self.svc.svcpath, moduleset)
             else:
                 d = self.node.collector.call('comp_detach_moduleset', moduleset)
             if d is None:
@@ -769,7 +769,7 @@ class Compliance(object):
         err = False
         for ruleset in rulesets:
             if self.svc:
-                d = self.node.collector.call('comp_attach_svc_ruleset', self.svc.svcname, ruleset)
+                d = self.node.collector.call('comp_attach_svc_ruleset', self.svc.svcpath, ruleset)
             else:
                 d = self.node.collector.call('comp_attach_ruleset', ruleset)
             if d is None:
@@ -786,7 +786,7 @@ class Compliance(object):
         err = False
         for ruleset in rulesets:
             if self.svc:
-                d = self.node.collector.call('comp_detach_svc_ruleset', self.svc.svcname, ruleset)
+                d = self.node.collector.call('comp_detach_svc_ruleset', self.svc.svcpath, ruleset)
             else:
                 d = self.node.collector.call('comp_detach_ruleset', ruleset)
             if d is None:
@@ -806,7 +806,7 @@ class Compliance(object):
     def _compliance_show_status(self):
         args = ['comp_show_status']
         if self.svc:
-           args.append(self.svc.svcname)
+           args.append(self.svc.svcpath)
         else:
            args.append('')
         if hasattr(self.options, 'module') and \
