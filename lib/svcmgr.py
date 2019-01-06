@@ -188,15 +188,16 @@ def _main(node, argv=None):
     except AttributeError:
         pass
     if os.environ.get("OSVC_SERVICE_LINK") is None and \
-       action != "ls" and options.svcs is None and options.status is None:
+       action not in ("ls", "create") and options.svcs is None and options.status is None:
         raise ex.excError("no service specified. set --service or --status.")
-    if action != "create":
+    if action == "create":
+        if options.svcs:
+            options.svcs = options.svcs.split(",")
+    else:
         expanded_svcs = expand_svcs(options, node)
         if options.svcs in (None, "*") and expanded_svcs == []:
             return
         options.svcs = expanded_svcs
-    else:
-        options.svcs = options.svcs.split(",")
 
     node.set_rlimit()
     build_kwargs = get_build_kwargs(optparser, options, action)
@@ -214,7 +215,7 @@ def _main(node, argv=None):
     elif action == "create" and "svcpaths" in build_kwargs:
         svcpaths = build_kwargs["svcpaths"]
 
-    if len(svcpaths) == 0:
+    if action != "create" and len(svcpaths) == 0:
         if action == "ls":
             return
         if not build_err:

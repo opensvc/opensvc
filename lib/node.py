@@ -2885,6 +2885,7 @@ class Node(Crypt, ExtConfigMixin):
                     if section_name == "DEFAULT" and key == "id":
                         continue
                 config.set(section_name, key, value)
+        makedirs(pathetc)
         try:
             with open(fpath, 'w') as ofile:
                 config.write(ofile)
@@ -2893,13 +2894,12 @@ class Node(Crypt, ExtConfigMixin):
             raise Exception()
 
     def install_service(self, svcpath, fpath=None, template=None,
-                        restore=False, resources=[]):
+                        restore=False, resources=[], namespace=None):
         """
         Pick a collector's template, arbitrary uri, or local file service
         configuration file fetching method. Run it, and create the
         service symlinks and launchers directory.
         """
-        svcname, namespace = split_svcpath(svcpath)
         data = None
         if sys.stdin and fpath in ("-", "/dev/stdin"):
             feed = ""
@@ -2913,6 +2913,17 @@ class Node(Crypt, ExtConfigMixin):
 
         if fpath is not None and template is not None:
             raise ex.excError("--config and --template can't both be specified")
+
+        if svcpath:
+            svcname, namespace = split_svcpath(svcpath)
+        elif not data:
+            raise ex.excError("feed service configurations to stdin and set --config=-")
+        else:
+            for _svcpath, _data in data.items():
+                # discard namespace in svcpath, use --namespace value instead
+                svcname, _ = split_svcpath(_svcpath)
+                self.install_svc_conf_from_data(svcname, namespace, _data, restore)
+            return
 
         if not exe_link_exists(svcname, namespace):
             # freeze before the installing the config so the daemon never
@@ -3108,13 +3119,17 @@ class Node(Crypt, ExtConfigMixin):
         The "svcmgr create" entrypoint.
         """
         ret = 0
-        svcpath = self.create_svcpath(svcpaths, options.namespace)
+        if svcpaths:
+            svcpath = self.create_svcpath(svcpaths, options.namespace)
+        else:
+            svcpath = None
 
         try:
             self.install_service(svcpath, fpath=options.config,
                                    template=options.template,
                                    restore=options.restore,
-                                   resources=options.resource)
+                                   resources=options.resource,
+                                   namespace=options.namespace)
         except Exception as exc:
             print(str(exc), file=sys.stderr)
             return 1
