@@ -453,7 +453,7 @@ class Collector(object):
                 'svc_config',
                 'svc_ha']
 
-        vals = [svc.svcname,
+        vals = [svc.svcpath,
                 svc.node.cluster_id,
                 svc.topology,
                 svc.flex_min_nodes,
@@ -485,7 +485,7 @@ class Collector(object):
 
         for container in svc.get_resources('container'):
             container_info = container.get_container_info()
-            vals += [[svc.svcname,
+            vals += [[svc.svcpath,
                       rcEnv.nodename,
                       container.vm_hostname,
                       container.guestos if hasattr(container, 'guestos') and container.guestos is not None else "",
