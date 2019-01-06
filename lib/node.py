@@ -992,7 +992,7 @@ class Node(Crypt, ExtConfigMixin):
             tmpf = tempfile.NamedTemporaryFile()
             fpath = tmpf.name
             tmpf.close()
-            if six.PY3:
+            if six.PY2:
                 with codecs.open(fpath, "w", "utf-8") as tmpf:
                     self.config.write(tmpf)
             else:
@@ -2886,11 +2886,16 @@ class Node(Crypt, ExtConfigMixin):
                         continue
                 config.set(section_name, key, value)
         makedirs(pathetc)
+        import codecs
         try:
-            with open(fpath, 'w') as ofile:
-                config.write(ofile)
-        except:
-            print("failed to write %s"%fpath, file=sys.stderr)
+            if six.PY2:
+                with codecs.open(fpath, "w", "utf-8") as ofile:
+                    config.write(ofile)
+            else:
+                with open(fpath, "w") as ofile:
+                    config.write(ofile)
+        except Exception as exc:
+            print("failed to write %s: %s" % (fpath, exc), file=sys.stderr)
             raise Exception()
 
     def install_service(self, svcpath, fpath=None, template=None,
@@ -2922,6 +2927,7 @@ class Node(Crypt, ExtConfigMixin):
             for _svcpath, _data in data.items():
                 # discard namespace in svcpath, use --namespace value instead
                 svcname, _ = split_svcpath(_svcpath)
+                print("create %s/%s" % (namespace, svcname))
                 self.install_svc_conf_from_data(svcname, namespace, _data, restore)
             return
 
