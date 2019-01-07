@@ -3721,7 +3721,7 @@ class Node(Crypt, ExtConfigMixin):
         head.add_column("size")
         now = time.time()
 
-        for nodename, _data in data.items():
+        for nodename, _data in sorted(data.items(), key=lambda x: x[0]):
              try:
                  updated = _data.get("updated", 0)
                  size = _data.get("size", 0)
