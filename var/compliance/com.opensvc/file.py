@@ -254,7 +254,10 @@ class CompFiles(CompObject):
         out, err = p.communicate()
         out = bdecode(out)
         if verbose and len(out) > 0:
-            perror(out.strip('\n'))
+            perror("file %s differs:" % f["path"])
+            # discard header not to create fake differences due to tmp filename
+            lines = [line for line in out.strip("\n").splitlines() if not line.startswith("---") and not line.startswith("+++")]
+            perror("\n".join(lines))
         if p.returncode != 0:
             return RET_ERR
         return RET_OK
