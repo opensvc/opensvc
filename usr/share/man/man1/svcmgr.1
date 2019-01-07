@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2019\-01\-02
+.TH SVCMGR 1 2019\-01\-07
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -11303,7 +11303,7 @@ Prompt the user for a choice instead of using defaults, or failing if no default
 Provision the service resources after config file creation. Defaults to False.
 .TP
 .B --resource=RESOURCE
-A resource definition in json dictionary format fed to create or update. The 'type' key point the driver group name, and the 'rtype' key the driver name (translated to type in the configuration file section).
+A resource definition in json dictionary format fed to create or update. The 'rtype' key point the driver group name, and the 'type' key the driver name (translated to type in the configuration file section).
 .TP
 .B --restore
 Keep the same service id as the template or config file referenced by the create action. The default behaviour is to generate a new id.
@@ -12595,7 +12595,7 @@ If set, don't try to rollback resources activated before a start action interrup
 Provision the service resources after config file creation. Defaults to False.
 .TP
 .B --resource=RESOURCE
-A resource definition in json dictionary format fed to create or update. The 'type' key point the driver group name, and the 'rtype' key the driver name (translated to type in the configuration file section).
+A resource definition in json dictionary format fed to create or update. The 'rtype' key point the driver group name, and the 'type' key the driver name (translated to type in the configuration file section).
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.

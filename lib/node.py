@@ -41,6 +41,7 @@ from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         call, which, purge_cache_expired, read_cf, unset_lazy, \
                         drop_option, is_string, try_decode, is_service, \
+                        bencode, bdecode, \
                         list_services, init_locale, ANSI_ESCAPE, svc_pathetc, \
                         makedirs, exe_link_exists, fmt_svcpath, \
                         glob_services_config, split_svcpath, validate_name
@@ -3671,6 +3672,61 @@ class Node(Crypt, ExtConfigMixin):
         for error in data.get("errors", []):
              print(error, file=sys.stderr)
         return data.get("status")
+
+    def dns_dump(self):
+        """
+        Dump the content of the cluster zone.
+        """
+        try:
+            dns = self.dns
+        except Exception:
+            return
+        request = {
+            "method": "list",
+            "parameters": {
+                "zonename": self.cluster_name + "."
+            }
+        }
+        for node in dns:
+            try:
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                sock.connect(rcEnv.paths.dnsuxsock)
+                sock.send(bencode(json.dumps(request)+"\n"))
+                response = ""
+                while True:
+                    buff = sock.recv(4096)
+                    if not buff:
+                        break
+                    response += bdecode(buff)
+                    if response[-1] == "\n":
+                        break
+            finally:
+                sock.close()
+            if not response:
+                return
+            try:
+                data = json.loads(response)["result"]
+            except ValueError:
+                print("invalid response format", file=sys.stderr)
+                raise ex.excError
+            if self.options.format in ("json", "flat_json"):
+                self.print_data(data)
+                return
+            widths = {
+                "qname": 0,
+                "qtype": 0,
+                "ttl": 0,
+                "content": 0,
+            }
+            for record in data:
+                for key in ("qname", "qtype", "ttl", "content"):
+                    length = len(str(record[key]))
+                    if length > widths[key]:
+                        widths[key] = length
+            fmt = "{:%d}  IN   {:%d}  {:%d}  {:%d}" % (widths["qname"], widths["qtype"], widths["ttl"], widths["content"])
+            for record in sorted(data, key=lambda x: x["qname"]):
+                print(fmt.format(record["qname"], record["qtype"], record["ttl"], record["content"]))
+            return
 
     def daemon_relay_status(self):
         """

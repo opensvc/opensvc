@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2019\-01\-02
+.TH NODEMGR 1 2019\-01\-07
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -2717,6 +2717,32 @@ If set, the action is executed on all cluster nodes via each node's listener.
 .TP
 .B --thread-id=THR_ID
 Specify a daemon thread, as listed in the :cmd:`nodemgr daemon status` output.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr dns dump\fP
+.RS
+
+Dump the content of the cluster zone.
+
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:

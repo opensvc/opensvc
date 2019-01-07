@@ -668,6 +668,9 @@ ACTIONS = {
                    "left nodes are no longer in the services nodes list "
                    "before leaving, so the other nodes won't takeover.",
         },
+        "dns_dump": {
+            "msg": "Dump the content of the cluster zone.",
+        },
     },
     "Push data to the collector": {
         "pushasset": {
