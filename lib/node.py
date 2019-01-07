@@ -2797,6 +2797,7 @@ class Node(Crypt, ExtConfigMixin):
         """
         pathetc = svc_pathetc(svcname, namespace)
         fpath = os.path.join(pathetc, svcname+'.conf')
+        makedirs(pathetc)
         try:
             int(template)
             url = "/provisioning_templates/"+str(template)+"?props=tpl_definition&meta=0"
