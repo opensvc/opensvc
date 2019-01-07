@@ -720,7 +720,8 @@ class DockerLib(object):
                 '-p', self.docker_pid_file
             ]
         if self.docker_min_version("1.9") and '--exec-root' not in str(self.docker_daemon_args):
-            cmd += ["--exec-root", os.path.join(self.svc.var_d, "docker_exec")]
+            # keep <104 length to please dockerd
+            cmd += ["--exec-root", os.path.join(rcEnv.paths.pathvar, "dockerx", self.svc.id)]
         cmd += self.docker_daemon_args
         return cmd
 
