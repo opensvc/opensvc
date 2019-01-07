@@ -200,6 +200,7 @@ class HbRelayRx(HbRelay):
             "action": "relay_rx",
             "options": {
                 "slot": nodename,
+                "cluster_id": self.cluster_id,
             },
         }
         resp = self.daemon_send(request, cluster_name="join", nodename=self.relay, secret=self.secret)
