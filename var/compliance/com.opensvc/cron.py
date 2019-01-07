@@ -76,11 +76,11 @@ class CompCron(CompObject):
         for e in self.ce:
             try:
                 self._fixable_cron(e)
-            except ComplianceError, e:
-                perror(str(e))
+            except ComplianceError as exc:
+                perror(str(exc))
                 r = RET_ERR
-            except Unfixable, e:
-                perror(str(e))
+            except Unfixable as exc:
+                perror(str(exc))
                 return r
         return r
 
@@ -92,11 +92,11 @@ class CompCron(CompObject):
                     self._add_cron(e)
                 elif e['action'] == 'del':
                     self._del_cron(e)
-            except ComplianceError, e:
-                perror(str(e))
+            except ComplianceError as exc:
+                perror(str(exc))
                 r = RET_ERR
-            except Unfixable, e:
-                perror(str(e))
+            except Unfixable as exc:
+                perror(str(exc))
                 return r
         return r
 
@@ -105,11 +105,11 @@ class CompCron(CompObject):
         for e in self.ce:
             try:
                 self._check_cron(e)
-            except ComplianceError, e:
-                perror(str(e))
+            except ComplianceError as exc:
+                perror(str(exc))
                 r = RET_ERR
-            except Unfixable, e:
-                perror(str(e))
+            except Unfixable as exc:
+                perror(str(exc))
                 return r
         return r
 
