@@ -43,7 +43,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         drop_option, is_string, try_decode, is_service, \
                         list_services, init_locale, ANSI_ESCAPE, svc_pathetc, \
                         makedirs, exe_link_exists, fmt_svcpath, \
-                        glob_services_config, split_svcpath
+                        glob_services_config, split_svcpath, validate_name
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -2920,14 +2920,21 @@ class Node(Crypt, ExtConfigMixin):
         if fpath is not None and template is not None:
             raise ex.excError("--config and --template can't both be specified")
 
+        if namespace:
+            validate_name(namespace)
+
         if svcpath:
             svcname, namespace = split_svcpath(svcpath)
+            validate_name(svcname)
+            if namespace:
+                validate_name(namespace)
         elif not data:
             raise ex.excError("feed service configurations to stdin and set --config=-")
         else:
             for _svcpath, _data in data.items():
                 # discard namespace in svcpath, use --namespace value instead
                 svcname, _ = split_svcpath(_svcpath)
+                validate_name(svcname)
                 print("create %s/%s" % (namespace, svcname))
                 self.install_svc_conf_from_data(svcname, namespace, _data, restore)
             return

@@ -22,6 +22,7 @@ import lock
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 
+VALID_NAME_RFC952 = "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
 GLOB_SVC_CONF = os.path.join(rcEnv.paths.pathetc, "*.conf")
 GLOB_SVC_CONF_NS = os.path.join(rcEnv.paths.pathetcns, "*", "*.conf")
 
@@ -1220,3 +1221,10 @@ def makedirs(path, mode=0o755):
             pass
         else:
             raise
+
+def validate_name(name):
+    if re.match(VALID_NAME_RFC952, name):
+        return
+    raise ex.excError("invalid name '%s'. names must contain only letters, "
+                      "digits and hyphens, start with a letter and end with "
+                      "a digit or letter (rfc 952)." % name)
