@@ -3678,7 +3678,7 @@ class Node(Crypt, ExtConfigMixin):
                     continue
                 try:
                     relay = self.conf_get(section, "relay")
-                except ex.OptNotFound:
+                except (ValueError, ex.OptNotFound):
                     continue
                 if relay != self.options.node:
                     continue
