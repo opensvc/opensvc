@@ -467,6 +467,8 @@ class ExtConfigMixin(object):
                 val = "dummy"
             else:
                 val = self.id
+        elif _ref == "svcpath" and is_svc:
+            val = self.svcpath
         elif _ref == "svcname" and is_svc:
             val = self.svcname
         elif _ref == "short_svcname" and is_svc:
