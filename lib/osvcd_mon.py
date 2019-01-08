@@ -2542,7 +2542,12 @@ class Monitor(shared.OsvcThread):
                 # preserve previous status data if any (an action may be running)
                 mtime = 0
 
-            if mtime > last_mtime + 0.0001:
+            try:
+               need_load = mtime > last_mtime + 0.0001
+            except TypeError:
+               need_load = True
+
+            if need_load:
                 # status.json changed
                 #  => load
                 idata = self.load_instance_status_cache(fpath)
