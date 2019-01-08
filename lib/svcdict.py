@@ -2737,6 +2737,14 @@ KEYWORDS = [
     },
     {
         "section": "task",
+        "keyword": "log",
+        "at": True,
+        "default": True,
+        "convert": "boolean",
+        "text": "Log the task outputs in the service log.",
+    },
+    {
+        "section": "task",
         "keyword": "confirmation",
         "at": True,
         "default": False,

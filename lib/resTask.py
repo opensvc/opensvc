@@ -7,6 +7,7 @@ import lock
 import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from rcUtilities import lcall
 from six.moves import input
 
 def run_as_popen_kwargs(user):
@@ -47,6 +48,7 @@ class Task(Res.Resource):
                  timeout=0,
                  snooze=0,
                  confirmation=False,
+                 log=True,
                  **kwargs):
         Res.Resource.__init__(self, rid, type="task", **kwargs)
         self.command = command
@@ -55,6 +57,7 @@ class Task(Res.Resource):
         self.snooze = snooze
         self.timeout = timeout
         self.confirmation = confirmation
+        self.log_outputs = log
 
     def __str__(self):
         return "%s command=%s user=%s" % (Res.Resource.__str__(self), self.command, str(self.user))
@@ -84,6 +87,16 @@ class Task(Res.Resource):
     @staticmethod
     def alarm_handler(signum, frame):
         raise ex.excSignal
+
+    def lcall(self, *args, **kwargs):
+        """
+        Wrap lcall, setting the resource logger
+        """
+        if self.log_outputs:
+            kwargs["logger"] = self.log
+        else:
+            kwargs["logger"] = None
+        return lcall(*args, **kwargs)
 
     def confirm(self):
         """
@@ -126,8 +139,8 @@ class Task(Res.Resource):
             except Exception as exc:
                 self.log.warning(exc)
         kwargs = {
-          'timeout': self.timeout,
-          'blocking': True,
+            'timeout': self.timeout,
+            'blocking': True,
         }
         kwargs.update(run_as_popen_kwargs(self.user))
 

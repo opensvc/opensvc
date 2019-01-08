@@ -2026,6 +2026,10 @@ def add_task(svc, s):
         kwargs['snooze'] = svc.conf_get(s, 'snooze')
     except ex.OptNotFound as exc:
         kwargs['snooze'] = exc.default
+    try:
+        kwargs['log'] = svc.conf_get(s, 'log')
+    except ex.OptNotFound as exc:
+        kwargs['log'] = exc.default
 
     try:
         kwargs['confirmation'] = svc.conf_get(s, 'confirmation')

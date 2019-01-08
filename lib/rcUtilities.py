@@ -414,7 +414,12 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
                     pending[io] = l[0]
                     break
                 line, buff = l
-                logger.log(log_level[io], line)
+                if logger:
+                    logger.log(log_level[io], line)
+                elif log_level[io] < logging.ERROR:
+                    print(line)
+                else:
+                    print(line, file=sys.stderr)
                 logged += 1
         return logged
 
@@ -424,11 +429,17 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
         ellapsed = time.time() - start
         if timeout and ellapsed > timeout:
             if not terminated:
-                logger.error("execution timeout (%.1f seconds). send SIGTERM." % timeout)
+                if logger:
+                    logger.error("execution timeout (%.1f seconds). send SIGTERM." % timeout)
+                else:
+                    print("execution timeout (%.1f seconds). send SIGTERM." % timeout, file=sys.stderr)
                 proc.terminate()
                 terminated = True
             elif not killed and ellapsed > timeout*2:
-                logger.error("SIGTERM handling timeout (%.1f seconds). send SIGKILL." % timeout)
+                if logger:
+                    logger.error("SIGTERM handling timeout (%.1f seconds). send SIGKILL." % timeout)
+                else:
+                    print("SIGTERM handling timeout (%.1f seconds). send SIGKILL." % timeout, file=sys.stderr)
                 proc.kill()
                 killed = True
 
@@ -440,7 +451,12 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
     for io in rout, rerr:
         line = pending[io]
         if line:
-            logger.log(log_level[io], line)
+            if logger:
+                logger.log(log_level[io], line)
+            elif log_level[io] < logging.ERROR:
+                print(line)
+            else:
+                print(line, file=sys.stderr)
     os.close(rout)
     os.close(rerr)
     os.close(wout)
@@ -701,7 +717,8 @@ def action_triggers(self, trigger="", action=None, **kwargs):
 
     cmdv = get_trigger_cmdv(cmd, kwargs)
 
-    self.log.info("%s: %s", attr, cmd)
+    if not hasattr(self, "log_outputs") or getattr(self, "log_outputs"):
+        self.log.info("%s: %s", attr, cmd)
 
     if svc.options.dry_run:
         return
