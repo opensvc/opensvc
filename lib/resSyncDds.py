@@ -145,10 +145,14 @@ class syncDds(resSync.Sync):
         self.log.info(' '.join(cmd1 + ["|"] + cmd2))
         p1 = Popen(cmd1, stdout=PIPE)
         p2 = Popen(cmd2, stdin=p1.stdout, stdout=PIPE)
-        stats_buff = p2.communicate()[1]
-        stats = self.parse_dd(stats_buff)
-        self.update_stats(stats, target=node)
-        if p2.returncode != 0:
+        buff = p2.communicate()
+        if p2.returncode == 0:
+            stats_buff = p2.communicate()[1]
+            stats = self.parse_dd(stats_buff)
+            self.update_stats(stats, target=node)
+        else:
+            if buff[1] is not None and len(buff[1]) > 0:
+                self.log.error(buff[1])
             self.log.error("full sync failed")
             raise ex.excError
         self.push_statefile(node)
