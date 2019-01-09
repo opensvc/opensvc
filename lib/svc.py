@@ -2382,6 +2382,8 @@ class Svc(Crypt, ExtConfigMixin):
             options = []
             if self.options.dry_run:
                 options.append('--dry-run')
+            if self.options.restore:
+                options.append("--restore")
             if self.options.force:
                 options.append('--force')
             if self.options.local and "status" not in cmd:
@@ -2403,8 +2405,8 @@ class Svc(Crypt, ExtConfigMixin):
         cmd = drop_option("--slaves", cmd, drop_value=False)
         cmd = drop_option("--slave", cmd, drop_value=True)
 
-        if self.namespace:
-            options += ["--namespace", self.namespace]
+        if self.options.namespace:
+            options += ["--namespace", self.options.namespace]
 
         paths = get_osvc_paths(osvc_root_path=container.osvc_root_path,
                                sysname=container.guestos)
@@ -2435,7 +2437,7 @@ class Svc(Crypt, ExtConfigMixin):
             raise ex.excEncapUnjoignable
         if "print" not in cmd and "create" not in cmd:
             self.log.info("refresh encap json status after action")
-            self.encap_json_status(container, refresh=True)
+            self.encap_json_status(container, refresh=True, push_config=push_config)
         if ret != 0:
             raise ex.excError("error from encap service command '%s': "
                               "%d\n%s\n%s"%(' '.join(cmd), ret, out, err))
@@ -2504,7 +2506,7 @@ class Svc(Crypt, ExtConfigMixin):
             egroups.add(egroup)
         return egroups
 
-    def encap_json_status(self, container, refresh=False):
+    def encap_json_status(self, container, refresh=False, push_config=True):
         """
         Return the status data from the agent runnning the encapsulated part
         of the service.
@@ -2580,7 +2582,7 @@ class Svc(Crypt, ExtConfigMixin):
         if refresh:
             cmd.append('--refresh')
         try:
-            results = self._encap_cmd(cmd, container, fwd_options=False)
+            results = self._encap_cmd(cmd, container, fwd_options=False, push_config=push_config)
         except ex.excError as exc:
             return group_status
         except Exception as exc:
@@ -3523,13 +3525,6 @@ class Svc(Crypt, ExtConfigMixin):
             out = None
             ret = 1
 
-        paths = get_osvc_paths(osvc_root_path=container.osvc_root_path,
-                               sysname=container.guestos)
-        if paths.pathetc == rcEnv.paths.pathetc:
-            encap_cf = self.paths.cf.split(rcEnv.paths.pathetc, 1)[-1]
-        else:
-            encap_cf = self.paths.cf
-
         if out == "":
             # this is what happens when the container is down
             return
@@ -3538,6 +3533,10 @@ class Svc(Crypt, ExtConfigMixin):
             encap_mtime = int(float(out.strip()))
             local_mtime = os.path.getmtime(self.paths.cf)
             if encap_mtime > local_mtime:
+                paths = get_osvc_paths(osvc_root_path=container.osvc_root_path,
+                                       sysname=container.guestos)
+                encap_cf = os.path.join(paths.pathetc, self.paths.cf[len(rcEnv.paths.pathetc)+1:])
+
                 if hasattr(container, 'rcp_from'):
                     cmd_results = container.rcp_from(encap_cf, self.paths.cf)
                 else:
@@ -3551,13 +3550,8 @@ class Svc(Crypt, ExtConfigMixin):
             elif encap_mtime == local_mtime:
                 return
 
-        if self.namespace:
-            cmd = ['mkdir', '-p', os.path.dirname(encap_cf)]
-            try:
-                cmd_results = self._encap_cmd(cmd, container=container, push_config=False, fwd_options=False)
-            except ex.excError:
-                raise ex.excError("failed to create namespace in %s" % container.name)
-
+        # use a tempory conf staging to not have to care about ns dir create
+        encap_cf = os.path.join(rcEnv.paths.pathtmp, self.id+".conf")
         if hasattr(container, 'rcp'):
             cmd_results = container.rcp(self.paths.cf, encap_cf)
         else:
@@ -3567,7 +3561,7 @@ class Svc(Crypt, ExtConfigMixin):
             raise ex.excError("failed to send %s to %s" % (self.paths.cf, container.name))
         self.log.info("send %s to %s", self.paths.cf, container.name)
 
-        cmd = ['create', '--config', encap_cf]
+        cmd = ["create", "--restore", "--config", encap_cf]
         try:
             cmd_results = self._encap_cmd(cmd, container=container, push_config=False, fwd_options=False)
         except ex.excError:

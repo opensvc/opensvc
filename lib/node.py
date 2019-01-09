@@ -2860,15 +2860,19 @@ class Node(Crypt, ExtConfigMixin):
         from svc import Svc
         import uuid
         svc = Svc(svcname, cf=tmpfpath, node=self)
-        try:
-            svc.conf_get("DEFAULT", "id")
-            svc._unset("DEFAULT", "id")
-        except ex.OptNotFound:
-            pass
+        if not restore:
+            try:
+                svc.conf_get("DEFAULT", "id")
+                svc._unset("DEFAULT", "id")
+            except ex.OptNotFound:
+                pass
         svc.validate_config(tmpfpath)
 
         # install the configuration file in etc/
         shutil.move(tmpfpath, dst_cf)
+
+        if src_cf.startswith(rcEnv.paths.pathtmp):
+            os.unlink(src_cf)
 
     @staticmethod
     def install_svc_conf_from_data(svcname, namespace, data, restore=False):
