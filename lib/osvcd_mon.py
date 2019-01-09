@@ -1236,8 +1236,9 @@ class Monitor(shared.OsvcThread):
                 })
                 self.service_unprovision(svc.svcpath)
         elif smon.global_expect == "provisioned":
-            if not self.service_provisioned(instance) and \
-               self.leader_first(svc, provisioned=True):
+            if not self.service_provisioned(instance):
+                if not self.leader_first(svc, provisioned=True):
+                   return
                 self.event("instance_provision", {
                     "reason": "target",
                     "svcpath": svc.svcpath,
