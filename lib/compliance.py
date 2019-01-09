@@ -150,6 +150,10 @@ class Module(object):
 
         # add services env section keys, with values eval'ed on this node
         if self.context.svc:
+            os.environ[self.context.format_rule_var("SVC_NAME")] = self.context.format_rule_val(self.context.svc.svcname)
+            os.environ[self.context.format_rule_var("SVC_PATH")] = self.context.format_rule_val(self.context.svc.svcpath)
+            if self.context.svc.namespace:
+                os.environ[self.context.format_rule_var("SVC_NAMESPACE")] = self.context.format_rule_val(self.context.svc.namespace)
             for key, val in self.context.svc.env_section_keys_evaluated().items():
                 os.environ[self.context.format_rule_var("SVC_CONF_ENV_"+key.upper())] = self.context.format_rule_val(val)
 
