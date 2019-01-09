@@ -44,6 +44,7 @@ class App(resApp.App):
         return out
 
     def get_matching(self, cmd):
+        cmd = cmd.replace("(", "\\(").replace(")", "\\)")
         out, err, ret = justcall(["pgrep", "-f", cmd])
         if ret != 0:
             return []
@@ -53,7 +54,12 @@ class App(resApp.App):
         return self.ps_pids_e(pids).splitlines()
 
     def get_running(self, with_children=False):
-        lines = self.get_matching(" ".join(self.get_cmd("start")))
+        cmd = self.get_cmd("start")
+        if isinstance(cmd, list):
+            cmd_s = " ".join(cmd)
+        else:
+            cmd_s = cmd
+        lines = self.get_matching(cmd_s)
         match = []
         for line in lines:
             words = line.split()
@@ -114,7 +120,11 @@ class App(resApp.App):
             self.log.error("%s", exc)
             return 1
         user = kwargs.get("env").get("LOGNAME")
-        self.log.info("exec '%s' as user %s", ' '.join(cmd), user)
+        if isinstance(cmd, list):
+            cmd_s = ' '.join(cmd)
+        else:
+            cmd_s = cmd
+        self.log.info("exec '%s' as user %s", cmd_s, user)
         try:
             proc = subprocess.Popen(cmd, **kwargs)
             if proc.returncode is not None:

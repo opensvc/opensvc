@@ -24,23 +24,31 @@ def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
     """
     if rcEnv.sysname == "Windows":
         return {}
-    if cwd is None:
-        cwd = rcEnv.paths.pathtmp
-    fpath = os.path.realpath(fpath)
 
     import pwd
-    try:
-        fstat = os.stat(fpath)
-    except Exception as exc:
-        raise ex.excError(str(exc))
-    user_uid = fstat[stat.ST_UID]
-    user_gid = fstat[stat.ST_GID]
-    try:
-        pwd_user = pwd.getpwuid(user_uid)
-        user_name = pwd_user.pw_name
-    except KeyError:
-        pwd_user = None
-        user_name = "unknown"
+    if cwd is None:
+        cwd = rcEnv.paths.pathtmp
+
+    pwd_user = None
+    user_name = "unknown"
+
+    if fpath:
+        fpath = os.path.realpath(fpath)
+
+        try:
+            fstat = os.stat(fpath)
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        user_uid = fstat[stat.ST_UID]
+        user_gid = fstat[stat.ST_GID]
+        try:
+            pwd_user = pwd.getpwuid(user_uid)
+            user_name = pwd_user.pw_name
+        except KeyError:
+            pwd_user = None
+            user_name = "unknown"
+    elif user is None:
+        user = "root"
 
     if user_name in ("root", "unknown") and user is not None:
         try:
@@ -82,6 +90,7 @@ def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
         user_home_dir = pw_record.pw_dir
     except KeyError:
         user_home_dir = rcEnv.paths.pathtmp
+
     env = os.environ.copy()
     env['HOME'] = user_home_dir
     env['LOGNAME'] = user_name
@@ -296,13 +305,12 @@ class App(Resource):
                     raise ex.excAbortAction()
                 cmd = [self.script, script_arg if script_arg else action]
             except:
-                if "|" in val or "&&" in val or ";" in val:
-                    return val
+                if six.PY2:
+                    cmd = map(lambda s: s.decode('utf8'), shlex.split(val.encode('utf8')))
                 else:
-                    if six.PY2:
-                        cmd = map(lambda s: s.decode('utf8'), shlex.split(val.encode('utf8')))
-                    else:
-                        cmd = shlex.split(val)
+                    cmd = shlex.split(val)
+                if "|" in cmd or "||" in cmd or "&&" in cmd or any([True for w in cmd if w.endswith(";")]):
+                    return val
         cmd = self.validate_on_action(cmd)
         return cmd
 
@@ -572,11 +580,14 @@ class App(Resource):
         if isinstance(cmd, list):
             kwargs.update(run_as_popen_kwargs(cmd[0], self.limits, self.user, self.group, self.cwd))
         else:
+            kwargs.update(run_as_popen_kwargs(None, self.limits, self.user, self.group, self.cwd))
             kwargs["shell"] = True
         if "env" in kwargs:
             kwargs["env"]["OPENSVC_RID"] = self.rid
             kwargs["env"]["OPENSVC_SVCNAME"] = self.svc.svcname
             kwargs["env"]["OPENSVC_SVC_ID"] = self.svc.id
+            if self.svc.namespace:
+                kwargs["env"]["OPENSVC_NAMESPACE"] = self.svc.namespace
         return kwargs
 
     def _run_cmd_dedicated_log(self, action, cmd):
@@ -596,7 +607,11 @@ class App(Resource):
             self.log.error("%s", exc)
             return 1
         user = kwargs.get("env").get("LOGNAME")
-        self.log.info('exec %s as user %s', ' '.join(cmd), user)
+        if isinstance(cmd, list):
+            cmd_s = ' '.join(cmd)
+        else:
+            cmd_s = cmd
+        self.log.info('exec %s as user %s', cmd_s, user)
         try:
             ret = lcall(cmd, **kwargs)
         except (KeyboardInterrupt, ex.excSignal):
