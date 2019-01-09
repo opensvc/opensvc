@@ -2843,6 +2843,7 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("%s does not exists" % fpath)
 
         pathetc = svc_pathetc(svcname, namespace)
+        makedirs(pathetc)
         src_cf = os.path.realpath(fpath)
         dst_cf = os.path.join(pathetc, svcname+'.conf')
         if dst_cf == src_cf:
