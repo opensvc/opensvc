@@ -137,7 +137,7 @@ def format_flat_json(d):
         if isinstance(x, dict):
             for a, v in x.items():
                 a = str(a)
-                if "#" in a or "." in a or "$" in a:
+                if "/" in a or "#" in a or "." in a or "$" in a:
                     a = "'"+a+"'"
                 flatten(v, name="%s.%s" % (name, a))
         elif isinstance(x, list):
