@@ -556,7 +556,7 @@ ACTIONS = {
                    "(3) ``D``   Disabled,          ``.`` Enabled\n\n"
                    "(4) ``O``   Optional,          ``.`` Not Optional\n\n"
                    "(5) ``E``   Encap,             ``.`` Not Encap\n\n"
-                   "(6) ``P``   Provisioned,       ``.`` Not Provisioned\n\n"
+                   "(6) ``P``   Not Provisioned,   ``.`` Provisioned\n\n"
                    "(7) ``S``   Standby,           ``.`` Not Standby\n\n"
                    "(8) ``<n>`` Remaining Restart, ``+`` if more than 10,  ``.``   No Restart\n\n"
                    "",
