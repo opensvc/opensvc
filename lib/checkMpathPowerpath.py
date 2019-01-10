@@ -18,7 +18,7 @@ class check(checks.check):
                     devs = []
                 self.svcdevs[svc] = devs
             if dev in self.svcdevs[svc]:
-                return svc.svcname
+                return svc.svcpath
         return ''
 
     def do_check(self):
@@ -62,9 +62,9 @@ class check(checks.check):
                         did = _di.disk_id(paths[0])
                         if did is not None:
                             name = did
-                    r.append({'chk_instance': name,
-                              'chk_value': str(n),
-                              'chk_svcname': self.find_svc(dev),
+                    r.append({"instance": name,
+                              "value": str(n),
+                              "svcpath": self.find_svc(dev),
                              })
                     paths = []
                     dev = None

@@ -177,17 +177,17 @@ class check(checks.check):
                 for phy in self.l[ifn]:
                     if phy in self.phys:
                         r.append({
-                            'chk_instance': '%s.%s.speed' % (ifn, self.phys[phy]["device"]),
-                            'chk_value': str(self.phys[phy]["speed"]),
-                            'chk_svcname': '',
+                            "instance": '%s.%s.speed' % (ifn, self.phys[phy]["device"]),
+                            "value": str(self.phys[phy]["speed"]),
+                            "svcpath": '',
                         })
             return r
         for ifn in self.ifs:
             val = self.get_param(ifn, 'link_speed')
             r.append({
-                      'chk_instance': '%s.speed'%ifn,
-                      'chk_value': str(val),
-                      'chk_svcname': '',
+                      "instance": '%s.speed'%ifn,
+                      "value": str(val),
+                      "svcpath": '',
                      })
         return r
 
@@ -202,17 +202,17 @@ class check(checks.check):
                         else:
                             val = "0"
                         r.append({
-                            'chk_instance': '%s.%s.duplex' % (ifn, self.phys[phy]["device"]),
-                            'chk_value': val,
-                            'chk_svcname': '',
+                            "instance": '%s.%s.duplex' % (ifn, self.phys[phy]["device"]),
+                            "value": val,
+                            "svcpath": '',
                         })
             return r
         for ifn in self.ifs:
             val = self.get_param(ifn, 'link_duplex')
             r.append({
-                      'chk_instance': '%s.duplex'%ifn,
-                      'chk_value': str(val),
-                      'chk_svcname': '',
+                      "instance": '%s.duplex'%ifn,
+                      "value": str(val),
+                      "svcpath": '',
                      })
         return r
 
@@ -227,17 +227,17 @@ class check(checks.check):
                         else:
                             val = "0"
                         r.append({
-                            'chk_instance': '%s.%s.link' % (ifn, self.phys[phy]["device"]),
-                            'chk_value': val,
-                            'chk_svcname': '',
+                            "instance": '%s.%s.link' % (ifn, self.phys[phy]["device"]),
+                            "value": val,
+                            "svcpath": '',
                         })
             return r
         for ifn in self.ifs:
             val = self.get_param(ifn, 'link_status')
             r.append({
-                      'chk_instance': '%s.link'%ifn,
-                      'chk_value': str(val),
-                      'chk_svcname': '',
+                      "instance": '%s.link'%ifn,
+                      "value": str(val),
+                      "svcpath": '',
                      })
         return r
 

@@ -13,12 +13,12 @@ class check(checks.check):
 
     def find_svc(self, name):
         for svc in self.svcs:
-            for resource in svc.get_resources('pool'):
+            for resource in svc.get_resources("pool"):
                 if not hasattr(resource, "poolname"):
                     continue
                 if resource.poolname == name:
-                    return svc.svcname
-        return ''
+                    return svc.svcpath
+        return ""
 
     def do_check(self):
         o = rcAdvfs.Fdmns()
@@ -27,9 +27,9 @@ class check(checks.check):
             try:
                 d = o.get_fdmn(dom)
                 r.append({
-                          'chk_instance': dom,
-                          'chk_value': str(d.used_pct),
-                          'chk_svcname': self.find_svc(dom),
+                          "instance": dom,
+                          "value": str(d.used_pct),
+                          "svcpath": self.find_svc(dom),
                          })
             except rcAdvfs.ExInit:
                 pass

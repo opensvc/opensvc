@@ -61,9 +61,9 @@ class check(checks.check):
         if val is not None:
             val.replace('Mb/s', '')
             r.append({
-                  'chk_instance': inst,
-                  'chk_value': val,
-                  'chk_svcname': '',
+                  "instance": inst,
+                  "value": val,
+                  "svcpath": '',
                  })
 
         inst = intf + ".autoneg"
@@ -74,9 +74,9 @@ class check(checks.check):
             else:
                 val = '0'
             r.append({
-                  'chk_instance': inst,
-                  'chk_value': val,
-                  'chk_svcname': '',
+                  "instance": inst,
+                  "value": val,
+                  "svcpath": '',
                  })
 
         inst = intf + ".duplex"
@@ -87,9 +87,9 @@ class check(checks.check):
             else:
                 val = '0'
             r.append({
-                  'chk_instance': inst,
-                  'chk_value': val,
-                  'chk_svcname': '',
+                  "instance": inst,
+                  "value": val,
+                  "svcpath": '',
                  })
 
         inst = intf + ".link"
@@ -100,9 +100,9 @@ class check(checks.check):
             else:
                 val = '0'
             r.append({
-                  'chk_instance': inst,
-                  'chk_value': val,
-                  'chk_svcname': '',
+                  "instance": inst,
+                  "value": val,
+                  "svcpath": '',
                  })
 
         return r

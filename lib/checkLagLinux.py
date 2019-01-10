@@ -107,9 +107,9 @@ class check(checks.check):
                 else:
                     val = "1"
                 r.append({
-                          'chk_instance': inst+'.mii_status',
-                          'chk_value': val,
-                          'chk_svcname': '',
+                          "instance": inst+'.mii_status',
+                          "value": val,
+                          "svcpath": '',
                          })
             elif line.startswith('Link Failure Count:'):
                 val = int(line.split()[-1])
@@ -121,13 +121,13 @@ class check(checks.check):
                 # Link Failure Count per hour
                 val = 3600. * (val - prev_val) / (uptime - prev_uptime)
                 r.append({
-                          'chk_instance': inst+'.link_failure_per_hour',
-                          'chk_value': "%.2f"%val,
-                          'chk_svcname': '',
+                          "instance": inst+'.link_failure_per_hour',
+                          "value": "%.2f"%val,
+                          "svcpath": '',
                          })
         r.append({
-                  'chk_instance': lag+'.paths',
-                  'chk_value': str(n_slave),
-                  'chk_svcname': '',
+                  "instance": lag+'.paths',
+                  "value": str(n_slave),
+                  "svcpath": '',
                  })
         return r

@@ -14,7 +14,7 @@ class check(checks.check):
                     devs = []
                 self.svcdevs[svc] = devs
             if dev in self.svcdevs[svc]:
-                return svc.svcname
+                return svc.svcpath
         return ''
 
     def do_check(self):
@@ -36,9 +36,9 @@ class check(checks.check):
                 # - store previous
                 # - reset path counter
                 if dev is not None and not dev.startswith('/dev/pt/pt') and wwid != '=' and "Virtual" not in proto:
-                    r.append({'chk_instance': wwid,
-                              'chk_value': str(n),
-                              'chk_svcname': self.find_svc(dev),
+                    r.append({"instance": wwid,
+                              "value": str(n),
+                              "svcpath": self.find_svc(dev),
                              })
                 n = 0
                 l = line.split()
@@ -58,8 +58,8 @@ class check(checks.check):
                 elif state == "UNOPEN" and last_known_state in ("ACTIVE", "STANDBY"):
                     n += 1
         if dev is not None and not dev.startswith('/dev/pt/pt') and wwid != '=' and "Virtual" not in proto:
-            r.append({'chk_instance': wwid,
-                      'chk_value': str(n),
-                      'chk_svcname': self.find_svc(dev),
+            r.append({"instance": wwid,
+                      "value": str(n),
+                      "svcpath": self.find_svc(dev),
             })
         return r

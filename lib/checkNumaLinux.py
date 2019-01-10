@@ -35,9 +35,9 @@ class check(checks.check):
             target = target_per_cpu * info['cpu']
             deviation = math.fabs(100. * (info['mem'] - target) // target)
             r.append({
-                  'chk_instance': node+'.mem.leveling',
-                  'chk_value': str(deviation),
-                  'chk_svcname': '',
+                  "instance": node+'.mem.leveling',
+                  "value": str(deviation),
+                  "svcpath": '',
                  })
         return r
 

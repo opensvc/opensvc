@@ -60,9 +60,9 @@ class check(checks.check):
         else:
             val = "1"
         r.append({
-                  'chk_instance': inst,
-                  'chk_value': val,
-                  'chk_svcname': '',
+                  "instance": inst,
+                  "value": val,
+                  "svcpath": "",
                  })
 
         inst = intf + ".speed"
@@ -75,9 +75,9 @@ class check(checks.check):
             except:
                 pass
         r.append({
-                  'chk_instance': inst,
-                  'chk_value': val,
-                  'chk_svcname': '',
+                  "instance": inst,
+                  "value": val,
+                  "svcpath": "",
                  })
 
         inst = intf + ".autoneg"
@@ -88,9 +88,9 @@ class check(checks.check):
             if " On":
                 val = "1"
         r.append({
-                  'chk_instance': inst,
-                  'chk_value': val,
-                  'chk_svcname': '',
+                  "instance": inst,
+                  "value": val,
+                  "svcpath": "",
                  })
 
         inst = intf + ".duplex"
@@ -101,9 +101,9 @@ class check(checks.check):
             if 'Full-Duplex' in line:
                 val = "1"
         r.append({
-                  'chk_instance': inst,
-                  'chk_value': val,
-                  'chk_svcname': '',
+                  "instance": inst,
+                  "value": val,
+                  "svcpath": "",
                  })
 
         return r

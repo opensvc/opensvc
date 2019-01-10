@@ -22,9 +22,9 @@ class check(checks.check):
         inst = team.Description
         val = team.RedundancyStatus
         r.append({
-                'chk_instance': inst+'.redundancy',
-                'chk_value': str(val),
-                'chk_svcname': '',
+                "instance": inst+'.redundancy',
+                "value": str(val),
+                "svcpath": '',
                })
         return r
 

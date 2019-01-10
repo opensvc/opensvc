@@ -17,7 +17,7 @@ class check(checks.check):
                 if not hasattr(resource, "name"):
                     continue
                 if resource.name == vgname:
-                    return svc.svcname
+                    return svc.svcpath
         return ''
 
     def do_check(self):
@@ -32,14 +32,14 @@ class check(checks.check):
         stats = resource.load_stats()
         if "bytes" in stats:
             data.append({
-                'chk_instance': resource.rid + ".bytes",
-                'chk_value': str(stats["bytes"]),
-                'chk_svcname': svc.svcname,
+                "instance": resource.rid + ".bytes",
+                "value": str(stats["bytes"]),
+                "svcpath": svc.svcpath,
              })
         if "speed" in stats:
             data.append({
-                'chk_instance': resource.rid + ".speed",
-                'chk_value': str(stats["speed"]),
-                'chk_svcname': svc.svcname,
+                "instance": resource.rid + ".speed",
+                "value": str(stats["speed"]),
+                "svcpath": svc.svcpath,
              })
         return data

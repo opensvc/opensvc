@@ -103,9 +103,9 @@ class check(checks.check):
                             l = phy.split(':')
                             val = l[2]
                             r.append({
-                                      'chk_instance': '%s.%s.speed'%(lag, net),
-                                      'chk_value': str(val),
-                                      'chk_svcname': '',
+                                      "instance": '%s.%s.speed'%(lag, net),
+                                      "value": str(val),
+                                      "svcpath": '',
                                      })
             return r
         for line in self.lines:
@@ -120,9 +120,9 @@ class check(checks.check):
                 continue
             val = l[2]
             r.append({
-                      'chk_instance': '%s.%d.speed'%(lag, i),
-                      'chk_value': str(val),
-                      'chk_svcname': '',
+                      "instance": '%s.%d.speed'%(lag, i),
+                      "value": str(val),
+                      "svcpath": '',
                      })
             i += 1
         return r
@@ -162,9 +162,9 @@ class check(checks.check):
                             else:
                                val = 0
                             r.append({
-                                      'chk_instance': '%s.%s.%s'%(lag, net, key),
-                                      'chk_value': str(val),
-                                      'chk_svcname': '',
+                                      "instance": '%s.%s.%s'%(lag, net, key),
+                                      "value": str(val),
+                                      "svcpath": '',
                                      })
             return r
         for line in self.lines:
@@ -183,9 +183,9 @@ class check(checks.check):
                 else:
                     val = 0
                 r.append({
-                          'chk_instance': '%s.%d.%s'%(lag, i, key),
-                          'chk_value': str(val),
-                          'chk_svcname': '',
+                          "instance": '%s.%d.%s'%(lag, i, key),
+                          "value": str(val),
+                          "svcpath": '',
                          })
                 i += 1
         return r

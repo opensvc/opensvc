@@ -28,10 +28,10 @@ class check(checks.check):
             for resource in svc.get_resources('container.zone'):
                 zpath = self.get_zonepath(resource.name)
                 if zpath is not None and zpath == mnt:
-                    return svc.svcname
+                    return svc.svcpath
             for resource in svc.get_resources('fs'):
                 if hasattr(resource, "device") and resource.device == name:
-                    return svc.svcname
+                    return svc.svcpath
         return ''
 
     def do_check(self):
@@ -60,20 +60,20 @@ class check(checks.check):
             avail = convert_size(l[2], _to="KB")
             total = used + avail
             pct = round(used / total * 100)
-            svcname = self.find_svc(l[0], l[3])
+            svcpath = self.find_svc(l[0], l[3])
             r.append({
-                      'chk_instance': l[0],
-                      'chk_value': str(pct)+"%",
-                      'chk_svcname': svcname,
+                      "instance": l[0],
+                      "value": str(pct)+"%",
+                      "svcpath": svcpath,
                      })
             r.append({
-                      'chk_instance': l[0]+".free",
-                      'chk_value': str(avail),
-                      'chk_svcname': svcname,
+                      "instance": l[0]+".free",
+                      "value": str(avail),
+                      "svcpath": svcpath,
                      })
             r.append({
-                      'chk_instance': l[0]+".size",
-                      'chk_value': str(total),
-                      'chk_svcname': svcname,
+                      "instance": l[0]+".size",
+                      "value": str(total),
+                      "svcpath": svcpath,
                      })
         return r

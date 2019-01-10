@@ -26,14 +26,14 @@ class check(checks.check):
             else:
                 # not handled
                 continue
-            svcname = ids.svcname if ids.svcname else ""
+            svcpath = ids.svcpath if ids.svcpath else ids.svcname if ids.svcname else ""
             jstat = get_executable(Storage(), pid)
             for stat in STATS:
                 for key, val in get_stat_metrics(jstat, pid, stat).items():
                     data.append({
-                        'chk_instance': "%s.%s.%s" % (instance, stat, key),
-                        'chk_value': val,
-                        'chk_svcname': svcname,
+                        "instance": "%s.%s.%s" % (instance, stat, key),
+                        "value": val,
+                        "svcpath": svcpath,
                     })
         #print(json.dumps(data, indent=4))
         return data
@@ -120,6 +120,8 @@ def pid_to_ids(pid):
             data["svc_id"] = val
         elif key == "OPENSVC_SVCNAME":
             data["svcname"] = val
+        elif key == "OPENSVC_SVCPATH":
+            data["svcpath"] = val
         elif key == "OPENSVC_RID":
             data["rid"] = val
         elif key == "OPENSVC_CHK_INSTANCE":

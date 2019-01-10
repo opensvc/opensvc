@@ -67,9 +67,9 @@ class check(checks.check):
 
         r = []
         r.append({
-                  'chk_instance': "new lines",
-                  'chk_value': str(l),
-                  'chk_svcname': "",
+                  "instance": "new lines",
+                  "value": str(l),
+                  "svcpath": "",
                  })
 
         self.update_marker()

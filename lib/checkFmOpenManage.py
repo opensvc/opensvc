@@ -49,8 +49,8 @@ class check(checks.check):
             else:
                 state = 1
             r.append({
-                      'chk_instance': inst,
-                      'chk_value': str(state),
-                      'chk_svcname': '',
+                      "instance": inst,
+                      "value": str(state),
+                      "svcpath": '',
                      })
         return r

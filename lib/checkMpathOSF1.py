@@ -16,15 +16,15 @@ class check(checks.check):
                     devs = []
                 self.svcdevs[svc] = devs
             if dev in self.svcdevs[svc]:
-                return svc.svcname
+                return svc.svcpath
         return ''
 
     def do_check(self):
         di = diskInfo()
         r = []
         for dev, data in di.h.items():
-            r.append({'chk_instance': data['wwid'],
-                      'chk_value': str(data['path_count']),
-                      'chk_svcname': self.find_svc(dev),
+            r.append({"instance": data['wwid'],
+                      "value": str(data['path_count']),
+                      "svcpath": self.find_svc(dev),
                      })
         return r

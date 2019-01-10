@@ -91,8 +91,8 @@ class check(checks.check):
                 _r += self.check_physicaldrive(uslot)
                 for inst, value in _r:
                     r.append({
-                          'chk_instance': ".".join((slot, inst)),
-                          'chk_value': str(value),
-                          'chk_svcname': '',
+                          "instance": ".".join((slot, inst)),
+                          "value": str(value),
+                          "svcpath": '',
                          })
         return r

@@ -53,9 +53,9 @@ class check(checks.check):
             inst = "lan" + intf + ".paths"
             val = str(i)
             r.append({
-                  'chk_instance': inst,
-                  'chk_value': val,
-                  'chk_svcname': '',
+                  "instance": inst,
+                  "value": val,
+                  "svcpath": '',
                  })
 
         return r

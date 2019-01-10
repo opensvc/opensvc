@@ -28,7 +28,7 @@ class check(checks.check):
                 except Exception as e:
                     self.svcdevs[svc] = []
             if dev in self.svcdevs[svc]:
-                return svc.svcname
+                return svc.svcpath
         return ''
 
     def do_check(self):
@@ -68,9 +68,9 @@ class check(checks.check):
                     # - reset dev
                 n = int(line.split(':')[-1].strip())
                 if dev is not None:
-                    r.append({'chk_instance': wwid,
-                              'chk_value': str(n),
-                              'chk_svcname': self.find_svc(dev),
+                    r.append({"instance": wwid,
+                              "value": str(n),
+                              "svcpath": self.find_svc(dev),
                              })
                     dev = None
                     n = 0

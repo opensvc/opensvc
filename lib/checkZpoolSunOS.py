@@ -31,7 +31,7 @@ class check(checks.check):
                 if not hasattr(res, "name"):
                     continue
                 if res.name == pool:
-                    return svc.svcname
+                    return svc.svcpath
         return ''
 
     def do_check(self):
@@ -64,8 +64,8 @@ class check(checks.check):
             else:
                 stat_val = 6
             if pool is not None:
-                r.append({'chk_instance': pool,
-                          'chk_value': str(stat_val),
-                          'chk_svcname': self.find_svc(pool),
+                r.append({"instance": pool,
+                          "value": str(stat_val),
+                          "svcpath": self.find_svc(pool),
                         })
         return r

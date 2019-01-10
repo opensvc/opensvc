@@ -33,8 +33,8 @@ class check(checks.check):
             return self.undef
         r = []
         r.append({
-              'chk_instance': 'faults ',
-              'chk_value': str(len(out)),
-              'chk_svcname': '',
+              "instance": 'faults ',
+              "value": str(len(out)),
+              "svcpath": '',
             })
         return r

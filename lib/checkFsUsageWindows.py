@@ -10,7 +10,7 @@ class check(checks.check):
                 if not hasattr(resource, "mount_point"):
                     continue
                 if resource.mount_point == mountpt:
-                    return svc.svcname
+                    return svc.svcpath
         return ''
 
     def do_check(self):
@@ -27,9 +27,9 @@ class check(checks.check):
                 continue
             pct = 100 * (n_total - n_free) // n_total
             r.append({
-                      'chk_instance': drive,
-                      'chk_value': str(pct),
-                      'chk_svcname': self.find_svc(drive),
+                      "instance": drive,
+                      "value": str(pct),
+                      "svcpath": self.find_svc(drive),
                      })
         return r
 

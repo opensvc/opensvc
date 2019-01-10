@@ -5,9 +5,9 @@ import os
 
 class check(object):
     undef = [{
-              'check_svcname': '',
-              'chk_instance': 'undef',
-              'chk_value': '-1'
+              'svcpath': '',
+              'instance': 'undef',
+              'value': '-1'
              }]
     def __init__(self, svcs=[]):
         self.svcs = svcs
@@ -111,22 +111,22 @@ class checks(check):
             for instance in _data:
                 if not isinstance(instance, dict):
                     continue
-                if 'chk_instance' not in instance:
+                if 'instance' not in instance:
                     continue
-                if instance['chk_instance'] == 'undef':
+                if instance['instance'] == 'undef':
                     continue
-                if 'chk_value' not in instance:
+                if 'value' not in instance:
                     continue
                 _instance = {
-                    "instance": instance.get("chk_instance", ""),
-                    "value": instance.get("chk_value", ""),
-                    "svcname": instance.get("chk_svcname", ""),
+                    "instance": instance.get("instance", ""),
+                    "value": instance.get("value", ""),
+                    "svcpath": instance.get("svcpath", ""),
                     "driver": driver,
                 }
 
                 vals.append([\
                     rcEnv.nodename,
-                    _instance["svcname"],
+                    _instance["svcpath"],
                     chk.chk_type,
                     _instance['instance'],
                     str(_instance['value']).replace("%",""),
@@ -159,7 +159,7 @@ class checks(check):
             for instance in instances:
                 _node = node.add_node()
                 _node.add_column(str(instance["instance"]), color.LIGHTBLUE)
-                _node.add_column(instance["svcname"])
+                _node.add_column(instance["svcpath"])
                 _node.add_column(str(instance["value"]))
                 if instance["driver"] == "generic":
                     _node.add_column()
