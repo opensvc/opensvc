@@ -218,9 +218,7 @@ class Dns(shared.OsvcThread):
         kind = parameters.get("kind")
         if kind == "ALLOW-AXFR-FROM":
             return ["0.0.0.0/0", "AUTO-NS"]
-        if kind == "PRESIGNED":
-            return ["0"]
-        return ["0"]
+        return []
 
     def action_lookup(self, parameters):
         qtype = parameters.get("qtype").upper()
