@@ -307,7 +307,7 @@ OPT = Storage({
              "      - ``<group>:``\n\n"
              "      - ``<rid>.<key>``\n\n"
              "      - ``<group>.<key>``\n\n"
-             "      - ``<single value jsonpath expression on the json service status data>``\n\n"
+             "      - ``<single value jsonpath expression on the $.monitor.services.<svcname> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>``\n\n"
              "    - ``<op>`` can be:\n\n"
              "      - ``<``  ``>``  ``<=``  ``>=``  ``=``\n\n"
              "      - ``~`` with regexp value\n\n"
@@ -316,7 +316,7 @@ OPT = Storage({
              "- ``ip:+task:``\n\n"
              "- ``!*excluded``\n\n"
              "- ``$.avail=warn``\n\n"
-             "- ``$.group_status.disk.status=up``\n\n"
+             "- ``$.nodes.*.status.avail=warn``\n\n"
              "Note:\n\n"
              "- ``!`` usage requires single quoting the expression to prevent "
              "shell history expansion"),

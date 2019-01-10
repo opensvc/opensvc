@@ -49,6 +49,8 @@ from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
 from lock import LOCK_EXCEPTIONS
+from jsonpath_ng import jsonpath
+from jsonpath_ng.ext import parse
 
 if six.PY2:
     BrokenPipeError = IOError
@@ -634,6 +636,7 @@ class Node(Crypt, ExtConfigMixin):
 
     def _svcs_selector(self, selector, data=None, namespace=None):
         self.build_services()
+        cluster_data = self._daemon_status()
         if data and "services" in data:
             paths = [path for path in data["services"]]
         else:
@@ -645,14 +648,17 @@ class Node(Crypt, ExtConfigMixin):
             ored_selectors = [selector]
         result = []
         for _selector in ored_selectors:
-            for path in self.__svcs_selector(_selector, data, paths, namespace=namespace):
+            for path in self.__svcs_selector(_selector, data, paths,
+                                             namespace=namespace,
+                                             cluster_data=cluster_data):
                 if path not in result:
                     result.append(path)
         if len(result) == 0 and not re.findall(r"[,\+\*=\^:~><]", selector):
             raise ex.excError("service not found")
         return result
 
-    def __svcs_selector(self, selector, data, paths, namespace=None):
+    def __svcs_selector(self, selector, data, paths, namespace=None,
+                        cluster_data=None):
         """
         Given a selector string, return a list of service names.
         This method only intersect the ANDed elements.
@@ -671,7 +677,7 @@ class Node(Crypt, ExtConfigMixin):
         else:
             result = None
             for _selector in anded_selectors:
-                _paths = self.___svcs_selector(_selector, paths)
+                _paths = self.___svcs_selector(_selector, paths, cluster_data)
                 if result is None:
                     result = _paths
                 else:
@@ -679,7 +685,7 @@ class Node(Crypt, ExtConfigMixin):
                     result = [svcname for svcname in result if svcname in common]
         return result
 
-    def ___svcs_selector(self, selector, paths):
+    def ___svcs_selector(self, selector, paths, cluster_data):
         """
         Given a basic selector string (no AND nor OR), return a list of service
         names.
@@ -716,19 +722,17 @@ class Node(Crypt, ExtConfigMixin):
                 match = True
             return match
 
-        def svc_matching(svc, param, op, value):
+        def svc_matching(svc, param, op, value, cluster_data):
             param = param.lstrip(".")
             if param.startswith("$."):
-                from jsonpath_ng import jsonpath
-                from jsonpath_ng.ext import parse
                 try:
                     jsonpath_expr = parse(param)
-                    data = svc.print_status_data()
+                    data = self.cluster_svc_data(svc.svcpath, cluster_data)
                     matches = jsonpath_expr.find(data)
-                    if len(matches) != 1:
-                        current = None
-                    else:
-                        current = matches[0].value
+                    for match in matches:
+                        current = match.value
+                        if matching(current, op, value):
+                            return True
                 except Exception as exc:
                     current = None
             else:
@@ -736,29 +740,28 @@ class Node(Crypt, ExtConfigMixin):
                     current = svc._get(param, evaluate=True)
                 except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
                     current = None
-            if current is None:
-                if "." in param:
-                    group, _param = param.split(".", 1)
-                else:
-                    group = param
-                    _param = None
-                rids = [section for section in svc.config.sections() if group == "" or section.split('#')[0] == group]
-                if op == ":" and len(rids) > 0 and _param is None:
+                if current is None:
+                    if "." in param:
+                        group, _param = param.split(".", 1)
+                    else:
+                        group = param
+                        _param = None
+                    rids = [section for section in svc.config.sections() if group == "" or section.split('#')[0] == group]
+                    if op == ":" and len(rids) > 0 and _param is None:
+                        return True
+                    elif _param:
+                        for rid in rids:
+                            try:
+                                _current = svc._get(rid+"."+_param, evaluate=True)
+                            except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
+                                continue
+                            if matching(_current, op, value):
+                                return True
+                    return False
+                if current is None:
+                    return op == ":"
+                if matching(current, op, value):
                     return True
-                elif _param:
-                    for rid in rids:
-                        try:
-                            _current = svc._get(rid+"."+_param, evaluate=True)
-                        except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
-                            continue
-                        if matching(_current, op, value):
-                            return True
-                return False
-            if current is None:
-                if op == ":":
-                    return True
-            elif matching(current, op, value):
-                return True
             return False
 
         if len(elts) == 1:
@@ -777,15 +780,40 @@ class Node(Crypt, ExtConfigMixin):
                 value = float(value)
             except (TypeError, ValueError):
                 return []
+
+        # status data jsonpath or config keyword match
+        if cluster_data is None:
+            return []
         result = []
         for svc in self.svcs:
-            ret = svc_matching(svc, param, op, value)
+            ret = svc_matching(svc, param, op, value, cluster_data)
             if ret ^ negate:
                 result.append(svc.svcpath)
 
         return result
 
-
+    def cluster_svc_data(self, svcpath, cluster_data):
+        """
+        Extract from the cluster data the structures refering to a
+        svcpath.
+        """
+        if not cluster_data:
+            return
+        try:
+            data = cluster_data.get("monitor", {}).get("services", {}).get(svcpath, {})
+            data["nodes"] = {}
+        except KeyError:
+            return
+        for node, ndata in cluster_data.get("monitor", {}).get("nodes", {}).items():
+            try:
+                data["nodes"][node] = {
+                    "status": ndata["services"]["status"][svcpath],
+                    "config": ndata["services"]["config"][svcpath],
+                }
+            except KeyError:
+                pass
+        return data
+ 
     def build_services(self, *args, **kwargs):
         """
         Instanciate a Svc objects for each requested services and add it to
@@ -3200,8 +3228,6 @@ class Node(Crypt, ExtConfigMixin):
         a local event data.
         """
         import json_delta
-        from jsonpath_ng import jsonpath
-        from jsonpath_ng.ext import parse
 
         if not path:
             return
