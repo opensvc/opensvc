@@ -2094,6 +2094,7 @@ class Svc(Crypt, ExtConfigMixin):
             node_child = node.add_node()
             node_child.add_column(svcpath, color.BOLD)
             node_child.add_column()
+            svcpath = re.sub("^root/", "", svcpath)
             try:
                 mon_data = self.get_mon_data()
                 avail = mon_data["services"][svcpath]["avail"]
