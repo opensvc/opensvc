@@ -677,7 +677,7 @@ class Node(Crypt, ExtConfigMixin):
         else:
             result = None
             for _selector in anded_selectors:
-                _paths = self.___svcs_selector(_selector, paths, cluster_data)
+                _paths = self.___svcs_selector(_selector, paths, cluster_data, namespace)
                 if result is None:
                     result = _paths
                 else:
@@ -685,7 +685,7 @@ class Node(Crypt, ExtConfigMixin):
                     result = [svcname for svcname in result if svcname in common]
         return result
 
-    def ___svcs_selector(self, selector, paths, cluster_data):
+    def ___svcs_selector(self, selector, paths, cluster_data, namespace):
         """
         Given a basic selector string (no AND nor OR), return a list of service
         names.
@@ -771,7 +771,9 @@ class Node(Crypt, ExtConfigMixin):
             elif "/" in selector:
                 return [path for path in paths if negate ^ fnmatch.fnmatch(path, selector)]
             else:
-                return [path for path in paths if negate ^ fnmatch.fnmatch(path.split("/")[-1], selector)]
+                if namespace:
+                    selector = fmt_svcpath(selector, namespace)
+                return [path for path in paths if negate ^ fnmatch.fnmatch(path, selector)]
         elif len(elts) != 3:
             return []
         param, op, value = elts
