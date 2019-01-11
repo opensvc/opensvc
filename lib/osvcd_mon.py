@@ -14,6 +14,7 @@ import shutil
 import re
 import threading
 from subprocess import Popen, PIPE
+from itertools import chain
 
 import osvcd_shared as shared
 import rcExceptions as ex
@@ -2043,6 +2044,7 @@ class Monitor(shared.OsvcThread):
             for child in slaves:
                 if "/" not in child and namespace:
                     child = fmt_svcpath(child, namespace)
+                child = re.sub("^root/", "", child)
                 try:
                     child_avail = shared.AGG[child]["avail"]
                 except KeyError:
@@ -2101,6 +2103,7 @@ class Monitor(shared.OsvcThread):
             for child in slaves:
                 if "/" not in child and namespace:
                     child = fmt_svcpath(child, namespace)
+                child = re.sub("^root/", "", child)
                 try:
                     child_status = shared.AGG[child]["overall"]
                 except KeyError:
@@ -2788,21 +2791,26 @@ class Monitor(shared.OsvcThread):
             data["arbitrators"] = self.get_arbitrators_data()
 
         # purge deleted service instances
-        for svcpath in list(data["services"]["status"].keys()):
-            if svcpath not in data["services"]["config"]:
-                smon = self.get_service_monitor(svcpath)
-                if smon.global_expect is not None:
-                    if time.time() < smon.global_expect_updated + 3:
-                        # keep the smon around for a while
-                        self.log.info("relay foreign service %s smon", svcpath)
-                    else:
-                        del shared.SMON_DATA[svcpath]
+        for svcpath in set(chain(data["services"]["status"].keys(), shared.SMON_DATA.keys())):
+            if svcpath in data["services"]["config"]:
+                continue
+            try:
+                smon = shared.SMON_DATA[svcpath]
+                global_expect = smon.get("global_expect")
+                global_expect_updated = smon.get("global_expect_updated", 0)
+                if global_expect is not None and time.time() < global_expect_updated + 3:
+                    # keep the smon around for a while
+                    self.log.info("relay foreign service %s smon", svcpath)
                     continue
+                else:
+                    del shared.SMON_DATA[svcpath]
+            except KeyError:
+                pass
+            try:
+                del data["services"]["status"][svcpath]
                 self.log.debug("purge deleted service %s from status data", svcpath)
-                try:
-                    del data["services"]["status"][svcpath]
-                except KeyError:
-                    pass
+            except KeyError:
+                pass
 
     def update_hb_data(self):
         """
