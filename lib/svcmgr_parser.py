@@ -165,7 +165,7 @@ OPT = Storage({
         help="An expression like ``[<section>.]<keyword>[@<scope>][[<index>]]<op><value>`` where\n\n"
              "* <section> can be:\n\n"
              "  * a resource id\n"
-             "  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.\n"
+             "  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.\n"
              "* <op> can be:\n\n"
              "  * ``=``\n"
              "  * ``+=``\n"
@@ -236,7 +236,7 @@ OPT = Storage({
         help="An expression like ``[<section>.]<keyword>`` where\n\n"
              "* <section> can be:\n\n"
              "  * a resource id\n"
-             "  * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources."),
+             "  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources."),
     "provision": Option(
         "--provision", default=False,
         action="store_true", dest="provision",
