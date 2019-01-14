@@ -413,7 +413,7 @@ class Dns(shared.OsvcThread):
                         name = "%s.%s.svc.%s." % (svcname, namespace, self.cluster_name)
                         name = name.lower()
                         if hostname:
-                            names.append("%s.%s" % (hostname, name))
+                            names.append("%s.%s" % (hostname.split(".")[0], name))
                         names.append(name)
         return names
 
@@ -470,7 +470,7 @@ class Dns(shared.OsvcThread):
                             names[rname] = set()
                         names[rname].add(addr)
                         if hostname:
-                            name = hostname + "." + qname
+                            name = hostname.split(".")[0] + "." + qname
                             if name not in names:
                                 names[name] = set()
                             names[name].add(addr)
