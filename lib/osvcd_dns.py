@@ -459,7 +459,7 @@ class Dns(shared.OsvcThread):
                     qname = "%s.%s" % (_svcname, zone)
                     if qname not in names:
                         names[qname] = set()
-                    for rid, resource in status[svcpath].get("resources", {}).items():
+                    for rid, resource in status.get("svcpath", {}).get("resources", {}).items():
                         addr = resource.get("info", {}).get("ipaddr")
                         if addr is None:
                             continue
