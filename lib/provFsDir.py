@@ -1,4 +1,7 @@
+import shutil
+
 import provisioning
+from rcUtilities import protected_dir
 
 class Prov(provisioning.Prov):
     def __init__(self, r):
@@ -11,5 +14,8 @@ class Prov(provisioning.Prov):
         pass
 
     def unprovisioner(self):
-        pass
+        if protected_dir(self.r.path):
+            self.r.log.warning("cowardly refuse to purge %s", self.r.path)
+        self.r.log.info("purge %s", self.r.path)
+        shutil.rmtree(self.r.path)
 
