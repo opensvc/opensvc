@@ -1010,6 +1010,16 @@ def has_option(option, cmd):
             return True
     return False
 
+def get_options(option, cmd):
+    """
+    Yield all <option> values in the <cmd> shlex list.
+    """
+    for i, word in enumerate(cmd):
+        if word == option:
+            yield cmd[i+1]
+        if word.startswith(option+"="):
+            yield word.split("=", 1)[-1]
+
 def get_option(option, cmd, boolean=False):
     """
     Get an <option> value in the <cmd> shlex list.
