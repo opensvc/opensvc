@@ -131,6 +131,9 @@ def format_json(d):
         print(colorize_json(json.dumps(d, **kwargs)))
 
 def format_flat_json(d):
+    print(format_str_flat_json(d))
+
+def format_str_flat_json(d):
     out = {}
 
     def flatten(x, name=''):
@@ -149,8 +152,13 @@ def format_flat_json(d):
             out[name] = x
 
     flatten(d)
+    buff = ""
     for k, v in out.items():
-        print(k, "=", v)
+        buff += "%s = %s\n" % (k, v)
+    if six.PY2:
+        return buff.encode("utf-8")
+    else:
+        return buff
 
 def format_table(d):
     from rcPrintTable import print_table_tabulate

@@ -12,6 +12,7 @@ import rcIfconfigLinux as rcIfconfig
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, to_cidr, lazy, bencode, bdecode
+from rcColor import format_str_flat_json
 
 CNI_VERSION = "0.2.0"
 PORTMAP_CONF = {
@@ -232,7 +233,7 @@ class Ip(Res.Ip):
             raise ex.excError(err)
         if "code" in data:
             raise ex.excError(data.get("msg", ""))
-        for line in out.splitlines():
+        for line in format_str_flat_json(data).splitlines():
             self.log.info(line)
         return data
 
