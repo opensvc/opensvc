@@ -4469,6 +4469,35 @@ class Node(Crypt, ExtConfigMixin):
             data[name] = pool.status()
         return data
 
+    def find_pool(self, poolname=None, pooltype=None):
+        if pooltype is None:
+            if poolname:
+                return self.get_pool(poolname)
+            else:
+                return self.get_pool("default")
+        else:
+            if poolname:
+                pool = self.get_pool(poolname)
+                if pool.type != pooltype:
+                    return
+                return pool
+            else:
+                # return the matching pool with max avail space
+                candidates = sorted([pool for pool in self.pool_status_data().values() if pool["type"] == pooltype], key=lambda x: x["free"])
+                if not candidates:
+                    return
+                return self.get_pool(candidates[-1]["name"])
+
+    def get_pool(self, poolname):
+        section = "pool#"+poolname
+        try:
+            ptype = self.conf_get(section, "type")
+        except ex.OptNotFound as exc:
+            ptype = exc.default
+        from rcUtilities import mimport
+        mod = mimport("pool", ptype)
+        return mod.Pool(node=self, name=poolname)
+
     ##########################################################################
     #
     # Network actions
@@ -4588,16 +4617,6 @@ class Node(Crypt, ExtConfigMixin):
         so Node() users don't have to import it from rcUtilities.
         """
         unset_lazy(self, prop)
-
-    def get_pool(self, poolname):
-        section = "pool#"+poolname
-        try:
-            ptype = self.conf_get(section, "type")
-        except ex.OptNotFound as exc:
-            ptype = exc.default
-        from rcUtilities import mimport
-        mod = mimport("pool", ptype)
-        return mod.Pool(node=self, name=poolname)
 
     @lazy
     def hooks(self):
