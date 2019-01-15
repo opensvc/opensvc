@@ -623,7 +623,7 @@ class Svc(Crypt, ExtConfigMixin):
             import uuid
             newid = str(uuid.uuid4())
             if not self.volatile:
-                self._set("DEFAULT", "id", newid)
+                self._set("DEFAULT", "id", newid, validation=False)
             return newid
 
     @lazy
@@ -4431,7 +4431,7 @@ class Svc(Crypt, ExtConfigMixin):
             assert value >= 0
         except Exception:
             raise ex.excError("invalid scale target: set '--to <n>' where n>=0")
-        self._set("DEFAULT", "scale", str(value))
+        self._set("DEFAULT", "scale", str(value), validation=False)
         self.set_service_monitor()
 
     def move(self):

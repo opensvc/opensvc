@@ -326,10 +326,11 @@ class ExtConfigMixin(object):
             raise ex.excError("malformed kw: format as 'section.key'")
         return elements[0], elements[1], _value, eval
 
-    def _set(self, section, option, value):
-        self._set_multi([[section, option, value, False]])
+    def _set(self, section, option, value, validation=True):
+        self._set_multi([[section, option, value, False]],
+                        validation=validation)
 
-    def _set_multi(self, changes):
+    def _set_multi(self, changes, validation=True):
         changed = False
         lines = self._read_cf().splitlines()
         for change in changes:
@@ -342,7 +343,7 @@ class ExtConfigMixin(object):
             # all changes were None
             return
         try:
-            self._write_cf(lines)
+            self._write_cf(lines, validation=validation)
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
         unset_all_lazy(self)
@@ -432,15 +433,14 @@ class ExtConfigMixin(object):
     #
     #########################################################################
     def handle_reference(self, ref, scope=False, impersonate=None, config=None,
-                         section=None, validation=False):
+                         section=None):
         if "[" in ref and ref.endswith("]"):
             i = ref.index("[")
             index = ref[i+1:-1]
             ref = ref[:i]
             index = int(self.handle_references(index, scope=scope,
                                                impersonate=impersonate,
-                                               section=section,
-                                               validation=validation))
+                                               section=section))
         else:
             index = None
 
@@ -462,11 +462,7 @@ class ExtConfigMixin(object):
         elif _ref == "namespace" and is_svc:
             val = self.namespace if self.namespace else "root"
         elif _ref == "id" and is_svc:
-            if validation:
-                # avoid recursion on set("id", ...) -> validate_config()
-                val = "dummy"
-            else:
-                val = self.id
+            val = self.id
         elif _ref == "svcpath" and is_svc:
             val = self.svcpath
         elif _ref == "svcname" and is_svc:
@@ -645,7 +641,7 @@ class ExtConfigMixin(object):
         raise ex.excError("%s: unknown reference" % ref)
 
     def _handle_references(self, s, scope=False, impersonate=None, config=None,
-                           section=None, first_step=None, validation=False):
+                           section=None, first_step=None):
         if not is_string(s):
             return s
         done = ""
@@ -661,8 +657,7 @@ class ExtConfigMixin(object):
                 continue
             val = self.handle_reference(ref, scope=scope,
                                         impersonate=impersonate,
-                                        config=config, section=section,
-                                        validation=validation)
+                                        config=config, section=section)
             if val is None:
                 # deferred
                 return
@@ -694,7 +689,7 @@ class ExtConfigMixin(object):
             return s
 
     def handle_references(self, s, scope=False, impersonate=None, config=None,
-                          section=None, validation=False):
+                          section=None):
         cacheable = self.cacheable(s)
         if cacheable:
             key = (str(s), scope, impersonate)
@@ -704,13 +699,11 @@ class ExtConfigMixin(object):
             val = self._handle_references(s, scope=scope,
                                           impersonate=impersonate,
                                           config=config, section=section,
-                                          first_step=True,
-                                          validation=validation)
+                                          first_step=True)
             val = self._handle_expressions(val)
             val = self._handle_references(val, scope=scope,
                                           impersonate=impersonate,
-                                          config=config, section=section,
-                                          validation=validation)
+                                          config=config, section=section)
         except Exception as e:
             raise
             raise ex.excError("%s: reference evaluation failed: %s"
@@ -1020,8 +1013,7 @@ class ExtConfigMixin(object):
             value = config.get(section, option)
             try:
                 value = self.handle_references(value, scope=True, config=config,
-                                               section=section,
-                                               validation=True)
+                                               section=section)
             except ex.excError as exc:
                 if not option.startswith("pre_") and \
                    not option.startswith("post_") and \
@@ -1193,7 +1185,7 @@ class ExtConfigMixin(object):
             buff = ofile.read()
         return buff
 
-    def _write_cf(self, buff):
+    def _write_cf(self, buff, validation=True):
         """
         Truncate the service config file and write buff.
         """
@@ -1213,10 +1205,11 @@ class ExtConfigMixin(object):
         with codecs.open(fpath, "w", "utf8") as ofile:
             ofile.write(buff)
             ofile.flush()
-        report = self._validate_config(fpath)
-        if report["errors"]:
-            os.unlink(fpath)
-            raise ex.excError("the change was not saved")
+        if validation:
+            report = self._validate_config(fpath)
+            if report["errors"]:
+                os.unlink(fpath)
+                raise ex.excError("the change was not saved")
         shutil.move(fpath, self.paths.cf)
 
     def skip_config_section(self, section):
