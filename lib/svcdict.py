@@ -1439,6 +1439,16 @@ KEYWORDS = [
     },
     {
         "section": "ip",
+        "rtype": "cni",
+        "keyword": "network",
+        "at": True,
+        "required": False,
+        "default": "default",
+        "text": "The name of the CNI network to plug into. The default network is created using the host-local bridge plugin if no existing configuration already exists.",
+        "example": "my-weave-net",
+    },
+    {
+        "section": "ip",
         "keyword": "network",
         "at": True,
         "example": "10.0.0.0",
@@ -1499,15 +1509,6 @@ KEYWORDS = [
         "required": False,
         "candidates": ["bridge", "dedicated", "macvlan", "ipvlan-l2", "ipvlan-l3", "ovs"],
         "text": "The ip link mode. If ipdev is set to a bridge interface the mode defaults to bridge, else defaults to macvlan. ipvlan requires a 4.2+ kernel.",
-        "example": "container#0"
-    },
-    {
-        "section": "ip",
-        "rtype": "cni",
-        "keyword": "network",
-        "at": True,
-        "required": True,
-        "text": "The name of the CNI network to plug into.",
         "example": "container#0"
     },
     {

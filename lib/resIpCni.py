@@ -11,7 +11,7 @@ import rcExceptions as ex
 import rcIfconfigLinux as rcIfconfig
 import rcStatus
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, to_cidr, lazy, bencode, bdecode
+from rcUtilities import which, justcall, to_cidr, lazy, bencode, bdecode, makedirs
 from rcColor import format_str_flat_json
 
 CNI_VERSION = "0.2.0"
@@ -24,6 +24,22 @@ PORTMAP_CONF = {
         "portMappings": True
     },
     "externalSetMarkChain": "OSVC-MARK-MASQ"
+}
+
+BR_CONF = {
+    "cniVersion": "0.2.0",
+    "name": "mynet",
+    "type": "bridge",
+    "bridge": "cni0",
+    "isGateway": True,
+    "ipMasq": True,
+    "ipam": {
+        "type": "host-local",
+        "subnet": "10.22.0.0/16",
+        "routes": [
+            { "dst": "0.0.0.0/0" }
+        ]
+    }
 }
 
 class Ip(Res.Ip):
@@ -65,6 +81,14 @@ class Ip(Res.Ip):
         if self.expose:
             label += " %s" % " ".join(self.expose)
         return label
+
+    def create_default_bridge_config(self):
+        cf = os.path.join(self.cni_config, "default.conf")
+        if os.path.exists(cf):
+            return
+        makedirs(self.cni_config)
+        with open(cf, "w") as ofile:
+            json.dump(BR_CONF, ofile)
 
     def status_info(self):
         data = Res.Ip.status_info(self)
@@ -152,6 +176,9 @@ class Ip(Res.Ip):
     @lazy
     def cni_data(self):
         if not os.path.exists(self.cni_conf):
+            if self.network == "default":
+                self.create_default_bridge_config()
+                return BR_CONF
             raise ex.excError("cni configuration %s does not exist" % self.cni_conf)
         try:
             with open(self.cni_conf, "r") as ofile:
