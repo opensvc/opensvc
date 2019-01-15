@@ -742,15 +742,15 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
     {
         "section": "pool",
         "keyword": "path",
-        "rtype": "loop",
-        "default": "{var}/pool/loop",
+        "rtype": "directory",
+        "default": "{var}/pool/directory",
         "text": "The path to create the pool loop files in."
     },
     {
         "section": "pool",
         "keyword": "path",
-        "rtype": "directory",
-        "default": "{var}/pool/directory",
+        "rtype": "loop",
+        "default": "{var}/pool/loop",
         "text": "The path to create the pool loop files in."
     },
     {
