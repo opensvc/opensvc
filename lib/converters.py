@@ -44,6 +44,9 @@ def convert_shlex(s):
         return shlex.split(s)
 
 def convert_expanded_shlex(s):
+    """
+    Like the shlex converter but expands -it into -i -t
+    """
     args = convert_shlex(s)
     if s is None:
         return
