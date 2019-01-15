@@ -2289,9 +2289,18 @@ class Monitor(shared.OsvcThread):
     #
     #########################################################################
     def status_older_than_cf(self, svcpath):
+        """
+        Return True if the instance status data is older than its config data
+        or if one of the age is not a timestamp float.
+
+        Returning True skips orchestration of the instance.
+        """
         status_age = shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("status", {}).get(svcpath, {}).get("updated", 0)
         config_age = shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("config", {}).get(svcpath, {}).get("updated", 0)
-        return status_age < config_age
+        try:
+            return status_age < config_age
+        except TypeError:
+            return True
 
     def service_instances_frozen(self, svcpath):
         """
