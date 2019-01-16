@@ -314,10 +314,20 @@ class Docker(resContainer.Container):
         args += ['--name='+self.container_name]
         args += ['--label='+self.container_label_id]
 
-        if self.vm_hostname:
-            args = drop_option("--hostname", args, drop_value=True)
-            args = drop_option("-h", args, drop_value=True)
-            args += ["--hostname", self.vm_hostname]
+        args = drop_option("--hostname", args, drop_value=True)
+        args = drop_option("-h", args, drop_value=True)
+        if not self.netns:
+            # only allow hostname setting if the container has a private netns
+            if self.vm_hostname:
+                args += ["--hostname", self.vm_hostname]
+            elif not self.run_args:
+                pass
+            else:
+                hostname = get_option("--hostname", self.run_args, boolean=False)
+                if not hostname:
+                    hostname = get_option("-h", self.run_args, boolean=False)
+                if hostname:
+                    args += ["--hostname", hostname]
 
         if self.entrypoint:
             args = drop_option("--entrypoint", args, drop_value=True)
