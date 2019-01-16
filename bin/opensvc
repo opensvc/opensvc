@@ -29,6 +29,11 @@ fi
 
 BASENAME=`basename $0`
 
+sudo_command_exe() {
+	set $SUDO_COMMAND
+	echo $1
+}
+
 case $BASENAME in
 opensvc)
 	#
@@ -45,6 +50,17 @@ if [ "$BASENAME" = "nodemgr" -o "$BASENAME" = "svcmgr" -o "$BASENAME" = "svcmon"
 then
 	unset OSVC_SERVICE_LINK
 	BIN="$OSVC_ROOT_PATH/lib/$BASENAME.py"
+elif [ ! -z "$SUDO_COMMAND" ]
+then
+	# exec from a service link: add the --service parameter
+	# sudo reports a wrong $0 for duplicate svcname in different namespaces.
+	# don't trust it, and use SUDO_COMMAND
+	EXE=`sudo_command_exe`
+	BASENAME=`basename $EXE`
+	DIRNAME=`dirname $EXE`
+	OSVC_SERVICE_LINK="`cd $DIRNAME && echo $PWD`/$BASENAME"
+	export OSVC_SERVICE_LINK
+	BIN="$OSVC_ROOT_PATH/lib/svcmgr.py"
 else
 	# exec from a service link: add the --service parameter
 	DIRNAME=`dirname $0`
