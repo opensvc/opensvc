@@ -17,7 +17,39 @@ template = """
 
 %(lists)s
 
-svcs=$(find /etc/opensvc /opt/opensvc/etc -maxdepth 1 -lname "*/bin/svcmgr" -a ! -name "*.*" -exec basename {} \; 2>/dev/null)
+if [ -r "/etc/defaults/opensvc" ]
+then
+        # FreeBSD, Darwin
+        . "/etc/defaults/opensvc"
+elif [ -r "/etc/default/opensvc" ]
+then
+        # Debian-like, Tru64, SunOS and HP-UX
+        . "/etc/default/opensvc"
+elif [ -r "/etc/sysconfig/opensvc" ]
+then
+        # Red Hat-like
+        . "/etc/sysconfig/opensvc"
+elif [ -r "/etc/conf.d/opensvc" ]
+then
+        # Alpine, Gentoo
+        . "/etc/conf.d/opensvc"
+elif [ -r "/etc/rc.config.d/opensvc" ]
+then
+        # AIX
+        . "/etc/rc.config.d/opensvc"
+fi
+
+if [ -z "$OSVC_ROOT_PATH" ]
+then
+        PATHETC=/etc/opensvc
+        PATHBIN=/usr/bin
+else
+        PATHETC=$OSVC_ROOT_PATH/etc
+        PATHBIN=$OSVC_ROOT_PATH/bin
+fi
+
+svcs=$($PATHBIN/svcmgr ls)
+nodes=$($PATHBIN/nodemgr eval --kw cluster.nodes)
 
 opt_has_arg()
 {
@@ -53,6 +85,10 @@ _comp_handler()
             ;;
         --service|-s)
             COMPREPLY=( $(compgen -W "${svcs}" -- ${a}) )
+            return 0
+            ;;
+        --node)
+            COMPREPLY=( $(compgen -W "${nodes}" -- ${a}) )
             return 0
             ;;
         *)
