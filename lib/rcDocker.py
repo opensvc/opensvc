@@ -106,47 +106,45 @@ class DockerLib(object):
     @lazy
     def docker_ps(self):
         """
-        The "docker ps" output.
+        The "docker ps -a --no-trunc" json loaded dicts assembled in a list.
         """
-        cmd = self.docker_cmd + ['ps', '-a', '--no-trunc']
+        cmd = self.docker_cmd + ['ps', '-a', '--no-trunc', "--format", "{{json .}}"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError(err)
-        return out
+        data = []
+        for line in out.splitlines():
+            data.append(json.loads(line))
+        return data
 
     @lazy
-    def container_id_by_name(self):
+    def container_by_label(self):
+        """
+        A hash of instances data as found in "docker ps", indexed by
+        instance label.
+        """
+        data = {}
+        for container in self.docker_ps:
+            for label in container.get("Labels", "").split(","):
+                try:
+                    data[label].append(container)
+                except KeyError:
+                    data[label] = [container]
+        return data
+
+    @lazy
+    def container_by_name(self):
         """
         A hash of instances data as found in "docker ps", indexed by
         instance id.
         """
-        lines = self.docker_ps.splitlines()
-        if len(lines) < 2:
-            return
-        try:
-            start = lines[0].index('NAMES')
-        except (IndexError, ValueError):
-            return
         data = {}
-        for line in lines[1:]:
-            if len(line.strip()) == 0:
-                continue
-            try:
-                names = line[start:].strip().split(',')
-            except IndexError:
-                continue
-            for name in names:
-                # swarm names are preffixed by <nodename>/
-                elements = name.split("/")
-                container_name = elements[-1]
-                if len(elements) == 2:
-                    swarm_node = elements[0]
-                else:
-                    swarm_node = None
-                data[container_name] = {
-                    "id": line.split()[0],
-                    "swarm_node": swarm_node,
-                }
+        for container in self.docker_ps:
+            for name in container.get("Names", "").split(","):
+                try:
+                    data[name].append(container)
+                except KeyError:
+                    data[name] = [container]
         return data
 
     def get_container_id_by_name(self, resource, refresh=False):
@@ -157,12 +155,37 @@ class DockerLib(object):
         """
         if refresh:
             unset_lazy(self, "docker_ps")
-            unset_lazy(self, "container_id_by_name")
-        if self.container_id_by_name is None or \
-            resource.container_name not in self.container_id_by_name:
+            unset_lazy(self, "container_by_name")
+        try:
+            return self.container_by_name[resource.name][0]["ID"]
+        except Exception:
             return
-        data = self.container_id_by_name[resource.container_name]
-        return data["id"]
+
+    def get_container_id_by_label(self, resource, refresh=False):
+        """
+        Return the container id for the <resource> container resource.
+        Lookup in docker ps by docker label com.opensvc.id=<...>.
+        """
+        if refresh:
+            unset_lazy(self, "docker_ps")
+            unset_lazy(self, "container_by_label")
+        try:
+            return self.container_by_label[resource.container_label_id][0]["ID"]
+        except Exception as exc:
+            return
+
+    def get_container_id(self, resource, refresh=False):
+        if refresh:
+            unset_lazy(self, "docker_ps")
+            unset_lazy(self, "container_by_label")
+            unset_lazy(self, "container_by_name")
+        cid = self.get_container_id_by_label(resource, refresh=False)
+        if cid:
+            return cid
+        try:
+            return self.svc.dockerlib.get_container_id_by_name(resource, refresh=False)
+        except:
+            return
 
     @lazy
     def docker_info(self):
@@ -638,7 +661,8 @@ class DockerLib(object):
             lock.unlock(lockfd)
 
         unset_lazy(self, "docker_ps")
-        unset_lazy(self, "container_id_by_name")
+        unset_lazy(self, "container_by_name")
+        unset_lazy(self, "container_by_label")
         unset_lazy(self, "docker_info")
         unset_lazy(self, "running_instance_ids")
         unset_lazy(self, "images")

@@ -126,15 +126,19 @@ class Docker(resContainer.Container):
         return container_name.replace('#', '.')
 
     @lazy
+    def container_label_id(self):
+        """
+        Format a docker container name
+        """
+        return "com.opensvc.id=%s.%s" % (self.svc.id, self.rid)
+
+    @lazy
     def name(self): # pylint: disable=method-hidden
         return self.container_name
 
     @lazy
     def container_id(self):
-        try:
-            return self.svc.dockerlib.get_container_id_by_name(self, refresh=True)
-        except:
-            return
+        return self.svc.dockerlib.get_container_id(self, refresh=True)
 
     @lazy
     def label(self): # pylint: disable=method-hidden
@@ -252,7 +256,6 @@ class Docker(resContainer.Container):
             if not self.detach:
                 signal.signal(signal.SIGALRM, alarm_handler)
                 signal.alarm(self.start_timeout)
-
             if self.rm:
                 self.container_rm()
             if self.container_id is None:
@@ -264,7 +267,7 @@ class Docker(resContainer.Container):
                     raise ex.excError(str(exc))
                 if image_id is None:
                     self.svc.dockerlib.docker_login(self.image)
-                cmd += ['run', '--name='+self.container_name]
+                cmd += ['run']
                 cmd += self._add_run_args()
                 cmd += [self.image]
                 if self.run_command:
@@ -308,6 +311,8 @@ class Docker(resContainer.Container):
         # drop user specified --name. we set ours already
         args = drop_option("--name", args, drop_value=True)
         args = drop_option("-n", args, drop_value=True)
+        args += ['--name='+self.container_name]
+        args += ['--label='+self.container_label_id]
 
         if self.vm_hostname:
             args = drop_option("--hostname", args, drop_value=True)

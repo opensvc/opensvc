@@ -89,7 +89,7 @@ class Ip(Res.Ip):
         if self.container.type == "container.lxc":
             return self.container.name
         else:
-            return self.svc.dockerlib.get_container_id_by_name(self.container, refresh=refresh)
+            return self.svc.dockerlib.get_container_id(self.container, refresh=refresh)
 
     def arp_announce(self):
         """ disable the generic arping. We do that in the guest namespace.
