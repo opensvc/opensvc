@@ -4855,10 +4855,7 @@ class Svc(Crypt, ExtConfigMixin):
                     if container_rid not in self.resources_by_id:
                         continue
                     container = self.resources_by_id[container_rid]
-                    if container.docker_service:
-                        name = container.service_name
-                    else:
-                        name = container.container_name
+                    name = container.container_name
                     del argv[idx]
                     argv.insert(idx, name)
             return argv

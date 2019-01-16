@@ -171,14 +171,6 @@ KEYWORDS = [
     },
     {
         "section": "DEFAULT",
-        "keyword": "docker_swarm_managers",
-        "convert": "list",
-        "default": [],
-        "at": True,
-        "text": "List of nodes promoted as docker swarm managers.The flex primary node is implicitely a manager. Whitespace separated."
-    },
-    {
-        "section": "DEFAULT",
         "keyword": "docker_exe",
         "at": True,
         "text": "If you have multiple docker versions installed and want the service to stick to a version whatever the PATH definition, you should set this parameter to the full path to the docker executable.",
@@ -215,15 +207,6 @@ KEYWORDS = [
         "default": [],
         "text": "If the service has docker-type container resources, the service handles the startup of a private docker daemon. OpenSVC sets the socket and data dir parameters. Admins can set extra parameters using this keyword. For example, it can be useful to set the --ip parameter for a docker registry service.",
         "example": "--ip 1.2.3.4"
-    },
-    {
-        "section": "DEFAULT",
-        "keyword": "docker_swarm_args",
-        "at": True,
-        "convert": "shlex",
-        "default": [],
-        "text": "The arguments passed to docker swarm init on the flex primary, and to docker swarm join on the the other nodes. The --token argument must not be specified, as it is handled by the agent. Scoping this parameter permits to set additional parameters on the flex_primary for use with swarm init only, like --autolock.",
-        "example": "--advertize-addr {ip#0.ipname} --listen-addr {ip#0.ipname}",
     },
     {
         "section": "subset",
@@ -348,17 +331,6 @@ KEYWORDS = [
         "convert": "tristate",
         "text": "Allocate a pseudo-tty.",
         "example": "container#0"
-    },
-    {
-        "section": "container",
-        "keyword": "docker_service",
-        "at": True,
-        "rtype": "docker",
-        "default": False,
-        "convert": "boolean",
-        "candidates": (True, False),
-        "text": "If set to True, run this container as a docker service, which is possible if the :kw:`topology` is set to flex and the docker swarm properly initialized.",
-        "example": False
     },
     {
         "section": "container",

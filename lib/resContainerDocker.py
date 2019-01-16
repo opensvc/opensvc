@@ -71,7 +71,6 @@ class Docker(resContainer.Container):
                  image=None,
                  run_command=None,
                  run_args=None,
-                 docker_service=False,
                  detach=True,
                  entrypoint=None,
                  rm=None,
@@ -108,7 +107,6 @@ class Docker(resContainer.Container):
         self.privileged = privileged
         self.interactive = interactive
         self.tty = tty
-        self.docker_service = docker_service
         if not self.detach:
             self.rm = True
             self.tags.add("nostatus")
@@ -132,13 +130,6 @@ class Docker(resContainer.Container):
         return self.container_name
 
     @lazy
-    def service_name(self):
-        """
-        Format a docker compliant docker service name, ie without dots
-        """
-        return self.container_name.replace(".", "_")
-
-    @lazy
     def container_id(self):
         try:
             return self.svc.dockerlib.get_container_id_by_name(self, refresh=True)
@@ -146,24 +137,11 @@ class Docker(resContainer.Container):
             return
 
     @lazy
-    def service_id(self):
-        try:
-            return self.svc.dockerlib.get_service_id_by_name(self, refresh=True)
-        except Exception:
-            return
-
-    @lazy
     def label(self): # pylint: disable=method-hidden
-        if self.docker_service:
-            return "docker service " + "@".join((
-                self.service_name,
-                self.svc.dockerlib.image_userfriendly_name(self)
-            ))
-        else:
-            return "docker container " + "@".join((
-                self.container_name,
-                self.svc.dockerlib.image_userfriendly_name(self)
-            ))
+        return "docker container " + "@".join((
+            self.container_name,
+            self.svc.dockerlib.image_userfriendly_name(self)
+        ))
 
     def __str__(self):
         return "%s name=%s" % (resources.Resource.__str__(self), self.name)
@@ -196,8 +174,6 @@ class Docker(resContainer.Container):
         """
         Files to contribute to sync#i0.
         """
-        if self.docker_service:
-            return self.svc.dockerlib.files_to_sync
         return []
 
     def operational(self):
@@ -232,23 +208,6 @@ class Docker(resContainer.Container):
             raise ex.excError("too many candidates rootfs paths: %s" % ', '.join(fpaths))
         return fpaths[0]
 
-    def service_create(self):
-        self.unset_lazy("service_id")
-        if self.service_id is not None:
-            return
-        if self.swarm_node_role() not in ("leader", "reachable"):
-            return
-        cmd = self.svc.dockerlib.docker_cmd + ['service', 'create', '--name='+self.service_name]
-        cmd += self._add_run_args()
-        cmd += [self.image]
-        if self.run_command:
-            cmd += self.run_command
-        ret, out, err = self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError(err)
-        self.unset_lazy("service_id")
-        self.svc.dockerlib.get_running_service_ids(refresh=True)
-
     def wait_for_startup(self):
         if not self.detach:
             return
@@ -266,8 +225,6 @@ class Docker(resContainer.Container):
         """
         Remove the resource docker instance.
         """
-        if self.docker_service:
-            return
         if not self.svc.dockerlib.docker_running():
             return
         cmd = self.svc.dockerlib.docker_cmd + ['rm', self.container_name]
@@ -284,23 +241,6 @@ class Docker(resContainer.Container):
             self.log.info(" ".join(cmd))
         self.unset_lazy("container_id")
 
-    def service_rm(self):
-        """
-        Remove the resource docker service.
-        """
-        self.unset_lazy("service_id")
-        if self.service_id is None:
-            self.log.info("skip: service already removed")
-            return
-        if self.swarm_node_role() not in ("leader", "reachable"):
-            return
-        cmd = self.svc.dockerlib.docker_cmd + ['service', 'rm', self.service_id]
-        ret, out, err = self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError(err)
-        self.unset_lazy("service_id")
-        self.svc.dockerlib.get_running_service_ids(refresh=True)
-
     def docker(self, action):
         """
         Wrap docker commands to honor <action>.
@@ -313,39 +253,28 @@ class Docker(resContainer.Container):
                 signal.signal(signal.SIGALRM, alarm_handler)
                 signal.alarm(self.start_timeout)
 
-            if self.docker_service:
-                self.service_create()
-                return
+            if self.rm:
+                self.container_rm()
+            if self.container_id is None:
+                self.unset_lazy("container_id")
+            if self.container_id is None:
+                try:
+                    image_id = self.svc.dockerlib.get_image_id(self)
+                except ValueError as exc:
+                    raise ex.excError(str(exc))
+                if image_id is None:
+                    self.svc.dockerlib.docker_login(self.image)
+                cmd += ['run', '--name='+self.container_name]
+                cmd += self._add_run_args()
+                cmd += [self.image]
+                if self.run_command:
+                    cmd += self.run_command
             else:
-                if self.rm:
-                    self.container_rm()
-                if self.container_id is None:
-                    self.unset_lazy("container_id")
-                if self.container_id is None:
-                    try:
-                        image_id = self.svc.dockerlib.get_image_id(self)
-                    except ValueError as exc:
-                        raise ex.excError(str(exc))
-                    if image_id is None:
-                        self.svc.dockerlib.docker_login(self.image)
-                    cmd += ['run', '--name='+self.container_name]
-                    cmd += self._add_run_args()
-                    cmd += [self.image]
-                    if self.run_command:
-                        cmd += self.run_command
-                else:
-                    cmd += ['start', self.container_id]
+                cmd += ['start', self.container_id]
         elif action == 'stop':
-            if self.docker_service:
-                self.service_stop()
-                return
-            else:
-                cmd += ['stop', self.container_id]
+            cmd += ['stop', self.container_id]
         elif action == 'kill':
-            if self.docker_service:
-                return 0
-            else:
-                cmd += ['kill', self.container_id]
+            cmd += ['kill', self.container_id]
         else:
             self.log.error("unsupported docker action: %s", action)
             return 1
@@ -364,44 +293,6 @@ class Docker(resContainer.Container):
                 self.container_rm()
             self.unset_lazy("container_id")
             self.svc.dockerlib.docker_stop()
-
-    def service_stop(self):
-        if not self.svc.dockerlib.docker_daemon_private and self.swarm_node_role() == "worker":
-            self.log.info("skip: worker with shared docker daemon")
-            return
-        role = self.swarm_node_role()
-        if self.partial_action():
-            if role == "worker":
-                raise ex.excError("actions on a subset of docker services are not possible from a docker worker")
-            elif role in ("leader", "reachable"):
-                self.service_rm()
-        else:
-            if role == "worker":
-                self.svc.dockerlib.docker_swarm_leave()
-            elif role in ("leader", "reachable"):
-                self.swarm_node_drain()
-
-    def swarm_node_drain(self):
-        if self.swarm_node_role() not in ("leader", "reachable"):
-            return
-        node_data = self.svc.dockerlib.node_data()
-        if node_data["Spec"]["Availability"] == "drain":
-            return
-        cmd = self.svc.dockerlib.docker_cmd + ['node', 'update', '--availability=drain', rcEnv.nodename]
-        ret, out, err = self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError("failed to update node availabilty as drain: %s" % err)
-
-    def swarm_node_active(self):
-        if self.swarm_node_role() not in ("leader", "reachable"):
-            return
-        node_data = self.svc.dockerlib.node_data()
-        if node_data["Spec"]["Availability"] == "active":
-            return
-        cmd = self.svc.dockerlib.docker_cmd + ['node', 'update', '--availability=active', rcEnv.nodename]
-        ret, out, err = self.vcall(cmd)
-        if ret != 0:
-            raise ex.excError("failed to update node availabilty as active: %s" % err)
 
     def _add_run_args(self):
         if self.run_args is None:
@@ -504,8 +395,7 @@ class Docker(resContainer.Container):
                 if not os.path.exists(elements[0]):
                     raise ex.excError("source dir of mapping %s does not "
                                       "exist" % (volarg))
-        if self.svc.dockerlib.docker_min_version("1.7") and \
-           not self.docker_service:
+        if self.svc.dockerlib.docker_min_version("1.7"):
             if self.svc.dockerlib.docker_info.get("CgroupDriver") == "cgroupfs":
                 args += ["--cgroup-parent", self.cgroup_dir]
         if not self.svc.dockerlib.docker_min_version("1.13") and "--rm" in args:
@@ -538,12 +428,6 @@ class Docker(resContainer.Container):
 
     def _start(self):
         self.svc.dockerlib.docker_start()
-        if self.docker_service:
-            self.svc.dockerlib.init_swarm()
-            self.swarm_node_active()
-            if self.swarm_node_role() not in ("leader", "reachable"):
-                self.log.info("skip: this docker node is not swarm manager")
-                return
         resContainer.Container.start(self)
 
     def provision(self):
@@ -575,14 +459,6 @@ class Docker(resContainer.Container):
         self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
         self._stop()
 
-    def partial_action(self):
-        if not self.svc.command_is_scoped():
-            return False
-        all_rids = set([res.rid for res in self.svc.get_resources("container.docker") if res.docker_service])
-        if len(all_rids - set(self.svc.action_rid)) > 0:
-            return True
-        return False
-
     def _stop(self):
         if not self.svc.dockerlib.docker_running():
             return
@@ -599,8 +475,7 @@ class Docker(resContainer.Container):
         data.append([self.rid, "run_command", " ".join(self.run_command)])
         data.append([self.rid, "rm", str(self.rm)])
         data.append([self.rid, "netns", str(self.netns)])
-        if not self.docker_service:
-            data.append([self.rid, "container_name", str(self.container_name)])
+        data.append([self.rid, "container_name", str(self.container_name)])
         return data
 
     def wanted_nodes_count(self):
@@ -627,85 +502,6 @@ class Docker(resContainer.Container):
                 return int(elements[idx+1])
         else:
             return 1
-
-    @lazy
-    def service_ps(self):
-        return self.svc.dockerlib.service_ps_data(self.service_id)
-
-    def running_replicas(self, refresh=False):
-        return len(self.service_running_instances(refresh=refresh))
-
-    @lazy
-    def ready_nodes(self):
-        return [node["ID"] for node in self.svc.dockerlib.node_ls_data() if node["Status"]["State"] == "ready"]
-
-    def service_running_instances(self, refresh=False):
-        if refresh:
-            self.unset_lazy("service_ps")
-        instances = []
-        for inst in self.service_ps:
-            if inst["Status"]["State"] != "running":
-                continue
-            if inst["NodeID"] not in self.ready_nodes:
-                continue
-            instances.append(inst)
-        return instances
-
-    def service_hosted_instances(self, refresh=False):
-        out = self.svc.dockerlib.get_ps(refresh=refresh)
-        return [line.split()[0] for line in out.splitlines() \
-                if self.service_name in line and \
-                "Exited" not in line and \
-                "Failed" not in line and \
-                "Created" not in line]
-
-    def swarm_node_role(self):
-        return self.svc.dockerlib.swarm_node_role
-
-    def _status_service_replicas_state(self):
-        if self.swarm_node_role() != "leader":
-            return
-        for inst in self.service_ps:
-            if inst["NodeID"] not in self.ready_nodes:
-                continue
-            if inst["DesiredState"] != inst["Status"]["State"]:
-                self.status_log("instance %s in state %s, desired %s" % (inst["ID"], inst["Status"]["State"], inst["DesiredState"]))
-
-    def _status_service_replicas(self):
-        if self.swarm_node_role() != "leader":
-            return
-        wanted = self.run_args_replicas()
-        if wanted is None:
-            return
-        current = self.running_replicas()
-        if wanted != current:
-            if current == 0:
-                # a pure resource 'down' state, we don't want to cause a warn
-                # at the service overall status
-                level = "info"
-            else:
-                level = "warn"
-            self.status_log("%d replicas wanted, %d currently running" % (wanted, current), level)
-
-    def _status_service_image(self):
-        if self.swarm_node_role() != "leader":
-            return
-        try:
-            image_id = self.svc.dockerlib.get_image_id(self, pull=False)
-        except ValueError as exc:
-            self.status_log(str(exc))
-            return
-        try:
-            inspect = self.svc.dockerlib.docker_service_inspect(self.service_id)
-        except Exception:
-            return
-        running_image_id = inspect['Spec']['TaskTemplate']['ContainerSpec']['Image']
-        running_image_id = self.svc.dockerlib.repotag_to_image_id(running_image_id)
-        if image_id is None:
-            self.status_log("image '%s' is not pulled yet."%(self.image))
-        elif image_id != running_image_id:
-            self.status_log("the service is configured with image '%s' "
-                            "instead of '%s'"%(running_image_id, image_id))
 
     def _status_container_image(self):
         try:
@@ -782,30 +578,9 @@ class Docker(resContainer.Container):
         if not self.svc.dockerlib.docker_running():
             self.status_log("docker daemon is not running", "info")
             return rcStatus.DOWN
-        if self.docker_service:
-            if self.swarm_node_role() == "none":
-                self.status_log("swarm node is not joined", "info")
-                return rcStatus.DOWN
-            self.svc.dockerlib.nodes_purge()
-            self.running_replicas(refresh=True)
-            self._status_service_image()
-            self._status_service_replicas()
-            self._status_service_replicas_state()
-            sta = resContainer.Container._status(self, verbose)
-            hosted = len(self.service_hosted_instances())
-            if hosted > 0:
-                self.status_log("%d/%d instances hosted" % (hosted, self.run_args_replicas()), "info")
-                balance_min, balance_max = self.balance
-                if hosted > balance_max:
-                    self.status_log("%d>%d instances imbalance" % (hosted, balance_max), "warn")
-                elif hosted < balance_min:
-                    self.status_log("%d<%d instances imbalance" % (hosted, balance_min), "warn")
-            elif sta == rcStatus.UP:
-                sta = rcStatus.STDBY_UP
-        else:
-            sta = resContainer.Container._status(self, verbose)
-            self._status_container_image()
-            self._status_inspect()
+        sta = resContainer.Container._status(self, verbose)
+        self._status_container_image()
+        self._status_inspect()
 
         return sta
 
@@ -828,13 +603,7 @@ class Docker(resContainer.Container):
         return check_ping(self.addr, timeout=1)
 
     def is_down(self):
-        if self.docker_service:
-            hosted = len(self.service_hosted_instances(refresh=True))
-            if hosted > 0:
-                return False
-            return True
-        else:
-            return not self.is_up()
+        return not self.is_up()
 
     def is_up(self):
         if self.svc.dockerlib.docker_daemon_private and \
@@ -844,23 +613,11 @@ class Docker(resContainer.Container):
         if not self.svc.dockerlib.docker_running():
             return False
 
-        if self.docker_service:
-            if self.swarm_node_role() == "leader":
-                if self.service_id is None:
-                    self.status_log("docker service is not created", "info")
-                    return False
-                if self.running_replicas(refresh=True) == 0:
-                    return False
-                if self.service_id in self.svc.dockerlib.get_running_service_ids(refresh=True):
-                    return True
-            else:
-                return True
-        else:
-            if self.container_id is None:
-                self.status_log("can not find container id", "info")
-                return False
-            if self.container_id in self.svc.dockerlib.get_running_instance_ids(refresh=True):
-                return True
+        if self.container_id is None:
+            self.status_log("can not find container id", "info")
+            return False
+        if self.container_id in self.svc.dockerlib.get_running_instance_ids(refresh=True):
+            return True
         return False
 
     def get_container_info(self):

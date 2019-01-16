@@ -1322,11 +1322,6 @@ def add_container_docker(svc, s):
     except ex.OptNotFound as exc:
         kwargs["tty"] = exc.default
 
-    try:
-        kwargs["docker_service"] = svc.conf_get(s, "docker_service")
-    except ex.OptNotFound as exc:
-        kwargs["docker_service"] = exc.default
-
     m = __import__("resContainerDocker")
     r = m.Docker(**kwargs)
     svc += r
