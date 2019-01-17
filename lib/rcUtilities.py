@@ -1250,6 +1250,8 @@ def makedirs(path, mode=0o755):
             raise
 
 def validate_name(name):
+    # strip scaler slice prefix
+    name = re.sub("^[0-9]+\.", "", name)
     if re.match(VALID_NAME_RFC952, name):
         return
     raise ex.excError("invalid name '%s'. names must contain only letters, "
