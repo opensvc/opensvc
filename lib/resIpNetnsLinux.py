@@ -86,7 +86,7 @@ class Ip(Res.Ip):
         return self.svc.resources_by_id[self.container_rid]
 
     def container_id(self, refresh=False):
-        if self.container.type == "container.lxc":
+        if self.container.type in ("container.lxd", "container.lxc"):
             return self.container.name
         else:
             return self.svc.dockerlib.get_container_id(self.container, refresh=refresh)
@@ -470,7 +470,7 @@ class Ip(Res.Ip):
     def get_nspid(self):
         if self.container.type == "container.docker":
             return self.get_nspid_docker()
-        elif self.container.type == "container.lxc":
+        elif self.container.type in ("container.lxd", "container.lxc"):
             return self.get_nspid_lxc()
 
     def get_nspid_lxc(self):
@@ -495,7 +495,7 @@ class Ip(Res.Ip):
     def netns(self):
         if self.container.type == "container.docker":
             return self.sandboxkey()
-        elif self.container.type == "container.lxc":
+        elif self.container.type in ("container.lxd", "container.lxc"):
             return self.container.cni_netns()
         raise ex.excError("unsupported container type: %s" % self.container.type)
 

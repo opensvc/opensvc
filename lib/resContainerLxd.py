@@ -253,3 +253,32 @@ class Container(resContainer.Container):
                 return True
         return False
 
+    def cni_containerid(self):
+        """
+        Used by ip.cni
+        """
+        return self.name
+
+    def cni_netns(self):
+        """
+        Used by ip.cni and ip.docker
+        """
+        try:
+            return "/proc/%d/ns/net" % self.get_pid()
+        except (TypeError, ValueError):
+            return
+
+    def get_pid(self):
+        try:
+            return self.lxc_info()["state"]["pid"]
+        except (KeyError, TypeError) as exc:
+            return
+
+    def start(self):
+        resContainer.Container.start(self)
+        self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
+
+    def stop(self):
+        resContainer.Container.stop(self)
+        self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
+
