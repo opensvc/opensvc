@@ -1086,7 +1086,14 @@ class Resource(object):
             self.write_is_provisioned_flag(True, mtime=1)
             return
         self._provision()
-        self.prov.start()
+        try:
+            self.prov.start()
+        except Exception:
+            if self.skip_provision:
+                # best effort
+                pass
+            else:
+                raise
 
     def _provision(self):
         """

@@ -23,15 +23,18 @@ def zfs_getprop(dataset='undef_ds', propname='undef_prop'):
     else:
         return ""
 
-def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val'):
+def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val', log=None):
     """
     Set the dataset property <propname> to value <propval>.
     """
-    if zfs_getprop(dataset, propname) == propval :
+    current = zfs_getprop(dataset, propname)
+    if current == "":
+        # dataset does not exist
+        return False
+    if zfs_getprop(dataset, propname) == propval:
         return True
     cmd = [rcEnv.syspaths.zfs, 'set', propname + '='+ propval, dataset]
-    print(' '.join(cmd))
-    (retcode, stdout, stderr) = vcall(cmd)
+    (retcode, stdout, stderr) = vcall(cmd, log=log)
     if retcode == 0 :
         return True
     else:

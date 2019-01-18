@@ -492,7 +492,7 @@ class Mount(Res.Mount):
         if not self.encap and \
            not self.svc.config.has_option(self.rid, 'zone') and \
            zfs_getprop(self.device, 'zoned') != 'off':
-            if zfs_setprop(self.device, 'zoned', 'off'):
+            if zfs_setprop(self.device, 'zoned', 'off', log=self.log):
                 raise ex.excError
         try:
             os.unlink(self.mount_point+"/.opensvc")
@@ -505,7 +505,7 @@ class Mount(Res.Mount):
 
     def mount_zfs_native(self):
         if zfs_getprop(self.device, 'mountpoint') != self.mount_point:
-            if not zfs_setprop(self.device, 'mountpoint', self.mount_point):
+            if not zfs_setprop(self.device, 'mountpoint', self.mount_point, log=self.log):
                 raise ex.excError
             # the prop change has mounted the dataset
             return

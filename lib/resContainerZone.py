@@ -399,7 +399,7 @@ class Zone(resContainer.Container):
             self.vcall(['umount', mount.mnt])
             self.vcall(['rmdir', mount.mnt])
             if mount.type == 'zfs':
-                zfs_setprop(mount.dev, 'canmount', 'noauto')
+                zfs_setprop(mount.dev, 'canmount', 'noauto', log=self.log)
 
     def start(self):
         if not 'noaction' in self.tags:
