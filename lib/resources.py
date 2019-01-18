@@ -84,6 +84,7 @@ class Resource(object):
         self.status_logs = []
         self.can_rollback = False
         self.rollback_even_if_standby = False
+        self.skip_triggers = set()
 
     @lazy
     def log(self):
@@ -1084,6 +1085,9 @@ class Resource(object):
            os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
             self.log.info("skip shared resource provisioning: not leader")
             self.write_is_provisioned_flag(True, mtime=1)
+            # do not execute post_provision triggers
+            self.skip_triggers.add("post_provision")
+            self.skip_triggers.add("blocking_post_provision")
             return
         self._provision()
         try:

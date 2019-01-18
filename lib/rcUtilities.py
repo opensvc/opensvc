@@ -701,6 +701,12 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         attr = compat_triggers[attr]
 
     try:
+        if attr in self.skip_triggers:
+            return
+    except AttributeError:
+        pass
+
+    try:
         cmd = svc.conf_get(section, attr, use_default=False)
     except ValueError:
         # no corresponding keyword
