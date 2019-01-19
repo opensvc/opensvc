@@ -2166,9 +2166,8 @@ def setup_logging(svcpaths):
     rcLogger.initLogger(rcEnv.nodename)
 
 def build(name, namespace=None, svcconf=None, node=None, volatile=False):
-    """build(name) is in charge of Svc creation
-    it return None if service Name is not managed by local node
-    else it return new Svc instance
+    """
+    Instanciate a Svc object
     """
     import svc
 
@@ -2179,19 +2178,6 @@ def build(name, namespace=None, svcconf=None, node=None, volatile=False):
     discover_node()
     svc = svc.Svc(svcname=name, namespace=namespace, node=node,
                   cf=svcconf, volatile=volatile)
-
-    try:
-        encapnodes = svc.conf_get('DEFAULT', "encapnodes")
-    except ex.OptNotFound as exc:
-        encapnodes = exc.default
-    svc.encapnodes = set(encapnodes)
-
-    try:
-        nodes = svc.conf_get('DEFAULT', "nodes")
-    except ex.OptNotFound as exc:
-        nodes = exc.default
-    svc.ordered_nodes = nodes
-    svc.nodes = set(nodes)
 
     try:
         drpnodes = svc.conf_get('DEFAULT', "drpnodes")
@@ -2210,8 +2196,8 @@ def build(name, namespace=None, svcconf=None, node=None, volatile=False):
     try:
         flex_primary = svc.conf_get('DEFAULT', "flex_primary").lower()
     except ex.OptNotFound as exc:
-        if len(nodes) > 0:
-            flex_primary = nodes[0]
+        if len(svc.ordered_nodes) > 0:
+            flex_primary = svc.ordered_nodes[0]
         else:
             flex_primary = ''
     svc.flex_primary = flex_primary
@@ -2219,8 +2205,8 @@ def build(name, namespace=None, svcconf=None, node=None, volatile=False):
     try:
         drp_flex_primary = svc.conf_get('DEFAULT', "drp_flex_primary").lower()
     except ex.OptNotFound as exc:
-        if len(drpnodes) > 0:
-            drp_flex_primary = drpnodes[0]
+        if len(svc.ordered_drpnodes) > 0:
+            drp_flex_primary = svc.ordered_drpnodes[0]
         else:
             drp_flex_primary = ''
     svc.drp_flex_primary = drp_flex_primary
@@ -2234,11 +2220,6 @@ def build(name, namespace=None, svcconf=None, node=None, volatile=False):
         svc.placement = svc.conf_get('DEFAULT', "placement")
     except ex.OptNotFound as exc:
         svc.placement = exc.default
-
-    try:
-        svc.orchestrate = svc.conf_get("DEFAULT", "orchestrate")
-    except ex.OptNotFound as exc:
-        svc.orchestrate = exc.default
 
     try:
         svc.stonith = svc.conf_get("DEFAULT", "stonith")
@@ -2294,11 +2275,6 @@ def build(name, namespace=None, svcconf=None, node=None, volatile=False):
     #
     try:
         svc.create_pg = svc.conf_get("DEFAULT", 'create_pg')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        svc.topology = svc.conf_get('DEFAULT', 'topology')
     except ex.OptNotFound as exc:
         pass
 

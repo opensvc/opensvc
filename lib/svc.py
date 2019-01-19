@@ -452,19 +452,14 @@ class Svc(Crypt, ExtConfigMixin):
 
         # set by the builder
         self.comment = ""
-        self.orchestrate = "ha"
-        self.topology = "failover"
         self.placement = "nodes order"
         self.stonith = False
         self.parents = []
         self.show_disabled = False
         self.svc_env = rcEnv.node_env
-        self.nodes = set([rcEnv.nodename])
-        self.ordered_nodes = [rcEnv.nodename]
         self.drpnodes = set()
         self.ordered_drpnodes = []
         self.drpnode = ""
-        self.encapnodes = set()
         self.flex_primary = ""
         self.drp_flex_primary = ""
         self.create_pg = False
@@ -625,6 +620,44 @@ class Svc(Crypt, ExtConfigMixin):
             if not self.volatile:
                 self._set("DEFAULT", "id", newid, validation=False)
             return newid
+
+    @lazy
+    def encapnodes(self):
+        try:
+            encapnodes = self.conf_get("DEFAULT", "encapnodes")
+        except ex.OptNotFound as exc:
+            encapnodes = exc.default
+        return set(encapnodes)
+
+    @lazy
+    def ordered_nodes(self):
+        try:
+            nodes = self.conf_get("DEFAULT", "nodes")
+        except ex.OptNotFound as exc:
+            nodes = exc.default
+        return nodes
+
+    @lazy
+    def nodes(self):
+        try:
+            nodes = self.conf_get("DEFAULT", "nodes")
+        except ex.OptNotFound as exc:
+            nodes = exc.default
+        return set(nodes)
+
+    @lazy
+    def orchestrate(self):
+        try:
+            return self.conf_get("DEFAULT", "orchestrate")
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    @lazy
+    def topology(self):
+        try:
+            return self.conf_get("DEFAULT", "topology")
+        except ex.OptNotFound as exc:
+            return exc.default
 
     @lazy
     def disabled(self):
