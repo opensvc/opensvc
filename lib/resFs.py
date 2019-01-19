@@ -47,6 +47,12 @@ class Mount(Res.Resource):
     @lazy
     def device(self):
         if self._device is not None:
+            if self.fs_type == "lofs" and not self._device.startswith(os.sep):
+                l = self._device.split("/")
+                vol = self.svc.get_volume(l[0])
+                if vol.mount_point is not None:
+                    l[0] = vol.mount_point
+                    return "/".join(l)
             return self._device
         # lazy ref support, like {<rid>.exposed_devs[<n>]}
         return self.conf_get("dev")
@@ -78,6 +84,8 @@ class Mount(Res.Resource):
 
     def validate_dev(self):
         if self.fs_type in ["zfs", "advfs"] + self.netfs:
+            return
+        if self.fs_type in ["bind", "lofs"] or "bind" in self.mount_options:
             return
         if self.device == "none":
             # pseudo fs have no dev

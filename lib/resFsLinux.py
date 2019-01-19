@@ -47,6 +47,13 @@ class Mount(Res.Mount):
     @lazy
     def device(self):
         if self._device is not None:
+            if self.fs_type == "bind" or "bind" in self.mount_options \
+               and not self._device.startswith(os.sep):
+                l = self._device.split("/")
+                vol = self.svc.get_volume(l[0])
+                if vol.mount_point is not None:
+                    l[0] = vol.mount_point
+                    return "/".join(l)
             device = self._device
         else:
             # lazy reference support
@@ -517,13 +524,19 @@ class Mount(Res.Mount):
         return ret, out, err
 
     def mount_generic(self):
-        if self.fs_type != "":
+        if self.fs_type and self.fs_type != "bind":
             fstype = ['-t', self.fs_type]
         else:
             fstype = []
 
-        if self.mount_options != "":
-            mntopt = ['-o', self.mount_options]
+        if self.mount_options:
+            opt = self.mount_options.strip().split(",")
+        else:
+            opt = []
+        if self.fs_type == "bind" and not "bind" in opt:
+            opt.append("bind")
+        if opt:
+            mntopt = ['-o', ",".join(opt)]
         else:
             mntopt = []
 
