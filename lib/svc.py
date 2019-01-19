@@ -2389,6 +2389,8 @@ class Svc(Crypt, ExtConfigMixin):
                 options.append('--force')
             if self.options.local and "status" not in cmd:
                 options.append('--local')
+            if self.options.leader:
+                options.append('--leader')
             if self.options.disable_rollback:
                 options.append('--disable-rollback')
             if self.options.rid:

@@ -507,7 +507,7 @@ class Monitor(shared.OsvcThread):
                                                discard_constraints_violation=False)
         cmd = ["provision"]
         if self.placement_leader(svc, candidates):
-            cmd += ["--disable-rollback"]
+            cmd += ["--leader", "--disable-rollback"]
         proc = self.service_command(svc.svcpath, cmd)
         self.push_proc(
             proc=proc,

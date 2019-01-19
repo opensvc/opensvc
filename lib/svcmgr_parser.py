@@ -291,6 +291,10 @@ OPT = Storage({
         "--ruleset-date", default="",
         action="store", dest="ruleset_date",
         help="Use an historical ruleset, specified by its date."),
+    "leader": Option(
+        "--leader", default=None,
+        action="store_true", dest="leader",
+        help="Switch the provision action behaviour to leader, ie provision shared resources that are not provisionned by default."),
     "service": Option(
         "-s", "--service", default=None,
         action="store", dest="parm_svcs",
@@ -507,7 +511,9 @@ ACTIONS = {
         },
         "provision": {
             "msg": "Provision the service. Leave the service in frozen, stdby up state.",
-            "options": ASYNC_ACTION_OPTS + ACTION_OPTS + START_ACTION_OPTS,
+            "options": ASYNC_ACTION_OPTS + ACTION_OPTS + START_ACTION_OPTS + [
+                OPT.leader,
+            ],
         },
         "unprovision": {
             "msg": "Shutdown and unprovision all service instances. Beware, data will be "
@@ -923,6 +929,7 @@ ACTIONS = {
                 OPT.config,
                 OPT.disable_rollback,
                 OPT.interactive,
+                OPT.leader,
                 OPT.provision,
                 OPT.resource,
                 OPT.restore,
