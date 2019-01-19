@@ -493,31 +493,6 @@ class Docker(resContainer.Container):
         data.append([self.rid, "container_name", str(self.container_name)])
         return data
 
-    def wanted_nodes_count(self):
-        if rcEnv.nodename in self.svc.nodes:
-            return len(self.svc.nodes)
-        else:
-            return len(self.svc.drpnodes)
-
-    def run_args_replicas(self):
-        elements = self._add_run_args()
-        if "--mode" in elements:
-            idx = elements.index("--mode")
-            if "=" in elements[idx]:
-                mode = elements[idx].split("=")[-1]
-            else:
-                mode = elements[idx+1]
-            if mode == "global":
-                return self.wanted_nodes_count()
-        elif "--replicas" in elements:
-            idx = elements.index("--replicas")
-            if "=" in elements[idx]:
-                return int(elements[idx].split("=")[-1])
-            else:
-                return int(elements[idx+1])
-        else:
-            return 1
-
     def _status_container_image(self):
         try:
             image_id = self.svc.dockerlib.get_image_id(self, pull=False)
@@ -598,18 +573,6 @@ class Docker(resContainer.Container):
         self._status_inspect()
 
         return sta
-
-    @lazy
-    def balance(self):
-        replicas = self.run_args_replicas()
-        nodes = self.wanted_nodes_count()
-        balance = replicas // nodes
-        if balance == 0:
-            balance = 1
-        if replicas % nodes == 0:
-            return balance, balance
-        else:
-            return balance, balance+1
 
     def container_forcestop(self):
         self.docker('kill')
