@@ -1137,7 +1137,10 @@ class Svc(Crypt, ExtConfigMixin):
                 other.svc = self
             return self
 
-        base_type = other.type.split(".")[0]
+        try:
+            base_type = other.type.split(".")[0]
+        except AttributeError as exc:
+            base_type = ""
         if other.subset is not None:
             # the resource wants to be added to a specific resourceset
             # for action grouping, parallel execution or sub-resource
