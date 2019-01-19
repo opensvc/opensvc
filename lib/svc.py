@@ -4706,7 +4706,11 @@ class Svc(Crypt, ExtConfigMixin):
         for dpath in dpaths:
             if os.path.exists(dpath):
                 self.log.info("remove %s", dpath)
-                shutil.rmtree(dpath)
+                try:
+                    shutil.rmtree(dpath)
+                except OSError:
+                    # errno 39: not empty (racing with a writer)
+                    pass
 
     def delete_resources(self, rids=None):
         """
