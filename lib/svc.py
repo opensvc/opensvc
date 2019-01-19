@@ -5547,3 +5547,10 @@ class Svc(Crypt, ExtConfigMixin):
             return True
         return False
 
+    def exists(self):
+        """
+        Return True if the service exists, ie has a configuration file on the
+        local node.
+        """
+        return os.path.exists(self.paths.cf)
+
