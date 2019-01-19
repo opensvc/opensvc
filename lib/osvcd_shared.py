@@ -1159,7 +1159,13 @@ class OsvcThread(threading.Thread, Crypt):
             except TypeError:
                 data["instance"]["monitor"] = Storage()
             rid = data.get("rid")
-            if rid:
+            resource = data.get("resource")
+            if resource:
+                try:
+                    data["resource"] = Storage(data["resource"])
+                except TypeError:
+                    data["resource"] = Storage()
+            elif rid:
                 try:
                     data["resource"] = Storage(
                         data["instance"].get("resources", {}).get(rid, {})

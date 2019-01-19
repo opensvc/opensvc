@@ -688,6 +688,7 @@ class Monitor(shared.OsvcThread):
                     self.event("max_resource_restart", {
                         "svcpath": svc.svcpath,
                         "rid": rid,
+                        "resource": resource,
                         "restart": nb_restart,
                     })
                 self.inc_smon_retries(svc.svcpath, rid)
@@ -697,6 +698,7 @@ class Monitor(shared.OsvcThread):
                         self.event("resource_toc", {
                             "svcpath": svc.svcpath,
                             "rid": rid,
+                            "resource": resource,
                         })
                         self.service_toc(svc.svcpath)
                     else:
@@ -704,11 +706,13 @@ class Monitor(shared.OsvcThread):
                             "reason": "no_candidate",
                             "svcpath": svc.svcpath,
                             "rid": rid,
+                            "resource": resource,
                         })
                 else:
                     self.event("resource_degraded", {
                         "svcpath": svc.svcpath,
                         "rid": rid,
+                        "resource": resource,
                     })
                     return False
             else:
@@ -716,6 +720,7 @@ class Monitor(shared.OsvcThread):
                 self.event("resource_restart", {
                     "svcpath": svc.svcpath,
                     "rid": rid,
+                    "resource": resource,
                     "restart": nb_restart,
                     "try": retries+1,
                 })
@@ -735,6 +740,7 @@ class Monitor(shared.OsvcThread):
                 self.event("max_stdby_resource_restart", {
                     "svcpath": svc.svcpath,
                     "rid": rid,
+                    "resource": resource,
                     "restart": nb_restart,
                 })
                 return False
@@ -742,6 +748,7 @@ class Monitor(shared.OsvcThread):
             self.event("stdby_resource_restart", {
                 "svcpath": svc.svcpath,
                 "rid": rid,
+                "resource": resource,
                 "restart": nb_restart,
                 "try": retries+1,
             })
