@@ -912,18 +912,21 @@ class ExtConfigMixin(object):
             (o+"@"+nodename, True),
         ]
         if hasattr(self, "svcname"):
-            candidates += [
-                (o+"@nodes", nodename in self.nodes),
-                (o+"@drpnodes", nodename in self.drpnodes),
-                (o+"@encapnodes", nodename in self.encapnodes),
-                (o+"@flex_primary", nodename == self.flex_primary),
-                (o+"@drp_flex_primary", nodename == self.drp_flex_primary),
-            ]
+            if o != "nodes":
+                candidates.append((o+"@nodes", nodename in self.nodes))
+            if o != "drpnodes":
+                candidates.append((o+"@drpnodes", nodename in self.drpnodes))
+            if o != "encapnodes":
+                candidates.append((o+"@encapnodes", nodename in self.encapnodes))
+            if o != "flex_primary":
+                candidates.append((o+"@flex_primary", nodename == self.flex_primary))
+            if o != "drp_flex_primary":
+                candidates.append((o+"@drp_flex_primary", nodename == self.drp_flex_primary))
         else:
-            candidates += [
-                (o+"@nodes", nodename in self.cluster_nodes),
-                (o+"@drpnodes", nodename in self.cluster_drpnodes),
-            ]
+            if o != "nodes":
+                candidates.append((o+"@nodes", nodename in self.cluster_nodes))
+            if o != "drpnodes":
+                candidates.append((o+"@drpnodes", nodename in self.cluster_drpnodes))
         candidates += [
             (o, True),
         ]
