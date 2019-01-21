@@ -7,22 +7,22 @@ import rcExceptions as ex
 from rcUtilities import lazy, justcall
 
 class Pool(pool.Pool):
+    type = "zpool"
+    capabilities = ["rox", "rwx", "roo", "rwo", "snap"]
+
     @lazy
     def zpool(self):
         return self.node.conf_get(self.section, "name")
 
-    def translate(self, section, size=None, fmt=True, mnt=None):
+    def translate(self, size=None, fmt=True):
         data = []
         fs = {
             "type": "zfs",
-            "dev": self.zpool+"/" + "{id}_"+self.section_index(section),
+            "dev": self.zpool + "/" + "{id}",
             "mkfs_opt": " ".join(self.mkfs_opt),
             "rtype": "fs",
         }
-        if mnt:
-            fs["mnt"] = mnt
-        else:
-            fs["mnt"] = self.default_mnt
+        fs["mnt"] = self.mount_point
         if self.mkfs_opt:
             fs["mkfs_opt"] = " ".join(self.mkfs_opt)
         if self.mnt_opt:
@@ -33,7 +33,9 @@ class Pool(pool.Pool):
     def status(self):
         from converters import convert_size
         data = {
-            "type": "zpool",
+            "type": self.type,
+            "name": self.name,
+            "capabilities": self.capabilities,
             "free": -1,
             "used": -1,
             "size": -1,

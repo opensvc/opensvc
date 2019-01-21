@@ -50,13 +50,16 @@ def fmt_svc_uptime(key, stats_data):
         return ""
     total = 0
     now = time.time()
+    top = 0
     for node, _data in stats_data.items():
         try:
-            total += now - _data["services"][key]["created"]
+            uptime = now - _data["services"][key]["created"]
+            if uptime > top:
+                top = uptime
         except KeyError as exc:
             pass
     try:
-        return print_duration(total)
+        return print_duration(top)
     except Exception:
         return ""
 
@@ -125,19 +128,14 @@ def fmt_cpu_usage(get, prev_stats_data, stats_data):
     if prev_stats_data is None or stats_data is None:
         return ""
     cpu = 0
-    count = 0
     for _node, _stats in stats_data.items():
         try:
             cpu += cpu_usage(get, prev_stats_data[_node], _stats)
-            count += 1
         except (KeyError, ValueError) as exc:
             pass
-    if count == 0:
-        return "     -"
-    try:
-        return "%6.1f%%" % (cpu / count)
-    except Exception:
-        return "     -"
+    if cpu == 0:
+        return "-"
+    return "%6.1f%%" % cpu
 
 def fmt_svc_blk_rb(key, stats_data):
     return fmt_blk(lambda x: x["services"][key]["blk"]["rb"], stats_data)
@@ -223,7 +221,7 @@ def fmt_tid(_data, stats_data):
         return "%d" % tid
     return ""
 
-def list_print(data, right=[2, 3, 4, 5, 6, 7, 8, 9, 10]):
+def list_print(data, right=[2, 3, 4, 5, 6, 7, 8, 9, 10, 11]):
     outs = ""
     if len(data) == 0:
         return ""
@@ -309,19 +307,30 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             status += colorize("^", color.RED)
 
         # info
+        info = {
+            "topology": data.get("topology", ""),
+            "kind": data.get("kind", ""),
+            "orchestrate": data.get("orchestrate", "-"),
+            "status": "%d/1" % data["n_up"] if data["n_up"] is not None else 0,
+        }
         if data.get("scale") is not None:
-            info = "scaler/%d/%d" % (data["n_up"], data.get("scale"))
+            info["status"] = "%d/%d" % (data["n_up"], data.get("scale"))
         elif data.get("wrapper"):
-            info = ""
-        else:
-            info = topology
-            if data["orchestrate"]:
-                info += "/" + data["orchestrate"]
-            if topology == "flex":
-                info += "/%d/%d" % (data["flex_min_nodes"], data["flex_max_nodes"])
+            info = {
+                "topology": "",
+                "kind": "",
+                "orchestrate": "",
+                "status": "",
+            }
+        elif topology == "flex":
+            info["status"] = "%d/%d-%d" % (data["n_up"], data["flex_min_nodes"], data["flex_max_nodes"])
+        if data["avail"] == "n/a":
+            info["status"] = ""
+        info = "%(orchestrate)-5s %(kind)-3s %(status)-5s" % info
         line = [
             " "+colorize(prefix+svcpath, color.BOLD),
             status,
+            info,
             fmt_svc_uptime(svcpath, stats_data),
             fmt_svc_tasks(svcpath, prev_stats_data),
             fmt_svc_cpu_usage(svcpath, prev_stats_data, stats_data),
@@ -331,7 +340,6 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             fmt_svc_blk_wb(svcpath, stats_data),
             fmt_svc_blk_rbps(svcpath, prev_stats_data, stats_data),
             fmt_svc_blk_wbps(svcpath, prev_stats_data, stats_data),
-            info,
             "|",
         ]
         for nodename in nodenames:
@@ -426,6 +434,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
         line = [
             " "+colorize(key, color.BOLD),
             state,
+            config,
             fmt_tid(_data, stats_data),
             fmt_thr_tasks(key, stats_data),
             fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
@@ -435,7 +444,6 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "",
             "",
             "",
-            config,
             "|",
         ]
         for nodename in nodenames:
@@ -462,6 +470,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
         out.append((
             " "+colorize(key, color.BOLD),
             state,
+            status,
             fmt_tid(_data, stats_data),
             fmt_thr_tasks(key, stats_data),
             fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
@@ -471,7 +480,6 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "",
             "",
             "",
-            status,
         ))
 
     def load_listener(key, _data):
@@ -482,6 +490,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
         out.append((
             " "+colorize(key, color.BOLD),
             state,
+            _data["config"]["addr"]+":"+str(_data["config"]["port"]),
             fmt_tid(_data, stats_data),
             fmt_thr_tasks(key, stats_data),
             fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
@@ -491,7 +500,6 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "",
             "",
             "",
-            _data["config"]["addr"]+":"+str(_data["config"]["port"]),
         ))
 
     def load_scheduler(key, _data):
@@ -502,11 +510,11 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
         out.append((
             " "+colorize(key, color.BOLD),
             state,
+            "",
             fmt_tid(_data, stats_data),
             fmt_thr_tasks(key, stats_data),
             fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
             fmt_thr_cpu_time(key, stats_data),
-            "",
             "",
             "",
             "",
@@ -520,12 +528,12 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
         line = [
             " "+colorize(key, color.BOLD),
             "%s" % state,
+            "",
             str(data.get("pid", "")) if stats_data else "",
             "",
             fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
             fmt_thr_cpu_time(key, stats_data),
             fmt_thr_mem_total(key, stats_data),
-            "",
             "",
             "",
             "",
@@ -551,11 +559,11 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
         line = [
             " "+colorize(key, color.BOLD),
             state,
+            "",
             fmt_tid(_data, stats_data),
             fmt_thr_tasks(key, stats_data),
             fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
             fmt_thr_cpu_time(key, stats_data),
-            "",
             "",
             "",
             "",
@@ -581,11 +589,11 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
         out.append((
             " "+colorize(key, color.BOLD),
             state,
+            "",
             fmt_tid(_data, stats_data),
             fmt_thr_tasks(key, stats_data),
             fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
             fmt_thr_cpu_time(key, stats_data),
-            "",
             "",
             "",
             "",
@@ -597,12 +605,12 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
         load_header([
             "Threads",
             "",
+            "",
             "pid/tid" if stats_data else "",
             "thr/sub" if stats_data else "",
             "usage" if stats_data else "",
             "time" if stats_data else "",
             "rss" if stats_data else "",
-            "",
             "",
             "",
             "",
@@ -867,8 +875,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                 if svcpath not in services:
                     services[svcpath] = Storage({
                         "drp": _data.get("drp", False),
+                        "kind": _data.get("kind", ""),
                         "topology": _data.get("topology", ""),
-                        "orchestrate": _data.get("orchestrate"),
+                        "orchestrate": _data.get("orchestrate", "-"),
                         "flex_min_nodes": _data.get("flex_min_nodes"),
                         "flex_max_nodes": _data.get("flex_max_nodes"),
                         "scale": _data.get("scale"),
@@ -894,6 +903,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                         slaves.append(child)
                         if node_svc_status.get(child, {}).get("avail") == "up":
                             services[svcpath].n_up += 1
+                else:
+                    if node_svc_status.get(svcpath, {}).get("avail") == "up":
+                        services[svcpath].n_up += 1
                 for child in slaves:
                     if child not in slave_parents:
                         slave_parents[child] = set([svcpath])
@@ -946,6 +958,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
         load_header([
             "Services",
             "",
+            "",
             "since" if stats_data else "",
             "tasks" if stats_data else "",
             "usage" if stats_data else "",
@@ -955,7 +968,6 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "blkwb" if stats_data else "",
             "blkrbps" if stats_data else "",
             "blkwbps" if stats_data else "",
-            "",
             "",
         ])
         for svcpath in sorted(list(services.keys())):

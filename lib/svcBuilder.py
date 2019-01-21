@@ -443,6 +443,34 @@ def add_loop(svc, s):
     svc += r
 
 
+def add_volume(svc, s):
+    kwargs = init_kwargs(svc, s)
+
+    try:
+        kwargs["name"] = svc.conf_get(s, "name")
+    except ex.OptNotFound:
+        pass
+    try:
+        kwargs["pool"] = svc.conf_get(s, "pool")
+    except ex.OptNotFound:
+        pass
+    try:
+        kwargs["format"] = svc.conf_get(s, "format")
+    except ex.OptNotFound as exc:
+        kwargs["format"] = exc.default
+    try:
+        kwargs["size"] = svc.conf_get(s, "size")
+    except ex.OptNotFound:
+        pass
+    try:
+        kwargs["access"] = svc.conf_get(s, "access")
+    except ex.OptNotFound as exc:
+        kwargs["access"] = exc.default
+
+    m = __import__('resVolume')
+    r = m.Volume(**kwargs)
+    svc += r
+
 def add_disk_disk(svc, s):
     kwargs = init_kwargs(svc, s)
 
@@ -1321,6 +1349,11 @@ def add_container_docker(svc, s):
         kwargs["tty"] = svc.conf_get(s, "tty")
     except ex.OptNotFound as exc:
         kwargs["tty"] = exc.default
+
+    try:
+        kwargs["volume_mounts"] = svc.conf_get(s, "volume_mounts")
+    except ex.OptNotFound as exc:
+        kwargs["volume_mounts"] = exc.default
 
     m = __import__("resContainerDocker")
     r = m.Docker(**kwargs)
@@ -2321,6 +2354,7 @@ def add_resources(svc):
             sections[restype] = set([section])
 
     ordered_restypes = [
+        "volume",
         "container",
         "ip",
         "disk",

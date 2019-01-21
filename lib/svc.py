@@ -121,6 +121,7 @@ TOP_STATUS_GROUPS = [
 
 DEFAULT_STATUS_GROUPS = [
     "ip",
+    "volume",
     "disk",
     "fs",
     "share",
@@ -284,6 +285,7 @@ START_GROUPS = [
     "sync.symsrdfs",
     "sync.hp3par",
     "sync.ibmdssnap",
+    "volume",
     "disk",
     "fs",
     "share",
@@ -298,6 +300,7 @@ STOP_GROUPS = [
     "fs",
     "sync.btrfssnap",
     "disk",
+    "volume",
     "ip",
 ]
 
@@ -620,6 +623,13 @@ class Svc(Crypt, ExtConfigMixin):
             if not self.volatile:
                 self._set("DEFAULT", "id", newid, validation=False)
             return newid
+
+    @lazy
+    def kind(self):
+        try:
+            return self.conf_get("DEFAULT", "kind")
+        except ex.OptNotFound as exc:
+            return exc.default
 
     @lazy
     def encapnodes(self):
@@ -1647,6 +1657,7 @@ class Svc(Crypt, ExtConfigMixin):
 
         data = {
             "updated": now,
+            "kind": self.kind,
             "app": self.app,
             "env": self.svc_env,
             "placement": self.placement,
@@ -5459,34 +5470,6 @@ class Svc(Crypt, ExtConfigMixin):
             raise ex.excError(data["error"])
         return data
 
-    def translate_volumes(self):
-        for section in self.config.sections():
-            if section.startswith("volume#"):
-                self.translate_volume(section)
-
-    def translate_volume(self, section):
-        """
-        Transform a volume section into resources sections using the storage
-        pool translation rules.
-        """
-        size = self.conf_get(section, "size")
-        try:
-            poolname = self.conf_get(section, "pool")
-        except ex.OptNotFound as exc:
-            poolname = exc.default
-        try:
-            fmt = self.conf_get(section, "format")
-        except ex.OptNotFound as exc:
-            fmt = exc.default
-        try:
-            mnt = self.conf_get(section, "mnt")
-        except ex.OptNotFound as exc:
-            mnt = exc.default
-        pool = self.node.get_pool(poolname)
-        data = pool.translate(section, fmt=fmt, size=size, mnt=mnt)
-        self._update(data)
-        self._delete_resources_config([section])
-
     def support(self):
         """
         Send a tarball to the OpenSVC support upload site.
@@ -5546,6 +5529,36 @@ class Svc(Crypt, ExtConfigMixin):
         if not self.encap and rid in self.encap_resources:
             return True
         return False
+
+    def mount_point(self):
+        """
+        Return the unambiguous service mount point. Volume services naturally
+        have suche a mount point. The volume resource in the consumer service
+        uses this function to set its own mount_point property.
+        """
+        candidates = [res for res in self.get_resources("fs")]
+        if not candidates or len(candidates) > 1:
+            return
+        return candidates[0].mount_point
+
+    def get_volume(self, name):
+        """
+        Return the volume resource matching name.
+        Raise excError if not found or found more than one matching resource.
+        """
+        candidates = [res for res in self.get_resources("volume") if res.name == name]
+        if not candidates:
+            raise ex.excError("volume %s not found" % name)
+        if not candidates or len(candidates) > 1:
+            raise ex.excError("found multiple volumes names" % name)
+        return candidates[0]
+
+    def get_volume_rid(self, volname):
+        candidates = [rid for rid, res in self.resources_by_id.items() if rid.startswith("volume#") and res.name == volname]
+        try:
+            return candidates[0]
+        except IndexError:
+            return
 
     def exists(self):
         """

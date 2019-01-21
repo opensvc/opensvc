@@ -11,11 +11,6 @@ Id ``stdby_resource_restart``
 
 start standby resource {rid} ({resource.label}) {resource.status} {resource.log}, try {try}/{restart}
 
-Id ``scale_up``
----------------
-
-misses {delta} instance to reach scale target {instance.scale}
-
 Id ``max_stdby_resource_restart``
 ---------------------------------
 
@@ -36,11 +31,6 @@ Id ``hb_beating``
 
 node {nodename} hb status stale => beating
 
-Id ``service_config_installed``
--------------------------------
-
-config fetched from node {from} is now installed
-
 Id ``node_config_change``
 -------------------------
 
@@ -55,6 +45,11 @@ Id ``resource_toc``
 -------------------
 
 toc for resource {rid} ({resource.label}) {resource.status} {resource.log}
+
+Id ``service_config_installed``
+-------------------------------
+
+config fetched from node {from} is now installed
 
 Id ``node_thaw``
 ----------------
@@ -85,6 +80,11 @@ Id ``arbitrator_down``
 ----------------------
 
 arbitrator {arbitrator} is no longer reachable
+
+Id ``scale_up``
+---------------
+
+misses {delta} instance to reach scale target {instance.scale}
 
 Id ``crash``, Reason ``split``
 ------------------------------

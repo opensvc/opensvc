@@ -3200,7 +3200,6 @@ class Node(Crypt, ExtConfigMixin):
             except ex.excError as exc:
                 print(exc, file=sys.stderr)
                 ret = 1
-            self.svcs[0].translate_volumes()
 
             if options.provision:
                 self.svcs[0].action("provision", options)
@@ -3644,7 +3643,7 @@ class Node(Crypt, ExtConfigMixin):
         data = {}
         for node in self.cluster_nodes:
             try:
-                data[node] = self._daemon_stats(svcpaths=svcpaths)["data"]
+                data[node] = self._daemon_stats(svcpaths=svcpaths, node=node)["data"]
             except Exception:
                 pass
         return data
@@ -4445,6 +4444,7 @@ class Node(Crypt, ExtConfigMixin):
         node = tree.add_node()
         node.add_column(rcEnv.nodename, color.BOLD)
         node.add_column("type")
+        node.add_column("caps")
         node.add_column("head")
         node.add_column("size")
         node.add_column("used")
@@ -4453,6 +4453,7 @@ class Node(Crypt, ExtConfigMixin):
             leaf = node.add_node()
             leaf.add_column(name, color.BOLD)
             leaf.add_column(_data["type"])
+            leaf.add_column(",".join(_data["capabilities"]))
             leaf.add_column(_data["head"])
             for key in ("size", "used", "free"):
                 if _data[key] < 0:
@@ -4469,24 +4470,34 @@ class Node(Crypt, ExtConfigMixin):
             data[name] = pool.status()
         return data
 
-    def find_pool(self, poolname=None, pooltype=None):
-        if pooltype is None:
-            if poolname:
-                return self.get_pool(poolname)
-            else:
-                return self.get_pool("default")
-        else:
-            if poolname:
-                pool = self.get_pool(poolname)
-                if pool.type != pooltype:
-                    return
-                return pool
-            else:
-                # return the matching pool with max avail space
-                candidates = sorted([pool for pool in self.pool_status_data().values() if pool["type"] == pooltype], key=lambda x: x["free"])
-                if not candidates:
-                    return
-                return self.get_pool(candidates[-1]["name"])
+    def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None):
+        candidates = []
+        for pool in self.pool_status_data().values():
+            if fmt is False and "blk" not in pool["capabilities"]:
+                self.log.debug("discard pool %s: not blk capable",
+                               pool["name"])
+                continue
+            if access and access not in pool["capabilities"]:
+                self.log.debug("discard pool %s: not %s capable (%s)",
+                               pool["name"], access, ','.join(pool["capabilities"]))
+                continue
+            if pooltype and pool["type"] != pooltype:
+                self.log.debug("discard pool %s: not typed %s",
+                               pool["name"], pooltype)
+                continue
+            if poolname and pool["name"] != poolname:
+                self.log.debug("discard pool %s: not named %s",
+                               pool["name"], poolname)
+                continue
+            if size and pool["free"] < size//1024+1:
+                self.log.debug("discard pool %s: not enough free space %d/%d",
+                               pool["name"], pool["free"], size)
+                continue
+            candidates.append(pool)
+        if not candidates:
+            return
+        candidates = sorted(candidates, key=lambda x: x["free"])
+        return self.get_pool(candidates[-1]["name"])
 
     def get_pool(self, poolname):
         section = "pool#"+poolname

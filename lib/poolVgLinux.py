@@ -7,6 +7,9 @@ import rcExceptions as ex
 from rcUtilities import lazy, justcall
 
 class Pool(pool.Pool):
+    type = "vg"
+    capabilities = ["rox", "rwx", "roo", "rwo", "snap", "blk"]
+
     @lazy
     def vg(self):
         return self.node.conf_get(self.section, "name")
@@ -18,20 +21,17 @@ class Pool(pool.Pool):
         except ex.OptNotFound as exc:
             return exc.default
 
-    def translate(self, section, size=None, fmt=True, mnt=None):
+    def translate(self, size=None, fmt=True):
         data = []
         if fmt:
             fs = {
                 "rtype": "fs",
                 "type": self.fs_type,
-                "dev": os.path.join(os.sep, "dev", self.vg, "{id}_"+self.section_index(section)),
+                "dev": os.path.join(os.sep, "dev", self.vg, "{id}"),
                 "vg": self.vg,
                 "size": size,
             }
-            if mnt:
-                fs["mnt"] = mnt
-            else:
-                fs["mnt"] = self.default_mnt
+            fs["mnt"] = self.mount_point
             if self.mkfs_opt:
                 fs["mkfs_opt"] = " ".join(self.mkfs_opt)
             if self.mnt_opt:
@@ -43,9 +43,10 @@ class Pool(pool.Pool):
             disk = {
                 "rtype": "disk",
                 "type": "lv",
-                "name": "{id}_"+self.section_index(section),
+                "name": "{id}",
                 "vg": self.vg,
                 "size": size,
+                "standby": standby,
             }
             if self.create_opt:
                 disk["create_opt"] = " ".join(self.create_opt)
@@ -55,7 +56,9 @@ class Pool(pool.Pool):
     def status(self):
         from converters import convert_size
         data = {
-            "type": "vg",
+            "type": self.type,
+            "name": self.name,
+            "capabilities": self.capabilities,
         }
         cmd = ["vgs", "-o", "Size,Free", "--units", "k", "--noheadings", self.vg]
         out, err, ret = justcall(cmd)

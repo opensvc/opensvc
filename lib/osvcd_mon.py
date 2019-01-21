@@ -1225,6 +1225,11 @@ class Monitor(shared.OsvcThread):
                     })
                     self.service_stop(svc.svcpath)
         elif smon.global_expect == "started":
+            if not self.parents_available(svc):
+                self.set_smon(svc.svcpath, status="wait parents")
+                return
+            elif smon.status == "wait parents":
+                self.set_smon(svc.svcpath, status="idle")
             if self.instance_frozen(svc.svcpath):
                 self.event("instance_thaw", {
                     "reason": "target",
@@ -1236,6 +1241,11 @@ class Monitor(shared.OsvcThread):
                     return
                 self.service_orchestrator_auto(svc, smon, status)
         elif smon.global_expect == "unprovisioned":
+            if not self.children_down(svc):
+                self.set_smon(svc.svcpath, status="wait children")
+                return
+            elif smon.status == "wait children":
+                self.set_smon(svc.svcpath, status="idle")
             if not self.service_unprovisioned(instance) and \
                self.leader_first(svc, provisioned=False):
                 self.event("instance_unprovision", {
@@ -1244,6 +1254,11 @@ class Monitor(shared.OsvcThread):
                 })
                 self.service_unprovision(svc.svcpath)
         elif smon.global_expect == "provisioned":
+            if not self.parents_available(svc):
+                self.set_smon(svc.svcpath, status="wait parents")
+                return
+            elif smon.status == "wait parents":
+                self.set_smon(svc.svcpath, status="idle")
             if not self.service_provisioned(instance):
                 if not self.leader_first(svc, provisioned=True):
                    return
@@ -1255,6 +1270,11 @@ class Monitor(shared.OsvcThread):
             else:
                 self.set_smon(svc.svcpath, global_expect="started")
         elif smon.global_expect == "deleted":
+            if not self.children_down(svc):
+                self.set_smon(svc.svcpath, status="wait children")
+                return
+            elif smon.status == "wait children":
+                self.set_smon(svc.svcpath, status="idle")
             if svc.svcpath in shared.SERVICES:
                 self.event("instance_delete", {
                     "reason": "target",
@@ -1263,6 +1283,11 @@ class Monitor(shared.OsvcThread):
                 self.service_delete(svc.svcpath)
         elif smon.global_expect == "purged" and \
              self.leader_first(svc, provisioned=False, deleted=True, check_min_instances_reached=False):
+            if not self.children_down(svc):
+                self.set_smon(svc.svcpath, status="wait children")
+                return
+            elif smon.status == "wait children":
+                self.set_smon(svc.svcpath, status="idle")
             if svc.svcpath in shared.SERVICES and \
                (not self.service_unprovisioned(instance) or instance is not None):
                 self.event("instance_purge", {
@@ -2221,6 +2246,8 @@ class Monitor(shared.OsvcThread):
         try:
             if shared.SERVICES[svcpath].placement == "none":
                 return "n/a"
+            if shared.SERVICES[svcpath].topology == "flex" and shared.SERVICES[svcpath].flex_min_nodes == 0:
+                return "n/a"
         except KeyError:
             pass
         instances = [instance for instance in self.get_service_instances(svcpath).values() \
@@ -2698,6 +2725,8 @@ class Monitor(shared.OsvcThread):
                           "status is %s", svcpath, smon.global_expect, status)
             self.set_smon(svcpath, global_expect="unset")
         elif smon.global_expect == "started":
+            if shared.AGG[svcpath].placement == "n/a":
+                self.set_smon(svcpath, global_expect="unset")
             if status in STARTED_STATES and not local_frozen:
                 self.log.info("service %s global expect is %s and its global "
                               "status is %s", svcpath, smon.global_expect, status)
@@ -2716,6 +2745,8 @@ class Monitor(shared.OsvcThread):
                           svcpath, smon.global_expect)
             self.set_smon(svcpath, global_expect="unset")
         elif smon.global_expect == "provisioned" and provisioned is True:
+            if shared.AGG[svcpath].placement == "n/a":
+                self.set_smon(svcpath, global_expect="unset")
             if shared.AGG[svcpath].avail in ("up", "n/a"):
                 # provision success, thaw
                 self.set_smon(svcpath, global_expect="thawed")
@@ -2995,6 +3026,9 @@ class Monitor(shared.OsvcThread):
         elif global_expect == "shutdown":
             return not self.get_agg_shutdown(svcpath)
         elif global_expect == "started":
+            if shared.AGG[svcpath].placement == "n/a":
+                # no placement policy
+                return False
             status = shared.AGG[svcpath].avail
             local_frozen = instance.get("frozen", 0)
             if status in STOPPED_STATES or local_frozen:
@@ -3014,6 +3048,9 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect == "provisioned":
+            if shared.AGG[svcpath].placement == "n/a":
+                # no placement policy
+                return False
             provisioned = shared.AGG[svcpath].provisioned
             if provisioned is not True:
                 return True
@@ -3032,6 +3069,9 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect == "purged":
+            if shared.AGG[svcpath].placement == "n/a":
+                # no placement policy
+                return False
             provisioned = shared.AGG[svcpath].provisioned
             deleted = self.get_agg_deleted(svcpath)
             purged = self.get_agg_purged(provisioned, deleted)
@@ -3046,6 +3086,9 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect == "placed":
+            if shared.AGG[svcpath].placement == "n/a":
+                # no placement policy
+                return False
             placement = shared.AGG[svcpath].placement
             frozen = shared.AGG[svcpath].frozen
             if placement == "non-optimal" or shared.AGG[svcpath].avail != "up" or frozen == "frozen":

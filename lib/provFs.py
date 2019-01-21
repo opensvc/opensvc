@@ -42,7 +42,7 @@ class Prov(provisioning.Prov):
         p.Prov(self.r).unprovisioner()
 
     def is_provisioned(self):
-        if "bind" in self.r.mount_options:
+        if "bind" in self.r.mount_options or self.r.fs_type in ("bind", "lofs"):
             return True
         try:
             self.dev = self.r.conf_get("dev")
@@ -93,6 +93,8 @@ class Prov(provisioning.Prov):
     def provisioner_fs(self):
         if self.r.fs_type in self.r.netfs + ["tmpfs"]:
             return
+        if "bind" in self.r.mount_options or self.r.fs_type in ("bind", "lofs"):
+            return True
 
         self.dev = self.r.conf_get("dev")
         self.mnt = self.r.conf_get("mnt")
@@ -140,8 +142,6 @@ class Prov(provisioning.Prov):
     def provisioner(self):
         self.r.unset_lazy("device")
         self.r.unset_lazy("label")
-        if "bind" in self.r.mount_options:
-            return
         self.provisioner_fs()
 
     def purge_mountpoint(self):

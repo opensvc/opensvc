@@ -8,6 +8,9 @@ from rcUtilities import lazy, justcall
 from rcGlobalEnv import rcEnv
 
 class Pool(pool.Pool):
+    type = "directory"
+    capabilities = ["rox", "rwx", "roo", "rwo"]
+
     @lazy
     def path(self):
         try:
@@ -15,44 +18,24 @@ class Pool(pool.Pool):
         except ex.OptNotFound as exc:
             return exc.default
 
-    @lazy
-    def evaluated_path(self):
-        try:
-            return self.node.conf_get(self.section, "path")
-        except ex.OptNotFound as exc:
-            return exc.default
-
-    def translate(self, section, size=None, fmt=True, mnt=None):
+    def translate(self, size=None, fmt=True):
         fs = {
             "rtype": "fs",
             "type": "directory",
-            "path": os.path.join(self.path, "{id}_"+self.section_index(section)),
+            "path": os.path.join(self.path, "{id}"),
         }
-        bind = {
-            "rtype": "fs",
-            "dev": os.path.join(self.path, "{id}_"+self.section_index(section)),
-        }
-        if rcEnv.sysname == "Linux":
-            bind["type"] = "none"
-            bind["mnt_opt"] = "bind,rw"
-        elif rcEnv.sysname == "SunOS":
-            bind["type"] = "lofs"
-        else:
-            return [fs]
-        if bind:
-            bind["mnt"] = mnt
-        else:
-            bind["mnt"] = self.default_mnt
-        return [fs, bind]
+        return [fs]
 
     def status(self):
         from converters import convert_size
-        if not os.path.exists(self.evaluated_path):
-            os.makedirs(self.evaluated_path)
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
         data = {
-            "type": "directory",
+            "type": self.type,
+            "name": self.name,
+            "capabilities": self.capabilities,
         }
-        cmd = ["df", "-P", self.evaluated_path]
+        cmd = ["df", "-P", self.path]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return data
@@ -60,6 +43,6 @@ class Pool(pool.Pool):
         data["free"] = int(l[3])
         data["used"] = int(l[2])
         data["size"] = int(l[1])
-        data["head"] = self.evaluated_path
+        data["head"] = self.path
         return data
 

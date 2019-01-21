@@ -4,13 +4,14 @@ Docker container resource driver module.
 import os
 import shlex
 import signal
+from itertools import chain
 
 import resources
 import resContainer
 import rcExceptions as ex
 import rcStatus
 from rcUtilitiesLinux import check_ping
-from rcUtilities import justcall, lazy, drop_option, has_option, get_option
+from rcUtilities import justcall, lazy, drop_option, has_option, get_option, get_options
 from rcGlobalEnv import rcEnv
 
 ATTR_MAP = {
@@ -82,6 +83,7 @@ class Docker(resContainer.Container):
                  privileged=None,
                  interactive=None,
                  tty=None,
+                 volume_mounts=None,
                  guestos="Linux",
                  osvc_root_path=None,
                  **kwargs):
@@ -107,9 +109,18 @@ class Docker(resContainer.Container):
         self.privileged = privileged
         self.interactive = interactive
         self.tty = tty
+        self.volume_mounts = volume_mounts
+        self.volumes = {}
         if not self.detach:
             self.rm = True
             self.tags.add("nostatus")
+
+    def on_add(self):
+        try:
+            self.volume_options()
+        except ex.excError:
+            # volume not created yet
+            pass
 
     @lazy
     def container_name(self):
@@ -297,7 +308,46 @@ class Docker(resContainer.Container):
             self.unset_lazy("container_id")
             self.svc.dockerlib.docker_stop()
 
-    def _add_run_args(self):
+    def volume_options(self, errors="raise"):
+        if self.run_args is None:
+            args = []
+        else:
+            args = [] + self.run_args
+        volumes = []
+        for volarg in chain(get_options("-v", args), get_options("--volume", args), iter(self.volume_mounts)):
+            elements = volarg.split(":")
+            if not elements or len(elements) not in (2, 3):
+                continue
+            if not elements[0].startswith(os.sep):
+                # vol service
+                l = elements[0].split("/")
+                volname = l[0]
+                vol = self.svc.get_volume(volname)
+                if vol.mount_point is None:
+                    if errors != "ignore":
+                        continue
+                    raise ex.excError("referenced volume %s has no "
+                                      "mount point" % l[0])
+                volstatus = vol.status()
+                if volstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
+                    if errors != "ignore":
+                        raise ex.excError("volume %s is %s" % (volname, volstatus))
+                volrid = self.svc.get_volume_rid(volname)
+                if volrid:
+                    self.svc.register_dependency("stop", volrid, self.rid)
+                    self.svc.register_dependency("start", self.rid, volrid)
+                l[0] = vol.mount_point
+                elements[0] = "/".join(l)
+                volumes.append(":".join(elements))
+            elif not os.path.exists(elements[0]):
+                # host path
+                raise ex.excError("source dir of mapping %s does not "
+                                  "exist" % (volarg))
+            else:
+                volumes.append(volarg)
+        return volumes
+
+    def _add_run_args(self, errors="raise"):
         if self.run_args is None:
             args = []
         else:
@@ -338,9 +388,10 @@ class Docker(resContainer.Container):
             args = drop_option("--network", args, drop_value=True)
             if self.netns.startswith("container#"):
                 res = self.svc.get_resource(self.netns)
-                if res is None:
+                if res is not None:
+                    args += ["--net=container:"+res.container_name]
+                elif errors == "raise":
                     raise ex.excError("resource %s, referenced in %s.netns, does not exist" % (self.netns, self.rid))
-                args += ["--net=container:"+res.container_name]
             else:
                 args += ["--net="+self.netns]
         elif not has_option("--net", args):
@@ -350,9 +401,10 @@ class Docker(resContainer.Container):
             args = drop_option("--pid", args, drop_value=True)
             if self.pidns.startswith("container#"):
                 res = self.svc.get_resource(self.netns)
-                if res is None:
+                if res is not None:
+                    args += ["--pid=container:"+res.container_name]
+                elif errors == "raise":
                     raise ex.excError("resource %s, referenced in %s.pidns, does not exist" % (self.pidns, self.rid))
-                args += ["--pid=container:"+res.container_name]
             else:
                 args += ["--pid="+self.pidns]
 
@@ -360,9 +412,10 @@ class Docker(resContainer.Container):
             args = drop_option("--ipc", args, drop_value=True)
             if self.ipcns.startswith("container#"):
                 res = self.svc.get_resource(self.netns)
-                if res is None:
+                if res is not None:
+                    args += ["--ipc=container:"+res.container_name]
+                elif errors == "raise":
                     raise ex.excError("resource %s, referenced in %s.ipcns, does not exist" % (self.ipcns, self.rid))
-                args += ["--ipc=container:"+res.container_name]
             else:
                 args += ["--ipc="+self.ipcns]
 
@@ -394,22 +447,11 @@ class Docker(resContainer.Container):
 
         drop_option("--rm", args, drop_value=False)
 
-        for arg, pos in enumerate(args):
-            if arg != '-p':
-                continue
-            if len(args) < pos + 2:
-                # bad
-                break
-            volarg = args[pos+1]
-            if ':' in volarg:
-                # mapping ... check source dir presence
-                elements = volarg.split(':')
-                if len(elements) != 3:
-                    raise ex.excError("mapping %s should be formatted as "
-                                      "<src>:<dst>:<ro|rw>" % (volarg))
-                if not os.path.exists(elements[0]):
-                    raise ex.excError("source dir of mapping %s does not "
-                                      "exist" % (volarg))
+        drop_option("-v", args, drop_value=True)
+        drop_option("--volume", args, drop_value=True)
+        for vol in self.volume_options(errors=errors):
+             args.append("--volume=%s" % vol)
+
         if self.svc.dockerlib.docker_min_version("1.7"):
             if self.svc.dockerlib.docker_info.get("CgroupDriver") == "cgroupfs":
                 args += ["--cgroup-parent", self.cgroup_dir]
@@ -486,7 +528,7 @@ class Docker(resContainer.Container):
         Return keys to contribute to resinfo.
         """
         data = self.svc.dockerlib._info()
-        data.append([self.rid, "run_args", " ".join(self._add_run_args())])
+        data.append([self.rid, "run_args", " ".join(self._add_run_args(errors="ignore"))])
         data.append([self.rid, "run_command", " ".join(self.run_command)])
         data.append([self.rid, "rm", str(self.rm)])
         data.append([self.rid, "netns", str(self.netns)])
@@ -571,7 +613,6 @@ class Docker(resContainer.Container):
         sta = resContainer.Container._status(self, verbose)
         self._status_container_image()
         self._status_inspect()
-
         return sta
 
     def container_forcestop(self):

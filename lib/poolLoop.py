@@ -7,6 +7,9 @@ import rcExceptions as ex
 from rcUtilities import lazy, justcall
 
 class Pool(pool.Pool):
+    type = "loop"
+    capabilities = ["rox", "rwx", "roo", "rwo", "blk"]
+
     @lazy
     def path(self):
         try:
@@ -14,19 +17,12 @@ class Pool(pool.Pool):
         except ex.OptNotFound as exc:
             return exc.default
 
-    @lazy
-    def evaluated_path(self):
-        try:
-            return self.node.conf_get(self.section, "path")
-        except ex.OptNotFound as exc:
-            return exc.default
-
-    def translate(self, section, size=None, fmt=True, mnt=None):
+    def translate(self, size=None, fmt=True):
         data = [
             {
                 "rtype": "disk",
                 "type": "loop",
-                "file": os.path.join(self.path, "{id}", self.section_index(section)+".img"),
+                "file": os.path.join(self.path, "{id}.img"),
                 "size": size,
             }
         ]
@@ -34,12 +30,9 @@ class Pool(pool.Pool):
             fs = {
                 "rtype": "fs",
                 "type": self.fs_type,
-                "dev": os.path.join(self.path, "{id}", self.section_index(section)+".img"),
+                "dev": os.path.join(self.path, "{id}.img"),
             }
-            if mnt:
-                fs["mnt"] = mnt
-            else:
-                fs["mnt"] = self.default_mnt
+            fs["mnt"] = self.mount_point
             if self.mkfs_opt:
                 fs["mkfs_opt"] = " ".join(self.mkfs_opt)
             if self.mnt_opt:
@@ -49,12 +42,14 @@ class Pool(pool.Pool):
 
     def status(self):
         from converters import convert_size
-        if not os.path.exists(self.evaluated_path):
-            os.makedirs(self.evaluated_path)
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
         data = {
-            "type": "loop",
+            "name": self.name,
+            "type": self.type,
+            "capabilities": self.capabilities,
         }
-        cmd = ["df", "-P", self.evaluated_path]
+        cmd = ["df", "-P", self.path]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return data
@@ -62,6 +57,6 @@ class Pool(pool.Pool):
         data["free"] = convert_size(l[3], default_unit="K", _to="k")
         data["used"] = convert_size(l[2], default_unit="K", _to="k")
         data["size"] = convert_size(l[1], default_unit="K", _to="k")
-        data["head"] = self.evaluated_path
+        data["head"] = self.path
         return data
 

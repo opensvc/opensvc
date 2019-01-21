@@ -8,7 +8,7 @@ from rcUtilities import lazy
 class Pool(object):
     def __init__(self, node=None, name=None):
         self.node = node
-        self.name = name
+        self.name = name.strip(os.sep)
 
     @lazy
     def section(self):
@@ -35,15 +35,24 @@ class Pool(object):
         except ex.OptNotFound as exc:
             return exc.default
 
-    def section_index(self, section):
-        return section.split("#")[-1]
-
     @lazy
-    def default_mnt(self):
-        return os.path.join("/srv/{id}/{rindex}")
+    def mount_point(self):
+        return os.path.join(os.sep, "srv", "{id}")
 
-    def translate(self, section, size=None, fmt=True, mnt=None):
-        pass
+    def configure_volume(self, volume, size=None, fmt=True, access="rwo", nodes=None):
+        data = self.translate(size=size, fmt=fmt)
+        defaults = {
+            "rtype": "DEFAULT",
+            "kind": "vol",
+            "access": access,
+        }
+        if access in ("rox", "rwx"):
+            defaults["topology"] = "flex"
+            defaults["flex_min_nodes"] = 0
+        if nodes:
+            defaults["nodes"] = nodes
+        data.append(defaults)
+        volume._update(data)
 
     def status(self):
         pass

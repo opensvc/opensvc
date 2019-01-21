@@ -13,6 +13,7 @@ SECTIONS = [
     "container",
     "app",
     "task",
+    "volume",
 ]
 
 # deprecated => supported
@@ -209,6 +210,16 @@ KEYWORDS = [
         "example": "--ip 1.2.3.4"
     },
     {
+        "section": "DEFAULT",
+        "keyword": "access",
+        "depends": [("kind", "vol")],
+        "default": "rwo",
+        "candidates": ["rwo", "roo", "rwx", "rox"],
+        "at": True,
+        "required": False,
+        "text": "The access mode of the volume. rwo is Read Write Once, roo is Read Only Once, rwx is Read Write Many, rox is Read Only Many. rox and rwx modes are served by flex volume services.",
+    },
+    {
         "section": "subset",
         "keyword": "parallel",
         "at": True,
@@ -262,6 +273,16 @@ KEYWORDS = [
         "convert": "boolean",
         "text": "If set to True, add --rm to the docker run args and make sure the instance is removed on resource stop.",
         "example": False
+    },
+    {
+        "section": "container",
+        "keyword": "volume_mounts",
+        "at": True,
+        "rtype": "docker",
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of <volume name>:<containerized mount path>:<mount options>.",
+        "example": "container#0"
     },
     {
         "section": "container",
@@ -661,6 +682,14 @@ KEYWORDS = [
         "default": False,
         "at": True,
         "text": "Automatically set to true by the daemon monitor when creating new scaler slaves."
+    },
+    {
+        "section": "DEFAULT",
+        "keyword": "kind",
+        "at": True,
+        "default": "app",
+        "candidates": ("app", "vol", "cfg", "sec"),
+        "text": "Defines the kind of service.",
     },
     {
         "section": "DEFAULT",
@@ -2749,16 +2778,35 @@ KEYWORDS = [
     },
     {
         "section": "volume",
-        "keyword": "mnt",
+        "keyword": "name",
         "at": True,
         "required": False,
-        "text": "The mount point where to mount the filesystem."
+        "text": "The volume service name. A service can only reference volumes in the same namespace."
+    },
+    {
+        "section": "volume",
+        "keyword": "type",
+        "provisioning": True,
+        "default": "directory",
+        "at": True,
+        "required": False,
+        "text": "The type of the pool to allocate from. If the 'pool' keyword is not set, this 'type' keyword must be set. The selected pool will be the one with the maximum available space."
+    },
+    {
+        "section": "volume",
+        "keyword": "access",
+        "default": "rwo",
+        "candidates": ["rwo", "roo", "rwx", "rox"],
+        "provisioning": True,
+        "at": True,
+        "required": False,
+        "text": "The access mode of the volume. rwo is Read Write Once, roo is Read Only Once, rwx is Read Write Many, rox is Read Only Many. rox and rwx modes are served by flex volume services.",
     },
     {
         "section": "volume",
         "keyword": "size",
         "at": True,
-#        "convert": "size",
+        "convert": "size",
         "provisioning": True,
         "required": True,
         "text": "The size to allocate in the pool."
@@ -2768,7 +2816,6 @@ KEYWORDS = [
         "keyword": "pool",
         "at": True,
         "provisioning": True,
-        "default": "default",
         "text": "The name of the pool to allocate from."
     },
     {
