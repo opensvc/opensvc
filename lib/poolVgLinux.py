@@ -46,7 +46,6 @@ class Pool(pool.Pool):
                 "name": "{id}",
                 "vg": self.vg,
                 "size": size,
-                "standby": standby,
             }
             if self.create_opt:
                 disk["create_opt"] = " ".join(self.create_opt)
