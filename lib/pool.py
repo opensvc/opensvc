@@ -57,3 +57,5 @@ class Pool(object):
     def status(self):
         pass
 
+    def translate(self, size=None, fmt=True):
+        pass
