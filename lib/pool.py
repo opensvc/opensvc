@@ -58,4 +58,4 @@ class Pool(object):
         pass
 
     def translate(self, size=None, fmt=True):
-        pass
+        return []
