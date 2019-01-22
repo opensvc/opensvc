@@ -1115,6 +1115,13 @@ class OsvcThread(threading.Thread, Crypt):
                 return True
         return False
 
+    def nodes_info(self):
+        data = {}
+        with CLUSTER_DATA_LOCK:
+            for node, _data in CLUSTER_DATA.items():
+                data[node] = {"labels": _data.get("labels", {})}
+        return data
+
     def speaker(self):
         for nodename in self.sorted_cluster_nodes:
             if nodename in CLUSTER_DATA and \

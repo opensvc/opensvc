@@ -800,10 +800,9 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "nodes",
         "at": True,
-        "default": [rcEnv.nodename],
+        "default": rcEnv.nodename,
         "default_text": "<hostname of the current node>",
-        "convert": "list_lower",
-        "text": "List of cluster local nodes able to start the service.  Whitespace separated."
+        "text": "A node selector expression specifying the list of cluster nodes hosting service instances."
     },
     {
         "section": "DEFAULT",

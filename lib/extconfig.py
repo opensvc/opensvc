@@ -792,7 +792,7 @@ class ExtConfigMixin(object):
             "use_default": use_default,
             "config": config,
         }
-        if s != "env":
+        if s not in ("labels", "env"):
             key = self.kwdict.KEYS[section].getkey(o, rtype)
             if key is None:
                 if scope is None and t is None:
@@ -1122,7 +1122,7 @@ class ExtConfigMixin(object):
             Validate resource sections options.
             """
             for section in config.sections():
-                if section == "env":
+                if section in ("labels", "env"):
                     # the "env" section is not handled by a resource driver, and is
                     # unknown to the self.kwdict. Just ignore it.
                     continue
@@ -1275,6 +1275,15 @@ class ExtConfigMixin(object):
                     val = list(val)
                 edata[section][key] = val
         return edata
+
+    @lazy
+    def labels(self):
+        data = {}
+        for label in self.config.options("labels"):
+            if label in self.config.defaults():
+                continue
+            data[label] = self.config.get("labels", label)
+        return data
 
     def section_kwargs(self, section, rtype=None):
         kwargs = {}

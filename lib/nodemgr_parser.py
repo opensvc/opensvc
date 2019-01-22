@@ -444,6 +444,13 @@ ACTIONS = {
                 OPT.cron,
             ],
         },
+        "ls": {
+            "msg": "List the cluster nodes matching the --node selector. "
+                   "Useful to validate selector expressions.",
+            "options": [
+                OPT.node,
+            ],
+        },
         "rotate_root_pw": {
             "msg": "Set a new root password and store it in the collector.",
             "options": [

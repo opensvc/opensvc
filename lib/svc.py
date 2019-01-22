@@ -643,6 +643,7 @@ class Svc(Crypt, ExtConfigMixin):
     def ordered_nodes(self):
         try:
             nodes = self.conf_get("DEFAULT", "nodes")
+            nodes = self.node.nodes_selector(nodes, self.node.listener.nodes_info() if self.node.listener else None)
         except ex.OptNotFound as exc:
             nodes = exc.default
         return nodes
@@ -651,6 +652,7 @@ class Svc(Crypt, ExtConfigMixin):
     def nodes(self):
         try:
             nodes = self.conf_get("DEFAULT", "nodes")
+            nodes = self.node.nodes_selector(nodes, self.node.listener.nodes_info() if self.node.listener else None)
         except ex.OptNotFound as exc:
             nodes = exc.default
         return set(nodes)
@@ -2283,7 +2285,7 @@ class Svc(Crypt, ExtConfigMixin):
         self.stats_data = self.pg.get_stats(self)
         self.stats_updated = now
         return self.stats_data
-        
+
     def pg_freeze(self):
         """
         Freeze all process of the process groups of the service.

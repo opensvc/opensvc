@@ -90,6 +90,7 @@ class Listener(shared.OsvcThread):
         self.setup_sockux()
 
     def run(self):
+        shared.NODE.listener = self
         self.set_tid()
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.listener")
         self.events_clients = []
@@ -127,6 +128,9 @@ class Listener(shared.OsvcThread):
             "addr": self.addr,
         }
         return data
+
+    def reconfigure(self):
+        shared.NODE.listener = self
 
     def do(self):
         self.reload_config()
@@ -404,6 +408,13 @@ class Listener(shared.OsvcThread):
                 if _data:
                     data["services"][svc.svcpath] = _data
         return {"status": 0, "data": data}
+
+    def action_nodes_info(self, nodename, **kwargs):
+        """
+        Return a hash indexed by nodename, containing the info
+        required by the node selector algorithm.
+        """
+        return {"status": 0, "data": self.nodes_info()}
 
     def action_daemon_status(self, nodename, **kwargs):
         """

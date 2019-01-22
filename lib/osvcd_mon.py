@@ -91,6 +91,7 @@ class Monitor(shared.OsvcThread):
                 "compat": shared.COMPAT_VERSION,
                 "agent": shared.NODE.agent_version,
                 "monitor": shared.NMON_DATA,
+                "labels": shared.NODE.labels,
                 "services": {},
             }
 

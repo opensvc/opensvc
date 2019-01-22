@@ -14,6 +14,7 @@ from __future__ import division
 import os
 import datetime
 import sys
+import fnmatch
 import json
 import socket
 import time
@@ -120,6 +121,7 @@ class Node(Crypt, ExtConfigMixin):
 
     def __init__(self):
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
+        self.listener = None
         self.config = None
         self.auth_config = None
         self.clouds = None
@@ -690,8 +692,6 @@ class Node(Crypt, ExtConfigMixin):
         Given a basic selector string (no AND nor OR), return a list of service
         names.
         """
-        import fnmatch
-
         ops = r"(<=|>=|<|>|=|~|:)"
         negate = selector[0] == "!"
         selector = selector.lstrip("!")
@@ -815,7 +815,7 @@ class Node(Crypt, ExtConfigMixin):
             except KeyError:
                 pass
         return data
- 
+
     def build_services(self, *args, **kwargs):
         """
         Instanciate a Svc objects for each requested services and add it to
@@ -3448,6 +3448,59 @@ class Node(Crypt, ExtConfigMixin):
         from rcColor import print_color_config
         print_color_config(rcEnv.paths.authconf)
 
+    @formatter
+    def ls(self):
+        data = self.nodes_selector(self.options.node)
+        if self.options.format is not None:
+            return data
+        for node in data:
+            print(node)
+
+    def nodes_selector(self, selector, data=None):
+        if selector in ("*", "", None):
+            return self.cluster_nodes
+
+        # compat with pre-selector nodes list
+        selector = ",".join([node.lower() for node in selector.split()])
+
+        if data is None:
+            data = self.nodes_info
+        if data is None:
+            # daemon down, at least decide if the local node matches
+            data = {rcEnv.nodename: {"labels": self.labels}}
+        nodes = set([node for node in data])
+        anded_selectors = selector.split("+")
+        for _selector in anded_selectors:
+            nodes = nodes & self._nodes_selector(_selector, data)
+        return sorted(list(nodes))
+
+    def _nodes_selector(self, selector, data):
+        nodes = set()
+        ored_selectors = selector.split(",")
+        for _selector in ored_selectors:
+            nodes = nodes | self.__nodes_selector(_selector, data)
+        return nodes
+
+    def __nodes_selector(self, selector, data):
+        negate = selector[0] == "!"
+        selector = selector.lstrip("!")
+        if selector == "*":
+            matching = set([node for node in data])
+        elif selector.endswith(":"):
+            label = selector.rstrip(":")
+            matching = set([node for node, _data in data.items() \
+                            if label in _data.get("labels", {})])
+        elif "=" in selector:
+            label, value = selector.split("=", 1)
+            matching = set([node for node, _data in data.items() \
+                            if _data.get("labels", {}).get(label) == value])
+        else:
+            matching = set([node for node in data if fnmatch.fnmatch(node, selector)])
+        if negate:
+            return set([node for node in data]) - matching
+        else:
+            return matching
+
     @lazy
     def agent_version(self):
         try:
@@ -3625,6 +3678,23 @@ class Node(Crypt, ExtConfigMixin):
             # the daemon is not running or refused the connection,
             # tell the collector ourselves
             self.collector.call(*args, **kwargs)
+
+    @lazy
+    def nodes_info(self):
+        try:
+            return self._daemon_nodes_info(silent=True)["data"]
+        except (KeyError, TypeError):
+            return
+
+    def _daemon_nodes_info(self, silent=False, refresh=False, node=None):
+        data = self.daemon_send(
+            {
+                "action": "nodes_info",
+            },
+            nodename=node,
+            silent=silent,
+        )
+        return data
 
     def _daemon_status(self, silent=False, refresh=False, node=None):
         data = self.daemon_send(
