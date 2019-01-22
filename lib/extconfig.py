@@ -1293,10 +1293,13 @@ class ExtConfigMixin(object):
     @lazy
     def labels(self):
         data = {}
-        for label in self.config.options("labels"):
-            if label in self.config.defaults():
-                continue
-            data[label] = self.config.get("labels", label)
+        try:
+            for label in self.config.options("labels"):
+                if label in self.config.defaults():
+                    continue
+                data[label] = self.config.get("labels", label)
+        except Exception:
+            pass
         return data
 
     def section_kwargs(self, section, rtype=None):
