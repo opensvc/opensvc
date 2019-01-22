@@ -857,6 +857,14 @@ class Svc(Crypt, ExtConfigMixin):
         except ex.OptNotFound as exc:
             return exc.default
 
+    def unset_conf_lazy(self):
+        self.unset_lazy("nodes")
+        self.unset_lazy("ordered_nodes")
+        self.unset_lazy("peers")
+        self.unset_lazy("ordered_peers")
+        self.unset_lazy("flex_min_nodes")
+        self.unset_lazy("flex_max_nodes")
+
     def get_node(self):
         if self.node is None:
             self.node = node.Node()

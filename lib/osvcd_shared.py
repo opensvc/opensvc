@@ -387,6 +387,22 @@ class OsvcThread(threading.Thread, Crypt):
         return SERVICES[svcpath]
 
     @staticmethod
+    def on_labels_change():
+        NODE.unset_lazy("nodes_info")
+        for svc in SERVICES.values():
+            svc.unset_conf_lazy()
+
+    @staticmethod
+    def patch_has_labels_change(patch):
+        for _patch in patch:
+            try:
+                if _patch[0][0] == "labels":
+                    return True
+            except KeyError:
+                continue
+        return False
+
+    @staticmethod
     def get_services_nodenames():
         """
         Return the services nodes and drpnodes name, fetching the information
@@ -1117,6 +1133,8 @@ class OsvcThread(threading.Thread, Crypt):
 
     def nodes_info(self):
         data = {}
+        for node in self.cluster_nodes:
+            data[node] = {}
         with CLUSTER_DATA_LOCK:
             for node, _data in CLUSTER_DATA.items():
                 data[node] = {"labels": _data.get("labels", {})}

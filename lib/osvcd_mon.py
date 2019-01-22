@@ -2829,6 +2829,7 @@ class Monitor(shared.OsvcThread):
         data["stats"] = shared.NODE.stats()
         data["frozen"] = self.freezer.node_frozen()
         data["env"] = shared.NODE.env
+        data["labels"] = shared.NODE.labels
         data["speaker"] = self.speaker()
         data["min_avail_mem"] = shared.NODE.min_avail_mem
         data["min_avail_swap"] = shared.NODE.min_avail_swap
