@@ -190,6 +190,10 @@ class ExtConfigMixin(object):
             if not self.has_default_section:
                 raise ex.OptNotFound("section [%s] not found" % section)
         if evaluate:
+            if self.options.format:
+                return self.conf_get(section, option, scope=True, impersonate=impersonate)
+            else:
+                return self.conf_get(section, option, "string", scope=True, impersonate=impersonate)
             return self.conf_get(section, option, "string", scope=True, impersonate=impersonate)
         else:
             return self.config.get(section, option)
@@ -843,6 +847,16 @@ class ExtConfigMixin(object):
             return self.__conf_get(s, o, **kwargs)
         raise ex.excError("unknown inheritance value: %s" % str(inheritance))
 
+    def convert(self, converter, val):
+        if converter == "nodes_selector":
+            if hasattr(self, "svcname"):
+                data = self.node.listener.nodes_info() if self.node.listener else None
+                return self.node.nodes_selector(val, data)
+            else:
+                data = self.listener.nodes_info() if self.listener else None
+                return self.nodes_selector(val, data)
+        return globals()["convert_"+converter](val)
+
     def __conf_get(self, s, o, t=None, scope=None, impersonate=None,
                    use_default=None, config=None, default=None, required=None,
                    deprecated=None):
@@ -862,7 +876,7 @@ class ExtConfigMixin(object):
                                                                impersonate=impersonate,
                                                                config=config, section=s))
                 if t not in (None, "string"):
-                    exc.default = globals()["convert_"+t](exc.default)
+                    exc.default = self.convert(t, exc.default)
                 raise exc
         try:
             val = self.handle_references(val, scope=scope,
@@ -877,7 +891,7 @@ class ExtConfigMixin(object):
 
         if t in (None, "string"):
             return val
-        return globals()["convert_"+t](val)
+        return self.convert(t, val)
 
     def conf_get_val_unscoped(self, s, o, use_default=True, config=None):
         if config is None:

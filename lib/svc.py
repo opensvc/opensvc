@@ -642,17 +642,14 @@ class Svc(Crypt, ExtConfigMixin):
     @lazy
     def ordered_nodes(self):
         try:
-            nodes = self.conf_get("DEFAULT", "nodes")
-            nodes = self.node.nodes_selector(nodes, self.node.listener.nodes_info() if self.node.listener else None)
+            return self.conf_get("DEFAULT", "nodes")
         except ex.OptNotFound as exc:
-            nodes = exc.default
-        return nodes
+            return exc.default
 
     @lazy
     def nodes(self):
         try:
             nodes = self.conf_get("DEFAULT", "nodes")
-            nodes = self.node.nodes_selector(nodes, self.node.listener.nodes_info() if self.node.listener else None)
         except ex.OptNotFound as exc:
             nodes = exc.default
         return set(nodes)
@@ -2861,9 +2858,13 @@ class Svc(Crypt, ExtConfigMixin):
         if status not in (None, 0):
             raise ex.excError
 
-    def daemon_mon_action(self, action, wait=None, timeout=None, svcpath=None):
-        if svcpath is None:
-            svcpath = self.svcpath
+    def daemon_mon_action(self, action, wait=None, timeout=None):
+        global_expect = self.prepare_global_expect(action)
+        ret = self.set_service_monitor(global_expect=global_expect)
+        self.daemon_log_result(ret)
+        self.wait_daemon_mon_action(global_expect, wait=wait, timeout=timeout)
+
+    def prepare_global_expect(self, action):
         global_expect = ACTION_ASYNC[action]["target"]
         if action == "delete" and self.options.unprovision:
             global_expect = "purged"
@@ -2878,17 +2879,17 @@ class Svc(Crypt, ExtConfigMixin):
         elif action == "takeover":
             dst = self.destination_node_sanity_checks(rcEnv.nodename)
             global_expect += dst
-        ret = self.set_service_monitor(global_expect=global_expect, svcpath=svcpath)
-        self.daemon_log_result(ret)
+        return global_expect
+
+    def wait_daemon_mon_action(self, global_expect, wait=None, timeout=None, log_progress=True):
         if wait is None:
             wait = self.options.wait
+        if not wait:
+            return
         if timeout is None:
             timeout = self.options.time
         if timeout is not None:
             timeout = convert_duration(timeout)
-        if not wait:
-            return
-
         # poll global service status
         prev_global_expect_set = set()
         for _ in range(timeout):
@@ -2898,28 +2899,29 @@ class Svc(Crypt, ExtConfigMixin):
                 time.sleep(1)
                 continue
             global_expect_set = set()
-            inprogress = []
+            inprogress = set()
             for nodename in data["monitor"]["nodes"]:
                 try:
-                    _data = data["monitor"]["nodes"][nodename]["services"]["status"][svcpath]
+                    _data = data["monitor"]["nodes"][nodename]["services"]["status"][self.svcpath]
                 except (KeyError, TypeError) as exc:
                     continue
-                if _data["monitor"].get("global_expect") is not None:
-                    inprogress.append(nodename)
+                if _data["monitor"].get("global_expect") is not None or "ing" in _data["monitor"].get("status"):
+                    inprogress.add(nodename)
                 if _data["monitor"].get("global_expect") in (global_expect, "n/a"):
                     global_expect_set.add(nodename)
-            if prev_global_expect_set != global_expect_set:
+            if log_progress and prev_global_expect_set != global_expect_set:
                 for nodename in global_expect_set - prev_global_expect_set:
                     self.log.info(" work starting on %s", nodename)
                 for nodename in prev_global_expect_set - global_expect_set:
                     self.log.info(" work over on %s", nodename)
             if not inprogress and not global_expect_set:
-                if svcpath not in data["monitor"]["services"]:
+                if self.svcpath not in data["monitor"]["services"]:
+                    self.log.info("final status: deleted")
                     return
                 self.log.info("final status: avail=%s overall=%s frozen=%s",
-                              data["monitor"]["services"][svcpath]["avail"],
-                              data["monitor"]["services"][svcpath]["overall"],
-                              data["monitor"]["services"][svcpath].get("frozen", False))
+                              data["monitor"]["services"][self.svcpath]["avail"],
+                              data["monitor"]["services"][self.svcpath]["overall"],
+                              data["monitor"]["services"][self.svcpath].get("frozen", False))
                 return
             prev_global_expect_set = set(global_expect_set)
             time.sleep(1)

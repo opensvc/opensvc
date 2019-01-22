@@ -955,6 +955,7 @@ ACTIONS = {
         "eval": {
             "msg": "Evaluate the value of a service configuration keyword.",
             "options": ACTION_OPTS + [
+                OPT.format,
                 OPT.impersonate,
                 OPT.kw,
             ],
@@ -975,6 +976,7 @@ ACTIONS = {
             "msg": "Get the raw value of a service configuration keyword.",
             "options": ACTION_OPTS + [
                 OPT.eval,
+                OPT.format,
                 OPT.impersonate,
                 OPT.param,
                 OPT.kw,

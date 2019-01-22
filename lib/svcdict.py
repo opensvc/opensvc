@@ -800,6 +800,7 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "nodes",
         "at": True,
+        "convert": "nodes_selector",
         "default": rcEnv.nodename,
         "default_text": "<hostname of the current node>",
         "text": "A node selector expression specifying the list of cluster nodes hosting service instances."

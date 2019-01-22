@@ -2475,6 +2475,13 @@ class Node(Crypt, ExtConfigMixin):
             data.procs = {}
             data.svcs = {}
 
+        timeout = 0
+        if not options.local and options.wait:
+            # submit all async actions and wait only after to avoid
+            # max_parallel breaking inter service dependencies
+            timeout = convert_duration(options.time)
+            options.wait = False
+
         def running():
             count = 0
             for proc in data.procs.values():
@@ -2533,6 +2540,14 @@ class Node(Crypt, ExtConfigMixin):
                     # r is negative when data.procs[svcpath] is killed by signal.
                     # in this case, we don't want to decrement the err counter.
                     err += ret
+        if timeout:
+            for svc in self.svcs:
+                global_expect = svc.prepare_global_expect(action)
+                begin = time.time()
+                svc.wait_daemon_mon_action(global_expect, wait=True, timeout=timeout, log_progress=False)
+                timeout = timeout - (time.time() - begin)
+                if timeout < 0:
+                    break
 
         if need_aggregate:
             if self.options.single_service:
