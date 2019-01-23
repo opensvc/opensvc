@@ -653,6 +653,7 @@ class Monitor(shared.OsvcThread):
             if self.status_older_than_cf(svcpath):
                 #self.log.info("%s status dump is older than its config file",
                 #              svcpath)
+                self.service_status(svcpath)
                 continue
             svc = self.get_service(svcpath)
             self.resources_orchestrator(svcpath, svc)
