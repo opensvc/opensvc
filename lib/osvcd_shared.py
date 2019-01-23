@@ -460,7 +460,7 @@ class OsvcThread(threading.Thread, Crypt):
         global SMON_DATA
         instance = self.get_service_instance(svcpath, rcEnv.nodename)
         if instance and not instance.get("resources", {}) and \
-           status != "scaling" and \
+           not status and \
            (
                global_expect not in (
                    "frozen",
