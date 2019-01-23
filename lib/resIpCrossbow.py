@@ -23,8 +23,6 @@ class Ip(Res.Ip):
                         mask=mask,
                         gateway=gateway,
                         **kwargs)
-        if not which('ipadm'):
-            raise ex.excInitError("crossbow ips are not supported on this system")
         if 'noalias' not in self.tags:
             self.tags.add('noalias')
 
@@ -46,23 +44,25 @@ class Ip(Res.Ip):
             self.label += " " + self.ipname
 
     def stopip_cmd(self):
+        if not which(rcEnv.syspaths.ipadm):
+            raise ex.excError("crossbow ips are not supported on this system")
         ret, out, err = (0, '', '')
         if self.gateway is not None:
             cmd=['route', '-q', 'delete', 'default', self.gateway]
             r, o, e = self.call(cmd, info=True, outlog=False, errlog=False)
             ret += r
-        cmd=['ipadm', 'delete-addr', self.stacked_dev+'/'+self.ipdevExt]
+        cmd=[rcEnv.syspaths.ipadm, 'delete-addr', self.stacked_dev+'/'+self.ipdevExt]
         r, o, e =  self.vcall(cmd)
         ret += r
         out += o
         err += e
-        cmd = ['ipadm', 'show-addr', '-p', '-o', 'state', self.stacked_dev ]
+        cmd = [rcEnv.syspaths.ipadm, 'show-addr', '-p', '-o', 'state', self.stacked_dev ]
         _out, _, _ = justcall(cmd)
         _out = _out.strip().split("\n")
         if len(_out) > 0:
             self.log.info("skip delete-ip because addrs still use the ip")
             return ret, out, err
-        cmd=['ipadm', 'delete-ip', self.stacked_dev]
+        cmd=[rcEnv.syspaths.ipadm, 'delete-ip', self.stacked_dev]
         r, o, e =  self.vcall(cmd)
         ret += r
         out += o
@@ -93,20 +93,22 @@ class Ip(Res.Ip):
         return out.strip()
 
     def startip_cmd(self):
+        if not which(rcEnv.syspaths.ipadm):
+            raise ex.excError("crossbow ips are not supported on this system")
         if self.mask is None:
             raise ex.excError("netmask not specified nor guessable")
         self.wait_net_smf()
         ret, out, err = (0, '', '')
-        cmd = ['ipadm', 'show-if', '-p', '-o', 'state', self.stacked_dev]
+        cmd = [rcEnv.syspaths.ipadm, 'show-if', '-p', '-o', 'state', self.stacked_dev]
         _out, err, ret = justcall(cmd)
         _out = _out.strip().split("\n")
         if len(_out) == 0:
-            cmd=['ipadm', 'create-ip', '-t', self.stacked_dev ]
+            cmd=[rcEnv.syspaths.ipadm, 'create-ip', '-t', self.stacked_dev ]
             r, o, e = self.vcall(cmd)
-        cmd=['ipadm', 'create-addr', '-t', '-T', 'static', '-a', self.addr+"/"+to_cidr(self.mask), self.stacked_dev+'/'+self.ipdevExt]
+        cmd=[rcEnv.syspaths.ipadm, 'create-addr', '-t', '-T', 'static', '-a', self.addr+"/"+to_cidr(self.mask), self.stacked_dev+'/'+self.ipdevExt]
         r, o, e = self.vcall(cmd)
         if r != 0:
-            cmd=['ipadm', 'show-if' ]
+            cmd=[rcEnv.syspaths.ipadm, 'show-if' ]
             self.vcall(cmd)
             raise ex.excError("Interface %s is not up. ipadm cannot create-addr over it. Retrying..." % self.stacked_dev)
         ret += r
@@ -133,7 +135,7 @@ class Ip(Res.Ip):
             raise ex.IpConflict(self.addr)
 
     def is_up(self):
-        cmd = ["ipadm", "show-addr", "-p", "-o", "STATE,ADDR", self.ipdev+'/'+self.ipdevExt]
+        cmd = [rcEnv.syspaths.ipadm, "show-addr", "-p", "-o", "STATE,ADDR", self.ipdev+'/'+self.ipdevExt]
         out, err, ret = justcall(cmd)
         if ret != 0:
             # normal down state
