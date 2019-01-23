@@ -44,7 +44,7 @@ def setup_parser(node):
                       help="colorize output. possible values are : auto=guess based "
                            "on tty presence, always|yes=always colorize, never|no="
                            "never colorize")
-    parser.add_option("--node", action="store", dest="node",
+    parser.add_option("--node", action="store", dest="node", default="*",
                       help="The node to send a request to. If not specified the "
                            "local node is targeted."),
     parser.add_option("--namespace", action="store", dest="namespace",
@@ -129,22 +129,26 @@ def _main(node, argv=None):
         options.interval = 3
     if options.interval:
         options.watch = True
-    if options.node is None:
-        options.node = socket.gethostname().lower()
+    endpoint = socket.gethostname().lower()
+    nodes = []
+    if options.node is not None:
+        nodes = node.nodes_selector(options.node)
+        if nodes and endpoint not in nodes:
+            endpoint = nodes[0]
 
     node.options.update({
         "color": options.color,
     })
 
-    status_data = node._daemon_status(node=options.node)
+    status_data = node._daemon_status(node=endpoint)
     expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
 
     if options.watch:
-        start_events_thread(node, options.node)
+        start_events_thread(node, endpoint)
         preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         stats_data = get_stats(options, node, expanded_svcs)
         prev_stats_data = None
-        outs = format_cluster(svcpaths=expanded_svcs, node=options.node,
+        outs = format_cluster(svcpaths=expanded_svcs, node=endpoint,
                               data=status_data, sections=options.sections)
 
         if outs is not None:
@@ -163,7 +167,7 @@ def _main(node, argv=None):
             if not status_changed and not stats_changed:
                 continue
             if status_changed:
-                status_data = node._daemon_status(node=options.node)
+                status_data = node._daemon_status(node=endpoint)
                 expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
             if stats_changed:
                 prev_stats_data = stats_data
@@ -174,7 +178,7 @@ def _main(node, argv=None):
             preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             outs = format_cluster(
                 svcpaths=expanded_svcs,
-                node=options.node,
+                node=nodes,
                 data=status_data,
                 prev_stats_data=prev_stats_data,
                 stats_data=stats_data,
@@ -188,7 +192,7 @@ def _main(node, argv=None):
             last_refresh = now
             time.sleep(0.2)
     else:
-        outs = format_cluster(svcpaths=expanded_svcs, node=options.node,
+        outs = format_cluster(svcpaths=expanded_svcs, node=nodes,
                               data=status_data, sections=options.sections)
         if outs is not None:
             print(outs)

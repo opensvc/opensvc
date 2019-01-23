@@ -261,6 +261,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
         sections = DEFAULT_SECTIONS
     out = []
     nodenames = get_nodes(data)
+    show_nodenames = sorted(list(set(nodenames) & set(node)))
     services = {}
 
     def load_header(title=""):
@@ -282,7 +283,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                 "",
                 "",
             ]
-        for nodename in nodenames:
+        for nodename in show_nodenames:
             line.append(colorize(nodename, color.BOLD))
         out.append(line)
 
@@ -340,9 +341,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             fmt_svc_blk_wb(svcpath, stats_data),
             fmt_svc_blk_rbps(svcpath, prev_stats_data, stats_data),
             fmt_svc_blk_wbps(svcpath, prev_stats_data, stats_data),
-            "|",
+            "|" if show_nodenames else "",
         ]
-        for nodename in nodenames:
+        for nodename in show_nodenames:
             if nodename not in data["nodes"]:
                 line.append("")
             elif data["nodes"][nodename] is None:
@@ -444,9 +445,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "",
             "",
             "",
-            "|",
+            "|" if show_nodenames else "",
         ]
-        for nodename in nodenames:
+        for nodename in show_nodenames:
             if nodename not in _data["peers"] or "beating" not in _data["peers"][nodename]:
                 status = "n/a"
             elif _data["peers"][nodename]["beating"]:
@@ -538,9 +539,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "",
             "",
             "",
-            "|",
+            "|" if show_nodenames else "",
         ]
-        for nodename in nodenames:
+        for nodename in show_nodenames:
             speaker = data["monitor"].get("nodes", {}).get(nodename, {}).get("speaker")
             if speaker:
                 status = "up"
@@ -569,9 +570,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "",
             "",
             "",
-            "|",
+            "|" if show_nodenames else "",
         ]
-        for nodename in nodenames:
+        for nodename in show_nodenames:
             speaker = data["monitor"].get("nodes", {}).get(nodename, {}).get("speaker")
             if speaker:
                 status = "up"
@@ -652,9 +653,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "",
             "",
             "",
-            "|",
+            "|" if show_nodenames else "",
         ]
-        for nodename in nodenames:
+        for nodename in show_nodenames:
             line.append(str(data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get("score", "")))
         out.append(line)
 
@@ -674,9 +675,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "",
             "",
             "",
-            "|",
+            "|" if show_nodenames else "",
         ]
-        for nodename in nodenames:
+        for nodename in show_nodenames:
             line.append(str(data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get("load_15m", "")))
         out.append(line)
 
@@ -696,9 +697,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "",
             "",
             "",
-            "|",
+            "|" if show_nodenames else "",
         ]
-        for nodename in nodenames:
+        for nodename in show_nodenames:
             total = data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get(key+"_total")
             avail = data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get(key+"_avail")
             limit = 100 - data["monitor"]["nodes"].get(nodename, {}).get("min_avail_"+key, 0)
@@ -732,9 +733,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "",
             "",
             "",
-            "|",
+            "|" if show_nodenames else "",
         ]
-        for nodename in nodenames:
+        for nodename in show_nodenames:
             nmon_state = data["monitor"]["nodes"].get(nodename, {}).get("monitor", {}).get("status", "")
             if nmon_state == "idle":
                 nmon_state = ""
@@ -769,9 +770,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "",
             "",
             "",
-            "|",
+            "|" if show_nodenames else "",
         ]
-        for nodename in nodenames:
+        for nodename in show_nodenames:
             compat = data["monitor"]["nodes"].get(nodename, {}).get("compat", "")
             line.append(str(compat))
         out.append(line)
@@ -792,10 +793,10 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "",
             "",
             "",
-            "|",
+            "|" if show_nodenames else "",
         ]
         versions = []
-        for nodename in nodenames:
+        for nodename in show_nodenames:
             agent = data["monitor"]["nodes"].get(nodename, {}).get("agent", "")
             line.append(str(agent))
             if agent is not '':
@@ -830,9 +831,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                 "",
                 "",
                 "",
-                "|",
+                "|" if show_nodenames else "",
             ]
-            for nodename in nodenames:
+            for nodename in show_nodenames:
                 status = data["monitor"]["nodes"].get(nodename, {}).get("arbitrators", {}).get(aid, {}).get("status", "undef")
                 if status != "up":
                     line[1] = colorize_status("warn", lpad=0)
@@ -842,7 +843,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
         out.append([])
 
     def load_nodes():
-        if "nodes" not in sections:
+        if "nodes" not in sections or not show_nodenames:
             return
         load_header("Nodes")
         load_metrics()

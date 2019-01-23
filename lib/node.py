@@ -3472,8 +3472,10 @@ class Node(Crypt, ExtConfigMixin):
             print(node)
 
     def nodes_selector(self, selector, data=None):
-        if selector in ("*", "", None):
+        if selector in ("*", None):
             return self.cluster_nodes
+        if selector == "":
+            return []
 
         # compat with pre-selector nodes list
         selector = ",".join([node.lower() for node in selector.split()])
