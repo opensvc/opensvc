@@ -623,10 +623,10 @@ class Listener(shared.OsvcThread):
                 data = shared.CLUSTER_DATA[nodename]["services"]["status"][svcpath]
             except KeyError:
                 continue
+            slaves.add(svcpath)
             new_slaves = set(data.get("slaves", [])) | set(data.get("scaler_slaves", []))
             new_slaves = set([set_ns(slave, namespace) for slave in new_slaves])
             new_slaves -= slaves
-            slaves |= new_slaves
             for slave in new_slaves:
                 slaves |= self.get_service_slaves(slave, slaves)
         return slaves
