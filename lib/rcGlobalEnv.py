@@ -194,6 +194,7 @@ class rcEnv:
     elif sysname == "SunOS":
         syspaths.ps = "/usr/bin/ps"
         syspaths.df = "/usr/sbin/df"
+        syspaths.ipadm = "/usr/sbin/ipadm"
         syspaths.mount = "/usr/sbin/mount"
         syspaths.umount = "/usr/sbin/umount"
         syspaths.zfs = "/usr/sbin/zfs"
