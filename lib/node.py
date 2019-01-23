@@ -2983,11 +2983,16 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("feed service configurations to stdin and set --config=-")
         else:
             for _svcpath, _data in data.items():
-                # discard namespace in svcpath, use --namespace value instead
-                svcname, _ = split_svcpath(_svcpath)
+                if namespace:
+                    # discard namespace in svcpath, use --namespace value instead
+                    svcname, _ = split_svcpath(_svcpath)
+                    _namespace = namespace
+                else:
+                    svcname, _namespace = split_svcpath(_svcpath)
                 validate_name(svcname)
-                print("create %s/%s" % (namespace, svcname))
-                self.install_svc_conf_from_data(svcname, namespace, _data, restore)
+                print("create %s" % fmt_svcpath(svcname, _namespace))
+                self.install_svc_conf_from_data(svcname, _namespace, _data, restore)
+                self.install_service_files(svcname, namespace)
             return
 
         if not exe_link_exists(svcname, namespace):
