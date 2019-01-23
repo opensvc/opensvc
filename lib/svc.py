@@ -227,6 +227,7 @@ ACTIONS_NO_LOG = [
 ACTIONS_NO_TRIGGER = [
     "abort",
     "delete",
+    "clear",
     "dns_update",
     "enable",
     "disable",
@@ -3674,6 +3675,11 @@ class Svc(Crypt, ExtConfigMixin):
         All resources can contribute a set of env variables through their
         own setup_environ() method.
         """
+        if action in ACTIONS_NO_TRIGGER:
+            return
+        if not action and os.environ.get("OPENSVC_SVCPATH") == self.svcpath:
+            return
+        os.environ['OPENSVC_SVCPATH'] = self.svcpath
         os.environ['OPENSVC_SVCNAME'] = self.svcname
         os.environ['OPENSVC_SVC_ID'] = self.id
         if self.namespace:
@@ -3983,7 +3989,6 @@ class Svc(Crypt, ExtConfigMixin):
            action.startswith("json_"):
             return self.do_print_action(action, options)
         if self.published_action(action, options):
-            self.setup_environ(action=action)
             err = self.do_logged_action(action, options)
         else:
             err = self.do_action(action, options)
@@ -4208,6 +4213,7 @@ class Svc(Crypt, ExtConfigMixin):
         psinfo = self.do_cluster_action(action, options=options)
 
         def call_action(action):
+            self.setup_environ(action=action)
             self.action_triggers("pre", action)
             self.action_triggers("blocking_pre", action, blocking=True)
             err = getattr(self, action)()
