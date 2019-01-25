@@ -22,7 +22,7 @@ class Disk(Res.Resource):
     @lazy
     def disk_id(self):
         try:
-            return self.conf_get("disk_id")
+            return self.conf_get("disk_id").strip()
         except ex.OptNotFound as exc:
             return
 
