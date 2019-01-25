@@ -4549,6 +4549,8 @@ class Node(Crypt, ExtConfigMixin):
         for name, _data in data.items():
             leaf = node.add_node()
             leaf.add_column(name, color.BOLD)
+            if _data is None:
+                continue
             leaf.add_column(_data["type"])
             leaf.add_column(",".join(_data["capabilities"]))
             leaf.add_column(_data["head"])
