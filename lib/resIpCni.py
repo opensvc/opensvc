@@ -189,9 +189,15 @@ class Ip(Res.Ip):
     @lazy
     def cni_plugins(self):
         try:
-            return self.svc.node.conf_get("cni", "plugins")
+            path = self.svc.node.conf_get("cni", "plugins")
         except ex.OptNotFound as exc:
-            return exc.default
+            path = exc.default
+        if os.path.exists(os.path.join(path, "bridge")):
+            return path
+        altpath = os.path.join(os.sep, "usr", "libexec", "cni")
+        if os.path.exists(os.path.join(altpath, "bridge")):
+            return altpath
+        return path
 
     @lazy
     def cni_config(self):
