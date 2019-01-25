@@ -1176,7 +1176,8 @@ class ExtConfigMixin(object):
             from svcBuilder import build
             svc = None
             try:
-                svc = build(self.svcname, svcconf=path, node=self.node, volatile=True)
+                svc = build(self.svcname, namespace=self.namespace,
+                            svcconf=path, node=self.node, volatile=True)
             except Exception as exc:
                 self.log.error("the new configuration causes the following "
                                "build error: %s", str(exc))
