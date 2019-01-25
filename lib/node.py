@@ -4599,7 +4599,10 @@ class Node(Crypt, ExtConfigMixin):
         return self.get_pool(candidates[-1]["name"])
 
     def get_pool(self, poolname):
-        section = "pool#"+poolname
+        try:
+            section = "pool#"+poolname
+        except TypeError:
+            raise ex.excError("invalid pool name: %s" % poolname)
         try:
             ptype = self.conf_get(section, "type")
         except ex.OptNotFound as exc:
