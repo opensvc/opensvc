@@ -148,7 +148,7 @@ def _main(node, argv=None):
         preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         stats_data = get_stats(options, node, expanded_svcs)
         prev_stats_data = None
-        outs = format_cluster(svcpaths=expanded_svcs, node=endpoint,
+        outs = format_cluster(svcpaths=expanded_svcs, node=nodes,
                               data=status_data, sections=options.sections)
 
         if outs is not None:
