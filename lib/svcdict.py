@@ -220,6 +220,14 @@ KEYWORDS = [
         "text": "The access mode of the volume. rwo is Read Write Once, roo is Read Only Once, rwx is Read Write Many, rox is Read Only Many. rox and rwx modes are served by flex volume services.",
     },
     {
+        "section": "DEFAULT",
+        "keyword": "pool",
+        "depends": [("kind", "vol")],
+        "at": True,
+        "required": False,
+        "text": "The name of the pool this volume was allocated from.",
+    },
+    {
         "section": "subset",
         "keyword": "parallel",
         "at": True,
@@ -1624,12 +1632,12 @@ KEYWORDS = [
     },
     {
         "section": "disk",
-        "rtype": "gce",
+        "rtype": ["disk", "gce"],
         "keyword": "size",
         "provisioning": True,
         "at": True,
         "convert": "size",
-        "text": "Indicates the size of the disks. The OpenSVC size converter is used to produce gce compatible size, so k, K, kib, KiB, kb, KB, ki, Ki and all their g, t, p, e variants are supported.",
+        "text": "A size expression for the disk allocation.",
         "example": "20g"
     },
     {
@@ -1734,6 +1742,22 @@ KEYWORDS = [
         "default": "vg",
         "candidates": ["disk", "veritas", "vxdg", "vxvol", "raw", "rados", "md", "drbd", "loop", "zpool", "pool", "raw", "vmdg", "vdisk", "lvm", "vg", "lv", "amazon", "gce"],
         "text": "The volume group driver to use. Leave empty to activate the native volume group manager."
+    },
+    {
+        "section": "disk",
+        "rtype": "disk",
+        "keyword": "pool",
+        "provisioning": True,
+        "at": True,
+        "text": "The name of the pool this volume was allocated from.",
+    },
+    {
+        "section": "disk",
+        "rtype": "disk",
+        "keyword": "name",
+        "provisioning": True,
+        "at": True,
+        "text": "The name of the disk.",
     },
     {
         "section": "fs",

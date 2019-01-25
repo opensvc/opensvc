@@ -473,12 +473,6 @@ def add_volume(svc, s):
 
 def add_disk_disk(svc, s):
     kwargs = init_kwargs(svc, s)
-
-    try:
-        kwargs['disk_id'] = svc.conf_get(s, 'disk_id')
-    except ex.OptNotFound:
-        pass
-
     m = __import__('resDiskDisk'+rcEnv.sysname)
     r = m.Disk(**kwargs)
     svc += r

@@ -13,6 +13,9 @@ OPT = Storage({
         "--api", default=None, action="store", dest="api",
         help="Specify a collector api url different from the "
              "one set in node.conf."),
+    "access": Option(
+        "--access", default="rwo", action="store", dest="access",
+        help="The access mode of the volume. rwo, roo, rwx, rox."),
     "add": Option(
         "--add", default=None,
         action="store",
@@ -201,6 +204,12 @@ OPT = Storage({
         action="store", dest="moduleset",
         help="Specify the modulesets to limit the action to. The special value ``all`` "
              "can be used in conjonction with detach."),
+    "name": Option(
+        "--name", action="store", dest="name",
+        help="The name of the object."),
+    "namespace": Option(
+        "--namespace", action="store", dest="namespace",
+        help="The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable."),
     "node": Option(
         "--node", default="",
         action="store", dest="node",
@@ -228,6 +237,10 @@ OPT = Storage({
              "specified user credentials instead of the node "
              "credentials. Prompted if necessary but not "
              "specified."),
+    "pool": Option(
+        "--pool", default=None,
+        action="store", dest="pool",
+        help="The name of the storage pool."),
     "port": Option(
         "--port", default=7,
         action="store", dest="port",
@@ -263,6 +276,9 @@ OPT = Storage({
         "--save", default=False,
         action="store_true", dest="save",
         help="Save the collector cli settings to the file specified by --config or ~/.opensvc-cli by default."),
+    "size": Option(
+        "--size", default="rwo", action="store", dest="size",
+        help="The size mode of the volume. ex: 10gi, 10g."),
     "stats_dir": Option(
         "--stats-dir", default=None,
         action="store", dest="stats_dir",
@@ -530,7 +546,26 @@ ACTIONS = {
         "pool_status": {
             "msg": "Show pools status.",
             "options": [
-                OPT.id,
+                OPT.pool,
+            ],
+        },
+        "pool_create_volume": {
+            "msg": "Create a volume in the pool.",
+            "options": [
+                OPT.pool,
+                OPT.name,
+                OPT.namespace,
+                OPT.size,
+                OPT.access,
+                OPT.node,
+            ],
+        },
+        "pool_delete_volume": {
+            "msg": "Delete a volume in the pool.",
+            "options": [
+                OPT.pool,
+                OPT.name,
+                OPT.namespace,
             ],
         },
     },

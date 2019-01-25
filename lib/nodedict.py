@@ -716,7 +716,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "section": "pool",
         "keyword": "type",
         "default": "directory",
-        "candidates": ["directory", "loop", "vg", "zpool"],
+        "candidates": ["directory", "loop", "vg", "zpool", "freenas"],
         "text": "The pool type."
     },
     {
@@ -724,6 +724,20 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "keyword": "mnt_opt",
         "at": True,
         "text": "The mount options of the fs created over the pool devices."
+    },
+    {
+        "section": "pool",
+        "rtype": "freenas",
+        "keyword": "array",
+        "required": True,
+        "text": "The name of the array, as known to the auth.conf."
+    },
+    {
+        "section": "pool",
+        "rtype": "freenas",
+        "keyword": "diskgroup",
+        "required": True,
+        "text": "The name of the array disk group to allocate volumes from."
     },
     {
         "section": "pool",

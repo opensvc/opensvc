@@ -4611,6 +4611,21 @@ class Node(Crypt, ExtConfigMixin):
         mod = mimport("pool", ptype)
         return mod.Pool(node=self, name=poolname)
 
+    def pool_create_volume(self):
+        self._pool_create_volume(poolname=self.options.pool,
+                                 name=self.options.name,
+                                 namespace=self.options.namespace,
+                                 size=self.options.size,
+                                 access=self.options.access,
+                                 nodes=self.options.node)
+
+    def _pool_create_volume(self, poolname=None, **kwargs):
+        try:
+            pool = self.get_pool(poolname)
+        except ImportError as exc:
+            raise ex.excError(str(exc))
+        pool.create_volume(**kwargs)
+
     ##########################################################################
     #
     # Network actions

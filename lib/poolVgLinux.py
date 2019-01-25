@@ -21,7 +21,7 @@ class Pool(pool.Pool):
         except ex.OptNotFound as exc:
             return exc.default
 
-    def translate(self, size=None, fmt=True):
+    def translate(self, name=None, size=None, fmt=True):
         data = []
         if fmt:
             fs = {
