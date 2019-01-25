@@ -4759,3 +4759,8 @@ class Node(Crypt, ExtConfigMixin):
                 return ofile.read()
         except Exception:
             return
+
+    @lazy
+    def targets(self):
+        return self.asset.get_targets()
+

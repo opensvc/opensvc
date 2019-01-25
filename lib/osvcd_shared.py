@@ -1137,7 +1137,10 @@ class OsvcThread(threading.Thread, Crypt):
             data[node] = {}
         with CLUSTER_DATA_LOCK:
             for node, _data in CLUSTER_DATA.items():
-                data[node] = {"labels": _data.get("labels", {})}
+                data[node] = {
+                    "labels": _data.get("labels", {}),
+                    "targets": _data.get("targets", {}),
+                }
         return data
 
     def speaker(self):
