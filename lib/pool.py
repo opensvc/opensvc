@@ -8,6 +8,8 @@ from converters import convert_size
 from svc import Svc
 
 class Pool(object):
+    type = None
+
     def __init__(self, node=None, name=None):
         self.node = node
         self.name = name.strip(os.sep)
