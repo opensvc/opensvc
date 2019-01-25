@@ -101,7 +101,7 @@ class Prov(provisioning.Prov):
             return volume
         elif not self.r.svc.options.leader:
             self.r.log.info("volume %s does not exist, we are not leader: wait its propagation", name)
-            self.r.wait_for_fn(lambda v: v.exists(), 10, 1,
+            self.r.wait_for_fn(lambda: volume.exists(), 10, 1,
                                "non leader instance waited for too long for the "
                                "volume to appear")
             return volume
