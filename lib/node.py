@@ -4543,6 +4543,7 @@ class Node(Crypt, ExtConfigMixin):
         node.add_column("type")
         node.add_column("caps")
         node.add_column("head")
+        node.add_column("vols")
         node.add_column("size")
         node.add_column("used")
         node.add_column("free")
@@ -4554,6 +4555,7 @@ class Node(Crypt, ExtConfigMixin):
             leaf.add_column(_data["type"])
             leaf.add_column(",".join(_data["capabilities"]))
             leaf.add_column(_data["head"])
+            leaf.add_column(len(_data["volumes"]))
             for key in ("size", "used", "free"):
                 if _data[key] < 0:
                     val = "-"
@@ -4562,11 +4564,33 @@ class Node(Crypt, ExtConfigMixin):
                 leaf.add_column(val)
         print(tree)
 
+    def pools_volumes(self):
+        try:
+            data = self._daemon_status(silent=True)["monitor"]["nodes"]
+        except Exception as exc:
+            return {}
+        pools = {}
+        for nodename, ndata in data.items():
+            if not isinstance(ndata, dict):
+                continue
+            for svcpath, sdata in ndata.get("services", {}).get("status", {}).items():
+                poolname = sdata.get("pool")
+                try:
+                    pools[poolname].add(svcpath)
+                except Exception:
+                    pools[poolname] = set([svcpath])
+        return pools
+
     def pool_status_data(self):
         data = {}
+        volumes = self.pools_volumes()
         for name in self.pool_ls_data():
             pool = self.get_pool(name)
             data[name] = pool.status()
+            if name in volumes:
+                data[name]["volumes"] = sorted(list(volumes[name]))
+            else:
+                data[name]["volumes"] = []
         return data
 
     def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None):
