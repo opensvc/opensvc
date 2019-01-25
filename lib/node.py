@@ -2354,6 +2354,9 @@ class Node(Crypt, ExtConfigMixin):
         """
         Rescans the scsi host buses for new logical units discovery.
         """
+        self._scanscsi(self.options.hba, self.options.target, self.options.lun)
+
+    def _scanscsi(self, hba=None, target=None, lun=None):
         try:
             mod = __import__("rcDiskInfo"+rcEnv.sysname)
         except ImportError:
@@ -2364,9 +2367,9 @@ class Node(Crypt, ExtConfigMixin):
             print("scanscsi is not implemented on", rcEnv.sysname, file=sys.stderr)
             return 1
         return diskinfo.scanscsi(
-            hba=self.options.hba,
-            target=self.options.target,
-            lun=self.options.lun,
+            hba=hba,
+            target=target,
+            lun=lun,
         )
 
     def cloud_get(self, section):
