@@ -38,6 +38,14 @@ STOPPED_STATES = [
     "stdby up",
     "stdby down",
 ]
+ORCHESTRATE_STATES = (
+    "ready",
+    "idle",
+    "wait children",
+    "wait parents",
+    "wait sync",
+    "wait leader",
+)
 ABORT_STATES = (
     ("thaw failed", "thawed"),
     ("freeze failed", "frozen"),
@@ -851,7 +859,7 @@ class Monitor(shared.OsvcThread):
                 if self.abort_state(smon.status, smon.global_expect, smon.placement):
                     self.set_smon(svcpath, global_expect="unset")
                     return
-            elif smon.status not in ("ready", "idle", "wait children", "wait parents"):
+            elif smon.status not in ORCHESTRATE_STATES:
                 #self.log.info("service %s orchestrator out (mon status %s)", svc.svcpath, smon.status)
                 return
         status = shared.AGG[svc.svcpath].avail
@@ -1257,21 +1265,32 @@ class Monitor(shared.OsvcThread):
                 })
                 self.service_unprovision(svc.svcpath)
         elif smon.global_expect == "provisioned":
+            if smon.status == "wait parents":
+                if not self.parents_available(svc):
+                    return
+            elif smon.status == "wait leader":
+                if not self.leader_first(svc, provisioned=True, silent=True):
+                    return
+            elif smon.status == "wait sync":
+                if not self.min_instances_reached(svc):
+                    return
+            if self.service_provisioned(instance):
+                self.set_smon(svc.svcpath, global_expect="started")
+                return
+            if not self.min_instances_reached(svc):
+                self.set_smon(svc.svcpath, status="wait sync")
+                return
             if not self.parents_available(svc):
                 self.set_smon(svc.svcpath, status="wait parents")
                 return
-            elif smon.status == "wait parents":
-                self.set_smon(svc.svcpath, status="idle")
-            if not self.service_provisioned(instance):
-                if not self.leader_first(svc, provisioned=True):
-                   return
-                self.event("instance_provision", {
-                    "reason": "target",
-                    "svcpath": svc.svcpath,
-                })
-                self.service_provision(svc)
-            else:
-                self.set_smon(svc.svcpath, global_expect="started")
+            if not self.leader_first(svc, provisioned=True):
+                self.set_smon(svc.svcpath, status="wait leader")
+                return
+            self.event("instance_provision", {
+                "reason": "target",
+                "svcpath": svc.svcpath,
+            })
+            self.service_provision(svc)
         elif smon.global_expect == "deleted":
             if not self.children_down(svc):
                 self.set_smon(svc.svcpath, status="wait children")
@@ -1285,7 +1304,7 @@ class Monitor(shared.OsvcThread):
                 })
                 self.service_delete(svc.svcpath)
         elif smon.global_expect == "purged" and \
-             self.leader_first(svc, provisioned=False, deleted=True, check_min_instances_reached=False):
+             self.leader_first(svc, provisioned=False, deleted=True):
             if not self.children_down(svc):
                 self.set_smon(svc.svcpath, status="wait children")
                 return
@@ -1804,7 +1823,7 @@ class Monitor(shared.OsvcThread):
                 return False
         return True
 
-    def leader_first(self, svc, provisioned=False, deleted=None, check_min_instances_reached=True):
+    def leader_first(self, svc, provisioned=False, deleted=None, silent=False):
         """
         Return True if the peer selected for anteriority is found to have
         reached the target status, or if the local node is the one with
@@ -1817,26 +1836,25 @@ class Monitor(shared.OsvcThread):
           whatever their frozen, and current provisioning state. Still
           honor the constraints and overload discards.
         """
-        if check_min_instances_reached and not self.min_instances_reached(svc):
-            self.log.info("delay leader-first action on service %s until all "
-                          "nodes have fetched the service config", svc.svcpath)
-            return False
         instances = self.get_service_instances(svc.svcpath, discard_empty=True)
         candidates = [nodename for (nodename, data) in instances.items() \
                       if data.get("avail") in ("up", "warn")]
         if len(candidates) == 0:
-            self.log.info("service %s has no up instance, relax candidates "
-                          "constraints", svc.svcpath)
+            if not silent:
+                self.log.info("service %s has no up instance, relax candidates "
+                              "constraints", svc.svcpath)
             candidates = self.placement_candidates(
                 svc, discard_frozen=False,
                 discard_unprovisioned=False,
             )
         try:
             top = self.placement_ranks(svc, candidates=candidates)[0]
-            self.log.info("elected %s as the first node to take action on "
-                          "service %s", top, svc.svcpath)
+            if not silent:
+                self.log.info("elected %s as the first node to take action on "
+                              "service %s", top, svc.svcpath)
         except IndexError:
-            self.log.error("service %s placement ranks list is empty", svc.svcpath)
+            if not silent:
+                self.log.error("service %s placement ranks list is empty", svc.svcpath)
             return True
         if top == rcEnv.nodename:
             return True
@@ -1845,7 +1863,8 @@ class Monitor(shared.OsvcThread):
             return True
         if instance["provisioned"] is provisioned:
             return True
-        self.log.info("delay leader-first action on service %s", svc.svcpath)
+        if not silent:
+            self.log.info("delay leader-first action on service %s", svc.svcpath)
         return False
 
     def overloaded_up_service_instances(self, svcpath):
@@ -2832,6 +2851,8 @@ class Monitor(shared.OsvcThread):
         data["frozen"] = self.freezer.node_frozen()
         data["env"] = shared.NODE.env
         data["labels"] = shared.NODE.labels
+        data["targets"] = shared.NODE.targets
+        data["locks"] = shared.LOCKS
         data["speaker"] = self.speaker()
         data["min_avail_mem"] = shared.NODE.min_avail_mem
         data["min_avail_swap"] = shared.NODE.min_avail_swap
@@ -2932,9 +2953,40 @@ class Monitor(shared.OsvcThread):
         return diff
 
     def merge_hb_data(self):
+        self.merge_hb_data_locks()
         self.merge_hb_data_compat()
         self.merge_hb_data_monitor()
         self.merge_hb_data_provision()
+
+    def merge_hb_data_locks(self):
+        with shared.LOCKS_LOCK:
+            self._merge_hb_data_locks()
+
+    def _merge_hb_data_locks(self):
+        for nodename, node in shared.CLUSTER_DATA.items():
+            if nodename == rcEnv.nodename:
+                continue
+            for name, lock in node.get("locks", {}).items():
+                if lock["requester"] == rcEnv.nodename and name not in shared.LOCKS:
+                    # don't re-merge a released lock emitted by this node
+                    continue
+                if name not in shared.LOCKS:
+                    self.log.info("merge lock %s from node %s", name, nodename)
+                    shared.LOCKS[name] = lock
+                    continue
+                if lock["requested"] < shared.LOCKS[name]["requested"] and \
+                   lock["requester"] != rcEnv.nodename and \
+                   lock["requester"] == nodename:
+                    self.log.info("merge older lock %s from node %s", name, nodename)
+                    shared.LOCKS[name] = lock
+                    continue
+        delete = []
+        for name, lock in shared.LOCKS.items():
+            if nodename == lock["requester"] and node.get("locks", {}).get(name) is None:
+                self.log.info("drop lock %s from node %s", name, nodename)
+                delete.append(name)
+        for name in delete:
+            del shared.LOCKS[name]
 
     def merge_hb_data_compat(self):
         compat = [data.get("compat") for data in shared.CLUSTER_DATA.values() if "compat" in data]

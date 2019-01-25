@@ -3723,6 +3723,28 @@ class Node(Crypt, ExtConfigMixin):
         )
         return data
 
+    def _daemon_lock(self, name, timeout=None, silent=False, on_error=None):
+        data = self.daemon_send(
+            {
+                "action": "lock",
+                "options": {"name": name, "timeout": timeout},
+            },
+            silent=silent,
+        )
+        lock_id = data.get("data", {}).get("id")
+        if not lock_id and on_error == "raise":
+            raise ex.excError("cluster lock error")
+        return lock_id
+
+    def _daemon_unlock(self, name, lock_id, silent=False):
+        data = self.daemon_send(
+            {
+                "action": "unlock",
+                "options": {"name": name, "id": lock_id},
+            },
+            silent=silent,
+        )
+
     def _daemon_status(self, silent=False, refresh=False, node=None):
         data = self.daemon_send(
             {

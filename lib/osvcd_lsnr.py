@@ -12,6 +12,7 @@ import time
 import select
 import shutil
 import traceback
+import uuid
 from subprocess import Popen, PIPE
 
 import six
@@ -776,6 +777,88 @@ class Listener(shared.OsvcThread):
             local_expect=local_expect, global_expect=global_expect,
         )
         return {"status": 0}
+
+    def lock_accepted(self, name, lock_id):
+        for nodename, node in shared.CLUSTER_DATA.items():
+            lock = node.get("locks", {}).get(name)
+            if not lock:
+                return False
+            if lock.get("id") != lock_id:
+                return False
+        return True
+
+    def lock_acquire(self, nodename, name, timeout=None):
+        if timeout is None:
+            timeout = 10
+        if nodename not in self.cluster_nodes:
+            return
+        lock_id = None
+        deadline = time.time() + timeout
+        situation = 0
+        while time.time() < deadline:
+            if not lock_id:
+                lock_id = self._lock_acquire(nodename, name)
+                if not lock_id:
+                    if situation != 1:
+                        self.log.info("claim %s lock refused (already claimed)", name)
+                    situation = 1
+                    time.sleep(0.5)
+                    continue
+                self.log.info("claimed %s lock: %s", name, lock_id)
+            if shared.LOCKS.get(name, {}).get("id") != lock_id:
+                self.log.info("claim %s dropped", name)
+                lock_id = None
+                continue
+            if self.lock_accepted(name, lock_id):
+                self.log.info("locked %s", name)
+                return lock_id
+            time.sleep(0.5)
+        self.log.warning("claim timeout on %s lock", name)
+        self.lock_release(name, lock_id, silent=True)
+
+    def lock_release(self, name, lock_id, silent=False):
+        with shared.LOCKS_LOCK:
+            if not lock_id or shared.LOCKS.get(name, {}).get("id") != lock_id:
+                return
+            del shared.LOCKS[name]
+        shared.wake_monitor(reason="unlock", immediate=True)
+        if not silent:
+            self.log.info("released %s", name)
+
+    def _lock_acquire(self, nodename, name):
+        with shared.LOCKS_LOCK:
+            if name in shared.LOCKS:
+                return
+            lock_id = str(uuid.uuid4())
+            shared.LOCKS[name] = {
+                "requested": time.time(),
+                "requester": nodename,
+                "id": lock_id,
+            }
+        shared.wake_monitor(reason="lock", immediate=True)
+        return lock_id
+
+    def action_lock(self, nodename, **kwargs):
+        name = kwargs.get("name")
+        timeout = kwargs.get("timeout")
+        lock_id = self.lock_acquire(nodename, name, timeout)
+        if lock_id:
+            result = {
+                "data": {
+                    "id": lock_id,
+                },
+                "status": 0,
+            }
+        else:
+            result = {"status": 1}
+        return result
+
+    def action_unlock(self, nodename, **kwargs):
+        name = kwargs.get("name")
+        lock_id = kwargs.get("id")
+        self.lock_release(name, lock_id)
+        result = {"status": 0}
+        return result
 
     def action_leave(self, nodename, **kwargs):
         if nodename not in self.cluster_nodes:

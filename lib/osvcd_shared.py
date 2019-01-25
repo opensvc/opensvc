@@ -88,6 +88,11 @@ NMON_DATA_LOCK = threading.RLock()
 # a boolean flag used to signal the monitor it has to do the long loop asap
 MON_CHANGED = []
 
+# cluster wide locks, aquire/release via the listener (usually the unix socket),
+# consensus via the heartbeat links.
+LOCKS = {}
+LOCKS_LOCK = threading.RLock()
+
 # The per-threads configuration, stats and states store
 # The monitor thread states include cluster-wide aggregated data
 CLUSTER_DATA = {}

@@ -30,8 +30,16 @@ class Pool(pool.Pool):
 
     def create_disk(self, name, size):
         mappings = self.get_mappings()
-        result = self.array.add_iscsi_zvol(name=name, size=size, volume=self.diskgroup,
-                                           mappings=mappings, insecure_tpc=True, blocksize=512)
+        lock_id = None
+        try:
+            lock_id = self.node._daemon_lock("freenas_create_disk", timeout=120, on_error="raise")
+            result = self.array.add_iscsi_zvol(name=name, size=size,
+                                               volume=self.diskgroup,
+                                               mappings=mappings,
+                                               insecure_tpc=True,
+                                               blocksize=512)
+        finally:
+            self.node._daemon_unlock("freenas_create_disk", lock_id)
         return result
 
     def translate(self, name=None, size=None, fmt=True):
