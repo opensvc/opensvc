@@ -633,6 +633,13 @@ class Svc(Crypt, ExtConfigMixin):
             return exc.default
 
     @lazy
+    def pool(self):
+        try:
+            return self.conf_get("DEFAULT", "pool")
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    @lazy
     def encapnodes(self):
         try:
             encapnodes = self.conf_get("DEFAULT", "encapnodes")
@@ -1700,6 +1707,8 @@ class Svc(Crypt, ExtConfigMixin):
             data["scaler_slaves"] = self.scaler.slaves
         if rcEnv.nodename in self.drpnodes:
             data["drp"] = True
+        if self.pool:
+            data["pool"] = self.pool
 
         containers = self.get_resources('container')
         if len(containers) > 0:
