@@ -267,7 +267,7 @@ def mimport(*args, **kwargs):
         args = args[:-1]
         return mimport(*args, **kwargs)
     else:
-        raise ImportError("no module found")
+        raise ImportError("no module found: %s" % args)
 
 def ximport(base):
     mod = base + rcEnv.sysname
