@@ -21,6 +21,13 @@ def udevadm_settle():
     cmd = ["udevadm", "settle"]
     justcall(cmd)
 
+def udevadm_query_symlink(dev):
+    cmd = ["udevadm", "info", "-q", "symlink", dev]
+    out, err, ret = justcall(cmd)
+    if ret != 0:
+        return []
+    return ["/dev/"+dev for dev in out.split() if dev]
+
 def dev_to_paths(dev, log=None):
     dev = os.path.realpath(dev)
     if dev.startswith("/dev/sd"):
@@ -82,15 +89,29 @@ def need_rescan(dev):
 
 def dev_rescan(dev, log=None):
     dev = dev.replace('/dev/', '')
-    sysdev = "/sys/block/%s/device/rescan"%dev
+    sysdev = "/sys/block/%s/device/rescan" % dev
+    if log:
+        log.info("echo 1>%s"%sysdev)
+    with open(sysdev, 'w') as s:
+        s.write("1")
+
+def dev_delete(dev, log=None):
+    dev = dev.replace('/dev/', '')
+    sysdev = "/sys/block/%s/device/delete" % dev
     if log:
         log.info("echo 1>%s"%sysdev)
     with open(sysdev, 'w') as s:
         s.write("1")
 
 def refresh_multipath(dev, log=None):
-    cmd = [rcEnv.syspaths.multipath, '-v0', '-r', dev]
+    cmd = [rcEnv.syspaths.multipath, "-v0", "-r", dev]
     (ret, out, err) = call(cmd, info=True, outlog=True, log=log)
+    if ret != 0:
+        raise ex.excError
+
+def multipath_flush(dev, log=None):
+    cmd = [rcEnv.syspaths.multipath, "-f", dev]
+    ret, out, err = call(cmd, info=True, outlog=True, log=log)
     if ret != 0:
         raise ex.excError
 

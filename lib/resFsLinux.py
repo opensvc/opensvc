@@ -8,7 +8,7 @@ from rcGlobalEnv import rcEnv
 import rcMountsLinux as rcMounts
 import resFs as Res
 from rcUtilities import qcall, protected_mount, getmount, justcall, lazy, cache
-from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists, devs_to_disks, label_to_dev
+from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists, devs_to_disks, label_to_dev, udevadm_query_symlink
 from rcLoopLinux import file_to_loop, loop_to_file
 import rcExceptions as ex
 from rcZfs import zfs_getprop, zfs_setprop
@@ -116,13 +116,16 @@ class Mount(Res.Mount):
 
     def is_up(self):
         if self.device is None:
-            raise ex.excError("dev is not defined")
+            self.status_log("dev is not defined", "info")
+            return False
         if self.mount_point is None:
-            raise ex.excError("mnt is not defined")
+            self.status_log("mnt is not defined", "info")
+            return False
         self.mounts = rcMounts.Mounts()
-        ret = self.mounts.has_mount(self.device, self.mount_point)
-        if ret:
-            return True
+        for dev in [self.device] + udevadm_query_symlink(self.device):
+            ret = self.mounts.has_mount(dev, self.mount_point)
+            if ret:
+                return True
 
         # might be defined as a symlink. Linux display realpaths in /proc/mounts
         ret = self.mounts.has_mount(self.device,
