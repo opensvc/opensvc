@@ -3484,6 +3484,8 @@ class Node(Crypt, ExtConfigMixin):
             return self.cluster_nodes
         if selector == "":
             return []
+        if isinstance(selector, (list, tuple, set)):
+            return selector
 
         # compat with pre-selector nodes list
         selector = ",".join([node.lower() for node in selector.split()])
