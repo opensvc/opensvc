@@ -294,7 +294,7 @@ class Freenass(object):
                 password = conf.get(s, 'password')
                 m += [(name, api, username, password)]
             except:
-                print("error parsing section", s)
+                print("error parsing section", s, file=sys.stderr)
         del conf
         done = []
         for name, api, username, password in m:
@@ -493,6 +493,8 @@ class Freenas(object):
             if locals()[key] is None:
                 raise ex.excError("'%s' key is mandatory" % key)
         target_ids = self.get_iscsi_target_ids(targets)
+        if lun is None:
+            lun = self.get_aligned_lun(target_ids)
         data = []
         for target_id in target_ids:
             data.append(self.add_iscsi_target_to_extent(target_id, extent_id, lun=lun))
@@ -502,9 +504,8 @@ class Freenas(object):
         d = {
             "iscsi_target": target_id,
             "iscsi_extent": extent_id,
+            "iscsi_lunid": lun,
         }
-        if lun is not None:
-            d["iscsi_lunid"] = lun
         buff = self.post("/services/iscsi/targettoextent", d)
         data = json.loads(buff)
         return data
@@ -543,6 +544,14 @@ class Freenas(object):
             return json.loads(buff)
         except ValueError:
             raise ex.excError(buff)
+
+    def get_aligned_lun(self, target_ids):
+        tte_data = json.loads(self.get_iscsi_targettoextents())
+        luns = [d["iscsi_lunid"] for d in tte_data if d["iscsi_target"] in target_ids]
+        for lun in range(2^16):
+            if luns.count(lun) == 0:
+                return lun
+        return
 
     def list_mappings(self, name=None, naa=None, **kwargs):
         tte_data = json.loads(self.get_iscsi_targettoextents())
@@ -673,14 +682,13 @@ class Freenas(object):
             raise ex.excError(buff)
 
     # targetgroup
-    def del_iscsi_targetgroup(self, tg_id=None, **kwargs):
-        content = self.get_iscsi_targetgroup_id(tg_id)
+    def del_iscsi_targetgroup(self, id=None, **kwargs):
+        content = self.get_iscsi_targetgroup_id(id)
         try:
             data = json.loads(content)
         except ValueError:
             raise ex.excError("target group not found")
-        self._del_iscsi_targetgroup(tg_id=tg_id, **kwargs)
-        print(json.dumps(data, indent=8))
+        self._del_iscsi_targetgroup(tg_id=id, **kwargs)
         return data
 
     def _del_iscsi_targetgroup(self, tg_id=None, **kwargs):
@@ -723,7 +731,6 @@ class Freenas(object):
                 data.append(_data)
         return data
 
-        print(json.dumps(data, indent=8))
         return data
 
     def _add_iscsi_targetgroup(self, portal_id=None, initiatorgroup_id=None,
@@ -754,7 +761,6 @@ class Freenas(object):
         except ValueError:
             raise ex.excError("target not found")
         self._del_iscsi_target(id=id, **kwargs)
-        print(json.dumps(data, indent=8))
         return data
 
     def _del_iscsi_target(self, id=None, **kwargs):
@@ -766,7 +772,6 @@ class Freenas(object):
 
     def add_iscsi_target(self, **kwargs):
         data = self._add_iscsi_target(**kwargs)
-        print(json.dumps(data, indent=8))
         return data
 
     def _add_iscsi_target(self, name=None, alias=None, **kwargs):
@@ -822,7 +827,7 @@ class Freenas(object):
         if data is None:
             return
         self.del_iscsi_extent(data["id"])
-        print(json.dumps(data, indent=8))
+        return data
 
     def translate_mappings(self, mappings):
         targets = set()
@@ -852,7 +857,7 @@ class Freenas(object):
                 if tg["tgt_id"] != mapping[1] or \
                    tg["hba_id"] != mapping[0]:
                     continue
-                result = self.del_iscsi_targetgroup(tg_id=tg["targetgroup"]["id"])
+                result = self.del_iscsi_targetgroup(id=tg["targetgroup"]["id"])
                 results.append(result)
         return results
 
@@ -950,7 +955,7 @@ class Freenas(object):
             warnings.append(str(exc))
         if warnings:
             data["warnings"] = warnings
-        print(json.dumps(data, indent=8))
+        return data
 
     def extent_volume(self, data):
         path = data["iscsi_target_extent_path"].split("/")
@@ -958,32 +963,25 @@ class Freenas(object):
         return volume
 
     def list_volume(self, **kwargs):
-        data = json.loads(self.get_volumes())
-        print(json.dumps(data, indent=8))
+        return json.loads(self.get_volumes())
 
     def list_iscsi_target(self, **kwargs):
-        data = json.loads(self.get_iscsi_targets())
-        print(json.dumps(data, indent=8))
+        return json.loads(self.get_iscsi_targets())
 
     def list_iscsi_targettoextent(self, **kwargs):
-        data = json.loads(self.get_iscsi_targettoextents())
-        print(json.dumps(data, indent=8))
+        return json.loads(self.get_iscsi_targettoextents())
 
     def list_iscsi_portal(self, **kwargs):
-        data = json.loads(self.get_iscsi_portal())
-        print(json.dumps(data, indent=8))
+        return json.loads(self.get_iscsi_portal())
 
     def list_iscsi_targetgroup(self, **kwargs):
-        data = json.loads(self.get_iscsi_targetgroup())
-        print(json.dumps(data, indent=8))
+        return json.loads(self.get_iscsi_targetgroup())
 
     def list_iscsi_extent(self, **kwargs):
-        data = json.loads(self.get_iscsi_extents())
-        print(json.dumps(data, indent=8))
+        return json.loads(self.get_iscsi_extents())
 
     def list_iscsi_initiatorgroup(self, **kwargs):
-        data = json.loads(self.get_iscsi_authorizedinitiator())
-        print(json.dumps(data, indent=8))
+        return json.loads(self.get_iscsi_authorizedinitiator())
 
     def del_diskinfo(self, disk_id):
         if disk_id in (None, ""):
