@@ -4670,7 +4670,7 @@ class Node(Crypt, ExtConfigMixin):
         return mod.Pool(node=self, name=poolname)
 
     def pool_create_volume(self):
-        nodes = nodes_selector(self.options.node)
+        nodes = self.nodes_selector(self.options.node)
         self._pool_create_volume(poolname=self.options.pool,
                                  name=self.options.name,
                                  namespace=self.options.namespace,

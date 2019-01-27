@@ -37,7 +37,7 @@ class Prov(provisioning.Prov):
             name += "." + rcEnv.nodename
             result = pool.create_disk(name, size=size, nodes=[rcEnv.nodename])
         if not result:
-            raise ex.excError("invalid create disk result: %s", result)
+            raise ex.excError("invalid create disk result: %s" % result)
         for line in format_str_flat_json(result).splitlines():
             self.r.log.info(line)
         self.r.svc.set_multi(["%s.%s=%s" % (self.r.rid, disk_id_kw, result["disk_id"])])

@@ -20,6 +20,13 @@ class Pool(object):
         return self.node.conf_get(self.section, kw)
 
     @lazy
+    def array(self):
+        """
+        Implemented by child classes
+        """
+        return
+
+    @lazy
     def section(self):
         return "pool#"+self.name
 
@@ -84,7 +91,7 @@ class Pool(object):
         self.log.info("delete volume %s", volume.svcpath)
         volume.action("delete", options={"wait": True, "unprovision": True, "time": "5m"})
         
-    def create_volume(self, name, namespace=None, size=None, access="rwo", format=False, nodes=None, shared=False):
+    def create_volume(self, name, namespace=None, size=None, access="rwo", fmt=False, nodes=None, shared=False):
         volume = Svc(svcname=name, namespace=namespace, node=self.node)
         if volume.exists():
             self.log.info("volume %s already exists", name)
@@ -94,9 +101,9 @@ class Pool(object):
         self.log.info("create volume %s (pool name: %s, pool type: %s, "
                            "access: %s, size: %s, format: %s, nodes: %s, shared: %s)",
                            volume.svcpath, self.name, self.type, access, size,
-                           format, nodes, shred)
+                           fmt, nodes, shared)
         self.configure_volume(volume,
-                              fmt=format,
+                              fmt=fmt,
                               size=convert_size(size),
                               access=access,
                               nodes=nodes,
