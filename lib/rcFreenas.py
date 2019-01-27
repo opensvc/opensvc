@@ -55,6 +55,9 @@ OPT = Storage({
         "--compression", default="inherit", action="store", dest="compression",
         choices=["off", "inherit", "lzjb", "lz4", "gzip", "gzip-9", "zle"],
         help="Toggle compression"),
+    "sparse": Option(
+        "--sparse", default=False, action="store_true", dest="sparse",
+        help="Toggle zvol sparse mode."),
     "dedup": Option(
         "--dedup", default="off", action="store", dest="dedup", choices=["on", "off"],
         help="Toggle dedup"),
@@ -137,6 +140,7 @@ ACTIONS = {
                 OPT.blocksize,
                 OPT.secure_tpc,
                 OPT.compression,
+                OPT.sparse,
                 OPT.dedup,
                 OPT.mappings,
                 OPT.lun,
@@ -452,11 +456,11 @@ class Freenas(object):
             raise ex.excError("delete error: %s (%d)" % (path, response.status_code))
 
     def add_iscsi_zvol_extent(self, name=None, size=None, volume=None,
-                              insecure_tpc=True, blocksize=512, **kwargs):
+                              insecure_tpc=True, blocksize=512, sparse=False, compression="inherit", **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
                 raise ex.excError("'%s' key is mandatory" % key)
-        data = self.add_zvol(name=name, size=size, volume=volume, **kwargs)
+        data = self.add_zvol(name=name, size=size, volume=volume, sparse=sparse, compression=compression, **kwargs)
         d = {
             "iscsi_target_extent_type": "Disk",
             "iscsi_target_extent_name": name,
@@ -520,7 +524,7 @@ class Freenas(object):
             raise ex.excError("delete error: %s (%d)" % (path, response.status_code))
 
     def add_zvol(self, name=None, size=None, volume=None,
-                 compression="inherit", dedup="off",
+                 compression="inherit", dedup="off", sparse=False,
                  **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
@@ -530,6 +534,7 @@ class Freenas(object):
             "name": name,
             "volsize": str(size)+"MiB",
             "compression": compression,
+            "sparse": sparse,
             "dedup": dedup,
         }
         buff = self.post('/storage/volume/%s/zvols/' % volume, d)
@@ -897,13 +902,13 @@ class Freenas(object):
         return results
 
     def add_iscsi_zvol(self, name=None, size=None, volume=None, targets=None,
-                       mappings=None, insecure_tpc=True, blocksize=512, lun=None, **kwargs):
+                       mappings=None, insecure_tpc=True, blocksize=512, sparse=False, lun=None, **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
                 raise ex.excError("'%s' key is mandatory" % key)
 
         # extent
-        data = self.add_iscsi_zvol_extent(name=name, size=size, volume=volume, **kwargs)
+        data = self.add_iscsi_zvol_extent(name=name, size=size, volume=volume, sparse=sparse, **kwargs)
 
         if "id" not in data:
             if "iscsi_target_extent_name" in data:
