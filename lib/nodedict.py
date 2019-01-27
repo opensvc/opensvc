@@ -741,6 +741,36 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
     },
     {
         "section": "pool",
+        "rtype": "freenas",
+        "keyword": "insecure_tpc",
+        "default": False,
+        "text": "Allow initiators to xcopy without authenticating to foreign targets."
+    },
+    {
+        "section": "pool",
+        "rtype": "freenas",
+        "keyword": "compression",
+        "default": "inherit",
+        "candidates": ["inherit", "none", "lz4", "gzip-1", "gzip-2", "gzip-3", "gzip-4", "gzip-5", "gzip-6", "gzip-7", "gzip-8", "gzip-9", "zle", "lzjb"],
+        "text": "Compression level.",
+    },
+    {
+        "section": "pool",
+        "rtype": "freenas",
+        "keyword": "sparse",
+        "default": False,
+        "text": "Create zvol in sparse mode."
+    },
+    {
+        "section": "pool",
+        "rtype": "freenas",
+        "keyword": "blocksize",
+        "default": 512,
+        "convert": "size",
+        "text": "Allow initiators to xcopy without authenticating to foreign targets."
+    },
+    {
+        "section": "pool",
         "rtype": "vg",
         "keyword": "name",
         "required": True,
