@@ -716,7 +716,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "section": "pool",
         "keyword": "type",
         "default": "directory",
-        "candidates": ["directory", "loop", "vg", "zpool", "freenas"],
+        "candidates": ["directory", "loop", "vg", "zpool", "freenas", "share"],
         "text": "The pool type."
     },
     {
@@ -786,7 +786,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
     {
         "section": "pool",
         "keyword": "path",
-        "rtype": "directory",
+        "rtype": ["directory", "share"],
         "default": "{var}/pool/directory",
         "text": "The path to create the pool loop files in."
     },
