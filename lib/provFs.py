@@ -100,7 +100,7 @@ class Prov(provisioning.Prov):
         self.mnt = self.r.conf_get("mnt")
 
         if self.dev is None:
-            raise ex.excError("device not found. parent resource is down ?")
+            raise ex.excError("device %s not found. parent resource is down ?" % self.dev)
         if not os.path.exists(self.mnt):
             os.makedirs(self.mnt)
             self.r.log.info("%s mount point created"%self.mnt)
