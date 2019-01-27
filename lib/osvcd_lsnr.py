@@ -754,7 +754,7 @@ class Listener(shared.OsvcThread):
                 raise ex.excError("service does not exist")
         for nodename, _data in instances.items():
             status = _data.get("monitor", {}).get("status", "unknown")
-            if status != "idle" and "failed" not in status:
+            if status != "idle" and "failed" not in status and "wait" not in status:
                 raise ex.excError("%s instance on node %s in %s state"
                                   "" % (svcpath, nodename, status))
 
