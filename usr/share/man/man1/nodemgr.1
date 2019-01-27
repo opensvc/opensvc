@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2019\-01\-22
+.TH NODEMGR 1 2019\-01\-27
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -2497,6 +2497,38 @@ A JSONPath expression to filter a JSON output.
 Show this help message and exit
 
 .RE
+\fBnodemgr daemon lock release\fP
+.RS
+
+Release a lock. Beware locks should be released automatically.
+
+.TP
+.B --id=ID
+Specify an id to act on.
+.TP
+.B --name=NAME
+The name of the object.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
 \fBnodemgr daemon rejoin\fP
 .RS
 
@@ -2795,6 +2827,53 @@ Show this help message and exit
 \fRPOOL ACTIONS\fP
 
 .RE
+\fBnodemgr pool create volume\fP
+.RS
+
+Create a volume in the pool.
+
+.TP
+.B --access=ACCESS
+The access mode of the volume. rwo, roo, rwx, rox.
+.TP
+.B --name=NAME
+The name of the object.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --pool=POOL
+The name of the storage pool.
+.TP
+.B --shared
+Create a volume service for a shared volume resource.
+.TP
+.B --size=SIZE
+The size mode of the volume. ex: 10gi, 10g.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
 \fBnodemgr pool ls\fP
 .RS
 
@@ -2827,8 +2906,8 @@ Show this help message and exit
 Show pools status.
 
 .TP
-.B --id=ID
-Specify an id to act on.
+.B --pool=POOL
+The name of the storage pool.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:

@@ -13,6 +13,8 @@ class Pool(object):
     def __init__(self, node=None, name=None):
         self.node = node
         self.name = name.strip(os.sep)
+        if node:
+            self.log = self.node.log
 
     def conf_get(self, kw):
         return self.node.conf_get(self.section, kw)
@@ -46,8 +48,8 @@ class Pool(object):
     def mount_point(self):
         return os.path.join(os.sep, "srv", "{id}")
 
-    def configure_volume(self, volume, size=None, fmt=True, access="rwo", nodes=None):
-        data = self.translate(name=volume.id, size=size, fmt=fmt)
+    def configure_volume(self, volume, size=None, fmt=True, access="rwo", shared=False, nodes=None):
+        data = self.translate(name=volume.id, size=size, fmt=fmt, shared=shared)
         defaults = {
             "rtype": "DEFAULT",
             "kind": "vol",
@@ -66,10 +68,10 @@ class Pool(object):
     def status(self):
         pass
 
-    def translate(self, name=None, size=None, fmt=True):
+    def translate(self, name=None, size=None, fmt=True, shared=False):
         return []
 
-    def create_disk(self, name, size):
+    def create_disk(self, name, size, nodes=None):
         return {}
 
     def delete_disk(self, name):
@@ -78,25 +80,42 @@ class Pool(object):
     def delete_volume(self, name, namespace=None):
         volume = Svc(svcname=name, namespace=namespace, node=self.node)
         if not volume.exists():
-            self.node.log("volume does not exist")
-        self.node.log.info("delete volume %s", volume.svcpath)
+            self.log("volume does not exist")
+        self.log.info("delete volume %s", volume.svcpath)
         volume.action("delete", options={"wait": True, "unprovision": True, "time": "5m"})
         
-    def create_volume(self, name, namespace=None, size=None, access="rwo", format=False, nodes=None):
+    def create_volume(self, name, namespace=None, size=None, access="rwo", format=False, nodes=None, shared=False):
         volume = Svc(svcname=name, namespace=namespace, node=self.node)
         if volume.exists():
-            self.node.log.info("volume %s already exists", name)
+            self.log.info("volume %s already exists", name)
             return volume
         if nodes is None:
             nodes = ""
-        self.node.log.info("create volume %s (pool name: %s, pool type: %s, "
-                           "access: %s, size: %s, format: %s, nodes: %s)",
+        self.log.info("create volume %s (pool name: %s, pool type: %s, "
+                           "access: %s, size: %s, format: %s, nodes: %s, shared: %s)",
                            volume.svcpath, self.name, self.type, access, size,
-                           format, nodes)
+                           format, nodes, shred)
         self.configure_volume(volume,
                               fmt=format,
                               size=convert_size(size),
                               access=access,
-                              nodes=nodes)
+                              nodes=nodes,
+                              shared=shared)
         volume.action("provision", options={"wait": True, "time": "5m"})
+
+    def get_mappings(self, nodes):
+        data = []
+        tgts = [tgt["iscsi_target_name"] for tgt in self.array.list_iscsi_target()]
+        for nodename, ndata in self.node.nodes_info.items():
+            if nodes and nodename not in nodes:
+                continue
+            for mapping in ndata.get("targets", []):
+                if not mapping["hba_id"].startswith("iqn"):
+                    continue
+                if mapping["tgt_id"] not in tgts:
+                    continue
+                data.append(":".join((mapping["hba_id"], mapping["tgt_id"])))
+        self.log.info("mappings for nodes %s: %s", nodes, ",".join(data))
+        return data
+
 

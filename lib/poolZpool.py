@@ -14,7 +14,7 @@ class Pool(pool.Pool):
     def zpool(self):
         return self.node.conf_get(self.section, "name")
 
-    def translate(self, name=None, size=None, fmt=True):
+    def translate(self, name=None, size=None, fmt=True, shared=False):
         data = []
         fs = {
             "type": "zfs",

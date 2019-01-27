@@ -26,6 +26,11 @@ Id ``monitor_started``
 
 monitor started
 
+Id ``service_config_installed``
+-------------------------------
+
+config fetched from node {from} is now installed
+
 Id ``hb_beating``
 -----------------
 
@@ -45,11 +50,6 @@ Id ``resource_toc``
 -------------------
 
 toc for resource {rid} ({resource.label}) {resource.status} {resource.log}
-
-Id ``service_config_installed``
--------------------------------
-
-config fetched from node {from} is now installed
 
 Id ``node_thaw``
 ----------------

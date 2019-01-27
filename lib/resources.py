@@ -1080,13 +1080,25 @@ class Resource(object):
             raise ex.excError("missing Prov class in module %s" % str(mod))
         return getattr(mod, "Prov")(self)
 
+    def provision_shared_non_leader(self):
+        self.log.info("non leader shared resource provisioning")
+        self.write_is_provisioned_flag(True, mtime=1)
+
+        # do not execute post_provision triggers
+        self.skip_triggers.add("post_provision")
+        self.skip_triggers.add("blocking_post_provision")
+
+        if self.skip_provision:
+            self.log.info("provision skipped (configuration directive)")
+            return
+        if self.prov is None:
+            return
+        if hasattr(self.prov, "provisioner_shared_non_leader"):
+            self.prov.provisioner_shared_non_leader()
+
     def provision(self):
         if self.shared and not self.svc.options.leader:
-            self.log.info("skip shared resource provisioning: not leader")
-            self.write_is_provisioned_flag(True, mtime=1)
-            # do not execute post_provision triggers
-            self.skip_triggers.add("post_provision")
-            self.skip_triggers.add("blocking_post_provision")
+            self.provision_shared_non_leader()
             return
         self._provision()
         try:

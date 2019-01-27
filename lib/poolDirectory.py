@@ -18,7 +18,7 @@ class Pool(pool.Pool):
         except ex.OptNotFound as exc:
             return exc.default
 
-    def translate(self, name=None, size=None, fmt=True):
+    def translate(self, name=None, size=None, fmt=True, shared=False):
         fs = {
             "rtype": "fs",
             "type": "directory",

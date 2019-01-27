@@ -42,8 +42,7 @@ class Disk(resDiskDisk.Disk):
             pass
         return set()
 
-    def unprovision(self):
-        # executed on all nodes
+    def unconfigure(self):
         try:
             mpath = list(self.exposed_devs())[0] # /dev/dm-<minor>
         except IndexError:
@@ -55,14 +54,7 @@ class Disk(resDiskDisk.Disk):
                 dev_delete(path, log=self.log)
         self.svc.node.unset_lazy("devtree")
 
-        # executed on the leader only
-        resDiskDisk.Disk.unprovision(self)
-
-    def provision(self):
-        # executed on the leader only
-        resDiskDisk.Disk.provision(self)
-
-        # executed on all nodes
+    def configure(self):
         self.unset_lazy("disk_id")
         self.unset_lazy("anypath")
         self.unset_lazy("devpath")

@@ -90,6 +90,8 @@ class Mount(Res.Resource):
         if self.device == "none":
             # pseudo fs have no dev
             return
+        if not self.device:
+            raise ex.excError("device keyword not set or evaluates to None")
         if self.device.startswith("UUID=") or self.device.startswith("LABEL="):
             return
         if not os.path.exists(self.device):

@@ -43,3 +43,10 @@ class Disk(Res.Resource):
             str(self.disk_id),
         )
 
+    def configure(self):
+        # OS specific
+        pass
+
+    def unconfigure(self):
+        # OS specific
+        pass

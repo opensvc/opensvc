@@ -3509,8 +3509,11 @@ class Node(Crypt, ExtConfigMixin):
         return nodes
 
     def __nodes_selector(self, selector, data):
-        negate = selector[0] == "!"
-        selector = selector.lstrip("!")
+        try:
+            negate = selector[0] == "!"
+            selector = selector.lstrip("!")
+        except IndexError:
+            negate = False
         if selector == "*":
             matching = set([node for node in data])
         elif selector.endswith(":"):
@@ -3766,6 +3769,9 @@ class Node(Crypt, ExtConfigMixin):
             except Exception:
                 pass
         return data
+
+    def daemon_lock_release(self):
+        self._daemon_unlock(self.options.name, self.options.id)
 
     def daemon_stats(self, svcpaths=None, node=None):
         if node:
@@ -4615,9 +4621,13 @@ class Node(Crypt, ExtConfigMixin):
                 data[name]["volumes"] = []
         return data
 
-    def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None):
+    def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None, shared=False):
         candidates = []
         for pool in self.pool_status_data().values():
+            if shared is True and "shared" not in pool["capabilities"]:
+                self.log.debug("discard pool %s: not shared capable",
+                               pool["name"])
+                continue
             if fmt is False and "blk" not in pool["capabilities"]:
                 self.log.debug("discard pool %s: not blk capable",
                                pool["name"])
@@ -4649,6 +4659,8 @@ class Node(Crypt, ExtConfigMixin):
             section = "pool#"+poolname
         except TypeError:
             raise ex.excError("invalid pool name: %s" % poolname)
+        if poolname != "default" and not self.config.has_section(section):
+            raise ex.excError("pool not found: %s" % poolname)
         try:
             ptype = self.conf_get(section, "type")
         except ex.OptNotFound as exc:
@@ -4658,12 +4670,14 @@ class Node(Crypt, ExtConfigMixin):
         return mod.Pool(node=self, name=poolname)
 
     def pool_create_volume(self):
+        nodes = nodes_selector(self.options.node)
         self._pool_create_volume(poolname=self.options.pool,
                                  name=self.options.name,
                                  namespace=self.options.namespace,
                                  size=self.options.size,
                                  access=self.options.access,
-                                 nodes=self.options.node)
+                                 nodes=nodes,
+                                 shared=self.options.shared)
 
     def _pool_create_volume(self, poolname=None, **kwargs):
         try:

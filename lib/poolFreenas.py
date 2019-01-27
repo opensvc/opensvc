@@ -9,47 +9,68 @@ from rcUtilities import lazy, justcall
 from rcGlobalEnv import rcEnv
 from rcFreenas import Freenass
 
+LOCK_NAME = "freenas_create_disk"
+
 class Pool(pool.Pool):
     type = "freenas"
-    capabilities = ["roo", "rwo"]
+    capabilities = ["roo", "rwo", "shared", "blk", "iscsi"]
 
-    def get_mappings(self):
-        data = []
-        tgts = [tgt["iscsi_target_name"] for tgt in self.array.list_iscsi_target()]
-        for ndata in self.node.nodes_info.values():
-            for mapping in ndata.get("targets", []):
-                if not mapping["hba_id"].startswith("iqn"):
-                    continue
-                if mapping["tgt_id"] not in tgts:
-                    continue
-                data.append(":".join((mapping["hba_id"], mapping["tgt_id"])))
-        return data
+    @lazy
+    def insecure_tpc(self):
+        try:
+            return self.conf_get("insecure_tpc")
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    @lazy
+    def compression(self):
+        try:
+            return self.conf_get("compression")
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    @lazy
+    def sparse(self):
+        try:
+            return self.conf_get("sparse")
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    @lazy
+    def blocksize(self):
+        try:
+            return self.conf_get("blocksize")
+        except ex.OptNotFound as exc:
+            return exc.default
 
     def delete_disk(self, name):
         self.array.del_iscsi_zvol(name=name)
 
-    def create_disk(self, name, size):
-        mappings = self.get_mappings()
+    def create_disk(self, name, size, nodes=None):
+        mappings = self.get_mappings(nodes)
         lock_id = None
         try:
-            lock_id = self.node._daemon_lock("freenas_create_disk", timeout=120, on_error="raise")
+            lock_id = self.node._daemon_lock(LOCK_NAME, timeout=120, on_error="raise")
+            self.log.info("lock acquired: name=%s id=%s", LOCK_NAME, lock_id)
             result = self.array.add_iscsi_zvol(name=name, size=size,
                                                volume=self.diskgroup,
                                                mappings=mappings,
-                                               insecure_tpc=True,
-                                               blocksize=512)
+                                               insecure_tpc=self.insecure_tpc,
+                                               compression=self.compression,
+                                               sparse=self.sparse,
+                                               blocksize=self.blocksize)
         finally:
-            self.node._daemon_unlock("freenas_create_disk", lock_id)
+            self.node._daemon_unlock(LOCK_NAME, lock_id)
+            self.log.info("lock released: name=%s id=%s", LOCK_NAME, lock_id)
         return result
 
-    def translate(self, name=None, size=None, fmt=True):
+    def translate(self, name=None, size=None, fmt=True, shared=False):
         disk = {
             "rtype": "disk",
             "type": "disk",
             "name": name if name else "{id}",
             "scsireserv": True,
-            "disk_id": "",
-            "shared": True,
+            "shared": shared,
             "size": size,
         }
         if not fmt:
@@ -58,7 +79,7 @@ class Pool(pool.Pool):
             "rtype": "fs",
             "type": self.fs_type,
             "dev": "{disk#1.exposed_devs[0]}",
-            "shared": True,
+            "shared": shared,
         }
         fs["mnt"] = self.mount_point
         if self.mkfs_opt:

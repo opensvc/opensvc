@@ -276,6 +276,10 @@ OPT = Storage({
         "--save", default=False,
         action="store_true", dest="save",
         help="Save the collector cli settings to the file specified by --config or ~/.opensvc-cli by default."),
+    "shared": Option(
+        "--shared", default=False,
+        action="store_true", dest="shared",
+        help="Create a volume service for a shared volume resource."),
     "size": Option(
         "--size", default="rwo", action="store", dest="size",
         help="The size mode of the volume. ex: 10gi, 10g."),
@@ -552,20 +556,13 @@ ACTIONS = {
         "pool_create_volume": {
             "msg": "Create a volume in the pool.",
             "options": [
-                OPT.pool,
-                OPT.name,
-                OPT.namespace,
-                OPT.size,
                 OPT.access,
-                OPT.node,
-            ],
-        },
-        "pool_delete_volume": {
-            "msg": "Delete a volume in the pool.",
-            "options": [
-                OPT.pool,
                 OPT.name,
                 OPT.namespace,
+                OPT.node,
+                OPT.pool,
+                OPT.shared,
+                OPT.size,
             ],
         },
     },
@@ -657,6 +654,13 @@ ACTIONS = {
         },
         "daemon_blacklist_clear": {
             "msg": "Empty the content of the daemon senders blacklist.",
+        },
+        "daemon_lock_release": {
+            "msg": "Release a lock. Beware locks should be released automatically.",
+            "options": [
+                OPT.id,
+                OPT.name,
+            ],
         },
         "daemon_restart": {
             "msg": "Restart the daemon.",

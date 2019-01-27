@@ -64,6 +64,9 @@ class Prov(provisioning.Prov):
             return
         self.r.volsvc.set_multi(["DEFAULT.children-=%s" % self.r.svc.svcpath])
 
+    def provisioner_shared_non_leader(self):
+        self.provisioner()
+
     def provisioner(self):
         """
         Create a volume service with resources definitions deduced from the storage
@@ -71,6 +74,7 @@ class Prov(provisioning.Prov):
         """
         volume = self.create_volume()
         self.claim(volume)
+        self.r.log.info("provision the %s volume service instance", self.r.name)
 
         # will be rolled back by the volume resource. for now, the remaining
         # resources might need the volume for their provision
@@ -81,26 +85,28 @@ class Prov(provisioning.Prov):
         }) 
         if ret != 0:
             raise ex.excError
+        self.r.log.info("thaw the volume service instance")
         volume.freezer.thaw()
         self.r.unset_lazy("mount_point")
         self.r.unset_lazy("volsvc")
 
     def create_volume(self):
-        name = self.r.conf_get("name")
-        volume = Svc(svcname=name, namespace=self.r.svc.namespace, node=self.r.svc.node)
+        volume = Svc(svcname=self.r.name, namespace=self.r.svc.namespace, node=self.r.svc.node)
         if volume.exists():
-            self.r.log.info("volume %s already exists", name)
+            self.r.log.info("volume %s already exists", self.r.name)
             data = volume.print_status_data(mon_data=True)
             if not data or "cluster" not in data:
                 return volume
+            if not self.r.svc.node.get_pool(volume.pool):
+                raise ex.excError("pool %s not found on this node" % volume.pool)
             if self.r.svc.options.leader and volume.topology == "failover" and \
                (self.owned() or not self.claimed(volume)) and \
                data["avail"] != "up" and data["cluster"]["avail"] == "up":
-                self.r.log.info("volume %s is up on peer, we are leader: take it over", name)
+                self.r.log.info("volume %s is up on peer, we are leader: take it over", self.r.name)
                 volume.action("takeover", options={"wait": True, "time": 60})
             return volume
         elif not self.r.svc.options.leader:
-            self.r.log.info("volume %s does not exist, we are not leader: wait its propagation", name)
+            self.r.log.info("volume %s does not exist, we are not leader: wait its propagation", self.r.name)
             self.r.wait_for_fn(lambda: volume.exists(), 10, 1,
                                "non leader instance waited for too long for the "
                                "volume to appear")
@@ -110,17 +116,19 @@ class Prov(provisioning.Prov):
         except ex.OptNotFound:
             pooltype = None
         self.r.log.info("create new volume %s (pool name: %s, pool type: %s, "
-                        "access: %s, size: %s, format: %s)",
-                        name, self.r.pool, pooltype, self.r.access,
+                        "access: %s, size: %s, format: %s, shared: %s)",
+                        self.r.name, self.r.pool, pooltype, self.r.access,
                         print_size(self.r.size, unit="B", compact=True),
-                        self.r.format)
+                        self.r.format, self.r.shared)
         pool = self.r.svc.node.find_pool(poolname=self.r.pool,
                                          pooltype=pooltype,
                                          access=self.r.access,
                                          size=self.r.size,
-                                         fmt=self.r.format)
+                                         fmt=self.r.format,
+                                         shared=self.r.shared)
         if pool is None:
             raise ex.excError("could not find a pool maching criteria")
+        pool.log = self.r.log
         try:
             nodes = self.r.svc._get("DEFAULT.nodes")
         except ex.OptNotFound:
@@ -129,6 +137,7 @@ class Prov(provisioning.Prov):
                               fmt=self.r.format,
                               size=self.r.size,
                               access=self.r.access,
-                              nodes=nodes)
+                              nodes=nodes,
+                              shared=self.r.shared)
         return volume
 
