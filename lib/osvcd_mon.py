@@ -2982,7 +2982,9 @@ class Monitor(shared.OsvcThread):
                     continue
         delete = []
         for name, lock in shared.LOCKS.items():
-            if nodename == lock["requester"] and node.get("locks", {}).get(name) is None:
+            if rcEnv.nodename == lock["requester"]:
+                continue
+            if shared.CLUSTER_DATA.get(lock["requester"], {}).get("locks", {}).get(name) is None:
                 self.log.info("drop lock %s from node %s", name, nodename)
                 delete.append(name)
         for name in delete:
