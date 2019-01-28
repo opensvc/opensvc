@@ -545,6 +545,7 @@ class Crypt(object):
         Send a request to the daemon running on nodename and return the result
         fetched if with_result is set.
         """
+        sock = None
         if nodename is None or nodename == "":
             nodename = rcEnv.nodename
         try:
@@ -604,7 +605,8 @@ class Crypt(object):
                 "retryable": exc.errno in RETRYABLE,
             }
         finally:
-            sock.close()
+            if sock:
+                sock.close()
         return {"status": 0}
 
     def daemon_get_stream(self, data, nodename=None, cluster_name=None,
