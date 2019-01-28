@@ -7,44 +7,44 @@ import pool
 import rcExceptions as ex
 from rcUtilities import lazy, justcall
 from rcGlobalEnv import rcEnv
-from rcFreenas import Freenass
+from rcSymmetrix import Arrays
 
-LOCK_NAME = "freenas_create_disk"
+LOCK_NAME = "symmetrix_create_disk"
 
 class Pool(pool.Pool):
-    type = "freenas"
-    capabilities = ["roo", "rwo", "shared", "blk", "iscsi"]
+    type = "symmetrix"
+    capabilities = ["roo", "rwo", "shared", "blk", "fc"]
 
     @lazy
-    def insecure_tpc(self):
+    def slo(self):
         try:
-            return self.conf_get("insecure_tpc")
+            return self.conf_get("slo")
         except ex.OptNotFound as exc:
             return exc.default
 
     @lazy
-    def compression(self):
+    def srp(self):
         try:
-            return self.conf_get("compression")
+            return self.conf_get("srp")
         except ex.OptNotFound as exc:
             return exc.default
 
     @lazy
-    def sparse(self):
+    def srdf(self):
         try:
-            return self.conf_get("sparse")
+            return self.conf_get("srdf")
         except ex.OptNotFound as exc:
             return exc.default
 
     @lazy
-    def blocksize(self):
+    def rdfg(self):
         try:
-            return self.conf_get("blocksize")
+            return self.conf_get("rdfg")
         except ex.OptNotFound as exc:
             return exc.default
 
-    def delete_disk(self, name):
-        self.array.del_iscsi_zvol(name=name)
+    def delete_disk(self, dev):
+        self.array.del_disk(dev=dev)
 
     def create_disk(self, name, size, nodes=None):
         mappings = self.get_mappings(nodes)
@@ -52,13 +52,11 @@ class Pool(pool.Pool):
         try:
             lock_id = self.node._daemon_lock(LOCK_NAME, timeout=120, on_error="raise")
             self.log.info("lock acquired: name=%s id=%s", LOCK_NAME, lock_id)
-            result = self.array.add_iscsi_zvol(name=name, size=size,
-                                               volume=self.diskgroup,
-                                               mappings=mappings,
-                                               insecure_tpc=self.insecure_tpc,
-                                               compression=self.compression,
-                                               sparse=self.sparse,
-                                               blocksize=self.blocksize)
+            result = self.array.add_disk(name=name, size=size,
+                                         srp=self.srp,
+                                         srdf=self.srdf,
+                                         rdfg=self.rdfg,
+                                         mappings=mappings)
         finally:
             self.node._daemon_unlock(LOCK_NAME, lock_id)
             self.log.info("lock released: name=%s id=%s", LOCK_NAME, lock_id)
@@ -93,13 +91,9 @@ class Pool(pool.Pool):
         return self.conf_get("array")
 
     @lazy
-    def diskgroup(self):
-        return self.conf_get("diskgroup")
-
-    @lazy
     def array(self):
-        o = Freenass()
-        array = o.get_freenas(self.array_name)
+        o = Arrays()
+        array = o.get_array(self.array_name)
         if array is None:
             raise ex.excError("array %s not found" % self.array_name)
         array.node = self.node
@@ -110,21 +104,28 @@ class Pool(pool.Pool):
         data = {
             "type": self.type,
             "name": self.name,
-            "head": "array://%s/%s" % (self.array_name, self.diskgroup),
+            "head": "array://%s/%s" % (self.array_name, self.srp),
             "capabilities": self.capabilities,
         }
         try:
-            dg = [dg for dg in self.array.list_volume() if dg["name"] == self.diskgroup][0]
+            dg = [dg for dg in self.array.get_srps() if dg["name"] == self.srp][0]
         except Exception as exc:
             print(exc, file=sys.stderr)
             return data
-        data["free"] = convert_size(dg["avail"], _to="KB")
-        data["used"] = convert_size(dg["used"], _to="KB")
-        data["size"] = convert_size(dg["avail"] + dg["used"], _to="KB")
+        data["free"] = convert_size(dg["free_capacity_gigabytes"], default_unit="G", _to="KB")
+        data["used"] = convert_size(dg["used_capacity_gigabytes"], default_unit="G", _to="KB")
+        data["size"] = convert_size(dg["usable_capacity_gigabytes"], default_unit="G", _to="KB")
         return data
 
     def get_targets(self):
-        return [tgt["iscsi_target_name"] for tgt in self.array.list_iscsi_target()]
+        tgts = []
+        for director in self.array.get_directors():
+            for port in director.get("Port", []):
+                pinfo = port.get("Port_Info", {})
+                if "node_wwn" in pinfo and "port_wwn" in pinfo:
+                    tgts.append(pinfo["port_wwn"].lower())
+        return tgts
 
     def get_mappings(self, nodes):
-        return self._get_mappings(nodes, transport="iscsi")
+        return self._get_mappings(nodes, transport="fc")
+

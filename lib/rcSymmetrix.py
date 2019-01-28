@@ -162,6 +162,12 @@ ACTIONS = {
         "list_sgs": {
             "msg": "List storage groups.",
         },
+        "list_srps": {
+            "msg": "List storage resource groups.",
+        },
+        "list_directors": {
+            "msg": "List directors.",
+        },
         "list_tdevs": {
             "msg": "List thin devices.",
             "options": [
@@ -266,6 +272,8 @@ class Arrays(object):
                 model = symm.find('model').text
                 if model.startswith('VMAX'):
                     self.arrays.append(Vmax(name, symcli_path, symcli_connect, username, password))
+                elif model.startswith("PowerMax"):
+                    self.arrays.append(PowerMax(name, symcli_path, symcli_connect, username, password))
                 elif 'DMX' in model or '3000-M' in model:
                     self.arrays.append(Dmx(name, symcli_path, symcli_connect, username, password))
                 else:
@@ -447,6 +455,14 @@ class SymMixin(object):
         out, err, ret = self.symdev(['show', dev])
         return self.parse_xml(out, key="Device")
 
+    def list_directors(self, **kwargs):
+        print(json.dumps(self.get_directors(), indent=4))
+
+    def get_directors(self, **kwargs):
+        out = self.get_sym_dir_info()
+        data = self.parse_xml(out, key="Director", as_list=["Port"])
+        return data
+
     def list_pools(self, **kwargs):
         print(json.dumps(self.get_pools(), indent=4))
 
@@ -460,8 +476,16 @@ class SymMixin(object):
         data = self.parse_xml(out, key="SG_Info")
         return data
 
+    def get_srps(self, **kwargs):
+        out = self.get_sym_srp_info()
+        data = self.parse_xml(out, key="SRP_Info")
+        return data
+
     def list_sgs(self, **kwargs):
         print(json.dumps(self.get_sgs(), indent=4))
+
+    def list_srps(self, **kwargs):
+        print(json.dumps(self.get_srps(), indent=4))
 
     def load_names(self):
         out = self.get_sym_dev_name_info()
@@ -1142,7 +1166,8 @@ class Dmx(SymMixin):
         out, err, ret = self.symaccesscmd(cmd)
         return out
 
-
+class PowerMax(Vmax):
+    pass
 
 def do_action(action, array_name=None, node=None, **kwargs):
     o = Arrays()

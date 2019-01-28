@@ -110,14 +110,17 @@ class Pool(object):
                               shared=shared)
         volume.action("provision", options={"wait": True, "time": "5m"})
 
-    def get_mappings(self, nodes):
+    def get_targets(self):
+        return []
+
+    def _get_mappings(self, nodes, transport="fc"):
         data = []
-        tgts = [tgt["iscsi_target_name"] for tgt in self.array.list_iscsi_target()]
+        tgts = self.get_targets()
         for nodename, ndata in self.node.nodes_info.items():
             if nodes and nodename not in nodes:
                 continue
             for mapping in ndata.get("targets", []):
-                if not mapping["hba_id"].startswith("iqn"):
+                if transport == "iscsi" and not mapping["hba_id"].startswith("iqn"):
                     continue
                 if mapping["tgt_id"] not in tgts:
                     continue

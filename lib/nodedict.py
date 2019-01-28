@@ -716,7 +716,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "section": "pool",
         "keyword": "type",
         "default": "directory",
-        "candidates": ["directory", "loop", "vg", "zpool", "freenas", "share"],
+        "candidates": ["directory", "loop", "vg", "zpool", "freenas", "share", "symmetrix"],
         "text": "The pool type."
     },
     {
@@ -727,10 +727,39 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
     },
     {
         "section": "pool",
-        "rtype": "freenas",
+        "rtype": ["freenas", "symmetrix"],
         "keyword": "array",
+        "at": True,
         "required": True,
         "text": "The name of the array, as known to the auth.conf."
+    },
+    {
+        "section": "pool",
+        "rtype": "symmetrix",
+        "keyword": "srp",
+        "required": True,
+        "text": "The name of the array resource pool to allocate volumes from."
+    },
+    {
+        "section": "pool",
+        "rtype": "symmetrix",
+        "keyword": "slo",
+        "default": None,
+        "text": "The name of the Service Level Agreement of the selected Storage Group."
+    },
+    {
+        "section": "pool",
+        "rtype": "symmetrix",
+        "keyword": "srdf",
+        "default": False,
+        "text": "Use SRDF replication."
+    },
+    {
+        "section": "pool",
+        "rtype": "symmetrix",
+        "keyword": "rdfg",
+        "default": None,
+        "text": "Replication Group to use for SRDF."
     },
     {
         "section": "pool",
