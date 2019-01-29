@@ -874,14 +874,19 @@ class Vmax(SymMixin):
             rdf_data = dev_data["RDF"]
         else:
             rdf_data = None
-        if rdf_data:
+        deleted = False
+        if rdf_data and not isinstance(self, PowerMax):
             self.deletepair(dev)
+            deleted = True
         cmd = ["modify", dev, "-tdev", "-cap", str(size), "-captype", "mb", "-noprompt"]
+        if rdf_data and isinstance(self, PowerMax):
+            cmd += ["-rdfg", rdf_data["Local"]["ra_group_num"]]
         out, err, ret = self.symdev(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.excError(err)
         results = {
             "driver_data": {
+                "pair_deleted": deleted,
             },
         }
         if rdf_data:
