@@ -51,7 +51,8 @@ class Resource(object):
                  skip_unprovision=False,
                  shared=False,
                  promote_rw=False,
-                 encap=False):
+                 encap=False,
+                 **ignored):
         if tags is None:
             tags = set()
         self.svc = None

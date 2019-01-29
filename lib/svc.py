@@ -627,86 +627,56 @@ class Svc(Crypt, ExtConfigMixin):
 
     @lazy
     def kind(self):
-        try:
-            return self.conf_get("DEFAULT", "kind")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("DEFAULT", "kind")
 
     @lazy
     def pool(self):
-        try:
-            return self.conf_get("DEFAULT", "pool")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("DEFAULT", "pool")
 
     @lazy
     def encapnodes(self):
-        try:
-            encapnodes = self.conf_get("DEFAULT", "encapnodes")
-        except ex.OptNotFound as exc:
-            encapnodes = exc.default
+        encapnodes = self.oget("DEFAULT", "encapnodes")
         return set(encapnodes)
 
     @lazy
     def ordered_nodes(self):
-        try:
-            return self.conf_get("DEFAULT", "nodes")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("DEFAULT", "nodes")
 
     @lazy
     def nodes(self):
-        try:
-            nodes = self.conf_get("DEFAULT", "nodes")
-        except ex.OptNotFound as exc:
-            nodes = exc.default
+        nodes = self.oget("DEFAULT", "nodes")
         return set(nodes)
 
     @lazy
     def orchestrate(self):
-        try:
-            return self.conf_get("DEFAULT", "orchestrate")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("DEFAULT", "orchestrate")
 
     @lazy
     def topology(self):
-        try:
-            return self.conf_get("DEFAULT", "topology")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("DEFAULT", "topology")
 
     @lazy
     def disabled(self):
-        try:
-            return self.conf_get("DEFAULT", "disable")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("DEFAULT", "disable")
 
     @lazy
     def children(self):
-        try:
-            children = self.conf_get('DEFAULT', "children")
-            for i, child in enumerate(children):
-                if "/" in child:
-                    continue
-                else:
-                    children[i] = fmt_svcpath(child, self.namespace)
-        except ex.OptNotFound as exc:
-            children = exc.default
+        children = self.oget('DEFAULT', "children")
+        for i, child in enumerate(children):
+            if "/" in child:
+                continue
+            else:
+                children[i] = fmt_svcpath(child, self.namespace)
         return children
 
     @lazy
     def slaves(self):
-        try:
-            slaves = self.conf_get('DEFAULT', "slaves")
-            for i, slave in enumerate(slaves):
-                if "/" in slave:
-                    continue
-                else:
-                    slaves[i] = fmt_svcpath(slave, self.namespace)
-        except ex.OptNotFound as exc:
-            slaves = exc.default
+        slaves = self.oget('DEFAULT', "slaves")
+        for i, slave in enumerate(slaves):
+            if "/" in slave:
+                continue
+            else:
+                slaves[i] = fmt_svcpath(slave, self.namespace)
         return slaves
 
     @lazy
@@ -718,20 +688,13 @@ class Svc(Crypt, ExtConfigMixin):
 
     @lazy
     def scaler_slave(self):
-        try:
-            scaler_slave = self.conf_get('DEFAULT', "scaler_slave")
-        except ex.OptNotFound as exc:
-            scaler_slave = exc.default
-        return scaler_slave
+        return self.oget('DEFAULT', "scaler_slave")
 
     @lazy
     def scale_target(self):
-        try:
-            val = self.conf_get("DEFAULT", "scale")
-            if isinstance(val, int) and val < 0:
-                val = 0
-        except ex.OptNotFound as exc:
-            val = exc.default
+        val = self.oget("DEFAULT", "scale")
+        if isinstance(val, int) and val < 0:
+            val = 0
         return val
 
     @lazy
@@ -779,38 +742,23 @@ class Svc(Crypt, ExtConfigMixin):
 
     @lazy
     def hard_affinity(self):
-        try:
-            return self.conf_get("DEFAULT", "hard_affinity")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("DEFAULT", "hard_affinity")
 
     @lazy
     def hard_anti_affinity(self):
-        try:
-            return self.conf_get("DEFAULT", "hard_anti_affinity")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("DEFAULT", "hard_anti_affinity")
 
     @lazy
     def soft_affinity(self):
-        try:
-            return self.conf_get("DEFAULT", "soft_affinity")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("DEFAULT", "soft_affinity")
 
     @lazy
     def soft_anti_affinity(self):
-        try:
-            return self.conf_get("DEFAULT", "soft_anti_affinity")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("DEFAULT", "soft_anti_affinity")
 
     @lazy
     def flex_min_nodes(self):
-        try:
-           val = self.conf_get('DEFAULT', 'flex_min_nodes')
-        except ex.OptNotFound as exc:
-           return exc.default
+        val = self.oget('DEFAULT', 'flex_min_nodes')
         if val < 0:
            val = 0
         nb_nodes = len(self.nodes|self.drpnodes)
@@ -833,10 +781,7 @@ class Svc(Crypt, ExtConfigMixin):
 
     @lazy
     def flex_cpu_low_threshold(self):
-        try:
-            val = self.conf_get('DEFAULT', 'flex_cpu_low_threshold')
-        except ex.OptNotFound as exc:
-            return exc.default
+        val = self.oget('DEFAULT', 'flex_cpu_low_threshold')
         if val < 0:
             return 0
         if val > 100:
@@ -845,10 +790,7 @@ class Svc(Crypt, ExtConfigMixin):
 
     @lazy
     def flex_cpu_high_threshold(self):
-        try:
-            val = self.conf_get('DEFAULT', 'flex_cpu_high_threshold')
-        except ex.OptNotFound as exc:
-            return exc.default
+        val = self.oget('DEFAULT', 'flex_cpu_high_threshold')
         if val < self.flex_cpu_low_threshold:
             return self.flex_cpu_low_threshold
         if val > 100:
@@ -860,10 +802,7 @@ class Svc(Crypt, ExtConfigMixin):
         """
         Return the service app code.
         """
-        try:
-            return self.conf_get("DEFAULT", "app")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("DEFAULT", "app")
 
     def unset_conf_lazy(self):
         self.unset_lazy("nodes")
@@ -953,10 +892,7 @@ class Svc(Crypt, ExtConfigMixin):
         if self.scheduler_configured:
             return
         self.scheduler_configured = True
-        try:
-            monitor_schedule = self.conf_get('DEFAULT', 'monitor_schedule')
-        except ex.OptNotFound:
-            monitor_schedule = None
+        monitor_schedule = self.oget('DEFAULT', 'monitor_schedule')
 
         if not self.encap:
             self.sched.scheduler_actions["status"] = SchedOpts(
@@ -1030,19 +966,13 @@ class Svc(Crypt, ExtConfigMixin):
         subset_section = 'subset#' + rtype
         if not self.config.has_section(subset_section):
             return False
-        try:
-            return self.conf_get(subset_section, "parallel")
-        except ex.OptNotFound:
-            return False
+        return self.oget(subset_section, "parallel")
 
     def get_scsireserv(self, rid):
         """
         Get the 'scsireserv' config keyword value for rid.
         """
-        try:
-            return self.conf_get(rid, 'scsireserv')
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget(rid, 'scsireserv')
 
     def add_scsireserv(self, resource):
         """
@@ -1063,16 +993,8 @@ class Svc(Crypt, ExtConfigMixin):
 
         kwargs = {}
         pr_rid = resource.rid+"pr"
-
-        try:
-            kwargs["prkey"] = self.conf_get(resource.rid, 'prkey')
-        except ex.OptNotFound as exc:
-            kwargs["prkey"] = exc.default
-
-        try:
-            kwargs['no_preempt_abort'] = self.conf_get(resource.rid, 'no_preempt_abort')
-        except ex.OptNotFound as exc:
-            kwargs['no_preempt_abort'] = exc.default
+        kwargs["prkey"] = self.oget(resource.rid, 'prkey')
+        kwargs['no_preempt_abort'] = self.oget(resource.rid, 'no_preempt_abort')
 
         try:
             kwargs['optional'] = self.conf_get(pr_rid, "optional")
@@ -1945,10 +1867,7 @@ class Svc(Crypt, ExtConfigMixin):
                     if subset != group:
                         node_subset = node_nodename.add_node()
                         node_subset.add_column(subset)
-                        try:
-                            parallel = self.conf_get("subset#"+subset, "parallel")
-                        except ex.OptNotFound as exc:
-                            parallel = exc.default
+                        parallel = self.oget("subset#"+subset, "parallel")
                         if parallel:
                             node_subset.add_column()
                             node_subset.add_column()

@@ -196,10 +196,7 @@ class ExtConfigMixin(object):
                 return self.conf_get(section, option, "string", scope=True, impersonate=impersonate)
             return self.conf_get(section, option, "string", scope=True, impersonate=impersonate)
         else:
-            try:
-                return self.config.get(section, option)
-            except Exception:
-                raise ex.OptNotFound()
+            return self.config.get(section, option)
 
     def set(self):
         """
@@ -307,8 +304,6 @@ class ExtConfigMixin(object):
                 _value = []
             except ex.OptNotFound as exc:
                 _value = copy.copy(exc.default)
-            if _value is None:
-                _value = []
             return _value
 
         if op == "remove":
@@ -732,6 +727,16 @@ class ExtConfigMixin(object):
             # being section-dependent
             return False
         return True
+
+    def oget(self, *args, **kwargs):
+        """
+        A wrapper around conf_get() that returns the keyword default
+        instead of raising OptNotFound.
+        """
+        try:
+            return self.conf_get(*args, **kwargs)
+        except ex.OptNotFound as exc:
+            return exc.default
 
     def conf_get(self, s, o, t=None, scope=None, impersonate=None,
                  use_default=True, config=None, verbose=True):
