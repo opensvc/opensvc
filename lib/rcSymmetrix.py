@@ -369,6 +369,16 @@ class SymMixin(object):
         out, err, ret = self.symdev(['list'])
         return out
 
+    def get_sym_dev_show_wwn(self, wwn):
+        out, err, ret = self.symdev(['show', '-wwn', wwn])
+        return self.parse_xml(out, key="Device")
+
+    def wwn_to_dev(self, wwn):
+        data = self.get_sym_dev_show_wwn(wwn)
+        if not data:
+            return
+        return data[0].get("Dev_Info", {}).get("dev_name")
+
     def get_sym_dev_wwn_info(self):
         out, err, ret = self.symdev(['list', '-wwn'])
         return out
@@ -495,6 +505,10 @@ class SymMixin(object):
             self.dev_names[d["dev_name"]] = d["dev_ident_name"]
 
     def list_tdevs(self, dev=None, **kwargs):
+        try:
+            dev = self.resolve_dev(dev)
+        except ex.excError:
+            dev = None
         self.load_names()
         data = self.get_tdevs(dev)
         for i, d in enumerate(data):
@@ -512,6 +526,11 @@ class SymMixin(object):
         return data
 
     def list_views(self, dev=None, **kwargs):
+        try:
+            dev = self.resolve_dev(dev)
+        except ex.excError:
+            dev = None
+        dev = self.resolve_dev(dev)
         if dev is None:
             print(json.dumps(self.get_views(), indent=4))
             return
@@ -780,6 +799,7 @@ class Vmax(SymMixin):
         return fpath
 
     def set_mode(self, dev, **kwargs):
+        dev = self.resolve_dev(dev)
         data = self.get_dev_rdf(dev)
         rdfg = data["Local"]["ra_group_num"]
         rdev = data["Remote"]["dev_name"]
@@ -819,6 +839,7 @@ class Vmax(SymMixin):
         os.unlink(fpath)
 
     def deletepair(self, dev=None, **kwargs):
+        dev = self.resolve_dev(dev)
         try:
             data = self.get_dev_rdf(dev)
         except ex.excError:
@@ -841,6 +862,7 @@ class Vmax(SymMixin):
         return data
 
     def rename_disk(self, dev=None, name=None, **kwargs):
+        dev = self.resolve_dev(dev)
         if dev is None:
             raise ex.excError("--dev is mandatory")
         if name is None:
@@ -852,6 +874,7 @@ class Vmax(SymMixin):
             raise ex.excError(err)
 
     def resize_disk(self, dev=None, size=None, force=False, **kwargs):
+        dev = self.resolve_dev(dev)
         if dev is None:
             raise ex.excError("The '--dev' parameter is mandatory")
         if size is None:
@@ -894,6 +917,7 @@ class Vmax(SymMixin):
         return results
 
     def del_tdev(self, dev=None, **kwargs):
+        dev = self.resolve_dev(dev)
         if dev is None:
             raise ex.excError("The '--dev' parameter is mandatory")
         data = self.get_sym_dev_wwn(dev)
@@ -907,7 +931,15 @@ class Vmax(SymMixin):
             raise ex.excError(err)
         self.del_diskinfo(data["wwn"])
 
+    def resolve_dev(self, dev):
+        if dev and len(dev) > 6:
+            dev = self.wwn_to_dev(dev)
+        if dev is None:
+            raise ex.excError("dev not found")
+        return dev
+
     def del_disk(self, dev=None, **kwargs):
+        dev = self.resolve_dev(dev)
         try:
             rdf_data = self.get_dev_rdf(dev)
         except ex.excError as exc:
@@ -940,6 +972,7 @@ class Vmax(SymMixin):
         return results
 
     def del_map(self, dev, **kwargs):
+        dev = self.resolve_dev(dev)
         for sg in self.get_dev_sgs(dev):
             self.del_tdev_from_sg(dev, sg)
 
@@ -1078,6 +1111,7 @@ class Vmax(SymMixin):
         self.add_tdev_to_sg(dev, sg)
 
     def add_map(self, dev=None, mappings=None, slo=None, srp=None, sg=None, **kwargs):
+        dev = self.resolve_dev(dev)
         self._add_map(dev, mappings, slo, srp, sg)
         dev_data = self.get_sym_dev_wwn(dev)[0]
         results = {
