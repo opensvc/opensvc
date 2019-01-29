@@ -144,7 +144,6 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "monitor_schedule",
         "at": True,
-        "default": "@1",
         "text": "The service resource monitor schedule. See usr/share/doc/schedule for the schedule syntax."
     },
     {
@@ -1918,8 +1917,16 @@ KEYWORDS = [
     },
     {
         "section": "disk",
+        "keyword": "node",
+        "rtype": "gandi",
+        "at": True,
+        "default_text": "The local node name.",
+        "text": "The node name from the Gandi api point of view.",
+    },
+    {
+        "section": "disk",
         "keyword": "user",
-        "rtype": "raw",
+        "rtype": ["gandi", "raw"],
         "at": True,
         "example": "root",
         "text": "The user that should be owner of the device. Either in numeric or symbolic form."
@@ -1927,7 +1934,7 @@ KEYWORDS = [
     {
         "section": "disk",
         "keyword": "group",
-        "rtype": "raw",
+        "rtype": ["gandi", "raw"],
         "at": True,
         "example": "sys",
         "text": "The group that should be owner of the device. Either in numeric or symbolic form."
@@ -1935,7 +1942,7 @@ KEYWORDS = [
     {
         "section": "disk",
         "keyword": "perm",
-        "rtype": "raw",
+        "rtype": ["gandi", "raw"],
         "at": True,
         "example": "600",
         "text": "The permissions the device should have. A string representing the octal permissions."
@@ -3277,9 +3284,8 @@ KEYWORDS = [
         "keyword": "optional",
         "generic": True,
         "at": True,
-        "candidates": (True, False),
-        "default_text": "True for task and sync, else False",
-        "convert": "boolean",
+        "convert": "tristate",
+        "default_text": "True for tasks, syncs and resources tagged 'noaction', else False",
         "text": "Action failures on optional resources are logged but do not stop the action sequence. Also the optional resource status is not aggregated to the instance 'availstatus', but aggregated to the 'overallstatus'. Resource tagged 'noaction' and sync resources are automatically considered optional. Useful for resources like dump filesystems for example."
     },
     {

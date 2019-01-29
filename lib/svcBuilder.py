@@ -16,9 +16,7 @@ from rcUtilities import mimport, check_privs, list_services, fix_exe_link, \
 
 def get_tags(svc, section):
     try:
-        s = svc.conf_get(section, 'tags')
-    except ex.OptNotFound as exc:
-        s = exc.default
+        s = svc.oget(section, "tags")
     except ValueError as exc:
         s = set()
     return s
@@ -26,84 +24,50 @@ def get_tags(svc, section):
 def get_optional(svc, section):
     if "noaction" in get_tags(svc, section):
         return True
-    try:
-        return svc.conf_get(section, "optional")
-    except ex.OptNotFound:
-        return None
+    return svc.oget(section, "optional")
 
 def get_monitor(svc, section):
-    try:
-        return svc.conf_get(section, "monitor")
-    except ex.OptNotFound as exc:
-        return exc.default
+    return svc.oget(section, "monitor")
 
 def get_provision(svc, section):
-    try:
-        return svc.conf_get(section, "provision")
-    except ex.OptNotFound as exc:
-        return exc.default
+    return svc.oget(section, "provision")
 
 def get_unprovision(svc, section):
-    try:
-        return svc.conf_get(section, "unprovision")
-    except ex.OptNotFound as exc:
-        return exc.default
+    return svc.oget(section, "unprovision")
 
 def get_encap(svc, section):
     try:
-        return svc.conf_get(section, "encap")
-    except ex.OptNotFound as exc:
-        return exc.default
+        return svc.oget(section, "encap")
     except ValueError as exc:
         return False
 
 def get_shared(svc, section):
-    try:
-        return svc.conf_get(section, "shared")
-    except ex.OptNotFound as exc:
-        return exc.default
+    return svc.oget(section, "shared")
 
 def get_rcmd(svc, section):
-    try:
-        return svc.conf_get(section, 'rcmd')
-    except ex.OptNotFound as exc:
-        return exc.default
+    return svc.oget(section, "rcmd")
 
 def get_subset(svc, section):
-    try:
-        return svc.conf_get(section, 'subset')
-    except ex.OptNotFound as exc:
-        return exc.default
+    return svc.oget(section, "subset")
 
 def get_osvc_root_path(svc, section):
-    try:
-        return svc.conf_get(section, 'osvc_root_path')
-    except ex.OptNotFound as exc:
-        return exc.default
+    return svc.oget(section, "osvc_root_path")
 
 def get_restart(svc, section):
-    try:
-        return svc.conf_get(section, 'restart')
-    except ex.OptNotFound as exc:
-        return exc.default
+    return svc.oget(section, "restart")
 
 def get_disabled(svc, section):
-    try:
-        return svc.conf_get(section, 'disable')
-    except ex.OptNotFound as exc:
-        return exc.default
+    return svc.oget(section, "disable")
 
 def get_promote_rw(svc, section):
     try:
-        return svc.conf_get(section, 'promote_rw')
+        return svc.oget(section, "promote_rw")
     except ValueError as exc:
         return False
-    except ex.OptNotFound as exc:
-        return exc.default
 
 def get_standby(svc, section):
     try:
-        return svc.conf_get(section, 'standby')
+        return svc.conf_get(section, "standby")
     except ex.OptNotFound as exc:
         # backward compat with always_on
         try:
@@ -133,33 +97,29 @@ def standby_from_always_on(svc, section):
     always_on_opt = svc.conf_get(section, "always_on")
     if rcEnv.nodename in always_on_opt:
         return True
-    if 'nodes' in always_on_opt and rcEnv.nodename in svc.nodes:
+    if "nodes" in always_on_opt and rcEnv.nodename in svc.nodes:
         return True
-    if 'drpnodes' in always_on_opt and rcEnv.nodename in svc.drpnodes:
+    if "drpnodes" in always_on_opt and rcEnv.nodename in svc.drpnodes:
         return True
     return False
 
 def get_sync_args(svc, s):
     kwargs = {}
     defaults = svc.config.defaults()
+    kwargs["sync_max_delay"] = svc.oget(s, "sync_max_delay")
 
-    try:
-        kwargs['sync_max_delay'] = svc.conf_get(s, 'sync_max_delay')
-    except ex.OptNotFound as exc:
-        kwargs['sync_max_delay'] = exc.default
-
-    if svc.config.has_option(s, 'schedule'):
-        kwargs['schedule'] = svc.conf_get(s, 'schedule')
-    elif svc.config.has_option(s, 'period') or svc.config.has_option(s, 'sync_period'):
+    if svc.config.has_option(s, "schedule"):
+        kwargs["schedule"] = svc.conf_get(s, "schedule")
+    elif svc.config.has_option(s, "period") or svc.config.has_option(s, "sync_period"):
         # old schedule syntax compatibility
         from rcScheduler import Scheduler
-        kwargs['schedule'] = Scheduler().sched_convert_to_schedule(svc.config, s, prefix='sync_')
-    elif 'sync_schedule' in defaults:
-        kwargs['schedule'] = svc.conf_get('DEFAULT', 'sync_schedule')
-    elif 'sync_period' in defaults:
+        kwargs["schedule"] = Scheduler().sched_convert_to_schedule(svc.config, s, prefix="sync_")
+    elif "sync_schedule" in defaults:
+        kwargs["schedule"] = svc.conf_get("DEFAULT", "sync_schedule")
+    elif "sync_period" in defaults:
         # old schedule syntax compatibility for internal sync
         from rcScheduler import Scheduler
-        kwargs['schedule'] = Scheduler().sched_convert_to_schedule(svc.config, s, prefix='sync_')
+        kwargs["schedule"] = Scheduler().sched_convert_to_schedule(svc.config, s, prefix="sync_")
 
     return kwargs
 
@@ -170,7 +130,7 @@ def add_resource(svc, restype, s):
     else:
         match = restype+"#"
 
-    if restype in ("disk", "vg", "zpool") and re.match(match+'.+pr$', s, re.I) is not None:
+    if restype in ("disk", "vg", "zpool") and re.match(match+".+pr$", s, re.I) is not None:
         # persistent reserv resource are declared by their peer resource:
         # don't add them from here
         return
@@ -183,20 +143,16 @@ def add_resource(svc, restype, s):
     tags = get_tags(svc, s)
     encap = get_encap(svc, s)
 
-    if svc.encap and 'encap' not in tags and not encap:
+    if svc.encap and "encap" not in tags and not encap:
         return
 
-    if not svc.encap and (encap or 'encap' in tags):
+    if not svc.encap and (encap or "encap" in tags):
         svc.has_encap_resources = True
-        try:
-            subset = svc.conf_get(s, 'subset')
-        except ex.OptNotFound as exc:
-            subset = exc.default
         svc.encap_resources[s] = Storage({
             "rid": s,
             "tags": tags,
             "encap": encap,
-            "subset": subset,
+            "subset": svc.oget(s, "subset"),
             "nb_restart": get_restart(svc, s),
         })
         return
@@ -208,58 +164,20 @@ def add_resource(svc, restype, s):
 
 def add_ip_gce(svc, s):
     kwargs = init_kwargs(svc, s)
-
-    try:
-        rtype = svc.conf_get(s, 'type')
-    except ex.OptNotFound as exc:
-        rtype = exc.default
-
-    if rtype != "gce":
-        return
-
-    try:
-         kwargs['ipname'] = svc.conf_get(s, 'ipname')
-    except ex.OptNotFound:
-         pass
-    kwargs['ipdev'] = svc.conf_get(s, 'ipdev')
-
-    try:
-        kwargs['routename'] = svc.conf_get(s, 'routename')
-    except ex.OptNotFound as exc:
-        kwargs['routename'] = exc.default
-
-    try:
-        kwargs['gce_zone'] = svc.conf_get(s, 'gce_zone')
-    except ex.OptNotFound as exc:
-        kwargs['gce_zone'] = exc.default
-
-    ip = __import__('resIpGce')
+    kwargs["ipname"] = svc.oget(s, "ipname")
+    kwargs["ipdev"] = svc.oget(s, "ipdev")
+    kwargs["routename"] = svc.oget(s, "routename")
+    kwargs["gce_zone"] = svc.oget(s, "gce_zone")
+    ip = __import__("resIpGce")
     r = ip.Ip(**kwargs)
     svc += r
 
 def add_ip_amazon(svc, s):
     kwargs = init_kwargs(svc, s)
-
-    try:
-        rtype = svc.conf_get(s, 'type')
-    except ex.OptNotFound as exc:
-        rtype = exc.default
-
-    if rtype != "amazon":
-        return
-
-    try:
-        kwargs['ipname'] = svc.conf_get(s, 'ipname')
-    except ex.OptNotFound:
-         pass
-    kwargs['ipdev'] = svc.conf_get(s, 'ipdev')
-
-    try:
-        kwargs['eip'] = svc.conf_get(s, 'eip')
-    except ex.OptNotFound as exc:
-        kwargs['eip'] = None
-
-    ip = __import__('resIpAmazon')
+    kwargs["ipname"] = svc.oget(s, "ipname")
+    kwargs["ipdev"] = svc.oget(s, "ipdev")
+    kwargs["eip"] = svc.oget(s, "eip")
+    ip = __import__("resIpAmazon")
     r = ip.Ip(**kwargs)
     svc += r
 
@@ -268,7 +186,7 @@ def add_ip(svc, s):
     section. Ip objects are stored in a list in the service object.
     """
     try:
-        rtype = svc.conf_get(s, 'type')
+        rtype = svc.conf_get(s, "type")
     except ex.OptNotFound as exc:
         rtype = exc.default
 
@@ -278,110 +196,53 @@ def add_ip(svc, s):
         return add_ip_gce(svc, s)
 
     kwargs = init_kwargs(svc, s)
+    kwargs["expose"] = svc.oget(s, "expose")
+    kwargs["check_carrier"] = svc.oget(s, "check_carrier")
+    kwargs["ipdev"] = svc.oget(s, "ipdev")
+    zone = svc.oget(s, "zone")
 
     if rtype == "cni":
-        try:
-            kwargs['ipdev'] = svc.conf_get(s, 'ipdev')
-        except ex.OptNotFound as exc:
-            kwargs['ipdev'] = exc.default
+        kwargs["network"] = svc.oget(s, "network")
+        kwargs["netns"] = svc.oget(s, "netns")
+    elif rtype in ("netns", "docker"):
+        kwargs["netns"] = svc.oget(s, "netns")
+        kwargs["mode"] = svc.oget(s, "mode")
+        kwargs["network"] = svc.oget(s, "network")
+        kwargs["del_net_route"] = svc.oget(s, "del_net_route")
+        if kwargs["mode"] == "ovs":
+            kwargs["vlan_tag"] = svc.oget(s, "vlan_tag")
+            kwargs["vlan_mode"] = svc.oget(s, "vlan_mode")
+    elif rtype == "crossbow":
+        kwargs["ipdevExt"] = svc.oget(s, "ipdevext")
     else:
-        try:
-            kwargs['ipname'] = svc.conf_get(s, 'ipname')
-        except ex.OptNotFound:
-            pass
-
-        kwargs['ipdev'] = svc.conf_get(s, 'ipdev')
-
-        try:
-            kwargs['mask'] = svc.conf_get(s, 'netmask')
-        except ex.OptNotFound as exc:
-            kwargs['mask'] = exc.default
-
-        try:
-            kwargs['gateway'] = svc.conf_get(s, 'gateway')
-        except ex.OptNotFound as exc:
-            kwargs['gateway'] = exc.default
-
-    try:
-        zone = svc.conf_get(s, 'zone')
-    except ex.OptNotFound as exc:
-        zone = exc.default
-
-    try:
-        kwargs['expose'] = svc.conf_get(s, 'expose')
-    except ex.OptNotFound as exc:
-        kwargs['expose'] = exc.default
-
-    try:
-        kwargs['check_carrier'] = svc.conf_get(s, 'check_carrier')
-    except ex.OptNotFound as exc:
-        kwargs['check_carrier'] = exc.default
-
-    if rtype in ("netns", "docker"):
-        try:
-            kwargs['netns'] = svc.conf_get(s, 'netns')
-        except ex.OptNotFound as exc:
-            kwargs['netns'] = exc.default
-        try:
-            kwargs['mode'] = svc.conf_get(s, 'mode')
-        except ex.OptNotFound as exc:
-            kwargs['mode'] = exc.default
-        try:
-            kwargs['network'] = svc.conf_get(s, 'network')
-        except ex.OptNotFound as exc:
-            kwargs['network'] = exc.default
-        try:
-            kwargs['del_net_route'] = svc.conf_get(s, 'del_net_route')
-        except ex.OptNotFound as exc:
-            kwargs['del_net_route'] = exc.default
-        if kwargs['mode'] == "ovs":
-            try:
-                kwargs['vlan_tag'] = svc.conf_get(s, 'vlan_tag')
-            except ex.OptNotFound as exc:
-                kwargs['vlan_tag'] = exc.default
-            try:
-                kwargs['vlan_mode'] = svc.conf_get(s, 'vlan_mode')
-            except ex.OptNotFound as exc:
-                kwargs['vlan_mode'] = exc.default
-
-    if rtype == "cni":
-        try:
-            kwargs['network'] = svc.conf_get(s, 'network')
-        except ex.OptNotFound as exc:
-            kwargs['network'] = exc.default
-        try:
-            kwargs['netns'] = svc.conf_get(s, 'netns')
-        except ex.OptNotFound as exc:
-            pass
+        kwargs["ipname"] = svc.oget(s, "ipname")
+        kwargs["mask"] = svc.oget(s, "netmask")
+        kwargs["gateway"] = svc.oget(s, "gateway")
 
     if rtype == "crossbow":
-        try:
-            kwargs['ipdevExt'] = svc.conf_get(s, 'ipdevext')
-        except ex.OptNotFound as exc:
-            kwargs['ipdevExt'] = exc.default
         if zone is not None:
             svc.log.error("'zone' and 'type=crossbow' are incompatible in section %s"%s)
             return
-        ip = __import__('resIpCrossbow')
+        ip = __import__("resIpCrossbow")
     elif zone is not None:
-        kwargs['zone'] = zone
-        ip = __import__('resIpZone')
+        kwargs["zone"] = zone
+        ip = __import__("resIpZone")
     elif rtype in ("netns", "docker"):
-        ip = __import__('resIpNetns'+rcEnv.sysname)
+        ip = __import__("resIpNetns"+rcEnv.sysname)
     elif rtype == "cni":
-        ip = __import__('resIpCni')
+        ip = __import__("resIpCni")
     else:
-        ip = __import__('resIp'+rcEnv.sysname)
+        ip = __import__("resIp"+rcEnv.sysname)
 
     r = ip.Ip(**kwargs)
     svc += r
 
 def add_lv(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['name'] = svc.conf_get(s, 'name')
-    kwargs['vg'] = svc.conf_get(s, 'vg')
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["vg"] = svc.oget(s, "vg")
     try:
-        m = __import__('resDiskLv'+rcEnv.sysname)
+        m = __import__("resDiskLv"+rcEnv.sysname)
     except ImportError:
         svc.log.error("resDiskLv%s is not implemented"%rcEnv.sysname)
         return
@@ -390,12 +251,8 @@ def add_lv(svc, s):
 
 def add_md(svc, s):
     kwargs = init_kwargs(svc, s)
-    try:
-        kwargs['uuid'] = svc.conf_get(s, 'uuid')
-    except ex.OptNotFound as exc:
-        kwargs['uuid'] = exc.default
-
-    m = __import__('resDiskMdLinux')
+    kwargs["uuid"] = svc.oget(s, "uuid")
+    m = __import__("resDiskMdLinux")
     r = m.Disk(**kwargs)
     svc += r
 
@@ -404,8 +261,8 @@ def add_drbd(svc, s):
     section. Drbd objects are stored in a list in the service object.
     """
     kwargs = init_kwargs(svc, s)
-    kwargs['res'] = svc.conf_get(s, 'res')
-    mod = __import__('resDiskDrbd')
+    kwargs["res"] = svc.oget(s, "res")
+    mod = __import__("resDiskDrbd")
     r = mod.Drbd(**kwargs)
     svc += r
 
@@ -414,15 +271,15 @@ def add_vdisk(svc, s):
     devpath = {}
 
     for attr, val in svc.config.items(s):
-        if 'path@' in attr:
-            devpath[attr.replace('path@', '')] = val
+        if "path@" in attr:
+            devpath[attr.replace("path@", "")] = val
 
     if len(devpath) == 0:
         svc.log.error("path@node must be set in section %s"%s)
         return
 
-    kwargs['devpath'] = devpath
-    m = __import__('resDiskVdisk')
+    kwargs["devpath"] = devpath
+    m = __import__("resDiskVdisk")
     r = m.Disk(**kwargs)
     svc += r
 
@@ -431,10 +288,10 @@ def add_loop(svc, s):
     section. Loop objects are stored in a list in the service object.
     """
     kwargs = init_kwargs(svc, s)
-    kwargs['loopFile'] = svc.conf_get(s, 'file')
+    kwargs["loopFile"] = svc.oget(s, "file")
 
     try:
-        m = __import__('resDiskLoop'+rcEnv.sysname)
+        m = __import__("resDiskLoop"+rcEnv.sysname)
     except ImportError:
         svc.log.error("resDiskLoop%s is not implemented"%rcEnv.sysname)
         return
@@ -445,75 +302,43 @@ def add_loop(svc, s):
 
 def add_volume(svc, s):
     kwargs = init_kwargs(svc, s)
-
-    try:
-        kwargs["name"] = svc.conf_get(s, "name")
-    except ex.OptNotFound:
-        pass
-    try:
-        kwargs["pool"] = svc.conf_get(s, "pool")
-    except ex.OptNotFound:
-        pass
-    try:
-        kwargs["format"] = svc.conf_get(s, "format")
-    except ex.OptNotFound as exc:
-        kwargs["format"] = exc.default
-    try:
-        kwargs["size"] = svc.conf_get(s, "size")
-    except ex.OptNotFound:
-        pass
-    try:
-        kwargs["access"] = svc.conf_get(s, "access")
-    except ex.OptNotFound as exc:
-        kwargs["access"] = exc.default
-
-    m = __import__('resVolume')
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["pool"] = svc.oget(s, "pool")
+    kwargs["format"] = svc.oget(s, "format")
+    kwargs["size"] = svc.oget(s, "size")
+    kwargs["access"] = svc.oget(s, "access")
+    m = __import__("resVolume")
     r = m.Volume(**kwargs)
     svc += r
 
 def add_disk_disk(svc, s):
     kwargs = init_kwargs(svc, s)
-    m = __import__('resDiskDisk'+rcEnv.sysname)
+    m = __import__("resDiskDisk"+rcEnv.sysname)
     r = m.Disk(**kwargs)
     svc += r
 
 def add_disk_gce(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['names'] = svc.conf_get(s, 'names')
-    kwargs['gce_zone'] = svc.conf_get(s, 'gce_zone')
-    m = __import__('resDiskGce')
+    kwargs["names"] = svc.oget(s, "names")
+    kwargs["gce_zone"] = svc.oget(s, "gce_zone")
+    m = __import__("resDiskGce")
     r = m.Disk(**kwargs)
     svc += r
 
 def add_disk_amazon(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['volumes'] = svc.conf_get(s, 'volumes')
-    m = __import__('resDiskAmazon')
+    kwargs["volumes"] = svc.oget(s, "volumes")
+    m = __import__("resDiskAmazon")
     r = m.Disk(**kwargs)
     svc += r
 
 def add_disk_rados(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['images'] = svc.conf_get(s, 'images')
+    kwargs["images"] = svc.oget(s, "images")
+    kwargs["keyring"] = svc.oget(s, "keyring")
+    kwargs["client_id"] = svc.oget(s, "client_id")
     try:
-        kwargs['keyring'] = svc.conf_get(s, 'keyring')
-    except ex.OptNotFound as exc:
-        kwargs['keyring'] = exc.default
-    try:
-        kwargs['client_id'] = svc.conf_get(s, 'client_id')
-    except ex.OptNotFound as exc:
-        kwargs['client_id'] = exc.default
-    try:
-        lock_shared_tag = svc.conf_get(s, 'lock_shared_tag')
-    except ex.OptNotFound as exc:
-        lock_shared_tag = exc.default
-    try:
-        lock = svc.conf_get(s, 'lock')
-    except ex.OptNotFound as exc:
-        lock = exc.default
-
-    try:
-        m = __import__('resDiskRados'+rcEnv.sysname)
+        m = __import__("resDiskRados"+rcEnv.sysname)
     except ImportError:
         svc.log.error("disk type rados is not implemented")
         return
@@ -521,10 +346,12 @@ def add_disk_rados(svc, s):
     r = m.Disk(**kwargs)
     svc += r
 
+    # rados locking resource
+    lock_shared_tag = svc.oget(s, "lock_shared_tag")
+    lock = svc.oget(s, "lock")
     if not lock:
         return
 
-    # rados locking resource
     kwargs["rid"] = kwargs["rid"]+"lock"
     kwargs["lock"] = lock
     kwargs["lock_shared_tag"] = lock_shared_tag
@@ -535,70 +362,40 @@ def add_disk_rados(svc, s):
 def add_raw(svc, s):
     kwargs = init_kwargs(svc, s)
     disk_type = "Raw"+rcEnv.sysname
-    try:
-        zone = svc.conf_get(s, 'zone')
-    except ex.OptNotFound as exc:
-        zone = exc.default
-
-    kwargs['devs'] = svc.conf_get(s, 'devs')
+    kwargs["devs"] = svc.oget(s, "devs")
+    zone = svc.oget(s, "zone")
 
     if zone is not None:
-        kwargs['devs'] = set([dev.replace(":", ":<%s>" % zone) for dev in kwargs['devs']])
+        kwargs["devs"] = set([dev.replace(":", ":<%s>" % zone) for dev in kwargs["devs"]])
+
+    kwargs["user"] = svc.oget(s, "user")
+    kwargs["group"] = svc.oget(s, "group")
+    kwargs["perm"] = svc.oget(s, "perm")
+    kwargs["create_char_devices"] = svc.oget(s, "create_char_devices")
 
     try:
-        kwargs['user'] = svc.conf_get(s, 'user')
-    except ex.OptNotFound as exc:
-        kwargs['user'] = exc.default
-    try:
-        kwargs['group'] = svc.conf_get(s, 'group')
-    except ex.OptNotFound as exc:
-        kwargs['group'] = exc.default
-    try:
-        kwargs['perm'] = svc.conf_get(s, 'perm')
-    except ex.OptNotFound as exc:
-        kwargs['perm'] = exc.default
-    try:
-        kwargs['create_char_devices'] = svc.conf_get(s, 'create_char_devices')
-    except ex.OptNotFound as exc:
-        kwargs['create_char_devices'] = exc.default
-
-    try:
-        m = __import__('resDisk'+disk_type)
+        m = __import__("resDisk"+disk_type)
     except ImportError:
         svc.log.error("disk type %s driver is not implemented"%disk_type)
         return
 
     r = m.Disk(**kwargs)
     if zone is not None:
-        r.tags.add('zone')
+        r.tags.add("zone")
         r.tags.add(zone)
     svc += r
 
 def add_gandi(svc, s):
     disk_type = "Gandi"
     kwargs = init_kwargs(svc, s)
-    kwargs['cloud_id'] = svc.conf_get(s, 'cloud_id')
-    kwargs['name'] = svc.conf_get(s, 'name')
-
+    kwargs["cloud_id"] = svc.oget(s, "cloud_id")
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["node"] = svc.oget(s, "node")
+    kwargs["user"] = svc.oget(s, "user")
+    kwargs["group"] = svc.oget(s, "group")
+    kwargs["perm"] = svc.oget(s, "perm")
     try:
-        kwargs['node'] = svc.conf_get(s, 'node')
-    except ex.OptNotFound as exc:
-        pass
-    try:
-        kwargs['user'] = svc.conf_get(s, 'user')
-    except ex.OptNotFound as exc:
-        pass
-    try:
-        kwargs['group'] = svc.conf_get(s, 'user')
-    except ex.OptNotFound as exc:
-        pass
-    try:
-        kwargs['perm'] = svc.conf_get(s, 'perm')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        m = __import__('resDisk'+disk_type)
+        m = __import__("resDisk"+disk_type)
     except ImportError:
         svc.log.error("disk type %s is not implemented"%disk_type)
         return
@@ -608,58 +405,58 @@ def add_gandi(svc, s):
 
 def add_disk_compat(svc, s):
     try:
-        disk_type = svc.conf_get(s, 'type')
+        disk_type = svc.conf_get(s, "type")
     except ex.OptNotFound as exc:
         disk_type = s.split("#")[0]
     if len(disk_type) >= 2:
         disk_type = disk_type[0].upper() + disk_type[1:].lower()
 
-    if disk_type == 'Drbd':
+    if disk_type == "Drbd":
         add_drbd(svc, s)
         return
-    if disk_type == 'Vdisk':
+    if disk_type == "Vdisk":
         add_vdisk(svc, s)
         return
-    if disk_type == 'Vmdg':
+    if disk_type == "Vmdg":
         add_vmdg(svc, s)
         return
-    if disk_type == 'Pool':
+    if disk_type == "Pool":
         add_zpool(svc, s)
         return
-    if disk_type == 'Zpool':
+    if disk_type == "Zpool":
         add_zpool(svc, s)
         return
-    if disk_type == 'Loop':
+    if disk_type == "Loop":
         add_loop(svc, s)
         return
-    if disk_type == 'Md':
+    if disk_type == "Md":
         add_md(svc, s)
         return
-    if disk_type == 'Lv':
+    if disk_type == "Lv":
         add_lv(svc, s)
         return
-    if disk_type == 'Gce':
+    if disk_type == "Gce":
         add_disk_gce(svc, s)
         return
-    if disk_type == 'Disk':
+    if disk_type == "Disk":
         add_disk_disk(svc, s)
         return
-    if disk_type == 'Amazon':
+    if disk_type == "Amazon":
         add_disk_amazon(svc, s)
         return
-    if disk_type == 'Rados':
+    if disk_type == "Rados":
         add_disk_rados(svc, s)
         return
-    if disk_type == 'Raw':
+    if disk_type == "Raw":
         add_raw(svc, s)
         return
-    if disk_type == 'Gandi':
+    if disk_type == "Gandi":
         add_gandi(svc, s)
         return
-    if disk_type in ('Veritas', 'Vxdg'):
+    if disk_type in ("Veritas", "Vxdg"):
         add_vxdg(svc, s)
         return
-    if disk_type == 'Vxvol':
+    if disk_type == "Vxvol":
         add_vxvol(svc, s)
         return
 
@@ -667,28 +464,24 @@ def add_disk_compat(svc, s):
 
 def add_vxdg(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['name'] = svc.conf_get(s, 'name')
-
+    kwargs["name"] = svc.oget(s, "name")
     try:
-        m = __import__('resDiskVxdg')
+        m = __import__("resDiskVxdg")
     except ImportError:
         svc.log.error("disk type vxdg is not implemented")
         return
-
     r = m.Disk(**kwargs)
     svc += r
 
 def add_vxvol(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['name'] = svc.conf_get(s, 'name')
-    kwargs['vg'] = svc.conf_get(s, 'vg')
-
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["vg"] = svc.oget(s, "vg")
     try:
-        m = __import__('resDiskVxvol')
+        m = __import__("resDiskVxvol")
     except ImportError:
         svc.log.error("disk type vxvol is not implemented")
         return
-
     r = m.Disk(**kwargs)
     svc += r
 
@@ -701,31 +494,22 @@ def add_vg(svc, s):
 
     disk_type = rcEnv.sysname
     kwargs = init_kwargs(svc, s)
-    kwargs['name'] = svc.conf_get(s, 'name')
-
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["dsf"] = svc.oget(s, "dsf")
     try:
-        kwargs['dsf'] = svc.conf_get(s, 'dsf')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        m = __import__('resDiskVg'+disk_type)
+        m = __import__("resDiskVg"+disk_type)
     except ImportError:
         svc.log.error("disk type %s is not implemented"%disk_type)
         return
-
     r = m.Disk(**kwargs)
     svc += r
 
 def add_sync(svc, s):
-    try:
-        rtype = svc.conf_get(s, 'type')
-    except ex.OptNotFound as exc:
-        rtype = exc.default
+    rtype = svc.oget(s, "type")
     globals()["add_sync_"+rtype](svc, s)
 
 def add_container(svc, s):
-    rtype = svc.conf_get(s, 'type')
+    rtype = svc.oget(s, "type")
     globals()["add_container_"+rtype](svc, s)
 
 def add_disk(svc, s):
@@ -733,81 +517,81 @@ def add_disk(svc, s):
     section. Disk objects are stored in a list in the service object.
     """
     try:
-        disk_type = svc.conf_get(s, 'type')
+        disk_type = svc.conf_get(s, "type")
     except ex.OptNotFound as exc:
         disk_type = s.split("#")[0]
 
     if len(disk_type) >= 2:
         disk_type = disk_type[0].upper() + disk_type[1:].lower()
 
-    if disk_type == 'Drbd':
+    if disk_type == "Drbd":
         add_drbd(svc, s)
         return
-    if disk_type == 'Vdisk':
+    if disk_type == "Vdisk":
         add_vdisk(svc, s)
         return
-    if disk_type == 'Vmdg':
+    if disk_type == "Vmdg":
         add_vmdg(svc, s)
         return
-    if disk_type == 'Pool':
+    if disk_type == "Pool":
         add_zpool(svc, s)
         return
-    if disk_type == 'Zpool':
+    if disk_type == "Zpool":
         add_zpool(svc, s)
         return
-    if disk_type == 'Loop':
+    if disk_type == "Loop":
         add_loop(svc, s)
         return
-    if disk_type == 'Lv':
+    if disk_type == "Lv":
         add_lv(svc, s)
         return
-    if disk_type == 'Md':
+    if disk_type == "Md":
         add_md(svc, s)
         return
-    if disk_type == 'Gce':
+    if disk_type == "Gce":
         add_disk_gce(svc, s)
         return
-    if disk_type == 'Disk':
+    if disk_type == "Disk":
         add_disk_disk(svc, s)
         return
-    if disk_type == 'Amazon':
+    if disk_type == "Amazon":
         add_disk_amazon(svc, s)
         return
-    if disk_type == 'Rados':
+    if disk_type == "Rados":
         add_disk_rados(svc, s)
         return
-    if disk_type == 'Raw':
+    if disk_type == "Raw":
         add_raw(svc, s)
         return
-    if disk_type == 'Gandi':
+    if disk_type == "Gandi":
         add_gandi(svc, s)
         return
-    if disk_type in ('Veritas', 'Vxdg'):
+    if disk_type in ("Veritas", "Vxdg"):
         add_vxdg(svc, s)
         return
-    if disk_type == 'Vxvol':
+    if disk_type == "Vxvol":
         add_vxvol(svc, s)
         return
-    if disk_type == 'Lvm' or disk_type == 'Vg' or disk_type == rcEnv.sysname:
+    if disk_type == "Lvm" or disk_type == "Vg" or disk_type == rcEnv.sysname:
         add_vg(svc, s)
         return
 
 def add_vmdg(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['container_id'] = svc.conf_get(s, 'container_id')
+    kwargs["container_id"] = svc.oget(s, "container_id")
 
-    if not svc.config.has_section(kwargs['container_id']):
-        svc.log.error("%s.container_id points to an invalid section"%kwargs['container_id'])
+    if not svc.config.has_section(kwargs["container_id"]):
+        svc.log.error("%s.container_id points to an invalid section"%kwargs["container_id"])
         return
 
     try:
-        container_type = svc.conf_get(kwargs['container_id'], 'type')
+        container_type = svc.conf_get(kwargs["container_id"], "type")
     except ex.OptNotFound as exc:
-        svc.log.error("type must be set in section %s"%kwargs['container_id'])
+        svc.log.error("type must be set in section %s"%kwargs["container_id"])
         return
 
-    if container_type == 'ldom':
-        m = __import__('resDiskLdom')
+    if container_type == "ldom":
+        m = __import__("resDiskLdom")
     else:
         return
 
@@ -819,29 +603,20 @@ def add_zpool(svc, s):
     section. Pools objects are stored in a list in the service object.
     """
     kwargs = init_kwargs(svc, s)
-    kwargs['name'] = svc.conf_get(s, 'name')
-
-    try:
-        zone = svc.conf_get(s, 'zone')
-    except ex.OptNotFound as exc:
-        zone = None
-
-    m = __import__('resDiskZfs')
+    kwargs["name"] = svc.oget(s, "name")
+    zone = svc.oget(s, "zone")
+    m = __import__("resDiskZfs")
     r = m.Disk(**kwargs)
 
     if zone is not None:
-        r.tags.add('zone')
+        r.tags.add("zone")
         r.tags.add(zone)
 
     svc += r
 
 def add_vhost(svc, s):
-    try:
-        _type = svc.conf_get(s, 'type')
-    except ex.OptNotFound as exc:
-        _type = exc.default
-
-    fname = 'add_vhost_'+_type
+    _type = svc.oget(s, "type")
+    fname = "add_vhost_"+_type
     if fname not in globals():
         svc.log.error("type '%s' not supported in section %s"%(_type, s))
     globals()[fname](svc, s)
@@ -850,7 +625,7 @@ def add_vhost_envoy(svc, s):
     kwargs = {"rid": s}
     kwargs.update(svc.section_kwargs(s, "envoy"))
     try:
-        m = __import__('resVhostEnvoy')
+        m = __import__("resVhostEnvoy")
     except ImportError:
         svc.log.error("resVhostEnvoy is not implemented")
         return
@@ -859,12 +634,8 @@ def add_vhost_envoy(svc, s):
     svc += r
 
 def add_route(svc, s):
-    try:
-        _type = svc.conf_get(s, 'type')
-    except ex.OptNotFound as exc:
-        _type = exc.default
-
-    fname = 'add_route_'+_type
+    _type = svc.oget(s, "type")
+    fname = "add_route_"+_type
     if fname not in globals():
         svc.log.error("type '%s' not supported in section %s"%(_type, s))
     globals()[fname](svc, s)
@@ -873,7 +644,7 @@ def add_route_envoy(svc, s):
     kwargs = {"rid": s}
     kwargs.update(svc.section_kwargs(s, "envoy"))
     try:
-        m = __import__('resRouteEnvoy')
+        m = __import__("resRouteEnvoy")
     except ImportError:
         svc.log.error("resRouteEnvoy is not implemented")
         return
@@ -881,12 +652,8 @@ def add_route_envoy(svc, s):
     svc += r
 
 def add_hash_policy(svc, s):
-    try:
-        _type = svc.conf_get(s, 'type')
-    except ex.OptNotFound as exc:
-        _type = exc.default
-
-    fname = 'add_hash_policy_'+_type
+    _type = svc.oget(s, "type")
+    fname = "add_hash_policy_"+_type
     if fname not in globals():
         svc.log.error("type '%s' not supported in section %s"%(_type, s))
     globals()[fname](svc, s)
@@ -895,7 +662,7 @@ def add_hash_policy_envoy(svc, s):
     kwargs = {"rid": s}
     kwargs.update(svc.section_kwargs(s, "envoy"))
     try:
-        m = __import__('resHashpolicyEnvoy')
+        m = __import__("resHashpolicyEnvoy")
     except ImportError:
         svc.log.error("resHashpolicyEnvoy is not implemented")
         return
@@ -903,12 +670,8 @@ def add_hash_policy_envoy(svc, s):
     svc += r
 
 def add_expose(svc, s):
-    try:
-        _type = svc.conf_get(s, 'type')
-    except ex.OptNotFound as exc:
-        _type = exc.default
-
-    fname = 'add_expose_'+_type
+    _type = svc.oget(s, "type")
+    fname = "add_expose_"+_type
     if fname not in globals():
         svc.log.error("type '%s' not supported in section %s"%(_type, s))
     globals()[fname](svc, s)
@@ -917,7 +680,7 @@ def add_expose_envoy(svc, s):
     kwargs = {"rid": s}
     kwargs.update(svc.section_kwargs(s, "envoy"))
     try:
-        m = __import__('resExposeEnvoy')
+        m = __import__("resExposeEnvoy")
     except ImportError:
         svc.log.error("resExposeEnvoy is not implemented")
         return
@@ -925,10 +688,7 @@ def add_expose_envoy(svc, s):
     svc += r
 
 def add_certificate(svc, s):
-    try:
-        rtype = svc.conf_get(s, 'type')
-    except ex.OptNotFound as exc:
-        rtype = exc.default
+    rtype = svc.oget(s, "type")
     kwargs = {"rid": s}
     kwargs.update(svc.section_kwargs(s, "tls"))
     try:
@@ -940,20 +700,19 @@ def add_certificate(svc, s):
     svc += r
 
 def add_share(svc, s):
-    _type = svc.conf_get(s, 'type')
-
-    fname = 'add_share_'+_type
+    _type = svc.oget(s, "type")
+    fname = "add_share_"+_type
     if fname not in globals():
         svc.log.error("type '%s' not supported in section %s"%(_type, s))
     globals()[fname](svc, s)
 
 def add_share_nfs(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['path'] = svc.conf_get(s, 'path')
-    kwargs['opts'] = svc.conf_get(s, 'opts')
+    kwargs["path"] = svc.oget(s, "path")
+    kwargs["opts"] = svc.oget(s, "opts")
 
     try:
-        m = __import__('resShareNfs'+rcEnv.sysname)
+        m = __import__("resShareNfs"+rcEnv.sysname)
     except ImportError:
         svc.log.error("resShareNfs%s is not implemented"%rcEnv.sysname)
         return
@@ -963,41 +722,19 @@ def add_share_nfs(svc, s):
 
 def add_fs_docker(svc, s):
     kwargs = init_kwargs(svc, s)
-    try:
-        kwargs['driver'] = svc.conf_get(s, 'driver')
-    except ex.OptNotFound as exc:
-        kwargs['driver'] = exc.default
-    try:
-        kwargs['options'] = svc.conf_get(s, 'options')
-    except ex.OptNotFound as exc:
-        kwargs['options'] = exc.default
-    m = __import__('resFsDocker')
+    kwargs["driver"] = svc.oget(s, "driver")
+    kwargs["options"] = svc.oget(s, "options")
+    m = __import__("resFsDocker")
     r = m.Fs(**kwargs)
     svc += r
 
 def add_fs_directory(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['path'] = svc.conf_get(s, 'path')
-
-    try:
-        kwargs['user'] = svc.conf_get(s, 'user')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        kwargs['group'] = svc.conf_get(s, 'group')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        kwargs['perm'] = svc.conf_get(s, 'perm')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        zone = svc.conf_get(s, 'zone')
-    except:
-        zone = None
+    kwargs["path"] = svc.oget(s, "path")
+    kwargs["user"] = svc.oget(s, "user")
+    kwargs["group"] = svc.oget(s, "group")
+    kwargs["perm"] = svc.oget(s, "perm")
+    zone = svc.oget(s, "zone")
 
     if zone is not None:
         zp = None
@@ -1011,16 +748,16 @@ def add_fs_directory(svc, s):
         if zp is None:
             svc.log.error("zone %s, referenced in %s, not found"%(zone, s))
             raise ex.excError()
-        kwargs['path'] = zp+'/root'+kwargs['path']
+        kwargs["path"] = zp+"/root"+kwargs["path"]
         if "<%s>" % zone != zp:
-            kwargs['path'] = os.path.realpath(kwargs['path'])
+            kwargs["path"] = os.path.realpath(kwargs["path"])
 
-    mod = __import__('resFsDir')
+    mod = __import__("resFsDir")
     r = mod.FsDir(**kwargs)
 
     if zone is not None:
         r.tags.add(zone)
-        r.tags.add('zone')
+        r.tags.add("zone")
 
     svc += r
 
@@ -1031,40 +768,37 @@ def add_fs(svc, s):
     kwargs = init_kwargs(svc, s)
 
     try:
-        kwargs['fs_type'] = svc.conf_get(s, 'type')
+        kwargs["fs_type"] = svc.conf_get(s, "type")
     except ex.OptNotFound as exc:
-        kwargs['fs_type'] = ""
+        kwargs["fs_type"] = ""
 
-    if kwargs['fs_type'] == "directory":
+    if kwargs["fs_type"] == "directory":
         add_fs_directory(svc, s)
         return
 
-    if kwargs['fs_type'] == "docker":
+    if kwargs["fs_type"] == "docker":
         add_fs_docker(svc, s)
         return
 
-    kwargs['device'] = svc.conf_get(s, 'dev')
-    kwargs['mount_point'] = svc.conf_get(s, 'mnt')
+    kwargs["device"] = svc.oget(s, "dev")
+    kwargs["mount_point"] = svc.oget(s, "mnt")
 
-    if kwargs['mount_point'] and kwargs['mount_point'][-1] != "/" and kwargs['mount_point'][-1] == '/':
+    if kwargs["mount_point"] and kwargs["mount_point"][-1] != "/" and kwargs["mount_point"][-1] == "/":
         # Remove trailing / to not risk losing rsync src trailing / upon snap
         # mountpoint substitution.
-        kwargs['mount_point'] = kwargs['mount_point'][0:-1]
+        kwargs["mount_point"] = kwargs["mount_point"][0:-1]
 
     try:
-        kwargs['mount_options'] = svc.conf_get(s, 'mnt_opt')
+        kwargs["mount_options"] = svc.conf_get(s, "mnt_opt")
     except ex.OptNotFound as exc:
-        kwargs['mount_options'] = ""
+        kwargs["mount_options"] = ""
 
     try:
-        kwargs['snap_size'] = svc.conf_get(s, 'snap_size')
+        kwargs["snap_size"] = svc.conf_get(s, "snap_size")
     except ex.OptNotFound as exc:
         pass
 
-    try:
-        zone = svc.conf_get(s, 'zone')
-    except:
-        zone = None
+    zone = svc.oget(s, "zone")
 
     if zone is not None:
         zp = None
@@ -1078,12 +812,12 @@ def add_fs(svc, s):
         if zp is None:
             svc.log.error("zone %s, referenced in %s, not found"%(zone, s))
             raise ex.excError()
-        kwargs['mount_point'] = zp+'/root'+kwargs['mount_point']
+        kwargs["mount_point"] = zp+"/root"+kwargs["mount_point"]
         if "<%s>" % zone != zp:
-            kwargs['mount_point'] = os.path.realpath(kwargs['mount_point'])
+            kwargs["mount_point"] = os.path.realpath(kwargs["mount_point"])
 
     try:
-        mount = __import__('resFs'+rcEnv.sysname)
+        mount = __import__("resFs"+rcEnv.sysname)
     except ImportError:
         svc.log.error("resFs%s is not implemented"%rcEnv.sysname)
         return
@@ -1092,7 +826,7 @@ def add_fs(svc, s):
 
     if zone is not None:
         r.tags.add(zone)
-        r.tags.add('zone')
+        r.tags.add("zone")
 
     svc += r
 
@@ -1101,254 +835,154 @@ def container_kwargs(svc, s, default_name="svcname"):
     Common kwargs for all containers.
     """
     kwargs = {}
-    kwargs['osvc_root_path'] = get_osvc_root_path(svc, s)
+    kwargs["osvc_root_path"] = get_osvc_root_path(svc, s)
 
     try:
-        kwargs['name'] = svc.conf_get(s, 'name')
+        kwargs["name"] = svc.conf_get(s, "name")
     except ex.OptNotFound as exc:
         if default_name is None:
-            kwargs['name'] = exc.default
+            kwargs["name"] = exc.default
         else:
-            kwargs['name'] = svc.svcname
+            kwargs["name"] = svc.svcname
 
-    try:
-        kwargs['guestos'] = svc.conf_get(s, 'guestos')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        kwargs['start_timeout'] = svc.conf_get(s, 'start_timeout')
-    except ex.OptNotFound as exc:
-        kwargs['start_timeout'] = exc.default
-
-    try:
-        kwargs['stop_timeout'] = svc.conf_get(s, 'stop_timeout')
-    except ex.OptNotFound as exc:
-        kwargs['stop_timeout'] = exc.default
-
+    kwargs["guestos"] = svc.oget(s, "guestos")
+    kwargs["start_timeout"] = svc.oget(s, "start_timeout")
+    kwargs["stop_timeout"] = svc.oget(s, "stop_timeout")
     return kwargs
 
 def add_container_esx(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    m = __import__('resContainerEsx')
+    m = __import__("resContainerEsx")
     r = m.Esx(**kwargs)
     svc += r
 
 def add_container_hpvm(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    m = __import__('resContainerHpVm')
+    m = __import__("resContainerHpVm")
     r = m.HpVm(**kwargs)
     svc += r
 
 def add_container_ldom(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    m = __import__('resContainerLdom')
+    m = __import__("resContainerLdom")
     r = m.Ldom(**kwargs)
     svc += r
 
 def add_container_vbox(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    m = __import__('resContainerVbox')
+    m = __import__("resContainerVbox")
     r = m.Vbox(**kwargs)
     svc += r
 
 def add_container_xen(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    m = __import__('resContainerXen')
+    m = __import__("resContainerXen")
     r = m.Xen(**kwargs)
     svc += r
 
 def add_container_zone(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-
-    try:
-        kwargs['delete_on_stop'] = svc.conf_get(s, 'delete_on_stop')
-    except ex.OptNotFound as exc:
-        pass
-
-    m = __import__('resContainerZone')
+    kwargs["delete_on_stop"] = svc.oget(s, "delete_on_stop")
+    m = __import__("resContainerZone")
     r = m.Zone(**kwargs)
     svc += r
 
 def add_container_vcloud(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    kwargs['cloud_id'] = svc.conf_get(s, 'cloud_id')
-    kwargs['vapp'] = svc.conf_get(s, 'vapp')
-    kwargs['key_name'] = svc.conf_get(s, 'key_name')
-    m = __import__('resContainerVcloud')
+    kwargs["cloud_id"] = svc.oget(s, "cloud_id")
+    kwargs["vapp"] = svc.oget(s, "vapp")
+    kwargs["key_name"] = svc.oget(s, "key_name")
+    m = __import__("resContainerVcloud")
     r = m.CloudVm(**kwargs)
     svc += r
 
 def add_container_amazon(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    kwargs['cloud_id'] = svc.conf_get(s, 'cloud_id')
-    kwargs['key_name'] = svc.conf_get(s, 'key_name')
+    kwargs["cloud_id"] = svc.oget(s, "cloud_id")
+    kwargs["key_name"] = svc.oget(s, "key_name")
 
     # provisioning keywords
-    try:
-        kwargs['image_id'] = svc.conf_get(s, 'image_id')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        kwargs['size'] = svc.conf_get(s, 'size')
-    except ex.OptNotFound as exc:
-        pass
-
-
-    try:
-        kwargs['subnet'] = svc.conf_get(s, 'subnet')
-    except ex.OptNotFound as exc:
-        pass
-
-    m = __import__('resContainerAmazon')
+    kwargs["image_id"] = svc.oget(s, "image_id")
+    kwargs["size"] = svc.oget(s, "size")
+    kwargs["subnet"] = svc.oget(s, "subnet")
+    m = __import__("resContainerAmazon")
     r = m.CloudVm(**kwargs)
     svc += r
 
 def add_container_openstack(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    kwargs['cloud_id'] = svc.conf_get(s, 'cloud_id')
-    kwargs['key_name'] = svc.conf_get(s, 'key_name')
-
-    try:
-        kwargs['size'] = svc.conf_get(s, 'size')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        kwargs['shared_ip_group'] = svc.conf_get(s, 'shared_ip_group')
-    except ex.OptNotFound as exc:
-        pass
-
-    m = __import__('resContainerOpenstack')
+    kwargs["cloud_id"] = svc.oget(s, "cloud_id")
+    kwargs["key_name"] = svc.oget(s, "key_name")
+    kwargs["size"] = svc.oget(s, "size")
+    kwargs["shared_ip_group"] = svc.oget(s, "shared_ip_group")
+    m = __import__("resContainerOpenstack")
     r = m.CloudVm(**kwargs)
     svc += r
 
 def add_container_vz(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    m = __import__('resContainerVz')
+    m = __import__("resContainerVz")
     r = m.Vz(**kwargs)
     svc += r
 
 def add_container_kvm(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    m = __import__('resContainerKvm')
+    m = __import__("resContainerKvm")
     r = m.Kvm(**kwargs)
     svc += r
 
 def add_container_srp(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    m = __import__('resContainerSrp')
+    m = __import__("resContainerSrp")
     r = m.Srp(**kwargs)
     svc += r
 
 def add_container_lxd(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    m = __import__('resContainerLxd')
+    m = __import__("resContainerLxd")
     r = m.Container(**kwargs)
     svc += r
 
 def add_container_lxc(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    kwargs['rcmd'] = get_rcmd(svc, s)
-    try:
-        kwargs['cf'] = svc.conf_get(s, 'cf')
-    except ex.OptNotFound as exc:
-        pass
-
-    m = __import__('resContainerLxc')
+    kwargs["rcmd"] = get_rcmd(svc, s)
+    kwargs["cf"] = svc.oget(s, "cf")
+    m = __import__("resContainerLxc")
     r = m.Lxc(**kwargs)
     svc += r
 
 def add_container_docker(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s, default_name=None))
-    kwargs["image"] = svc.conf_get(s, "image")
-
-    try:
-        kwargs["run_command"] = svc.conf_get(s, "run_command")
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        kwargs["run_args"] = svc.conf_get(s, "run_args")
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        kwargs["rm"] = svc.conf_get(s, "rm")
-    except ex.OptNotFound as exc:
-        kwargs["rm"] = exc.default
-
-    try:
-        kwargs["detach"] = svc.conf_get(s, "detach")
-    except ex.OptNotFound as exc:
-        kwargs["detach"] = exc.default
-
-    try:
-        kwargs["entrypoint"] = svc.conf_get(s, "entrypoint")
-    except ex.OptNotFound as exc:
-        kwargs["entrypoint"] = exc.default
-
-    try:
-        kwargs["netns"] = svc.conf_get(s, "netns")
-    except ex.OptNotFound as exc:
-        kwargs["netns"] = exc.default
-
-    try:
-        kwargs["userns"] = svc.conf_get(s, "userns")
-    except ex.OptNotFound as exc:
-        kwargs["userns"] = exc.default
-
-    try:
-        kwargs["pidns"] = svc.conf_get(s, "pidns")
-    except ex.OptNotFound as exc:
-        kwargs["pidns"] = exc.default
-
-    try:
-        kwargs["ipcns"] = svc.conf_get(s, "ipcns")
-    except ex.OptNotFound as exc:
-        kwargs["ipcns"] = exc.default
-
-    try:
-        kwargs["utsns"] = svc.conf_get(s, "utsns")
-    except ex.OptNotFound as exc:
-        kwargs["utsns"] = exc.default
-
-    try:
-        kwargs["privileged"] = svc.conf_get(s, "privileged")
-    except ex.OptNotFound as exc:
-        kwargs["privileged"] = exc.default
-
-    try:
-        kwargs["interactive"] = svc.conf_get(s, "interactive")
-    except ex.OptNotFound as exc:
-        kwargs["interactive"] = exc.default
-
-    try:
-        kwargs["tty"] = svc.conf_get(s, "tty")
-    except ex.OptNotFound as exc:
-        kwargs["tty"] = exc.default
-
-    try:
-        kwargs["volume_mounts"] = svc.conf_get(s, "volume_mounts")
-    except ex.OptNotFound as exc:
-        kwargs["volume_mounts"] = exc.default
-
+    kwargs["image"] = svc.oget(s, "image")
+    kwargs["run_command"] = svc.oget(s, "run_command")
+    kwargs["run_args"] = svc.oget(s, "run_args")
+    kwargs["rm"] = svc.oget(s, "rm")
+    kwargs["detach"] = svc.oget(s, "detach")
+    kwargs["entrypoint"] = svc.oget(s, "entrypoint")
+    kwargs["netns"] = svc.oget(s, "netns")
+    kwargs["userns"] = svc.oget(s, "userns")
+    kwargs["pidns"] = svc.oget(s, "pidns")
+    kwargs["ipcns"] = svc.oget(s, "ipcns")
+    kwargs["utsns"] = svc.oget(s, "utsns")
+    kwargs["privileged"] = svc.oget(s, "privileged")
+    kwargs["interactive"] = svc.oget(s, "interactive")
+    kwargs["tty"] = svc.oget(s, "tty")
+    kwargs["volume_mounts"] = svc.oget(s, "volume_mounts")
     m = __import__("resContainerDocker")
     r = m.Docker(**kwargs)
     svc += r
@@ -1356,32 +990,18 @@ def add_container_docker(svc, s):
 def add_container_ovm(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-
-    try:
-        kwargs['uuid'] = svc.conf_get(s, 'uuid')
-    except ex.OptNotFound as exc:
-        kwargs['uuid'] = exc.default
-
-    m = __import__('resContainerOvm')
+    kwargs["uuid"] = svc.oget(s, "uuid")
+    m = __import__("resContainerOvm")
     r = m.Ovm(**kwargs)
     svc += r
 
 def add_container_jail(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    kwargs['jailroot'] = svc.conf_get(s, 'jailroot')
-
-    try:
-        kwargs['ips'] = svc.conf_get(s, 'ips')
-    except ex.OptNotFound as exc:
-        kwargs['ips'] = exc.default
-
-    try:
-        kwargs['ip6s'] = svc.conf_get(s, 'ip6s')
-    except ex.OptNotFound as exc:
-        kwargs['ip6s'] = exc.default
-
-    m = __import__('resContainerJail')
+    kwargs["jailroot"] = svc.oget(s, "jailroot")
+    kwargs["ips"] = svc.oget(s, "ips")
+    kwargs["ip6s"] = svc.oget(s, "ip6s")
+    m = __import__("resContainerJail")
     r = m.Jail(**kwargs)
     svc += r
 
@@ -1415,121 +1035,106 @@ def add_mandatory_syncs(svc):
     src = add_file(src, svc.paths.initd)
     src = add_file(src, svc.paths.alt_initd)
     dst = os.path.join("/")
-    exclude = ['--exclude=*.core']
-    kwargs['rid'] = "sync#i0"
-    kwargs['src'] = src
-    kwargs['dst'] = dst
-    kwargs['options'] = ['-R']+exclude
+    exclude = ["--exclude=*.core"]
+    kwargs["rid"] = "sync#i0"
+    kwargs["src"] = src
+    kwargs["dst"] = dst
+    kwargs["options"] = ["-R"]+exclude
     try:
-        kwargs['options'] += svc.conf_get(kwargs['rid'], 'options')
+        kwargs["options"] += svc.conf_get(kwargs["rid"], "options")
     except ex.OptNotFound:
         pass
-    kwargs['target'] = list(target)
-    kwargs['internal'] = True
-    kwargs['disabled'] = get_disabled(svc, kwargs['rid'])
-    kwargs['optional'] = get_optional(svc, kwargs['rid'])
-    kwargs.update(get_sync_args(svc, kwargs['rid']))
+    kwargs["target"] = list(target)
+    kwargs["internal"] = True
+    kwargs["disabled"] = get_disabled(svc, kwargs["rid"])
+    kwargs["optional"] = get_optional(svc, kwargs["rid"])
+    kwargs.update(get_sync_args(svc, kwargs["rid"]))
     r = resSyncRsync.Rsync(**kwargs)
     svc += r
 
 def add_sync_docker(svc, s):
     kwargs = {}
 
-    kwargs['target'] = svc.conf_get(s, 'target')
+    kwargs["target"] = svc.oget(s, "target")
 
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
 
-    m = __import__('resSyncDocker')
+    m = __import__("resSyncDocker")
     r = m.SyncDocker(**kwargs)
     svc += r
 
 def add_sync_btrfs(svc, s):
     kwargs = {}
 
-    kwargs['src'] = svc.conf_get(s, 'src')
-    kwargs['dst'] = svc.conf_get(s, 'dst')
-    kwargs['target'] = svc.conf_get(s, 'target')
-
-    try:
-        kwargs['recursive'] = svc.conf_get(s, 'recursive')
-    except ex.OptNotFound as exc:
-        kwargs['recursive'] = exc.default
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["src"] = svc.oget(s, "src")
+    kwargs["dst"] = svc.oget(s, "dst")
+    kwargs["target"] = svc.oget(s, "target")
+    kwargs["recursive"] = svc.oget(s, "recursive")
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    btrfs = __import__('resSyncBtrfs')
+    btrfs = __import__("resSyncBtrfs")
     r = btrfs.SyncBtrfs(**kwargs)
     svc += r
 
 def add_sync_zfs(svc, s):
     kwargs = {}
 
-    kwargs['src'] = svc.conf_get(s, 'src')
-    kwargs['dst'] = svc.conf_get(s, 'dst')
-    kwargs['target'] = svc.conf_get(s, 'target')
-
-    try:
-        kwargs['recursive'] = svc.conf_get(s, 'recursive')
-    except ex.OptNotFound as exc:
-        kwargs['recursive'] = exc.default
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["src"] = svc.oget(s, "src")
+    kwargs["dst"] = svc.oget(s, "dst")
+    kwargs["target"] = svc.oget(s, "target")
+    kwargs["recursive"] = svc.oget(s, "recursive")
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    zfs = __import__('resSyncZfs')
+    zfs = __import__("resSyncZfs")
     r = zfs.SyncZfs(**kwargs)
     svc += r
 
 def add_sync_dds(svc, s):
     kwargs = {}
 
-    kwargs['src'] = svc.conf_get(s, 'src')
-    kwargs['target'] = svc.conf_get(s, 'target')
+    kwargs["src"] = svc.oget(s, "src")
+    kwargs["target"] = svc.oget(s, "target")
 
     dsts = {}
     for node in svc.nodes | svc.drpnodes:
-        dst = svc.conf_get(s, 'dst', impersonate=node)
+        dst = svc.oget(s, "dst", impersonate=node)
         dsts[node] = dst
 
     if len(dsts) == 0:
         for node in svc.nodes | svc.drpnodes:
-            dsts[node] = kwargs['src']
+            dsts[node] = kwargs["src"]
 
-    kwargs['dsts'] = dsts
-
-    try:
-        kwargs['snap_size'] = svc.conf_get(s, 'snap_size')
-    except ex.OptNotFound as exc:
-        pass
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["dsts"] = dsts
+    kwargs["snap_size"] = svc.oget(s, "snap_size")
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    dds = __import__('resSyncDds')
+    dds = __import__("resSyncDds")
     r = dds.syncDds(**kwargs)
     svc += r
 
 def add_sync_dcsckpt(svc, s):
     kwargs = {}
 
-    kwargs['dcs'] = svc.conf_get(s, 'dcs')
-    kwargs['manager'] = svc.conf_get(s, 'manager')
-    raw_pairs = svc.conf_get(s, 'pairs')
+    kwargs["dcs"] = svc.oget(s, "dcs")
+    kwargs["manager"] = svc.oget(s, "manager")
+    raw_pairs = svc.oget(s, "pairs")
 
     import json
     try:
@@ -1539,336 +1144,215 @@ def add_sync_dcsckpt(svc, s):
             return
     except:
         svc.log.error("json error parsing 'pairs' in section %s" % s)
-    kwargs['pairs'] = pairs
+    kwargs["pairs"] = pairs
 
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    try:
-        sc = __import__('resSyncDcsCkpt'+rcEnv.sysname)
-    except:
-        sc = __import__('resSyncDcsCkpt')
-    r = sc.syncDcsCkpt(**kwargs)
+    mod = mimport("res", "sync", "dcs", "ckpt")
+    r = mod.syncDcsCkpt(**kwargs)
     svc += r
 
 def add_sync_dcssnap(svc, s):
     kwargs = {}
-
-    try:
-        kwargs['dcs'] = svc.conf_get(s, 'dcs')
-    except ex.OptNotFound as exc:
-        svc.log.error("config file section %s must have 'dcs' set" % s)
-        return
-
-    try:
-        kwargs['manager'] = svc.conf_get(s, 'manager')
-    except ex.OptNotFound as exc:
-        svc.log.error("config file section %s must have 'manager' set" % s)
-        return
-
-    try:
-        kwargs['snapname'] = svc.conf_get(s, 'snapname')
-    except ex.OptNotFound as exc:
-        svc.log.error("config file section %s must have 'snapname' set" % s)
-        return
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["dcs"] = svc.oget(s, "dcs")
+    kwargs["manager"] = svc.oget(s, "manager")
+    kwargs["snapname"] = svc.oget(s, "snapname")
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    try:
-        sc = __import__('resSyncDcsSnap'+rcEnv.sysname)
-    except:
-        sc = __import__('resSyncDcsSnap')
-    r = sc.syncDcsSnap(**kwargs)
+    mod = mimport("res", "sync", "dcs", "snap")
+    r = mod.syncDcsSnap(**kwargs)
     svc += r
 
 def add_sync_s3(svc, s):
     kwargs = {}
-
-    try:
-        kwargs['full_schedule'] = svc.conf_get(s, 'full_schedule')
-    except ex.OptNotFound as exc:
-        kwargs['full_schedule'] = exc.default
-
-    try:
-        kwargs['options'] = svc.conf_get(s, 'options')
-    except ex.OptNotFound as exc:
-        kwargs['options'] = exc.default
-
-    try:
-        kwargs['snar'] = svc.conf_get(s, 'snar')
-    except ex.OptNotFound as exc:
-        kwargs['snar'] = exc.default
-
-    kwargs['bucket'] = svc.conf_get(s, 'bucket')
-    kwargs['src'] = svc.conf_get(s, 'src')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["full_schedule"] = svc.oget(s, "full_schedule")
+    kwargs["options"] = svc.oget(s, "options")
+    kwargs["snar"] = svc.oget(s, "snar")
+    kwargs["bucket"] = svc.oget(s, "bucket")
+    kwargs["src"] = svc.oget(s, "src")
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    sc = __import__('resSyncS3')
+    sc = __import__("resSyncS3")
     r = sc.syncS3(**kwargs)
     svc += r
 
 def add_sync_zfssnap(svc, s):
     kwargs = {}
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        kwargs['keep'] = svc.conf_get(s, 'keep')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        kwargs['recursive'] = svc.conf_get(s, 'recursive')
-    except ex.OptNotFound as exc:
-        pass
-
-    kwargs['dataset'] = svc.conf_get(s, 'dataset')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["keep"] = svc.oget(s, "keep")
+    kwargs["recursive"] = svc.oget(s, "recursive")
+    kwargs["dataset"] = svc.oget(s, "dataset")
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    sc = __import__('resSyncZfsSnap')
+    sc = __import__("resSyncZfsSnap")
     r = sc.syncZfsSnap(**kwargs)
     svc += r
 
 def add_sync_btrfssnap(svc, s):
     kwargs = {}
-
-    try:
-        kwargs['name'] = svc.conf_get(s, 'name')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        kwargs['keep'] = svc.conf_get(s, 'keep')
-    except ex.OptNotFound as exc:
-        pass
-
-    kwargs['subvol'] = svc.conf_get(s, 'subvol')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["keep"] = svc.oget(s, "keep")
+    kwargs["subvol"] = svc.oget(s, "subvol")
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    sc = __import__('resSyncBtrfsSnap')
+    sc = __import__("resSyncBtrfsSnap")
     r = sc.syncBtrfsSnap(**kwargs)
     svc += r
 
 def add_sync_necismsnap(svc, s):
     kwargs = {}
-
-    try:
-        kwargs['array'] = svc.conf_get(s, 'array')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        kwargs['devs'] = svc.conf_get(s, 'devs')
-    except ex.OptNotFound as exc:
-        svc.log.error("config file section %s must have devs set" % s)
-        return
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["array"] = svc.oget(s, "array")
+    kwargs["devs"] = svc.oget(s, "devs")
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    try:
-        sc = __import__('resSyncNecIsmSnap'+rcEnv.sysname)
-    except:
-        sc = __import__('resSyncNecIsmSnap')
-    r = sc.syncNecIsmSnap(**kwargs)
+    mod = mimport("res", "sync", "nec", "ism", "snap")
+    r = mod.syncNecIsmSnap(**kwargs)
     svc += r
 
 def add_sync_evasnap(svc, s):
     kwargs = {}
-
-    try:
-        kwargs['eva_name'] = svc.conf_get(s, 'eva_name')
-    except ex.OptNotFound as exc:
-        svc.log.error("config file section %s must have eva_name set" % s)
-        return
-
-    try:
-        kwargs['snap_name'] = svc.conf_get(s, 'snap_name')
-    except ex.OptNotFound as exc:
-        kwargs['snap_name'] = svc.svcname
-
+    kwargs["eva_name"] = svc.oget(s, "eva_name")
+    kwargs["snap_name"] = svc.oget(s, "snap_name")
     import json
     pairs = []
-    if 'pairs' in svc.config.options(s):
-        pairs = json.loads(svc.config.get(s, 'pairs'))
+    if "pairs" in svc.config.options(s):
+        pairs = json.loads(svc.config.get(s, "pairs"))
     if len(pairs) == 0:
         svc.log.error("config file section %s must have pairs set" % s)
         return
     else:
-        kwargs['pairs'] = pairs
+        kwargs["pairs"] = pairs
 
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    try:
-        sc = __import__('resSyncEvasnap'+rcEnv.sysname)
-    except:
-        sc = __import__('resSyncEvasnap')
-    r = sc.syncEvasnap(**kwargs)
+    mod = mimport("res", "sync", "evasnap")
+    r = mod.syncEvasnap(**kwargs)
     svc += r
 
 def add_sync_hp3parsnap(svc, s):
     kwargs = {}
 
-    kwargs['array'] = svc.conf_get(s, 'array')
-    vv_names = svc.conf_get(s, 'vv_names')
+    kwargs["array"] = svc.oget(s, "array")
+    vv_names = svc.oget(s, "vv_names")
 
     if len(vv_names) == 0:
         svc.log.error("config file section %s must have at least one vv_name set" % s)
         return
 
-    kwargs['vv_names'] = vv_names
+    kwargs["vv_names"] = vv_names
 
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    try:
-        sc = __import__('resSyncHp3parSnap'+rcEnv.sysname)
-    except:
-        sc = __import__('resSyncHp3parSnap')
-    r = sc.syncHp3parSnap(**kwargs)
+    mod = mimport("res", "sync", "hp3par", "snap")
+    r = mod.syncHp3parSnap(**kwargs)
     svc += r
 
 def add_sync_hp3par(svc, s):
     kwargs = {}
 
-    kwargs['mode'] = svc.conf_get(s, 'mode')
-    kwargs['array'] = svc.conf_get(s, 'array')
+    kwargs["mode"] = svc.oget(s, "mode")
+    kwargs["array"] = svc.oget(s, "array")
 
     rcg_names = {}
     for node in svc.nodes | svc.drpnodes:
-        array = svc.conf_get(s, 'array', impersonate=node)
-        rcg = svc.conf_get(s, 'rcg', impersonate=node)
+        array = svc.oget(s, "array", impersonate=node)
+        rcg = svc.oget(s, "rcg", impersonate=node)
         rcg_names[array] = rcg
 
     if len(rcg_names) == 0:
         svc.log.error("config file section %s must have rcg set" % s)
         return
 
-    kwargs['rcg_names'] = rcg_names
+    kwargs["rcg_names"] = rcg_names
 
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    try:
-        sc = __import__('resSyncHp3par'+rcEnv.sysname)
-    except:
-        sc = __import__('resSyncHp3par')
-    r = sc.syncHp3par(**kwargs)
+    mod = mimport("res", "sync", "hp3par")
+    r = mod.syncHp3par(**kwargs)
     svc += r
 
 def add_sync_symsrdfs(svc, s):
     kwargs = {}
 
-    kwargs['symdg'] = svc.conf_get(s, 'symdg')
-    kwargs['rdfg'] = svc.conf_get(s, 'rdfg')
-    kwargs['symid'] = svc.conf_get(s, 'symid')
+    kwargs["symdg"] = svc.oget(s, "symdg")
+    kwargs["rdfg"] = svc.oget(s, "rdfg")
+    kwargs["symid"] = svc.oget(s, "symid")
 
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    try:
-        sc = __import__('resSyncSymSrdfS'+rcEnv.sysname)
-    except:
-        sc = __import__('resSyncSymSrdfS')
-    r = sc.syncSymSrdfS(**kwargs)
+    mod = mimport("res", "sync", "sym", "srdf", "s")
+    r = mod.syncSymSrdfS(**kwargs)
     svc += r
 
 
 def add_sync_radosclone(svc, s):
     kwargs = {}
-
-    try:
-        kwargs['client_id'] = svc.conf_get(s, 'client_id')
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        kwargs['keyring'] = svc.conf_get(s, 'keyring')
-    except ex.OptNotFound as exc:
-        pass
-
-    kwargs['pairs'] = svc.conf_get(s, 'pairs')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["client_id"] = svc.oget(s, "client_id")
+    kwargs["keyring"] = svc.oget(s, "keyring")
+    kwargs["pairs"] = svc.oget(s, "pairs")
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    try:
-        sc = __import__('resSyncRados'+rcEnv.sysname)
-    except:
-        sc = __import__('resSyncRados')
-    r = sc.syncRadosClone(**kwargs)
+    mod = mimport("res", "sync", "rados")
+    r = mod.syncRadosClone(**kwargs)
     svc += r
 
 def add_sync_radossnap(svc, s):
     kwargs = {}
-
-    try:
-        kwargs['client_id'] = svc.conf_get(s, 'client_id')
-    except ex.OptNotFound:
-        pass
-
-    try:
-        kwargs['keyring'] = svc.conf_get(s, 'keyring')
-    except ex.OptNotFound:
-        pass
-
-    kwargs['images'] = svc.conf_get(s, 'images')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["client_id"] = svc.oget(s, "client_id")
+    kwargs["keyring"] = svc.oget(s, "keyring")
+    kwargs["images"] = svc.oget(s, "images")
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    try:
-        sc = __import__('resSyncRados'+rcEnv.sysname)
-    except:
-        sc = __import__('resSyncRados')
-    r = sc.syncRadosSnap(**kwargs)
+    mod = mimport("res", "sync", "rados")
+    r = mod.syncRadosSnap(**kwargs)
     svc += r
 
 def add_sync_symsnap(svc, s):
@@ -1879,81 +1363,57 @@ def add_sync_symclone(svc, s):
 
 def _add_sync_symclone(svc, s, t):
     kwargs = {}
-    kwargs['type'] = t
-    kwargs['pairs'] = svc.conf_get(s, 'pairs')
-    kwargs['symid'] = svc.conf_get(s, 'symid')
-
-    try:
-        kwargs['recreate_timeout'] = svc.conf_get(s, 'recreate_timeout')
-    except ex.OptNotFound as exc:
-        kwargs['recreate_timeout'] = exc.default
-
-    try:
-        kwargs['restore_timeout'] = svc.conf_get(s, 'restore_timeout')
-    except ex.OptNotFound as exc:
-        kwargs['restore_timeout'] = exc.default
-
-    try:
-        kwargs['consistent'] = svc.conf_get(s, 'consistent')
-    except ex.OptNotFound as exc:
-        kwargs['consistent'] = exc.default
-
-    try:
-        kwargs['precopy'] = svc.conf_get(s, 'precopy')
-    except ex.OptNotFound as exc:
-        kwargs['precopy'] = exc.default
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["type"] = t
+    kwargs["pairs"] = svc.oget(s, "pairs")
+    kwargs["symid"] = svc.oget(s, "symid")
+    kwargs["recreate_timeout"] = svc.oget(s, "recreate_timeout")
+    kwargs["restore_timeout"] = svc.oget(s, "restore_timeout")
+    kwargs["consistent"] = svc.oget(s, "consistent")
+    kwargs["precopy"] = svc.oget(s, "precopy")
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    try:
-        sc = __import__('resSyncSymclone'+rcEnv.sysname)
-    except:
-        sc = __import__('resSyncSymclone')
-    r = sc.syncSymclone(**kwargs)
+    mod = mimport("res", "sync", "symclone")
+    r = mod.syncSymclone(**kwargs)
     svc += r
 
 def add_sync_ibmdssnap(svc, s):
     kwargs = {}
 
-    kwargs['pairs'] = svc.conf_get(s, 'pairs')
-    kwargs['array'] = svc.conf_get(s, 'array')
-    kwargs['bgcopy'] = svc.conf_get(s, 'bgcopy')
-    kwargs['recording'] = svc.conf_get(s, 'recording')
-
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["pairs"] = svc.oget(s, "pairs")
+    kwargs["array"] = svc.oget(s, "array")
+    kwargs["bgcopy"] = svc.oget(s, "bgcopy")
+    kwargs["recording"] = svc.oget(s, "recording")
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
-    try:
-        m = __import__('resSyncIbmdsSnap'+rcEnv.sysname)
-    except:
-        m = __import__('resSyncIbmdsSnap')
-    r = m.syncIbmdsSnap(**kwargs)
+    mod = mimport("res", "sync", "ibmds", "snap")
+    r = mod.syncIbmdsSnap(**kwargs)
     svc += r
 
 def add_sync_nexenta(svc, s):
     kwargs = {}
 
-    kwargs['name'] = svc.conf_get(s, 'name')
-    kwargs['path'] = svc.conf_get(s, 'path')
-    kwargs['reversible'] = svc.conf_get(s, "reversible")
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["path"] = svc.oget(s, "path")
+    kwargs["reversible"] = svc.oget(s, "reversible")
 
     filers = {}
     for n in svc.nodes | svc.drpnodes:
-        filers[n] = svc.conf_get(s, 'filer', impersonate=n)
+        filers[n] = svc.oget(s, "filer", impersonate=n)
 
-    kwargs['filers'] = filers
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["filers"] = filers
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
 
     import resSyncNexenta
@@ -1963,19 +1423,19 @@ def add_sync_nexenta(svc, s):
 def add_sync_netapp(svc, s):
     kwargs = {}
 
-    kwargs['path'] = svc.conf_get(s, 'path')
-    kwargs['user'] = svc.conf_get(s, 'user')
+    kwargs["path"] = svc.oget(s, "path")
+    kwargs["user"] = svc.oget(s, "user")
 
     filers = {}
     for n in svc.nodes | svc.drpnodes:
-        filers[n] = svc.conf_get(s, 'filer', impersonate=n)
+        filers[n] = svc.oget(s, "filer", impersonate=n)
 
-    kwargs['filers'] = filers
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["filers"] = filers
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
 
     import resSyncNetapp
@@ -1988,39 +1448,22 @@ def add_sync_rsync(svc, s):
         return
 
     kwargs = {}
-    kwargs['src'] = []
-    _s = svc.conf_get(s, 'src')
+    kwargs["src"] = []
+    _s = svc.oget(s, "src")
     for src in _s:
-        kwargs['src'] += glob.glob(src)
+        kwargs["src"] += glob.glob(src)
 
-    kwargs['dst'] = svc.conf_get(s, 'dst')
-
-    try:
-        kwargs['options'] = svc.conf_get(s, 'options')
-    except ex.OptNotFound as exc:
-        kwargs['options'] = exc.default
-
-    try:
-        kwargs['dstfs'] = svc.conf_get(s, 'dstfs')
-    except ex.OptNotFound as exc:
-        kwargs['dstfs'] = exc.default
-
-    try:
-        kwargs['snap'] = svc.conf_get(s, 'snap')
-    except ex.OptNotFound as exc:
-        kwargs['snap'] = exc.default
-
-    try:
-        kwargs['bwlimit'] = svc.conf_get(s, 'bwlimit')
-    except ex.OptNotFound as exc:
-        pass
-
-    kwargs['target'] = svc.conf_get(s, 'target')
-    kwargs['rid'] = s
-    kwargs['subset'] = get_subset(svc, s)
-    kwargs['tags'] = get_tags(svc, s)
-    kwargs['disabled'] = get_disabled(svc, s)
-    kwargs['optional'] = get_optional(svc, s)
+    kwargs["dst"] = svc.oget(s, "dst")
+    kwargs["options"] = svc.oget(s, "options")
+    kwargs["dstfs"] = svc.oget(s, "dstfs")
+    kwargs["snap"] = svc.oget(s, "snap")
+    kwargs["bwlimit"] = svc.oget(s, "bwlimit")
+    kwargs["target"] = svc.oget(s, "target")
+    kwargs["rid"] = s
+    kwargs["subset"] = get_subset(svc, s)
+    kwargs["tags"] = get_tags(svc, s)
+    kwargs["disabled"] = get_disabled(svc, s)
+    kwargs["optional"] = get_optional(svc, s)
     kwargs.update(get_sync_args(svc, s))
 
     r = resSyncRsync.Rsync(**kwargs)
@@ -2028,149 +1471,51 @@ def add_sync_rsync(svc, s):
 
 def add_task(svc, s):
     kwargs = init_kwargs(svc, s)
-
-    kwargs['command'] = svc.conf_get(s, 'command')
-
-    try:
-        kwargs['on_error'] = svc.conf_get(s, 'on_error')
-    except ex.OptNotFound as exc:
-        kwargs['on_error'] = exc.default
-
-    try:
-        kwargs['user'] = svc.conf_get(s, 'user')
-    except ex.OptNotFound as exc:
-        kwargs['user'] = exc.default
-    try:
-        kwargs['timeout'] = svc.conf_get(s, 'timeout')
-    except ex.OptNotFound as exc:
-        kwargs['timeout'] = exc.default
-    try:
-        kwargs['snooze'] = svc.conf_get(s, 'snooze')
-    except ex.OptNotFound as exc:
-        kwargs['snooze'] = exc.default
-    try:
-        kwargs['log'] = svc.conf_get(s, 'log')
-    except ex.OptNotFound as exc:
-        kwargs['log'] = exc.default
-
-    try:
-        kwargs['confirmation'] = svc.conf_get(s, 'confirmation')
-    except ex.OptNotFound as exc:
-        kwargs['confirmation'] = exc.default
-
+    kwargs["command"] = svc.oget(s, "command")
+    kwargs["on_error"] = svc.oget(s, "on_error")
+    kwargs["user"] = svc.oget(s, "user")
+    kwargs["timeout"] = svc.oget(s, "timeout")
+    kwargs["snooze"] = svc.oget(s, "snooze")
+    kwargs["log"] = svc.oget(s, "log")
+    kwargs["confirmation"] = svc.oget(s, "confirmation")
     import resTask
     r = resTask.Task(**kwargs)
     svc += r
 
 def add_app_winservice(svc, s):
     kwargs = init_kwargs(svc, s)
-    kwargs['name'] = svc.conf_get(s, 'name')
-
-    try:
-        kwargs['timeout'] = svc.conf_get(s, 'timeout')
-    except ex.OptNotFound as exc:
-        kwargs['timeout'] = exc.default
-
-    try:
-        kwargs['start_timeout'] = svc.conf_get(s, 'start_timeout')
-    except ex.OptNotFound as exc:
-        kwargs['start_timeout'] = exc.default
-
-    try:
-        kwargs['stop_timeout'] = svc.conf_get(s, 'stop_timeout')
-    except ex.OptNotFound as exc:
-        kwargs['stop_timeout'] = exc.default
-
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["timeout"] = svc.oget(s, "timeout")
+    kwargs["start_timeout"] = svc.oget(s, "start_timeout")
+    kwargs["stop_timeout"] = svc.oget(s, "stop_timeout")
     mod = mimport("res", "app", "winservice")
     r = mod.App(**kwargs)
     svc += r
 
 def add_app(svc, s):
-    try:
-        rtype = svc.conf_get(s, 'type')
-    except ex.OptNotFound as exc:
-        rtype = exc.default
+    rtype = svc.oget(s, "type")
 
     if rtype == "winservice":
         return add_app_winservice(svc, s)
 
     kwargs = init_kwargs(svc, s)
-
-    try:
-        kwargs['script'] = svc.conf_get(s, 'script')
-    except ex.OptNotFound:
-        pass
-
-    try:
-        kwargs['start'] = svc.conf_get(s, 'start')
-    except ex.OptNotFound as exc:
-        kwargs['start'] = exc.default
-
-    try:
-        kwargs['stop'] = svc.conf_get(s, 'stop')
-    except ex.OptNotFound as exc:
-        kwargs['stop'] = exc.default
-
-    try:
-        kwargs['check'] = svc.conf_get(s, 'check')
-    except ex.OptNotFound as exc:
-        kwargs['check'] = exc.default
-
-    try:
-        kwargs['info'] = svc.conf_get(s, 'info')
-    except ex.OptNotFound as exc:
-        kwargs['info'] = exc.default
-
-    try:
-        kwargs['status_log'] = svc.conf_get(s, 'status_log')
-    except ex.OptNotFound as exc:
-        kwargs['status_log'] = exc.default
-
-    try:
-        kwargs['timeout'] = svc.conf_get(s, 'timeout')
-    except ex.OptNotFound as exc:
-        kwargs['timeout'] = exc.default
-
-    try:
-        kwargs['start_timeout'] = svc.conf_get(s, 'start_timeout')
-    except ex.OptNotFound as exc:
-        kwargs['start_timeout'] = exc.default
-
-    try:
-        kwargs['stop_timeout'] = svc.conf_get(s, 'stop_timeout')
-    except ex.OptNotFound as exc:
-        kwargs['stop_timeout'] = exc.default
-
-    try:
-        kwargs['check_timeout'] = svc.conf_get(s, 'check_timeout')
-    except ex.OptNotFound as exc:
-        kwargs['check_timeout'] = exc.default
-
-    try:
-        kwargs['info_timeout'] = svc.conf_get(s, 'info_timeout')
-    except ex.OptNotFound as exc:
-        kwargs['info_timeout'] = exc.default
-
-    try:
-        kwargs['user'] = svc.conf_get(s, 'user')
-    except ex.OptNotFound as exc:
-        kwargs['user'] = exc.default
-
-    try:
-        kwargs['group'] = svc.conf_get(s, 'group')
-    except ex.OptNotFound as exc:
-        kwargs['group'] = exc.default
-
-    try:
-        kwargs['cwd'] = svc.conf_get(s, 'cwd')
-    except ex.OptNotFound as exc:
-        kwargs['cwd'] = exc.default
+    kwargs["script"] = svc.oget(s, "script")
+    kwargs["start"] = svc.oget(s, "start")
+    kwargs["stop"] = svc.oget(s, "stop")
+    kwargs["check"] = svc.oget(s, "check")
+    kwargs["info"] = svc.oget(s, "info")
+    kwargs["status_log"] = svc.oget(s, "status_log")
+    kwargs["timeout"] = svc.oget(s, "timeout")
+    kwargs["start_timeout"] = svc.oget(s, "start_timeout")
+    kwargs["stop_timeout"] = svc.oget(s, "stop_timeout")
+    kwargs["check_timeout"] = svc.oget(s, "check_timeout")
+    kwargs["info_timeout"] = svc.oget(s, "info_timeout")
+    kwargs["user"] = svc.oget(s, "user")
+    kwargs["group"] = svc.oget(s, "group")
+    kwargs["cwd"] = svc.oget(s, "cwd")
 
     if rtype == "simple":
-        try:
-            kwargs['kill'] = svc.conf_get(s, 'kill')
-        except ex.OptNotFound as exc:
-            kwargs['kill'] = exc.default
+        kwargs["kill"] = svc.oget(s, "kill")
 
     mod = mimport("res", "app", rtype)
     r = mod.App(**kwargs)
@@ -2206,79 +1551,65 @@ def build(name, namespace=None, svcconf=None, node=None, volatile=False):
     svc = svc.Svc(svcname=name, namespace=namespace, node=node,
                   cf=svcconf, volatile=volatile)
 
-    try:
-        drpnodes = svc.conf_get('DEFAULT', "drpnodes")
-    except ex.OptNotFound as exc:
-        drpnodes = exc.default
+    drpnodes = svc.oget("DEFAULT", "drpnodes")
 
     try:
-        drpnode = svc.conf_get('DEFAULT', "drpnode").lower()
+        drpnode = svc.conf_get("DEFAULT", "drpnode").lower()
         if drpnode not in drpnodes and drpnode != "":
             drpnodes.append(drpnode)
     except ex.OptNotFound as exc:
-        drpnode = ''
+        drpnode = ""
+
     svc.ordered_drpnodes = drpnodes
     svc.drpnodes = set(drpnodes)
 
     try:
-        flex_primary = svc.conf_get('DEFAULT', "flex_primary").lower()
+        flex_primary = svc.conf_get("DEFAULT", "flex_primary").lower()
     except ex.OptNotFound as exc:
         if len(svc.ordered_nodes) > 0:
             flex_primary = svc.ordered_nodes[0]
         else:
-            flex_primary = ''
+            flex_primary = ""
     svc.flex_primary = flex_primary
 
     try:
-        drp_flex_primary = svc.conf_get('DEFAULT', "drp_flex_primary").lower()
+        drp_flex_primary = svc.conf_get("DEFAULT", "drp_flex_primary").lower()
     except ex.OptNotFound as exc:
         if len(svc.ordered_drpnodes) > 0:
             drp_flex_primary = svc.ordered_drpnodes[0]
         else:
-            drp_flex_primary = ''
+            drp_flex_primary = ""
     svc.drp_flex_primary = drp_flex_primary
 
-    try:
-        svc.parents = svc.conf_get('DEFAULT', "parents")
-    except ex.OptNotFound as exc:
-        svc.parents = exc.default
-
-    try:
-        svc.placement = svc.conf_get('DEFAULT', "placement")
-    except ex.OptNotFound as exc:
-        svc.placement = exc.default
-
-    try:
-        svc.stonith = svc.conf_get("DEFAULT", "stonith")
-    except ex.OptNotFound as exc:
-        svc.stonith = exc.default
-
+    svc.parents = svc.oget("DEFAULT", "parents")
+    svc.placement = svc.oget("DEFAULT", "placement")
+    svc.stonith = svc.oget("DEFAULT", "stonith")
 
     #
     # Store and validate the service type
     #
     if svc.conf_has_option_scoped("DEFAULT", "env"):
-        svc.svc_env = svc.conf_get('DEFAULT', "env")
+        svc.svc_env = svc.oget("DEFAULT", "env")
     elif svc.conf_has_option_scoped("DEFAULT", "service_type"):
-        svc.svc_env = svc.conf_get('DEFAULT', "service_type")
+        svc.svc_env = svc.oget("DEFAULT", "service_type")
 
     try:
-        svc.lock_timeout = svc.conf_get('DEFAULT', 'lock_timeout')
+        svc.lock_timeout = svc.conf_get("DEFAULT", "lock_timeout")
     except ex.OptNotFound as exc:
         pass
 
     try:
-        svc.presnap_trigger = svc.conf_get('DEFAULT', 'presnap_trigger')
+        svc.presnap_trigger = svc.conf_get("DEFAULT", "presnap_trigger")
     except ex.OptNotFound as exc:
         pass
 
     try:
-        svc.postsnap_trigger = svc.conf_get('DEFAULT', 'postsnap_trigger')
+        svc.postsnap_trigger = svc.conf_get("DEFAULT", "postsnap_trigger")
     except ex.OptNotFound as exc:
         pass
 
     try:
-        svc.disable_rollback = not svc.conf_get('DEFAULT', "rollback")
+        svc.disable_rollback = not svc.conf_get("DEFAULT", "rollback")
     except ex.OptNotFound as exc:
         pass
 
@@ -2288,12 +1619,12 @@ def build(name, namespace=None, svcconf=None, node=None, volatile=False):
     # amazon options
     #
     try:
-        svc.aws = svc.conf_get("DEFAULT", 'aws')
+        svc.aws = svc.conf_get("DEFAULT", "aws")
     except ex.OptNotFound as exc:
         pass
 
     try:
-        svc.aws_profile = svc.conf_get("DEFAULT", 'aws_profile')
+        svc.aws_profile = svc.conf_get("DEFAULT", "aws_profile")
     except ex.OptNotFound as exc:
         pass
 
@@ -2301,34 +1632,27 @@ def build(name, namespace=None, svcconf=None, node=None, volatile=False):
     # process group options
     #
     try:
-        svc.create_pg = svc.conf_get("DEFAULT", 'create_pg')
+        svc.create_pg = svc.conf_get("DEFAULT", "create_pg")
     except ex.OptNotFound as exc:
         pass
 
     try:
-        svc.show_disabled = svc.conf_get('DEFAULT', 'show_disabled')
-    except ex.OptNotFound as exc:
-        svc.show_disabled = True
-
-    try:
-        svc.comment = svc.conf_get('DEFAULT', 'comment')
+        svc.comment = svc.conf_get("DEFAULT", "comment")
     except ex.OptNotFound as exc:
         pass
 
     try:
-        svc.monitor_action = svc.conf_get('DEFAULT', "monitor_action")
+        svc.monitor_action = svc.conf_get("DEFAULT", "monitor_action")
     except ex.OptNotFound as exc:
         pass
 
     try:
-        svc.pre_monitor_action = svc.conf_get('DEFAULT', "pre_monitor_action")
+        svc.pre_monitor_action = svc.conf_get("DEFAULT", "pre_monitor_action")
     except ex.OptNotFound as exc:
         pass
 
-    try:
-        svc.bwlimit = svc.conf_get('DEFAULT', "bwlimit")
-    except ex.OptNotFound as exc:
-        svc.bwlimit = None
+    svc.show_disabled = svc.oget("DEFAULT", "show_disabled")
+    svc.bwlimit = svc.oget("DEFAULT", "bwlimit")
 
     return svc
 
