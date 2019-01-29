@@ -64,7 +64,7 @@ class Prov(provisioning.Prov):
         else:
             disk_id_kw = "disk_id@" + rcEnv.nodename
             name += "." + rcEnv.nodename
-        result = pool.delete_disk(name)
+        result = pool.delete_disk(name=name, disk_id=self.r.disk_id)
         for line in format_str_flat_json(result).splitlines():
             self.r.log.info(line)
         self.r.svc.set_multi(["%s.%s=%s" % (self.r.rid, disk_id_kw, "")])

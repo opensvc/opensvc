@@ -43,7 +43,7 @@ class Pool(pool.Pool):
         except ex.OptNotFound as exc:
             return exc.default
 
-    def delete_disk(self, name):
+    def delete_disk(self, name=None, disk_id=None):
         self.array.del_iscsi_zvol(name=name)
 
     def create_disk(self, name, size, nodes=None):

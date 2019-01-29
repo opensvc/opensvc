@@ -81,7 +81,7 @@ class Pool(object):
     def create_disk(self, name, size, nodes=None):
         return {}
 
-    def delete_disk(self, name):
+    def delete_disk(self, name=None, disk_id=None):
         return {}
 
     def delete_volume(self, name, namespace=None):

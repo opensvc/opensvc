@@ -43,8 +43,8 @@ class Pool(pool.Pool):
         except ex.OptNotFound as exc:
             return exc.default
 
-    def delete_disk(self, dev):
-        self.array.del_disk(dev=dev)
+    def delete_disk(self, name=None, disk_id=None):
+        self.array.del_disk(dev=disk_id)
 
     def create_disk(self, name, size, nodes=None):
         mappings = self.get_mappings(nodes)
