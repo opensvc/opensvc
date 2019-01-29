@@ -196,7 +196,10 @@ class ExtConfigMixin(object):
                 return self.conf_get(section, option, "string", scope=True, impersonate=impersonate)
             return self.conf_get(section, option, "string", scope=True, impersonate=impersonate)
         else:
-            return self.config.get(section, option)
+            try:
+                return self.config.get(section, option)
+            except Exception:
+                raise ex.OptNotFound()
 
     def set(self):
         """
@@ -304,6 +307,8 @@ class ExtConfigMixin(object):
                 _value = []
             except ex.OptNotFound as exc:
                 _value = copy.copy(exc.default)
+            if _value is None:
+                _value = []
             return _value
 
         if op == "remove":
