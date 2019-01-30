@@ -26,6 +26,9 @@ class Disk(resDiskDisk.Disk):
         path = "/dev/disk/by-id/wwn-0x%s" % wwid
         return path
 
+    def sub_devs(self):
+        return set([self.devpath])
+
     def _status(self, verbose=False):
         if self.disk_id is None:
             return rcStatus.NA
