@@ -26,7 +26,7 @@ then
 fi
 
 LAST=$(git describe --abbrev=0 --tags)
-BRANCH=${1:-$LAST}
-echo BRANCH=$BRANCH
+COMMITS=${1:-$LAST..HEAD}
+echo COMMITS=$COMMITS
 
-$OSVC_PYTHON $OSVC_ROOT_PATH/bin/pkg/changelog.py $BRANCH
+$OSVC_PYTHON $OSVC_ROOT_PATH/bin/pkg/changelog.py $COMMITS
