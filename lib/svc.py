@@ -4190,7 +4190,8 @@ class Svc(Crypt, ExtConfigMixin):
                not (action == "delete" and not self.command_is_scoped()):
                 data = self.print_status_data(refresh=True)
                 if action == "start" and not self.command_is_scoped() and \
-                   err == 0 and data.get("avail") not in ("up", "n/a"):
+                   err == 0 and data.get("avail") not in ("up", "n/a") and \
+                   not self.options.dry_run:
                     # catch drivers reporting no error, but instance not
                     # evaluating as "up", to avoid the daemon entering a
                     # start loop. This also catches resources going down
