@@ -163,13 +163,14 @@ class Monitor(shared.OsvcThread):
         """
         The node config references may have changed, update the services objects.
         """
-        with shared.SERVICES_LOCK:
-            for svcpath in shared.SERVICES:
-                try:
-                    name, namespace = split_svcpath(svcpath)
-                    shared.SERVICES[svcpath] = build(name, namespace, node=shared.NODE)
-                except Exception as exc:
-                    continue
+        for svcpath in shared.SERVICES:
+            try:
+                name, namespace = split_svcpath(svcpath)
+                svc = build(name, namespace, node=shared.NODE)
+            except Exception as exc:
+                continue
+            with shared.SERVICES_LOCK:
+                shared.SERVICES[svcpath] = svc
 
     def do(self):
         terminated = self.janitor_procs() + self.janitor_threads()
