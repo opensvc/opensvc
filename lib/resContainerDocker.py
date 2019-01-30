@@ -323,7 +323,7 @@ class Docker(resContainer.Container):
         devices = []
         for arg in chain(get_options("--device", args), iter(self.devices)):
             elements = arg.split(":")
-            if not elements or len(elements) != 2:
+            if not elements or len(elements) not in (2, 3):
                 continue
             if not elements[0].startswith(os.sep):
                 # vol service
