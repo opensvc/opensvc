@@ -84,6 +84,7 @@ class Docker(resContainer.Container):
                  interactive=None,
                  tty=None,
                  volume_mounts=None,
+                 devices=None,
                  guestos="Linux",
                  osvc_root_path=None,
                  **kwargs):
@@ -110,6 +111,7 @@ class Docker(resContainer.Container):
         self.interactive = interactive
         self.tty = tty
         self.volume_mounts = volume_mounts
+        self.devices = devices
         self.volumes = {}
         if not self.detach:
             self.rm = True
@@ -118,6 +120,11 @@ class Docker(resContainer.Container):
     def on_add(self):
         try:
             self.volume_options()
+        except ex.excError:
+            # volume not created yet
+            pass
+        try:
+            self.device_options()
         except ex.excError:
             # volume not created yet
             pass
@@ -308,6 +315,43 @@ class Docker(resContainer.Container):
             self.unset_lazy("container_id")
             self.svc.dockerlib.docker_stop()
 
+    def device_options(self, errors="raise"):
+        if self.run_args is None:
+            args = []
+        else:
+            args = [] + self.run_args
+        devices = []
+        for arg in chain(get_options("--device", args), iter(self.devices)):
+            elements = arg.split(":")
+            if not elements or len(elements) != 2:
+                continue
+            if not elements[0].startswith(os.sep):
+                # vol service
+                volname = elements[0]
+                vol = self.svc.get_volume(volname)
+                if vol.device is None:
+                    if errors != "ignore":
+                        continue
+                    raise ex.excError("referenced volume %s has no "
+                                      "device" % l[0])
+                volstatus = vol.status()
+                if volstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
+                    if errors != "ignore":
+                        raise ex.excError("volume %s is %s" % (volname, volstatus))
+                volrid = self.svc.get_volume_rid(volname)
+                if volrid:
+                    self.svc.register_dependency("stop", volrid, self.rid)
+                    self.svc.register_dependency("start", self.rid, volrid)
+                elements[0] = vol.device
+                devices.append(":".join(elements))
+            elif not os.path.exists(elements[0]):
+                # host path
+                raise ex.excError("source dir of mapping %s does not "
+                                  "exist" % (arg))
+            else:
+                devices.append(arg)
+        return devices
+
     def volume_options(self, errors="raise"):
         if self.run_args is None:
             args = []
@@ -451,6 +495,10 @@ class Docker(resContainer.Container):
         drop_option("--volume", args, drop_value=True)
         for vol in self.volume_options(errors=errors):
              args.append("--volume=%s" % vol)
+
+        drop_option("--device", args, drop_value=True)
+        for dev in self.device_options(errors=errors):
+             args.append("--device=%s" % dev)
 
         if self.svc.dockerlib.docker_min_version("1.7"):
             if self.svc.dockerlib.docker_info.get("CgroupDriver") == "cgroupfs":

@@ -983,6 +983,7 @@ def add_container_docker(svc, s):
     kwargs["interactive"] = svc.oget(s, "interactive")
     kwargs["tty"] = svc.oget(s, "tty")
     kwargs["volume_mounts"] = svc.oget(s, "volume_mounts")
+    kwargs["devices"] = svc.oget(s, "devices")
     m = __import__("resContainerDocker")
     r = m.Docker(**kwargs)
     svc += r

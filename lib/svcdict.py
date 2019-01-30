@@ -289,7 +289,17 @@ KEYWORDS = [
         "convert": "shlex",
         "default": [],
         "text": "The whitespace separated list of <volume name>:<containerized mount path>:<mount options>.",
-        "example": "container#0"
+        "example": "myvol1:/vol1 myvol2:/vol2"
+    },
+    {
+        "section": "container",
+        "keyword": "devices",
+        "at": True,
+        "rtype": "docker",
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of <host devpath>:<containerized devpath>, specifying the host devices the container should have access to.",
+        "example": "myvol1:/dev/xvda myvol2:/dev/xvdb"
     },
     {
         "section": "container",
@@ -2855,6 +2865,7 @@ KEYWORDS = [
         "at": True,
         "provisioning": True,
         "default": True,
+        "convert": "boolean",
         "text": "If true the volume translator will also produce a fs resource layered over the disk allocated in the pool."
     },
     {

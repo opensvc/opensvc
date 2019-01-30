@@ -40,6 +40,10 @@ class Volume(Res.Resource):
     def mount_point(self):
         return self.volsvc.mount_point()
 
+    @lazy
+    def device(self):
+        return self.volsvc.device()
+
     def stop(self):
         if not self.volsvc.exists():
             self.log.info("volume %s does not exist", self.name)
@@ -55,6 +59,8 @@ class Volume(Res.Resource):
         if self.volsvc.action("start", options={"local": True}) != 0:
             raise ex.excError
         self.can_rollback = True
+        self.unset_lazy("device")
+        self.unset_lazy("mount_point")
 
     def _status(self, verbose=False):
         if not self.volsvc.exists():

@@ -87,6 +87,7 @@ class Prov(provisioning.Prov):
             raise ex.excError
         self.r.log.info("thaw the volume service instance")
         volume.freezer.thaw()
+        self.r.unset_lazy("device")
         self.r.unset_lazy("mount_point")
         self.r.unset_lazy("volsvc")
 
