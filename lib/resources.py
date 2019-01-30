@@ -177,9 +177,15 @@ class Resource(object):
         should redefine that.
         """
         if self.type in LOCKER_TYPES and other.type not in LOCKER_TYPES:
-            ret = True
+            if other.type == "disk.disk" and self.rid == other.rid + "pr":
+                ret = False
+            else:
+                ret = True
         elif self.type not in LOCKER_TYPES and other.type in LOCKER_TYPES:
-            ret = False
+            if self.type == "disk.disk" and self.rid + "pr" == other.rid:
+                ret = True
+            else:
+                ret = False
         elif self.type == "sync.zfssnap" and other.type == "sync.zfs":
             ret = True
         elif self.type == "sync.zfs" and other.type == "sync.zfssnap":
