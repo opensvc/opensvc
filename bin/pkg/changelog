@@ -1,3 +1,32 @@
-BRANCH=${1:-HEAD}
+# variables users can override in the defaults file
+OSVC_ROOT_PATH="/usr/share/opensvc"
+OSVC_PYTHON="python"
+OSVC_PYTHON_ARGS=""
+
+if [ -r "/etc/defaults/opensvc" ]
+then
+	# FreeBSD, Darwin
+	. "/etc/defaults/opensvc"
+elif [ -r "/etc/default/opensvc" ]
+then
+	# Debian-like, Tru64, SunOS and HP-UX
+	. "/etc/default/opensvc"
+elif [ -r "/etc/sysconfig/opensvc" ]
+then
+	# Red Hat-like
+	. "/etc/sysconfig/opensvc"
+elif [ -r "/etc/conf.d/opensvc" ]
+then
+	# Alpine, Gentoo
+	. "/etc/conf.d/opensvc"
+elif [ -r "/etc/rc.config.d/opensvc" ]
+then
+	# AIX
+	. "/etc/rc.config.d/opensvc"
+fi
+
+LAST=$(git describe --abbrev=0 --tags)
+BRANCH=${1:-$LAST}
 echo BRANCH=$BRANCH
-git log --pretty=oneline $BRANCH | awk -v BRANCH=$BRANCH 'BEGIN{cmd="git describe --tags " BRANCH ; cmd | getline rev; split(rev, a, "-"); rev=a[2]}{if (rev<0){exit};print a[1] "-" rev " " $0; rev=rev-1}'
+
+$OSVC_PYTHON $OSVC_ROOT_PATH/bin/pkg/changelog.py $BRANCH
