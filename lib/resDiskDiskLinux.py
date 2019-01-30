@@ -27,7 +27,10 @@ class Disk(resDiskDisk.Disk):
         return path
 
     def sub_devs(self):
-        return set([self.devpath])
+        if self.devpath:
+            return set([self.devpath])
+        else:
+            return set()
 
     def _status(self, verbose=False):
         if self.disk_id is None:
