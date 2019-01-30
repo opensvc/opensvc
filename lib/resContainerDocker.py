@@ -333,7 +333,7 @@ class Docker(resContainer.Container):
                     if errors != "ignore":
                         continue
                     raise ex.excError("referenced volume %s has no "
-                                      "device" % l[0])
+                                      "device" % volname)
                 volstatus = vol.status()
                 if volstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
                     if errors != "ignore":
