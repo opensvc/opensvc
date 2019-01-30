@@ -23,10 +23,12 @@ from rcGlobalEnv import rcEnv
 from storage import Storage
 from rcUtilities import bdecode, drop_option, chunker, svc_pathcf, \
                         split_svcpath, fmt_svcpath
-from converters import convert_size
+from converters import convert_size, print_duration
 
 RELAY_DATA = {}
 RELAY_LOCK = threading.RLock()
+RELAY_SLOT_MAX_AGE = 24 * 60 * 60
+RELAY_JANITOR_INTERVAL = 10 * 60
 
 class Listener(shared.OsvcThread):
     sock_tmo = 1.0
@@ -93,6 +95,7 @@ class Listener(shared.OsvcThread):
     def run(self):
         shared.NODE.listener = self
         self.set_tid()
+        self.last_relay_janitor = 0
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.listener")
         self.events_clients = []
         self.stats = Storage({
@@ -138,6 +141,7 @@ class Listener(shared.OsvcThread):
         self.janitor_procs()
         self.janitor_threads()
         self.janitor_events()
+        self.janitor_relay()
 
         fds = select.select([fno for fno in self.sockmap], [], [], self.sock_tmo)
         if self.sock_tmo and fds == ([], [], []):
@@ -170,6 +174,21 @@ class Listener(shared.OsvcThread):
             except RuntimeError as exc:
                 self.log.warning(exc)
                 conn.close()
+
+    def janitor_relay(self):
+        """
+        Purge expired relay.
+        """
+        now = time.time()
+        if now - self.last_relay_janitor < RELAY_JANITOR_INTERVAL:
+            return
+        self.last_relay_janitor = now
+        with RELAY_LOCK:
+            for key in [k for k in RELAY_DATA]:
+                age = now - RELAY_DATA[key]["updated"]
+                if age > RELAY_SLOT_MAX_AGE:
+                    self.log.info("drop relay slot %s aged %s", key, print_duration(age))
+                    del RELAY_DATA[key]
 
     def janitor_events(self):
         """
