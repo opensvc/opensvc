@@ -47,6 +47,12 @@ class Pool(pool.Pool):
         self.array.del_disk(dev=disk_id)
 
     def create_disk(self, name, size, nodes=None):
+        if self.rdfg:
+            return self.create_disk_srdf(name, size, nodes=nodes)
+        else:
+            return self.create_disk_simple(name, size, nodes=nodes)
+
+    def create_disk_simple(self, name, size, nodes=None):
         mappings = self.get_mappings(nodes)
         lock_id = None
         try:
@@ -60,6 +66,51 @@ class Pool(pool.Pool):
         finally:
             self.node._daemon_unlock(LOCK_NAME, lock_id)
             self.log.info("lock released: name=%s id=%s", LOCK_NAME, lock_id)
+        return result
+
+    def array_nodes(self, nodes=None):
+        if nodes is None:
+            nodes = self.node.cluster_nodes
+        data = {}
+        for node in nodes:
+            an = self.oget("array", impersonate=node)
+            if an not in data:
+                data[an] = [node]
+            else:
+                data[an] += [node]
+        return data
+
+    def create_disk_srdf(self, name, size, nodes=None):
+        ans = self.array_nodes(nodes)
+        r1_nodes = ans[self.array_name]
+        r2_nodes = ans[self.remote_array_name]
+        r1_result = self.create_disk_simple(name=name, size=size, nodes=r1_nodes)
+        dev_id = r1_result["disk_devid"]
+        remote_mappings = self.get_mappings(r2_nodes)
+        remote_dev_id = self.array.remote_dev_id(dev_id)
+        self.log.info("local dev=%s.%s remote dev=%s.%s",
+                      self.array.sid, dev_id,
+                      self.remote_array.sid, remote_dev_id)
+        try:
+            lock_id = self.node._daemon_lock(LOCK_NAME, timeout=120, on_error="raise")
+            self.log.info("lock acquired: name=%s id=%s", LOCK_NAME, lock_id)
+            r2_result = self.remote_array.add_map(dev=remote_dev_id,
+                                                  mappings=remote_mappings,
+                                                  slo=self.slo,
+                                                  srp=self.srp)
+            self.log.info("%s", r2_result)
+        finally:
+            self.node._daemon_unlock(LOCK_NAME, lock_id)
+            self.log.info("lock released: name=%s id=%s", LOCK_NAME, lock_id)
+        result = {
+            "r1": r1_result,
+            "r2": r1_result,
+            "disk_ids": {}
+        }
+        for node in r1_nodes:
+            result["disk_ids"][node] = r1_result["disk_id"]
+        for node in r2_nodes:
+            result["disk_ids"][node] = r2_result["disk_id"]
         return result
 
     def translate(self, name=None, size=None, fmt=True, shared=False):
@@ -91,11 +142,29 @@ class Pool(pool.Pool):
         return self.conf_get("array")
 
     @lazy
+    def remote_array_name(self):
+        for node in self.node.cluster_nodes:
+             if node == rcEnv.nodename:
+                 continue
+             an = self.oget("array", impersonate=node)
+             if an:
+                 return an
+
+    @lazy
     def array(self):
         o = Arrays()
         array = o.get_array(self.array_name)
         if array is None:
             raise ex.excError("array %s not found" % self.array_name)
+        array.node = self.node
+        return array
+
+    @lazy
+    def remote_array(self):
+        o = Arrays()
+        array = o.get_array(self.remote_array_name)
+        if array is None:
+            raise ex.excError("remote array %s not found" % self.remote_array_name)
         array.node = self.node
         return array
 

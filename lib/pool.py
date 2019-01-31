@@ -16,8 +16,11 @@ class Pool(object):
         if node:
             self.log = self.node.log
 
-    def conf_get(self, kw):
-        return self.node.conf_get(self.section, kw)
+    def conf_get(self, kw, **kwargs):
+        return self.node.conf_get(self.section, kw, **kwargs)
+
+    def oget(self, kw, **kwargs):
+        return self.node.oget(self.section, kw, **kwargs)
 
     @lazy
     def array(self):
@@ -55,8 +58,12 @@ class Pool(object):
     def mount_point(self):
         return os.path.join(os.sep, "srv", "{id}")
 
+    def default_disk_name(self, volume):
+        return "%s.%s.svc.%" % (volume.svcname, volume.namespace, self.node.cluster_name)
+
     def configure_volume(self, volume, size=None, fmt=True, access="rwo", shared=False, nodes=None):
-        data = self.translate(name=volume.id, size=size, fmt=fmt, shared=shared)
+        name = self.default_disk_name(volume)
+        data = self.translate(name=name, size=size, fmt=fmt, shared=shared)
         defaults = {
             "rtype": "DEFAULT",
             "kind": "vol",

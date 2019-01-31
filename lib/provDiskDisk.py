@@ -40,7 +40,15 @@ class Prov(provisioning.Prov):
             raise ex.excError("invalid create disk result: %s" % result)
         for line in format_str_flat_json(result).splitlines():
             self.r.log.info(line)
-        self.r.svc.set_multi(["%s.%s=%s" % (self.r.rid, disk_id_kw, result["disk_id"])])
+        changes = []
+        if "disk_ids" in result:
+            for node, disk_id in result["disk_ids"].items():
+                changes.append("%s@%s.%s=%s" % (self.r.rid, node, disk_id_kw, disk_id))
+        elif "disk_id" in result:
+            changes.append("%s@%s.%s=%s" % (self.r.rid, node, disk_id_kw, disk_id))
+        else:
+             raise ex.excError("no disk id found in result")
+        self.r.svc.set_multi(changes)
         self.r.unset_lazy("disk_id")
         self.r.log.info("disk %s provisioned" % result["disk_id"])
 
