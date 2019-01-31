@@ -205,6 +205,9 @@ def add_ip(svc, s):
         kwargs["network"] = svc.oget(s, "network")
         kwargs["netns"] = svc.oget(s, "netns")
     elif rtype in ("netns", "docker"):
+        kwargs["ipname"] = svc.oget(s, "ipname")
+        kwargs["mask"] = svc.oget(s, "netmask")
+        kwargs["gateway"] = svc.oget(s, "gateway")
         kwargs["netns"] = svc.oget(s, "netns")
         kwargs["mode"] = svc.oget(s, "mode")
         kwargs["network"] = svc.oget(s, "network")

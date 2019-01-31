@@ -23,7 +23,7 @@ class Ip(Res.Ip):
                  **kwargs):
         Res.Ip.__init__(self,
                         rid,
-                        type="ip.docker",
+                        type="ip.netns",
                         ipdev=ipdev,
                         ipname=ipname,
                         gateway=gateway,

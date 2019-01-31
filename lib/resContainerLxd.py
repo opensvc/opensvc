@@ -261,7 +261,7 @@ class Container(resContainer.Container):
 
     def cni_netns(self):
         """
-        Used by ip.cni and ip.docker
+        Used by ip.cni and ip.netns
         """
         try:
             return "/proc/%d/ns/net" % self.get_pid()
