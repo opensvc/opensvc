@@ -45,9 +45,10 @@ class Prov(provisioning.Prov):
             for node, disk_id in result["disk_ids"].items():
                 changes.append("%s@%s.%s=%s" % (self.r.rid, node, disk_id_kw, disk_id))
         elif "disk_id" in result:
-            changes.append("%s@%s.%s=%s" % (self.r.rid, node, disk_id_kw, disk_id))
+            disk_id = result["disk_id"]
+            changes.append("%s.%s=%s" % (self.r.rid, disk_id_kw, disk_id))
         else:
-             raise ex.excError("no disk id found in result")
+            raise ex.excError("no disk id found in result")
         self.r.svc.set_multi(changes)
         self.r.unset_lazy("disk_id")
         self.r.log.info("disk %s provisioned" % result["disk_id"])
