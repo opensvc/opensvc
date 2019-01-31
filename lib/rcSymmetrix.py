@@ -530,7 +530,6 @@ class SymMixin(object):
             dev = self.resolve_dev(dev)
         except ex.excError:
             dev = None
-        dev = self.resolve_dev(dev)
         if dev is None:
             print(json.dumps(self.get_views(), indent=4))
             return
@@ -727,22 +726,22 @@ class Vmax(SymMixin):
 
     def add_tdev(self, name=None, size=None, srdf=False, rdfg=None, **kwargs):
         """
-	     create dev count=<n>,
-		  size = <n> [MB | GB | CYL],
-		  emulation=<EmulationType>,
-		  config=<DevConfig>
-		  [, preallocate size = <ALL>
-		    [, allocate_type = PERSISTENT]]
-		  [, remote_config=<DevConfig>, ra_group=<n>]
-		  [, sg=<SgName> [, remote_sg=<SgName>]]
-		  [, mapping to dir <director_num:port>
-		    [starting] target = <scsi_target>,
-		    lun=<scsi_lun>, vbus=<fibre_vbus>
-		    [starting] base_address = <cuu_address>[,...]]
-		  [, device_attr =
-		    <SCSI3_PERSIST_RESERV | DIF1 |
-		      AS400_GK>[,...]]
-		  [, device_name='<DeviceName>'[,number=<n | SYMDEV> ]];
+             create dev count=<n>,
+                  size = <n> [MB | GB | CYL],
+                  emulation=<EmulationType>,
+                  config=<DevConfig>
+                  [, preallocate size = <ALL>
+                    [, allocate_type = PERSISTENT]]
+                  [, remote_config=<DevConfig>, ra_group=<n>]
+                  [, sg=<SgName> [, remote_sg=<SgName>]]
+                  [, mapping to dir <director_num:port>
+                    [starting] target = <scsi_target>,
+                    lun=<scsi_lun>, vbus=<fibre_vbus>
+                    [starting] base_address = <cuu_address>[,...]]
+                  [, device_attr =
+                    <SCSI3_PERSIST_RESERV | DIF1 |
+                      AS400_GK>[,...]]
+                  [, device_name='<DeviceName>'[,number=<n | SYMDEV> ]];
         """
 
         if size is None:
@@ -782,6 +781,10 @@ class Vmax(SymMixin):
                 data = self.get_sym_dev_wwn(dev)[0]
                 return data
         raise ex.excError("unable to determine the created SymDevName")
+
+    def remote_dev_id(self, dev):
+        data = self.get_dev_rdf(dev)
+        return data.get("Remote").get("dev_name")
 
     def get_dev_rdf(self, dev):
         data = self.get_sym_dev_show(dev)
