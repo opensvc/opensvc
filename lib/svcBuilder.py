@@ -217,6 +217,9 @@ def add_ip(svc, s):
             kwargs["vlan_mode"] = svc.oget(s, "vlan_mode")
     elif rtype == "crossbow":
         kwargs["ipdevExt"] = svc.oget(s, "ipdevext")
+        kwargs["ipname"] = svc.oget(s, "ipname")
+        kwargs["mask"] = svc.oget(s, "netmask")
+        kwargs["gateway"] = svc.oget(s, "gateway")
     else:
         kwargs["ipname"] = svc.oget(s, "ipname")
         kwargs["mask"] = svc.oget(s, "netmask")
