@@ -59,7 +59,7 @@ class Pool(object):
         return os.path.join(os.sep, "srv", "{id}")
 
     def default_disk_name(self, volume):
-        return "%s.%s.svc.%" % (volume.svcname, volume.namespace, self.node.cluster_name)
+        return "%s.%s.svc.%s" % (volume.svcname, volume.namespace, self.node.cluster_name)
 
     def configure_volume(self, volume, size=None, fmt=True, access="rwo", shared=False, nodes=None):
         name = self.default_disk_name(volume)
