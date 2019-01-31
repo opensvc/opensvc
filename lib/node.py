@@ -3486,7 +3486,7 @@ class Node(Crypt, ExtConfigMixin):
             return []
         if isinstance(selector, (list, tuple, set)):
             return selector
-        if not re.match("=,\+", selector) and re.match("\S", selector):
+        if not re.search("\*?=,\+", selector) and re.search("\s", selector):
             # simple node list
             return selector.split()
 
