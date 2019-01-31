@@ -249,12 +249,29 @@ class Monitor(shared.OsvcThread):
                     return
             self.log.info("node %s has the most recent service %s config",
                           ref_nodename, svcpath)
-            if new_service:
-                Freezer(svcpath).freeze()
             self.fetch_service_config(svcpath, ref_nodename)
             if new_service:
-                name, namespace = split_svcpath(svcpath)
-                fix_exe_link(name, namespace)
+                self.init_new_service(svcpath)
+
+    def init_new_service(self, svcpath):
+        name, namespace = split_svcpath(svcpath)
+        fix_exe_link(name, namespace)
+        try:
+            shared.SERVICES[svcpath] = build(name, namespace, node=shared.NODE)
+        except Exception as exc:
+            self.log.error("unbuildable service %s fetched: %s", svcpath, exc)
+            return
+
+        try:
+            svc = shared.SERVICES[svcpath]
+            if svc.kind != "vol":
+                Freezer(svcpath).freeze()
+            if not os.path.exists(svc.paths.cf):
+                return
+            self.service_status_fallback(svc.svcpath)
+        except Exception:
+            # can happen when deleting the service
+            pass
 
     def fetch_service_config(self, svcpath, nodename):
         """
@@ -313,21 +330,6 @@ class Monitor(shared.OsvcThread):
                 return
         finally:
             os.unlink(tmpfpath)
-        try:
-            name, namespace = split_svcpath(svcpath)
-            shared.SERVICES[svcpath] = build(name, namespace, node=shared.NODE)
-        except Exception as exc:
-            self.log.error("unbuildable service %s fetched: %s", svcpath, exc)
-            return
-
-        try:
-            svc = shared.SERVICES[svcpath]
-            if not os.path.exists(svc.paths.cf):
-                return
-            self.service_status_fallback(svc.svcpath)
-        except Exception:
-            # can happen when deleting the service
-            pass
 
         self.event("service_config_installed", {
             "svcpath": svcpath,
