@@ -169,6 +169,7 @@ def _main(node, argv=None):
             if status_changed:
                 status_data = node._daemon_status(node=endpoint)
                 expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
+                nodes = node.nodes_selector(options.node)
             if stats_changed:
                 prev_stats_data = stats_data
                 stats_data = get_stats(options, node, expanded_svcs)
