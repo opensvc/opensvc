@@ -1,6 +1,6 @@
 
 
-svcmgr="abort boot clear collector compliance create delete disable dns docker edit enable eval freeze frozen get giveback logs ls migrate move pg postsync presync print provision prstatus pull push resource restart resync run scale set shutdown snooze start startstandby status stop support switch sync takeover thaw toc unprovision unset unsnooze update validate"
+svcmgr="abort boot clear collector compliance create delete disable dns docker edit enable eval freeze frozen get giveback logs ls migrate move pg postsync presync print provision prstatus pull purge push resource restart resync run scale set shutdown snooze start startstandby status stop support switch sync takeover thaw toc unprovision unset unsnooze update validate"
 svcmgr_collector="ack alerts asset checks create disks events list log networks show tag untag"
 svcmgr_collector_ack="action unavailability"
 svcmgr_collector_create="tag"
@@ -34,6 +34,7 @@ svcmgr_eval="--color --debug --dry-run --env --format --impersonate --kw --local
 svcmgr_edit_config="--color --debug --discard --env --namespace --recover --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_print_config="--color --debug --env --eval --filter --format --impersonate --namespace --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_create="--color --config --debug --disable-rollback --dry-run --env --leader --local --master --namespace --node --nolock --provision --resource --restore --rid --slave --slaves --status --subsets --tags --template --waitlock -c --cluster -f --force -h --help -i --interactive -p --parallel -s --service"
+svcmgr_purge="--color --debug --dry-run --env --leader --local --master --namespace --node --nolock --purge-collector --rid --slave --slaves --status --subsets --tags --time --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_unset="--color --debug --dry-run --env --kw --local --master --namespace --node --nolock --param --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_delete="--color --debug --dry-run --env --local --master --namespace --node --nolock --purge-collector --rid --slave --slaves --status --subsets --tags --time --unprovision --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_compliance_fix="--attach --color --debug --env --module --moduleset --namespace --ruleset-date --status --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"

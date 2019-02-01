@@ -4159,7 +4159,7 @@ class Svc(Crypt, ExtConfigMixin):
                 if err is None:
                     err = 0
             else:
-                self.log.error("unsupported action %s", action)
+                self.log.error("unsupported local action %s", action)
                 err = 1
         except ex.excEndAction as exc:
             self.log.info(exc)

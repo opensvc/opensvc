@@ -938,6 +938,13 @@ ACTIONS = {
                 OPT.template,
             ],
         },
+        "purge": {
+            "msg": "Unprovision and delete selected services.",
+            "options": ASYNC_ACTION_OPTS + ACTION_OPTS + [
+                OPT.purge_collector,
+                OPT.leader,
+            ],
+        },
         "update": {
             "msg": "Update definitions in an existing service configuration "
                    "file.",
