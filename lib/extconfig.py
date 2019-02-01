@@ -1246,7 +1246,7 @@ class ExtConfigMixin(object):
                 report = {"errors": [str(exc)]}
             if report["errors"]:
                 os.unlink(fpath)
-                raise ex.excError("the change was not saved: %s", report)
+                raise ex.excError("the change was not saved: %s" % report)
         shutil.move(fpath, self.paths.cf)
 
     def skip_config_section(self, section):
