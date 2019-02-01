@@ -14,6 +14,7 @@ import rcStatus
 class Disk(resDiskDisk.Disk):
     @lazy
     def devpath(self):
+        self.unset_lazy("disk_id")
         wwid = str(self.disk_id).lower().replace("0x", "")
         try:
             return glob.glob("/dev/disk/by-id/dm-uuid-mpath-[36]%s" % wwid)[0]
@@ -41,6 +42,7 @@ class Disk(resDiskDisk.Disk):
         return rcStatus.NA
 
     def exposed_devs(self):
+        self.unset_lazy("devpath")
         try:
             dev = os.path.realpath(self.devpath)
             return set([dev])
@@ -49,6 +51,7 @@ class Disk(resDiskDisk.Disk):
         return set()
 
     def unconfigure(self):
+        self.log.info("unconfigure disk %s", self.disk_id)
         try:
             mpath = list(self.exposed_devs())[0] # /dev/dm-<minor>
         except IndexError:
@@ -64,11 +67,14 @@ class Disk(resDiskDisk.Disk):
         self.unset_lazy("disk_id")
         self.unset_lazy("anypath")
         self.unset_lazy("devpath")
+        if self.exposed_devs():
+            self.log.info("disk already configured: exposed devs %s", self.exposed_devs())
+            return
+        self.log.info("configure disk %s", self.disk_id)
         if not self.disk_id:
             raise ex.excError("disk_id is not set. should be at this point")
         self.svc.node._scanscsi()
         self.wait_udev()
-        self.unset_lazy("devpath")
         self.svc.node.unset_lazy("devtree")
         if self.devpath and which(rcEnv.syspaths.multipath):
             dev = os.path.realpath(self.devpath)
@@ -77,8 +83,9 @@ class Disk(resDiskDisk.Disk):
 
     def wait_udev(self):
         for retry in range(30):
-            if os.path.exists(self.anypath):
-                self.log.info("%s now exists", self.anypath)
+            self.unset_lazy("devpath")
+            if self.devpath and os.path.exists(self.devpath):
+                self.log.info("%s now exists", self.devpath)
                 return
             time.sleep(1)
         raise ex.excError("time out waiting for %s to appear" % self.anypath)

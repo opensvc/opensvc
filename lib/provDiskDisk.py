@@ -19,9 +19,7 @@ class Prov(provisioning.Prov):
             self.r.log.info("skip disk creation: the disk_id keyword is already set")
         else:
             self.create_disk()
-        if not self.r.exposed_devs():
-            self.r.log.info("configure disk %s", self.r.disk_id)
-            self.r.configure()
+        self.r.configure()
 
     def create_disk(self):
         poolname = self.r.conf_get("pool")
@@ -49,7 +47,9 @@ class Prov(provisioning.Prov):
             changes.append("%s.%s=%s" % (self.r.rid, disk_id_kw, disk_id))
         else:
             raise ex.excError("no disk id found in result")
-        self.r.svc.set_multi(changes)
+        self.r.log.info("changes: %s", changes)
+        self.r.svc.set_multi(changes, validation=False)
+        self.r.log.info("changes applied")
         self.r.unset_lazy("disk_id")
         self.r.log.info("disk %s provisioned" % result["disk_id"])
 
@@ -57,7 +57,7 @@ class Prov(provisioning.Prov):
         self.r.configure()
 
     def unprovisioner_shared_non_leader(self):
-        self.unprovisioner()
+        self.r.unconfigure()
 
     def unprovisioner(self):
         if not self.r.disk_id:
@@ -76,7 +76,7 @@ class Prov(provisioning.Prov):
         result = pool.delete_disk(name=name, disk_id=self.r.disk_id)
         for line in format_str_flat_json(result).splitlines():
             self.r.log.info(line)
-        self.r.svc.set_multi(["%s.%s=%s" % (self.r.rid, disk_id_kw, "")])
+        self.r.svc.set_multi(["%s.%s=%s" % (self.r.rid, disk_id_kw, "")], validation=False)
         self.r.unset_lazy("disk_id")
         self.r.log.info("unprovisioned")
 

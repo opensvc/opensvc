@@ -55,14 +55,15 @@ class Prov(provisioning.Prov):
         self.r.log.info("claim volume %s", volume.svcname)
         volume.set_multi(["DEFAULT.children+=%s" % self.r.svc.svcpath])
 
-    def unclaim(self, volume):
-        self.r.log.info("unclaim volume %s", volume.svcname)
-        volume.set_multi(["DEFAULT.children-=%s" % self.r.svc.svcpath])
+    def unclaim(self):
+        self.r.log.info("unclaim volume %s", self.r.volsvc.svcname)
+        self.r.volsvc.set_multi(["DEFAULT.children-=%s" % self.r.svc.svcpath], validation=False)
 
     def unprovisioner(self):
         if not self.r.volsvc.exists():
             return
-        self.r.volsvc.set_multi(["DEFAULT.children-=%s" % self.r.svc.svcpath])
+        if self.r.svc.options.leader:
+            self.unclaim()
 
     def provisioner_shared_non_leader(self):
         self.provisioner()
@@ -81,12 +82,11 @@ class Prov(provisioning.Prov):
         ret = volume.action("provision", options={
             "disable_rollback": True,
             "local": True,
-            "leader": self.r.svc.options.leader
+            "leader": self.r.svc.options.leader,
+            "notify": True,
         }) 
         if ret != 0:
-            raise ex.excError
-        self.r.log.info("thaw the volume service instance")
-        volume.freezer.thaw()
+            raise ex.excError("volume provision returned %d" % ret)
         self.r.unset_lazy("device")
         self.r.unset_lazy("mount_point")
         self.r.unset_lazy("volsvc")

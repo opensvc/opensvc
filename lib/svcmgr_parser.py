@@ -518,7 +518,9 @@ ACTIONS = {
         "unprovision": {
             "msg": "Shutdown and unprovision all service instances. Beware, data will be "
                    "lost upon fs and disk unprovisioning.",
-            "options": ASYNC_ACTION_OPTS + ACTION_OPTS,
+            "options": ASYNC_ACTION_OPTS + ACTION_OPTS + [
+                OPT.leader,
+            ],
         },
         "disable": {
             "msg": "Disable resources specified by :opt:`--rid` in services specified by "

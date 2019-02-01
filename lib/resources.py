@@ -1134,8 +1134,34 @@ class Resource(object):
         self.write_is_provisioned_flag(True)
 
     def unprovision(self):
-        self.prov.stop()
+        try:
+            self.prov.stop()
+        except Exception:
+            if self.skip_unprovision:
+                # best effort
+                pass
+            else:
+                raise
+        if self.shared and not self.svc.options.leader:
+            self.unprovision_shared_non_leader()
+            return
         self._unprovision()
+
+    def unprovision_shared_non_leader(self):
+        self.log.info("non leader shared resource unprovisioning")
+
+        # do not execute post_unprovision triggers
+        self.skip_triggers.add("post_unprovision")
+        self.skip_triggers.add("blocking_post_unprovision")
+
+        if self.skip_unprovision:
+            self.log.info("unprovision skipped (configuration directive)")
+            return
+        if self.prov is None:
+            return
+        if hasattr(self.prov, "unprovisioner_shared_non_leader"):
+            self.prov.unprovisioner_shared_non_leader()
+        self.write_is_provisioned_flag(False)
 
     def _unprovision(self):
         """

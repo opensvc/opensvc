@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2019\-01\-27
+.TH SVCMGR 1 2019\-02\-01
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -11064,6 +11064,9 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --leader
+Switch the provision action behaviour to leader, ie provision shared resources that are not provisionned by default.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.

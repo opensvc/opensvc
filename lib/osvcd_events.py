@@ -32,6 +32,7 @@ EVENTS = {
     ("instance_abort", "target"): "abort {instance.topology} {instance.avail} instance {instance.monitor.local_expect} action to satisfy the {instance.monitor.global_expect} target",
     ("instance_delete", "target"): "delete {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
     ("instance_freeze", "target"): "freeze instance to satisfy the {instance.monitor.global_expect} target",
+    ("instance_freeze", "install"): "freeze instance on install",
     ("instance_freeze", "merge_frozen"): "freeze instance on rejoin because instance on {peer} is frozen",
     ("instance_provision", "target"): "provision {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
     ("instance_purge", "target"): "purge {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
