@@ -1228,10 +1228,6 @@ def fix_exe_link(svcname, namespace):
     pathetc = svc_pathetc(svcname, namespace)
     if not os.path.exists(os.path.join(pathetc, svcname+".conf")):
         return
-    if not exe_link_exists(svcname, namespace):
-        from freezer import Freezer
-        svcpath = fmt_svcpath(svcname, namespace)
-        Freezer(svcpath).freeze()
     os.chdir(pathetc)
     try:
         p = os.readlink(svcname)
