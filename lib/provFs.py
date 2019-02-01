@@ -139,6 +139,10 @@ class Prov(provisioning.Prov):
         else:
             raise ex.excError("no mkfs method implemented")
 
+    def provisioner_shared_non_leader(self):
+        self.r.unset_lazy("device")
+        self.r.unset_lazy("label")
+
     def provisioner(self):
         self.r.unset_lazy("device")
         self.r.unset_lazy("label")
