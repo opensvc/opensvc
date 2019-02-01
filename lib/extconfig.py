@@ -9,7 +9,7 @@ import six
 import rcExceptions as ex
 from converters import *
 from rcUtilities import is_string, try_decode, read_cf, eval_expr, unset_lazy, \
-                        lazy, unset_all_lazy
+                        lazy
 from rcGlobalEnv import rcEnv
 
 SECRETS = []
@@ -82,7 +82,7 @@ class ExtConfigMixin(object):
             self._write_cf(lines)
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
-        unset_all_lazy(self)
+        self.unset_all_lazy()
         self.ref_cache = {}
 
     def unset_line(self, lines, section, option):
@@ -217,7 +217,7 @@ class ExtConfigMixin(object):
         else:
             return self.set_mono(eval=eval)
 
-    def set_multi(self, kws, eval=False):
+    def set_multi(self, kws, eval=False, validation=True):
         changes = []
         self.set_multi_cache = {}
         for kw in kws:
@@ -256,7 +256,7 @@ class ExtConfigMixin(object):
             else:
                 # <rid>.keyword[@<scope>]
                 changes.append(self.set_mangle(keyword, op, value, index, eval))
-        self._set_multi(changes)
+        self._set_multi(changes, validation=validation)
 
     def set_mono(self, eval=False):
         self.set_multi_cache = {}
@@ -355,7 +355,7 @@ class ExtConfigMixin(object):
             self._write_cf(lines, validation=validation)
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
-        unset_all_lazy(self)
+        self.unset_all_lazy()
         self.ref_cache = {}
 
     def set_line(self, lines, section, option, value):
@@ -1239,10 +1239,14 @@ class ExtConfigMixin(object):
             ofile.write(buff)
             ofile.flush()
         if validation:
-            report = self._validate_config(fpath)
+            try:
+                report = self._validate_config(fpath)
+            except Exception as exc:
+                self.log.warning("%s", exc)
+                report = {"errors": [str(exc)]}
             if report["errors"]:
                 os.unlink(fpath)
-                raise ex.excError("the change was not saved")
+                raise ex.excError("the change was not saved: %s", report)
         shutil.move(fpath, self.paths.cf)
 
     def skip_config_section(self, section):
