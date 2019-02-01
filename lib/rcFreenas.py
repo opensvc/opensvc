@@ -189,6 +189,7 @@ ACTIONS = {
             "options": [
                 OPT.name,
                 OPT.naa,
+                OPT.volume,
             ],
         },
         "del_iscsi_zvol": {
@@ -196,6 +197,7 @@ ACTIONS = {
             "options": [
                 OPT.name,
                 OPT.naa,
+                OPT.volume,
             ],
         },
         "unmap": {
@@ -821,7 +823,7 @@ class Freenas(object):
             "driver_data": data,
             "disk_id": disk_id,
             "disk_devid": data["id"],
-            "mappings": self.list_mappings(naa=disk_id),
+            "mappings": sorted(self.list_mappings(naa=disk_id).values(), key=lambda x: (x["hba_id"], x["tgt_id"], x["disk_id"])),
         }
         return results
 
@@ -934,24 +936,28 @@ class Freenas(object):
             "driver_data": data,
             "disk_id": disk_id,
             "disk_devid": data["id"],
-            "mappings": self.list_mappings(naa=disk_id),
+            "mappings": sorted(self.list_mappings(naa=disk_id).values(), key=lambda x: (x["hba_id"], x["tgt_id"], x["disk_id"])),
         }
         if warnings:
             results["warnings"] = warnings
 
         return results
 
-    def del_iscsi_zvol(self, name=None, naa=None, **kwargs):
+    def del_iscsi_zvol(self, name=None, naa=None, volume=None, **kwargs):
         if name is None and naa is None:
             raise ex.excError("'name' or 'naa' must be specified")
         data = self.get_iscsi_extent(name=name, naa=naa)
-        if data is None:
-            return
-        try:
-            volume = self.extent_volume(data)
-        except ValueError:
-            raise ex.excError("failed to identify zvol. may be a file ?")
-        self.del_iscsi_extent(data["id"])
+        if data is None and volume is None:
+            raise ex.excError("extent not found: need to specify the volume")
+        if volume is None:
+            try:
+                volume = self.extent_volume(data)
+            except ValueError:
+                raise ex.excError("failed to identify zvol. may be a file ?")
+        if data:
+            self.del_iscsi_extent(data["id"])
+        else:
+            data = {}
         self.del_zvol(name=name, volume=volume)
         warnings = []
         try:
