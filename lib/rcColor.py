@@ -153,7 +153,7 @@ def format_str_flat_json(d):
 
     flatten(d)
     buff = ""
-    for k, v in out.items():
+    for k, v in sorted(out.items(), key=lambda x: x[0]):
         buff += "%s = %s\n" % (k, v)
     if six.PY2:
         return buff.encode("utf-8")
