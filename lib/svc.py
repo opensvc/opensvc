@@ -26,7 +26,7 @@ from storage import Storage
 from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         try_decode, action_triggers, read_cf, \
                         drop_option, fcache, init_locale, makedirs, \
-                        fmt_svcpath
+                        fmt_svcpath, unset_all_lazy
 from converters import *
 import rcExceptions as ex
 import rcLogger
@@ -4154,7 +4154,7 @@ class Svc(Crypt, ExtConfigMixin):
                 err = getattr(self.compliance, action)()
             elif hasattr(self, action):
                 self.running_action = action
-                self.notify_action(action)
+                self.notify_action(action, force=options.notify)
                 err = call_action(action)
                 if err is None:
                     err = 0
@@ -4201,7 +4201,7 @@ class Svc(Crypt, ExtConfigMixin):
                     err = 1
             elif action in ACTIONS_CF_CHANGE:
                 self.wake_monitor()
-            self.clear_action(action, err)
+            self.clear_action(action, err, force=options.notify)
             if action not in ("sync_all", "run"):
                 # sync_all and run handle notfications at the resource level
                 self.notify_done(action)
@@ -4226,8 +4226,8 @@ class Svc(Crypt, ExtConfigMixin):
             progress = "syncing"
         return progress
 
-    def notify_action(self, action):
-        if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
+    def notify_action(self, action, force=False):
+        if not force and os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
             return
         progress = self.action_progress(action)
         if progress is None:
@@ -4243,8 +4243,8 @@ class Svc(Crypt, ExtConfigMixin):
         except Exception as exc:
             self.log.warning("failed to notify action begin to the daemon: %s", str(exc))
 
-    def clear_action(self, action, err):
-        if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
+    def clear_action(self, action, err, force=False):
+        if not force and os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
             return
         progress = self.action_progress(action)
         local_expect = None
@@ -5526,4 +5526,9 @@ class Svc(Crypt, ExtConfigMixin):
         local node.
         """
         return os.path.exists(self.paths.cf)
+
+    def unset_all_lazy(self):
+        unset_all_lazy(self)
+        for res in self.resources_by_id.values():
+            unset_all_lazy(res)
 

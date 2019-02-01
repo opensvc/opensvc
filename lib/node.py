@@ -45,7 +45,8 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         bencode, bdecode, \
                         list_services, init_locale, ANSI_ESCAPE, svc_pathetc, \
                         makedirs, exe_link_exists, fmt_svcpath, \
-                        glob_services_config, split_svcpath, validate_name
+                        glob_services_config, split_svcpath, validate_name, \
+                        unset_all_lazy
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -4841,4 +4842,7 @@ class Node(Crypt, ExtConfigMixin):
     @lazy
     def targets(self):
         return self.asset.get_targets()
+
+    def unset_all_lazy(self):
+        unset_all_lazy(self)
 
