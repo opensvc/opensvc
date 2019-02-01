@@ -44,11 +44,12 @@ class Pool(pool.Pool):
             return exc.default
 
     def delete_disk(self, name=None, disk_id=None):
-        self.array.del_iscsi_zvol(name=name)
+        return self.array.del_iscsi_zvol(name=name, volume=self.diskgroup)
 
     def create_disk(self, name, size, nodes=None):
         mappings = self.get_mappings(nodes)
         lock_id = None
+        result = {}
         try:
             lock_id = self.node._daemon_lock(LOCK_NAME, timeout=120, on_error="raise")
             self.log.info("lock acquired: name=%s id=%s", LOCK_NAME, lock_id)
