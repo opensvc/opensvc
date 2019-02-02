@@ -1347,7 +1347,7 @@ class Monitor(shared.OsvcThread):
             if not self.leader_last(svc, provisioned=False, deleted=True):
                 self.set_smon(svc.svcpath, status="wait non-leader")
                 return
-            if svc.svcpath not in shared.SERVICES or instance is None or self.service_unprovisioned(instance):
+            if svc.svcpath not in shared.SERVICES or (instance is None and self.service_unprovisioned(instance)):
                 self.set_smon(svc.svcpath, status="idle")
                 return
             self.event("instance_purge", {

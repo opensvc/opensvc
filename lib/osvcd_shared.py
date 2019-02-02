@@ -832,7 +832,7 @@ class OsvcThread(threading.Thread, Crypt):
                         except (TypeError, KeyError):
                             # foreign
                             continue
-                        if discard_empty and CLUSTER_DATA[nodename]["services"]["status"][svcpath]:
+                        if discard_empty and not CLUSTER_DATA[nodename]["services"]["status"][svcpath]:
                             continue
                         instances[nodename] = CLUSTER_DATA[nodename]["services"]["status"][svcpath]
                 except (TypeError, KeyError):
