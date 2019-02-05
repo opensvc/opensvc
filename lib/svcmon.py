@@ -115,6 +115,17 @@ def get_stats(options, node, svcpaths):
     except Exception:
         return None
 
+def nodes_info_from_cluster_data(node, data):
+    info = {}
+    for node in node.cluster_nodes:
+        info[node] = {}
+    for node, _data in data.items():
+            info[node] = {
+                "labels": _data.get("labels", {}),
+                "targets": _data.get("targets", {}),
+            }
+    return data
+
 def _main(node, argv=None):
     parser = setup_parser(node)
     (options, args) = parser.parse_args(argv)
@@ -169,7 +180,8 @@ def _main(node, argv=None):
             if status_changed:
                 status_data = node._daemon_status(node=endpoint)
                 expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
-                nodes = node.nodes_selector(options.node)
+                nodes_info = nodes_info_from_cluster_data(node, status_data["monitor"]["nodes"])
+                nodes = node.nodes_selector(options.node, data=nodes_info)
             if stats_changed:
                 prev_stats_data = stats_data
                 stats_data = get_stats(options, node, expanded_svcs)
