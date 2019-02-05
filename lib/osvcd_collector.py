@@ -100,13 +100,14 @@ class Collector(shared.OsvcThread):
     def get_last_config(self, data):
         last_config = {}
         last_config_changed = []
-        for svcname, sdata in data["nodes"].get(rcEnv.nodename, {}).get("services", {}).get("config", {}).items():
+        for svcpath, sdata in data["nodes"].get(rcEnv.nodename, {}).get("services", {}).get("config", {}).items():
             config_csum = sdata.get("csum")
-            prev_config_csum = self.last_config.get(svcname)
+            prev_config_csum = self.last_config.get(svcpath)
             if config_csum != prev_config_csum:
-                last_config_changed.append(svcname)
-            last_config[svcname] = config_csum
-        return last_config, last_config_changed
+                last_config_changed.append(svcpath)
+            last_config[svcpath] = config_csum
+        self.last_config = last_config
+        return last_config_changed
 
     def init_collector(self):
         if shared.NODE.collector.reinit():
@@ -254,11 +255,10 @@ class Collector(shared.OsvcThread):
             #self.log.debug("no service")
             return
 
-        last_config, last_config_changed = self.get_last_config(data)
+        last_config_changed = self.get_last_config(data)
         for svcname in last_config_changed:
             self.send_service_config(svcname)
             self.send_containerinfo(svcname)
-        self.last_config = last_config
 
         if self.speaker():
             last_status, last_status_changed = self.get_last_status(data)
