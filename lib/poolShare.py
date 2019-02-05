@@ -39,6 +39,7 @@ class Pool(pool.Pool):
             "type": self.type,
             "name": self.name,
             "capabilities": self.capabilities,
+            "head": self.path,
         }
         cmd = ["df", "-P", self.path]
         out, err, ret = justcall(cmd)
@@ -48,6 +49,5 @@ class Pool(pool.Pool):
         data["free"] = int(l[3])
         data["used"] = int(l[2])
         data["size"] = int(l[1])
-        data["head"] = self.path
         return data
 
