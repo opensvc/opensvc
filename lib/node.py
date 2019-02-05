@@ -4839,7 +4839,7 @@ class Node(Crypt, ExtConfigMixin):
         ip = str(net[1])+"/"+str(net.prefixlen)
         self.network_bridge_add("obr_"+name, ip)
 
-    def network_bridge_add(self, name):
+    def network_bridge_add(self, *args, **kwargs):
         """
         OS specific
         """
@@ -4850,16 +4850,12 @@ class Node(Crypt, ExtConfigMixin):
         for route in routes:
             self.network_route_add(**route)
 
-    def network_route_add(self, **kwargs):
+    def network_route_add(self, *args, **kwargs):
         """
         OS specific
         """
         pass
  
-    @lazy
-    def cni_config(self):
-        return self.oget("cni", "config")
-
     def network_create_config(self, name="default"):
         ntype = self.oget("network#"+name, "type")
         fn = "network_create_%s_config" % ntype
