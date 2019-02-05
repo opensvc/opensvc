@@ -416,8 +416,11 @@ class Daemon(object):
             self.last_config_mtime = mtime
 
             # signal the node config change to threads
-            for thr_id in self.threads:
-                self.threads[thr_id].notify_config_change()
+            for thr in self.threads.values():
+                if thr.stopped():
+                    thr.unstop()
+                else:
+                    thr.notify_config_change()
             shared.wake_monitor(reason="config change", immediate=True)
 
             # signal the caller the config has changed
