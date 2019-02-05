@@ -160,10 +160,7 @@ class Docker(resContainer.Container):
 
     @lazy
     def label(self): # pylint: disable=method-hidden
-        return "docker container " + "@".join((
-            self.container_name,
-            self.svc.dockerlib.image_userfriendly_name(self)
-        ))
+        return "docker " + self.svc.dockerlib.image_userfriendly_name(self)
 
     def __str__(self):
         return "%s name=%s" % (resources.Resource.__str__(self), self.name)
@@ -577,10 +574,12 @@ class Docker(resContainer.Container):
         """
         data = self.svc.dockerlib._info()
         data.append([self.rid, "run_args", " ".join(self._add_run_args(errors="ignore"))])
-        data.append([self.rid, "run_command", " ".join(self.run_command)])
         data.append([self.rid, "rm", str(self.rm)])
-        data.append([self.rid, "netns", str(self.netns)])
         data.append([self.rid, "container_name", str(self.container_name)])
+        if self.netns:
+            data.append([self.rid, "netns", str(self.netns)])
+        if self.run_command:
+            data.append([self.rid, "run_command", " ".join(self.run_command)])
         return data
 
     def _status_container_image(self):
