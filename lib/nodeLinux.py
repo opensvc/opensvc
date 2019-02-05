@@ -1,7 +1,7 @@
 import os
 from itertools import islice
 from rcUtilitiesLinux import get_tid
-from rcUtilities import lazy
+from rcUtilities import lazy, justcall
 import node
 
 class Node(node.Node):
@@ -79,3 +79,22 @@ class Node(node.Node):
             stat_line = next(stat_file)
         return sum(float(time) for time in
                 islice(stat_line.split(), 2, 5))
+
+    def network_route_add(self, dst=None, gw=None):
+        if dst is None or gw is None:
+            return
+        cmd = ["ip", "route", "replace", dst, "via", gw]
+        self.vcall(cmd)
+
+    def network_bridge_add(self, name, ip):
+        cmd = ["ip", "link", "show", name]
+        _, _, ret = justcall(cmd)
+        if ret != 0:
+            cmd = ["ip", "link", "add", "name", name, "type", "bridge"]
+            self.vcall(cmd)
+        cmd = ["ip", "addr", "show", "dev", name]
+        out, _, _ = justcall(cmd)
+        if " "+ip+" " not in out:
+            cmd = ["ip", "addr", "add", ip, "dev", name]
+            self.vcall(cmd)
+

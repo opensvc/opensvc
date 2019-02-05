@@ -4,6 +4,7 @@ https://github.com/containernetworking/cni/blob/master/SPEC.md
 """
 import os
 import json
+import socket
 from subprocess import Popen, PIPE
 
 import resIpLinux as Res
@@ -24,22 +25,6 @@ PORTMAP_CONF = {
         "portMappings": True
     },
     "externalSetMarkChain": "OSVC-MARK-MASQ"
-}
-
-BR_CONF = {
-    "cniVersion": "0.2.0",
-    "name": "mynet",
-    "type": "bridge",
-    "bridge": "cni0",
-    "isGateway": True,
-    "ipMasq": True,
-    "ipam": {
-        "type": "host-local",
-        "subnet": "10.22.0.0/16",
-        "routes": [
-            { "dst": "0.0.0.0/0" }
-        ]
-    }
 }
 
 class Ip(Res.Ip):
@@ -82,13 +67,6 @@ class Ip(Res.Ip):
             label += " %s" % " ".join(self.expose)
         return label
 
-    def create_default_bridge_config(self):
-        cf = os.path.join(self.cni_config, "default.conf")
-        if os.path.exists(cf):
-            return
-        makedirs(self.cni_config)
-        with open(cf, "w") as ofile:
-            json.dump(BR_CONF, ofile)
 
     def status_info(self):
         data = Res.Ip.status_info(self)
@@ -175,11 +153,7 @@ class Ip(Res.Ip):
 
     @lazy
     def cni_data(self):
-        if not os.path.exists(self.cni_conf):
-            if self.network == "default":
-                self.create_default_bridge_config()
-                return BR_CONF
-            raise ex.excError("cni configuration %s does not exist" % self.cni_conf)
+        self.svc.node.network_create_config(self.network)
         try:
             with open(self.cni_conf, "r") as ofile:
                 return json.load(ofile)
@@ -188,10 +162,7 @@ class Ip(Res.Ip):
 
     @lazy
     def cni_plugins(self):
-        try:
-            path = self.svc.node.conf_get("cni", "plugins")
-        except ex.OptNotFound as exc:
-            path = exc.default
+        path = self.svc.node.oget("cni", "plugins")
         if os.path.exists(os.path.join(path, "bridge")):
             return path
         altpath = os.path.join(os.sep, "usr", "libexec", "cni")
@@ -201,10 +172,7 @@ class Ip(Res.Ip):
 
     @lazy
     def cni_config(self):
-        try:
-            return self.svc.node.conf_get("cni", "config")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.svc.node.oget("cni", "config")
 
     @lazy
     def cni_portmap_conf(self):
@@ -384,6 +352,11 @@ class Ip(Res.Ip):
         if not self.has_ip():
             self.log.info("already no ip on dev %s" % self.ipdev)
             return
+        intf = self.get_ipdev()
+        if intf and len(intf.ipaddr) > 0:
+            ipaddr = intf.ipaddr[0]
+        else:
+            ipaddr = None
         _env = {
             "CNI_COMMAND": "DEL",
             "CNI_IFNAME": self.ipdev,
@@ -409,6 +382,11 @@ class Ip(Res.Ip):
             data["cniVersion"] = self.cni_data["cniVersion"]
             data["name"] = self.cni_data["name"]
             result = self.cni_cmd(_env, data)
+
+        var_f = "/var/lib/cni/networks/%s/%s" % (self.network, ipaddr)
+        if os.path.exists(var_f):
+            self.log.info("rm %s", var_f)
+            os.unlink(var_f)
 
     def start(self):
         self.unset_lazy("containerid")

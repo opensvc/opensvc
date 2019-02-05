@@ -925,6 +925,7 @@ class Listener(shared.OsvcThread):
             if section.startswith("hb#") or \
                section.startswith("stonith#") or \
                section.startswith("pool#") or \
+               section.startswith("network#") or \
                section.startswith("arbitrator#"):
                 result["data"][section] = {}
                 for key, val in self.config.items(section):

@@ -53,6 +53,7 @@ from extconfig import ExtConfigMixin
 from lock import LOCK_EXCEPTIONS
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
+from ipaddress import ip_network, ip_address, summarize_address_range
 
 if six.PY2:
     BrokenPipeError = IOError
@@ -4366,6 +4367,15 @@ class Node(Crypt, ExtConfigMixin):
                 self.config.add_section(section)
                 for option, value in _data.items():
                     self.config.set(section, option, value)
+            elif section.startswith("network#"):
+                if self.config.has_section(section):
+                    self.log.info("update network %s", section)
+                    self.config.remove_section(section)
+                else:
+                    self.log.info("add network %s", section)
+                self.config.add_section(section)
+                for option, value in _data.items():
+                    self.config.set(section, option, value)
 
         # remove obsolete hb configurations
         for section in self.config.sections():
@@ -4389,6 +4399,12 @@ class Node(Crypt, ExtConfigMixin):
         for section in self.config.sections():
             if section.startswith("pool#") and section not in data:
                 self.log.info("remove pool %s", section)
+                self.config.remove_section(section)
+
+        # remove obsolete network configurations
+        for section in self.config.sections():
+            if section.startswith("network#") and section not in data:
+                self.log.info("remove network %s", section)
                 self.config.remove_section(section)
 
         self.write_config()
@@ -4545,7 +4561,7 @@ class Node(Crypt, ExtConfigMixin):
 
     ##########################################################################
     #
-    # Pool actions
+    # Pool
     #
     ##########################################################################
     @formatter
@@ -4571,25 +4587,25 @@ class Node(Crypt, ExtConfigMixin):
         from rcColor import color
         tree = Forest()
         node = tree.add_node()
-        node.add_column(rcEnv.nodename, color.BOLD)
-        node.add_column("type")
-        node.add_column("caps")
-        node.add_column("head")
-        node.add_column("vols")
-        node.add_column("size")
-        node.add_column("used")
-        node.add_column("free")
+        node.add_column("name", color.BOLD)
+        node.add_column("type", color.BOLD)
+        node.add_column("caps", color.BOLD)
+        node.add_column("head", color.BOLD)
+        node.add_column("vols", color.BOLD)
+        node.add_column("size", color.BOLD)
+        node.add_column("used", color.BOLD)
+        node.add_column("free", color.BOLD)
         for name, _data in data.items():
             leaf = node.add_node()
-            leaf.add_column(name, color.BOLD)
+            leaf.add_column(name, color.BROWN)
             if _data is None:
                 continue
             leaf.add_column(_data["type"])
             leaf.add_column(",".join(_data["capabilities"]))
-            leaf.add_column(_data["head"])
+            leaf.add_column(_data.get("head",""))
             leaf.add_column(len(_data["volumes"]))
             for key in ("size", "used", "free"):
-                if _data[key] < 0:
+                if _data.get(key, -1) < 0:
                     val = "-"
                 else:
                     val = print_size(_data[key], unit="k", compact=True)
@@ -4692,9 +4708,10 @@ class Node(Crypt, ExtConfigMixin):
 
     ##########################################################################
     #
-    # Network actions
+    # Network
     #
     ##########################################################################
+
     @lazy
     def cni_config(self):
         try:
@@ -4702,47 +4719,305 @@ class Node(Crypt, ExtConfigMixin):
         except ex.OptNotFound as exc:
             return exc.default
 
-    def network_data(self):
+    def network_data(self, id):
+        if id:
+            return self.networks_data()[id]
+        else:
+            return self.networks_data()
+
+    def networks_data(self):
         import glob
         nets = {}
-        for net in glob.glob(self.cni_config+"/*.conf"):
+        for cf in glob.glob(self.cni_config+"/*.conf"):
             try:
-                with open(net, "r") as ofile:
+                with open(cf, "r") as ofile:
                     data = json.load(ofile)
             except ValueError:
-                continue
+                data = {}
             if data.get("type") == "portmap":
                 continue
-            net = os.path.basename(net)
-            net = re.sub(".conf$", "", net)
-            nets[net] = data
+            name = os.path.basename(cf)
+            name = re.sub(".conf$", "", name)
+            nets[name] = {
+                "cni": {
+                    "cf": cf,
+                    "mtime": os.path.getmtime(cf),
+                    "data": data,
+                },
+                "config": {
+                    "type": "undef",
+                    "network": "undef",
+                },
+            }
+        sections = list(self.conf_sections("network"))
+        if "network#default" not in sections:
+            sections.append("network#default")
+        for section in sections:
+            _, name = section.split("#", 1)
+            config = {}
+            config["type"] = self.oget(section, "type")
+            for key in self.section_kwargs(section, config["type"]):
+                config[key] = self.oget(section, key)
+            if config:
+                if name not in nets:
+                    nets[name] = {}
+                nets[name]["config"] = config
+                nets[name]["routes"] = self.routes(name)
         return nets
 
     @formatter
     def network_ls(self):
-        nets = self.network_data()
+        nets = self.networks_data()
         if self.options.format in ("json", "flat_json"):
             return nets
         print("\n".join([net for net in nets]))
 
     @formatter
     def network_show(self):
-        nets = self.network_data()
+        data = {}
+        for name, netdata in self.networks_data().items():
+            if self.options.name and name != self.options.name:
+                continue
+            data[name] = netdata
         if self.options.format in ("json", "flat_json"):
-            if self.options.id not in nets:
-                return {}
-            return nets[self.options.id]
-        if self.options.id not in nets:
+            return data
+        if not data:
             return
         from forest import Forest
         from rcColor import color
         tree = Forest()
-        tree.load({self.options.id: nets[self.options.id]}, title=rcEnv.nodename)
+        tree.load(data, title="networks")
         print(tree)
+
+    def node_subnet(self, name, nodename=None):
+        if nodename is None:
+            nodename = rcEnv.nodename
+        idx = self.cluster_nodes.index(nodename)
+        network = self.oget("network#" + name, "network") 
+        ips_per_node = self.oget("network#" + name, "ips_per_node") 
+        ips_per_node = 1 << (ips_per_node - 1).bit_length()
+        net = ip_network(six.text_type(network))
+        first = net[0] + (idx * ips_per_node)
+        last = first + ips_per_node - 1
+        subnet = next(summarize_address_range(first, last))
+        return subnet
+
+    def routes(self, name):
+        routes = []
+        ntype = self.oget("network#"+name, "type")
+        if ntype != "routed_bridge":
+            return routes
+        for nodename in self.cluster_nodes:
+            if nodename == rcEnv.nodename:
+                continue
+            try:
+                gw = socket.getaddrinfo(nodename, None)[0][4][0]
+            except socket.gaierror:
+                self.log.warning("node %s is not resolvable", nodename)
+                continue
+            routes.append({
+                "dst": str(self.node_subnet(name, nodename)),
+                "gw": gw,
+            })
+        return routes
+
+    def network_setup(self):
+        sections = list(self.conf_sections("network"))
+        if "network#default" not in sections:
+            sections.append("network#default")
+        for section in sections:
+            _, name = section.split("#", 1)
+            self.network_create_config(name)
+            self.network_create_routes(name)
+            self.network_create_bridge(name)
+
+    def network_create_bridge(self, name):
+        ntype = self.oget("network#"+name, "type")
+        if ntype != "routed_bridge":
+            return
+        net = self.node_subnet(name)
+        ip = str(net[1])+"/"+str(net.prefixlen)
+        self.network_bridge_add("obr_"+name, ip)
+
+    def network_bridge_add(self, name):
+        """
+        OS specific
+        """
+        pass
+
+    def network_create_routes(self, name):
+        routes = self.routes(name)
+        for route in routes:
+            self.network_route_add(**route)
+
+    def network_route_add(self, **kwargs):
+        """
+        OS specific
+        """
+        pass
+ 
+    @lazy
+    def cni_config(self):
+        return self.oget("cni", "config")
+
+    def network_create_config(self, name="default"):
+        ntype = self.oget("network#"+name, "type")
+        fn = "network_create_%s_config" % ntype
+        if hasattr(self, fn):
+            getattr(self, fn)(name)
+
+    def network_create_weave_config(self, name="default"):
+        cf = os.path.join(self.cni_config, name+".conf")
+        if os.path.exists(cf):
+            return
+        self.log.info("create %s", cf)
+        network = self.oget("network#"+name, "network")
+        conf = {
+            "cniVersion": "0.2.0",
+            "name": name,
+            "type": "weave-net",
+            "ipam": {
+                "subnet": network,
+            },
+        }
+        makedirs(self.cni_config)
+        with open(cf, "w") as ofile:
+            json.dump(conf, ofile, indent=4)
+
+    def network_create_routed_bridge_config(self, name="default"):
+        cf = os.path.join(self.cni_config, name+".conf")
+        if os.path.exists(cf):
+            return
+        self.log.info("create %s", cf)
+        conf = {
+            "cniVersion": "0.2.0",
+            "name": name,
+            "type": "bridge",
+            "bridge": "obr_"+name,
+            "isGateway": True,
+            "ipMasq": True,
+            "ipam": {
+                "type": "host-local",
+                "routes": [
+                    { "dst": "0.0.0.0/0" }
+                ]
+            }
+        }
+        makedirs(self.cni_config)
+        conf["ipam"]["subnet"] = str(self.node_subnet(name))
+        with open(cf, "w") as ofile:
+            json.dump(conf, ofile, indent=4)
+
+    def network_create_bridge_config(self, name="default"):
+        cf = os.path.join(self.cni_config, name+".conf")
+        if os.path.exists(cf):
+            return
+        self.log.info("create %s", cf)
+        conf = {
+            "cniVersion": "0.2.0",
+            "name": name,
+            "type": "bridge",
+            "bridge": "obr_"+name,
+            "isGateway": True,
+            "ipMasq": True,
+            "ipam": {
+                "type": "host-local",
+                "routes": [
+                    { "dst": "0.0.0.0/0" }
+                ]
+            }
+        }
+        makedirs(self.cni_config)
+        conf["ipam"]["subnet"] = self.oget("network#"+name, "network")
+        with open(cf, "w") as ofile:
+            json.dump(conf, ofile, indent=4)
+
+    @formatter
+    def network_status(self):
+        data = self.network_status_data(self.options.name)
+        if self.options.format in ("json", "flat_json"):
+            return data
+        from forest import Forest
+        from rcColor import color
+        tree = Forest()
+        head = tree.add_node()
+        head.add_column("name", color.BOLD)
+        head.add_column("type", color.BOLD)
+        head.add_column("network", color.BOLD)
+        head.add_column("size", color.BOLD)
+        head.add_column("used", color.BOLD)
+        head.add_column("free", color.BOLD)
+        head.add_column("pct", color.BOLD)
+        for name in sorted(data):
+            ndata = data[name]
+            net_node = head.add_node()
+            net_node.add_column(name, color.BROWN)
+            net_node.add_column(data[name]["type"])
+            net_node.add_column(data[name]["network"])
+            net_node.add_column("%d" % data[name]["size"])
+            net_node.add_column("%d" % data[name]["used"])
+            net_node.add_column("%d" % data[name]["free"])
+            net_node.add_column("%.2f%%" % data[name]["pct"])
+            if not self.options.verbose:
+                continue
+            ips_node = net_node.add_node()
+            ips_node.add_column("ip", color.BOLD)
+            ips_node.add_column("node", color.BOLD)
+            ips_node.add_column("service", color.BOLD)
+            ips_node.add_column("resource", color.BOLD)
+            for ip in sorted(ndata.get("ips", []), key=lambda x: (x["ip"], x["node"], x["svcpath"], x["rid"])):
+                ip_node = ips_node.add_node()
+                ip_node.add_column(ip["ip"])
+                ip_node.add_column(ip["node"])
+                ip_node.add_column(ip["svcpath"])
+                ip_node.add_column(ip["rid"])
+        print(tree)
+
+    def network_ip_data(self):
+        data = []
+        cdata = self._daemon_status(silent=True)["monitor"]["nodes"]
+        for nodename, node in cdata.items():
+            for svcpath, sdata in node.get("services", {}).get("status", {}).items():
+                for rid, rdata in sdata.get("resources", {}).items():
+                    ip = rdata.get("info", {}).get("ipaddr")
+                    if not ip:
+                        continue
+                    data.append({
+                        "ip": ip,
+                        "node": nodename,
+                        "svcpath": svcpath,
+                        "rid": rid,
+                    })
+        return data
+
+    def network_status_data(self, name=None):
+        data = {}
+        nets = self.networks_data()
+        ipdata = self.network_ip_data()
+        for _name, ndata in nets.items():
+            if name and name != _name:
+                continue
+            network = ip_network(six.text_type(self.oget("network#"+_name, "network")))
+            _data = {
+                "type": ndata["config"]["type"],
+                "network": ndata["config"]["network"],
+                "size": network.num_addresses,
+                "ips": [],
+            }
+            for idata in ipdata:
+                ip = ip_address(idata["ip"])
+                if ip not in network:
+                    continue
+                _data["ips"].append(idata)
+            _data["used"] = len(_data["ips"])
+            _data["free"] = _data["size"] - _data["used"]
+            _data["pct"] = 100 * _data["used"] / _data["size"]
+            data[_name] = _data
+        return data
 
     ##########################################################################
     #
-    # Node stats
+    # Stats
     #
     ##########################################################################
     def score(self, data):

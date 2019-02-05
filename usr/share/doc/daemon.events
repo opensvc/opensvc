@@ -61,11 +61,6 @@ Id ``scale_down``
 
 exceeds {delta} instance to reach scale target {instance.scale}
 
-Id ``service_config_installed``
--------------------------------
-
-config fetched from node {from} is now installed
-
 Id ``resource_degraded``
 ------------------------
 
@@ -80,6 +75,11 @@ Id ``arbitrator_down``
 ----------------------
 
 arbitrator {arbitrator} is no longer reachable
+
+Id ``service_config_installed``
+-------------------------------
+
+config fetched from node {from} is now installed
 
 Id ``scale_up``
 ---------------

@@ -406,6 +406,7 @@ class Daemon(object):
                     shared.NODE.close()
                 shared.NODE = node_mod.Node()
                 shared.NODE.set_rlimit()
+                shared.NODE.network_setup()
             unset_lazy(self, "config")
             unset_lazy(self, "config_hbs")
             if self.last_config_mtime:

@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2019\-02\-01
+.TH NODEMGR 1 2019\-02\-05
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -1065,14 +1065,72 @@ A JSONPath expression to filter a JSON output.
 Show this help message and exit
 
 .RE
+\fBnodemgr network setup\fP
+.RS
+
+Create bridges, assign host address, update host routes to node backend networks. This action is executed on node configuration changes. It is exposed as a nodemgr action for troubleshoot.
+
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
 \fBnodemgr network show\fP
 .RS
 
-Show a network configuration.
+Show network configuration.
 
 .TP
-.B --id=ID
-Specify an id to act on.
+.B --name=NAME
+The name of the object.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
+.B -h, --help
+Show this help message and exit
+
+.RE
+\fBnodemgr network status\fP
+.RS
+
+Show allocated ip address in networks.
+
+.TP
+.B --name=NAME
+The name of the object.
+.TP
+.B --verbose
+Include more information to some print commands output. For example, add the 'next run' column in the output of :cmd:`nodemgr print schedule`.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:

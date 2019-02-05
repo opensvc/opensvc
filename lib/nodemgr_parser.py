@@ -570,10 +570,20 @@ ACTIONS = {
         "network_ls": {
             "msg": "List the available networks.",
         },
+        "network_setup": {
+            "msg": "Create bridges, assign host address, update host routes to node backend networks. This action is executed on node configuration changes. It is exposed as a nodemgr action for troubleshoot.",
+        },
         "network_show": {
-            "msg": "Show a network configuration.",
+            "msg": "Show network configuration.",
             "options": [
-                OPT.id,
+                OPT.name,
+            ],
+        },
+        "network_status": {
+            "msg": "Show allocated ip address in networks.",
+            "options": [
+                OPT.name,
+                OPT.verbose,
             ],
         },
     },
