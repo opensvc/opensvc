@@ -365,8 +365,10 @@ class Node(object):
             """
             Load data structured as list in the node.
             """
-            for val in _data:
-                add_gen(head, val)
+            for idx, val in enumerate(_data):
+                leaf = head.add_node()
+                leaf.add_column("[%d]" % idx)
+                add_gen(leaf, val)
 
         def add_dict(head, _data):
             """
