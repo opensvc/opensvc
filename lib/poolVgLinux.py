@@ -14,42 +14,20 @@ class Pool(pool.Pool):
     def vg(self):
         return self.node.conf_get(self.section, "name")
 
-    @lazy
-    def create_opt(self):
-        try:
-            return self.node.conf_get(self.section, "create_opt")
-        except ex.OptNotFound as exc:
-            return exc.default
-
     def translate(self, name=None, size=None, fmt=True, shared=False):
         data = []
+        disk = {
+            "rtype": "disk",
+            "type": "lv",
+            "name": name,
+            "vg": self.vg,
+            "size": size,
+        }
+        if self.mkblk_opt:
+            disk["create_options"] = " ".join(self.mkblk_opt)
+        data.append(disk)
         if fmt:
-            fs = {
-                "rtype": "fs",
-                "type": self.fs_type,
-                "dev": os.path.join(os.sep, "dev", self.vg, "{id}"),
-                "vg": self.vg,
-                "size": size,
-            }
-            fs["mnt"] = self.mount_point
-            if self.mkfs_opt:
-                fs["mkfs_opt"] = " ".join(self.mkfs_opt)
-            if self.mnt_opt:
-                fs["mnt_opt"] = self.mnt_opt
-            if self.create_opt:
-                fs["create_opt"] = " ".join(self.create_opt)
-            data.append(fs)
-        else:
-            disk = {
-                "rtype": "disk",
-                "type": "lv",
-                "name": "{id}",
-                "vg": self.vg,
-                "size": size,
-            }
-            if self.create_opt:
-                disk["create_opt"] = " ".join(self.create_opt)
-            data.append(disk)
+            data += self.add_fs(name, shared)
         return data
 
     def status(self):

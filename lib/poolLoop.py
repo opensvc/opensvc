@@ -22,22 +22,13 @@ class Pool(pool.Pool):
             {
                 "rtype": "disk",
                 "type": "loop",
-                "file": os.path.join(self.path, "{id}.img"),
+                "file": os.path.join(self.path, "%s.img" % name),
                 "size": size,
             }
         ]
         if fmt:
-            fs = {
-                "rtype": "fs",
-                "type": self.fs_type,
-                "dev": os.path.join(self.path, "{id}.img"),
-            }
-            fs["mnt"] = self.mount_point
-            if self.mkfs_opt:
-                fs["mkfs_opt"] = " ".join(self.mkfs_opt)
-            if self.mnt_opt:
-                fs["mnt_opt"] = self.mnt_opt
-            data.append(fs)
+            data += self.add_fs(name, shared)
+        data += self.add_sync_internal(data)
         return data
 
     def status(self):

@@ -8,7 +8,7 @@ from rcUtilities import lazy, justcall
 
 class Pool(pool.Pool):
     type = "zpool"
-    capabilities = ["rox", "rwx", "roo", "rwo", "snap"]
+    capabilities = ["rox", "rwx", "roo", "rwo", "snap", "blk"]
 
     @lazy
     def zpool(self):
@@ -16,18 +16,27 @@ class Pool(pool.Pool):
 
     def translate(self, name=None, size=None, fmt=True, shared=False):
         data = []
-        fs = {
-            "type": "zfs",
-            "dev": self.zpool + "/" + "{id}",
-            "mkfs_opt": " ".join(self.mkfs_opt),
-            "rtype": "fs",
-        }
-        fs["mnt"] = self.mount_point
-        if self.mkfs_opt:
-            fs["mkfs_opt"] = " ".join(self.mkfs_opt)
-        if self.mnt_opt:
-            fs["mnt_opt"] = self.mnt_opt
-        data.append(fs)
+        if fmt:
+            fs = {
+                "rtype": "fs",
+                "type": "zfs",
+                "dev": self.zpool + "/" + name,
+                "mnt": self.mount_point(name),
+            }
+            if self.mkfs_opt:
+                fs["mkfs_opt"] = " ".join(self.mkfs_opt)
+            if self.mnt_opt:
+                fs["mnt_opt"] = self.mnt_opt
+            data.append(fs)
+        else:
+            zvol = {
+                "rtype": "disk",
+                "type": "zvol",
+                "dev": self.zpool + "/" + name,
+            }
+            if self.mkblk_opt:
+                zvol["create_options"] = " ".join(self.mkblk_opt)
+            data.append(zvol)
         return data
 
     def status(self):

@@ -116,28 +116,18 @@ class Pool(pool.Pool):
         return result
 
     def translate(self, name=None, size=None, fmt=True, shared=False):
-        disk = {
+        data = []
+        data.append({
             "rtype": "disk",
             "type": "disk",
-            "name": name if name else "{id}",
+            "name": name,
             "scsireserv": True,
             "shared": shared,
             "size": size,
-        }
-        if not fmt:
-            return [disk]
-        fs = {
-            "rtype": "fs",
-            "type": self.fs_type,
-            "dev": "{disk#1.exposed_devs[0]}",
-            "shared": shared,
-        }
-        fs["mnt"] = self.mount_point
-        if self.mkfs_opt:
-            fs["mkfs_opt"] = " ".join(self.mkfs_opt)
-        if self.mnt_opt:
-            fs["mnt_opt"] = self.mnt_opt
-        return [disk, fs]
+        })
+        if fmt:
+            data += self.add_fs(name, shared)
+        return data
 
     @lazy
     def array_name(self):

@@ -19,12 +19,14 @@ class Pool(pool.Pool):
             return exc.default
 
     def translate(self, name=None, size=None, fmt=True, shared=False):
-        fs = {
+        data = []
+        path = os.path.join(self.path, name)
+        data.append({
             "rtype": "fs",
             "type": "directory",
-            "path": os.path.join(self.path, "{id}"),
-        }
-        return [fs]
+            "path": path,
+        })
+        return data
 
     def status(self):
         from converters import convert_size

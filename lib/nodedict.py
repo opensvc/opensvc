@@ -843,17 +843,16 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "section": "pool",
         "keyword": "mkfs_opt",
         "default": [],
-        "convert": "list",
+        "convert": "shlex",
         "example": "-O largefile",
         "text": "The mkfs command options to use to format the pool devices."
     },
     {
         "section": "pool",
-        "rtype": "vg",
-        "keyword": "create_opt",
+        "keyword": "mkblk_opt",
         "default": [],
-        "convert": "list",
-        "text": "The lvcreate command options to use to create the pool logical volumes."
+        "convert": "shlex",
+        "text": "The zvol, lv, and other block device creation command options to use to prepare the pool devices."
     },
     {
         "section": "hook",
@@ -887,6 +886,13 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "section": "network",
         "rtype": ["bridge", "routed_bridge"],
         "keyword": "network",
+        "default": "10.22.0.0/16",
+        "text": "The cluster backend network. The routed_bridge driver fragments this network into <ips_per_nodes> blocks> subnets."
+    },
+    {
+        "section": "network",
+        "rtype": ["routed_bridge"],
+        "keyword": "subnet",
         "default": "10.22.0.0/16",
         "text": "The cluster backend network to fragment for nodes into <ips_per_nodes> blocks."
     },

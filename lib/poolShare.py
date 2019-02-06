@@ -20,14 +20,14 @@ class Pool(pool.Pool):
 
     def translate(self, name=None, size=None, fmt=True, shared=False):
         if shared:
-            basename = os.path.join(self.path, "{id}")
+            basename = os.path.join(self.path, name)
         else:
-            basename = os.path.join(self.path, "{id}.{nodename}")
+            basename = os.path.join(self.path, "%s.{nodename}" % name)
 
         fs = {
             "rtype": "fs",
             "type": "directory",
-            "path": os.path.join(self.path, "{id}"),
+            "path": os.path.join(self.path, name),
         }
         return [fs]
 

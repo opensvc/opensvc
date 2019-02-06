@@ -48,15 +48,21 @@ class Pool(object):
             return exc.default
 
     @lazy
+    def mkblk_opt(self):
+        try:
+            return self.conf_get("mkblk_opt")
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    @lazy
     def mnt_opt(self):
         try:
             return self.conf_get("mnt_opt")
         except ex.OptNotFound as exc:
             return exc.default
 
-    @lazy
-    def mount_point(self):
-        return os.path.join(os.sep, "srv", "{id}")
+    def mount_point(self, name):
+        return os.path.join(os.sep, "srv", name)
 
     def default_disk_name(self, volume):
         return "%s.%s.svc.%s" % (
@@ -139,4 +145,48 @@ class Pool(object):
         self.log.info("mappings for nodes %s: %s", ",".join(sorted(list(nodes))), ",".join(data))
         return data
 
+    def add_sync_internal(self, data):
+        """
+        Disable sync#i0 if the volume has only disk.disk and fs.directory resources.
+        """
+        if len([res for res in data if res["type"] not in ("disk.disk", "disk.scsireserv", "fs.directory")]) > 0:
+            return []
+        return [{"rid": "sync#i0", "disable": True}]
+
+    def add_fs(self, name, shared=False):
+        data = []
+        if self.fs_type == "zfs":
+            disk = {
+                "rtype": "disk",
+                "type": "zpool",
+                "name": name,
+                "vdev": "{disk#1.exposed_devs[0]}",
+                "shared": shared,
+            }
+            fs = {
+                "rtype": "fs",
+                "type": self.fs_type,
+                "dev": "%s/root" % name,
+                "mnt": self.mount_point(name),
+                "shared": shared,
+            }
+            if self.mkfs_opt:
+                fs["mkfs_opt"] = " ".join(self.mkfs_opt)
+            if self.mnt_opt:
+                fs["mnt_opt"] = self.mnt_opt
+            data += [disk, fs]
+        else:
+            fs = {
+                "rtype": "fs",
+                "type": self.fs_type,
+                "dev": "{disk#1.exposed_devs[0]}",
+                "mnt": self.mount_point(name),
+                "shared": shared,
+            }
+            if self.mkfs_opt:
+                fs["mkfs_opt"] = " ".join(self.mkfs_opt)
+            if self.mnt_opt:
+                fs["mnt_opt"] = self.mnt_opt
+            data += [fs]
+        return data
 

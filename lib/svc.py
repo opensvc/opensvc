@@ -5451,14 +5451,14 @@ class Svc(Crypt, ExtConfigMixin):
 
     def mount_point(self):
         """
-        Return the unambiguous service mount point. Volume services naturally
-        have such a mount point. The volume resource in the consumer service
-        uses this function to set its own mount_point property.
+        Return the shortest service mount point.
+        The volume resource in the consumer service uses this function as the
+        prefix of its own mount_point property.
         """
         candidates = [res for res in self.get_resources("fs")]
-        if not candidates or len(candidates) > 1:
+        if not candidates:
             return
-        return candidates[0].mount_point
+        return sorted(candidates)[0].mount_point
 
     def device(self):
         """
