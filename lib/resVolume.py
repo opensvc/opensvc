@@ -69,3 +69,6 @@ class Volume(Res.Resource):
         status = rcStatus.Status(self.volsvc.print_status_data()["avail"])
         return status
 
+    def exposed_devs(self):
+        return set([self.volsvc.device()])
+

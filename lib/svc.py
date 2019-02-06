@@ -5493,11 +5493,11 @@ class Svc(Crypt, ExtConfigMixin):
         Return the unambiguous exposed device. Volume services naturally
         have such a device.
         """
-        candidates = sorted([res for res in self.get_resources("disk")], key=lambda r: r.rid)
-        if not candidates or len(candidates) > 1:
+        candidates = sorted([res for res in self.get_resources("disk") if res.type != "disk.scsireserv"], key=lambda r: r.rid)
+        if not candidates:
             return
         try:
-            return list(candidates[0].exposed_devs())[0]
+            return list(candidates[-1].exposed_devs())[0]
         except Exception:
             return
 
