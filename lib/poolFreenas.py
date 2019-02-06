@@ -48,6 +48,8 @@ class Pool(pool.Pool):
 
     def create_disk(self, name, size, nodes=None):
         mappings = self.get_mappings(nodes)
+        if not mappings:
+            raise ex.excError("refuse to create a disk with no mappings")
         lock_id = None
         result = {}
         try:

@@ -54,6 +54,8 @@ class Pool(pool.Pool):
 
     def create_disk_simple(self, name, size, nodes=None):
         mappings = self.get_mappings(nodes)
+        if not mappings:
+            raise ex.excError("refuse to create a disk with no mappings")
         lock_id = None
         try:
             lock_id = self.node._daemon_lock(LOCK_NAME, timeout=120, on_error="raise")
