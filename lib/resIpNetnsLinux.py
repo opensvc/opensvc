@@ -62,6 +62,8 @@ class Ip(Res.Ip):
         Execute a ip link command in the container net namespace to parse
         used eth netdevs.
         """
+        if self.netns is None:
+            raise ex.excError("could not determine netns")
         cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip" , "link"]
         out, err, ret = justcall(cmd)
         used = []
@@ -103,7 +105,6 @@ class Ip(Res.Ip):
             return
         if nspid is None:
             return
-
         cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr"]
         out, err, ret = justcall(cmd)
         if ret != 0:
