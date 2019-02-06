@@ -26,6 +26,40 @@ class ExtConfigMixin(object):
         else:
             return False
 
+    def delete_sections(self, sections):
+        """
+        Delete config file sections.
+        """
+        lines = self._read_cf().splitlines()
+        need_write = False
+
+        for section in sections:
+            section = "[%s]" % section
+            in_section = False
+            for i, line in enumerate(lines):
+                sline = line.strip()
+                if sline == section:
+                    in_section = True
+                    need_write = True
+                    del lines[i]
+                    while i < len(lines) and not lines[i].strip().startswith("["):
+                        del lines[i]
+
+            if not in_section:
+                self.log.info("skip delete %s: not found", section)
+
+        if not need_write:
+            return
+
+        buff = "\n".join(lines)
+
+        try:
+            self._write_cf(buff)
+        except (IOError, OSError):
+            raise ex.excError("failed to rewrite %s" % self.paths.cf)
+
+        self.unset_lazy("config")
+
     def unset(self):
         """
         The 'unset' action entrypoint.

@@ -4712,35 +4712,7 @@ class Svc(Crypt, ExtConfigMixin):
         """
         Delete service resources from its configuration file
         """
-        lines = self._read_cf().splitlines()
-        need_write = False
-
-        for rid in rids:
-            section = "[%s]" % rid
-            in_section = False
-            for i, line in enumerate(lines):
-                sline = line.strip()
-                if sline == section:
-                    in_section = True
-                    need_write = True
-                    del lines[i]
-                    while i < len(lines) and not lines[i].strip().startswith("["):
-                        del lines[i]
-
-            if not in_section:
-                print("service", self.svcname, "has no resource", rid, file=sys.stderr)
-
-        if not need_write:
-            return
-
-        buff = "\n".join(lines)
-
-        try:
-            self._write_cf(buff)
-        except (IOError, OSError):
-            raise ex.excError("failed to rewrite %s" % self.paths.cf)
-
-        self.unset_lazy("config")
+        self.delete_sections(rids)
 
     def set_purge_collector_tag(self):
         if not self.options.purge_collector:

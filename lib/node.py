@@ -5151,3 +5151,5 @@ class Node(Crypt, ExtConfigMixin):
     def unset_all_lazy(self):
         unset_all_lazy(self)
 
+    def delete(self):
+        self.delete_sections(self.options.kw)

@@ -620,6 +620,12 @@ ACTIONS = {
                 OPT.kw,
             ],
         },
+        "delete": {
+            "msg": "Delete node configuration sections pointed by --kw options.",
+            "options": [
+                OPT.kw,
+            ],
+        },
         "get": {
             "msg": "Get the raw value of a node configuration keyword.",
             "options": [
