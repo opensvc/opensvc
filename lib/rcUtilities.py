@@ -721,7 +721,10 @@ def action_triggers(self, trigger="", action=None, **kwargs):
     if "|" in cmd or "&&" in cmd or ";" in cmd:
         kwargs["shell"] = True
 
-    cmdv = get_trigger_cmdv(cmd, kwargs)
+    try:
+        cmdv = get_trigger_cmdv(cmd, kwargs)
+    except ValueError as exc:
+        raise ex.excError(str(exc))
 
     if not hasattr(self, "log_outputs") or getattr(self, "log_outputs"):
         self.log.info("%s: %s", attr, cmd)
