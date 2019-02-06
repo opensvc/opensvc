@@ -1129,8 +1129,6 @@ def is_service(f, namespace=None):
         f = os.path.join(rcEnv.paths.pathetcns, namespace, f)
     else:
         f = os.path.join(rcEnv.paths.pathetc, f)
-    if os.name != "nt" and os.path.realpath(f) != os.path.realpath(rcEnv.paths.svcmgr):
-        return
     if not os.path.exists(f + '.conf'):
         return
     return f.replace(rcEnv.paths.pathetcns+os.sep, "").replace(rcEnv.paths.pathetc+os.sep, "")
