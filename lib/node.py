@@ -4821,12 +4821,46 @@ class Node(Crypt, ExtConfigMixin):
             })
         return routes
 
+    def network_overlaps(self, name, nets=None):
+        def get_val(key, net):
+            try:
+                return net["config"][key]
+            except KeyError:
+                try:
+                    return net["cni"]["data"][key]
+                except KeyError:
+                    return
+        if nets is None:
+            nets = self.networks_data()
+        net = nets.get(name)
+        if not net:
+            return
+        try:
+            network = ip_network(six.text_type(get_val("network", net)))
+        except Exception:
+            return
+        for other_name, other in nets.items():
+            if name == other_name:
+                continue
+            try:
+                other_network = ip_network(six.text_type(get_val("network", other)))
+            except Exception:
+                continue
+            if other_network and network.overlaps(other_network):
+                raise ex.excError("network %s %s overlaps with %s %s" % \
+                                  (name, network, other_name, other_network))
+
     def network_setup(self):
         sections = list(self.conf_sections("network"))
         if "network#default" not in sections:
             sections.append("network#default")
         for section in sections:
             _, name = section.split("#", 1)
+            try:
+                self.network_overlaps(name)
+            except ex.excError as exc:
+                self.log.warning("skip setup: %s", exc)
+                continue
             self.network_create_config(name)
             self.network_create_routes(name)
             self.network_create_bridge(name)
