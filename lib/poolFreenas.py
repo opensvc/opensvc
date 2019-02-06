@@ -68,6 +68,7 @@ class Pool(pool.Pool):
         return result
 
     def translate(self, name=None, size=None, fmt=True, shared=False):
+        data = []
         disk = {
             "rtype": "disk",
             "type": "disk",
