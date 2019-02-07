@@ -2936,6 +2936,19 @@ class Monitor(shared.OsvcThread):
         return self.arbitrators_data
 
     def update_cluster_data(self):
+        self.update_node_data()
+        self.purge_left_nodes()
+
+    def purge_left_nodes(self):
+        left = set([node for node in shared.CLUSTER_DATA]) - set(self.cluster_nodes)
+        for node in left:
+            self.log.info("purge left node %s data", node)
+            try:
+                del shared.CLUSTER_DATA[node]
+            except Exception:
+                pass
+
+    def update_node_data(self):
         """
         Rescan services config and status.
         """
@@ -3039,7 +3052,7 @@ class Monitor(shared.OsvcThread):
             data["updated"] = now
             return
 
-        self.last_node_data = json.loads(json.dumps(data))
+        self.last_node_data = {}.update(data)
         data["gen"] = self.get_gen(inc=True)
         data["updated"] = now
         diff.append([["updated"], data["updated"]])
