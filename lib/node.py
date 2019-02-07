@@ -3483,7 +3483,13 @@ class Node(Crypt, ExtConfigMixin):
 
     def nodes_selector(self, selector, data=None):
         if selector in ("*", None):
-            return self.cluster_nodes
+            if data:
+                # if data is provided (by svcmon usually), it is surely
+                # more up-to-date then the cluster_node lazy relying on
+                # the config lazy
+                return sorted([node for node in data])
+            else:
+                return self.cluster_nodes
         if selector == "":
             return []
         if isinstance(selector, (list, tuple, set)):
@@ -4214,13 +4220,12 @@ class Node(Crypt, ExtConfigMixin):
         if rcEnv.nodename in cluster_nodes:
             cluster_nodes.remove(rcEnv.nodename)
 
-        # freeze and remember the initial frozen state
         if not self.frozen():
             self.freeze()
             self.log.info("freeze local node")
         else:
             self.log.info("local node is already frozen")
-        self.log.warning = "DO NOT UNFREEZE before verifying split services won't double-start"
+        self.log.warning("DO NOT UNFREEZE before verifying split services won't double-start")
 
         # leave other nodes
         options = {"thr_id": "tx", "wait": True}

@@ -120,11 +120,11 @@ def nodes_info_from_cluster_data(node, data):
     for node in node.cluster_nodes:
         info[node] = {}
     for node, _data in data.items():
-            info[node] = {
-                "labels": _data.get("labels", {}),
-                "targets": _data.get("targets", {}),
-            }
-    return data
+        info[node] = {
+            "labels": _data.get("labels", {}),
+            "targets": _data.get("targets", {}),
+        }
+    return info
 
 def _main(node, argv=None):
     parser = setup_parser(node)
