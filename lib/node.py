@@ -4215,12 +4215,12 @@ class Node(Crypt, ExtConfigMixin):
             cluster_nodes.remove(rcEnv.nodename)
 
         # freeze and remember the initial frozen state
-        initially_frozen = self.frozen()
-        if not initially_frozen:
+        if not self.frozen():
             self.freeze()
             self.log.info("freeze local node")
         else:
             self.log.info("local node is already frozen")
+        self.log.warning = "DO NOT UNFREEZE before verifying split services won't double-start"
 
         # leave other nodes
         options = {"thr_id": "tx", "wait": True}
@@ -4251,15 +4251,6 @@ class Node(Crypt, ExtConfigMixin):
 
         self.write_config()
         self.unset_lazy("cluster_nodes")
-
-        # leave node frozen if initially frozen or we failed joining all nodes
-        if initially_frozen:
-            self.log.warning("local node is left frozen as it was already before leave")
-        elif errors > 0:
-            self.log.warning("local node is left frozen due to leave errors")
-        else:
-            self.thaw()
-            self.log.info("thaw local node")
 
     def daemon_join(self):
         if self.options.secret is None:
