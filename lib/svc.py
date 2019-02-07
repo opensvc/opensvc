@@ -1918,7 +1918,10 @@ class Svc(Crypt, ExtConfigMixin):
                 notice.append("constraints violation")
             if provisioned is False:
                 notice.append(colorize("not provisioned", color.RED))
-            if monitor:
+            if monitor == {}:
+                # encap monitor
+                pass
+            elif monitor:
                 mon_status = monitor.get("status", "unknown")
                 if monitor["status"] == "idle":
                     notice.append(colorize(mon_status, color.LIGHTBLUE))
@@ -1972,7 +1975,7 @@ class Svc(Crypt, ExtConfigMixin):
                     frozen=edata.frozen,
                     constraints=edata.get("constraints", True),
                     provisioned=edata.provisioned,
-                    monitor=edata.monitor,
+                    monitor={},
                 )
                 col.add_text(encap_notice, color.LIGHTBLUE)
             for line in resource.get("log", []):
