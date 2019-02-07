@@ -1749,7 +1749,7 @@ KEYWORDS = [
         "inheritance": "leaf",
         "at": True,
         "default": "vg",
-        "candidates": ["disk", "veritas", "vxdg", "vxvol", "raw", "rados", "md", "drbd", "loop", "zpool", "pool", "raw", "vmdg", "vdisk", "lvm", "vg", "lv", "amazon", "gce"],
+        "candidates": ["disk", "veritas", "vxdg", "vxvol", "raw", "rados", "md", "drbd", "loop", "zpool", "pool", "raw", "vmdg", "vdisk", "lvm", "vg", "lv", "amazon", "gce", "zvol"],
         "text": "The volume group driver to use. Leave empty to activate the native volume group manager."
     },
     {
@@ -1794,6 +1794,36 @@ KEYWORDS = [
         "provisioning": True,
         "text": "The list of modulesets providing files to install in the volume.",
         "example": "configmap.redis configmap.global"
+    },
+    {
+        "section": "disk",
+        "rtype": "zvol",
+        "keyword": "name",
+        "required": True,
+        "at": True,
+        "text": "The full name of the zfs volume in the <pool>/<name> form.",
+        "example": "tank/zvol1"
+    },
+    {
+        "section": "disk",
+        "rtype": "zvol",
+        "keyword": "size",
+        "provisioning": True,
+        "convert": "size",
+        "at": True,
+        "text": "The size of the zfs volume to create.",
+        "example": "1g"
+    },
+    {
+        "section": "disk",
+        "rtype": "zvol",
+        "keyword": "create_options",
+        "provisioning": True,
+        "convert": "shlex",
+        "default": [],
+        "at": True,
+        "text": "The zfs create -V <name> extra options.",
+        "example": "-o dedup=on"
     },
     {
         "section": "disk",

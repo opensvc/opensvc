@@ -243,6 +243,17 @@ def add_ip(svc, s):
     r = ip.Ip(**kwargs)
     svc += r
 
+def add_zvol(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["name"] = svc.oget(s, "name")
+    try:
+        mod = mimport("res", "disk", "zvol")
+    except ImportError:
+        svc.log.error("resDiskZvol is not implemented")
+        return
+    r = mod.Disk(**kwargs)
+    svc += r
+
 def add_lv(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs["name"] = svc.oget(s, "name")
@@ -438,6 +449,9 @@ def add_disk_compat(svc, s):
     if disk_type == "Md":
         add_md(svc, s)
         return
+    if disk_type == "Zvol":
+        add_zvol(svc, s)
+        return
     if disk_type == "Lv":
         add_lv(svc, s)
         return
@@ -547,6 +561,9 @@ def add_disk(svc, s):
         return
     if disk_type == "Loop":
         add_loop(svc, s)
+        return
+    if disk_type == "Zvol":
+        add_zvol(svc, s)
         return
     if disk_type == "Lv":
         add_lv(svc, s)

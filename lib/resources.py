@@ -935,6 +935,9 @@ class Resource(object):
         """
         pass
 
+    def oget(self, o, **kwargs):
+        return self.svc.oget(self.rid, o, **kwargs)
+
     def conf_get(self, o, **kwargs):
         """
         Relay for the Svc::conf_get() method, setting the resource rid as the
