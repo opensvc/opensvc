@@ -3052,7 +3052,7 @@ class Monitor(shared.OsvcThread):
             data["updated"] = now
             return
 
-        self.last_node_data = {}.update(data)
+        self.last_node_data = json.loads(json.dumps(data))
         data["gen"] = self.get_gen(inc=True)
         data["updated"] = now
         diff.append([["updated"], data["updated"]])
