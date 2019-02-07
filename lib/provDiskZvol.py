@@ -47,7 +47,7 @@ class Prov(provisioning.Prov):
             if i != 0:
                 time.sleep(1)
         if i == 0:
-            self.r.log.error("timed out waiting for %s to appear"%dev)
+            self.r.log.error("timed out waiting for %s to appear" % self.r.device)
             raise ex.excError
 
         self.r.svc.node.unset_lazy("devtree")
