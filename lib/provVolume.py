@@ -134,11 +134,23 @@ class Prov(provisioning.Prov):
             nodes = self.r.svc._get("DEFAULT.nodes")
         except ex.OptNotFound:
             nodes = None
+        env = {}
+        for mapping in pool.volume_env:
+            try:
+                src, dst = mapping.split(":", 1)
+            except Exception:
+                continue
+            args = src.split(".", 1)
+            val = self.r.svc.oget(*args)
+            if ".." in val:
+                raise ex.excError("the '..' substring is forbidden in volume env keys: %s=%s" % (mapping, val))
+            env[dst] = val
         pool.configure_volume(volume,
                               fmt=self.r.format,
                               size=self.r.size,
                               access=self.r.access,
                               nodes=nodes,
-                              shared=self.r.shared)
+                              shared=self.r.shared,
+                              env=env)
         return volume
 

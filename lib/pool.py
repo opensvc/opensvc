@@ -23,6 +23,10 @@ class Pool(object):
         return self.node.oget(self.section, kw, **kwargs)
 
     @lazy
+    def volume_env(self):
+        return []
+
+    @lazy
     def array(self):
         """
         Implemented by child classes
@@ -71,7 +75,7 @@ class Pool(object):
             self.node.cluster_name,
         )
 
-    def configure_volume(self, volume, size=None, fmt=True, access="rwo", shared=False, nodes=None):
+    def configure_volume(self, volume, size=None, fmt=True, access="rwo", shared=False, nodes=None, env=None):
         name = self.default_disk_name(volume)
         data = self.translate(name=name, size=size, fmt=fmt, shared=shared)
         defaults = {

@@ -4664,14 +4664,14 @@ class Node(Crypt, ExtConfigMixin):
                 self.log.debug("discard pool %s: not named %s",
                                pool["name"], poolname)
                 continue
-            if size and pool["free"] < size//1024+1:
+            if size and "free" in pool and pool["free"] < size//1024+1:
                 self.log.debug("discard pool %s: not enough free space %d/%d",
                                pool["name"], pool["free"], size)
                 continue
             candidates.append(pool)
         if not candidates:
             return
-        candidates = sorted(candidates, key=lambda x: x["free"])
+        candidates = sorted(candidates, key=lambda x: x.get("free", 0))
         return self.get_pool(candidates[-1]["name"])
 
     def get_pool(self, poolname):

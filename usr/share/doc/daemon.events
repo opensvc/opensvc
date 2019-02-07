@@ -16,6 +16,11 @@ Id ``max_stdby_resource_restart``
 
 max restart ({restart}) reached for standby resource {rid} ({resource.label})
 
+Id ``service_config_installed``
+-------------------------------
+
+config fetched from node {from} is now installed
+
 Id ``blacklist_add``
 --------------------
 
@@ -40,11 +45,6 @@ Id ``max_resource_restart``
 ---------------------------
 
 max restart ({restart}) reached for resource {rid} ({resource.label})
-
-Id ``service_config_installed``
--------------------------------
-
-config fetched from node {from} is now installed
 
 Id ``resource_toc``
 -------------------

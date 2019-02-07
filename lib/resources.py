@@ -1124,6 +1124,7 @@ class Resource(object):
         """
         if self.skip_provision:
             self.log.info("provision skipped (configuration directive)")
+            self.write_is_provisioned_flag(True)
             return
         if self.prov is None:
             return

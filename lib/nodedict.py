@@ -723,7 +723,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "section": "pool",
         "keyword": "type",
         "default": "directory",
-        "candidates": ["directory", "loop", "vg", "zpool", "freenas", "share", "symmetrix"],
+        "candidates": ["directory", "loop", "vg", "zpool", "freenas", "share", "symmetrix", "virtual"],
         "text": "The pool type."
     },
     {
@@ -825,6 +825,28 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "rtype": ["directory", "share"],
         "default": "{var}/pool/directory",
         "text": "The path to create the pool loop files in."
+    },
+    {
+        "section": "pool",
+        "keyword": "template",
+        "rtype": ["virtual"],
+        "text": "The service path (<namespace>/<svcname>) of a volume service to use as a template for new volumes.",
+    },
+    {
+        "section": "pool",
+        "keyword": "volume_env",
+        "rtype": ["virtual"],
+        "convert": "list",
+        "example": "container#1.name:container_name env.foo:foo",
+        "text": "The list of the volume consumer service config keywords which values are mapped as env keys in the allocated volume service.",
+    },
+    {
+        "section": "pool",
+        "keyword": "capabilities",
+        "rtype": ["virtual"],
+        "convert": "list",
+        "default": ["roo", "rwo", "rox", "rwx"],
+        "text": "The capabilities exposed by the virtual pool.",
     },
     {
         "section": "pool",
