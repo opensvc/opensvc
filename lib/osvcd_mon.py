@@ -1274,17 +1274,19 @@ class Monitor(shared.OsvcThread):
                     return
                 self.service_orchestrator_auto(svc, smon, status)
         elif smon.global_expect == "unprovisioned":
-            if smon.status == "wait children":
-                if not self.children_down(svc):
+            if smon.status == "unprovisioning":
+                return
+            elif smon.status == "wait children":
+                if not self.children_unprovisioned(svc):
                     return
             elif smon.status == "wait non-leader":
                 if not self.leader_last(svc, provisioned=False, silent=True):
                     self.log.info("service %s still waiting non leaders", svc.svcpath)
                     return
-            if self.service_unprovisioned(instance):
+            if svc.svcpath not in shared.SERVICES or self.instance_unprovisioned(instance):
                 self.set_smon(svc.svcpath, status="idle")
                 return
-            if not self.children_down(svc):
+            if not self.children_unprovisioned(svc):
                 self.set_smon(svc.svcpath, status="wait children")
                 return
             if not self.leader_last(svc, provisioned=False):
@@ -1305,7 +1307,7 @@ class Monitor(shared.OsvcThread):
             elif smon.status == "wait sync":
                 if not self.min_instances_reached(svc):
                     return
-            if self.service_provisioned(instance):
+            if self.instance_provisioned(instance):
                 self.set_smon(svc.svcpath, status="idle")
                 return
             if not self.min_instances_reached(svc):
@@ -1335,19 +1337,21 @@ class Monitor(shared.OsvcThread):
                 })
                 self.service_delete(svc.svcpath)
         elif smon.global_expect == "purged":
+            if smon.status in ("purging", "deleting"):
+                return
             if smon.status == "wait children":
-                if not self.children_down(svc):
+                if not self.children_unprovisioned(svc):
                     return
             elif smon.status == "wait non-leader":
                 if not self.leader_last(svc, provisioned=False, silent=True, deleted=True):
                     return
-            if not self.children_down(svc):
+            if not self.children_unprovisioned(svc):
                 self.set_smon(svc.svcpath, status="wait children")
                 return
             if not self.leader_last(svc, provisioned=False, deleted=True):
                 self.set_smon(svc.svcpath, status="wait non-leader")
                 return
-            if svc.svcpath not in shared.SERVICES or (instance is None and self.service_unprovisioned(instance)):
+            if svc.svcpath not in shared.SERVICES or self.instance_unprovisioned(instance):
                 self.set_smon(svc.svcpath, status="idle")
                 return
             self.event("instance_purge", {
@@ -1735,7 +1739,10 @@ class Monitor(shared.OsvcThread):
                     missing=" ".join(missing))
         return False
 
-    def children_down(self, svc):
+    def children_unprovisioned(self, svc):
+        return self.children_down(svc, unprovisioned=True)
+
+    def children_down(self, svc, unprovisioned=None):
         missing = []
         if len(svc.children_and_slaves) == 0:
             return True
@@ -1748,15 +1755,30 @@ class Monitor(shared.OsvcThread):
                 avail = shared.AGG[child].avail
             except KeyError:
                 avail = "unknown"
-            if avail in STOPPED_STATES + ["unknown"]:
+            if avail not in STOPPED_STATES + ["unknown"]:
+                missing.append(child)
                 continue
-            missing.append(child)
+            if unprovisioned:
+                try:
+                    prov = shared.AGG[child].provisioned
+                except KeyError:
+                    prov = "unknown"
+                if prov not in [False, "unknown"]:
+                    # mixed or true
+                    missing.append(child)
         if len(missing) == 0:
-            self.duplog("info", "service %(svcpath)s children all avail down",
-                        svcpath=svc.svcpath)
+            state = "avail down"
+            if unprovisioned:
+                state += " and unprovisioned"
+            self.duplog("info", "service %(svcpath)s children all %(state)s:"
+                        " %(children)s", svcpath=svc.svcpath, state=state,
+                        children=" ".join(svc.children_and_slaves))
             return True
-        self.duplog("info", "service %(svcpath)s children still available:"
-                    " %(missing)s", svcpath=svc.svcpath,
+        state = "available"
+        if unprovisioned:
+            state += " or provisioned"
+        self.duplog("info", "service %(svcpath)s children still %(state)s:"
+                    " %(missing)s", svcpath=svc.svcpath, state=state,
                     missing=" ".join(missing))
         return False
 
@@ -3272,11 +3294,18 @@ class Monitor(shared.OsvcThread):
                     return True
         return False
 
-    def service_provisioned(self, instance):
+    def instance_provisioned(self, instance):
+        if instance is None:
+            return False
         return instance.get("provisioned")
 
-    def service_unprovisioned(self, instance):
+    def instance_unprovisioned(self, instance):
+        if instance is None:
+            return True
         for resource in instance["resources"].values():
+            if resource.get("type") in ("disk.scsireserv", "task"):
+                # always provisioned
+                continue
             if resource.get("provisioned", {}).get("state") is True:
                 return False
         return True
