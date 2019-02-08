@@ -4853,7 +4853,7 @@ class Svc(Crypt, ExtConfigMixin):
         """
         The freezestop monitor action.
         """
-        self.freeze()
+        self.master_freeze()
         self.stop()
 
     def freeze(self):
