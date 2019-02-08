@@ -190,6 +190,7 @@ class rcEnv:
         syspaths.nsenter = "/usr/bin/nsenter"
         syspaths.pvs = "/sbin/pvs"
         syspaths.pvscan = "/sbin/pvscan"
+        syspaths.vgscan = "/sbin/vgscan"
         syspaths.vgs = "/sbin/vgs"
     elif sysname == "SunOS":
         syspaths.ps = "/usr/bin/ps"

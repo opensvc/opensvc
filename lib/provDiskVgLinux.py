@@ -18,6 +18,7 @@ class Prov(provisioning.Prov):
         self.r.clear_cache("vg.lvs.attr")
         self.r.clear_cache("vg.tags")
         self.r.clear_cache("vg.pvs")
+        self.vgscan()
         return self.r.has_it()
 
     def unprovisioner(self):
@@ -32,6 +33,10 @@ class Prov(provisioning.Prov):
         self.r.clear_cache("vg.tags")
         self.r.clear_cache("vg.pvs")
         self.r.svc.node.unset_lazy("devtree")
+
+    def vgscan(self):
+        cmd = [rcEnv.syspaths.vgscan, "--cache"]
+        justcall(cmd)
 
     def has_pv(self, pv):
         cmd = [rcEnv.syspaths.pvscan, "--cache", pv]
