@@ -26,8 +26,8 @@ def get_optional(svc, section):
         return True
     return svc.oget(section, "optional")
 
-def get_monitor(svc, section):
-    return svc.oget(section, "monitor")
+def get_monitor(svc, section, impersonate=None):
+    return svc.oget(section, "monitor", impersonate=impersonate)
 
 def get_provision(svc, section):
     return svc.oget(section, "provision")
@@ -47,17 +47,17 @@ def get_shared(svc, section):
 def get_rcmd(svc, section):
     return svc.oget(section, "rcmd")
 
-def get_subset(svc, section):
-    return svc.oget(section, "subset")
+def get_subset(svc, section, impersonate=None):
+    return svc.oget(section, "subset", impersonate=impersonate)
 
 def get_osvc_root_path(svc, section):
     return svc.oget(section, "osvc_root_path")
 
-def get_restart(svc, section):
-    return svc.oget(section, "restart")
+def get_restart(svc, section, impersonate=None):
+    return svc.oget(section, "restart", impersonate=impersonate)
 
-def get_disabled(svc, section):
-    return svc.oget(section, "disable")
+def get_disabled(svc, section, impersonate=None):
+    return svc.oget(section, "disable", impersonate=impersonate)
 
 def get_promote_rw(svc, section):
     try:
@@ -148,13 +148,20 @@ def add_resource(svc, restype, s):
 
     if not svc.encap and (encap or "encap" in tags):
         svc.has_encap_resources = True
+        try:
+            enode = list(svc.encapnodes)[0]
+        except KeyError:
+            return
         svc.encap_resources[s] = Storage({
             "rid": s,
             "tags": tags,
             "encap": encap,
-            "subset": svc.oget(s, "subset"),
-            "nb_restart": get_restart(svc, s),
+            "subset": svc.oget(s, "subset", impersonate=enode),
+            "nb_restart": get_restart(svc, s, impersonate=enode),
+            "monitor": get_monitor(svc, s, impersonate=enode),
+            "disabled": get_disabled(svc, s, impersonate=enode),
         })
+        svc.encap_resources[s].is_disabled = lambda: svc.encap_resources[s].disabled
         return
 
     if s in svc.resources_by_id:
