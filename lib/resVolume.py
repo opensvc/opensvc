@@ -29,6 +29,7 @@ class Volume(Res.Resource):
         self.format = format
         self.label = name
         self.refresh_provisioned_on_provision = True
+        self.refresh_provisioned_on_unprovision = True
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)

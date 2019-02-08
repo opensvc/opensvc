@@ -19,6 +19,8 @@ class Disk(resDisk.Disk):
                               **kwargs)
         self.label = "vg "+name
         self.tag = rcEnv.nodename
+        self.refresh_provisioned_on_provision = True
+        self.refresh_provisioned_on_unprovision = True
 
     def _info(self):
         data = [
