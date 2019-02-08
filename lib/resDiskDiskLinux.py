@@ -37,7 +37,8 @@ class Disk(resDiskDisk.Disk):
         if self.disk_id is None:
             return rcStatus.NA
         if not self.devpath or not os.path.exists(self.devpath):
-            self.status_log("%s does not exist" % self.devpath, "warn")
+            if self.devpath:
+                self.status_log("%s does not exist" % self.devpath, "warn")
             return rcStatus.DOWN
         return rcStatus.NA
 
