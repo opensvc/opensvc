@@ -9,6 +9,7 @@ import os
 import signal
 import logging
 import datetime
+import itertools
 import time
 import lock
 import json
@@ -880,7 +881,7 @@ class Svc(Crypt, ExtConfigMixin):
         return self.sched.print_schedule()
 
     def has_monitored_resources(self):
-        for res in self.get_resources():
+        for res in self.get_resources(with_encap=True):
             if res.monitor and not res.is_disabled():
                 return True
         return False
@@ -1261,7 +1262,7 @@ class Svc(Crypt, ExtConfigMixin):
             return self.encap_resources[rid]
         return
 
-    def get_resources(self, _type=None, discard_disabled=True):
+    def get_resources(self, _type=None, discard_disabled=True, with_encap=False):
         """
         Return the list of resources matching criteria.
 
@@ -1269,16 +1270,20 @@ class Svc(Crypt, ExtConfigMixin):
           None: all resources are returned
         """
         self.init_resources()
+        if with_encap:
+            allresources = itertools.chain(self.resources_by_id.values(), self.encap_resources.values())
+        else:
+            allresources = self.resources_by_id.values()
         if _type is None:
-            return self.resources_by_id.values()
+            return allresources
         if not isinstance(_type, (list, tuple)):
             _types = [_type]
         else:
             _types = _type
 
         resources = []
-        for resource in self.resources_by_id.values():
-            if not self.encap and resource.encap:
+        for resource in allresources:
+            if not with_encap and not self.encap and resource.encap:
                 continue
             if discard_disabled and resource.is_disabled():
                 continue
