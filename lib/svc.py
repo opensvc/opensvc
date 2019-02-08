@@ -5023,11 +5023,6 @@ class Svc(Crypt, ExtConfigMixin):
                 defaults.update(data)
 
             if is_resource:
-                try:
-                    sections[section].update(self.kwdict.KEYS.update(section, data))
-                except (MissKeyNoDefault, KeyInvalidValue) as exc:
-                    if not interactive:
-                        raise ex.excError(str(exc))
                 rid.append(section)
 
         for section, data in sections.items():
