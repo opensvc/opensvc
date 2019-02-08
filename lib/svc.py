@@ -4807,6 +4807,17 @@ class Svc(Crypt, ExtConfigMixin):
             """
             import re
             for idx, arg in enumerate(argv):
+                if re.match(r'\{[#\.-_\w]+\}', arg):
+                    container_rid = arg.strip("{}")
+                    if not container_rid.startswith("container#"):
+                        container_rid = "container#" + container_rid
+                    if container_rid not in self.resources_by_id:
+                        continue
+                    container = self.resources_by_id[container_rid]
+                    name = container.container_name
+                    del argv[idx]
+                    argv.insert(idx, name)
+            for idx, arg in enumerate(argv):
                 if arg in ("%instances%", "{instances}"):
                     del argv[idx]
                     instances = [resource.container_name for resource in containers
@@ -4824,15 +4835,6 @@ class Svc(Crypt, ExtConfigMixin):
                 if arg in ("%as_service%", "{as_service}"):
                     del argv[idx]
                     argv[idx:idx] = self.dockerlib.login_as_service_args()
-            for idx, arg in enumerate(argv):
-                if re.match(r'\{container#\w+\}', arg):
-                    container_rid = arg.strip("{}")
-                    if container_rid not in self.resources_by_id:
-                        continue
-                    container = self.resources_by_id[container_rid]
-                    name = container.container_name
-                    del argv[idx]
-                    argv.insert(idx, name)
             return argv
 
         if len(containers) == 0:
