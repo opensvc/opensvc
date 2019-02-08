@@ -74,19 +74,29 @@ class Disk(resDiskDisk.Disk):
         if not self.disk_id:
             raise ex.excError("disk_id is not set. should be at this point")
         self.svc.node._scanscsi()
-        self.wait_udev()
+        self.wait_anypath()
         self.svc.node.unset_lazy("devtree")
         if self.devpath and which(rcEnv.syspaths.multipath):
             dev = os.path.realpath(self.devpath)
             cmd = [rcEnv.syspaths.multipath, "-v1", dev]
             ret, out, err = self.vcall(cmd)
+        self.wait_devpath()
 
-    def wait_udev(self):
+    def wait_anypath(self):
+        for retry in range(30):
+            self.unset_lazy("anypath")
+            if self.anypath and os.path.exists(self.anypath):
+                self.log.info("%s now exists", self.anypath)
+                return
+            time.sleep(1)
+        raise ex.excError("time out waiting for %s to appear" % self.anypath)
+
+    def wait_devpath(self):
         for retry in range(30):
             self.unset_lazy("devpath")
             if self.devpath and os.path.exists(self.devpath):
                 self.log.info("%s now exists", self.devpath)
                 return
             time.sleep(1)
-        raise ex.excError("time out waiting for %s to appear" % self.anypath)
+        raise ex.excError("time out waiting for %s to appear" % self.devpath)
 
