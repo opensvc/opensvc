@@ -3545,7 +3545,9 @@ class Svc(Crypt, ExtConfigMixin):
                 return
 
         # use a tempory conf staging to not have to care about ns dir create
-        encap_cf = os.path.join(rcEnv.paths.pathtmp, self.id+".conf")
+        paths = get_osvc_paths(osvc_root_path=container.osvc_root_path,
+                               sysname=container.guestos)
+        encap_cf = os.path.join(paths.pathtmp, self.id+".conf")
         if hasattr(container, 'rcp'):
             cmd_results = container.rcp(self.paths.cf, encap_cf)
         else:
