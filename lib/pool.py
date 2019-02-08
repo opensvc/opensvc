@@ -153,7 +153,7 @@ class Pool(object):
         """
         Disable sync#i0 if the volume has only disk.disk and fs.directory resources.
         """
-        if len([res for res in data if res["type"] not in ("disk.disk", "disk.scsireserv", "fs.directory")]) > 0:
+        if len([res for res in data if ".".join((res.get("rtype", ""), res.get("type",""))) not in ("disk.disk", "disk.scsireserv", "fs.directory")]) > 0:
             return []
         return [{"rid": "sync#i0", "disable": True}]
 
