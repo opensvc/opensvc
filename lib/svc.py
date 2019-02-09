@@ -478,6 +478,14 @@ class Svc(Crypt, ExtConfigMixin):
         self.stats_data = {}
         self.stats_updated = 0
 
+        # needed for oget()
+        self.nodes = set()
+        self.encapnodes = set()
+
+        self.encapnodes = set(self.oget("DEFAULT", "encapnodes"))
+        self.ordered_nodes = self.oget("DEFAULT", "nodes")
+        self.nodes = set(self.ordered_nodes)
+
         # merged by the cmdline parser
         self.options = Storage(
             color="auto",
@@ -633,20 +641,6 @@ class Svc(Crypt, ExtConfigMixin):
     @lazy
     def pool(self):
         return self.oget("DEFAULT", "pool")
-
-    @lazy
-    def encapnodes(self):
-        encapnodes = self.oget("DEFAULT", "encapnodes")
-        return set(encapnodes)
-
-    @lazy
-    def ordered_nodes(self):
-        return self.oget("DEFAULT", "nodes")
-
-    @lazy
-    def nodes(self):
-        nodes = self.oget("DEFAULT", "nodes")
-        return set(nodes)
 
     @lazy
     def orchestrate(self):
