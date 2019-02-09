@@ -11,7 +11,7 @@ class Node(node.Node):
         try:
             with open("/proc/sys/kernel/sysrq", "r") as ofile:
                 buff = ofile.read()
-        except Excepion:
+        except Exception:
             buff = "<unknown>"
         self.log.error("still alive ... maybe crashing is ignored by kernel.sysrq=%s (check dmesg)" % buff)
         time.sleep(1)
