@@ -332,18 +332,6 @@ class Node(Crypt, ExtConfigMixin):
         return socket.gethostname().lower()
 
     @lazy
-    def system(self):
-        """
-        Lazy initialization of the operating system object, which implements
-        specific methods like crash or fast-reboot.
-        """
-        try:
-            rcos = __import__('rcOs'+rcEnv.sysname)
-        except ImportError:
-            rcos = __import__('rcOs')
-        return rcos.Os()
-
-    @lazy
     def compliance(self):
         from compliance import Compliance
         comp = Compliance(self)
@@ -1797,6 +1785,12 @@ class Node(Crypt, ExtConfigMixin):
         ret, out, err = self.vcall(_cmd, err_to_warn=err_to_warn)
         if ret != 0:
             raise ex.excError((ret, out, err))
+
+    def sys_reboot(self, delay=0):
+        pass
+
+    def sys_crash(self, delay=0):
+        pass
 
     def _reboot(self):
         """

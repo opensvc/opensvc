@@ -2150,13 +2150,13 @@ class Svc(Crypt, ExtConfigMixin):
         """
         A method wrapper the node reboot method.
         """
-        self.node.system.reboot()
+        self.node.sys_reboot()
 
     def crash(self):
         """
         A method wrapper the node crash method.
         """
-        self.node.system.crash()
+        self.node.sys_crash()
 
     def _pg_freeze(self):
         """

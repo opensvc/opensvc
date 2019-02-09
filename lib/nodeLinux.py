@@ -1,10 +1,40 @@
 import os
+import time
 from itertools import islice
+
 from rcUtilitiesLinux import get_tid
 from rcUtilities import lazy, justcall
 import node
 
 class Node(node.Node):
+    def still_alive(self):
+        try:
+            with open("/proc/sys/kernel/sysrq", "r") as ofile:
+                buff = ofile.read()
+        except Excepion:
+            buff = "<unknown>"
+        self.log.error("still alive ... maybe crashing is ignored by kernel.sysrq=%s (check dmesg)" % buff)
+        time.sleep(1)
+        self.freeze()
+
+    def sys_reboot(self, delay=0):
+        if delay:
+            self.log.info("sysrq reboot in %s seconds", delay)
+            time.sleep(delay)
+        with open("/proc/sysrq-trigger", "w") as ofile:
+            ofile.write("b")
+        self.still_alive()
+        time.sleep(1)
+        self.freeze()
+
+    def sys_crash(self, delay=0):
+        if delay:
+            self.log.info("sysrq crash in %s seconds", delay)
+            time.sleep(delay)
+        with open("/proc/sysrq-trigger", "w") as ofile:
+            ofile.write("c")
+        self.still_alive()
+
     def shutdown(self):
         cmd = ["shutdown", "-h", "now"]
         ret, out, err = self.vcall(cmd)

@@ -1,7 +1,21 @@
+import time
+
 import node
 from rcUtilities import justcall
 
 class Node(node.Node):
+    def sys_reboot(self, delay=0):
+        if delay:
+            self.log.info("sysrq reboot in %s seconds", delay)
+            time.sleep(delay)
+        justcall(['reboot', '-q'])
+
+    def sys_crash(self, delay=0):
+        if delay:
+            self.log.info("sysrq crash in %s seconds", delay)
+            time.sleep(delay)
+        justcall(['halt', '-q'])
+
     def shutdown(self):
         cmd = ["init", "5"]
         ret, out, err = self.vcall(cmd)
