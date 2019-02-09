@@ -21,7 +21,7 @@ class Disk(resDisk.Disk):
                               name=name,
                               type='disk.zpool',
                               **kwargs)
-        self.label = 'pool ' + name
+        self.label = 'pool ' + name if name else "<undefined>"
 
     def _info(self):
         data = [

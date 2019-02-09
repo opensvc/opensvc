@@ -26,7 +26,7 @@ class Container(resContainer.Container):
 
         self.runmethod = ['lxc', 'exec', name, '--']
         self.getaddr = self.dummy
-        self.label = "lxd " + self.label
+        self.label = "lxd " + name if name else "<undefined>"
 
     def files_to_sync(self):
         return ["/var/lib/lxd/containers/"+self.name]
