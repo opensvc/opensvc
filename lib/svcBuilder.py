@@ -150,7 +150,7 @@ def add_resource(svc, restype, s):
         svc.has_encap_resources = True
         try:
             enode = list(svc.encapnodes)[0]
-        except KeyError:
+        except IndexError:
             return
         svc.encap_resources[s] = Storage({
             "rid": s,
