@@ -156,6 +156,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "flex_primary",
+        "inheritance": "head",
         "at": True,
         "depends": [('topology', ["flex"])],
         "default_text": "<first node of the nodes parameter>",
@@ -164,6 +165,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "drp_flex_primary",
+        "inheritance": "head",
         "at": True,
         "depends": [('topology', ["flex"])],
         "default_text": "<first node of the drpnodes parameter>",
@@ -211,6 +213,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "access",
+        "inheritance": "head",
         "depends": [("kind", "vol")],
         "default": "rwo",
         "candidates": ["rwo", "roo", "rwx", "rox"],
@@ -221,6 +224,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "pool",
+        "inheritance": "head",
         "depends": [("kind", "vol")],
         "at": True,
         "required": False,
@@ -620,6 +624,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "hard_affinity",
+        "inheritance": "head",
         "convert": "set",
         "default": set(),
         "at": True,
@@ -629,6 +634,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "hard_anti_affinity",
+        "inheritance": "head",
         "convert": "set",
         "default": set(),
         "at": True,
@@ -638,6 +644,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "soft_affinity",
+        "inheritance": "head",
         "convert": "set",
         "default": set(),
         "at": True,
@@ -647,6 +654,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "soft_anti_affinity",
+        "inheritance": "head",
         "convert": "set",
         "default": set(),
         "at": True,
@@ -671,6 +679,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "show_disabled",
+        "inheritance": "head",
         "at": True,
         "default": True,
         "convert": "boolean",
@@ -680,6 +689,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "topology",
+        "inheritance": "head",
         "at": True,
         "default": "failover",
         "candidates": ["failover", "flex"],
@@ -688,6 +698,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "scale",
+        "inheritance": "head",
         "at": True,
         "convert": "integer",
         "text": "If set, create and provision the necessary slave services, named <n>.<svcname>, to meet the target <scale> number of started instances."
@@ -695,6 +706,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "scaler_slave",
+        "inheritance": "head",
         "convert": "boolean",
         "default": False,
         "at": True,
@@ -703,6 +715,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "kind",
+        "inheritance": "head",
         "at": True,
         "default": "app",
         "candidates": ("app", "vol", "cfg", "sec"),
@@ -711,6 +724,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "orchestrate",
+        "inheritance": "head",
         "at": True,
         "default": "no",
         "convert": "string",
@@ -720,6 +734,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "stonith",
+        "inheritance": "head",
         "convert": "boolean",
         "default": False,
         "candidates": (True, False),
@@ -729,6 +744,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "placement",
+        "inheritance": "head",
         "default": "nodes order",
         "candidates": ["none", "nodes order", "load avg", "shift", "spread", "score"],
         "text": "Set a service instances placement policy:\n\n"
@@ -742,6 +758,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "constraints",
+        "inheritance": "head",
         "at": True,
         "depends": [("orchestrate", "ha")],
         "example": "$(\"{nodename}\"==\"n2.opensvc.com\")",
@@ -750,6 +767,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "flex_min_nodes",
+        "inheritance": "head",
         "default": 1,
         "convert": "integer",
         "depends": [("topology", ["flex"])],
@@ -758,6 +776,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "flex_max_nodes",
+        "inheritance": "head",
         "default_text": "<number of peer nodes>",
         "convert": "integer",
         "depends": [("topology", ["flex"])],
@@ -766,6 +785,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "flex_cpu_low_threshold",
+        "inheritance": "head",
         "default": 0,
         "convert": "integer",
         "depends": [("topology", ["flex"])],
@@ -774,6 +794,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "flex_cpu_high_threshold",
+        "inheritance": "head",
         "default": 100,
         "convert": "integer",
         "depends": [("topology", ["flex"])],
@@ -782,6 +803,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "env",
+        "inheritance": "head",
         "default": node_get_node_env(),
         "default_text": "<same as node env>",
         "candidates": rcEnv.allowed_svc_envs,
@@ -790,6 +812,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "parents",
+        "inheritance": "head",
         "at": True,
         "default": [],
         "default_text": "",
@@ -799,6 +822,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "children",
+        "inheritance": "head",
         "at": True,
         "default": [],
         "default_text": "",
@@ -808,6 +832,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "slaves",
+        "inheritance": "head",
         "at": True,
         "default": [],
         "convert": "list",
@@ -816,6 +841,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "nodes",
+        "inheritance": "head",
         "at": True,
         "convert": "nodes_selector",
         "default": rcEnv.nodename,
@@ -825,6 +851,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "drpnode",
+        "inheritance": "head",
         "at": True,
         "text": "The backup node where the service is activated in a DRP situation. This node is also a data synchronization target for 'sync' resources.",
         "example": "node1"
@@ -832,6 +859,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "drpnodes",
+        "inheritance": "head",
         "at": True,
         "convert": "list_lower",
         "default": [],
@@ -842,6 +870,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "encapnodes",
+        "inheritance": "head",
         "convert": "list_lower",
         "default": [],
         "default_text": "",
