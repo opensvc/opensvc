@@ -31,7 +31,8 @@ class Prov(provisioning.Prov):
         except Exception as e:
             raise ex.excError(str(e))
 
-        cmd = ["zpool", "create", "-m", "legacy", self.name] + self.vdev
+        # cachefile=none to avoid import by the system boot
+        cmd = ["zpool", "create", "-m", "legacy", "-o", "cachefile=none", self.name] + self.vdev
         ret, _, _ = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
