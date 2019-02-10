@@ -92,7 +92,13 @@ def set_task(o, t):
         else:
             raise
 
-def set_cgroup(o, t, name, key, force=False):
+def set_cgroup(o, *args, **kwargs):
+    try:
+        _set_cgroup(o, *args, **kwargs)
+    except Exception as exc:
+        o.log.warning(exc)
+
+def _set_cgroup(o, t, name, key, force=False):
     o.log.debug("set_cgroup : start %s, %s, %s, %s" %(t, name, key, force))
     if not hasattr(o, "pg_settings"):
         return
@@ -474,11 +480,8 @@ def _create_pg(o):
         set_mem_cgroup(o)
         set_cpu_quota(o)
     except Exception as e:
-        try:
-            name = o.svcname
-        except:
-            name = o.rid
-        raise ex.excError("process group creation in '%s' cgroup failed: %s"%(name, str(e)))
+        # not configured in kernel
+        pass
 
 ##############################################################################
 #
