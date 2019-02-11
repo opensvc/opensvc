@@ -12,14 +12,42 @@ def dataset_exists(device, dstype):
     """
     return Dataset(device).exists(dstype)
 
+def zpool_getprop(pool='undef_pool', propname='undef_prop'):
+    """
+    Return the zpool property <propname> value
+    """
+    cmd = [rcEnv.syspaths.zpool, 'get', '-Hp', '-o', 'value', propname, pool]
+    out, _, ret = justcall(cmd)
+    if ret == 0:
+        return out.split("\n")[0]
+    else:
+        return ""
+
+def zpool_setprop(pool='undef_pool', propname='undef_prop', propval='undef_val', log=None):
+    """
+    Set the dataset property <propname> to value <propval>.
+    """
+    current = zpool_getprop(pool, propname)
+    if current == "":
+        # pool does not exist
+        return False
+    if current == propval:
+        return True
+    cmd = [rcEnv.syspaths.zpool, 'set', propname + '='+ propval, pool]
+    ret, _, _ = vcall(cmd, log=log)
+    if ret == 0:
+        return True
+    else:
+        return False
+
 def zfs_getprop(dataset='undef_ds', propname='undef_prop'):
     """
     Return the dataset property <propname> value
     """
     cmd = [rcEnv.syspaths.zfs, 'get', '-Hp', '-o', 'value', propname, dataset]
-    (stdout, stderr, retcode) = justcall(cmd)
-    if retcode == 0 :
-        return stdout.split("\n")[0]
+    out, _, ret = justcall(cmd)
+    if ret == 0:
+        return out.split("\n")[0]
     else:
         return ""
 
@@ -31,11 +59,11 @@ def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val', 
     if current == "":
         # dataset does not exist
         return False
-    if zfs_getprop(dataset, propname) == propval:
+    if current == propval:
         return True
     cmd = [rcEnv.syspaths.zfs, 'set', propname + '='+ propval, dataset]
-    (retcode, stdout, stderr) = vcall(cmd, log=log)
-    if retcode == 0 :
+    ret, _, _ = vcall(cmd, log=log)
+    if ret == 0:
         return True
     else:
         return False

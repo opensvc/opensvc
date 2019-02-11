@@ -629,19 +629,15 @@ def add_vmdg(svc, s):
     svc += r
 
 def add_zpool(svc, s):
-    """Parse the configuration file and add a zpool object for each disk.zpool
-    section. Pools objects are stored in a list in the service object.
-    """
     kwargs = init_kwargs(svc, s)
     kwargs["name"] = svc.oget(s, "name")
+    kwargs["multihost"] = svc.oget(s, "multihost")
     zone = svc.oget(s, "zone")
-    m = __import__("resDiskZfs")
-    r = m.Disk(**kwargs)
-
+    mod = mimport("res", "disk", "zpool")
+    r = mod.Disk(**kwargs)
     if zone is not None:
         r.tags.add("zone")
         r.tags.add(zone)
-
     svc += r
 
 def add_vhost(svc, s):

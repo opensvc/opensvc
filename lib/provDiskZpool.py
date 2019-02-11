@@ -1,6 +1,9 @@
 import provisioning
 import rcExceptions as ex
 
+from rcUtilities import drop_option
+from rcGlobalEnv import rcEnv
+
 class Prov(provisioning.Prov):
     def __init__(self, r):
         provisioning.Prov.__init__(self, r)
@@ -25,14 +28,25 @@ class Prov(provisioning.Prov):
         pass
 
     def provisioner(self):
-        try:
-            self.name = self.r.name
-            self.vdev = self.r.svc.conf_get(self.r.rid, "vdev")
-        except Exception as e:
-            raise ex.excError(str(e))
+        name = self.r.name
+        vdev = self.r.oget("vdev")
+        multihost = self.r.oget("multihost")
+        create_options = self.r.oget("create_options")
 
-        # cachefile=none to avoid import by the system boot
-        cmd = ["zpool", "create", "-m", "legacy", "-o", "cachefile=none", self.name] + self.vdev
+        args = create_options
+        args += [name]
+        args += vdev
+        args = drop_option("-m", args, drop_value=True)
+        args = drop_option("-o", args, drop_value="cachefile")
+        args = drop_option("-o", args, drop_value="multihost")
+        args = [
+            "-m", "legacy",
+            "-o", "cachefile="+self.r.zpool_cache,
+        ] + args
+        if multihost and rcEnv.sysname == "Linux":
+            args = ["-o", "multihost=on"] + args
+            self.r.zgenhostid()
+        cmd = ["zpool", "create"] + args
         ret, _, _ = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError

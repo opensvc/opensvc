@@ -6,7 +6,7 @@ import resDisk
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, qcall, which, lazy, cache
-from rcZfs import zpool_devs
+from rcZfs import zpool_devs, zpool_getprop, zpool_setprop
 
 class Disk(resDisk.Disk):
     """
@@ -15,13 +15,15 @@ class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  name=None,
+                 multihost=None,
                  **kwargs):
         resDisk.Disk.__init__(self,
                               rid=rid,
                               name=name,
                               type='disk.zpool',
                               **kwargs)
-        self.label = 'pool ' + name if name else "<undefined>"
+        self.multihost = multihost
+        self.label = 'zpool ' + name if name else "<undefined>"
 
     def _info(self):
         data = [
@@ -74,9 +76,12 @@ class Disk(resDisk.Disk):
             return True
         return False
 
+    @lazy
+    def zpool_cache(self):
+        return os.path.join(rcEnv.paths.pathvar, 'zpool.cache')
+
     def import_pool_no_cachefile(self, verbose=True):
-        cmd = ['zpool', 'import', '-f', '-o',
-               'cachefile='+os.path.join(rcEnv.paths.pathvar, 'zpool.cache'),
+        cmd = ['zpool', 'import', '-f', '-o', 'cachefile='+self.zpool_cache,
                self.name]
         if verbose:
             return self.vcall(cmd, errlog=verbose)
@@ -87,8 +92,7 @@ class Disk(resDisk.Disk):
         devzp = os.path.join(self.var_d, 'dev', 'dsk')
         if not os.path.isdir(devzp):
             return 1, "", ""
-        cmd = ['zpool', 'import', '-f', '-o',
-               'cachefile='+os.path.join(rcEnv.paths.pathvar, 'zpool.cache'),
+        cmd = ['zpool', 'import', '-f', '-o', 'cachefile='+self.zpool_cache,
                '-d', devzp, self.name]
         if verbose:
             return self.vcall(cmd, errlog=verbose)
@@ -109,10 +113,12 @@ class Disk(resDisk.Disk):
         if self.is_up():
             self.log.info("%s is already up" % self.name)
             return 0
+        self.zgenhostid()
         ret = self.import_pool()
         if ret != 0:
             raise ex.excError("failed to import pool")
         self.can_rollback = True
+        self.set_multihost()
 
     def do_stop(self):
         if not self.is_up():
@@ -197,3 +203,34 @@ class Disk(resDisk.Disk):
         imported.
         """
         return set(zpool_devs(self.name, self.svc.node))
+
+    def zgenhostid(self):
+        if self.multihost and not os.path.exists("/etc/hostid"):
+            try:
+                justcall(["zgenhostid"])
+            except Exception:
+                self.log.warning("/etc/hostid does not exist and zgenhostid is not installed")
+
+    def set_multihost(self):
+        if self.multihost is None:
+            # don't care
+            return
+        current = zpool_getprop(self.name, "multihost")
+        if current is "":
+            # not multihost capable (pre-0.7) or not imported
+            return
+        ret = 0
+        if self.multihost is True:
+            if current == "off":
+                ret = zpool_setprop(self.name, "multihost", "on", log=self.log)
+            else:
+                self.log.info("multihost is already on")
+        elif self.multihost is False:
+            if current == "on":
+                ret = zpool_setprop(self.name, "multihost", "off", log=self.log)
+            else:
+                self.log.info("multihost is already off")
+        if ret != 0:
+            raise ex.excError
+
+
