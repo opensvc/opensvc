@@ -2421,6 +2421,9 @@ class Svc(Crypt, ExtConfigMixin):
             print(out)
             if len(err) > 0:
                 print(err)
+        if ret == 127:
+            # opensvc is not installed
+            raise ex.excEncapUnjoignable
         if ret == 255:
             raise ex.excEncapUnjoignable
         if "print" not in cmd and "create" not in cmd:
