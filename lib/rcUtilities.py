@@ -1052,8 +1052,14 @@ def drop_option(option, cmd, drop_value=False):
     to_drop = []
     for i, word in enumerate(cmd):
         if word == option:
-            if drop_value:
+            if drop_value is True:
                 to_drop += [i, i+1]
+            elif is_string(drop_value):
+                if cmd[i+1].startswith(drop_value):
+                    to_drop += [i, i+1]
+                else:
+                    # do not drop option
+                    pass
             else:
                 to_drop += [i]
             continue
