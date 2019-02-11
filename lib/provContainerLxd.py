@@ -7,14 +7,6 @@ class Prov(provisioning.Prov):
     def is_provisioned(self):
         return self.r.has_it()
 
-    def start(self):
-        """
-        Replace the container.lxd start method, to bypass the initial
-        lxc import, as it can't suceed on nodes where the container
-        storage is not yet available.
-        """
-        pass
-
     def provisioner(self):
         if self.r.has_it():
             return
