@@ -71,8 +71,8 @@ class Disk(resDisk.Disk):
         state = self.zpool_health(self.name)
         if state == "ONLINE":
             return True
-        elif state == "DEGRADED":
-            self.status_log(state)
+        elif state in ("SUSPENDED", "DEGRADED"):
+            self.status_log(state.lower())
             return True
         return False
 
