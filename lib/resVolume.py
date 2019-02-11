@@ -27,16 +27,28 @@ class Volume(Res.Resource):
         self.pool = pool
         self.size = size
         self.format = format
-        self.label = name
         self.refresh_provisioned_on_provision = True
         self.refresh_provisioned_on_unprovision = True
 
     def __str__(self):
-        return "%s name=%s" % (Res.Resource.__str__(self), self.name)
+        return "%s name=%s" % (Res.Resource.__str__(self), self.volname)
+
+    def set_label(self):
+        self.label = self.volname
+
+    def on_add(self):
+        self.set_label()
+
+    @lazy
+    def volname(self):
+        if self.name:
+            return self.name
+        else:
+            return "%s-vol-%s" % (self.svc.svcname, self.rid.split("#")[-1])
 
     @lazy
     def volsvc(self):
-        return Svc(svcname=self.name, namespace=self.svc.namespace, node=self.svc.node)
+        return Svc(svcname=self.volname, namespace=self.svc.namespace, node=self.svc.node)
 
     @lazy
     def mount_point(self):
@@ -48,7 +60,7 @@ class Volume(Res.Resource):
 
     def stop(self):
         if not self.volsvc.exists():
-            self.log.info("volume %s does not exist", self.name)
+            self.log.info("volume %s does not exist", self.volname)
             return
         if self.volsvc.topology == "flex":
             return
@@ -57,7 +69,7 @@ class Volume(Res.Resource):
 
     def start(self):
         if not self.volsvc.exists():
-            raise ex.excError("volume %s does not exist" % self.name)
+            raise ex.excError("volume %s does not exist" % self.volname)
         if self.volsvc.action("start", options={"local": True}) != 0:
             raise ex.excError
         self.can_rollback = True
@@ -66,7 +78,7 @@ class Volume(Res.Resource):
 
     def _status(self, verbose=False):
         if not self.volsvc.exists():
-            self.status_log("volume %s does not exist" % self.name, "info")
+            self.status_log("volume %s does not exist" % self.volname, "info")
             return rcStatus.DOWN
         status = rcStatus.Status(self.volsvc.print_status_data()["avail"])
         return status

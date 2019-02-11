@@ -75,7 +75,7 @@ class Prov(provisioning.Prov):
         """
         volume = self.create_volume()
         self.claim(volume)
-        self.r.log.info("provision the %s volume service instance", self.r.name)
+        self.r.log.info("provision the %s volume service instance", self.r.volname)
 
         # will be rolled back by the volume resource. for now, the remaining
         # resources might need the volume for their provision
@@ -92,9 +92,9 @@ class Prov(provisioning.Prov):
         self.r.unset_lazy("volsvc")
 
     def create_volume(self):
-        volume = Svc(svcname=self.r.name, namespace=self.r.svc.namespace, node=self.r.svc.node)
+        volume = Svc(svcname=self.r.volname, namespace=self.r.svc.namespace, node=self.r.svc.node)
         if volume.exists():
-            self.r.log.info("volume %s already exists", self.r.name)
+            self.r.log.info("volume %s already exists", self.r.volname)
             data = volume.print_status_data(mon_data=True)
             if not data or "cluster" not in data:
                 return volume
@@ -103,11 +103,11 @@ class Prov(provisioning.Prov):
             if self.r.svc.options.leader and volume.topology == "failover" and \
                (self.owned() or not self.claimed(volume)) and \
                data["avail"] != "up" and data["cluster"]["avail"] == "up":
-                self.r.log.info("volume %s is up on peer, we are leader: take it over", self.r.name)
+                self.r.log.info("volume %s is up on peer, we are leader: take it over", self.r.volname)
                 volume.action("takeover", options={"wait": True, "time": 60})
             return volume
         elif not self.r.svc.options.leader:
-            self.r.log.info("volume %s does not exist, we are not leader: wait its propagation", self.r.name)
+            self.r.log.info("volume %s does not exist, we are not leader: wait its propagation", self.r.volname)
             self.r.wait_for_fn(lambda: volume.exists(), 10, 1,
                                "non leader instance waited for too long for the "
                                "volume to appear")
@@ -118,7 +118,7 @@ class Prov(provisioning.Prov):
             pooltype = None
         self.r.log.info("create new volume %s (pool name: %s, pool type: %s, "
                         "access: %s, size: %s, format: %s, shared: %s)",
-                        self.r.name, self.r.pool, pooltype, self.r.access,
+                        self.r.volname, self.r.pool, pooltype, self.r.access,
                         print_size(self.r.size, unit="B", compact=True),
                         self.r.format, self.r.shared)
         pool = self.r.svc.node.find_pool(poolname=self.r.pool,
