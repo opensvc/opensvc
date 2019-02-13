@@ -38,7 +38,7 @@ class Prov(provFs.Prov):
             raise ex.excError
         dataset = Dataset(self.r.device, log=self.r.log)
         mkfs_opt = ["-p"]
-        mkfs_opt += self.r.oget(self.r.rid, "mkfs_opt")
+        mkfs_opt += self.r.oget("mkfs_opt")
 
         if not any([True for e in mkfs_opt if e.startswith("mountpoint=")]):
             mkfs_opt += ['-o', 'mountpoint='+self.r.mount_point]
