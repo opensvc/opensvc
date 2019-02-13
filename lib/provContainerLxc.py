@@ -1,14 +1,16 @@
+import os
+import shutil
+
 import provisioning
 from rcGlobalEnv import rcEnv
-import os
+from rcUtilities import protected_dir
 import rcExceptions as ex
 
-class Prov(provisioning.Prov):
-    config_template = """\
-lxc.utsname = %(vm_name)s
+DEFAULT_CONFIG = """\
+lxc.utsname = %(hostname)s
 lxc.tty = 4
 lxc.pts = 1024
-lxc.console = /var/log/opensvc/%(vm_name)s.console.log
+lxc.console = /var/log/opensvc/%(hostname)s.console.log
 
 lxc.rootfs = %(rootfs)s
 lxc.cgroup.devices.deny = a
@@ -39,48 +41,14 @@ lxc.mount.entry=proc %(rootfs)s/proc proc nodev,noexec,nosuid 0 0
 lxc.mount.entry=devpts %(rootfs)s/dev/pts devpts defaults 0 0
 lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
 """
-    def __init__(self, r):
-        provisioning.Prov.__init__(self, r)
 
-        self.section = r.svc.config.defaults()
-        try:
-            self.rootfs = self.r.svc.conf_get(self.r.rid, 'rootfs')
-        except ex.OptNotFound:
-            self.rootfs = None
-            return
-
-        try:
-            self.template = self.r.svc.conf_get(self.r.rid, 'template')
-        except ex.OptNotFound:
-            self.template =None
-            return
-
-        # hostname file in the container rootfs
-        self.p_hostname = os.path.join(self.rootfs, 'etc', 'hostname')
-
-        self.vm_name = r.name
-
-        # lxc root conf dir
-        self.d_lxc = os.path.join(os.sep, 'var', 'lib', 'lxc')
-        if not os.path.exists(self.d_lxc):
-            self.d_lxc = os.path.join(os.sep, 'usr', 'local', 'var', 'lib', 'lxc')
-        if not os.path.exists(self.d_lxc):
-            self.d_lxc = None
-
-        # container config file
-        if self.d_lxc is not None:
-            self.config = os.path.join(self.d_lxc, self.vm_name, 'config')
-
-        # network config candidates
-        self.interfaces = os.path.join(self.rootfs, 'etc', 'network', 'interfaces')
-        self.network = os.path.join(self.rootfs, 'etc', 'sysconfig', 'network-scripts')
-
+class Prov(provisioning.Prov):
     def validate(self):
         if self.d_lxc is None:
             self.r.log.error("this node is not lxc capable")
             return True
 
-        if not self.check_vm_name():
+        if not self.check_hostname():
             return False
 
         if not self.check_lxc():
@@ -97,7 +65,7 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
     def setup_lxc_config(self):
         import tempfile
         f = tempfile.NamedTemporaryFile(delete=False)
-        f.write(self.config_template%dict(vm_name=self.vm_name, rootfs=self.rootfs))
+        f.write(DEFAULT_CONFIG % dict(hostname=self.r.vm_hostname, rootfs=self.rootfs))
         self.config = f.name
         f.close()
 
@@ -106,14 +74,14 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
             self.r.log.info("container is already created")
             return
         self.setup_lxc_config()
-        with open(os.path.join(rcEnv.paths.pathlog, "%s.console.log"%self.vm_name), "a+") as f:
+        with open(os.path.join(rcEnv.paths.pathlog, "%s.console.log"%self.r.name), "a+") as f:
             f.write("")
-        cmd = ['lxc-create', '-n', self.vm_name, '-f', self.config]
-        (ret, out, err) = self.r.vcall(cmd)
+        cmd = ['lxc-create', '-n', self.r.name, '-f', self.config]
+        ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
-    def check_vm_name(self):
+    def check_hostname(self):
         if not os.path.exists(self.p_hostname):
             return False
 
@@ -124,19 +92,19 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
             self.r.log.error("can not get container hostname")
             raise ex.excError
 
-        if h != self.vm_name:
-            self.r.log.info("container hostname is not %s"%self.vm_name)
+        if h != self.r.vm_hostname:
+            self.r.log.info("container hostname is not %s"%self.r.vm_hostname)
             return False
 
         return True
 
-    def set_vm_name(self):
-        if self.check_vm_name():
+    def set_hostname(self):
+        if self.check_hostname():
             self.r.log.info("container hostname already set")
             return
         with open(self.p_hostname, 'w') as f:
-            f.write(self.vm_name+'\n')
-        self.r.log.info("container hostname set to %s"%self.vm_name)
+            f.write(self.r.vm_hostname+'\n')
+        self.r.log.info("container hostname set to %s"%self.r.vm_hostname)
 
     def get_template(self):
         self.template_fname = os.path.basename(self.template)
@@ -166,7 +134,7 @@ lxc.mount.entry=sysfs %(rootfs)s/sys sysfs defaults 0 0
         tar.close()
 
     def setup_template(self):
-        self.set_vm_name()
+        self.set_hostname()
 
     def disable_udev(self):
         updaterc = os.path.join(self.rootfs, 'usr', 'sbin', 'update-rc.d')
@@ -193,51 +161,11 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
         if not os.path.exists(pub):
             self.r.log.error("no dsa found on node for root")
             return
-        import shutil
         if not os.path.exists(os.path.dirname(authkeys)):
             os.makedirs(os.path.dirname(authkeys))
         shutil.copyfile(pub, authkeys)
         os.chmod(authkeys, int('600', 8))
         self.r.log.info("setup hypervisor root trust")
-
-    def setup_ip(self, r):
-        self.purge_known_hosts(r.addr)
-        if os.path.exists(self.interfaces):
-            return self.setup_ip_debian(r)
-        elif os.path.exists(self.network):
-            return self.setup_ip_rh(r)
-
-    def setup_ip_rh(self, r):
-        r.getaddr()
-        buff = """
-DEVICE=%(ipdev)s
-IPADDR=%(ipaddr)s
-NETMASK=%(netmask)s
-ONBOOT=yes
-"""%dict(ipdev=r.ipdev, netmask=r.mask, ipaddr=r.addr)
-        intf = os.path.join(self.network, 'ifcfg-'+r.ipdev)
-        with open(intf, 'w') as f:
-            f.write(buff)
-
-    def setup_ip_debian(self, r):
-        r.getaddr()
-        buff = """
-auto lo
-iface lo inet loopback
-
-auto %(ipdev)s
-iface %(ipdev)s inet static
-    address %(ipaddr)s
-    netmask %(netmask)s
-
-"""%dict(ipdev=r.ipdev, netmask=r.mask, ipaddr=r.addr)
-        with open(self.interfaces, 'w') as f:
-            f.write(buff)
-
-    def setup_ips(self):
-        self.purge_known_hosts()
-        for resource in self.r.svc.get_resources("ip"):
-            self.setup_ip(resource)
 
     def purge_known_hosts(self, ip=None):
         if ip is None:
@@ -246,17 +174,73 @@ iface %(ipdev)s inet static
             cmd = ['ssh-keygen', '-R', ip]
         ret, out, err = self.r.vcall(cmd, err_to_info=True)
 
-    def provisioner(self):
-        if self.rootfs is None:
-            self.r.log.info("missing provisioning keyword: rootfs. skip")
-            return
-        if self.template is None:
-            self.r.log.info("missing provisioning keyword: template. skip")
-            return
-        path = self.rootfs
-
+    def unprovisioner(self):
+        rootfs = self.r.get_rootfs()
+        self.set_d_lxc()
+        if rootfs and os.path.exists(rootfs):
+            cmd = ["lxc-destroy", "--name", self.r.name]
+            ret, _, _ = self.r.vcall(cmd)
+            if ret != 0:
+                raise ex.excError
+        path = os.path.join(self.d_lxc, self.r.name)
         if not os.path.exists(path):
-            os.makedirs(path)
+            self.r.log.info("%s already cleaned up", path)
+            return
+        if protected_dir(path):
+            self.r.log.warning("refuse to remove %s", path)
+            return
+        self.r.log.info("rm -rf %s", path)
+        shutil.rmtree(path)
+
+    def set_d_lxc(self):
+        # lxc root conf dir
+        self.d_lxc = os.path.join(os.sep, 'var', 'lib', 'lxc')
+        if not os.path.exists(self.d_lxc):
+            self.d_lxc = os.path.join(os.sep, 'usr', 'local', 'var', 'lib', 'lxc')
+        if not os.path.exists(self.d_lxc):
+            self.d_lxc = None
+
+    def provisioner(self):
+        self.rootfs = self.r.oget("rootfs")
+        self.template = self.r.oget("template")
+
+        # hostname file in the container rootfs
+        self.p_hostname = os.path.join(self.rootfs, 'etc', 'hostname')
+        self.set_d_lxc()
+
+        if not os.path.exists(self.rootfs):
+            os.makedirs(self.rootfs)
+
+        if self.template is None or "://" not in self.template:
+            self.provisioner_lxc_create()
+        else:
+            self.provisioner_archive()
+
+    def provisioner_lxc_create(self):
+        cmd = ['lxc-create', '--name', self.r.name, "--dir", self.rootfs]
+        if self.r.cf:
+            cmd += ['-f', self.r.cf]
+        if self.template:
+            cmd += ['--template', self.template]
+        env = {
+            "DEBIAN_FRONTEND": "noninteractive",
+            "DEBIAN_PRIORITY": "critical",
+        }
+        mirror = self.r.oget("mirror")
+        if mirror:
+            env["MIRROR"] = mirror
+            env["SECURITY_MIRROR"] = mirror
+        security_mirror = self.r.oget("security_mirror")
+        if security_mirror:
+            env["SECURITY_MIRROR"] = security_mirror
+        ret, out, err = self.r.vcall(cmd, env=env)
+        if ret != 0:
+            raise ex.excError
+
+    def provisioner_archive(self):
+        # container config file
+        if self.d_lxc is not None:
+            self.config = os.path.join(self.d_lxc, self.r.name, 'config')
 
         self.get_template()
         self.unpack_template()

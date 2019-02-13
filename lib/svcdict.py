@@ -496,9 +496,31 @@ KEYWORDS = [
     {
         "section": "container",
         "keyword": "template",
-        "rtype": ["lxc", "vz", "zone"],
+        "rtype": ["vz", "zone"],
         "text": "Sets the url of the template unpacked into the container root fs.",
         "required": True,
+        "provisioning": True
+    },
+    {
+        "section": "container",
+        "keyword": "template",
+        "rtype": ["lxc"],
+        "text": "Sets the url of the template unpacked into the container root fs or the name of the template passed to lxc-create.",
+        "required": True,
+        "provisioning": True
+    },
+    {
+        "section": "container",
+        "keyword": "mirror",
+        "rtype": ["lxc"],
+        "text": "Sets the MIRROR environment variable for lxc-create, pointing the distribution server to use.",
+        "provisioning": True
+    },
+    {
+        "section": "container",
+        "keyword": "security_mirror",
+        "rtype": ["lxc"],
+        "text": "Sets the SECURITY_MIRROR environment variable for lxc-create, pointing the security distribution server to use. If not set but mirror is set, use mirror as the security mirror.",
         "provisioning": True
     },
     {

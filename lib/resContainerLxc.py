@@ -424,6 +424,8 @@ class Lxc(resContainer.Container):
                                         guestos=guestos,
                                         osvc_root_path=osvc_root_path,
                                         **kwargs)
+        self.refresh_provisioned_on_provision = True
+        self.refresh_provisioned_on_unprovision = True
         self.always_pg = True
         self.label = "lxc " + self.label
 
