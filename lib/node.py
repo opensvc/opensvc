@@ -4309,7 +4309,8 @@ class Node(Crypt, ExtConfigMixin):
         self.config.set("cluster", "name", cluster_name)
         self.config.set("cluster", "id", cluster_id)
         self.config.set("cluster", "nodes", " ".join(cluster_nodes))
-        self.config.set("cluster", "secret", secret)
+        # secret might be bytes, when passed from rejoin
+        self.config.set("cluster", "secret", secret.decode())
         if isinstance(dns, list) and len(dns) > 0:
             self.config.set("cluster", "dns", " ".join(dns))
         if isinstance(cluster_drpnodes, list) and len(cluster_drpnodes) > 0:
