@@ -99,7 +99,9 @@ class Lxc(resContainer.Container):
             if self.cf:
                 cmd += ['-f', self.cf]
         elif action == 'stop':
-            cmd = ['lxc-stop', '-n', self.name, '-o', outf]
+            cmd = ['lxc-stop', '-n', self.name]
+        elif action == 'kill':
+            cmd = ['lxc-stop', '--kill', '--name', self.name]
         else:
             raise ex.excError("unsupported lxc action: %s" % action)
 
@@ -222,10 +224,7 @@ class Lxc(resContainer.Container):
         self.cleanup_cgroup()
 
     def container_forcestop(self):
-        """ no harder way to stop a lxc container, raise to signal our
-            helplessness
-        """
-        raise ex.excError
+        self.lxc('kill')
 
     def get_pid(self):
         cmd = ['lxc-info', '--name', self.name, '-p']
