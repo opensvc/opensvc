@@ -782,13 +782,15 @@ class ExtConfigMixin(object):
         """
         Handle keyword and section deprecation.
         """
+        if config is None:
+            config = self.config
         section = s.split("#")[0]
         if section in self.kwdict.DEPRECATED_SECTIONS:
             section, rtype = self.kwdict.DEPRECATED_SECTIONS[section]
             fkey = ".".join((section, rtype, o))
         else:
             try:
-                rtype = self.config.get(s, "type")
+                rtype = config.get(s, "type")
                 fkey = ".".join((section, rtype, o))
             except Exception:
                 if hasattr(self, "svcname") and section == "sync":
