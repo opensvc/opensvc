@@ -28,6 +28,9 @@ class Prov(provisioning.Prov):
         pass
 
     def provisioner(self):
+        if self.is_provisioned():
+            self.r.log.info("already provisioned")
+            return
         name = self.r.name
         vdev = self.r.oget("vdev")
         multihost = self.r.oget("multihost")
