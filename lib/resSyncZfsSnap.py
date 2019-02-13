@@ -126,6 +126,8 @@ class syncZfsSnap(resSync.Sync):
             return
 
     def _status_one(self, dataset):
+        if not self.has_pool(dataset):
+            return
         try:
             ds = rcZfs.Dataset(dataset, log=self.log)
         except Exception as e:
@@ -141,6 +143,11 @@ class syncZfsSnap(resSync.Sync):
         limit = datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay)
         if last < limit:
             self.status_log("%s last snap is too old (%s)" % (dataset, last.strftime("%Y-%m-%d %H:%M:%S")))
+
+    def has_pool(self, dataset):
+        cmd = ["zfs", "list", "-H", "-o", "name", dataset.split("/")[0]]
+        _, _, ret = justcall(cmd)
+        return ret == 0
 
     def sync_status(self, verbose=False):
         self.remove_snaps()
