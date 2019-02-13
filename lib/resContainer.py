@@ -175,6 +175,9 @@ class Container(Res.Resource):
         return
 
     def abort_start_ping(self):
+        if self.svc.get_resources("ip"):
+            # we manage an ip, no need to try to ping the container
+            return False
         if self.type == "container.docker":
             # docker container for example
             return False
