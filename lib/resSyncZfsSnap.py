@@ -21,11 +21,14 @@ class syncZfsSnap(resSync.Sync):
                               rid=rid, type="sync.zfssnap",
                               **kwargs)
 
+        try:
+            self.dataset = [ds.strip("/") for ds in dataset]
+        except Exception:
+            self.dataset = dataset
         if name:
-            self.label = "zfs '%s' snapshot %s" % (name, ", ".join(dataset))
+            self.label = "zfs '%s' snapshot %s" % (name, ", ".join(self.dataset))
         else:
-            self.label = "zfs snapshot %s" % ", ".join(dataset)
-        self.dataset = dataset
+            self.label = "zfs snapshot %s" % ", ".join(self.dataset)
         self.recursive = recursive
         self.keep = keep
         self.name = name
@@ -61,13 +64,13 @@ class syncZfsSnap(resSync.Sync):
             raise ex.excError(str(e))
 
     @cache("zfs.list.snapshots.name")
-    def list_snaps(self, dataset):
+    def list_snaps(self):
         cmd = ["zfs", "list", "-r", "-H", "-t", "snapshot", "-o", "name"]
         out, err, ret = justcall(cmd)
         return out.splitlines()
 
     def remove_snap(self, dataset):
-        cursnaps = self.list_snaps(dataset)
+        cursnaps = self.list_snaps()
         snaps = {}
         for sv in cursnaps:
             s = sv.replace(dataset+"@", "")
@@ -101,7 +104,7 @@ class syncZfsSnap(resSync.Sync):
 
     def get_snaps(self, dataset):
         snaps = []
-        for sv in self.list_snaps(dataset):
+        for sv in self.list_snaps():
             s = sv.replace(dataset+"@", "")
             l = s.split('.')
             if len(l) < 2:
@@ -142,9 +145,6 @@ class syncZfsSnap(resSync.Sync):
     def sync_status(self, verbose=False):
         self.remove_snaps()
         for dataset in self.dataset:
-            if dataset.count("/") < 1:
-                self.status_log("misformatted dataset entry %s (expected <pool>/<ds>)" % dataset)
-                continue
             self._status_one(dataset)
         issues = set(self.status_logs_get(["warn"])) - set([''])
         if len(issues) == 0:
