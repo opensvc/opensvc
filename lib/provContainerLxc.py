@@ -156,10 +156,10 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
 """)
 
     def setup_authkeys(self):
-        pub = os.path.join(os.sep, 'root', '.ssh', 'id_dsa.pub')
+        pub = os.path.join(os.sep, 'root', '.ssh', 'id_rsa.pub')
         authkeys = os.path.join(self.rootfs, 'root', '.ssh', 'authorized_keys')
         if not os.path.exists(pub):
-            self.r.log.error("no dsa found on node for root")
+            self.r.log.error("no rsa key found on node for root")
             return
         if not os.path.exists(os.path.dirname(authkeys)):
             os.makedirs(os.path.dirname(authkeys))
