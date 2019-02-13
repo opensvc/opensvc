@@ -511,6 +511,15 @@ KEYWORDS = [
     },
     {
         "section": "container",
+        "keyword": "template_options",
+        "rtype": ["lxc"],
+        "text": "The arguments to pass through lxc-create to the per-template script.",
+        "convert": "shlex",
+        "default": [],
+        "provisioning": True
+    },
+    {
+        "section": "container",
         "keyword": "mirror",
         "rtype": ["lxc"],
         "text": "Sets the MIRROR environment variable for lxc-create, pointing the distribution server to use.",

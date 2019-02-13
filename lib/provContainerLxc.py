@@ -217,11 +217,14 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             self.provisioner_archive()
 
     def provisioner_lxc_create(self):
+        template_options = self.r.oget("template_options")
         cmd = ['lxc-create', '--name', self.r.name, "--dir", self.rootfs]
         if self.r.cf:
             cmd += ['-f', self.r.cf]
         if self.template:
             cmd += ['--template', self.template]
+            if template_options:
+                cmd += ["--"] + template_options
         env = {
             "DEBIAN_FRONTEND": "noninteractive",
             "DEBIAN_PRIORITY": "critical",
