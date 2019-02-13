@@ -41,10 +41,7 @@ class Prov(provisioning.Prov):
             return
         if not self.r.svc.config.get(self.r.rid, "docker_daemon_ip"):
             return
-        try:
-            args = self.r.svc.conf_get('DEFAULT', 'docker_daemon_args')
-        except ex.OptNotFound as exc:
-            args = exc.default
+        args = self.r.svc.oget('DEFAULT', 'docker_daemon_args')
         args += ["--ip", self.r.ipname]
         self.r.svc.config.set("DEFAULT", "docker_daemon_args", " ".join(args))
         self.r.svc.write_config()

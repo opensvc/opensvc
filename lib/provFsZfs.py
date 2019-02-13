@@ -38,10 +38,7 @@ class Prov(provFs.Prov):
             raise ex.excError
         dataset = Dataset(self.r.device, log=self.r.log)
         mkfs_opt = ["-p"]
-        try:
-            mkfs_opt += self.r.svc.conf_get(self.r.rid, "mkfs_opt")
-        except ex.OptNotFound:
-            pass
+        mkfs_opt += self.r.oget(self.r.rid, "mkfs_opt")
 
         if not any([True for e in mkfs_opt if e.startswith("mountpoint=")]):
             mkfs_opt += ['-o', 'mountpoint='+self.r.mount_point]
@@ -52,9 +49,8 @@ class Prov(provFs.Prov):
             dataset.create(mkfs_opt)
 
         nv_list = dict()
-        try:
-            size = self.r.svc.conf_get(self.r.rid, "size")
-        except ex.OptNotFound:
+        size = self.r.oget("size")
+        if not size:
             return
         if size:
             nv_list['refquota'] = "%dM" % convert_size(size, _to="m")

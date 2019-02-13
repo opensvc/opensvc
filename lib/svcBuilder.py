@@ -1719,7 +1719,7 @@ def add_resources(svc):
         for section in sections.get(restype, []):
             try:
                 add_resource(svc, restype, section)
-            except ex.RequiredOptNotFound:
+            except (ex.excError, ex.RequiredOptNotFound):
                 ret += 1
     add_mandatory_syncs(svc)
     return ret

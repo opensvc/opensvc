@@ -46,10 +46,7 @@ class Prov(provisioning.Prov):
             self.r.log.info("skip vxvol provisioning: %s %s" % (self.r.fullname, str(e)))
             return
 
-        try:
-            create_options = self.r.conf_get("create_options")
-        except ex.OptNotFound:
-            create_options = []
+        create_options = self.r.oget("create_options")
 
         # strip dev dir in case the alloc vxassist parameter was formatted using sub_devs
         # lazy references

@@ -27,12 +27,8 @@ class Prov(provisioning.Prov):
         self.r.svc.node.unset_lazy("devtree")
 
     def provisioner(self):
-        try:
-            self.path = self.r.loopFile
-            self.size = self.r.svc.conf_get(self.r.rid, "size")
-        except Exception as e:
-            raise ex.excError(str(e))
-
+        self.path = self.r.loopFile
+        self.size = self.r.oget("size")
         d = os.path.dirname(self.path)
         try:
             if not os.path.exists(d):

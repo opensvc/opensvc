@@ -18,9 +18,8 @@ class Prov(provisioning.Prov):
         self.populate()
 
     def populate(self):
-        try:
-            modulesets = self.r.conf_get("populate")
-        except ex.OptNotFound as exc:
+        modulesets = self.r.oget("populate")
+        if not modulesets:
             return
         try:
             os.environ["OPENSVC_VOL_PATH"] = self.r.vol_path

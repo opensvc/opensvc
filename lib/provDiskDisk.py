@@ -22,9 +22,9 @@ class Prov(provisioning.Prov):
         self.r.configure()
 
     def create_disk(self):
-        poolname = self.r.conf_get("pool")
-        name = self.r.conf_get("name")
-        size = self.r.conf_get("size")
+        poolname = self.r.oget("pool")
+        name = self.r.oget("name")
+        size = self.r.oget("size")
         pool = self.r.svc.node.get_pool(poolname)
         pool.log = self.r.log
         if self.r.shared:
@@ -64,8 +64,8 @@ class Prov(provisioning.Prov):
             self.r.log.info("skip unprovision: 'disk_id' is not set")
             return
         self.r.unconfigure()
-        poolname = self.r.conf_get("pool")
-        name = self.r.conf_get("name")
+        poolname = self.r.oget("pool")
+        name = self.r.oget("name")
         pool = self.r.svc.node.get_pool(poolname)
         pool.log = self.r.log
         if self.r.shared:

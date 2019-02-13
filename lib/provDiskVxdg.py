@@ -115,10 +115,7 @@ class Prov(provisioning.Prov):
         return data
 
     def provisioner(self):
-        try:
-            self.pvs = self.r.svc.conf_get(self.r.rid, "pvs")
-        except ex.RequiredOptNotFound:
-            raise ex.excError
+        self.pvs = self.r.oget("pvs")
 
         if self.pvs is None:
             # lazy reference not resolvable

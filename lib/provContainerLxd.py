@@ -10,11 +10,8 @@ class Prov(provisioning.Prov):
     def provisioner(self):
         if self.r.has_it():
             return
-        image = self.r.conf_get("launch_image")
-        try:
-            options = self.r.conf_get("launch_options")
-        except ex.OptNotFound as exc:
-            options = exc.default
+        image = self.r.oget("launch_image")
+        options = self.r.oget("launch_options")
         cmd = ["/usr/bin/lxc", "launch", image] + options + [self.r.name]
         ret, out, err = self.r.vcall(cmd, stdin=PIPE)
         if ret != 0:

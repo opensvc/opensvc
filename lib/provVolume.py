@@ -112,10 +112,7 @@ class Prov(provisioning.Prov):
                                "non leader instance waited for too long for the "
                                "volume to appear")
             return volume
-        try:
-            pooltype = self.r.conf_get("type")
-        except ex.OptNotFound:
-            pooltype = None
+        pooltype = self.r.oget("type")
         self.r.log.info("create new volume %s (pool name: %s, pool type: %s, "
                         "access: %s, size: %s, format: %s, shared: %s)",
                         self.r.volname, self.r.pool, pooltype, self.r.access,

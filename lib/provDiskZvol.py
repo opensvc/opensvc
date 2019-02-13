@@ -31,7 +31,7 @@ class Prov(provisioning.Prov):
         if self.r.has_it():
             self.r.log.info("zvol %s already exists", self.r.name)
             return
-        size = self.r.conf_get("size")
+        size = self.r.oget("size")
         create_options = self.r.oget("create_options")
         cmd = [rcEnv.syspaths.zfs, "create", "-V"]
         cmd += create_options

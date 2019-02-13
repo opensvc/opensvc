@@ -7,18 +7,15 @@ class Prov(provFs.Prov):
    info = ['diskutil', 'info']
 
    def do_mkfs(self):
-       try:
-           opts = self.r.svc.conf_get(self.r.rid, "mkfs_opt").split()
-       except:
-           opts = []
+       opts = self.r.oget("mkfs_opt")
        cmd = self.mkfs + opts + [self.mkfs_dev]
-       (ret, out, err) = self.r.vcall(cmd)
+       ret, out, err = self.r.vcall(cmd)
        if ret != 0:
            self.r.log.error('Failed to format %s'%self.mkfs_dev)
            raise ex.excError
        self.r.start()
        cmd = ["diskutil", "enableOwnership", self.mkfs_dev]
-       (ret, out, err) = self.r.vcall(cmd)
+       ret, out, err = self.r.vcall(cmd)
        if ret != 0:
            raise ex.excError
 

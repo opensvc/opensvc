@@ -30,10 +30,7 @@ class Prov(provisioning.Prov):
             return "/dev/" + self.r.fullname
 
         # the resource is a fs
-        try:
-            dev = self.r.conf_get("dev")
-        except ex.RequiredOptNotFound:
-            raise ex.excError
+        dev = self.r.oget("dev")
 
         if dev.startswith("LABEL=") or dev.startswith("UUID="):
             try:
@@ -45,10 +42,7 @@ class Prov(provisioning.Prov):
                 return
             dev = _dev
 
-        try:
-            vg = self.r.conf_get("vg")
-        except ex.RequiredOptNotFound:
-            raise ex.excError
+        vg = self.r.oget("vg")
 
         if dev.startswith('/dev/mapper/'):
             dev = dev.replace(vg.replace('-', '--')+'-', '')
@@ -139,10 +133,7 @@ class Prov(provisioning.Prov):
             self.r.log.info("skip lv provisioning: %s" % str(e))
             return
 
-        try:
-            create_options = self.r.conf_get("create_options")
-        except ex.OptNotFound:
-            create_options = []
+        create_options = self.r.oget("create_options")
         cmd = ['vgdisplay', vg]
         out, err, ret = justcall(cmd)
         if ret != 0:

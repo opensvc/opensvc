@@ -20,10 +20,7 @@ class Prov(provisioning.Prov):
             self.r.log.info("gce disk name %s already provisioned" % name)
             return
 
-        try:
-            size = self.r.svc.conf_get(self.r.rid, "size")
-        except:
-            raise ex.excError("gce disk name %s in %s: missing the 'size' parameter" % (name, self.r.rid))
+        size = self.r.oget("size")
         size = str(convert_size(size, _to="MB"))+'MB'
 
         cmd = ["gcloud", "compute", "disks", "create", "-q",

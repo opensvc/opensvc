@@ -776,6 +776,8 @@ class ExtConfigMixin(object):
             return self.conf_get(*args, **kwargs)
         except ex.OptNotFound as exc:
             return exc.default
+        except ex.RequiredOptNotFound as exc:
+            raise ex.excError(str(exc))
 
     def conf_get(self, s, o, t=None, scope=None, impersonate=None,
                  use_default=True, config=None, verbose=True):

@@ -19,13 +19,9 @@ class Prov(provisioning.Prov):
             self.r.log.error("lvcreate command not found")
             raise ex.excError
 
-        try:
-            self.size = self.r.svc.conf_get(self.r.rid, "size")
-            self.size = convert_size(self.size, _to="m")
-            self.vg = self.r.svc.conf_get(self.r.rid, "vg")
-        except Exception as e:
-            self.r.log.info("skip lv provisioning: %s" % str(e))
-            return
+        self.size = self.r.oget("size")
+        self.size = convert_size(self.size, _to="m")
+        self.vg = self.r.oget("vg")
 
         cmd = ['vgdisplay', self.vg]
         out, err, ret = justcall(cmd)

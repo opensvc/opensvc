@@ -19,27 +19,12 @@ class Prov(provisioning.Prov):
         """
         provisioning.Prov.__init__(self, r)
         self.log = self.r.log
-        self.section = r.svc.config.defaults()
-
-        try:
-            self.container_origin = r.conf_get("container_origin")
-        except ex.OptNotFound as exc:
-            self.container_origin = exc.default
-
-        if 'snapof' in self.section:
-            self.snapof = self.section['snapof']
-        else:
-            self.snapof = None
-
-        if 'snap' in self.section:
-            self.clone = self.section['snap']
-        else:
-            self.clone = "rpool/zones/" + r.name
-
-        if 'zonepath' in self.section:
-            self.zonepath = self.section['zonepath']
-        else:
-            self.zonepath = None
+        self.container_origin = self.r.oget("container_origin")
+        self.snapof = self.r.oget("snapof")
+        self.clone = self.r.oget("snap")
+        self.zonepath = self.r.oget("zonepath")
+        if not self.clone:
+            self.clone = "rpool/zones/" + self.r.name
 
     def stop(self):
         self.r._stop()

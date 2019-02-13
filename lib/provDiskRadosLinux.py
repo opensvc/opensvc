@@ -17,14 +17,9 @@ class Prov(provisioning.Prov):
         if self.r.exists(image):
             self.r.log.info("%s already provisioned"%image)
             return
-        size = self.r.conf_get('size')
+        size = self.r.oget('size')
         size = convert_size(size, _to="m")
-
-        try:
-            image_format = self.r.conf_get('image_format')
-        except ex.OptNotFound as exc:
-            image_format = exc.default
-
+        image_format = self.r.oget('image_format')
         cmd = self.r.rbd_rcmd() + ['create', '--size', str(size), image]
         if image_format:
             cmd += ["--image-format", str(image_format)]

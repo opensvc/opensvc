@@ -260,6 +260,14 @@ KEYWORDS = [
     },
     {
         "section": "container",
+        "rtype": "zone",
+        "keyword": "zonepath",
+        "at": True,
+        "text": "The zone path used to provision the container.",
+        "provisioning": True,
+    },
+    {
+        "section": "container",
         "keyword": "detach",
         "at": True,
         "rtype": "docker",
@@ -422,7 +430,7 @@ KEYWORDS = [
         "keyword": "snap",
         "rtype": ["kvm", "xen", "ovm", "zone", "esx"],
         "text": "The target snapshot/clone full path containing the new container disk files.",
-        "required": True,
+        "required": False,
         "provisioning": True
     },
     {
@@ -430,7 +438,7 @@ KEYWORDS = [
         "keyword": "snapof",
         "rtype": ["kvm", "xen", "ovm", "zone", "esx"],
         "text": "The snapshot origin full path containing the reference container disk files.",
-        "required": True,
+        "required": False,
         "provisioning": True
     },
     {
@@ -2046,6 +2054,7 @@ KEYWORDS = [
         "required": True,
         "at": True,
         "keyword": "devs",
+        "convert": "list",
         "rtype": "md",
         "provisioning": True,
         "example": "/dev/rbd0 /dev/rbd1",
@@ -2058,6 +2067,7 @@ KEYWORDS = [
         "keyword": "level",
         "rtype": "md",
         "provisioning": True,
+        "required": True,
         "example": "raid1",
         "text": "The md raid level to use with mdadm create command (see mdadm man for values)"
     },
@@ -2086,6 +2096,7 @@ KEYWORDS = [
         "provisioning": True,
         "convert": "integer",
         "example": "0",
+        "default": 0,
         "text": "The md number of spare devices to use with mdadm create command"
     },
     {

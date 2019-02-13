@@ -18,28 +18,15 @@ class Prov(provisioning.Prov):
     def provisioner(self):
         if which("mdadm") is None:
             raise ex.excError("mdadm is not installed")
-        try:
-            level = self.r.svc.conf_get(self.r.rid, "level")
-        except:
-            raise ex.excError("'level' provisioning parameter not set")
-        try:
-            devs = self.r.svc.conf_get(self.r.rid, "devs").split()
-        except:
-            raise ex.excError("'devs' provisioning parameter not set")
+
+        level = self.r.oget("level")
+        devs = self.r.oget("devs")
+        spares = self.r.oget('spares')
+        chunk = self.r.oget("chunk")
+        layout = self.r.oget("layout")
+
         if len(devs) == 0:
             raise ex.excError("at least 2 devices must be set in the 'devs' provisioning parameter")
-        try:
-            spares = self.r.svc.conf_get(self.r.rid, 'spares')
-        except:
-            spares = 0
-        try:
-            chunk = self.r.svc.conf_get(self.r.rid, 'chunk')
-        except:
-            chunk = None
-        try:
-            layout = self.r.svc.conf_get(self.r.rid, 'layout')
-        except:
-            layout = None
 
         # long md names cause a buffer overflow in mdadm
         name = self.r.devname()
