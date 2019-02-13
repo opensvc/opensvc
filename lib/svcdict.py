@@ -1894,6 +1894,7 @@ KEYWORDS = [
         "rtype": ["lv", "vxvol"],
         "keyword": "create_options",
         "convert": "shlex",
+        "default": [],
         "at": True,
         "provisioning": True,
         "text": "Additional options to pass to the logical volume create command (lvcreate or vxassist, depending on the driver). Size and name are alread set.",
@@ -1904,6 +1905,7 @@ KEYWORDS = [
         "rtype": rcEnv.fs_non_pooling,
         "keyword": "create_options",
         "convert": "shlex",
+        "default": [],
         "at": True,
         "provisioning": True,
         "text": "Additional options to pass to the logical volume create command. Size and name are alread set.",
@@ -2430,6 +2432,7 @@ KEYWORDS = [
         "section": "fs",
         "keyword": "mkfs_opt",
         "convert": "shlex",
+        "default": [],
         "provisioning": True,
         "at": True,
         "text": "Eventual mkfs additional options."
