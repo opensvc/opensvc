@@ -1232,7 +1232,11 @@ class ExtConfigMixin(object):
                                "build error: %s", str(exc))
                 ret["errors"] += 1
             if svc:
-                ret["errors"] += svc.init_resources()
+                try:
+                    ret["errors"] += svc.init_resources()
+                except Exception as exc:
+                    self.log.error(exc)
+                    ret["errors"] += 1
             return ret
 
         ret = validate_build(path, ret)
