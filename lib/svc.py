@@ -1583,7 +1583,7 @@ class Svc(Crypt, ExtConfigMixin):
             return {}
         return {}
 
-    def print_status_data_eval(self, refresh=False):
+    def print_status_data_eval(self, refresh=False, write_data=True):
         """
         Return a structure containing hierarchical status of
         the service.
@@ -1695,7 +1695,8 @@ class Svc(Crypt, ExtConfigMixin):
         data.update(group_status)
         if self.stonith and self.topology == "failover" and data["avail"] == "up":
             data["stonith"] = True
-        self.write_status_data(data)
+        if write_data:
+            self.write_status_data(data)
         return data
 
     def csum_status_data(self, data):
@@ -2131,20 +2132,30 @@ class Svc(Crypt, ExtConfigMixin):
             rsets_status[rset.rid] = rset.status(refresh=refresh)
         return rsets_status
 
+    def need_encap_resource_monitor(self):
+        for res in self.encap_resources.values():
+            if res.monitor or res.restart:
+                return True
+        return False
+
     def resource_monitor(self):
         """
         The resource monitor action. Refresh important resources at a different
         schedule.
         """
-        changed = False
+        data1 = self.print_status_data()
         for resource in self.get_resources():
             if resource.monitor or resource.nb_restart:
-                prev = resource.status()
-                curr = resource.status(refresh=True)
-                if prev != curr:
-                    changed = True
-        if changed:
-            self.update_status_data()
+                resource.status(refresh=True)
+        if self.need_encap_resource_monitor():
+            self.encap_cmd(["resource_monitor"])
+        data2 = self.print_status_data_eval(write_data=False)
+        import json_delta
+        diff = json_delta.diff(data1, data2, verbose=False, array_align=False, compare_lengths=False)
+        significant_changes = [change for change in diff if change[0][-1] not in ("updated", "csum")]
+        if significant_changes:
+            self.log.info("changes detected in monitored resources")
+            self.write_status_data(data2)
 
     def reboot(self):
         """
@@ -2426,7 +2437,9 @@ class Svc(Crypt, ExtConfigMixin):
             raise ex.excEncapUnjoignable
         if ret == 255:
             raise ex.excEncapUnjoignable
-        if "print" not in cmd and "create" not in cmd:
+        if "resource_monitor" in cmd:
+            self.encap_json_status(container, refresh=True, push_config=False, cache=False)
+        elif "print" not in cmd and "create" not in cmd:
             self.log.info("refresh encap json status after action")
             self.encap_json_status(container, refresh=True, push_config=push_config)
         if ret != 0:
@@ -2497,7 +2510,7 @@ class Svc(Crypt, ExtConfigMixin):
             egroups.add(egroup)
         return egroups
 
-    def encap_json_status(self, container, refresh=False, push_config=True):
+    def encap_json_status(self, container, refresh=False, push_config=True, cache=True):
         """
         Return the status data from the agent runnning the encapsulated part
         of the service.
@@ -2543,7 +2556,7 @@ class Svc(Crypt, ExtConfigMixin):
 
             return group_status
 
-        if not refresh:
+        if not refresh and cache:
             group_status = self.get_cache_encap_json_status(container.rid)
             if group_status:
                 return group_status
