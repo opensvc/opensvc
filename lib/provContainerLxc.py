@@ -252,7 +252,6 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
         self.disable_udev()
         self.setup_getty()
         self.setup_authkeys()
-        self.setup_ips()
 
         self.r.start()
         self.r.log.info("provisioned")
