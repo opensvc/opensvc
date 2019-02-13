@@ -175,13 +175,7 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
         ret, out, err = self.r.vcall(cmd, err_to_info=True)
 
     def unprovisioner(self):
-        rootfs = self.r.get_rootfs()
         self.set_d_lxc()
-        if rootfs and os.path.exists(rootfs):
-            cmd = ["lxc-destroy", "--name", self.r.name]
-            ret, _, _ = self.r.vcall(cmd)
-            if ret != 0:
-                raise ex.excError
         path = os.path.join(self.d_lxc, self.r.name)
         if not os.path.exists(path):
             self.r.log.info("%s already cleaned up", path)
