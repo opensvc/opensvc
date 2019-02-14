@@ -2951,10 +2951,9 @@ KEYWORDS = [
         "section": "volume",
         "keyword": "type",
         "provisioning": True,
-        "default": "directory",
         "at": True,
         "required": False,
-        "text": "The type of the pool to allocate from. If the 'pool' keyword is not set, this 'type' keyword must be set. The selected pool will be the one with the maximum available space."
+        "text": "The type of the pool to allocate from. The selected pool will be the one matching type and capabilities and with the maximum available space."
     },
     {
         "section": "volume",
