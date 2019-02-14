@@ -571,6 +571,7 @@ ACTIONS = {
             "options": [
                 OPT.filter,
                 OPT.format,
+                OPT.node,
                 OPT.hide_disabled,
                 OPT.refresh,
                 OPT.show_disabled,

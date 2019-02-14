@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2019\-02\-06
+.TH SVCMGR 1 2019\-02\-14
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -5863,6 +5863,9 @@ A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --hide-disabled
 Do not include the disabled resources. This option supersedes the :kw:`show_disabled` value in the service configuration.
