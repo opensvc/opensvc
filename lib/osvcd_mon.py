@@ -943,8 +943,7 @@ class Monitor(shared.OsvcThread):
                 self.set_smon(svc.svcpath, local_expect="unset")
             else:
                 return
-        not_from_manual = smon.global_expect != "started"
-        if not_from_manual and (self.instance_frozen(svc.svcpath) or self.freezer.node_frozen()):
+        if self.instance_frozen(svc.svcpath) or self.freezer.node_frozen():
             #self.log.info("service %s orchestrator out (frozen)", svc.svcpath)
             return
         if not self.rejoin_grace_period_expired:
@@ -960,7 +959,7 @@ class Monitor(shared.OsvcThread):
         if not self.pass_hard_affinities(svc):
             return
 
-        candidates = self.placement_candidates(svc, discard_frozen=not_from_manual)
+        candidates = self.placement_candidates(svc)
         if not self.pass_soft_affinities(svc, candidates):
             return
 
