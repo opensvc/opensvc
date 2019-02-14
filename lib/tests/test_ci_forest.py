@@ -14,7 +14,7 @@ class TestForest:
         """
         tree = Forest()
         tree.load({})
-        tree.print()
+        tree.out()
         overall_node = tree.add_node()
         overall_node.add_column("overall")
         node = overall_node.add_node()
