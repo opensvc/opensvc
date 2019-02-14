@@ -215,6 +215,8 @@ class Sync(Res.Resource, Scheduler):
         Extract normalized speed and transfered data size from the dd output
         """
         data = {}
+        if not buff:
+            return data
         words = bdecode(buff).split()
         if "bytes" in words:
             data["bytes"] = int(words[words.index("bytes")-1])
@@ -222,7 +224,13 @@ class Sync(Res.Resource, Scheduler):
             data["speed"] = int(convert_speed("".join(words[-2:])))
         return data
 
-    def update_stats(self, data, target=None):
+    def update_stats(self, *args, **kwargs):
+        try:
+            self._update_stats(*args, **kwargs)
+        except (KeyError, AttributeError):
+            pass
+
+    def _update_stats(self, data, target=None):
         self.log.info("transfered %s at %s",
             print_size(data["bytes"], unit="B"),
             print_size(data["speed"], unit="B")+"/s"
