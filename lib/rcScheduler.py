@@ -1036,7 +1036,7 @@ class Scheduler(object):
             node.add_column(data["config_parameter"])
             node.add_column(data["schedule_definition"])
 
-        tree.print()
+        tree.out()
 
     def _print_schedule_data(self):
         """

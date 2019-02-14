@@ -2391,7 +2391,7 @@ class Svc(Crypt, ExtConfigMixin):
                 for dev in __data:
                     devnode = catnode.add_node()
                     devnode.add_column(dev)
-        tree.print()
+        tree.out()
 
     def devs(self, categories=None):
         """
@@ -3152,7 +3152,7 @@ class Svc(Crypt, ExtConfigMixin):
                 catnode = node.add_node()
                 catnode.add_column(__data[-2], color.LIGHTBLUE)
                 catnode.add_column(__data[-1])
-        tree.print()
+        tree.out()
 
     def push_status(self):
         """

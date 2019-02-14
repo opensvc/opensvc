@@ -1342,7 +1342,7 @@ class Node(Crypt, ExtConfigMixin):
             node.add_column(str(n))
             node.add_column(self.asset.s_probe)
 
-        tree.print()
+        tree.out()
 
 
     def pushnsr(self):
@@ -1615,7 +1615,7 @@ class Node(Crypt, ExtConfigMixin):
             disk_node.add_column(print_size(disk["size"]))
             disk_node.add_column(disk["vdisk_id"])
 
-        tree.print()
+        tree.out()
 
     def push_disks_data(self):
         if self.svcs is None:
@@ -3953,7 +3953,7 @@ class Node(Crypt, ExtConfigMixin):
              node.add_column("%s" % print_duration(now-updated))
              node.add_column("%s" % ipaddr)
              node.add_column("%s" % print_size(size, unit="B"))
-        tree.print()
+        tree.out()
 
     def daemon_blacklist_status(self):
         """

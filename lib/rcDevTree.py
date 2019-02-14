@@ -304,7 +304,7 @@ class DevTree(object):
                 continue
             dev.print_dev(node=node, highlight=devices, verbose=verbose)
 
-        print(ftree)
+        ftree.out()
 
     def print_tree_bottom_up(self, devices=None, verbose=False):
         ftree = Forest()
@@ -325,7 +325,7 @@ class DevTree(object):
             dev.print_dev_bottom_up(node=node, highlight=devices,
                                     verbose=verbose)
 
-        print(ftree)
+        ftree.out()
 
     def has_relations(self, devname):
         l = []

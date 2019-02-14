@@ -165,5 +165,5 @@ class checks(check):
                     _node.add_column()
                 else:
                     _node.add_column(instance["driver"])
-        print(tree)
+        tree.out()
 

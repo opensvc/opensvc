@@ -279,8 +279,6 @@ def get_ers(idata, discard_disabled=False):
             ers[rid] = dispatch_resources(ejs, discard_disabled=discard_disabled)
         except KeyError:
             continue
-        except ex.excNotAvailable:
-            ers[rid] = {}
         except Exception as exc:
             print(exc)
             ers[rid] = {}
@@ -340,5 +338,5 @@ def format_service(svcpath, idata, mon_data=None, discard_disabled=False, volati
     add_scaler_slaves(node_svcname, idata, mon_data)
     add_slaves(node_svcname, idata, mon_data)
 
-    tree.print()
+    tree.out()
 

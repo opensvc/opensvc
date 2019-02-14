@@ -424,7 +424,7 @@ class Forest(object):
         self.separator = separator
         self.widths = widths
 
-    def print(self):
+    def out(self):
         """
         Print the forest to stdout.
         """
