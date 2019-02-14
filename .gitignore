@@ -1,3 +1,6 @@
+*.tmp
+*.orig
+*.rej
 *.pyc
 *.pyo
 *.class
