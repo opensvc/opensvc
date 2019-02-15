@@ -90,8 +90,9 @@ class Lxc(resContainer.Container):
 
     def lxc(self, action):
         self.find_cf()
-        outf = '/var/tmp/svc_'+self.name+'_lxc_'+action+'.log'
+        outf = None
         if action == 'start':
+            outf = '/var/tmp/svc_'+self.name+'_lxc_'+action+'.log'
             if self.capable("cgroup_dir"):
                 cmd = ["lxc-start", "-d", "-n", self.name, "-o", outf, "-s", "lxc.cgroup.dir="+self.cgroup_dir]
             else:
@@ -111,7 +112,10 @@ class Lxc(resContainer.Container):
         begin = datetime.now()
         ret, _, _ = self.vcall(cmd, preexec_fn=prex)
         duration = datetime.now() - begin
-        self.log.info('%s done in %s - ret %i - logs in %s', action, duration, ret, outf)
+        loginfo = '%s done in %s - ret %i'%(action, duration, ret)
+        if outf is not None:
+            loginfo += ' - logs in %s'%outf
+        self.log.info(loginfo)
         if ret != 0:
             raise ex.excError
 
