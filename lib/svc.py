@@ -1634,6 +1634,8 @@ class Svc(Crypt, ExtConfigMixin):
             data["pool"] = self.pool
 
         for sid, subset in self.resourcesets_by_id.items():
+            if not subset.parallel:
+                continue
             data["subsets"][sid] = {
                 "parallel": subset.parallel,
             }
