@@ -176,8 +176,18 @@ def add_res_node(resource, parent, idata, rid=None, discard_disabled=False):
 
     add_subsets(ers[rid], node_res, idata, discard_disabled=discard_disabled)
 
+def get_scope(svcpath, mon_data):
+    nodes = []
+    for ndata in mon_data.get("nodes", {}).values():
+        try:
+            nodes = ndata["services"]["config"][svcpath]["scope"]
+            break
+        except KeyError:
+            pass
+    return sorted(nodes)
+
 def add_instances(node, svcpath, ref_nodename, mon_data):
-    for nodename in sorted(list(mon_data.get("nodes", {}).keys())):
+    for nodename in get_scope(svcpath, mon_data):
         if nodename == ref_nodename:
             continue
         add_instance(node, nodename, svcpath, mon_data)
