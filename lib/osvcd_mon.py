@@ -2043,7 +2043,7 @@ class Monitor(shared.OsvcThread):
         for parent in svc.parents:
             if parent == svc.svcpath:
                 continue
-            if self.peer_transitioning(parent):
+            if self.peer_transitioning(parent, discard_local=False):
                 return True
         return False
 
@@ -2098,13 +2098,13 @@ class Monitor(shared.OsvcThread):
                 nodenames.append(nodename)
         return nodenames
 
-    def peer_transitioning(self, svcpath):
+    def peer_transitioning(self, svcpath, discard_local=True):
         """
         Return the nodename of the first peer with the service in a transition
         state.
         """
         for nodename, instance in self.get_service_instances(svcpath).items():
-            if nodename == rcEnv.nodename:
+            if discard_local and nodename == rcEnv.nodename:
                 continue
             if instance["monitor"]["status"].endswith("ing"):
                 return nodename
