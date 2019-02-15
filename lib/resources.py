@@ -415,7 +415,7 @@ class Resource(object):
             print(exc)
             return False
         except ex.excContinueAction as exc:
-            if self.options.cron:
+            if self.svc.options.cron:
                 # no need to flood the logs for scheduled tasks
                 self.log.debug(str(exc))
             else:
