@@ -34,7 +34,7 @@ def get_docker_argv(argv=None):
         return argv, []
     if "docker" not in argv:
         return argv, []
-    pos = argv.index('docker')
+    pos = argv.index("docker")
     if len(argv) > pos + 1:
         docker_argv = argv[pos+1:]
     else:
@@ -178,6 +178,9 @@ def _main(node, argv=None):
     argv, docker_argv = get_docker_argv(argv)
     optparser = SvcmgrOptParser()
     options, action = optparser.parse_args(argv)
+    if action == "deploy":
+        action = "create"
+        options.provision = True
     options = prepare_options(options)
     export_env_from_options(options)
     options.docker_argv = docker_argv

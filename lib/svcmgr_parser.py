@@ -939,6 +939,17 @@ ACTIONS = {
                 OPT.template,
             ],
         },
+        "deploy": {
+            "msg": "Create and provision a new service.",
+            "options": ACTION_OPTS + [
+                OPT.config,
+                OPT.disable_rollback,
+                OPT.interactive,
+                OPT.leader,
+                OPT.restore,
+                OPT.template,
+            ],
+        },
         "purge": {
             "msg": "Unprovision and delete selected services.",
             "options": ASYNC_ACTION_OPTS + ACTION_OPTS + [
