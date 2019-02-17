@@ -378,6 +378,18 @@ class Docker(resContainer.Container):
                     self.svc.register_dependency("stop", volrid, self.rid)
                     self.svc.register_dependency("start", self.rid, volrid)
                 l[0] = vol.mount_point
+                try:
+                    options = elements[2].split(",")
+                    options = drop_option("ro", options)
+                    options = drop_option("rw", options)
+                    del elements[2]
+                except Exception:
+                    options = []
+                if vol.volsvc.access.startswith("ro"):
+                    options.insert(0, "ro")
+                else:
+                    options.insert(0, "rw")
+                elements.append(",".join(options))
                 elements[0] = "/".join(l)
                 volumes.append(":".join(elements))
             elif not os.path.exists(elements[0]):

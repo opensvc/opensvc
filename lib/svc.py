@@ -656,6 +656,13 @@ class Svc(Crypt, ExtConfigMixin):
         return self.oget("DEFAULT", "disable")
 
     @lazy
+    def access(self):
+        """
+        Volume service property
+        """
+        return self.oget("DEFAULT", "access")
+
+    @lazy
     def children(self):
         children = self.oget('DEFAULT', "children")
         for i, child in enumerate(children):
