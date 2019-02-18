@@ -24,10 +24,13 @@ def generate_examples(fmt="text"):
         if svc_type_key is None:
             continue
         svc_types = svc_type_key.candidates
+        if svc_types is None:
+            svc_types = [None]
         for svc_type in svc_types:
             if svc_type is None:
-                continue
-            fpath = os.path.join(dpath, "template.service."+section+"."+svc_type+".example")
+                fpath = os.path.join(dpath, "template.service."+section+".example")
+            else:
+                fpath = os.path.join(dpath, "template.service."+section+"."+svc_type+".example")
             s = "Simplest configuration:"
             if fmt == "rst":
                 u = "\n\n::\n\n\tsvcmgr -s <svcname> set"
@@ -36,8 +39,9 @@ def generate_examples(fmt="text"):
             if fmt == "rst":
                 s += ":"
             s += "\n\n\t[" + section + "#0]\n"
-            s += "\ttype = " + svc_type + "\n"
-            u += " --kw " + section + "#0.type=" + svc_type
+            if svc_type:
+                s += "\ttype = " + svc_type + "\n"
+                u += " --kw " + section + "#0.type=" + svc_type
             for svc_k in sorted(svc_key[section].getkeys(svc_type)):
                 if svc_k is not None and svc_k.required:
                     s += "\t" + svc_k.keyword + " = " + svc_k.example + "\n"

@@ -32,7 +32,7 @@ class Keyword(object):
                  convert=None,
                  depends=[],
                  text="",
-                 example="foo",
+                 example=None,
                  provisioning=False):
         self.section = section
         self.keyword = keyword
@@ -50,11 +50,18 @@ class Keyword(object):
         self.strict_candidates = strict_candidates
         self.depends = depends
         self.text = text
-        self.example = example
         self.provisioning = provisioning
         self.convert = convert
         self.inheritance = inheritance
         self.scope_order = scope_order
+        if example is not None:
+            self.example = example
+        elif self.convert == "size":
+            self.example = "100m"
+        elif self.convert == "duration":
+            self.example = "1h"
+        else:
+            self.example = "foo"
 
         if self.default_text is None:
             self.default_text = self.default
