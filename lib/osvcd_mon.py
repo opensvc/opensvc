@@ -2888,7 +2888,7 @@ class Monitor(shared.OsvcThread):
                 # provision success, thaw
                 self.set_smon(svcpath, global_expect="thawed")
             else:
-                self.set_smon(svcpath, global_expect="unset")
+                self.set_smon(svcpath, global_expect="started")
         elif (smon.global_expect == "purged" and purged is True) or \
              (smon.global_expect == "deleted" and deleted is True):
             self.log.info("service %s global expect is %s, already is",
