@@ -110,10 +110,13 @@ class Node(node.Node):
         return sum(float(time) for time in
                 islice(stat_line.split(), 2, 5))
 
-    def network_route_add(self, dst=None, gw=None):
-        if dst is None or gw is None:
+    def network_route_add(self, dst=None, gw=None, dev=None):
+        if dst is None:
             return
-        cmd = ["ip", "route", "replace", dst, "via", gw]
+        if gw is not None:
+            cmd = ["ip", "route", "replace", dst, "via", gw]
+        elif dev is not None:
+            cmd = ["ip", "route", "replace", dst, "dev", dev]
         self.vcall(cmd)
 
     def network_bridge_add(self, name, ip):

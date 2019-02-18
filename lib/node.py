@@ -4799,6 +4799,10 @@ class Node(Crypt, ExtConfigMixin):
             return routes
         for nodename in self.cluster_nodes:
             if nodename == rcEnv.nodename:
+                routes.append({
+                    "dst": str(self.node_subnet(name, nodename)),
+                    "dev": "obr_"+name,
+                })
                 continue
             try:
                 gw = socket.getaddrinfo(nodename, None)[0][4][0]
