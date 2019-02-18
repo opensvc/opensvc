@@ -1,4 +1,5 @@
 #!/bin/bash
+
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 . $PATH_SCRIPT/make.lib
 
@@ -17,6 +18,19 @@ function changelog {
 }
 
 prepare_chroot || exit 1
+
+# cleanup generic chroot
+rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.init.AIX
+rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.init.Darwin
+rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.init.FreeBSD
+rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.init.hpux
+rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.init.OSF1
+rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.init.redhat
+rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.init.SunOS
+rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.init.suse
+rm -f $CHROOT/usr/share/opensvc/bin/init/darwin.com.opensvc.svcmgr.plist
+rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.agent.xml
+rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.defaults.parameters
 
 # upstream changelog
 changelog | gzip -c -9 -n | $SUDO tee $CHROOT/usr/share/doc/opensvc/changelog.gz >/dev/null
@@ -46,8 +60,8 @@ Version: $VERSION-$RELEASE
 Section: admin 
 Priority: optional
 Architecture: all
-Depends: python, psmisc
-Recommends: sg3-utils
+Depends: python (>= 2.6), psmisc
+Recommends: sg3-utils, python-crypto
 Installed-Size: 5000
 Maintainer: OpenSVC <support@opensvc.com>
 Provides: opensvc

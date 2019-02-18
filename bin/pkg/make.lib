@@ -1,8 +1,6 @@
-SUMMARY="Automation and configuration management agent"
-DESCRIPTION="The agent provisions, starts, stops, monitors and relocates applications \
-described as OpenSVC services. It centralizes nodes discovery and handles \
-nodes and services configuration management. It tracks system configuration \
-changes."
+SUMMARY="Cluster and configuration management agent"
+DESCRIPTION="A cluster agent to deploy, start, stop, monitor and relocate applications \
+described as services."
 
 umask 022
 
@@ -66,6 +64,7 @@ function prepare_chroot {
 
 	# install tracked files
 	cd $OSVC || return 1
+	git config tar.umask 0022
 	git archive --format=tar HEAD | ( cd $CHROOT/opt/opensvc && tar xf - )
 
 	# install version.py
@@ -76,13 +75,13 @@ function prepare_chroot {
 	for f in $(echo template*conf)
 	do
 		echo "gzip -9 -n $f"
-		gzip -n $f
+		gzip -9 -n $f
 	done
 	cd $CHROOT/opt/opensvc/usr/share/man/man1
 	for f in $(echo *.1)
 	do
 		echo "gzip -9 -n $f"
-		gzip -n $f
+		gzip -9 -n $f
 	done
 
 	# purge unwanted files
@@ -121,6 +120,9 @@ function prepare_chroot {
 	cd $OSVC
 	$SUDO chown -Rh 0:0 $CHROOT/* || return 1
 	$SUDO find $CHROOT -type d -exec $SUDO chmod 755 {} \; || return 1
+	$SUDO find $CHROOT/etc/bash_completion.d -type f -exec $SUDO chmod 644 {} \; || return 1
+	$SUDO find $CHROOT/usr/share/man -type f -exec $SUDO chmod 644 {} \; || return 1
+	$SUDO find $CHROOT/usr/share/doc -type f -exec $SUDO chmod 644 {} \; || return 1
 
 	return 0
 }

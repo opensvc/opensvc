@@ -2835,14 +2835,11 @@ class Node(Crypt, ExtConfigMixin):
                 ofile.write(chunk)
         ufile.close()
 
-    def install_svc_conf_from_templ(self, svcname, namespace, template, restore=False):
+    def install_svc_conf_from_templ(self, svcname, namespace, template, restore=False, info=None):
         """
         Download a provisioning template from the collector's rest api,
         and installs it as the service configuration file.
         """
-        pathetc = svc_pathetc(svcname, namespace)
-        fpath = os.path.join(pathetc, svcname+'.conf')
-        makedirs(pathetc)
         try:
             int(template)
             url = "/provisioning_templates/"+str(template)+"?props=tpl_definition&meta=0"
@@ -2855,11 +2852,11 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("service not found on the collector")
         if len(data["data"][0]["tpl_definition"]) == 0:
             raise ex.excError("service has an empty configuration")
-        with open(fpath, "w") as ofile:
+        with open(info.cf, "w") as ofile:
             ofile.write(data["data"][0]["tpl_definition"].replace("\\n", "\n").replace("\\t", "\t"))
-        self.install_svc_conf_from_file(svcname, namespace, fpath, restore)
+        self.install_svc_conf_from_file(svcname, namespace, info.cf, restore, info=info)
 
-    def install_svc_conf_from_uri(self, svcname, namespace, fpath, restore=False):
+    def install_svc_conf_from_uri(self, svcname, namespace, fpath, restore=False, info=None):
         """
         Download a provisioning template from an arbitrary uri,
         and installs it as the service configuration file.
@@ -2877,19 +2874,17 @@ class Node(Crypt, ExtConfigMixin):
                 os.unlink(tmpfpath)
             except OSError:
                 pass
-        self.install_svc_conf_from_file(svcname, namespace, tmpfpath, restore)
+        self.install_svc_conf_from_file(svcname, namespace, tmpfpath, restore, info=info)
 
-    def install_svc_conf_from_file(self, svcname, namespace, fpath, restore=False):
+    def install_svc_conf_from_file(self, svcname, namespace, fpath, restore=False, info=None):
         """
         Installs a local template as the service configuration file.
         """
         if not os.path.exists(fpath):
             raise ex.excError("%s does not exists" % fpath)
 
-        pathetc = svc_pathetc(svcname, namespace)
-        makedirs(pathetc)
         src_cf = os.path.realpath(fpath)
-        dst_cf = os.path.join(pathetc, svcname+'.conf')
+        dst_cf = info.cf
         if dst_cf == src_cf:
             return
 
@@ -2906,8 +2901,7 @@ class Node(Crypt, ExtConfigMixin):
         svc = Svc(svcname, cf=tmpfpath, node=self)
         if not restore:
             try:
-                svc.conf_get("DEFAULT", "id")
-                svc._unset("DEFAULT", "id")
+                svc.set_multi(["DEFAULT.id=%s" % info.id])
             except ex.OptNotFound:
                 pass
         svc.validate_config(tmpfpath)
@@ -2919,15 +2913,14 @@ class Node(Crypt, ExtConfigMixin):
             os.unlink(src_cf)
 
     @staticmethod
-    def install_svc_conf_from_data(svcname, namespace, data, restore=False):
+    def install_svc_conf_from_data(svcname, namespace, data, restore=False, info=None):
         """
         Installs a service configuration file from section, keys and values
         fed from a data structure.
         """
-        pathetc = svc_pathetc(svcname, namespace)
-        fpath = os.path.join(pathetc, svcname+'.conf')
         config = rcConfigParser.RawConfigParser()
 
+        config.set("DEFAULT", "id",info.id)
         for section_name, section in data.items():
             if section_name != "DEFAULT":
                 config.add_section(section_name)
@@ -2936,18 +2929,29 @@ class Node(Crypt, ExtConfigMixin):
                     if section_name == "DEFAULT" and key == "id":
                         continue
                 config.set(section_name, key, value)
-        makedirs(pathetc)
         import codecs
         try:
             if six.PY2:
-                with codecs.open(fpath, "w", "utf-8") as ofile:
+                with codecs.open(info.cf, "w", "utf-8") as ofile:
                     config.write(ofile)
             else:
-                with open(fpath, "w") as ofile:
+                with open(info.cf, "w") as ofile:
                     config.write(ofile)
         except Exception as exc:
-            print("failed to write %s: %s" % (fpath, exc), file=sys.stderr)
+            print("failed to write %s: %s" % (info.cf, exc), file=sys.stderr)
             raise Exception()
+
+    def install_service_info(self, svcname, namespace):
+        validate_name(svcname)
+        if namespace:
+            validate_name(namespace)
+        data = Storage()
+        data.pathetc = svc_pathetc(svcname, namespace)
+        data.cf = os.path.join(data.pathetc, svcname+'.conf')
+        from svc import Svc
+        data.id = Svc(svcname, namespace=namespace, volatile=True, cf=data.cf, node=self).id
+        makedirs(data.pathetc)
+        return data
 
     def install_service(self, svcpath, fpath=None, template=None,
                         restore=False, resources=[], namespace=None):
@@ -2970,14 +2974,8 @@ class Node(Crypt, ExtConfigMixin):
         if fpath is not None and template is not None:
             raise ex.excError("--config and --template can't both be specified")
 
-        if namespace:
-            validate_name(namespace)
-
         if svcpath:
             svcname, namespace = split_svcpath(svcpath)
-            validate_name(svcname)
-            if namespace:
-                validate_name(namespace)
         elif not data:
             raise ex.excError("feed service configurations to stdin and set --config=-")
         else:
@@ -2988,11 +2986,13 @@ class Node(Crypt, ExtConfigMixin):
                     _namespace = namespace
                 else:
                     svcname, _namespace = split_svcpath(_svcpath)
-                validate_name(svcname)
+                info = self.install_service_info(svcname, namespace)
                 print("create %s" % fmt_svcpath(svcname, _namespace))
-                self.install_svc_conf_from_data(svcname, _namespace, _data, restore)
+                self.install_svc_conf_from_data(svcname, _namespace, _data, restore, info)
                 self.install_service_files(svcname, namespace)
             return
+
+        info = self.install_service_info(svcname, namespace)
 
         if not exe_link_exists(svcname, namespace):
             # freeze before the installing the config so the daemon never
@@ -3001,21 +3001,21 @@ class Node(Crypt, ExtConfigMixin):
             Freezer(svcpath).freeze()
 
         if data is not None:
-            self.install_svc_conf_from_data(svcname, namespace, data, restore)
+            self.install_svc_conf_from_data(svcname, namespace, data, restore, info)
         elif template is not None:
             if "://" in template:
-                self.install_svc_conf_from_uri(svcname, namespace, template, restore)
+                self.install_svc_conf_from_uri(svcname, namespace, template, restore, info)
             elif os.path.exists(template):
-                self.install_svc_conf_from_file(svcname, namespace, template, restore)
+                self.install_svc_conf_from_file(svcname, namespace, template, restore, info)
             else:
-                self.install_svc_conf_from_templ(svcname, namespace, template, restore)
+                self.install_svc_conf_from_templ(svcname, namespace, template, restore, info)
         elif fpath is not None:
             if "://" in fpath:
-                self.install_svc_conf_from_uri(svcname, namespace, fpath, restore)
+                self.install_svc_conf_from_uri(svcname, namespace, fpath, restore, info)
             else:
-                self.install_svc_conf_from_file(svcname, namespace, fpath, restore)
+                self.install_svc_conf_from_file(svcname, namespace, fpath, restore, info)
         else:
-            self.install_svc_from_args(svcname, namespace, resources)
+            self.install_svc_from_args(svcname, namespace, resources, info)
 
         self.install_service_files(svcname, namespace)
         self.wake_monitor()
@@ -3062,7 +3062,7 @@ class Node(Crypt, ExtConfigMixin):
         except Exception as exc:
             self.log.debug(str(exc))
 
-    def install_svc_from_args(self, svcname, namespace=None, resources=[]):
+    def install_svc_from_args(self, svcname, namespace=None, resources=[], info=None):
         """
         Create a new service from resource definitions passed as individual
         dictionaries in json format.
@@ -3073,23 +3073,23 @@ class Node(Crypt, ExtConfigMixin):
         if svcname in list_services(namespace):
             print("service", svcname, "already exists", file=sys.stderr)
             return {"ret": 1}
-        pathetc = svc_pathetc(svcname, namespace)
-        cf = os.path.join(pathetc, svcname+'.conf')
-        if os.path.exists(cf):
-            import shutil
-            print(cf, "already exists. save as "+svcname+".conf.bak", file=sys.stderr)
-            shutil.move(cf, os.path.join(rcEnv.paths.pathtmp, svcname+".conf.bak"))
-        makedirs(pathetc)
+        if os.path.exists(info.cf):
+            if resources:
+                import shutil
+                bak = os.path.join(rcEnv.paths.pathtmp, svcname + ".conf.bak")
+                print(info.cf, "already exists. save as", bak, file=sys.stderr)
+                shutil.move(info.cf, bak)
+            else:
+                print(info.cf, "already exists")
+                return
         try:
-            f = open(cf, 'w')
+            f = open(info.cf, 'w')
         except:
-            print("failed to open", cf, "for writing", file=sys.stderr)
+            print("failed to open", info.cf, "for writing", file=sys.stderr)
             return {"ret": 1}
 
-        import uuid
-
         defaults = {
-           "id": str(uuid.uuid4()),
+           "id": info.id,
         }
         sections = {}
         rtypes = {}
