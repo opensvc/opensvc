@@ -276,7 +276,7 @@ class Hb(shared.OsvcThread):
                 change = True
         else:
             data_gen = data.get("gen", {}).get(nodename)
-            if data_gen is not None and nodename in shared.LOCAL_GEN and data_gen == shared.LOCAL_GEN[nodename]:
+            if data_gen is not None and shared.REMOTE_GEN.get(nodename) == data_gen:
                 # already installed
                 self.log.debug("already installed %d", data_gen)
                 return

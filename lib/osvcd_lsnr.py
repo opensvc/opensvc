@@ -1182,3 +1182,22 @@ class Listener(shared.OsvcThread):
                     msg_size = 0
                     lines = []
 
+    def action_ask_full(self, nodename, **kwargs):
+        """
+        Reset the gen number of the dataset of a peer node to force him
+        to resend a full.
+        """
+        peer = kwargs.get("peer")
+        if peer is None:
+            raise ex.excError("The 'peer' option must be set")
+        if peer == rcEnv.nodename:
+            raise ex.excError("Can't ask a full from ourself")
+        if peer not in self.cluster_nodes:
+            raise ex.excError("Can't ask a full from %s: not in cluster.nodes" % peer)
+        shared.REMOTE_GEN[peer] = 0
+        result = {
+            "info": "remote %s asked for a full" % peer,
+            "status": 0,
+        }
+        return result
+
