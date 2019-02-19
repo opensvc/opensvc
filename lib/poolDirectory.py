@@ -9,7 +9,7 @@ from rcGlobalEnv import rcEnv
 
 class Pool(pool.Pool):
     type = "directory"
-    capabilities = ["rox", "rwx", "roo", "rwo"]
+    capabilities = ["rox", "rwx", "roo", "rwo", "blk"]
 
     @lazy
     def path(self):
@@ -18,7 +18,21 @@ class Pool(pool.Pool):
         except ex.OptNotFound as exc:
             return exc.default
 
+    def translate_blk(self, name=None, size=None, shared=False):
+        data = [
+            {
+                "rtype": "disk",
+                "type": "loop",
+                "file": os.path.join(self.path, "%s.img" % name),
+                "size": size,
+            }
+        ]
+        data += self.add_sync_internal(data)
+        return data
+
     def translate(self, name=None, size=None, fmt=True, shared=False):
+        if not fmt:
+            return self.translate_blk(name=name, size=size, shared=shared)
         data = []
         path = os.path.join(self.path, name)
         data.append({
