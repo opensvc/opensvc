@@ -84,9 +84,10 @@ from comp import *
 from keyval_parser import Parser, ParserError
 
 class KeyVal(CompObject):
-    def __init__(self, prefix=None, path=None):
+    def __init__(self, prefix=None, path=None, separator=" "):
         CompObject.__init__(self, prefix=prefix, data=data)
         self.cf = path
+        self.separator = separator
 
     def init(self):
         self.nocf = False
@@ -107,8 +108,10 @@ class KeyVal(CompObject):
             if "keys" not in rule or not isinstance(rule["keys"], list):
                 continue
             path = rule["path"]
+            separator = rule.get("separator", self.separator)
             if path not in self.file_keys:
                 self.file_keys[path] = {
+                    "separator": separator,
                     "target_n_key": {},
                     "keys": rule["keys"],
                 }
@@ -125,7 +128,7 @@ class KeyVal(CompObject):
                     else:
                         data["target_n_key"][key['key']] += 1
             try:
-                data["conf"] = Parser(path)
+                data["conf"] = Parser(path, separator=data["separator"])
             except ParserError as e:
                 perror(e)
                 raise ComplianceError()

@@ -13,11 +13,12 @@ class ParserError(Exception):
     pass
 
 class Parser(object):
-    def __init__(self, path, section_markers=None):
+    def __init__(self, path, section_markers=None, separator=" "):
         self.path = path
         self.data = {}
         self.changed = False
         self.nocf = False
+        self.separator = separator
         self.keys = []
         self.sections = {}
         self.section_names = []
@@ -35,14 +36,14 @@ class Parser(object):
         for k in self.keys:
             if k in self.comments:
                 s += '\n'.join(self.comments[k]) + '\n'
-            s += '\n'.join([k + " " + str(v) for v in self.data[k]]) + '\n'
+            s += '\n'.join([k + self.separator + str(v) for v in self.data[k]]) + '\n'
         if len(self.comments[self.lastkey]) > 0:
             s += '\n'.join(self.comments[self.lastkey])
         for section, data in self.sections.items():
             s += section + '\n'
             for k in data["keys"]:
                 for v in data["data"][k]:
-                    s += "\t" + k + " " + str(v) + '\n'
+                    s += "\t" + k + self.separator + str(v) + '\n'
         return s
 
     def truncate(self, key, max):
@@ -90,7 +91,6 @@ class Parser(object):
 
     def load(self):
         if not os.path.exists(self.path):
-            raise ParserError("%s does not exist"%self.path)
             self.nocf = True
             return
         with open(self.path, 'r') as f:
@@ -155,12 +155,13 @@ class Parser(object):
             if len(line) == 0:
                 continue
 
-            l = line.split()
+            l = line.split(self.separator)
             if len(l) < 2:
                 self.comments[self.lastkey].append(line)
                 continue
             key = l[0]
             value = line[len(key):].strip()
+            key = key.strip()
 
             if key not in self.comments:
                 self.comments[key] = self.comments[self.lastkey]
@@ -174,7 +175,7 @@ class Parser(object):
                 pass
 
             if key in self.section_markers:
-                section = key + " " + value
+                section = key + self.separator + value
                 if section not in self.sections:
                     self.sections[section] = {"keys": [], "data": {}}
                     self.section_names.append(section)

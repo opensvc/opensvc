@@ -42,6 +42,13 @@ Inputs:
     LabelCss: file16
     Type: string
   -
+    Id: separator
+    Label: Separator
+    DisplayModeLabel: separator
+    LabelCss: key
+    Default: " "
+    Type: string
+  -
     Id: keys
     Label: Keys
     DisplayModeLabel: keys
@@ -63,9 +70,10 @@ from keyval_parser import Parser, ParserError
 import keyval
 
 class KeyVal(keyval.KeyVal):
-    def __init__(self, prefix=None, path=None):
+    def __init__(self, prefix=None, path=None, separator=" "):
         CompObject.__init__(self, prefix=prefix, data=data)
         self.cf = path
+        self.separator = separator
 
 if __name__ == "__main__":
     main(KeyVal)
