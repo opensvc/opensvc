@@ -57,10 +57,13 @@ OPT = Storage({
     "config": Option(
         "--config", default=None,
         action="store", dest="parm_config",
-        help="The configuration file to use as template when creating or "
+        help="The configuration to use as template when creating or "
              "installing a service. The value can be ``-`` or ``/dev/stdin`` "
              "to read the json-formatted configuration from stdin, or a file "
-             "path or uri pointing to a ini-formatted configuration."),
+             "path, or uri pointing to a ini-formatted configuration, or a "
+             "service selector expression (ATTENTION with cloning existing live "
+             "services that include more than containers, volumes and backend "
+             "ip addresses ... this could cause disruption on the cloned service)."),
     "cron": Option(
         "--cron", default=False,
         action="store_true", dest="cron",
