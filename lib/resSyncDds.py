@@ -27,6 +27,7 @@ class syncDds(resSync.Sync):
                 return
             r.get_info()
             if action == 'sync_full':
+                r.remove_snap1()
                 r.create_snap1()
             elif action in ['sync_update', 'sync_resync', 'sync_drp', 'sync_nodes']:
                 if action == 'sync_nodes' and self.target != ['nodes']:
@@ -147,7 +148,7 @@ class syncDds(resSync.Sync):
         p2 = Popen(cmd2, stdin=p1.stdout, stdout=PIPE)
         buff = p2.communicate()
         if p2.returncode == 0:
-            stats_buff = p2.communicate()[1]
+            stats_buff = buff[1]
             stats = self.parse_dd(stats_buff)
             self.update_stats(stats, target=node)
         else:
