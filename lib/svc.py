@@ -2947,12 +2947,28 @@ class Svc(Crypt, ExtConfigMixin):
         The 'print config' action entry point.
         Print the service configuration in the format specified by --format.
         """
+        if not os.path.exists(self.paths.cf):
+            buff = self.remote_service_config()
+            if buff is None:
+                raise ex.excError("could not fetch remote config")
+            import tempfile
+            try:
+                tmpfile = tempfile.NamedTemporaryFile()
+                fname = tmpfile.name
+                tmpfile.close()
+                with open(fname, "w") as tmpfile:
+                    tmpfile.write(buff)
+                svc = Svc(self.svcname, self.namespace, node=self.node, cf=fname, volatile=True)
+                svc.options = self.options
+                return svc.print_config()
+            finally:
+                try:
+                    os.unlink(fname)
+                except Exception:
+                    pass
         if self.options.format is not None or self.options.jsonpath_filter:
             return self.print_config_data(evaluate=self.options.eval,
                                           impersonate=self.options.impersonate)
-        if not os.path.exists(self.paths.cf):
-            raise ex.excError("service %s is not installed on this node" % \
-                              self.svcpath)
         from rcColor import print_color_config
         print_color_config(self.paths.cf)
 
@@ -4962,6 +4978,30 @@ class Svc(Crypt, ExtConfigMixin):
             return data
         except Exception as exc:
             self.log.warning("set monitor status failed: %s", str(exc))
+
+    def peer_service_config(self, nodename):
+        options = {
+            "svcpath": self.svcpath,
+        }
+        data = self.daemon_send(
+            {"action": "get_service_config", "options": options},
+            nodename=nodename,
+            silent=True,
+        )
+        if data["status"] != 0:
+            raise ex.excError(data.get("error"))
+        return data["data"]
+
+    def remote_service_config(self):
+        data = self.node._daemon_status(silent=True)["monitor"]["nodes"]
+        for ndata in data.values():
+            scope = ndata.get("services", {}).get("config", {}).get(self.svcpath, {}).get("scope", [])
+            if scope:
+                break
+        for peer in scope:
+            buff = self.peer_service_config(peer)
+            if buff:
+                return buff
 
     def daemon_service_action(self, cmd, nodename=None, sync=True, timeout=0, collect=False, action_mode=True):
         """
