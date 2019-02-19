@@ -7,7 +7,6 @@ data = {
   },
   "example_value": """
 {
-  "path": "/etc/ssh/sshd_config",
   "keys": [
     {
       "key": "PermitRootLogin",
