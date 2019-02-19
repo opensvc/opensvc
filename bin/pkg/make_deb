@@ -30,7 +30,6 @@ rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.init.SunOS
 rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.init.suse
 rm -f $CHROOT/usr/share/opensvc/bin/init/darwin.com.opensvc.svcmgr.plist
 rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.agent.xml
-rm -f $CHROOT/usr/share/opensvc/bin/init/opensvc.defaults.parameters
 
 # upstream changelog
 changelog | gzip -c -9 -n | $SUDO tee $CHROOT/usr/share/doc/opensvc/changelog.gz >/dev/null
@@ -50,7 +49,8 @@ chmod 755 $CHROOT/DEBIAN/preinst
 
 cat - <<-EOF >$CHROOT/DEBIAN/postinst
 #!/bin/sh -e
-/usr/share/opensvc/bin/postinstall
+which python3 && PYTHON=python3 || PYTHON=python
+\$PYTHON /usr/share/opensvc/bin/postinstall
 EOF
 chmod 755 $CHROOT/DEBIAN/postinst
 
