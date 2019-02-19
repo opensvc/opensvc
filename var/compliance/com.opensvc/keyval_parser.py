@@ -155,12 +155,12 @@ class Parser(object):
             if len(line) == 0:
                 continue
 
-            l = line.split(self.separator)
-            if len(l) < 2:
+            try:
+                key, value = line.split(self.separator, 1)
+            except Exception:
                 self.comments[self.lastkey].append(line)
                 continue
-            key = l[0]
-            value = line[len(key):].strip()
+            value = value.strip()
             key = key.strip()
 
             if key not in self.comments:
