@@ -2971,6 +2971,17 @@ class Node(Crypt, ExtConfigMixin):
                 except ValueError:
                     raise ex.excError("invalid json feed")
 
+        if data is None and fpath and "://" not in fpath and not os.path.exists(fpath):
+            # service selector
+            svcpaths = self.svcs_selector(fpath)
+            data = {}
+            from svc import Svc
+            for _svcpath in svcpaths:
+                 name, _namespace = split_svcpath(_svcpath)
+                 svc = Svc(name, _namespace, node=self)
+                 svc.options.format = "json"
+                 data[_svcpath] = svc.print_config()
+
         if fpath is not None and template is not None:
             raise ex.excError("--config and --template can't both be specified")
 
