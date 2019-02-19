@@ -680,10 +680,14 @@ def install_params(path2file):
         return
 
     src = os.path.join(pathini, 'opensvc.defaults.parameters')
-
+    with open(src, "r") as f:
+        buff = f.read()
+    if sys.executable != "/usr/bin/python":
+        buff += "OSVC_PYTHON=%s\n" % sys.executable
     try:
         logit("writing new <%s>"%path2file)
-        shutil.copy(src, path2file)
+        with open(path2file, "w") as f:
+            f.write(buff)
         os.chmod(path2file, p0644)
     except:
         import traceback
