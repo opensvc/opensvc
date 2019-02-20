@@ -121,6 +121,8 @@ class NodeConf(CompObject):
             out = int(out)
         except:
             pass
+        if out == "None":
+            out = None
         return out
 
     def _check_key(self, keyname, target, op, value, verbose=True):
