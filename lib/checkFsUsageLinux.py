@@ -41,6 +41,8 @@ class check(checks.check):
                 continue
             if l[5].startswith('/snap/'):
                 continue
+            if "/overlay2/" in l[5]:
+                continue
             if "/snapd/" in l[5]:
                 continue
             if "/graph/" in l[5]:
