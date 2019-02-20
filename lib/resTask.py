@@ -42,6 +42,7 @@ class Task(Res.Resource):
     default_optional = True
     def __init__(self,
                  rid=None,
+                 type="task",
                  command=None,
                  user=None,
                  on_error=None,
@@ -50,7 +51,7 @@ class Task(Res.Resource):
                  confirmation=False,
                  log=True,
                  **kwargs):
-        Res.Resource.__init__(self, rid, type="task", **kwargs)
+        Res.Resource.__init__(self, rid, type=type, **kwargs)
         self.command = command
         self.on_error = on_error
         self.user = user
@@ -138,6 +139,16 @@ class Task(Res.Resource):
                 self.log.info(data.get("info", ""))
             except Exception as exc:
                 self.log.warning(exc)
+        self._run_call()
+        if self.snooze:
+            try:
+                data = self.svc._unsnooze()
+                self.log.info(data.get("info", ""))
+            except Exception as exc:
+                self.log.warning(exc)
+
+
+    def _run_call(self):
         kwargs = {
             'timeout': self.timeout,
             'blocking': True,
@@ -151,13 +162,6 @@ class Task(Res.Resource):
                 kwargs["blocking"] = False
                 self.action_triggers("", "on_error", **kwargs)
             raise ex.excError
-
-        if self.snooze:
-            try:
-                data = self.svc._unsnooze()
-                self.log.info(data.get("info", ""))
-            except Exception as exc:
-                self.log.warning(exc)
 
     def _status(self, verbose=False):
         return rcStatus.NA

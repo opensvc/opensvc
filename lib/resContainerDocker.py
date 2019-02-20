@@ -60,7 +60,7 @@ ATTR_MAP = {
 def alarm_handler(signum, frame):
     raise KeyboardInterrupt
 
-class Docker(resContainer.Container):
+class Container(resContainer.Container):
     """
     Docker container resource driver.
     """
@@ -69,6 +69,7 @@ class Docker(resContainer.Container):
     def __init__(self,
                  rid,
                  name="",
+                 type="container.docker",
                  image=None,
                  run_command=None,
                  run_args=None,
@@ -91,7 +92,7 @@ class Docker(resContainer.Container):
         resContainer.Container.__init__(self,
                                         rid=rid,
                                         name="",
-                                        type="container.docker",
+                                        type=type,
                                         guestos=guestos,
                                         osvc_root_path=osvc_root_path,
                                         **kwargs)
@@ -128,6 +129,12 @@ class Docker(resContainer.Container):
         except ex.excError:
             # volume not created yet
             pass
+
+    def abort_start_ping(self, *args, **kwargs):
+        return False
+
+    def getaddr(self, *args, **kwargs):
+        return
 
     @lazy
     def container_name(self):

@@ -1056,7 +1056,7 @@ class Svc(Crypt, ExtConfigMixin):
                 'sync_resync', 'sync_break',
                 'sync_update',
             ]
-        if resource.type == "task":
+        if resource.type in ("task", "task.docker"):
             actions += [
                 'run',
             ]

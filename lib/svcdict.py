@@ -30,7 +30,9 @@ DEPRECATED_KEYWORDS = {
   "disk.zpool.poolname": "name",
   "always_on": None,
   "container.docker.run_image": "image",
+  "container.docker.run_command": "command",
   "container.docker.net": "netns",
+  "task.docker.run_command": "command",
   "ip.docker.container_rid": "netns",
   "ip.netns.container_rid": "netns",
   "ip.cni.container_rid": "netns",
@@ -43,6 +45,7 @@ REVERSE_DEPRECATED_KEYWORDS = {
   "DEFAULT.hard_affinity": "affinity",
   "DEFAULT.hard_anti_affinity": "anti_affinity",
   "container.docker.image": "run_image",
+  "container.docker.command": "run_command",
   "container.docker.netns": "net",
   "disk.lvm.name": "vgname",
   "disk.pool.name": "poolname",
@@ -51,6 +54,7 @@ REVERSE_DEPRECATED_KEYWORDS = {
   "ip.docker.netns": "container_rid",
   "ip.netns.netns": "container_rid",
   "ip.cni.netns": "container_rid",
+  "task.docker.command": "run_command",
 }
 
 DEPRECATED_SECTIONS = {
@@ -276,15 +280,15 @@ KEYWORDS = [
         "text": "Run container in background. Set to False only for init containers, alongside start_timeout and the nostatus tag.",
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "entrypoint",
         "at": True,
         "rtype": "docker",
-        "text": "The script or binary executed in the container. Args must be set in :kw:`run_command`.",
+        "text": "The script or binary executed in the container. Args must be set in :kw:`command`.",
         "example": "/bin/sh"
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "rm",
         "at": True,
         "rtype": "docker",
@@ -294,7 +298,7 @@ KEYWORDS = [
         "example": False
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "volume_mounts",
         "at": True,
         "rtype": "docker",
@@ -304,7 +308,7 @@ KEYWORDS = [
         "example": "myvol1:/vol1 myvol2:/vol2"
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "devices",
         "at": True,
         "rtype": "docker",
@@ -314,7 +318,7 @@ KEYWORDS = [
         "example": "myvol1:/dev/xvda myvol2:/dev/xvdb"
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "netns",
         "at": True,
         "rtype": "docker",
@@ -322,7 +326,7 @@ KEYWORDS = [
         "example": "container#0"
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "userns",
         "at": True,
         "rtype": "docker",
@@ -331,7 +335,7 @@ KEYWORDS = [
         "example": "container#0"
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "pidns",
         "at": True,
         "rtype": "docker",
@@ -339,7 +343,7 @@ KEYWORDS = [
         "example": "container#0"
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "ipcns",
         "at": True,
         "rtype": "docker",
@@ -347,7 +351,7 @@ KEYWORDS = [
         "example": "container#0"
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "utsns",
         "at": True,
         "rtype": "docker",
@@ -356,7 +360,7 @@ KEYWORDS = [
         "example": "container#0"
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "privileged",
         "at": True,
         "rtype": "docker",
@@ -365,7 +369,7 @@ KEYWORDS = [
         "example": "container#0"
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "interactive",
         "at": True,
         "rtype": "docker",
@@ -374,7 +378,7 @@ KEYWORDS = [
         "example": "container#0"
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "tty",
         "at": True,
         "rtype": "docker",
@@ -383,7 +387,7 @@ KEYWORDS = [
         "example": "container#0"
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "name",
         "at": True,
         "rtype": "docker",
@@ -391,7 +395,7 @@ KEYWORDS = [
         "text": "The name to assign to the container on docker run. If none is specified a <svcname>.container.<rid idx> name is automatically assigned."
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "image",
         "at": True,
         "required": True,
@@ -400,8 +404,8 @@ KEYWORDS = [
         "example": "83f2a3dd2980"
     },
     {
-        "section": "container",
-        "keyword": "run_command",
+        "sections": ["task", "container"],
+        "keyword": "command",
         "at": True,
         "rtype": "docker",
         "convert": "shlex",
@@ -409,7 +413,7 @@ KEYWORDS = [
         "example": "/opt/tomcat/bin/catalina.sh"
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "run_args",
         "at": True,
         "rtype": "docker",
@@ -541,7 +545,7 @@ KEYWORDS = [
         "text": "Set if the container hostname is different from the container name."
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "keyword": "hostname",
         "at": True,
         "rtype": rcEnv.vt_supported,
@@ -2284,7 +2288,7 @@ KEYWORDS = [
         "text": "If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
     },
     {
-        "section": "container",
+        "sections": ["task", "container"],
         "rtype": ["docker"],
         "keyword": "start_timeout",
         "convert": "duration",
@@ -2875,6 +2879,12 @@ KEYWORDS = [
         "required": True,
         "at": True,
         "text": "Path of the device or file used as a virtual machine disk. The path@nodename can be used to to set up different path on each node."
+    },
+    {
+        "section": "task",
+        "keyword": "type",
+        "candidates": [None, "docker"],
+        "text": "The type of task. Default tasks run on the host, their use is limited to the cluster admin population. Containerized tasks are safe for unprivileged population."
     },
     {
         "section": "task",
