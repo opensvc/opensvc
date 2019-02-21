@@ -11,7 +11,7 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
-from rcUtilities import mimport, check_privs, list_services, fix_exe_link, \
+from rcUtilities import mimport, check_privs, list_services, \
                         svc_pathetc, split_svcpath, makedirs
 
 def get_tags(svc, section):

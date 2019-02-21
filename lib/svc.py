@@ -4384,6 +4384,7 @@ class Svc(Crypt, ExtConfigMixin):
         Delete the service configuration files
         """
         import shutil
+        from rcUtilities import svclink_path
         dpaths = [
             self.paths.alt_initd,
             self.paths.initd,
@@ -4391,7 +4392,7 @@ class Svc(Crypt, ExtConfigMixin):
         ]
         fpaths = [
             self.paths.cf,
-            self.paths.exe,
+            svclink_path(self.svcname, self.namespace, self.node.cluster_name),
             self.paths.initd,
         ]
         for fpath in fpaths:

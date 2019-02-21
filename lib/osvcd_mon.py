@@ -23,8 +23,8 @@ from rcGlobalEnv import rcEnv
 from storage import Storage
 from rcUtilities import bdecode, purge_cache, fsum, glob_services_config, \
                         svc_pathetc, svc_pathvar, makedirs, split_svcpath, \
-                        list_services, svc_pathcf, fmt_svcpath
-from svcBuilder import build, fix_exe_link
+                        list_services, svc_pathcf, fmt_svcpath, create_svclink
+from svcBuilder import build
 from freezer import Freezer
 from jsonpath_ng import jsonpath, parse
 
@@ -256,7 +256,7 @@ class Monitor(shared.OsvcThread):
 
     def init_new_service(self, svcpath):
         name, namespace = split_svcpath(svcpath)
-        fix_exe_link(name, namespace)
+        create_svclink(name, namespace, self.cluster_name)
         try:
             shared.SERVICES[svcpath] = build(name, namespace, node=shared.NODE)
         except Exception as exc:

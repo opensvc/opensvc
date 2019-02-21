@@ -46,7 +46,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         list_services, init_locale, ANSI_ESCAPE, svc_pathetc, \
                         makedirs, exe_link_exists, fmt_svcpath, \
                         glob_services_config, split_svcpath, validate_name, \
-                        unset_all_lazy
+                        unset_all_lazy, create_svclink
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -3005,7 +3005,7 @@ class Node(Crypt, ExtConfigMixin):
 
         info = self.install_service_info(svcname, namespace)
 
-        if not exe_link_exists(svcname, namespace):
+        if not exe_link_exists(svcname, namespace, self.cluster_name):
             # freeze before the installing the config so the daemon never
             # has a chance to consider the new service unfrozen and take undue
             # action before we have the change to modify the service config
@@ -3031,23 +3031,11 @@ class Node(Crypt, ExtConfigMixin):
         self.install_service_files(svcname, namespace)
         self.wake_monitor()
 
-    @staticmethod
-    def install_service_files(svcname, namespace=None):
+    def install_service_files(self, svcname, namespace=None):
         """
         Given a service name, install the symlink to svcmgr.
         """
-        if rcEnv.sysname == 'Windows':
-            return
-
-        # install svcmgr link
-        pathetc = svc_pathetc(svcname, namespace)
-        makedirs(pathetc)
-        svcmgr_l = os.path.join(pathetc, svcname)
-        if not os.path.exists(svcmgr_l):
-            os.symlink(rcEnv.paths.svcmgr, svcmgr_l)
-        elif os.path.realpath(rcEnv.paths.svcmgr) != os.path.realpath(svcmgr_l):
-            os.unlink(svcmgr_l)
-            os.symlink(rcEnv.paths.svcmgr, svcmgr_l)
+        create_svclink(svcname, namespace, self.cluster_name)
 
     def set_rlimit(self, nofile=4096):
         """

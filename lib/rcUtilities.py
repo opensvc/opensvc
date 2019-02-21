@@ -277,12 +277,6 @@ def ximport(base):
     m = __import__(mod)
     return m
 
-def check_svclink_ns(svclink, namespace):
-    if namespace and "/namespaces/%s/" % namespace not in svclink:
-        raise ex.excError("Service link '%s' doesn't belong to namespace '%s'.\n"
-                          "Use a service selector expression to select a "
-                          "service from a foreign namespace." % (os.path.basename(svclink), namespace))
-
 def check_privs():
     if os.name == 'nt':
         return
@@ -1167,14 +1161,6 @@ def list_services(namespace=None):
 def glob_services_config():
     return glob.glob(GLOB_SVC_CONF) + glob.glob(GLOB_SVC_CONF_NS)
 
-def svcpath_from_link(svclink):
-    try:
-        l = svclink.split(os.sep)
-        l = l[l.index("namespaces")+1:]
-        return os.path.join(*l)
-    except Exception as exc:
-        return os.path.basename(svclink)
-
 def split_svcpath(path):
     path = path.strip("/")
     if not path:
@@ -1213,12 +1199,46 @@ def fmt_svcpath(name, namespace):
     else:
         return name
 
-def exe_link_exists(svcname, namespace):
+def svc_fullname(svcname, namespace, clustername):
+    return "%s.%s.svc.%s" % (
+        svcname,
+        namespace if namespace else "root",
+        clustername
+    )
+
+def split_svclink(svclink):
+    bn = os.path.basename(svclink)
+    if ".svc." not in bn:
+        return bn, None
+    return bn.split(".svc.", 1)[0].rsplit(".", 1)
+
+def svcpath_from_link(svclink):
+    svcname, namespace = split_svclink(svclink)
+    if namespace:
+        return "/".join((namespace, svcname))
+    return svcname
+
+def check_svclink_ns(svclink, namespace):
+    svcname, linkns = split_svclink(svclink)
+    if namespace and linkns != namespace:
+        raise ex.excError("Service link '%s' doesn't belong to namespace '%s'.\n"
+                          "Use a service selector expression to select a "
+                          "service from a foreign namespace." % (os.path.basename(svclink), namespace))
+
+def svclink_path(svcname, namespace, clustername):
+    pathetc = svc_pathetc(svcname, namespace)
+    if namespace:
+        bn = svc_fullname(svcname, namespace, clustername)
+    else:
+        bn = svcname
+    return os.path.join(rcEnv.paths.pathetc, bn)
+
+def exe_link_exists(svcname, namespace, clustername):
     if os.name != 'posix':
         return False
-    pathetc = svc_pathetc(svcname, namespace)
+    path = svclink_path(svcname, namespace, clustername)
     try:
-        p = os.readlink(os.path.join(pathetc, svcname))
+        p = os.readlink(path)
         if p == rcEnv.paths.svcmgr:
             return True
         else:
@@ -1226,24 +1246,23 @@ def exe_link_exists(svcname, namespace):
     except:
         return False
 
-def fix_exe_link(svcname, namespace):
+def create_svclink(svcname, namespace, clustername):
     """
     Create the <svcname> -> svcmgr symlink
     """
     if os.name != 'posix':
         return
-    pathetc = svc_pathetc(svcname, namespace)
-    if not os.path.exists(os.path.join(pathetc, svcname+".conf")):
-        return
-    os.chdir(pathetc)
+    path = svclink_path(svcname, namespace, clustername)
     try:
-        p = os.readlink(svcname)
+        p = os.readlink(path)
     except:
-        os.symlink(rcEnv.paths.svcmgr, svcname)
+        os.chdir(rcEnv.paths.pathetc)
+        os.symlink(rcEnv.paths.svcmgr, path)
         p = rcEnv.paths.svcmgr
     if p != rcEnv.paths.svcmgr:
+        os.chdir(rcEnv.paths.pathetc)
         os.unlink(svcname)
-        os.symlink(rcEnv.paths.svcmgr, svcname)
+        os.symlink(rcEnv.paths.svcmgr, path)
 
 def makedirs(path, mode=0o755):
     """
