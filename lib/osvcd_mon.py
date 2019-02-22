@@ -914,6 +914,8 @@ class Monitor(shared.OsvcThread):
         Verifies hard and soft affinity and anti-affinity, then routes to
         failover and flex specific policies.
         """
+        if status == "unknown":
+            return
         if svc.disabled:
             #self.log.info("service %s orchestrator out (disabled)", svc.svcpath)
             return
@@ -2756,8 +2758,11 @@ class Monitor(shared.OsvcThread):
             data[svcpath]["monitor"] = self.get_service_monitor(svcpath)
 
             # forget the stonith target node if we run the service
-            if data[svcpath]["avail"] == "up" and "stonith" in data[svcpath]["monitor"]:
-                del data[svcpath]["monitor"]["stonith"]
+            if data[svcpath].get("avail", "n/a") == "up":
+                try:
+                    del data[svcpath]["monitor"]["stonith"]
+                except KeyError:
+                    pass
 
         # deleting services (still in SMON_DATA, no longer has cf).
         # emulate a status
@@ -2926,17 +2931,19 @@ class Monitor(shared.OsvcThread):
     def set_smon_l_expect_from_status(self, data, svcpath):
         if svcpath not in data:
             return
+        if data.get(svcpath, {}).get("avail") != "up":
+            return
         with shared.SMON_DATA_LOCK:
             if svcpath not in shared.SMON_DATA:
                 return
-            if data[svcpath]["avail"] == "up" and \
-               shared.SMON_DATA[svcpath].global_expect is None and \
-               shared.SMON_DATA[svcpath].status == "idle" and \
-               shared.SMON_DATA[svcpath].local_expect not in ("started", "shutdown"):
-                self.log.info("service %s monitor local_expect change "
-                              "%s => %s", svcpath,
-                              shared.SMON_DATA[svcpath].local_expect, "started")
-                shared.SMON_DATA[svcpath].local_expect = "started"
+            if shared.SMON_DATA[svcpath].global_expect is not None or \
+               shared.SMON_DATA[svcpath].status != "idle" or \
+               shared.SMON_DATA[svcpath].local_expect in ("started", "shutdown"):
+                return
+            shared.SMON_DATA[svcpath].local_expect = "started"
+        self.log.info("service %s monitor local_expect change "
+                      "%s => %s", svcpath,
+                      shared.SMON_DATA[svcpath].local_expect, "started")
 
     def get_arbitrators_data(self):
         if self.arbitrators_data is None or self.last_arbitrator_ping < time.time() - self.arbitrators_check_period:
