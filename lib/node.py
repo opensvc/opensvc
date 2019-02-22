@@ -996,40 +996,6 @@ class Node(Crypt, ExtConfigMixin):
             return 1
         return os.system(' '.join((editor, fpath)))
 
-    def write_config(self):
-        """
-        Rewrite node.conf using the in-memory ConfigParser object as reference.
-        """
-        for option in CONFIG_DEFAULTS:
-            if self.config.has_option('DEFAULT', option):
-                self.config.remove_option('DEFAULT', option)
-        for section in self.config.sections():
-            if '#sync#' in section:
-                self.config.remove_section(section)
-        import tempfile
-        import shutil
-        import codecs
-        try:
-            tmpf = tempfile.NamedTemporaryFile()
-            fpath = tmpf.name
-            tmpf.close()
-            if six.PY2:
-                with codecs.open(fpath, "w", "utf-8") as tmpf:
-                    self.config.write(tmpf)
-            else:
-                with open(fpath, "w") as tmpf:
-                    self.config.write(tmpf)
-            shutil.move(fpath, rcEnv.paths.nodeconf)
-        except (OSError, IOError) as exc:
-            print("failed to write new %s (%s)" % (rcEnv.paths.nodeconf, str(exc)),
-                  file=sys.stderr)
-            raise ex.excError
-        try:
-            os.chmod(rcEnv.paths.nodeconf, 0o0600)
-        except OSError:
-            pass
-        self.load_config()
-
     def purge_status_last(self):
         """
         Purge the cached status of each and every services and resources.
@@ -1833,10 +1799,7 @@ class Node(Crypt, ExtConfigMixin):
             return hostid
         self.log.info("can't find a prkey forced in node.conf. generate one.")
         hostid = "0x"+self.hostid()
-        if not self.config.has_section("node"):
-            self.config.add_section("node")
-        self.config.set('node', 'prkey', hostid)
-        self.write_config()
+        self.set_multi(["node.prkey="+hostid])
         return hostid
 
     def prkey(self):
@@ -2000,12 +1963,8 @@ class Node(Crypt, ExtConfigMixin):
             print(exc, file=sys.stderr)
             return 1
 
-        if not self.config.has_section('node'):
-            self.config.add_section('node')
-        self.config.set('node', 'uuid', rcEnv.uuid)
-
         try:
-            self.write_config()
+            self.set_multi(["node.uuid="+rcEnv.uuid])
         except ex.excError:
             print("failed to write registration number: %s" % rcEnv.uuid,
                   file=sys.stderr)
@@ -4239,14 +4198,13 @@ class Node(Crypt, ExtConfigMixin):
                 self.log.info("leave node %s", nodename)
 
         # remove obsolete hb configurations
+        todo = ["cluster"]
         for section in self.config.sections():
             if section.startswith("hb#") or \
                section.startswith("arbitrator#"):
                 self.log.info("remove configuration %s", section)
-                self.config.remove_section(section)
-            self.config.remove_section("cluster")
-
-        self.write_config()
+                todo.append(section)
+        self.delete_sections(todo)
         self.unset_lazy("cluster_nodes")
 
     def daemon_join(self):
@@ -4270,8 +4228,6 @@ class Node(Crypt, ExtConfigMixin):
         else:
             self.log.info("local node is already frozen")
 
-        if not self.config.has_section("cluster"):
-            self.config.add_section("cluster")
         data = self.daemon_send(
             {"action": "join"},
             nodename=joined,
@@ -4299,104 +4255,102 @@ class Node(Crypt, ExtConfigMixin):
         quorum = data.get("cluster", {}).get("quorum", False)
 
         peer_env = data.get("node", {}).get("env")
+        toadd = []
+        toremove = []
+        sectoremove = []
         if peer_env and peer_env != rcEnv.node_env:
             self.log.info("update node.env %s => %s", rcEnv.node_env, peer_env)
-            if not self.config.has_section("node"):
-                self.config.add_section("node")
-            self.config.set("node", "env", peer_env)
+            toadd.append("node.env="+peer_env)
 
-        self.config.set("cluster", "name", cluster_name)
-        self.config.set("cluster", "id", cluster_id)
-        self.config.set("cluster", "nodes", " ".join(cluster_nodes))
         # secret might be bytes, when passed from rejoin
-        self.config.set("cluster", "secret", bdecode(secret))
+        toadd.append("cluster.secret=" + bdecode(secret))
+        toadd.append("cluster.name=" + cluster_name)
+        toadd.append("cluster.id=" + cluster_id)
+        toadd.append("cluster.nodes=" + " ".join(cluster_nodes))
         if isinstance(dns, list) and len(dns) > 0:
-            self.config.set("cluster", "dns", " ".join(dns))
+            toadd.append("cluster.dns=" + " ".join(dns))
         if isinstance(cluster_drpnodes, list) and len(cluster_drpnodes) > 0:
-            self.config.set("cluster", "drpnodes", " ".join(cluster_drpnodes))
+            toadd.append("cluster.drpnodes=" + " ".join(cluster_drpnodes))
         if quorum:
-            self.config.set("cluster", "quorum", "true")
-        elif self.config.has_option("cluster", "quorum"):
-            self.config.remove_option("cluster", "quorum")
+            toadd.append("cluster.quorum=true")
+        else:
+            toremove.append("cluster.quorum")
 
         for section, _data in data.items():
             if section.startswith("hb#"):
                 if self.config.has_section(section):
                     self.log.info("update heartbeat %s", section)
-                    self.config.remove_section(section)
+                    sectoremove.append(section)
                 else:
                     self.log.info("add heartbeat %s", section)
-                self.config.add_section(section)
                 for option, value in _data.items():
-                    self.config.set(section, option, value)
+                    toadd.append("%s.%s=%s" % (section, option, value))
             elif section.startswith("stonith#"):
                 if self.config.has_section(section):
                     self.log.info("update stonith %s", section)
-                    self.config.remove_section(section)
+                    sectoremove.append(section)
                 else:
                     self.log.info("add stonith %s", section)
-                self.config.add_section(section)
                 for option, value in _data.items():
-                    self.config.set(section, option, value)
+                    toadd.append("%s.%s=%s" % (section, option, value))
             elif section.startswith("arbitrator#"):
                 if self.config.has_section(section):
                     self.log.info("update arbitrator %s", section)
-                    self.config.remove_section(section)
+                    sectoremove.append(section)
                 else:
                     self.log.info("add arbitrator %s", section)
-                self.config.add_section(section)
                 for option, value in _data.items():
-                    self.config.set(section, option, value)
+                    toadd.append("%s.%s=%s" % (section, option, value))
             elif section.startswith("pool#"):
                 if self.config.has_section(section):
                     self.log.info("update pool %s", section)
-                    self.config.remove_section(section)
+                    sectoremove.append(section)
                 else:
                     self.log.info("add pool %s", section)
-                self.config.add_section(section)
                 for option, value in _data.items():
-                    self.config.set(section, option, value)
+                    toadd.append("%s.%s=%s" % (section, option, value))
             elif section.startswith("network#"):
                 if self.config.has_section(section):
                     self.log.info("update network %s", section)
-                    self.config.remove_section(section)
+                    sectoremove.append(section)
                 else:
                     self.log.info("add network %s", section)
-                self.config.add_section(section)
                 for option, value in _data.items():
-                    self.config.set(section, option, value)
+                    toadd.append("%s.%s=%s" % (section, option, value))
 
         # remove obsolete hb configurations
         for section in self.config.sections():
             if section.startswith("hb#") and section not in data:
                 self.log.info("remove heartbeat %s", section)
-                self.config.remove_section(section)
+                sectoremove.append(section)
 
         # remove obsolete stonith configurations
         for section in self.config.sections():
             if section.startswith("stonith#") and section not in data:
                 self.log.info("remove stonith %s", section)
-                self.config.remove_section(section)
+                sectoremove.append(section)
 
         # remove obsolete arbitrator configurations
         for section in self.config.sections():
             if section.startswith("arbitrator#") and section not in data:
                 self.log.info("remove arbitrator %s", section)
-                self.config.remove_section(section)
+                sectoremove.append(section)
 
         # remove obsolete pool configurations
         for section in self.config.sections():
             if section.startswith("pool#") and section not in data:
                 self.log.info("remove pool %s", section)
-                self.config.remove_section(section)
+                sectoremove.append(section)
 
         # remove obsolete network configurations
         for section in self.config.sections():
             if section.startswith("network#") and section not in data:
                 self.log.info("remove network %s", section)
-                self.config.remove_section(section)
+                sectoremove.append(section)
 
-        self.write_config()
+        self.delete_sections(sectoremove)
+        self.unset_multi(toremove)
+        self.set_multi(toadd)
         self.log.info("join node %s", joined)
 
         # join other nodes
