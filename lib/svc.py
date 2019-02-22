@@ -46,8 +46,6 @@ def signal_handler(*args):
     """
     raise ex.excSignal
 
-DEFAULT_WAITLOCK = 60
-
 ACTION_NO_ASYNC = [
     "logs",
     "print_status",
@@ -228,24 +226,23 @@ ACTIONS_NO_LOG = [
 
 ACTIONS_NO_TRIGGER = [
     "abort",
-    "delete",
     "clear",
-    "dns_update",
-    "enable",
+    "delete",
     "disable",
-    "status",
+    "dns_update",
+    "edit_config",
+    "enable",
+    "group_status",
+    "logs",
     "pg_freeze",
     "pg_thaw",
     "pg_kill",
-    "logs",
-    "edit_config",
+    "postsync",
+    "push_encap_config",
+    "push_config",
     "push_resinfo",
     "push_status",
-    "push_config",
-    "push_encap_config",
-    "group_status",
     "presync",
-    "postsync",
     "resource_monitor",
     "set_provisioned",
     "set_unprovisioned",
@@ -402,17 +399,9 @@ def _master_action(func):
             func(self)
     return _func
 
-class Svc(Crypt, ExtConfigMixin):
-    """
-    A OpenSVC service class.
-    A service is a collection of resources.
-    It exposes operations methods like provision, unprovision, stop, start,
-    and sync.
-    """
-
+class BaseSvc(Crypt, ExtConfigMixin):
     def __init__(self, svcname=None, namespace=None, node=None, cf=None, volatile=False):
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
-        self.type = "hosted"
         self.svcname = svcname
         self.namespace = namespace.strip("/") if namespace else None
         self.node = node
@@ -449,7 +438,6 @@ class Svc(Crypt, ExtConfigMixin):
         self.abort_start_done = False
         self.action_start_date = datetime.datetime.now()
         self.has_encap_resources = False
-        self.encap = False
         self.action_rid = []
         self.action_rid_before_depends = []
         self.action_rid_depends = []
@@ -457,25 +445,12 @@ class Svc(Crypt, ExtConfigMixin):
         self.running_action = None
 
         # set by the builder
-        self.comment = ""
-        self.placement = "nodes order"
-        self.stonith = False
-        self.parents = []
-        self.show_disabled = False
-        self.svc_env = rcEnv.node_env
         self.drpnodes = set()
         self.ordered_drpnodes = []
         self.drpnode = ""
         self.flex_primary = ""
         self.drp_flex_primary = ""
-        self.create_pg = False
-        self.disable_rollback = False
         self.presync_done = False
-        self.presnap_trigger = None
-        self.postsnap_trigger = None
-        self.monitor_action = None
-        self.pre_monitor_action = None
-        self.lock_timeout = DEFAULT_WAITLOCK
         self.stats_data = {}
         self.stats_updated = 0
 
@@ -483,7 +458,8 @@ class Svc(Crypt, ExtConfigMixin):
         self.nodes = set()
         self.encapnodes = set()
 
-        self.encapnodes = set(self.oget("DEFAULT", "encapnodes"))
+        if self.kind in "app":
+            self.encapnodes = set(self.oget("DEFAULT", "encapnodes"))
         self.ordered_nodes = self.oget("DEFAULT", "nodes")
         self.nodes = set(self.ordered_nodes)
 
@@ -511,13 +487,9 @@ class Svc(Crypt, ExtConfigMixin):
             subsets=None,
             discard=False,
             recover=False,
-            waitlock=DEFAULT_WAITLOCK,
+            waitlock=None,
             wait=False,
         )
-
-    @lazy
-    def kwdict(self):
-        return __import__("svcdict")
 
     @lazy
     def var_d(self):
@@ -576,14 +548,12 @@ class Svc(Crypt, ExtConfigMixin):
         )
 
     @lazy
-    def ha(self):
-        if self.topology == "flex":
-            return True
-        if self.has_monitored_resources():
-            return True
-        if self.orchestrate == "ha":
-            return True
-        return False
+    def orchestrate(self):
+        return "no"
+
+    @lazy
+    def kind(self):
+        return self.oget("DEFAULT", "kind")
 
     @lazy
     def peers(self):
@@ -602,6 +572,1689 @@ class Svc(Crypt, ExtConfigMixin):
             return self.ordered_drpnodes
         else:
             return []
+
+    @lazy
+    def placement(self):
+        return "nodes order"
+
+    @lazy
+    def topology(self):
+        return "failover"
+
+    @lazy
+    def svc_env(self):
+        val = self.oget("DEFAULT", "env")
+        if val is None:
+            return self.node.env
+        return val
+
+    @lazy
+    def lock_timeout(self):
+        return self.oget("DEFAULT", "lock_timeout")
+
+    @lazy
+    def config(self):
+        """
+        Initialize the service configuration parser object. Using an
+        OrderDict type to preserve the options and sections ordering,
+        if possible.
+
+        The parser object is a opensvc-specified class derived from
+        optparse.RawConfigParser.
+        """
+        return read_cf(self.paths.cf)
+
+    @lazy
+    def disabled(self):
+        return self.oget("DEFAULT", "disable")
+
+    def svclock(self, action=None, timeout=30, delay=1):
+        """
+        Acquire the service action lock.
+        """
+        suffix = None
+        if (action not in ACTION_NO_ASYNC and self.options.node is not None and self.options.node != "") or \
+           action in ACTIONS_NO_LOCK or \
+           self.options.nolock or \
+           action.startswith("collector") or \
+           self.lockfd is not None:
+            # explicitly blacklisted or
+            # no need to serialize requests or
+            # already acquired
+            return
+
+        if action.startswith("compliance"):
+            # compliance modules are allowed to execute actions on the service
+            # so give them their own lock
+            suffix = "compliance"
+        elif action.startswith("sync"):
+            suffix = "sync"
+
+        lockfile = os.path.join(self.var_d, "lock.generic")
+        if suffix is not None:
+            lockfile = ".".join((lockfile, suffix))
+
+        details = "(timeout %d, delay %d, action %s, lockfile %s)" % \
+                  (timeout, delay, action, lockfile)
+        self.log.debug("acquire service lock %s", details)
+
+        # try an immmediate lock acquire and see if the running action is
+        # compatible
+        if action in ACTIONS_LOCK_COMPAT:
+            try:
+                lockfd = lock.lock(
+                    timeout=0,
+                    delay=delay,
+                    lockfile=lockfile,
+                    intent=action
+                )
+                if lockfd is not None:
+                    self.lockfd = lockfd
+                return
+            except lock.LockTimeout as exc:
+                if exc.intent in ACTIONS_LOCK_COMPAT[action]:
+                    return
+                # not compatible, continue with the normal acquire
+            except Exception:
+                pass
+
+        try:
+            lockfd = lock.lock(
+                timeout=timeout,
+                delay=delay,
+                lockfile=lockfile,
+                intent=action
+            )
+        except lock.LockTimeout as exc:
+            raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
+        except lock.LockNoLockFile:
+            raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
+        except lock.LockCreateError:
+            raise ex.excError("can not create lock file %s" % details)
+        except lock.LockAcquire as exc:
+            raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
+        except ex.excSignal:
+            raise ex.excError("interrupted by signal %s" % details)
+        except Exception as exc:
+            self.save_exc()
+            raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
+
+        if lockfd is not None:
+            self.lockfd = lockfd
+
+    def svcunlock(self):
+        """
+        Release the service action lock.
+        """
+        lock.unlock(self.lockfd)
+        self.lockfd = None
+
+    @staticmethod
+    def setup_signal_handlers():
+        """
+        Install signal handlers.
+        """
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+
+    def systemd_join_agent_service(self):
+        from rcSystemd import systemd_system, systemd_join
+        if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon" or not systemd_system():
+               return
+        systemd_join("opensvc-agent.service")
+
+    def action(self, action, options=None):
+        self.systemd_join_agent_service()
+        try:
+            options = self.prepare_options(action, options)
+            self.async_action(action)
+        except ex.excError as exc:
+            msg = str(exc)
+            if msg:
+                self.log.error(msg)
+            return 1
+        except ex.excAbortAction as exc:
+            msg = str(exc)
+            if msg:
+                self.log.info(msg)
+            return 0
+        self.allow_on_this_node(action)
+        if (self.options.cron and action in ("run", "resource_monitor", "sync_all", "status")) or action == "print_schedule":
+            self.configure_scheduler()
+        try:
+            return self._action(action, options=options)
+        except lock.LOCK_EXCEPTIONS as exc:
+            raise ex.excError(str(exc))
+
+    @sched_action
+    def _action(self, action, options=None):
+        """
+        Filter resources on which the service action must act.
+        Abort if the service is frozen, or if --cluster is not set on a HA
+        service.
+        Set up the environment variables.
+        Finally do the service action either in logged or unlogged mode.
+        """
+
+        try:
+            self.action_rid_before_depends = self.options_to_rids(options, action)
+        except ex.excAbortAction as exc:
+            self.log.error(exc)
+            return 1
+
+        depends = set()
+        for rid in self.action_rid_before_depends:
+            depends |= self.action_rid_dependencies(action, rid) - set(self.action_rid_before_depends)
+
+        self.action_rid = set(self.action_rid_before_depends)
+        if len(depends) > 0:
+            self.log.info("add rid %s to satisfy dependencies" % ", ".join(depends))
+            self.action_rid |= depends
+
+        self.action_rid = list(self.action_rid)
+        self.action_rid_depends = list(depends)
+        self.action_start_date = datetime.datetime.now()
+
+        if self.node is None:
+            self.node = node.Node()
+
+        if action not in ACTIONS_NO_STATUS_CHANGE + ACTIONS_CF_CHANGE and \
+           'compliance' not in action and \
+           'collector' not in action and \
+            not options.dry_run and \
+            not action.startswith("docker"):
+            #
+            # here we know we will run a resource state-changing action
+            # purge the resource status file cache, so that we don't take
+            # decision on outdated information
+            #
+            self.log.debug("purge all resource status file caches before "
+                           "action %s", action)
+            self.purge_status_caches()
+
+        self.setup_signal_handlers()
+        self.set_skip_resources(keeprid=self.action_rid, xtags=options.xtags)
+        if action == "status" or \
+           action.startswith("print_") or \
+           action.startswith("collector") or \
+           action.startswith("json_"):
+            return self.do_print_action(action, options)
+        if self.published_action(action, options):
+            err = self.do_logged_action(action, options)
+        else:
+            err = self.do_action(action, options)
+        return err
+
+    def published_action(self, action, options):
+        if self.volatile:
+            return False
+        if not os.path.exists(self.paths.cf):
+            return False
+        if rcEnv.dbopensvc is None or action in ACTIONS_NO_LOG or \
+           action.startswith("compliance") or \
+           action.startswith("docker") or \
+           options.dry_run:
+            return False
+        return True
+
+    def do_print_action(self, action, options):
+        """
+        Call the service method associated with action. This method produces
+        data the caller will print.
+        If --cluster is set, execute the action on remote nodes and
+        aggregate the results.
+        """
+        _action = action + ""
+        if action.startswith("json_"):
+            action = "print_"+action[5:]
+            self.node.options.format = "json"
+            self.options.format = "json"
+            options.format = "json"
+
+        if "_json_" in action:
+            action = action.replace("_json_", "_")
+            self.node.options.format = "json"
+            self.options.format = "json"
+            options.format = "json"
+
+        if options.cluster and options.format not in ("json", "flat_json"):
+            raise ex.excError("only the json and flat_json output formats are allowed with --cluster")
+
+        try:
+            if action.startswith("collector_"):
+                from collector import Collector
+                collector = Collector(options, self.node, self.svcpath)
+                func = getattr(collector, action)
+            else:
+                func = getattr(self, action)
+        except AttributeError:
+            raise ex.excError("%s is not implemented" % action)
+
+        if not hasattr(func, "__call__"):
+            raise ex.excError("%s is not callable" % action)
+
+        psinfo = self.do_cluster_action(_action, collect=True, action_mode=False)
+
+        try:
+            data = func()
+        except Exception as exc:
+            data = {"error": str(exc)}
+
+        if psinfo:
+            # --cluster is set and we have remote responses
+            results = self.join_cluster_action(**psinfo)
+            for nodename in results:
+                results[nodename] = results[nodename][0]
+                if options.format in ("json", "flat_json"):
+                    try:
+                        results[nodename] = json.loads(results[nodename])
+                    except (TypeError, ValueError) as exc:
+                        results[nodename] = {"error": str(exc)}
+            results[rcEnv.nodename] = data
+            return results
+        elif options.cluster:
+            # no remote though --cluster is set
+            results = {}
+            results[rcEnv.nodename] = data
+            return results
+
+        return data
+
+    def do_cluster_action(self, action, options=None, waitlock=60, collect=False, action_mode=True):
+        """
+        Execute an action on remote nodes if --cluster is set and the
+        service is a flex, and this node is flex primary.
+
+        edit config, validate config, and sync* are never executed through
+        this method.
+
+        If possible execute in parallel running subprocess. Aggregate and
+        return results.
+        """
+        if options is None:
+            options = self.options
+        if not options.cluster:
+            return
+
+        if action in ("edit_config", "validate_config") or "sync" in action:
+            return
+
+        if self.topology == "flex":
+            if rcEnv.nodename == self.drp_flex_primary:
+                peers = set(self.drpnodes) - set([rcEnv.nodename])
+            elif rcEnv.nodename == self.flex_primary:
+                peers = set(self.nodes) - set([rcEnv.nodename])
+            else:
+                return
+        elif not action_mode:
+            if rcEnv.nodename in self.nodes:
+                peers = set(self.nodes) | set(self.drpnodes)
+            else:
+                peers = set(self.drpnodes)
+            peers -= set([rcEnv.nodename])
+        else:
+            return
+
+        args = [arg for arg in sys.argv[1:] if arg not in ("-c", "--cluster")]
+        if options.docker_argv and len(options.docker_argv) > 0:
+            args += options.docker_argv
+
+        def wrapper(queue, **kwargs):
+            """
+            Execute the remote action and enqueue or print results.
+            """
+            collect = kwargs["collect"]
+            ret, out, err = self.remote_action(**kwargs)
+            if collect:
+                queue.put([out, err, ret])
+            else:
+                if len(out):
+                    print(out)
+                if len(err):
+                    print(err)
+            return out, err, ret
+
+        if rcEnv.sysname == "Windows":
+            parallel = False
+        else:
+            try:
+                from multiprocessing import Process, Queue
+                parallel = True
+                results = None
+                procs = {}
+                queues = {}
+            except ImportError:
+                parallel = False
+                results = {}
+                procs = None
+                queues = None
+
+        for nodename in peers:
+            kwargs = {
+                "nodename": nodename,
+                "action": " ".join(args),
+                "waitlock": waitlock,
+                "verbose": False,
+                "sync": True,
+                "action_mode": action_mode,
+                "collect": True,
+            }
+            if parallel:
+                queues[nodename] = Queue()
+                proc = Process(target=wrapper, args=(queues[nodename],), kwargs=kwargs)
+                proc.start()
+                procs[nodename] = proc
+            else:
+                results[nodename] = wrapper(**kwargs)
+        return {"procs": procs, "queues": queues, "results": results}
+
+    @staticmethod
+    def join_cluster_action(procs=None, queues=None, results=None):
+        """
+        Wait for subprocess to finish, aggregate and return results.
+        """
+        if procs is None or queues is None:
+            return results
+        results = {}
+        joined = []
+        while len(joined) < len(procs):
+            for nodename, proc in procs.items():
+                proc.join(0.1)
+                if not proc.is_alive():
+                    joined.append(nodename)
+                queue = queues[nodename]
+                if not queue.empty():
+                    results[nodename] = queue.get()
+        return results
+
+    def do_action(self, action, options):
+        """
+        Acquire the service action lock, call the service action method,
+        handles its errors, and finally release the lock.
+
+        If --cluster is set, and the service is a flex, and we are
+        flex_primary run the action on all remote nodes.
+        """
+
+        if action not in ACTIONS_NO_LOCK and self.topology not in TOPOLOGIES:
+            raise ex.excError("invalid cluster type '%s'. allowed: %s" % (
+                self.topology,
+                ', '.join(TOPOLOGIES),
+            ))
+
+        err = 0
+        waitlock = convert_duration(options.waitlock)
+        if waitlock < 0:
+            waitlock = self.lock_timeout
+
+        if action == "sync_all" and self.command_is_scoped():
+            for rid in self.action_rid:
+                resource = self.get_resource(rid)
+                if not resource or not resource.type.startswith("sync"):
+                    continue
+                try:
+                    resource.reslock(action=action, suffix="sync")
+                except ex.excError as exc:
+                    self.log.error(str(exc))
+                    return 1
+        else:
+            try:
+                self.svclock(action, timeout=waitlock)
+            except ex.excError as exc:
+                self.log.error(str(exc))
+                return 1
+
+        psinfo = self.do_cluster_action(action, options=options)
+
+        def call_action(action):
+            self.setup_environ(action=action)
+            self.action_triggers("pre", action)
+            self.action_triggers("blocking_pre", action, blocking=True)
+            err = getattr(self, action)()
+            self.action_triggers("post", action)
+            self.action_triggers("blocking_post", action, blocking=True)
+            return err
+
+        try:
+            if action.startswith("compliance_"):
+                err = getattr(self.compliance, action)()
+            elif hasattr(self, action):
+                self.running_action = action
+                self.notify_action(action, force=options.notify)
+                err = call_action(action)
+                if err is None:
+                    err = 0
+            else:
+                self.log.error("unsupported local action %s", action)
+                err = 1
+        except ex.excEndAction as exc:
+            self.log.info(exc)
+            err = 0
+        except ex.excAbortAction as exc:
+            msg = "'%s' action aborted by last resource" % action
+            if len(str(exc)) > 0:
+                msg += ": %s" % str(exc)
+            self.log.info(msg)
+            err = 0
+        except ex.excError as exc:
+            msg = "'%s' action stopped on execution error" % action
+            self.log.debug(msg)
+            msg = str(exc)
+            if len(msg) > 0:
+                self.log.error(msg)
+            err = 1
+            self.rollback_handler(action)
+        except ex.excSignal:
+            self.log.error("interrupted by signal")
+            err = 1
+        except:
+            err = 1
+            self.save_exc()
+        finally:
+            self.running_action = None
+            if action not in ACTIONS_NO_STATUS_CHANGE + ACTIONS_CF_CHANGE and \
+               not (action == "delete" and not self.command_is_scoped()):
+                data = self.print_status_data(refresh=True)
+                if action == "start" and not self.command_is_scoped() and \
+                   err == 0 and data.get("avail") not in ("up", "n/a") and \
+                   not self.options.dry_run:
+                    # catch drivers reporting no error, but instance not
+                    # evaluating as "up", to avoid the daemon entering a
+                    # start loop. This also catches resources going down
+                    # a short time a startup (app.simple for example)
+                    self.log.error("start action returned 0 but instance "
+                                   "avail status is %s", data.get("avail"))
+                    err = 1
+            elif action in ACTIONS_CF_CHANGE:
+                self.wake_monitor()
+            self.clear_action(action, err, force=options.notify)
+            if action not in ("sync_all", "run"):
+                # sync_all and run handle notfications at the resource level
+                self.notify_done(action)
+            self.svcunlock()
+            if action == "sync_all" and self.command_is_scoped():
+                for rid in self.action_rid:
+                    resource = self.resources_by_id[rid]
+                    if not resource.type.startswith("sync"):
+                        continue
+                    resource.resunlock()
+
+        if psinfo:
+            self.join_cluster_action(**psinfo)
+
+        return err
+
+    def action_progress(self, action):
+        progress = ACTION_ASYNC.get(action, {}).get("progress")
+        if progress is None:
+            return
+        if action.startswith("sync"):
+            progress = "syncing"
+        return progress
+
+    def notify_action(self, action, force=False):
+        if not force and os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
+            return
+        progress = self.action_progress(action)
+        if progress is None:
+            return
+        local_expect = None
+        if action in ("stop", "shutdown", "unprovision", "delete", "rollback", "toc") and not self.command_is_scoped():
+            local_expect = "unset"
+            if self.orchestrate in ("ha", "start"):
+                self.master_freeze()
+        try:
+            self.set_service_monitor(local_expect=local_expect, status=progress)
+            self.log.debug("daemon notified of action '%s' begin" % action)
+        except Exception as exc:
+            self.log.warning("failed to notify action begin to the daemon: %s", str(exc))
+
+    def clear_action(self, action, err, force=False):
+        if not force and os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
+            return
+        progress = self.action_progress(action)
+        local_expect = None
+        if progress is None:
+            return
+        if err:
+            status = action + " failed"
+        else:
+            status = "idle"
+            if action == "start" and not self.command_is_scoped():
+                local_expect == "started"
+        try:
+            self.set_service_monitor(local_expect=local_expect, status=status)
+            self.log.debug("daemon notified of action '%s' end" % action)
+        except Exception as exc:
+            self.log.warning("failed to notify action end to the daemon: %s", str(exc))
+
+    def rollback_handler(self, action):
+        """
+        Call the rollback method if
+        * the action triggering this handler is a start*
+        * service is not configured to not disable rollback
+        * --disable-rollback is not set
+        * at least one resource has been flagged rollbackable during the
+          start* action
+        """
+        if 'start' not in action:
+            return
+        if self.options.disable_rollback:
+            self.log.info("skip rollback %s: as instructed by --disable-rollback", action)
+            return
+        if self.disable_rollback:
+            self.log.info("skip rollback %s: as instructed by DEFAULT.rollback=false", action)
+            return
+        rids = [r.rid for r in self.get_resources() if r.can_rollback and (r.rollback_even_if_standby or not r.standby)]
+        if len(rids) == 0:
+            self.log.info("skip rollback %s: no resource activated", action)
+            return
+        self.log.info("trying to rollback %s on %s", action, ', '.join(rids))
+        try:
+            self.rollback()
+        except ex.excError:
+            self.log.error("rollback %s failed", action)
+
+    def do_logged_action(self, action, options):
+        """
+        Setup action logging to a machine-readable temp logfile, in preparation
+        to the collector feeding.
+        Do the action.
+        Finally, feed the log to the collector.
+        """
+        import tempfile
+        begin = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Provision a database entry to store action log later
+        self.node.daemon_collector_xmlrpc("begin_action", self.svcpath,
+                                          action, self.node.agent_version,
+                                          begin, self.options.cron)
+
+        # Per action logfile to push to database at the end of the action
+        tmpfile = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.paths.pathtmp,
+                                              prefix=self.svcname+'.'+action)
+        actionlogfile = tmpfile.name
+        tmpfile.close()
+        fmt = "%(asctime)s;;%(name)s;;%(levelname)s;;%(message)s;;%(process)d;;EOL"
+        actionlogformatter = logging.Formatter(fmt)
+        actionlogfilehandler = logging.FileHandler(actionlogfile)
+        actionlogfilehandler.setFormatter(actionlogformatter)
+        actionlogfilehandler.setLevel(logging.INFO)
+        self.log.addHandler(actionlogfilehandler)
+        try:
+            if sys.argv[0].endswith("/svcmgr.py"):
+                runlog = "do "+" ".join(sys.argv[1:])
+                runlog = runlog.replace("-s %s "%self.svcname, "")
+                runlog = runlog.replace("--service %s "%self.svcname, "")
+                runlog = runlog.replace("-s %s "%self.svcpath, "")
+                runlog = runlog.replace("--service %s "%self.svcpath, "")
+                if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
+                    runlog += " (daemon origin)"
+                else:
+                    runlog += " (user origin)"
+                self.log.info(runlog, {"f_stream": False})
+        except IndexError:
+            pass
+
+        err = self.do_action(action, options)
+
+        # Push result and logs to database
+        actionlogfilehandler.close()
+        self.log.removeHandler(actionlogfilehandler)
+        end = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.dblogger(action, begin, end, actionlogfile)
+        return err
+
+    def prepare_options(self, action, options):
+        """
+        Return a Storage() from command line options or dict passed as
+        <options>, sanitized, merge with default values in self.options.
+        """
+        if options is None:
+            options = Storage()
+        elif isinstance(options, dict):
+            options = Storage(options)
+
+        if is_string(options.slave):
+            options.slave = options.slave.split(',')
+
+        if isinstance(options.resource, list):
+            for idx, resource in enumerate(options.resource):
+                if not is_string(resource):
+                    continue
+                try:
+                    options.resource[idx] = json.loads(resource)
+                except ValueError:
+                    raise ex.excError("invalid json in resource definition: "
+                                      "%s" % options.resource[idx])
+
+        self.options.update(options)
+        options = self.options
+
+        return options
+
+    def print_config_mtime(self):
+        """
+        Print the service configuration file last modified timestamp. Used by
+        remote agents to determine which agent holds the most recent version.
+        """
+        mtime = os.stat(self.paths.cf).st_mtime
+        print(mtime)
+
+    def prepare_async_cmd(self):
+        cmd = sys.argv[1:]
+        cmd = drop_option("--node", cmd, drop_value=True)
+        cmd = drop_option("-s", cmd, drop_value=True)
+        cmd = drop_option("--service", cmd, drop_value=True)
+        return cmd
+
+    def async_action(self, action, wait=None, timeout=None):
+        if action in ACTION_NO_ASYNC:
+            return
+        if self.options.node is not None and self.options.node != "":
+            cmd = self.prepare_async_cmd()
+            ret = self.daemon_service_action(cmd)
+            if ret == 0:
+                raise ex.excAbortAction()
+            else:
+                raise ex.excError()
+        if self.options.local or self.options.slave or self.options.slaves or \
+           self.options.master:
+            return
+        if action not in ACTION_ASYNC:
+            return
+        if "target" not in ACTION_ASYNC[action]:
+            return
+        if self.command_is_scoped():
+            return
+        if self.options.dry_run:
+            raise ex.excAbortAction()
+        self.daemon_mon_action(action, wait=wait, timeout=timeout)
+        raise ex.excAbortAction()
+
+    def daemon_log_result(self, ret, raise_on_errors=True):
+        if ret is None:
+            return
+        info = ret.get("info", [])
+        if info is None:
+            info = []
+        elif not isinstance(info, list):
+            info = [info]
+        for line in info:
+            if not line:
+                continue
+            self.log.info(line)
+
+        errors = ret.get("error", [])
+        if errors is None:
+            errors = []
+        if not isinstance(errors, list):
+            errors = [errors]
+        for line in errors:
+            if not line:
+                continue
+            self.log.error(line)
+        if errors:
+            raise ex.excError
+        status = ret.get("status")
+        if status not in (None, 0):
+            raise ex.excError
+
+    def daemon_mon_action(self, action, wait=None, timeout=None):
+        global_expect = self.prepare_global_expect(action)
+        ret = self.set_service_monitor(global_expect=global_expect)
+        self.daemon_log_result(ret)
+        self.wait_daemon_mon_action(global_expect, wait=wait, timeout=timeout)
+
+    def prepare_global_expect(self, action):
+        global_expect = ACTION_ASYNC[action]["target"]
+        if action == "delete" and self.options.unprovision:
+            global_expect = "purged"
+            action = "purge"
+        elif action == "move":
+            if self.options.destination_node is None:
+                raise ex.excError("the --to <node>[,<node>,...] option is required")
+            global_expect += self.options.destination_node
+        elif action == "switch":
+            dst = self.destination_node_sanity_checks()
+            global_expect += dst
+        elif action == "takeover":
+            dst = self.destination_node_sanity_checks(rcEnv.nodename)
+            global_expect += dst
+        return global_expect
+
+    def wait_daemon_mon_action(self, global_expect, wait=None, timeout=None, log_progress=True):
+        if wait is None:
+            wait = self.options.wait
+        if not wait:
+            return
+        if timeout is None:
+            timeout = self.options.time
+        if timeout is not None:
+            timeout = convert_duration(timeout)
+        # poll global service status
+        prev_global_expect_set = set()
+        for _ in range(timeout):
+            data = self.node._daemon_status(refresh=True)
+            if data is None or "monitor" not in data:
+                # interrupted, daemon died
+                time.sleep(1)
+                continue
+            global_expect_set = set()
+            inprogress = set()
+            for nodename in data["monitor"]["nodes"]:
+                try:
+                    _data = data["monitor"]["nodes"][nodename]["services"]["status"][self.svcpath]
+                except (KeyError, TypeError) as exc:
+                    continue
+                if _data["monitor"].get("global_expect") is not None or "ing" in _data["monitor"].get("status"):
+                    inprogress.add(nodename)
+                if _data["monitor"].get("global_expect") in (global_expect, "n/a"):
+                    global_expect_set.add(nodename)
+            if log_progress and prev_global_expect_set != global_expect_set:
+                for nodename in global_expect_set - prev_global_expect_set:
+                    self.log.info(" work starting on %s", nodename)
+                for nodename in prev_global_expect_set - global_expect_set:
+                    self.log.info(" work over on %s", nodename)
+            if not inprogress and not global_expect_set:
+                if self.svcpath not in data["monitor"]["services"]:
+                    self.log.info("final status: deleted")
+                    return
+                self.log.info("final status: avail=%s overall=%s frozen=%s",
+                              data["monitor"]["services"][self.svcpath]["avail"],
+                              data["monitor"]["services"][self.svcpath]["overall"],
+                              data["monitor"]["services"][self.svcpath].get("frozen", False))
+                return
+            prev_global_expect_set = set(global_expect_set)
+            time.sleep(1)
+        raise ex.excError("wait timeout exceeded")
+
+    def current_node(self):
+        data = self.node._daemon_status()
+        for nodename, _data in data["monitor"]["nodes"].items():
+            try:
+                __data = _data["services"]["status"][self.svcpath]
+            except KeyError:
+                continue
+            if __data["avail"] == "up":
+                return nodename
+
+    def command_is_scoped(self, options=None):
+        """
+        Return True if a resource filter has been setup through
+        --rid, --subsets or --tags
+        """
+        if options is None:
+            options = self.options
+        if (options.rid is not None and options.rid != "") or \
+           (options.tags is not None and options.tags != "") or \
+           (options.subsets is not None and options.subsets != "") or \
+           options.upto or options.downto:
+            return True
+        return False
+
+    def save_exc(self):
+        """
+        A helper method to save stacks in the service log.
+        """
+        self.log.error("", exc_info=True)
+
+    def vcall(self, *args, **kwargs):
+        """
+        Wrap vcall, setting the service logger
+        """
+        kwargs["log"] = self.log
+        return vcall(*args, **kwargs)
+
+    def lcall(self, *args, **kwargs):
+        """
+        Wrap lcall, setting the service logger
+        """
+        kwargs["logger"] = self.log
+        return lcall(*args, **kwargs)
+
+    def allocate_rid(self, group, sections):
+        """
+        Return an unused rid in <group>.
+        """
+        prefix = group + "#"
+        rids = [section for section in sections if section.startswith(prefix)]
+        idx = 1
+        while True:
+            rid = "#".join((group, str(idx)))
+            if rid in rids:
+                idx += 1
+                continue
+            return rid
+
+    def update(self):
+        return self._update(self.options.resource,
+                            interactive=self.options.interactive,
+                            provision=self.options.provision)
+
+    def _update(self, resources, interactive=False, provision=False):
+        """
+        The 'update' action entry point.
+        Add resources to the service configuration, and provision them if
+        instructed to do so.
+        """
+        from keywords import MissKeyNoDefault, KeyInvalidValue
+
+        sections = {}
+        rtypes = {}
+        defaults = self.config.defaults()
+        for section in self.config.sections():
+            sections[section] = {}
+            elements = section.split('#')
+            if len(elements) == 2:
+                rtype = elements[0]
+                ridx = elements[1]
+                if rtype not in rtypes:
+                    rtypes[rtype] = set()
+                rtypes[rtype].add(ridx)
+            for option, value in self.config.items(section):
+                if option in list(defaults.keys()) + ['rtype']:
+                    continue
+                sections[section][option] = value
+
+        import svcBuilder
+
+        rid = []
+
+        for data in resources:
+            is_resource = False
+            if 'rid' in data:
+                section = data['rid']
+                if '#' not in section:
+                    raise ex.excError("%s must be formatted as 'rtype#n'" % section)
+                elements = section.split('#')
+                if len(elements) != 2:
+                    raise ex.excError("%s must be formatted as 'rtype#n'" % section)
+                del data['rid']
+                if section in sections:
+                    sections[section].update(data)
+                else:
+                    sections[section] = data
+                is_resource = True
+            elif 'rtype' in data and data["rtype"] == "env":
+                del data["rtype"]
+                if "env" in sections:
+                    sections["env"].update(data)
+                else:
+                    sections["env"] = data
+            elif 'rtype' in data and data["rtype"] != "DEFAULT":
+                section = self.allocate_rid(data['rtype'], sections)
+                self.log.info("allocated rid %s" % section)
+                del data['rtype']
+                sections[section] = data
+                is_resource = True
+            else:
+                if "rtype" in data:
+                    del data["rtype"]
+                defaults.update(data)
+
+            if is_resource:
+                rid.append(section)
+
+        for section, data in sections.items():
+            if not self.config.has_section(section):
+                self.config.add_section(section)
+            for key, val in data.items():
+                self.config.set(section, key, val)
+
+        self.write_config()
+
+        for section in rid:
+            group = section.split("#")[0]
+            svcBuilder.add_resource(self, group, section)
+
+        if provision and len(rid) > 0:
+            options = Storage(self.options)
+            options.rid = rid
+            self.action("provision", options)
+
+    def allow_on_this_node(self, action):
+        """
+        Raise excError if the service is not allowed to run on this node.
+        In other words, the nodename is not a service node or drpnode, nor the
+        service mode is cloud proxy.
+        """
+        if action in ACTIONS_ALLOW_ON_INVALID_NODE:
+            return
+        if self.svc_env != 'PRD' and self.node.env == 'PRD':
+            raise ex.excError('not allowed to run on this node (svc env=%s node env=%s)' % (self.svc_env, self.node.env))
+        if rcEnv.nodename in self.nodes:
+            return
+        if rcEnv.nodename in self.drpnodes:
+            return
+        raise ex.excError("action '%s' aborted because this node's hostname "
+                          "'%s' is not a member of DEFAULT.nodes, "
+                          "DEFAULT.drpnode nor DEFAULT.drpnodes" % \
+                          (action, rcEnv.nodename))
+
+    def setup_environ(self, action=None):
+        """
+        Setup envionment variables.
+        Startup scripts and triggers can use them, so their code can be
+        more generic.
+        All resources can contribute a set of env variables through their
+        own setup_environ() method.
+        """
+        if action in ACTIONS_NO_TRIGGER:
+            return
+        if not action and os.environ.get("OPENSVC_SVCPATH") == self.svcpath:
+            return
+        os.environ['OPENSVC_SVCPATH'] = self.svcpath
+        os.environ['OPENSVC_SVCNAME'] = self.svcname
+        os.environ['OPENSVC_SVC_ID'] = self.id
+        if self.namespace:
+            os.environ['OPENSVC_NAMESPACE'] = self.namespace
+        if action:
+            os.environ['OPENSVC_ACTION'] = action
+        for resource in self.get_resources():
+            resource.setup_environ()
+
+    def print_config(self):
+        """
+        The 'print config' action entry point.
+        Print the service configuration in the format specified by --format.
+        """
+        if not os.path.exists(self.paths.cf):
+            buff = self.remote_service_config()
+            if buff is None:
+                raise ex.excError("could not fetch remote config")
+            import tempfile
+            try:
+                tmpfile = tempfile.NamedTemporaryFile()
+                fname = tmpfile.name
+                tmpfile.close()
+                with open(fname, "w") as tmpfile:
+                    tmpfile.write(buff)
+                svc = Svc(self.svcname, self.namespace, node=self.node, cf=fname, volatile=True)
+                svc.options = self.options
+                return svc.print_config()
+            finally:
+                try:
+                    os.unlink(fname)
+                except Exception:
+                    pass
+        if self.options.format is not None or self.options.jsonpath_filter:
+            return self.print_config_data(evaluate=self.options.eval,
+                                          impersonate=self.options.impersonate)
+        from rcColor import print_color_config
+        print_color_config(self.paths.cf)
+
+    def make_temp_config(self):
+        """
+        Copy the current service configuration file to a temporary
+        location for edition.
+        If the temp file already exists, propose the --discard
+        or --recover options.
+        """
+        import shutil
+        makedirs(os.path.dirname(self.paths.tmp_cf))
+        if os.path.exists(self.paths.tmp_cf):
+            if self.options.recover:
+                pass
+            elif self.options.discard:
+                shutil.copy(self.paths.cf, self.paths.tmp_cf)
+            else:
+                self.edit_config_diff()
+                print("%s exists: service is already being edited. Set "
+                      "--discard to edit from the current configuration, "
+                      "or --recover to open the unapplied config" % \
+                      self.paths.tmp_cf, file=sys.stderr)
+                raise ex.excError
+        else:
+            shutil.copy(self.paths.cf, self.paths.tmp_cf)
+        return self.paths.tmp_cf
+
+    def edit_config_diff(self):
+        """
+        Display the diff between the current config and the pending
+        unvalidated config.
+        """
+        from subprocess import call
+
+        def diff_capable(opts):
+            cmd = ["diff"] + opts + [self.paths.cf, self.paths.cf]
+            cmd_results = justcall(cmd)
+            if cmd_results[2] == 0:
+                return True
+            return False
+
+        if not os.path.exists(self.paths.tmp_cf):
+            return
+        if diff_capable(["-u", "--color"]):
+            cmd = ["diff", "-u", "--color", self.paths.cf, self.paths.tmp_cf]
+        elif diff_capable(["-u"]):
+            cmd = ["diff", "-u", self.paths.cf, self.paths.tmp_cf]
+        else:
+            cmd = ["diff", self.paths.cf, self.paths.tmp_cf]
+        call(cmd)
+
+    def edit_config(self):
+        """
+        Execute an editor on the service configuration file.
+        When the editor exits, validate the new configuration file.
+        If validation pass, install the new configuration,
+        else keep the previous configuration in place and offer the
+        user the --recover or --discard choices for its next edit
+        config action.
+        """
+        if not os.path.exists(self.paths.cf):
+            raise ex.excError("service %s is not installed on this node" % \
+                              self.svcpath)
+        if "EDITOR" in os.environ:
+            editor = os.environ["EDITOR"]
+        elif os.name == "nt":
+            editor = "notepad"
+        else:
+            editor = "vi"
+        from rcUtilities import which, fsum
+        if not which(editor):
+            print("%s not found" % editor, file=sys.stderr)
+            return 1
+        path = self.make_temp_config()
+        os.system(' '.join((editor, path)))
+        if fsum(path) == fsum(self.paths.cf):
+            os.unlink(path)
+            return 0
+        results = self._validate_config(path=path)
+        if results["errors"] == 0:
+            import shutil
+            shutil.copy(path, self.paths.cf)
+            os.unlink(path)
+        else:
+            print("your changes were not applied because of the errors "
+                  "reported above. you can use the edit config command "
+                  "with --recover to try to fix your changes or with "
+                  "--discard to restart from the live config")
+        return results["errors"] + results["warnings"]
+
+    #########################################################################
+    #
+    # daemon communications
+    #
+    #########################################################################
+    def daemon_backlogs(self, nodename):
+        options = {
+            "svcpath": self.svcpath,
+            "backlog": self.options.backlog,
+            "debug": self.options.debug,
+        }
+        for lines in self.daemon_get_stream(
+            {"action": "service_logs", "options": options},
+            nodename=nodename,
+        ):
+            if lines is None:
+                break
+            for line in lines:
+                yield line
+
+    def daemon_logs(self, nodes=None):
+        options = {
+            "svcpath": self.svcpath,
+            "backlog": 0,
+        }
+        for lines in self.daemon_get_streams(
+            {"action": "service_logs", "options": options},
+            nodenames=nodes,
+        ):
+            if lines is None:
+                break
+            for line in lines:
+                yield line
+
+    def abort(self):
+        pass
+
+    def clear(self):
+        self.master_clear()
+        self.slave_clear()
+
+    @_slave_action
+    def slave_clear(self):
+        self.encap_cmd(["clear"], verbose=True)
+
+    @_master_action
+    def master_clear(self):
+        if self.options.local:
+           self._clear()
+        elif self.options.node:
+           self._clear(self.options.node)
+        else:
+           cleared = 0
+           for nodename in self.peers:
+               try:
+                   self._clear(nodename)
+               except ex.excError as exc:
+                   self.log.warning(exc)
+                   continue
+               cleared += 1
+           if cleared < len(self.peers):
+               raise ex.excError("cleared on %d/%d nodes" % (cleared, len(self.peers)))
+
+    def _clear(self, nodename=None):
+        options = {
+            "svcpath": self.svcpath,
+        }
+        data = self.daemon_send(
+            {"action": "clear", "options": options},
+            nodename=nodename,
+            timeout=5,
+        )
+        if data is None or data["status"] != 0:
+            raise ex.excError("clear on node %s failed: %s" % (nodename, data.get("error", "")))
+
+    def notify_done(self, action, rids=None):
+        if not self.options.cron:
+            return
+        if rids is None:
+            rids = self.action_rid
+        options = {
+            "action": action,
+            "svcpath": self.svcpath,
+            "rids": rids,
+        }
+        try:
+            data = self.daemon_send(
+                {"action": "run_done", "options": options},
+                nodename=self.options.node,
+                silent=True,
+            )
+            if data and data["status"] != 0:
+                if "error" in data:
+                    self.log.warning("notify scheduler action is done failed: %s", data["error"])
+                else:
+                    self.log.warning("notify scheduler action is done failed")
+        except Exception as exc:
+            self.log.warning("notify scheduler action is done failed: %s", str(exc))
+
+    def wake_monitor(self):
+        if self.options.no_daemon:
+            return
+        options = {
+            "svcpath": self.svcpath,
+        }
+        try:
+            data = self.daemon_send(
+                {"action": "wake_monitor", "options": options},
+                nodename=self.options.node,
+                silent=True,
+            )
+            if data and data["status"] != 0 and data.get("errno") != 111:
+                # 111: EREFUSED (ie daemon down)
+                if "error" in data:
+                    self.log.warning("wake monitor failed: %s", data["error"])
+                else:
+                    self.log.warning("wake monitor failed")
+        except Exception as exc:
+            self.log.warning("wake monitor failed: %s", str(exc))
+
+    def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None, svcpath=None):
+        if svcpath is None:
+            svcpath = self.svcpath
+        options = {
+            "svcpath": svcpath,
+            "status": status,
+            "local_expect": local_expect,
+            "global_expect": global_expect,
+            "stonith": stonith,
+        }
+        try:
+            data = self.daemon_send(
+                {"action": "set_service_monitor", "options": options},
+                nodename=self.options.node,
+                silent=True,
+                with_result=True,
+            )
+            if data and data["status"] != 0 and data.get("errno") != 111:
+                # 111: EREFUSED (ie daemon down)
+                self.log.warning("set monitor status failed")
+            return data
+        except Exception as exc:
+            self.log.warning("set monitor status failed: %s", str(exc))
+
+    def peer_service_config(self, nodename):
+        options = {
+            "svcpath": self.svcpath,
+        }
+        data = self.daemon_send(
+            {"action": "get_service_config", "options": options},
+            nodename=nodename,
+            silent=True,
+        )
+        if data["status"] != 0:
+            raise ex.excError(data.get("error"))
+        return data["data"]
+
+    def remote_service_config(self):
+        data = self.node._daemon_status(silent=True)["monitor"]["nodes"]
+        for ndata in data.values():
+            scope = ndata.get("services", {}).get("config", {}).get(self.svcpath, {}).get("scope", [])
+            if scope:
+                break
+        for peer in scope:
+            buff = self.peer_service_config(peer)
+            if buff:
+                return buff
+
+    def daemon_service_action(self, cmd, nodename=None, sync=True, timeout=0, collect=False, action_mode=True):
+        """
+        Execute a service action on a peer node.
+        If sync is set, wait for the action result.
+        """
+        if timeout is not None:
+            timeout = convert_duration(timeout)
+        if nodename is None:
+            nodename = self.options.node
+        if nodename not in self.node.cluster_nodes:
+            try:
+                secret = self.node.conf_get("cluster", "secret", impersonate=nodename)
+            except:
+                raise ex.excError("unknown cluster secret to communicate with node %s" % nodename)
+            try:
+                cluster_name = self.node.conf_get("cluster", "name", impersonate=nodename)
+            except:
+                raise ex.excError("unknown cluster name to communicate with node %s" % nodename)
+        else:
+            secret = self.cluster_key
+            cluster_name = None
+
+
+        options = {
+            "svcpath": self.svcpath,
+            "cmd": cmd,
+            "sync": sync,
+            "action_mode": action_mode,
+        }
+        if action_mode:
+            self.log.info("request action '%s' on node %s", " ".join(cmd), nodename)
+        try:
+            data = self.daemon_send(
+                {"action": "service_action", "options": options},
+                nodename=nodename,
+                silent=True,
+                timeout=timeout,
+                secret=secret,
+                cluster_name=cluster_name,
+            )
+        except Exception as exc:
+            self.log.error("post service action '%s' on node %s failed: %s",
+                           " ".join(cmd), nodename, exc)
+            return 1
+        if data is None or data["status"] != 0:
+            self.log.error("post service action '%s' on node %s failed",
+                           " ".join(cmd), nodename)
+            return 1
+        if "data" not in data:
+            return 0
+        data = data["data"]
+        if collect:
+            return data["ret"], data.get("out", ""), data.get("err", "")
+        else:
+            if data.get("out") and len(data["out"]) > 0:
+                for line in data["out"].splitlines():
+                   print(line)
+            if data.get("err") and len(data["err"]) > 0:
+                for line in data["err"].splitlines():
+                   print(line, file=sys.stderr)
+            return data["ret"]
+
+    def logs(self, nodename=None):
+        try:
+            self._logs(nodename=nodename)
+        except ex.excSignal:
+            return
+        except (OSError, IOError) as exc:
+            if exc.errno == 32:
+                # broken pipe
+                return
+
+    def _logs(self, nodename=None):
+        if nodename is None:
+            nodename = self.options.node
+        if self.options.local:
+            nodes = [rcEnv.nodename]
+        elif self.options.node:
+            nodes = [self.options.node]
+        else:
+            nodes = self.peers
+        from rcColor import colorize_log_line
+        lines = []
+        auto = sorted(nodes, reverse=True)
+        for nodename in nodes:
+            lines += self.daemon_backlogs(nodename)
+            for line in sorted(lines):
+                line = colorize_log_line(line, auto=auto)
+                if line:
+                    print(line)
+        if not self.options.follow:
+            return
+        for line in self.daemon_logs(nodes):
+            line = colorize_log_line(line, auto=auto)
+            if line:
+                print(line)
+                sys.stdout.flush()
+
+    def support(self):
+        """
+        Send a tarball to the OpenSVC support upload site.
+        """
+        if self.node.sysreport_mod is None:
+            return
+
+        todo = [
+          ('INC', os.path.join(rcEnv.paths.pathlog, "node.log")),
+          ('INC', os.path.join(rcEnv.paths.pathlog, "xmlrpc.log")),
+          ('INC', os.path.join(self.log_d, self.svcname+".log")),
+          ('INC', self.var_d),
+        ]
+
+        import shutil
+        collect_d = os.path.join(rcEnv.paths.pathvar, "support")
+        try:
+            shutil.rmtree(collect_d)
+        except:
+            pass
+        srep = self.node.sysreport_mod.SysReport(node=self.node, collect_d=collect_d, compress=True)
+        srep.todo += todo
+        srep.collect()
+        tmpf = srep.archive(srep.full)
+
+        try:
+            import requests
+        except:
+            print("uploading the support tarball requires the requests module", file=sys.stderr)
+            return 1
+        print("uploading the support tarball")
+        content_size = os.stat(tmpf).st_size
+        import base64
+        with open(tmpf, 'rb') as filep:
+            files = {"upload": filep}
+            headers = {
+                'Content-Type':'application/octet-stream',
+                'Content-Filename':"%s_%s_at_%s.tar.gz" % (self.namespace if self.namespace else "", self.svcname, rcEnv.nodename),
+                'Content-length': '%d' % content_size,
+                'Content-Range': 'bytes 0-%d/%d' % (content_size-1, content_size),
+                'Maxlife-Unit':"DAYS",
+                'Maxlife-Value':"7",
+            }
+            resp = requests.post("https://sfx.opensvc.com/apis/rest/items", headers=headers, data=base64.b64encode(filep.read(content_size)), auth=("user", "support"))
+        loc = resp.headers.get("Content-Location")
+        if not loc:
+            print(json.dumps(resp.content, indent=4), file=sys.stderr)
+            return 1
+        print("uploaded as https://sfx.opensvc.com%s" % loc)
+
+    def skip_config_section(self, rid):
+        if rid == "DEFAULT":
+            return False
+        self.init_resources()
+        if self.encap and rid not in self.resources_by_id:
+            return True
+        if not self.encap and rid in self.encap_resources:
+            return True
+        return False
+
+    def exists(self):
+        """
+        Return True if the service exists, ie has a configuration file on the
+        local node.
+        """
+        return os.path.exists(self.paths.cf)
+
+    def unset_lazy(self, prop):
+        """
+        Expose the unset_lazy(self, ...) utility function as a method,
+        so Node() users don't have to import it from rcUtilities.
+        """
+        unset_lazy(self, prop)
+
+    def unset_conf_lazy(self):
+        self.unset_lazy("nodes")
+        self.unset_lazy("ordered_nodes")
+        self.unset_lazy("peers")
+        self.unset_lazy("ordered_peers")
+        self.unset_lazy("flex_min_nodes")
+        self.unset_lazy("flex_max_nodes")
+
+    def unset_all_lazy(self):
+        unset_all_lazy(self)
+        for res in self.resources_by_id.values():
+            unset_all_lazy(res)
+
+    def action_triggers(self, trigger, action, **kwargs):
+        """
+        Executes a resource trigger. Guess if the shell mode is needed from
+        the trigger syntax.
+        """
+        action_triggers(self, trigger, action, **kwargs)
+
+    def status(self):
+        """
+        Return the aggregate status a service.
+        """
+        refresh = self.options.refresh or (not self.encap and self.options.cron)
+        data = self.print_status_data(mon_data=False, refresh=refresh)
+        return rcStatus.Status(data["overall"]).value()
+
+    @fcache
+    def get_mon_data(self):
+        data = self.node._daemon_status(silent=True)
+        if data is not None and "monitor" in data:
+            return data["monitor"]
+        return {}
+
+    def get_smon_data(self):
+        data = {}
+        try:
+            mon_data = self.get_mon_data()
+            data["compat"] = mon_data["compat"]
+            data["service"] = mon_data["services"][self.svcpath]
+            data["instances"] = {}
+            for nodename in mon_data["nodes"]:
+                 try:
+                     data["instances"][nodename] = mon_data["nodes"][nodename]["services"]["status"][self.svcpath]["monitor"]
+                 except KeyError:
+                     pass
+            return data
+        except Exception:
+            return
+
+    @lazy
+    def status_data_dump(self):
+        return os.path.join(self.var_d, "status.json")
+
+    def status_data_dump_outdated(self):
+        """
+        Return True if the status data dump is older than the last config file
+        modification time.
+        """
+        try:
+            return os.stat(self.paths.cf).st_mtime > os.stat(self.status_data_dump).st_mtime
+        except OSError as exc:
+            return True
+
+    def print_status_data(self, from_resource_status_cache=False, mon_data=False, refresh=False):
+        """
+        Return a structure containing hierarchical status of
+        the service and monitor information. Fetch CRM status from cache if
+        possible and allowed by kwargs.
+        """
+        data = None
+        try:
+            lockfile = os.path.join(self.var_d, "lock.json.status")
+            with lock.cmlock(timeout=2, delay=1, lockfile=lockfile, intent="status from cache"):
+                if not from_resource_status_cache and \
+                   not refresh and \
+                   os.path.exists(self.status_data_dump) and \
+                   not self.status_data_dump_outdated():
+                    try:
+                        with open(self.status_data_dump, 'r') as filep:
+                            data = json.load(filep)
+                    except ValueError:
+                        pass
+        except lock.LOCK_EXCEPTIONS as exc:
+            raise ex.excAbortAction(str(exc))
+
+        waitlock = convert_duration(self.options.waitlock)
+        if waitlock is None or waitlock < 0:
+            waitlock = self.lock_timeout
+
+        if data is None:
+            # use a different lock to not block the faster "from cache" codepath
+            lockfile = os.path.join(self.var_d, "lock.status")
+            try:
+                with lock.cmlock(timeout=waitlock, delay=1, lockfile=lockfile, intent="status"):
+                    data = self.print_status_data_eval(refresh=refresh)
+            except lock.LOCK_EXCEPTIONS as exc:
+                raise ex.excAbortAction(str(exc))
+        else:
+            data["running"] = self.get_running(data["resources"].keys())
+
+        if mon_data:
+            mon_data = self.get_smon_data()
+            try:
+                data["cluster"] = {
+                    "compat": mon_data["compat"],
+                    "avail": mon_data["service"]["avail"],
+                    "overall": mon_data["service"]["overall"],
+                    "placement": mon_data["service"]["placement"],
+                }
+                data["monitor"] = mon_data["instances"][rcEnv.nodename]
+            except:
+                pass
+
+        return data
+
+    def print_status_data_eval(self, refresh=False, write_data=True):
+        """
+        Return a structure containing hierarchical status of
+        the service.
+        """
+        now = time.time()
+        data = {
+            "updated": now,
+            "kind": self.kind,
+        }
+        if write_data:
+            self.write_status_data(data)
+        return data
+
+    def csum_status_data(self, data):
+        h = hashlib.md5()
+        def fn(h, val):
+            if type(val) == dict:
+                for key in sorted(val.keys()):
+                    _val = val[key]
+                    if key in ("status_updated", "updated", "mtime", "csum"):
+                        continue
+                    h = fn(h, _val)
+            elif type(val) == list:
+                for _val in val:
+                    h = fn(h, _val)
+            else:
+                h.update(repr(val).encode())
+            return h
+        return fn(h, data).hexdigest()
+
+    def write_status_data(self, data):
+        if self.volatile:
+            return
+        data["csum"] = self.csum_status_data(data)
+        try:
+            with open(self.status_data_dump, "w") as filep:
+                json.dump(data, filep)
+                filep.flush()
+            os.utime(self.status_data_dump, (-1, data["updated"]))
+            self.wake_monitor()
+        except Exception as exc:
+            self.log.warning("failed to update %s: %s",
+                             self.status_data_dump, str(exc))
+        return data
+
+    def update_status_data(self):
+        self.log.debug("update status dump")
+        # print_status_data() with from_resource_status_cache=True does a status.json write
+        return self.print_status_data(from_resource_status_cache=True)
+
+    def env_section_keys_evaluated(self):
+        """
+        Return the dict of key/val pairs in the [env] section of the
+        service configuration, after dereferencing.
+        """
+        return self.env_section_keys(evaluate=True)
+
+    def env_section_keys(self, evaluate=False):
+        """
+        Return the dict of key/val pairs in the [env] section of the
+        service configuration, without dereferencing.
+        """
+        config = self.print_config_data()
+        try:
+            from collections import OrderedDict
+            data = OrderedDict()
+        except ImportError:
+            data = {}
+        for key in config.get("env", {}).keys():
+            key = key.split("@")[0]
+            if key in data:
+                continue
+            if evaluate:
+                data[key] = self.conf_get('env', key)
+            else:
+                data[key] = config["env"][key]
+        return data
+
+    def print_status(self):
+        """
+        Display in human-readable format the hierarchical service status.
+        """
+        pass
+
+    def options_to_rids(self, options, action):
+        return set()
+
+    def set_skip_resources(self, *args, **kwargs):
+        pass
+
+    def init_resources(self):
+        return 0
+
+    def freeze(self):
+        pass
+
+    def thaw(self):
+        pass
+
+    def frozen(self):
+        return 0
+
+    def configure_scheduler(self):
+        pass
+
+class Svc(BaseSvc):
+    """
+    A OpenSVC service class.
+    A service is a collection of resources.
+    It exposes operations methods like provision, unprovision, stop, start,
+    and sync.
+    """
+    @lazy
+    def kwdict(self):
+        return __import__("svcdict")
+
+    @lazy
+    def ha(self):
+        if self.topology == "flex":
+            return True
+        if self.has_monitored_resources():
+            return True
+        if self.orchestrate == "ha":
+            return True
+        return False
 
     @lazy
     def dockerlib(self):
@@ -636,8 +2289,64 @@ class Svc(Crypt, ExtConfigMixin):
             return newid
 
     @lazy
-    def kind(self):
-        return self.oget("DEFAULT", "kind")
+    def parents(self):
+        return self.oget("DEFAULT", "parents")
+
+    @lazy
+    def placement(self):
+        return self.oget("DEFAULT", "placement")
+
+    @lazy
+    def stonith(self):
+        return self.oget("DEFAULT", "stonith")
+
+    @lazy
+    def comment(self):
+        return self.oget("DEFAULT", "comment")
+
+    @lazy
+    def create_pg(self):
+        return self.oget("DEFAULT", "create_pg")
+
+    @lazy
+    def aws(self):
+        return self.oget("DEFAULT", "aws")
+
+    @lazy
+    def disable_rollback(self):
+        return not self.oget("DEFAULT", "rollback")
+
+    @lazy
+    def aws_profile(self):
+        return self.oget("DEFAULT", "aws_profile")
+
+    @lazy
+    def show_disabled(self):
+        return self.oget("DEFAULT", "show_disabled")
+
+    @lazy
+    def pre_monitor_action(self):
+        return self.oget("DEFAULT", "pre_monitor_action")
+
+    @lazy
+    def monitor_action(self):
+        return self.oget("DEFAULT", "monitor_action")
+
+    @lazy
+    def bwlimit(self):
+        return self.oget("DEFAULT", "bwlimit")
+
+    @lazy
+    def encap(self):
+        return rcEnv.nodename in self.encapnodes
+
+    @lazy
+    def presnap_trigger(self):
+        return self.oget("DEFAULT", "presnap_trigger")
+
+    @lazy
+    def postsnap_trigger(self):
+        return self.oget("DEFAULT", "postsnap_trigger")
 
     @lazy
     def pool(self):
@@ -650,10 +2359,6 @@ class Svc(Crypt, ExtConfigMixin):
     @lazy
     def topology(self):
         return self.oget("DEFAULT", "topology")
-
-    @lazy
-    def disabled(self):
-        return self.oget("DEFAULT", "disable")
 
     @lazy
     def access(self):
@@ -806,14 +2511,6 @@ class Svc(Crypt, ExtConfigMixin):
         Return the service app code.
         """
         return self.oget("DEFAULT", "app")
-
-    def unset_conf_lazy(self):
-        self.unset_lazy("nodes")
-        self.unset_lazy("ordered_nodes")
-        self.unset_lazy("peers")
-        self.unset_lazy("ordered_peers")
-        self.unset_lazy("flex_min_nodes")
-        self.unset_lazy("flex_max_nodes")
 
     def get_node(self):
         if self.node is None:
@@ -1151,95 +2848,6 @@ class Svc(Crypt, ExtConfigMixin):
                 nodenames.append(nodename)
         return nodenames
 
-    def svclock(self, action=None, timeout=30, delay=1):
-        """
-        Acquire the service action lock.
-        """
-        suffix = None
-        if (action not in ACTION_NO_ASYNC and self.options.node is not None and self.options.node != "") or \
-           action in ACTIONS_NO_LOCK or \
-           self.options.nolock or \
-           action.startswith("collector") or \
-           self.lockfd is not None:
-            # explicitly blacklisted or
-            # no need to serialize requests or
-            # already acquired
-            return
-
-        if action.startswith("compliance"):
-            # compliance modules are allowed to execute actions on the service
-            # so give them their own lock
-            suffix = "compliance"
-        elif action.startswith("sync"):
-            suffix = "sync"
-
-        lockfile = os.path.join(self.var_d, "lock.generic")
-        if suffix is not None:
-            lockfile = ".".join((lockfile, suffix))
-
-        details = "(timeout %d, delay %d, action %s, lockfile %s)" % \
-                  (timeout, delay, action, lockfile)
-        self.log.debug("acquire service lock %s", details)
-
-        # try an immmediate lock acquire and see if the running action is
-        # compatible
-        if action in ACTIONS_LOCK_COMPAT:
-            try:
-                lockfd = lock.lock(
-                    timeout=0,
-                    delay=delay,
-                    lockfile=lockfile,
-                    intent=action
-                )
-                if lockfd is not None:
-                    self.lockfd = lockfd
-                return
-            except lock.LockTimeout as exc:
-                if exc.intent in ACTIONS_LOCK_COMPAT[action]:
-                    return
-                # not compatible, continue with the normal acquire
-            except Exception:
-                pass
-
-        try:
-            lockfd = lock.lock(
-                timeout=timeout,
-                delay=delay,
-                lockfile=lockfile,
-                intent=action
-            )
-        except lock.LockTimeout as exc:
-            raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
-        except lock.LockNoLockFile:
-            raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
-        except lock.LockCreateError:
-            raise ex.excError("can not create lock file %s" % details)
-        except lock.LockAcquire as exc:
-            raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
-        except ex.excSignal:
-            raise ex.excError("interrupted by signal %s" % details)
-        except Exception as exc:
-            self.save_exc()
-            raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
-
-        if lockfd is not None:
-            self.lockfd = lockfd
-
-    def svcunlock(self):
-        """
-        Release the service action lock.
-        """
-        lock.unlock(self.lockfd)
-        self.lockfd = None
-
-    @staticmethod
-    def setup_signal_handlers():
-        """
-        Install signal handlers.
-        """
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
-
     def init_resources(self):
         if self.resources_initialized:
             return self.init_resources_errors
@@ -1342,7 +2950,7 @@ class Svc(Crypt, ExtConfigMixin):
                     _rsets.append(rset)
 
             if action in ["start", "startstandby", "provision"] or \
-                self.type.startswith("sync"):
+                __type.startswith("sync"):
                 _rsets.sort()
             else:
                 _rsets.sort(reverse=True)
@@ -1364,13 +2972,6 @@ class Svc(Crypt, ExtConfigMixin):
                    rcEnv.nodename in self.nodes:
                     return True
         return False
-
-    def action_triggers(self, trigger, action, **kwargs):
-        """
-        Executes a resource trigger. Guess if the shell mode is needed from
-        the trigger syntax.
-        """
-        action_triggers(self, trigger, action, **kwargs)
 
     def set_action(self, rsets=None, _type=None, action=None, tags=None, xtags=None):
         """
@@ -1463,103 +3064,6 @@ class Svc(Crypt, ExtConfigMixin):
             status += resource.status()
         return int(status)
 
-    def status(self):
-        """
-        Return the aggregate status a service.
-        """
-        refresh = self.options.refresh or (not self.encap and self.options.cron)
-        data = self.print_status_data(mon_data=False, refresh=refresh)
-        return rcStatus.Status(data["overall"]).value()
-
-    @fcache
-    def get_mon_data(self):
-        data = self.node._daemon_status(silent=True)
-        if data is not None and "monitor" in data:
-            return data["monitor"]
-        return {}
-
-    def get_smon_data(self):
-        data = {}
-        try:
-            mon_data = self.get_mon_data()
-            data["compat"] = mon_data["compat"]
-            data["service"] = mon_data["services"][self.svcpath]
-            data["instances"] = {}
-            for nodename in mon_data["nodes"]:
-                 try:
-                     data["instances"][nodename] = mon_data["nodes"][nodename]["services"]["status"][self.svcpath]["monitor"]
-                 except KeyError:
-                     pass
-            return data
-        except Exception:
-            return
-
-    @lazy
-    def status_data_dump(self):
-        return os.path.join(self.var_d, "status.json")
-
-    def status_data_dump_outdated(self):
-        """
-        Return True if the status data dump is older than the last config file
-        modification time.
-        """
-        try:
-            return os.stat(self.paths.cf).st_mtime > os.stat(self.status_data_dump).st_mtime
-        except OSError as exc:
-            return True
-
-    def print_status_data(self, from_resource_status_cache=False, mon_data=False, refresh=False):
-        """
-        Return a structure containing hierarchical status of
-        the service and monitor information. Fetch CRM status from cache if
-        possible and allowed by kwargs.
-        """
-        data = None
-        try:
-            lockfile = os.path.join(self.var_d, "lock.json.status")
-            with lock.cmlock(timeout=2, delay=1, lockfile=lockfile, intent="status from cache"):
-                if not from_resource_status_cache and \
-                   not refresh and \
-                   os.path.exists(self.status_data_dump) and \
-                   not self.status_data_dump_outdated():
-                    try:
-                        with open(self.status_data_dump, 'r') as filep:
-                            data = json.load(filep)
-                    except ValueError:
-                        pass
-        except lock.LOCK_EXCEPTIONS as exc:
-            raise ex.excAbortAction(str(exc))
-
-        waitlock = convert_duration(self.options.waitlock)
-        if waitlock < 0:
-            waitlock = DEFAULT_WAITLOCK
-
-        if data is None:
-            # use a different lock to not block the faster "from cache" codepath
-            lockfile = os.path.join(self.var_d, "lock.status")
-            try:
-                with lock.cmlock(timeout=waitlock, delay=1, lockfile=lockfile, intent="status"):
-                    data = self.print_status_data_eval(refresh=refresh)
-            except lock.LOCK_EXCEPTIONS as exc:
-                raise ex.excAbortAction(str(exc))
-        else:
-            data["running"] = self.get_running(data["resources"].keys())
-
-        if mon_data:
-            mon_data = self.get_smon_data()
-            try:
-                data["cluster"] = {
-                    "compat": mon_data["compat"],
-                    "avail": mon_data["service"]["avail"],
-                    "overall": mon_data["service"]["overall"],
-                    "placement": mon_data["service"]["placement"],
-                }
-                data["monitor"] = mon_data["instances"][rcEnv.nodename]
-            except:
-                pass
-
-        return data
-
     def get_running(self, rids=None):
         lockfile = os.path.join(self.var_d, "lock.generic")
         running = []
@@ -1590,6 +3094,49 @@ class Svc(Crypt, ExtConfigMixin):
                 pass
             return {}
         return {}
+
+    def print_resource_status(self):
+        """
+        Print a single resource status string.
+        """
+        if len(self.action_rid) != 1:
+            print("action 'print_resource_status' is not allowed on mutiple "
+                  "resources", file=sys.stderr)
+            return 1
+        for rid in self.action_rid:
+            resource = self.get_resource(rid)
+            if resource is None:
+                print("resource %s not found" % rid)
+                continue
+            print(rcStatus.colorize_status(str(resource.status(refresh=self.options.refresh))))
+        return 0
+
+    def print_status(self):
+        """
+        Display in human-readable format the hierarchical service status.
+        """
+        data = self.print_status_data(mon_data=True, refresh=self.options.refresh)
+        if self.options.node:
+            nodename = self.options.node
+            mon_data = self.get_mon_data()
+            data = mon_data.get("nodes", {}).get(self.options.node, {}).get("services", {}).get("status", {}).get(self.svcpath, {})
+            data["cluster"] = mon_data.get("services", {}).get(self.svcpath, {})
+            data["cluster"]["compat"] = mon_data.get("compat")
+        else:
+            nodename = rcEnv.nodename
+
+        if self.options.format is not None or self.options.jsonpath_filter:
+            return data
+
+        # discard disabled resources ?
+        if self.options.show_disabled is not None:
+            discard_disabled = not self.options.show_disabled
+        else:
+            discard_disabled = not self.show_disabled
+
+        from fmt_service import format_service
+        mon_data = self.get_mon_data()
+        format_service(self.svcpath, data, mon_data=mon_data, discard_disabled=discard_disabled, volatile=self.volatile, nodename=nodename)
 
     def print_status_data_eval(self, refresh=False, write_data=True):
         """
@@ -1714,114 +3261,6 @@ class Svc(Crypt, ExtConfigMixin):
         if write_data:
             self.write_status_data(data)
         return data
-
-    def csum_status_data(self, data):
-        h = hashlib.md5()
-        def fn(h, val):
-            if type(val) == dict:
-                for key in sorted(val.keys()):
-                    _val = val[key]
-                    if key in ("status_updated", "updated", "mtime", "csum"):
-                        continue
-                    h = fn(h, _val)
-            elif type(val) == list:
-                for _val in val:
-                    h = fn(h, _val)
-            else:
-                h.update(repr(val).encode())
-            return h
-        return fn(h, data).hexdigest()
-
-    def write_status_data(self, data):
-        if self.volatile:
-            return
-        data["csum"] = self.csum_status_data(data)
-        try:
-            with open(self.status_data_dump, "w") as filep:
-                json.dump(data, filep)
-                filep.flush()
-            os.utime(self.status_data_dump, (-1, data["updated"]))
-            self.wake_monitor()
-        except Exception as exc:
-            self.log.warning("failed to update %s: %s",
-                             self.status_data_dump, str(exc))
-        return data
-
-    def update_status_data(self):
-        self.log.debug("update status dump")
-        # print_status_data() with from_resource_status_cache=True does a status.json write
-        return self.print_status_data(from_resource_status_cache=True)
-
-    def env_section_keys_evaluated(self):
-        """
-        Return the dict of key/val pairs in the [env] section of the
-        service configuration, after dereferencing.
-        """
-        return self.env_section_keys(evaluate=True)
-
-    def env_section_keys(self, evaluate=False):
-        """
-        Return the dict of key/val pairs in the [env] section of the
-        service configuration, without dereferencing.
-        """
-        config = self.print_config_data()
-        try:
-            from collections import OrderedDict
-            data = OrderedDict()
-        except ImportError:
-            data = {}
-        for key in config.get("env", {}).keys():
-            key = key.split("@")[0]
-            if key in data:
-                continue
-            if evaluate:
-                data[key] = self.conf_get('env', key)
-            else:
-                data[key] = config["env"][key]
-        return data
-
-    def print_resource_status(self):
-        """
-        Print a single resource status string.
-        """
-        if len(self.action_rid) != 1:
-            print("action 'print_resource_status' is not allowed on mutiple "
-                  "resources", file=sys.stderr)
-            return 1
-        for rid in self.action_rid:
-            resource = self.get_resource(rid)
-            if resource is None:
-                print("resource %s not found" % rid)
-                continue
-            print(rcStatus.colorize_status(str(resource.status(refresh=self.options.refresh))))
-        return 0
-
-    def print_status(self):
-        """
-        Display in human-readable format the hierarchical service status.
-        """
-        data = self.print_status_data(mon_data=True, refresh=self.options.refresh)
-        if self.options.node:
-            nodename = self.options.node
-            mon_data = self.get_mon_data()
-            data = mon_data.get("nodes", {}).get(self.options.node, {}).get("services", {}).get("status", {}).get(self.svcpath, {})
-            data["cluster"] = mon_data.get("services", {}).get(self.svcpath, {})
-            data["cluster"]["compat"] = mon_data.get("compat")
-        else:
-            nodename = rcEnv.nodename
-
-        if self.options.format is not None or self.options.jsonpath_filter:
-            return data
-
-        # discard disabled resources ?
-        if self.options.show_disabled is not None:
-            discard_disabled = not self.options.show_disabled
-        else:
-            discard_disabled = not self.show_disabled
-
-        from fmt_service import format_service
-        mon_data = self.get_mon_data()
-        format_service(self.svcpath, data, mon_data=mon_data, discard_disabled=discard_disabled, volatile=self.volatile, nodename=nodename)
 
     def get_rset_status(self, groups, refresh=False):
         """
@@ -2448,166 +3887,6 @@ class Svc(Crypt, ExtConfigMixin):
             devs |= set(_data.get("exposed", []))
         return devs
 
-    def print_config_mtime(self):
-        """
-        Print the service configuration file last modified timestamp. Used by
-        remote agents to determine which agent holds the most recent version.
-        """
-        mtime = os.stat(self.paths.cf).st_mtime
-        print(mtime)
-
-    def prepare_async_cmd(self):
-        cmd = sys.argv[1:]
-        cmd = drop_option("--node", cmd, drop_value=True)
-        cmd = drop_option("-s", cmd, drop_value=True)
-        cmd = drop_option("--service", cmd, drop_value=True)
-        return cmd
-
-    def async_action(self, action, wait=None, timeout=None):
-        if action in ACTION_NO_ASYNC:
-            return
-        if self.options.node is not None and self.options.node != "":
-            cmd = self.prepare_async_cmd()
-            ret = self.daemon_service_action(cmd)
-            if ret == 0:
-                raise ex.excAbortAction()
-            else:
-                raise ex.excError()
-        if self.options.local or self.options.slave or self.options.slaves or \
-           self.options.master:
-            return
-        if action not in ACTION_ASYNC:
-            return
-        if "target" not in ACTION_ASYNC[action]:
-            return
-        if self.command_is_scoped():
-            return
-        if self.options.dry_run:
-            raise ex.excAbortAction()
-        self.daemon_mon_action(action, wait=wait, timeout=timeout)
-        raise ex.excAbortAction()
-
-    def daemon_log_result(self, ret, raise_on_errors=True):
-        if ret is None:
-            return
-        info = ret.get("info", [])
-        if info is None:
-            info = []
-        elif not isinstance(info, list):
-            info = [info]
-        for line in info:
-            if not line:
-                continue
-            self.log.info(line)
-
-        errors = ret.get("error", [])
-        if errors is None:
-            errors = []
-        if not isinstance(errors, list):
-            errors = [errors]
-        for line in errors:
-            if not line:
-                continue
-            self.log.error(line)
-        if errors:
-            raise ex.excError
-        status = ret.get("status")
-        if status not in (None, 0):
-            raise ex.excError
-
-    def daemon_mon_action(self, action, wait=None, timeout=None):
-        global_expect = self.prepare_global_expect(action)
-        ret = self.set_service_monitor(global_expect=global_expect)
-        self.daemon_log_result(ret)
-        self.wait_daemon_mon_action(global_expect, wait=wait, timeout=timeout)
-
-    def prepare_global_expect(self, action):
-        global_expect = ACTION_ASYNC[action]["target"]
-        if action == "delete" and self.options.unprovision:
-            global_expect = "purged"
-            action = "purge"
-        elif action == "move":
-            if self.options.destination_node is None:
-                raise ex.excError("the --to <node>[,<node>,...] option is required")
-            global_expect += self.options.destination_node
-        elif action == "switch":
-            dst = self.destination_node_sanity_checks()
-            global_expect += dst
-        elif action == "takeover":
-            dst = self.destination_node_sanity_checks(rcEnv.nodename)
-            global_expect += dst
-        return global_expect
-
-    def wait_daemon_mon_action(self, global_expect, wait=None, timeout=None, log_progress=True):
-        if wait is None:
-            wait = self.options.wait
-        if not wait:
-            return
-        if timeout is None:
-            timeout = self.options.time
-        if timeout is not None:
-            timeout = convert_duration(timeout)
-        # poll global service status
-        prev_global_expect_set = set()
-        for _ in range(timeout):
-            data = self.node._daemon_status(refresh=True)
-            if data is None or "monitor" not in data:
-                # interrupted, daemon died
-                time.sleep(1)
-                continue
-            global_expect_set = set()
-            inprogress = set()
-            for nodename in data["monitor"]["nodes"]:
-                try:
-                    _data = data["monitor"]["nodes"][nodename]["services"]["status"][self.svcpath]
-                except (KeyError, TypeError) as exc:
-                    continue
-                if _data["monitor"].get("global_expect") is not None or "ing" in _data["monitor"].get("status"):
-                    inprogress.add(nodename)
-                if _data["monitor"].get("global_expect") in (global_expect, "n/a"):
-                    global_expect_set.add(nodename)
-            if log_progress and prev_global_expect_set != global_expect_set:
-                for nodename in global_expect_set - prev_global_expect_set:
-                    self.log.info(" work starting on %s", nodename)
-                for nodename in prev_global_expect_set - global_expect_set:
-                    self.log.info(" work over on %s", nodename)
-            if not inprogress and not global_expect_set:
-                if self.svcpath not in data["monitor"]["services"]:
-                    self.log.info("final status: deleted")
-                    return
-                self.log.info("final status: avail=%s overall=%s frozen=%s",
-                              data["monitor"]["services"][self.svcpath]["avail"],
-                              data["monitor"]["services"][self.svcpath]["overall"],
-                              data["monitor"]["services"][self.svcpath].get("frozen", False))
-                return
-            prev_global_expect_set = set(global_expect_set)
-            time.sleep(1)
-        raise ex.excError("wait timeout exceeded")
-
-    def current_node(self):
-        data = self.node._daemon_status()
-        for nodename, _data in data["monitor"]["nodes"].items():
-            try:
-                __data = _data["services"]["status"][self.svcpath]
-            except KeyError:
-                continue
-            if __data["avail"] == "up":
-                return nodename
-
-    def command_is_scoped(self, options=None):
-        """
-        Return True if a resource filter has been setup through
-        --rid, --subsets or --tags
-        """
-        if options is None:
-            options = self.options
-        if (options.rid is not None and options.rid != "") or \
-           (options.tags is not None and options.tags != "") or \
-           (options.subsets is not None and options.subsets != "") or \
-           options.upto or options.downto:
-            return True
-        return False
-
     def run(self):
         self.master_run()
         self.slave_run()
@@ -2770,7 +4049,7 @@ class Svc(Crypt, ExtConfigMixin):
         """
         self.all_set_action("postsync")
 
-    def remote_action(self, nodename, action, waitlock=DEFAULT_WAITLOCK,
+    def remote_action(self, nodename, action, waitlock=None,
                       sync=False, verbose=True, action_mode=True, collect=True):
         rcmd = []
         if self.options.debug:
@@ -2781,7 +4060,7 @@ class Svc(Crypt, ExtConfigMixin):
             rcmd += ['--local']
         if self.options.cron:
             rcmd += ['--cron']
-        if self.options.waitlock != DEFAULT_WAITLOCK:
+        if waitlock is not None and waitlock != self.lock_timeout:
             rcmd += ['--waitlock', str(waitlock)]
         rcmd += action.split()
         if verbose:
@@ -2941,124 +4220,6 @@ class Svc(Crypt, ExtConfigMixin):
             "sync.dds",
         ]
         self.sub_set_action(rtypes, "sync_verify")
-
-    def print_config(self):
-        """
-        The 'print config' action entry point.
-        Print the service configuration in the format specified by --format.
-        """
-        if not os.path.exists(self.paths.cf):
-            buff = self.remote_service_config()
-            if buff is None:
-                raise ex.excError("could not fetch remote config")
-            import tempfile
-            try:
-                tmpfile = tempfile.NamedTemporaryFile()
-                fname = tmpfile.name
-                tmpfile.close()
-                with open(fname, "w") as tmpfile:
-                    tmpfile.write(buff)
-                svc = Svc(self.svcname, self.namespace, node=self.node, cf=fname, volatile=True)
-                svc.options = self.options
-                return svc.print_config()
-            finally:
-                try:
-                    os.unlink(fname)
-                except Exception:
-                    pass
-        if self.options.format is not None or self.options.jsonpath_filter:
-            return self.print_config_data(evaluate=self.options.eval,
-                                          impersonate=self.options.impersonate)
-        from rcColor import print_color_config
-        print_color_config(self.paths.cf)
-
-    def make_temp_config(self):
-        """
-        Copy the current service configuration file to a temporary
-        location for edition.
-        If the temp file already exists, propose the --discard
-        or --recover options.
-        """
-        import shutil
-        makedirs(os.path.dirname(self.paths.tmp_cf))
-        if os.path.exists(self.paths.tmp_cf):
-            if self.options.recover:
-                pass
-            elif self.options.discard:
-                shutil.copy(self.paths.cf, self.paths.tmp_cf)
-            else:
-                self.edit_config_diff()
-                print("%s exists: service is already being edited. Set "
-                      "--discard to edit from the current configuration, "
-                      "or --recover to open the unapplied config" % \
-                      self.paths.tmp_cf, file=sys.stderr)
-                raise ex.excError
-        else:
-            shutil.copy(self.paths.cf, self.paths.tmp_cf)
-        return self.paths.tmp_cf
-
-    def edit_config_diff(self):
-        """
-        Display the diff between the current config and the pending
-        unvalidated config.
-        """
-        from subprocess import call
-
-        def diff_capable(opts):
-            cmd = ["diff"] + opts + [self.paths.cf, self.paths.cf]
-            cmd_results = justcall(cmd)
-            if cmd_results[2] == 0:
-                return True
-            return False
-
-        if not os.path.exists(self.paths.tmp_cf):
-            return
-        if diff_capable(["-u", "--color"]):
-            cmd = ["diff", "-u", "--color", self.paths.cf, self.paths.tmp_cf]
-        elif diff_capable(["-u"]):
-            cmd = ["diff", "-u", self.paths.cf, self.paths.tmp_cf]
-        else:
-            cmd = ["diff", self.paths.cf, self.paths.tmp_cf]
-        call(cmd)
-
-    def edit_config(self):
-        """
-        Execute an editor on the service configuration file.
-        When the editor exits, validate the new configuration file.
-        If validation pass, install the new configuration,
-        else keep the previous configuration in place and offer the
-        user the --recover or --discard choices for its next edit
-        config action.
-        """
-        if not os.path.exists(self.paths.cf):
-            raise ex.excError("service %s is not installed on this node" % \
-                              self.svcpath)
-        if "EDITOR" in os.environ:
-            editor = os.environ["EDITOR"]
-        elif os.name == "nt":
-            editor = "notepad"
-        else:
-            editor = "vi"
-        from rcUtilities import which, fsum
-        if not which(editor):
-            print("%s not found" % editor, file=sys.stderr)
-            return 1
-        path = self.make_temp_config()
-        os.system(' '.join((editor, path)))
-        if fsum(path) == fsum(self.paths.cf):
-            os.unlink(path)
-            return 0
-        results = self._validate_config(path=path)
-        if results["errors"] == 0:
-            import shutil
-            shutil.copy(path, self.paths.cf)
-            os.unlink(path)
-        else:
-            print("your changes were not applied because of the errors "
-                  "reported above. you can use the edit config command "
-                  "with --recover to try to fix your changes or with "
-                  "--discard to restart from the live config")
-        return results["errors"] + results["warnings"]
 
     def can_sync(self, rtypes=None, target=None):
         """
@@ -3333,28 +4494,6 @@ class Svc(Crypt, ExtConfigMixin):
                 continue
             resource.skip = True
 
-    def setup_environ(self, action=None):
-        """
-        Setup envionment variables.
-        Startup scripts and triggers can use them, so their code can be
-        more generic.
-        All resources can contribute a set of env variables through their
-        own setup_environ() method.
-        """
-        if action in ACTIONS_NO_TRIGGER:
-            return
-        if not action and os.environ.get("OPENSVC_SVCPATH") == self.svcpath:
-            return
-        os.environ['OPENSVC_SVCPATH'] = self.svcpath
-        os.environ['OPENSVC_SVCNAME'] = self.svcname
-        os.environ['OPENSVC_SVC_ID'] = self.id
-        if self.namespace:
-            os.environ['OPENSVC_NAMESPACE'] = self.namespace
-        if action:
-            os.environ['OPENSVC_ACTION'] = action
-        for resource in self.get_resources():
-            resource.setup_environ()
-
     def all_rids(self):
         self.init_resources()
         return [rid for rid in self.resources_by_id if rid is not None] + \
@@ -3470,34 +4609,6 @@ class Svc(Crypt, ExtConfigMixin):
         return [resource for resource in self.resources_by_id.values()
                 if resource.standby]
 
-    def prepare_options(self, action, options):
-        """
-        Return a Storage() from command line options or dict passed as
-        <options>, sanitized, merge with default values in self.options.
-        """
-        if options is None:
-            options = Storage()
-        elif isinstance(options, dict):
-            options = Storage(options)
-
-        if is_string(options.slave):
-            options.slave = options.slave.split(',')
-
-        if isinstance(options.resource, list):
-            for idx, resource in enumerate(options.resource):
-                if not is_string(resource):
-                    continue
-                try:
-                    options.resource[idx] = json.loads(resource)
-                except ValueError:
-                    raise ex.excError("invalid json in resource definition: "
-                                      "%s" % options.resource[idx])
-
-        self.options.update(options)
-        options = self.options
-
-        return options
-
     def options_to_rids(self, options, action):
         """
         Return the list of rids to apply an action to, from the command
@@ -3571,511 +4682,6 @@ class Svc(Crypt, ExtConfigMixin):
             rids = rid
 
         return rids
-
-    def systemd_join_agent_service(self):
-        from rcSystemd import systemd_system, systemd_join
-        if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon" or not systemd_system():
-               return
-        systemd_join("opensvc-agent.service")
-
-    def action(self, action, options=None):
-        self.systemd_join_agent_service()
-        try:
-            options = self.prepare_options(action, options)
-            self.async_action(action)
-        except ex.excError as exc:
-            msg = str(exc)
-            if msg:
-                self.log.error(msg)
-            return 1
-        except ex.excAbortAction as exc:
-            msg = str(exc)
-            if msg:
-                self.log.info(msg)
-            return 0
-        self.allow_on_this_node(action)
-        if (self.options.cron and action in ("run", "resource_monitor", "sync_all", "status")) or action == "print_schedule":
-            self.configure_scheduler()
-        try:
-            return self._action(action, options=options)
-        except lock.LOCK_EXCEPTIONS as exc:
-            raise ex.excError(str(exc))
-
-    @sched_action
-    def _action(self, action, options=None):
-        """
-        Filter resources on which the service action must act.
-        Abort if the service is frozen, or if --cluster is not set on a HA
-        service.
-        Set up the environment variables.
-        Finally do the service action either in logged or unlogged mode.
-        """
-
-        try:
-            self.action_rid_before_depends = self.options_to_rids(options, action)
-        except ex.excAbortAction as exc:
-            self.log.error(exc)
-            return 1
-
-        depends = set()
-        for rid in self.action_rid_before_depends:
-            depends |= self.action_rid_dependencies(action, rid) - set(self.action_rid_before_depends)
-
-        self.action_rid = set(self.action_rid_before_depends)
-        if len(depends) > 0:
-            self.log.info("add rid %s to satisfy dependencies" % ", ".join(depends))
-            self.action_rid |= depends
-
-        self.action_rid = list(self.action_rid)
-        self.action_rid_depends = list(depends)
-        self.action_start_date = datetime.datetime.now()
-
-        if self.node is None:
-            self.node = node.Node()
-
-        if action not in ACTIONS_NO_STATUS_CHANGE + ACTIONS_CF_CHANGE and \
-           'compliance' not in action and \
-           'collector' not in action and \
-            not options.dry_run and \
-            not action.startswith("docker"):
-            #
-            # here we know we will run a resource state-changing action
-            # purge the resource status file cache, so that we don't take
-            # decision on outdated information
-            #
-            self.log.debug("purge all resource status file caches before "
-                           "action %s", action)
-            self.purge_status_caches()
-
-        self.setup_signal_handlers()
-        self.set_skip_resources(keeprid=self.action_rid, xtags=options.xtags)
-        if action == "status" or \
-           action.startswith("print_") or \
-           action.startswith("collector") or \
-           action.startswith("json_"):
-            return self.do_print_action(action, options)
-        if self.published_action(action, options):
-            err = self.do_logged_action(action, options)
-        else:
-            err = self.do_action(action, options)
-        return err
-
-    def published_action(self, action, options):
-        if self.volatile:
-            return False
-        if not os.path.exists(self.paths.cf):
-            return False
-        if rcEnv.dbopensvc is None or action in ACTIONS_NO_LOG or \
-           action.startswith("compliance") or \
-           action.startswith("docker") or \
-           options.dry_run:
-            return False
-        return True
-
-    def do_print_action(self, action, options):
-        """
-        Call the service method associated with action. This method produces
-        data the caller will print.
-        If --cluster is set, execute the action on remote nodes and
-        aggregate the results.
-        """
-        _action = action + ""
-        if action.startswith("json_"):
-            action = "print_"+action[5:]
-            self.node.options.format = "json"
-            self.options.format = "json"
-            options.format = "json"
-
-        if "_json_" in action:
-            action = action.replace("_json_", "_")
-            self.node.options.format = "json"
-            self.options.format = "json"
-            options.format = "json"
-
-        if options.cluster and options.format not in ("json", "flat_json"):
-            raise ex.excError("only the json and flat_json output formats are allowed with --cluster")
-
-        if action.startswith("collector_"):
-            from collector import Collector
-            collector = Collector(options, self.node, self.svcpath)
-            func = getattr(collector, action)
-        else:
-            func = getattr(self, action)
-
-        if not hasattr(func, "__call__"):
-            raise ex.excError("%s is not callable" % action)
-
-        psinfo = self.do_cluster_action(_action, collect=True, action_mode=False)
-
-        try:
-            data = func()
-        except Exception as exc:
-            data = {"error": str(exc)}
-
-        if psinfo:
-            # --cluster is set and we have remote responses
-            results = self.join_cluster_action(**psinfo)
-            for nodename in results:
-                results[nodename] = results[nodename][0]
-                if options.format in ("json", "flat_json"):
-                    try:
-                        results[nodename] = json.loads(results[nodename])
-                    except (TypeError, ValueError) as exc:
-                        results[nodename] = {"error": str(exc)}
-            results[rcEnv.nodename] = data
-            return results
-        elif options.cluster:
-            # no remote though --cluster is set
-            results = {}
-            results[rcEnv.nodename] = data
-            return results
-
-        return data
-
-    def do_cluster_action(self, action, options=None, waitlock=60, collect=False, action_mode=True):
-        """
-        Execute an action on remote nodes if --cluster is set and the
-        service is a flex, and this node is flex primary.
-
-        edit config, validate config, and sync* are never executed through
-        this method.
-
-        If possible execute in parallel running subprocess. Aggregate and
-        return results.
-        """
-        if options is None:
-            options = self.options
-        if not options.cluster:
-            return
-
-        if action in ("edit_config", "validate_config") or "sync" in action:
-            return
-
-        if self.topology == "flex":
-            if rcEnv.nodename == self.drp_flex_primary:
-                peers = set(self.drpnodes) - set([rcEnv.nodename])
-            elif rcEnv.nodename == self.flex_primary:
-                peers = set(self.nodes) - set([rcEnv.nodename])
-            else:
-                return
-        elif not action_mode:
-            if rcEnv.nodename in self.nodes:
-                peers = set(self.nodes) | set(self.drpnodes)
-            else:
-                peers = set(self.drpnodes)
-            peers -= set([rcEnv.nodename])
-        else:
-            return
-
-        args = [arg for arg in sys.argv[1:] if arg not in ("-c", "--cluster")]
-        if options.docker_argv and len(options.docker_argv) > 0:
-            args += options.docker_argv
-
-        def wrapper(queue, **kwargs):
-            """
-            Execute the remote action and enqueue or print results.
-            """
-            collect = kwargs["collect"]
-            ret, out, err = self.remote_action(**kwargs)
-            if collect:
-                queue.put([out, err, ret])
-            else:
-                if len(out):
-                    print(out)
-                if len(err):
-                    print(err)
-            return out, err, ret
-
-        if rcEnv.sysname == "Windows":
-            parallel = False
-        else:
-            try:
-                from multiprocessing import Process, Queue
-                parallel = True
-                results = None
-                procs = {}
-                queues = {}
-            except ImportError:
-                parallel = False
-                results = {}
-                procs = None
-                queues = None
-
-        for nodename in peers:
-            kwargs = {
-                "nodename": nodename,
-                "action": " ".join(args),
-                "waitlock": waitlock,
-                "verbose": False,
-                "sync": True,
-                "action_mode": action_mode,
-                "collect": True,
-            }
-            if parallel:
-                queues[nodename] = Queue()
-                proc = Process(target=wrapper, args=(queues[nodename],), kwargs=kwargs)
-                proc.start()
-                procs[nodename] = proc
-            else:
-                results[nodename] = wrapper(**kwargs)
-        return {"procs": procs, "queues": queues, "results": results}
-
-    @staticmethod
-    def join_cluster_action(procs=None, queues=None, results=None):
-        """
-        Wait for subprocess to finish, aggregate and return results.
-        """
-        if procs is None or queues is None:
-            return results
-        results = {}
-        joined = []
-        while len(joined) < len(procs):
-            for nodename, proc in procs.items():
-                proc.join(0.1)
-                if not proc.is_alive():
-                    joined.append(nodename)
-                queue = queues[nodename]
-                if not queue.empty():
-                    results[nodename] = queue.get()
-        return results
-
-    def do_action(self, action, options):
-        """
-        Acquire the service action lock, call the service action method,
-        handles its errors, and finally release the lock.
-
-        If --cluster is set, and the service is a flex, and we are
-        flex_primary run the action on all remote nodes.
-        """
-
-        if action not in ACTIONS_NO_LOCK and self.topology not in TOPOLOGIES:
-            raise ex.excError("invalid cluster type '%s'. allowed: %s" % (
-                self.topology,
-                ', '.join(TOPOLOGIES),
-            ))
-
-        err = 0
-        waitlock = convert_duration(options.waitlock)
-        if waitlock < 0:
-            waitlock = self.lock_timeout
-
-        if action == "sync_all" and self.command_is_scoped():
-            for rid in self.action_rid:
-                resource = self.get_resource(rid)
-                if not resource or not resource.type.startswith("sync"):
-                    continue
-                try:
-                    resource.reslock(action=action, suffix="sync")
-                except ex.excError as exc:
-                    self.log.error(str(exc))
-                    return 1
-        else:
-            try:
-                self.svclock(action, timeout=waitlock)
-            except ex.excError as exc:
-                self.log.error(str(exc))
-                return 1
-
-        psinfo = self.do_cluster_action(action, options=options)
-
-        def call_action(action):
-            self.setup_environ(action=action)
-            self.action_triggers("pre", action)
-            self.action_triggers("blocking_pre", action, blocking=True)
-            err = getattr(self, action)()
-            self.action_triggers("post", action)
-            self.action_triggers("blocking_post", action, blocking=True)
-            return err
-
-        try:
-            if action.startswith("compliance_"):
-                err = getattr(self.compliance, action)()
-            elif hasattr(self, action):
-                self.running_action = action
-                self.notify_action(action, force=options.notify)
-                err = call_action(action)
-                if err is None:
-                    err = 0
-            else:
-                self.log.error("unsupported local action %s", action)
-                err = 1
-        except ex.excEndAction as exc:
-            self.log.info(exc)
-            err = 0
-        except ex.excAbortAction as exc:
-            msg = "'%s' action aborted by last resource" % action
-            if len(str(exc)) > 0:
-                msg += ": %s" % str(exc)
-            self.log.info(msg)
-            err = 0
-        except ex.excError as exc:
-            msg = "'%s' action stopped on execution error" % action
-            self.log.debug(msg)
-            msg = str(exc)
-            if len(msg) > 0:
-                self.log.error(msg)
-            err = 1
-            self.rollback_handler(action)
-        except ex.excSignal:
-            self.log.error("interrupted by signal")
-            err = 1
-        except:
-            err = 1
-            self.save_exc()
-        finally:
-            self.running_action = None
-            if action not in ACTIONS_NO_STATUS_CHANGE + ACTIONS_CF_CHANGE and \
-               not (action == "delete" and not self.command_is_scoped()):
-                data = self.print_status_data(refresh=True)
-                if action == "start" and not self.command_is_scoped() and \
-                   err == 0 and data.get("avail") not in ("up", "n/a") and \
-                   not self.options.dry_run:
-                    # catch drivers reporting no error, but instance not
-                    # evaluating as "up", to avoid the daemon entering a
-                    # start loop. This also catches resources going down
-                    # a short time a startup (app.simple for example)
-                    self.log.error("start action returned 0 but instance "
-                                   "avail status is %s", data.get("avail"))
-                    err = 1
-            elif action in ACTIONS_CF_CHANGE:
-                self.wake_monitor()
-            self.clear_action(action, err, force=options.notify)
-            if action not in ("sync_all", "run"):
-                # sync_all and run handle notfications at the resource level
-                self.notify_done(action)
-            self.svcunlock()
-            if action == "sync_all" and self.command_is_scoped():
-                for rid in self.action_rid:
-                    resource = self.resources_by_id[rid]
-                    if not resource.type.startswith("sync"):
-                        continue
-                    resource.resunlock()
-
-        if psinfo:
-            self.join_cluster_action(**psinfo)
-
-        return err
-
-    def action_progress(self, action):
-        progress = ACTION_ASYNC.get(action, {}).get("progress")
-        if progress is None:
-            return
-        if action.startswith("sync"):
-            progress = "syncing"
-        return progress
-
-    def notify_action(self, action, force=False):
-        if not force and os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
-            return
-        progress = self.action_progress(action)
-        if progress is None:
-            return
-        local_expect = None
-        if action in ("stop", "shutdown", "unprovision", "delete", "rollback", "toc") and not self.command_is_scoped():
-            local_expect = "unset"
-            if self.orchestrate in ("ha", "start"):
-                self.master_freeze()
-        try:
-            self.set_service_monitor(local_expect=local_expect, status=progress)
-            self.log.debug("daemon notified of action '%s' begin" % action)
-        except Exception as exc:
-            self.log.warning("failed to notify action begin to the daemon: %s", str(exc))
-
-    def clear_action(self, action, err, force=False):
-        if not force and os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
-            return
-        progress = self.action_progress(action)
-        local_expect = None
-        if progress is None:
-            return
-        if err:
-            status = action + " failed"
-        else:
-            status = "idle"
-            if action == "start" and not self.command_is_scoped():
-                local_expect == "started"
-        try:
-            self.set_service_monitor(local_expect=local_expect, status=status)
-            self.log.debug("daemon notified of action '%s' end" % action)
-        except Exception as exc:
-            self.log.warning("failed to notify action end to the daemon: %s", str(exc))
-
-    def rollback_handler(self, action):
-        """
-        Call the rollback method if
-        * the action triggering this handler is a start*
-        * service is not configured to not disable rollback
-        * --disable-rollback is not set
-        * at least one resource has been flagged rollbackable during the
-          start* action
-        """
-        if 'start' not in action:
-            return
-        if self.options.disable_rollback:
-            self.log.info("skip rollback %s: as instructed by --disable-rollback", action)
-            return
-        if self.disable_rollback:
-            self.log.info("skip rollback %s: as instructed by DEFAULT.rollback=false", action)
-            return
-        rids = [r.rid for r in self.get_resources() if r.can_rollback and (r.rollback_even_if_standby or not r.standby)]
-        if len(rids) == 0:
-            self.log.info("skip rollback %s: no resource activated", action)
-            return
-        self.log.info("trying to rollback %s on %s", action, ', '.join(rids))
-        try:
-            self.rollback()
-        except ex.excError:
-            self.log.error("rollback %s failed", action)
-
-    def do_logged_action(self, action, options):
-        """
-        Setup action logging to a machine-readable temp logfile, in preparation
-        to the collector feeding.
-        Do the action.
-        Finally, feed the log to the collector.
-        """
-        import tempfile
-        begin = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        # Provision a database entry to store action log later
-        self.node.daemon_collector_xmlrpc("begin_action", self.svcpath,
-                                          action, self.node.agent_version,
-                                          begin, self.options.cron)
-
-        # Per action logfile to push to database at the end of the action
-        tmpfile = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.paths.pathtmp,
-                                              prefix=self.svcname+'.'+action)
-        actionlogfile = tmpfile.name
-        tmpfile.close()
-        fmt = "%(asctime)s;;%(name)s;;%(levelname)s;;%(message)s;;%(process)d;;EOL"
-        actionlogformatter = logging.Formatter(fmt)
-        actionlogfilehandler = logging.FileHandler(actionlogfile)
-        actionlogfilehandler.setFormatter(actionlogformatter)
-        actionlogfilehandler.setLevel(logging.INFO)
-        self.log.addHandler(actionlogfilehandler)
-        try:
-            if sys.argv[0].endswith("/svcmgr.py"):
-                runlog = "do "+" ".join(sys.argv[1:])
-                runlog = runlog.replace("-s %s "%self.svcname, "")
-                runlog = runlog.replace("--service %s "%self.svcname, "")
-                runlog = runlog.replace("-s %s "%self.svcpath, "")
-                runlog = runlog.replace("--service %s "%self.svcpath, "")
-                if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
-                    runlog += " (daemon origin)"
-                else:
-                    runlog += " (user origin)"
-                self.log.info(runlog, {"f_stream": False})
-        except IndexError:
-            pass
-
-        err = self.do_action(action, options)
-
-        # Push result and logs to database
-        actionlogfilehandler.close()
-        self.log.removeHandler(actionlogfilehandler)
-        end = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.dblogger(action, begin, end, actionlogfile)
-        return err
 
     def restart(self):
         """
@@ -4223,18 +4829,6 @@ class Svc(Crypt, ExtConfigMixin):
             os.chmod(self.paths.cf, 0o0644)
         except (OSError, IOError) as exc:
             self.log.debug("failed to set %s mode: %s", self.paths.cf, str(exc))
-
-    @lazy
-    def config(self):
-        """
-        Initialize the service configuration parser object. Using an
-        OrderDict type to preserve the options and sections ordering,
-        if possible.
-
-        The parser object is a opensvc-specified class derived from
-        optparse.RawConfigParser.
-        """
-        return read_cf(self.paths.cf)
 
     def setenv(self, args, interactive=False):
         """
@@ -4651,183 +5245,6 @@ class Svc(Crypt, ExtConfigMixin):
         if self.options.provision:
             self.action("provision")
 
-    def save_exc(self):
-        """
-        A helper method to save stacks in the service log.
-        """
-        self.log.error("", exc_info=True)
-
-    def vcall(self, *args, **kwargs):
-        """
-        Wrap vcall, setting the service logger
-        """
-        kwargs["log"] = self.log
-        return vcall(*args, **kwargs)
-
-    def lcall(self, *args, **kwargs):
-        """
-        Wrap lcall, setting the service logger
-        """
-        kwargs["logger"] = self.log
-        return lcall(*args, **kwargs)
-
-    def allocate_rid(self, group, sections):
-        """
-        Return an unused rid in <group>.
-        """
-        prefix = group + "#"
-        rids = [section for section in sections if section.startswith(prefix)]
-        idx = 1
-        while True:
-            rid = "#".join((group, str(idx)))
-            if rid in rids:
-                idx += 1
-                continue
-            return rid
-
-    def update(self):
-        return self._update(self.options.resource,
-                            interactive=self.options.interactive,
-                            provision=self.options.provision)
-
-    def _update(self, resources, interactive=False, provision=False):
-        """
-        The 'update' action entry point.
-        Add resources to the service configuration, and provision them if
-        instructed to do so.
-        """
-        from keywords import MissKeyNoDefault, KeyInvalidValue
-
-        sections = {}
-        rtypes = {}
-        defaults = self.config.defaults()
-        for section in self.config.sections():
-            sections[section] = {}
-            elements = section.split('#')
-            if len(elements) == 2:
-                rtype = elements[0]
-                ridx = elements[1]
-                if rtype not in rtypes:
-                    rtypes[rtype] = set()
-                rtypes[rtype].add(ridx)
-            for option, value in self.config.items(section):
-                if option in list(defaults.keys()) + ['rtype']:
-                    continue
-                sections[section][option] = value
-
-        import svcBuilder
-
-        rid = []
-
-        for data in resources:
-            is_resource = False
-            if 'rid' in data:
-                section = data['rid']
-                if '#' not in section:
-                    raise ex.excError("%s must be formatted as 'rtype#n'" % section)
-                elements = section.split('#')
-                if len(elements) != 2:
-                    raise ex.excError("%s must be formatted as 'rtype#n'" % section)
-                del data['rid']
-                if section in sections:
-                    sections[section].update(data)
-                else:
-                    sections[section] = data
-                is_resource = True
-            elif 'rtype' in data and data["rtype"] == "env":
-                del data["rtype"]
-                if "env" in sections:
-                    sections["env"].update(data)
-                else:
-                    sections["env"] = data
-            elif 'rtype' in data and data["rtype"] != "DEFAULT":
-                section = self.allocate_rid(data['rtype'], sections)
-                self.log.info("allocated rid %s" % section)
-                del data['rtype']
-                sections[section] = data
-                is_resource = True
-            else:
-                if "rtype" in data:
-                    del data["rtype"]
-                defaults.update(data)
-
-            if is_resource:
-                rid.append(section)
-
-        for section, data in sections.items():
-            if not self.config.has_section(section):
-                self.config.add_section(section)
-            for key, val in data.items():
-                self.config.set(section, key, val)
-
-        self.write_config()
-
-        for section in rid:
-            group = section.split("#")[0]
-            svcBuilder.add_resource(self, group, section)
-
-        if provision and len(rid) > 0:
-            options = Storage(self.options)
-            options.rid = rid
-            self.action("provision", options)
-
-    def allow_on_this_node(self, action):
-        """
-        Raise excError if the service is not allowed to run on this node.
-        In other words, the nodename is not a service node or drpnode, nor the
-        service mode is cloud proxy.
-        """
-        if action in ACTIONS_ALLOW_ON_INVALID_NODE:
-            return
-        if self.svc_env != 'PRD' and rcEnv.node_env == 'PRD':
-            raise ex.excError('not allowed to run on this node (svc env=%s node env=%s)' % (self.svc_env, rcEnv.node_env))
-        if self.type in rcEnv.vt_cloud:
-            return
-        if rcEnv.nodename in self.nodes:
-            return
-        if rcEnv.nodename in self.drpnodes:
-            return
-        raise ex.excError("action '%s' aborted because this node's hostname "
-                          "'%s' is not a member of DEFAULT.nodes, "
-                          "DEFAULT.drpnode nor DEFAULT.drpnodes" % \
-                          (action, rcEnv.nodename))
-
-    def logs(self, nodename=None):
-        try:
-            self._logs(nodename=nodename)
-        except ex.excSignal:
-            return
-        except (OSError, IOError) as exc:
-            if exc.errno == 32:
-                # broken pipe
-                return
-
-    def _logs(self, nodename=None):
-        if nodename is None:
-            nodename = self.options.node
-        if self.options.local:
-            nodes = [rcEnv.nodename]
-        elif self.options.node:
-            nodes = [self.options.node]
-        else:
-            nodes = self.peers
-        from rcColor import colorize_log_line
-        lines = []
-        auto = sorted(nodes, reverse=True)
-        for nodename in nodes:
-            lines += self.daemon_backlogs(nodename)
-            for line in sorted(lines):
-                line = colorize_log_line(line, auto=auto)
-                if line:
-                    print(line)
-        if not self.options.follow:
-            return
-        for line in self.daemon_logs(nodes):
-            line = colorize_log_line(line, auto=auto)
-            if line:
-                print(line)
-                sys.stdout.flush()
-
     def placement_optimal(self, data=None):
         if data is None:
             data = self.node._daemon_status()
@@ -4835,236 +5252,6 @@ class Svc(Crypt, ExtConfigMixin):
         if placement == "optimal":
             return True
         return False
-
-    #########################################################################
-    #
-    # daemon communications
-    #
-    #########################################################################
-    def daemon_backlogs(self, nodename):
-        options = {
-            "svcpath": self.svcpath,
-            "backlog": self.options.backlog,
-            "debug": self.options.debug,
-        }
-        for lines in self.daemon_get_stream(
-            {"action": "service_logs", "options": options},
-            nodename=nodename,
-        ):
-            if lines is None:
-                break
-            for line in lines:
-                yield line
-
-    def daemon_logs(self, nodes=None):
-        options = {
-            "svcpath": self.svcpath,
-            "backlog": 0,
-        }
-        for lines in self.daemon_get_streams(
-            {"action": "service_logs", "options": options},
-            nodenames=nodes,
-        ):
-            if lines is None:
-                break
-            for line in lines:
-                yield line
-
-    def abort(self):
-        pass
-
-    def clear(self):
-        self.master_clear()
-        self.slave_clear()
-
-    @_slave_action
-    def slave_clear(self):
-        self.encap_cmd(["clear"], verbose=True)
-
-    @_master_action
-    def master_clear(self):
-        if self.options.local:
-           self._clear()
-        elif self.options.node:
-           self._clear(self.options.node)
-        else:
-           cleared = 0
-           for nodename in self.peers:
-               try:
-                   self._clear(nodename)
-               except ex.excError as exc:
-                   self.log.warning(exc)
-                   continue
-               cleared += 1
-           if cleared < len(self.peers):
-               raise ex.excError("cleared on %d/%d nodes" % (cleared, len(self.peers)))
-
-    def _clear(self, nodename=None):
-        options = {
-            "svcpath": self.svcpath,
-        }
-        data = self.daemon_send(
-            {"action": "clear", "options": options},
-            nodename=nodename,
-            timeout=5,
-        )
-        if data is None or data["status"] != 0:
-            raise ex.excError("clear on node %s failed: %s" % (nodename, data.get("error", "")))
-
-    def notify_done(self, action, rids=None):
-        if not self.options.cron:
-            return
-        if rids is None:
-            rids = self.action_rid
-        options = {
-            "action": action,
-            "svcpath": self.svcpath,
-            "rids": rids,
-        }
-        try:
-            data = self.daemon_send(
-                {"action": "run_done", "options": options},
-                nodename=self.options.node,
-                silent=True,
-            )
-            if data and data["status"] != 0:
-                if "error" in data:
-                    self.log.warning("notify scheduler action is done failed: %s", data["error"])
-                else:
-                    self.log.warning("notify scheduler action is done failed")
-        except Exception as exc:
-            self.log.warning("notify scheduler action is done failed: %s", str(exc))
-
-    def wake_monitor(self):
-        if self.options.no_daemon:
-            return
-        options = {
-            "svcpath": self.svcpath,
-        }
-        try:
-            data = self.daemon_send(
-                {"action": "wake_monitor", "options": options},
-                nodename=self.options.node,
-                silent=True,
-            )
-            if data and data["status"] != 0 and data.get("errno") != 111:
-                # 111: EREFUSED (ie daemon down)
-                if "error" in data:
-                    self.log.warning("wake monitor failed: %s", data["error"])
-                else:
-                    self.log.warning("wake monitor failed")
-        except Exception as exc:
-            self.log.warning("wake monitor failed: %s", str(exc))
-
-    def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None, svcpath=None):
-        if svcpath is None:
-            svcpath = self.svcpath
-        options = {
-            "svcpath": svcpath,
-            "status": status,
-            "local_expect": local_expect,
-            "global_expect": global_expect,
-            "stonith": stonith,
-        }
-        try:
-            data = self.daemon_send(
-                {"action": "set_service_monitor", "options": options},
-                nodename=self.options.node,
-                silent=True,
-                with_result=True,
-            )
-            if data and data["status"] != 0 and data.get("errno") != 111:
-                # 111: EREFUSED (ie daemon down)
-                self.log.warning("set monitor status failed")
-            return data
-        except Exception as exc:
-            self.log.warning("set monitor status failed: %s", str(exc))
-
-    def peer_service_config(self, nodename):
-        options = {
-            "svcpath": self.svcpath,
-        }
-        data = self.daemon_send(
-            {"action": "get_service_config", "options": options},
-            nodename=nodename,
-            silent=True,
-        )
-        if data["status"] != 0:
-            raise ex.excError(data.get("error"))
-        return data["data"]
-
-    def remote_service_config(self):
-        data = self.node._daemon_status(silent=True)["monitor"]["nodes"]
-        for ndata in data.values():
-            scope = ndata.get("services", {}).get("config", {}).get(self.svcpath, {}).get("scope", [])
-            if scope:
-                break
-        for peer in scope:
-            buff = self.peer_service_config(peer)
-            if buff:
-                return buff
-
-    def daemon_service_action(self, cmd, nodename=None, sync=True, timeout=0, collect=False, action_mode=True):
-        """
-        Execute a service action on a peer node.
-        If sync is set, wait for the action result.
-        """
-        if timeout is not None:
-            timeout = convert_duration(timeout)
-        if nodename is None:
-            nodename = self.options.node
-        if nodename not in self.node.cluster_nodes:
-            try:
-                secret = self.node.conf_get("cluster", "secret", impersonate=nodename)
-            except:
-                raise ex.excError("unknown cluster secret to communicate with node %s" % nodename)
-            try:
-                cluster_name = self.node.conf_get("cluster", "name", impersonate=nodename)
-            except:
-                raise ex.excError("unknown cluster name to communicate with node %s" % nodename)
-        else:
-            secret = self.cluster_key
-            cluster_name = None
-
-
-        options = {
-            "svcpath": self.svcpath,
-            "cmd": cmd,
-            "sync": sync,
-            "action_mode": action_mode,
-        }
-        if action_mode:
-            self.log.info("request action '%s' on node %s", " ".join(cmd), nodename)
-        try:
-            data = self.daemon_send(
-                {"action": "service_action", "options": options},
-                nodename=nodename,
-                silent=True,
-                timeout=timeout,
-                secret=secret,
-                cluster_name=cluster_name,
-            )
-        except Exception as exc:
-            self.log.error("post service action '%s' on node %s failed: %s",
-                           " ".join(cmd), nodename, exc)
-            return 1
-        if data is None or data["status"] != 0:
-            self.log.error("post service action '%s' on node %s failed",
-                           " ".join(cmd), nodename)
-            return 1
-        if "data" not in data:
-            return 0
-        data = data["data"]
-        if collect:
-            return data["ret"], data.get("out", ""), data.get("err", "")
-        else:
-            if data.get("out") and len(data["out"]) > 0:
-                for line in data["out"].splitlines():
-                   print(line)
-            if data.get("err") and len(data["err"]) > 0:
-                for line in data["err"].splitlines():
-                   print(line, file=sys.stderr)
-            return data["ret"]
 
     def get_pg_settings(self, s):
         d = {}
@@ -5101,13 +5288,6 @@ class Svc(Crypt, ExtConfigMixin):
             return int(self.svcname.split(".")[0])
         except ValueError:
             return 0
-
-    def unset_lazy(self, prop):
-        """
-        Expose the unset_lazy(self, ...) utility function as a method,
-        so Node() users don't have to import it from rcUtilities.
-        """
-        unset_lazy(self, prop)
 
     def snooze(self):
         """
@@ -5148,66 +5328,6 @@ class Svc(Crypt, ExtConfigMixin):
         if "error" in data:
             raise ex.excError(data["error"])
         return data
-
-    def support(self):
-        """
-        Send a tarball to the OpenSVC support upload site.
-        """
-        if self.node.sysreport_mod is None:
-            return
-
-        todo = [
-          ('INC', os.path.join(rcEnv.paths.pathlog, "node.log")),
-          ('INC', os.path.join(rcEnv.paths.pathlog, "xmlrpc.log")),
-          ('INC', os.path.join(self.log_d, self.svcname+".log")),
-          ('INC', self.var_d),
-        ]
-
-        import shutil
-        collect_d = os.path.join(rcEnv.paths.pathvar, "support")
-        try:
-            shutil.rmtree(collect_d)
-        except:
-            pass
-        srep = self.node.sysreport_mod.SysReport(node=self.node, collect_d=collect_d, compress=True)
-        srep.todo += todo
-        srep.collect()
-        tmpf = srep.archive(srep.full)
-
-        try:
-            import requests
-        except:
-            print("uploading the support tarball requires the requests module", file=sys.stderr)
-            return 1
-        print("uploading the support tarball")
-        content_size = os.stat(tmpf).st_size
-        import base64
-        with open(tmpf, 'rb') as filep:
-            files = {"upload": filep}
-            headers = {
-                'Content-Type':'application/octet-stream',
-                'Content-Filename':"%s_%s_at_%s.tar.gz" % (self.namespace if self.namespace else "", self.svcname, rcEnv.nodename),
-                'Content-length': '%d' % content_size,
-                'Content-Range': 'bytes 0-%d/%d' % (content_size-1, content_size),
-                'Maxlife-Unit':"DAYS",
-                'Maxlife-Value':"7",
-            }
-            resp = requests.post("https://sfx.opensvc.com/apis/rest/items", headers=headers, data=base64.b64encode(filep.read(content_size)), auth=("user", "support"))
-        loc = resp.headers.get("Content-Location")
-        if not loc:
-            print(json.dumps(resp.content, indent=4), file=sys.stderr)
-            return 1
-        print("uploaded as https://sfx.opensvc.com%s" % loc)
-
-    def skip_config_section(self, rid):
-        if rid == "DEFAULT":
-            return False
-        self.init_resources()
-        if self.encap and rid not in self.resources_by_id:
-            return True
-        if not self.encap and rid in self.encap_resources:
-            return True
-        return False
 
     def mount_point(self):
         """
@@ -5252,15 +5372,4 @@ class Svc(Crypt, ExtConfigMixin):
         except IndexError:
             return
 
-    def exists(self):
-        """
-        Return True if the service exists, ie has a configuration file on the
-        local node.
-        """
-        return os.path.exists(self.paths.cf)
-
-    def unset_all_lazy(self):
-        unset_all_lazy(self)
-        for res in self.resources_by_id.values():
-            unset_all_lazy(res)
 
