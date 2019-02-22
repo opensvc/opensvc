@@ -164,15 +164,12 @@ class Crypt(object):
 
         if hasattr(self, "get_node"):
             node = getattr(self, "get_node")()
-        elif hasattr(self, "write_config"):
+        elif hasattr(self, "nodename"):
             node = self
         else:
             node = None
         if node is not None:
-            if not node.config.has_section("cluster"):
-                node.config.add_section("cluster")
-            node.config.set("cluster", "nodes", " ".join(nodes))
-            node.write_config()
+            node.set_multi(["cluster.nodes=" + " ".join(nodes)], validation=False)
         return nodes
 
     @lazy
@@ -208,16 +205,13 @@ class Crypt(object):
             pass
         if hasattr(self, "node"):
             node = getattr(self, "node")
-        elif hasattr(self, "write_config"):
+        elif hasattr(self, "nodename"):
             node = self
         else:
             node = None
         name = "default"
         if node is not None:
-            if not node.config.has_section("cluster"):
-                node.config.add_section("cluster")
-            node.config.set("cluster", "name", name)
-            node.write_config()
+            node.set_multi(["cluster.name="+name], validation=False)
         return name
 
     @lazy
@@ -237,16 +231,13 @@ class Crypt(object):
             pass
         if hasattr(self, "node"):
             node = getattr(self, "node")
-        elif hasattr(self, "write_config"):
+        elif hasattr(self, "nodename"):
             node = self
         else:
             return
         import uuid
         key = uuid.uuid1().hex
-        if not config.has_section("cluster"):
-            config.add_section("cluster")
-        node.config.set("cluster", "secret", key)
-        node.write_config()
+        node.set_multi(["cluster.secret="+key], validation=False)
         return self.prepare_key(key)
 
     @lazy
@@ -258,7 +249,7 @@ class Crypt(object):
         if hasattr(self, "get_node"):
             # svc
             node = getattr(self, "get_node")()
-        elif hasattr(self, "write_config"):
+        elif hasattr(self, "nodename"):
             # node
             node = self
         else:
@@ -270,10 +261,7 @@ class Crypt(object):
             pass
         import uuid
         cluster_id = str(uuid.uuid1())
-        if not node.config.has_section("cluster"):
-            node.config.add_section("cluster")
-        node.config.set("cluster", "id", cluster_id)
-        node.write_config()
+        node.set_multi(["cluster.id="+cluster_id], validation=False)
         return cluster_id
 
     @staticmethod
