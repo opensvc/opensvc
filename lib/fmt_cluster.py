@@ -327,7 +327,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             info["status"] = "%d/%d-%d" % (data["n_up"], data["flex_min_nodes"], data["flex_max_nodes"])
         if data["avail"] == "n/a":
             info["status"] = ""
-        info = "%(orchestrate)-5s %(kind)-3s %(status)-5s" % info
+        info = "%(orchestrate)-5s %(kind)-4s %(status)-5s" % info
         line = [
             " "+colorize(prefix+svcpath, color.BOLD),
             status,
@@ -889,7 +889,10 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                         "n_up": 0,
                         "resources": set(),
                     })
-                services[svcpath]["resources"] |= set(_data["resources"].keys())
+                try:
+                    services[svcpath]["resources"] |= set(_data["resources"].keys())
+                except KeyError:
+                    pass
                 slaves = _data.get("slaves", [])
                 scale = _data.get("scale")
                 if scale:
