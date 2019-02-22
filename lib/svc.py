@@ -524,6 +524,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return rcLogger.initLogger(self.loggerpath, directory=self.log_d, handlers=handlers)
 
     @lazy
+    def compliance(self):
+        from compliance import Compliance
+        comp = Compliance(self)
+        return comp
+
+    @lazy
     def sched(self):
         """
         Lazy init of the service scheduler.
@@ -552,8 +558,34 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return "no"
 
     @lazy
+    def disable_rollback(self):
+        return True
+
+    @lazy
+    def encap(self):
+        return False
+
+    @lazy
     def kind(self):
         return self.oget("DEFAULT", "kind")
+
+    @lazy
+    def freezer(self):
+        """
+        Lazy allocator for the freezer object.
+        """
+        return Freezer(self.svcpath)
+
+    @lazy
+    def id(self):
+        try:
+            return self.conf_get("DEFAULT", "id")
+        except ex.OptNotFound as exc:
+            import uuid
+            newid = str(uuid.uuid4())
+            if not self.volatile:
+                self._set("DEFAULT", "id", newid, validation=False)
+            return newid
 
     @lazy
     def peers(self):
@@ -785,6 +817,33 @@ class BaseSvc(Crypt, ExtConfigMixin):
             err = self.do_action(action, options)
         return err
 
+    def purge_status_caches(self):
+        """
+        Purge the json cache and each resource status on-disk cache.
+        """
+        self.purge_status_last()
+        self.purge_status_data_dump()
+
+    def purge_status_data_dump(self):
+        """
+        Purge the json status dump
+        """
+        try:
+            os.unlink(self.status_data_dump)
+        except Exception:
+            pass
+
+    def purge_status_last(self):
+        """
+        Purge all service resources on-disk status caches.
+        """
+        import glob
+        for fpath in glob.glob(os.path.join(self.var_d, "*#*", "status.last")):
+            try:
+                os.unlink(fpath)
+            except:
+                pass
+
     def published_action(self, action, options):
         if self.volatile:
             return False
@@ -859,6 +918,25 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return results
 
         return data
+
+    def remote_action(self, nodename, action, waitlock=None,
+                      sync=False, verbose=True, action_mode=True, collect=True):
+        rcmd = []
+        if self.options.debug:
+            rcmd += ['--debug']
+        if self.options.dry_run:
+            rcmd += ['--dry-run']
+        if self.options.local and action_mode:
+            rcmd += ['--local']
+        if self.options.cron:
+            rcmd += ['--cron']
+        if waitlock is not None and waitlock != self.lock_timeout:
+            rcmd += ['--waitlock', str(waitlock)]
+        rcmd += action.split()
+        if verbose:
+            self.log.info("exec '%s' on node %s", ' '.join(rcmd), nodename)
+        return self.daemon_service_action(rcmd, nodename=nodename, sync=sync,
+                                          collect=collect, action_mode=action_mode)
 
     def do_cluster_action(self, action, options=None, waitlock=60, collect=False, action_mode=True):
         """
@@ -1102,7 +1180,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if action in ("stop", "shutdown", "unprovision", "delete", "rollback", "toc") and not self.command_is_scoped():
             local_expect = "unset"
             if self.orchestrate in ("ha", "start"):
-                self.master_freeze()
+                self.freezer.freeze()
         try:
             self.set_service_monitor(local_expect=local_expect, status=progress)
             self.log.debug("daemon notified of action '%s' begin" % action)
@@ -1154,6 +1232,19 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.rollback()
         except ex.excError:
             self.log.error("rollback %s failed", action)
+
+    def dblogger(self, action, begin, end, actionlogfile):
+        """
+        Send to the collector the service status after an action, and
+        the action log.
+        """
+        self.node.daemon_collector_xmlrpc('end_action', self.svcpath, action,
+                                          begin, end, self.options.cron,
+                                          actionlogfile)
+        try:
+            logging.shutdown()
+        except:
+            pass
 
     def do_logged_action(self, action, options):
         """
@@ -1512,6 +1603,33 @@ class BaseSvc(Crypt, ExtConfigMixin):
             options = Storage(self.options)
             options.rid = rid
             self.action("provision", options)
+
+    def write_config(self):
+        """
+        Rewrite the service configuration file, using the current parser
+        object in self.config write method.
+        Also reset the file mode to 644.
+        """
+        if self.volatile:
+            return
+        import tempfile
+        import shutil
+        try:
+            tmpfile = tempfile.NamedTemporaryFile()
+            fname = tmpfile.name
+            tmpfile.close()
+            with open(fname, "w") as tmpfile:
+                self.config.write(tmpfile)
+                tmpfile.flush()
+            shutil.move(fname, self.paths.cf)
+        except (OSError, IOError) as exc:
+            print("failed to write new %s (%s)" % (self.paths.cf, str(exc)),
+                  file=sys.stderr)
+            raise ex.excError()
+        try:
+            os.chmod(self.paths.cf, 0o0644)
+        except (OSError, IOError) as exc:
+            self.log.debug("failed to set %s mode: %s", self.paths.cf, str(exc))
 
     def allow_on_this_node(self, action):
         """
@@ -2235,6 +2353,28 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def configure_scheduler(self):
         pass
 
+    def action_rid_dependencies(self, action, rid):
+        return []
+
+    def get_running(self, *args, **kwargs):
+        return []
+
+    def get_resources(self, *args, **kwargs):
+        return []
+
+    def destination_node_sanity_checks(self, *args, **kwargs):
+        pass
+
+    def encap_cmd(self, *args, **kwargs):
+        pass
+
+    def get_resource(self, *args, **kwargs):
+        pass
+
+    def rollback(self):
+        pass
+
+
 class Svc(BaseSvc):
     """
     A OpenSVC service class.
@@ -2263,30 +2403,6 @@ class Svc(BaseSvc):
         """
         import rcDocker
         return rcDocker.DockerLib(self)
-
-    @lazy
-    def freezer(self):
-        """
-        Lazy allocator for the freezer object.
-        """
-        return Freezer(self.svcpath)
-
-    @lazy
-    def compliance(self):
-        from compliance import Compliance
-        comp = Compliance(self)
-        return comp
-
-    @lazy
-    def id(self):
-        try:
-            return self.conf_get("DEFAULT", "id")
-        except ex.OptNotFound as exc:
-            import uuid
-            newid = str(uuid.uuid4())
-            if not self.volatile:
-                self._set("DEFAULT", "id", newid, validation=False)
-            return newid
 
     @lazy
     def parents(self):
@@ -2630,33 +2746,6 @@ class Svc(BaseSvc):
             self.sched.scheduler_actions["run"] = tasks
 
 
-    def purge_status_caches(self):
-        """
-        Purge the json cache and each resource status on-disk cache.
-        """
-        self.purge_status_last()
-        self.purge_status_data_dump()
-
-    def purge_status_data_dump(self):
-        """
-        Purge the json status dump
-        """
-        try:
-            os.unlink(self.status_data_dump)
-        except Exception:
-            pass
-
-    def purge_status_last(self):
-        """
-        Purge all service resources on-disk status caches.
-        """
-        import glob
-        for fpath in glob.glob(os.path.join(self.var_d, "*#*", "status.last")):
-            try:
-                os.unlink(fpath)
-            except:
-                pass
-
     def get_subset_parallel(self, rtype):
         """
         Return True if the resources of a resourceset can run an action in
@@ -2821,19 +2910,6 @@ class Svc(BaseSvc):
             other.on_add()
 
         return self
-
-    def dblogger(self, action, begin, end, actionlogfile):
-        """
-        Send to the collector the service status after an action, and
-        the action log.
-        """
-        self.node.daemon_collector_xmlrpc('end_action', self.svcpath, action,
-                                          begin, end, self.options.cron,
-                                          actionlogfile)
-        try:
-            logging.shutdown()
-        except:
-            pass
 
     def started_on(self):
         nodenames = []
@@ -4049,25 +4125,6 @@ class Svc(BaseSvc):
         """
         self.all_set_action("postsync")
 
-    def remote_action(self, nodename, action, waitlock=None,
-                      sync=False, verbose=True, action_mode=True, collect=True):
-        rcmd = []
-        if self.options.debug:
-            rcmd += ['--debug']
-        if self.options.dry_run:
-            rcmd += ['--dry-run']
-        if self.options.local and action_mode:
-            rcmd += ['--local']
-        if self.options.cron:
-            rcmd += ['--cron']
-        if waitlock is not None and waitlock != self.lock_timeout:
-            rcmd += ['--waitlock', str(waitlock)]
-        rcmd += action.split()
-        if verbose:
-            self.log.info("exec '%s' on node %s", ' '.join(rcmd), nodename)
-        return self.daemon_service_action(rcmd, nodename=nodename, sync=sync,
-                                          collect=collect, action_mode=action_mode)
-
     def presync(self):
         """ prepare files to send to slave nodes in var/.
             Each resource can prepare its own set of files.
@@ -4802,33 +4859,6 @@ class Svc(BaseSvc):
     def collector_rest_delete(self, *args, **kwargs):
         kwargs["svcname"] = self.svcpath
         return self.node.collector_rest_delete(*args, **kwargs)
-
-    def write_config(self):
-        """
-        Rewrite the service configuration file, using the current parser
-        object in self.config write method.
-        Also reset the file mode to 644.
-        """
-        if self.volatile:
-            return
-        import tempfile
-        import shutil
-        try:
-            tmpfile = tempfile.NamedTemporaryFile()
-            fname = tmpfile.name
-            tmpfile.close()
-            with open(fname, "w") as tmpfile:
-                self.config.write(tmpfile)
-                tmpfile.flush()
-            shutil.move(fname, self.paths.cf)
-        except (OSError, IOError) as exc:
-            print("failed to write new %s (%s)" % (self.paths.cf, str(exc)),
-                  file=sys.stderr)
-            raise ex.excError()
-        try:
-            os.chmod(self.paths.cf, 0o0644)
-        except (OSError, IOError) as exc:
-            self.log.debug("failed to set %s mode: %s", self.paths.cf, str(exc))
 
     def setenv(self, args, interactive=False):
         """
