@@ -106,6 +106,27 @@ class ExtConfigMixin(object):
                 print(exc, file=sys.stderr)
                 return 1
 
+    def unset_multi(self, kws):
+        if not kws:
+            return
+        changed = False
+        lines = self._read_cf().splitlines()
+        for kw in kws:
+            try:
+                section, option = kw.split(".")
+            except Exception:
+                continue
+            lines = self.unset_line(lines, section, option)
+            changed = True
+        if not changed:
+            return
+        try:
+            self._write_cf(lines)
+        except (IOError, OSError) as exc:
+            raise ex.excError(str(exc))
+        self.unset_all_lazy()
+        self.ref_cache = {}
+
     def _unset(self, section, option):
         """
         Delete an option in the service configuration file specified section.
