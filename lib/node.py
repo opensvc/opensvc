@@ -4855,8 +4855,8 @@ class Node(Crypt, ExtConfigMixin):
                 self.log.warning("skip setup: %s", exc)
                 continue
             self.network_create_config(name)
-            self.network_create_routes(name)
             self.network_create_bridge(name)
+            self.network_create_routes(name)
 
     def network_create_bridge(self, name):
         ntype = self.oget("network#"+name, "type")

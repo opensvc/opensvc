@@ -130,4 +130,9 @@ class Node(node.Node):
         if " "+ip+" " not in out:
             cmd = ["ip", "addr", "add", ip, "dev", name]
             self.vcall(cmd)
+        cmd = ["ip", "link", "show", "dev", name]
+        out, _, _ = justcall(cmd)
+        if "DOWN" in out:
+            cmd = ["ip", "link", "set", "dev", name, "up"]
+            self.vcall(cmd)
 
