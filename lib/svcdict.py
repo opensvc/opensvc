@@ -1,6 +1,5 @@
 import sys
 from rcGlobalEnv import rcEnv
-from rcNode import node_get_node_env
 from keywords import KeywordStore
 
 SECTIONS = [
@@ -80,7 +79,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "lock_timeout",
-        "default": 60,
+        "default": "60s",
         "convert": "duration",
         "text": "A duration expression, like '1m30s'. The maximum wait time for the action lock acquire. The svcmgr --waitlock option overrides this parameter."
     },
@@ -847,7 +846,6 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "env",
         "inheritance": "head",
-        "default": node_get_node_env(),
         "default_text": "<same as node env>",
         "candidates": rcEnv.allowed_svc_envs,
         "text": "A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node env."
@@ -929,6 +927,7 @@ KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "comment",
+        "default": "",
         "text": "Helps users understand the role of the service, which is nice to on-call support people having to operate on a service they are not usually responsible for."
     },
     {

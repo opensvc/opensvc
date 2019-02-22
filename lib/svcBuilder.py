@@ -6,7 +6,6 @@ import glob
 
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcNode import discover_node
 import rcLogger
 import resSyncRsync
 import rcExceptions as ex
@@ -1603,14 +1602,12 @@ def build(name, namespace=None, svcconf=None, node=None, volatile=False):
     """
     Instanciate a Svc object
     """
-    import svc
-
-    #
-    # node discovery is hidden in a separate module to
-    # keep it separate from the framework stuff
-    #
-    discover_node()
-    svc = svc.Svc(svcname=name, namespace=namespace, node=node,
+    if namespace == "pools":
+        from pool import Pool
+        svc = Pool(name, node=node, cf=svcconf)
+    else:
+        from svc import Svc
+        svc = Svc(svcname=name, namespace=namespace, node=node,
                   cf=svcconf, volatile=volatile)
 
     drpnodes = svc.oget("DEFAULT", "drpnodes")
@@ -1642,79 +1639,6 @@ def build(name, namespace=None, svcconf=None, node=None, volatile=False):
         else:
             drp_flex_primary = ""
     svc.drp_flex_primary = drp_flex_primary
-
-    svc.parents = svc.oget("DEFAULT", "parents")
-    svc.placement = svc.oget("DEFAULT", "placement")
-    svc.stonith = svc.oget("DEFAULT", "stonith")
-
-    #
-    # Store and validate the service type
-    #
-    if svc.conf_has_option_scoped("DEFAULT", "env"):
-        svc.svc_env = svc.oget("DEFAULT", "env")
-    elif svc.conf_has_option_scoped("DEFAULT", "service_type"):
-        svc.svc_env = svc.oget("DEFAULT", "service_type")
-
-    try:
-        svc.lock_timeout = svc.conf_get("DEFAULT", "lock_timeout")
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        svc.presnap_trigger = svc.conf_get("DEFAULT", "presnap_trigger")
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        svc.postsnap_trigger = svc.conf_get("DEFAULT", "postsnap_trigger")
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        svc.disable_rollback = not svc.conf_get("DEFAULT", "rollback")
-    except ex.OptNotFound as exc:
-        pass
-
-    svc.encap = rcEnv.nodename in svc.encapnodes
-
-    #
-    # amazon options
-    #
-    try:
-        svc.aws = svc.conf_get("DEFAULT", "aws")
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        svc.aws_profile = svc.conf_get("DEFAULT", "aws_profile")
-    except ex.OptNotFound as exc:
-        pass
-
-    #
-    # process group options
-    #
-    try:
-        svc.create_pg = svc.conf_get("DEFAULT", "create_pg")
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        svc.comment = svc.conf_get("DEFAULT", "comment")
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        svc.monitor_action = svc.conf_get("DEFAULT", "monitor_action")
-    except ex.OptNotFound as exc:
-        pass
-
-    try:
-        svc.pre_monitor_action = svc.conf_get("DEFAULT", "pre_monitor_action")
-    except ex.OptNotFound as exc:
-        pass
-
-    svc.show_disabled = svc.oget("DEFAULT", "show_disabled")
-    svc.bwlimit = svc.oget("DEFAULT", "bwlimit")
 
     return svc
 
