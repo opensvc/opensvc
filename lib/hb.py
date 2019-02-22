@@ -278,7 +278,7 @@ class Hb(shared.OsvcThread):
             data_gen = data.get("gen", {}).get(nodename)
             if data_gen is not None and shared.REMOTE_GEN.get(nodename) == data_gen:
                 # already installed
-                self.log.debug("already installed %d", data_gen)
+                self.log.debug("already installed %s gen %d dataset", nodename, data_gen)
                 return
             node_status = data.get("monitor", {}).get("status")
             if node_status in ("init", "maintenance", "upgrade") and nodename in shared.CLUSTER_DATA:
