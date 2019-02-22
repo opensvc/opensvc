@@ -99,7 +99,6 @@ ACTIONS_NO_MULTIPLE_SERVICES = [
 ]
 
 CONFIG_DEFAULTS = {
-    "node_env": "TST",
     "push_schedule": "00:00-06:00",
     "sync_schedule": "04:00-06:00",
     "comp_schedule": "02:00-06:00",
@@ -4258,8 +4257,8 @@ class Node(Crypt, ExtConfigMixin):
         toadd = []
         toremove = []
         sectoremove = []
-        if peer_env and peer_env != rcEnv.node_env:
-            self.log.info("update node.env %s => %s", rcEnv.node_env, peer_env)
+        if peer_env and peer_env != self.env:
+            self.log.info("update node.env %s => %s", self.env, peer_env)
             toadd.append("node.env="+peer_env)
 
         # secret might be bytes, when passed from rejoin

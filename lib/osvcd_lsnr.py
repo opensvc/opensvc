@@ -901,7 +901,7 @@ class Listener(shared.OsvcThread):
             "status": 0,
             "data": {
                 "node": {
-                    "env": rcEnv.node_env,
+                    "env": shared.NODE.env,
                 },
                 "cluster": {
                     "nodes": new_nodes,

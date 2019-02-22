@@ -163,7 +163,7 @@ class Sync(Res.Resource, Scheduler):
             raise ex.excAbortAction
 
     def pre_sync_check_prd_svc_on_non_prd_node(self):
-        if self.svc.svc_env == 'PRD' and rcEnv.node_env != 'PRD':
+        if self.svc.svc_env == 'PRD' and self.svc.node.env != 'PRD':
             if self.svc.options.cron:
                 self.log.debug("won't sync a PRD service running on a !PRD node")
             else:
