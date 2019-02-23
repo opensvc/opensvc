@@ -54,7 +54,7 @@ def dispatch_resources(idata, discard_disabled=False):
     for group in DEFAULT_STATUS_GROUPS:
         subsets[group] = {}
 
-    for rid, resource in idata["resources"].items():
+    for rid, resource in idata.get("resources", {}).items():
         if discard_disabled and resource.get("disable", False):
             continue
         group = resource["type"].split(".", 1)[0]
@@ -103,11 +103,14 @@ def add_subsets(subsets, node_nodename, idata, discard_disabled=False):
 def get_svc_notice(data):
     svc_notice = []
     if "cluster" in data:
-        if data["cluster"]["overall"] == "warn":
-            svc_notice.append(colorize(data["cluster"]["overall"], STATUS_COLOR[data["cluster"]["overall"]]))
-        if data["cluster"]["placement"] not in ("optimal", "n/a"):
-            svc_notice.append(colorize(data["cluster"]["placement"] + " placement", color.RED))
-        if not data["cluster"]["compat"]:
+        overall = data["cluster"].get("overall", "n/a")
+        if overall == "warn":
+            svc_notice.append(colorize(overall, STATUS_COLOR[overall]))
+        placement = data["cluster"].get("placement", "n/a")
+        if placement not in ("optimal", "n/a"):
+            svc_notice.append(colorize(placement + " placement", color.RED))
+        compat = data["cluster"].get("compat", True)
+        if not compat:
             svc_notice.append(colorize("incompatible versions", color.RED))
     return ", ".join(svc_notice)
 
@@ -198,14 +201,14 @@ def add_instance(node, nodename, svcpath, mon_data):
     node_child.add_column()
     try:
         data = mon_data["nodes"][nodename]["services"]["status"][svcpath]
-        avail = data["avail"]
+        avail = data.get("avail", "n/a")
         node_frozen = mon_data["nodes"][nodename].get("frozen")
     except (TypeError, KeyError) as exc:
         avail = "undef"
         node_frozen = False
         data = Storage()
     node_child.add_column(avail, STATUS_COLOR[avail])
-    notice = instance_notice(overall=data["overall"],
+    notice = instance_notice(overall=data.get("overall", "n/a"),
                              frozen=data.get("frozen"),
                              node_frozen=node_frozen,
                              constraints=data.get("constraints", True),
@@ -229,13 +232,13 @@ def add_parent(svcpath, node, mon_data):
     try:
         svcpath, nodename = svcpath.split("@")
         try:
-            avail = mon_data["nodes"][nodename]["services"]["status"][svcpath]["avail"]
+            avail = mon_data["nodes"][nodename]["services"]["status"][svcpath].get("avail", "n/a")
         except KeyError:
             avail = "undef"
     except ValueError:
         nodename = None
         try:
-            avail = mon_data["services"][svcpath]["avail"]
+            avail = mon_data["services"][svcpath].get("avail", "n/a")
         except KeyError:
             avail = "undef"
     node_parent.add_column(avail, STATUS_COLOR[avail])
@@ -273,7 +276,7 @@ def add_child(svcpath, node, mon_data):
     node_child.add_column()
     svcpath = re.sub("^root/", "", svcpath)
     try:
-        avail = mon_data["services"][svcpath]["avail"]
+        avail = mon_data["services"][svcpath].get("avail", "n/a")
     except KeyError:
         avail = "undef"
     node_child.add_column(avail, STATUS_COLOR[avail])
@@ -281,7 +284,7 @@ def add_child(svcpath, node, mon_data):
 def get_ers(idata, discard_disabled=False):
     # encap resources
     ers = {}
-    for rid in idata["resources"]:
+    for rid in idata.get("resources", {}):
         if not rid.startswith("container"):
             continue
         try:
@@ -301,7 +304,7 @@ def add_node_node(node_instances, nodename, idata, mon_data, discard_disabled=Fa
         node_frozen = mon_data["nodes"][nodename].get("frozen")
     except (KeyError, AttributeError):
         node_frozen = False
-    notice = instance_notice(overall=idata["overall"],
+    notice = instance_notice(overall=idata.get("overall", "n/a"),
                              frozen=idata.get("frozen"),
                              node_frozen=node_frozen,
                              constraints=idata.get("constraints", True),
@@ -312,7 +315,7 @@ def add_node_node(node_instances, nodename, idata, mon_data, discard_disabled=Fa
     node_nodename = node_instances.add_node()
     node_nodename.add_column(nodename, color.BOLD)
     node_nodename.add_column()
-    node_nodename.add_column(idata['avail'], STATUS_COLOR[idata['avail']])
+    node_nodename.add_column(idata.get("avail", "n/a"), STATUS_COLOR[idata.get("avail", "n/a")])
     node_nodename.add_column(notice, color.LIGHTBLUE)
     add_subsets(subsets, node_nodename, idata, discard_disabled=discard_disabled)
 
@@ -334,7 +337,7 @@ def format_service(svcpath, idata, mon_data=None, discard_disabled=False, volati
     node_svcname.add_column(svcname, color.BOLD)
     node_svcname.add_column()
     if "cluster" in idata:
-        node_svcname.add_column(idata["cluster"]["avail"], STATUS_COLOR[idata["cluster"]["avail"]])
+        node_svcname.add_column(idata["cluster"].get("avail", "n/a"), STATUS_COLOR[idata["cluster"].get("avail", "n/a")])
     else:
         node_svcname.add_column()
     node_svcname.add_column(svc_notice)

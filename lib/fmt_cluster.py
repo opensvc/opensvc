@@ -952,9 +952,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                     "overall": "",
                     "nodes": {}
                 })
-            services[svcpath].avail = _data["avail"]
-            services[svcpath].overall = _data["overall"]
-            services[svcpath].placement = _data["placement"]
+            services[svcpath].avail = _data.get("avail", "n/a")
+            services[svcpath].overall = _data.get("overall", "n/a")
+            services[svcpath].placement = _data.get("placement", "n/a")
 
     def load_services():
         if "services" not in sections:
