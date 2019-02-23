@@ -59,6 +59,14 @@ def convert_expanded_shlex(s):
             new_args.append(arg)
     return new_args
 
+def convert_lower(s):
+    """
+    Return <s> lowercased
+    """
+    if s is None:
+        return
+    return s.lower()
+
 def convert_integer(s):
     """
     Return <s> cast to int.
