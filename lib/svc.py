@@ -2561,13 +2561,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return []
 
     def destination_node_sanity_checks(self, *args, **kwargs):
-        pass
+        return
 
     def encap_cmd(self, *args, **kwargs):
         pass
 
     def get_resource(self, *args, **kwargs):
-        pass
+        return
 
     def rollback(self):
         pass
