@@ -1602,9 +1602,12 @@ def build(name, namespace=None, svcconf=None, node=None, volatile=False):
     """
     Instanciate a Svc object
     """
-    if namespace == "pools":
+    if namespace == "pool":
         from pool import PoolSvc
         svc = PoolSvc(name, namespace, node=node, cf=svcconf)
+    elif namespace == "net":
+        from net import NetSvc
+        svc = NetSvc(name, namespace, node=node, cf=svcconf)
     else:
         from svc import Svc
         svc = Svc(svcname=name, namespace=namespace, node=node,

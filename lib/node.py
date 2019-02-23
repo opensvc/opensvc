@@ -4525,7 +4525,7 @@ class Node(Crypt, ExtConfigMixin):
         for section in self.config.sections():
             if section.startswith("pool#"):
                 data.add(section.split("#")[-1])
-        for svcpath in self.svcs_selector("*", namespace="pools"):
+        for svcpath in self.svcs_selector("*", namespace="pool"):
             data.add(split_svcpath(svcpath)[0])
         return sorted(list(data))
 
@@ -4627,7 +4627,7 @@ class Node(Crypt, ExtConfigMixin):
 
     def get_pool(self, poolname):
         from pool import PoolSvc
-        pool = PoolSvc(poolname, "pools", node=self)
+        pool = PoolSvc(poolname, "pool", node=self)
         if pool.exists():
             return pool.pool
         try:
@@ -4682,6 +4682,7 @@ class Node(Crypt, ExtConfigMixin):
 
     def networks_data(self):
         import glob
+        from net import NetSvc
         nets = {}
         for cf in glob.glob(self.cni_config+"/*.conf"):
             try:
@@ -4713,11 +4714,24 @@ class Node(Crypt, ExtConfigMixin):
             config["type"] = self.oget(section, "type")
             for key in self.section_kwargs(section, config["type"]):
                 config[key] = self.oget(section, key)
-            if config:
-                if name not in nets:
-                    nets[name] = {}
-                nets[name]["config"] = config
-                nets[name]["routes"] = self.routes(name)
+            if not config:
+                continue
+            nets[name] = {}
+            nets[name]["config"] = config
+            nets[name]["routes"] = self.routes(name, config)
+        svcpaths = self.svcs_selector("*", namespace="net")
+        for svcpath in svcpaths:
+            name, namespace = split_svcpath(svcpath)
+            svc = NetSvc(name, namespace, node=self)
+            config = {}
+            config["type"] = svc.oget("network", "type")
+            for key in svc.section_kwargs("network", config["type"]):
+                config[key] = svc.oget("network", key)
+            if not config:
+                continue
+            nets[name] = {}
+            nets[name]["config"] = config
+            nets[name]["routes"] = self.routes(name, config)
         return nets
 
     @formatter
@@ -4744,12 +4758,14 @@ class Node(Crypt, ExtConfigMixin):
         tree.load(data, title="networks")
         print(tree)
 
-    def node_subnet(self, name, nodename=None):
+    def node_subnet(self, name, nodename=None, config=None):
         if nodename is None:
             nodename = rcEnv.nodename
+        if not config:
+            config = self.network_data(name)["config"]
         idx = self.cluster_nodes.index(nodename)
-        network = self.oget("network#" + name, "network") 
-        ips_per_node = self.oget("network#" + name, "ips_per_node") 
+        network = config["network"]
+        ips_per_node = config["ips_per_node"]
         ips_per_node = 1 << (ips_per_node - 1).bit_length()
         net = ip_network(six.text_type(network))
         first = net[0] + (idx * ips_per_node)
@@ -4757,15 +4773,17 @@ class Node(Crypt, ExtConfigMixin):
         subnet = next(summarize_address_range(first, last))
         return subnet
 
-    def routes(self, name):
+    def routes(self, name, config=None):
         routes = []
-        ntype = self.oget("network#"+name, "type")
+        if not config:
+            config = self.network_data(name)["config"]
+        ntype = config["type"]
         if ntype != "routed_bridge":
             return routes
         for nodename in self.cluster_nodes:
             if nodename == rcEnv.nodename:
                 routes.append({
-                    "dst": str(self.node_subnet(name, nodename)),
+                    "dst": str(self.node_subnet(name, nodename, config=config)),
                     "dev": "obr_"+name,
                 })
                 continue
@@ -4775,7 +4793,7 @@ class Node(Crypt, ExtConfigMixin):
                 self.log.warning("node %s is not resolvable", nodename)
                 continue
             routes.append({
-                "dst": str(self.node_subnet(name, nodename)),
+                "dst": str(self.node_subnet(name, nodename, config=config)),
                 "gw": gw,
             })
         return routes
@@ -4810,13 +4828,13 @@ class Node(Crypt, ExtConfigMixin):
                                   (name, network, other_name, other_network))
 
     def network_setup(self):
-        sections = list(self.conf_sections("network"))
-        if "network#default" not in sections:
-            sections.append("network#default")
-        for section in sections:
-            _, name = section.split("#", 1)
+        data = self.networks_data()
+        names = [name for name in data]
+        if "default" not in names:
+            names.append("default")
+        for name in names:
             try:
-                self.network_overlaps(name)
+                self.network_overlaps(name, data)
             except ex.excError as exc:
                 self.log.warning("skip setup: %s", exc)
                 continue
@@ -4825,10 +4843,11 @@ class Node(Crypt, ExtConfigMixin):
             self.network_create_routes(name)
 
     def network_create_bridge(self, name):
-        ntype = self.oget("network#"+name, "type")
+        data = self.network_data(name)
+        ntype = data["config"]["type"]
         if ntype != "routed_bridge":
             return
-        net = self.node_subnet(name)
+        net = self.node_subnet(name, config=data["config"])
         ip = str(net[1])+"/"+str(net.prefixlen)
         self.network_bridge_add("obr_"+name, ip)
 
@@ -4850,7 +4869,8 @@ class Node(Crypt, ExtConfigMixin):
         pass
  
     def network_create_config(self, name="default"):
-        ntype = self.oget("network#"+name, "type")
+        data = self.network_data(name)
+        ntype = data["config"]["type"]
         fn = "network_create_%s_config" % ntype
         if hasattr(self, fn):
             getattr(self, fn)(name)
@@ -4860,7 +4880,8 @@ class Node(Crypt, ExtConfigMixin):
         if os.path.exists(cf):
             return
         self.log.info("create %s", cf)
-        network = self.oget("network#"+name, "network")
+        data = self.network_data(name)
+        network = data["config"]["network"]
         conf = {
             "cniVersion": "0.2.0",
             "name": name,
@@ -4917,7 +4938,9 @@ class Node(Crypt, ExtConfigMixin):
             }
         }
         makedirs(self.cni_config)
-        conf["ipam"]["subnet"] = self.oget("network#"+name, "network")
+        data = self.network_data(name)
+        network = data["config"]["network"]
+        conf["ipam"]["subnet"] = network
         with open(cf, "w") as ofile:
             json.dump(conf, ofile, indent=4)
 
@@ -4986,7 +5009,7 @@ class Node(Crypt, ExtConfigMixin):
         for _name, ndata in nets.items():
             if name and name != _name:
                 continue
-            network = ip_network(six.text_type(self.oget("network#"+_name, "network")))
+            network = ip_network(six.text_type(ndata["config"]["network"]))
             _data = {
                 "type": ndata["config"]["type"],
                 "network": ndata["config"]["network"],
