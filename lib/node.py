@@ -2871,15 +2871,16 @@ class Node(Crypt, ExtConfigMixin):
         if src_cf.startswith(rcEnv.paths.pathtmp):
             os.unlink(src_cf)
 
-    @staticmethod
-    def install_svc_conf_from_data(svcname, namespace, data, restore=False, info=None):
+    def install_svc_conf_from_data(self, svcname, namespace, data, restore=False, info=None):
         """
         Installs a service configuration file from section, keys and values
         fed from a data structure.
         """
+        if info is None:
+            info = self.install_service_info(svcname, namespace)
         config = rcConfigParser.RawConfigParser()
 
-        config.set("DEFAULT", "id",info.id)
+        config.set("DEFAULT", "id", info.id)
         for section_name, section in data.items():
             if section_name != "DEFAULT":
                 config.add_section(section_name)
