@@ -6,21 +6,22 @@ import pool
 import rcExceptions as ex
 from rcUtilities import lazy, justcall
 from rcGlobalEnv import rcEnv
+from converters import convert_size
 
 class Pool(pool.Pool):
-    type = "share"
-    capabilities = ["rox", "rwx", "roo", "rwo", "blk", "shared"]
+    type = "shm"
+    capabilities = ["rox", "rwx", "roo", "rwo", "blk"]
 
     @lazy
     def path(self):
-        return self.oget("path")
+        return "/dev/shm"
 
-    def translate_blk(self, path=None, size=None, shared=False):
+    def translate_blk(self, name=None, size=None, shared=False):
         data = [
             {
                 "rtype": "disk",
                 "type": "loop",
-                "file": "%s.img" % path,
+                "file": os.path.join(self.path, "%s.img" % name),
                 "size": size,
             }
         ]
@@ -28,19 +29,23 @@ class Pool(pool.Pool):
         return data
 
     def translate(self, name=None, size=None, fmt=True, shared=False):
-        if shared:
-            path = os.path.join(self.path, name)
-        else:
-            path = os.path.join(self.path, "%s.{nodename}" % name)
         if not fmt:
-            return self.translate_blk(path, size=size, shared=shared)
-
-        fs = {
+            return self.translate_blk(name=name, size=size, shared=shared)
+        data = []
+        path = os.path.join(self.path, name)
+        size_opt = "size=%dm" % convert_size(size, _to="m")
+        if self.mnt_opt:
+            mnt_opt = ",".join((self.mnt_opt, size_opt))
+        else:
+            mnt_opt = size_opt
+        data.append({
             "rtype": "fs",
-            "type": "directory",
-            "path": path,
-        }
-        return [fs]
+            "type": "tmpfs",
+            "dev": "shmfs",
+            "mnt": self.mount_point(name),
+            "mnt_opt": mnt_opt,
+        })
+        return data
 
     def pool_status(self):
         from converters import convert_size
@@ -50,7 +55,6 @@ class Pool(pool.Pool):
             "type": self.type,
             "name": self.name,
             "capabilities": self.capabilities,
-            "head": self.path,
         }
         cmd = ["df", "-P", self.path]
         out, err, ret = justcall(cmd)
@@ -60,5 +64,6 @@ class Pool(pool.Pool):
         data["free"] = int(l[3])
         data["used"] = int(l[2])
         data["size"] = int(l[1])
+        data["head"] = self.path
         return data
 

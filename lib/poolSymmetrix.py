@@ -17,31 +17,19 @@ class Pool(pool.Pool):
 
     @lazy
     def slo(self):
-        try:
-            return self.conf_get("slo")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("slo")
 
     @lazy
     def srp(self):
-        try:
-            return self.conf_get("srp")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("srp")
 
     @lazy
     def srdf(self):
-        try:
-            return self.conf_get("srdf")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("srdf")
 
     @lazy
     def rdfg(self):
-        try:
-            return self.conf_get("rdfg")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("rdfg")
 
     def delete_disk(self, name=None, disk_id=None):
         self.array.del_disk(dev=disk_id)
@@ -131,7 +119,7 @@ class Pool(pool.Pool):
 
     @lazy
     def array_name(self):
-        return self.conf_get("array")
+        return self.oget("array")
 
     @lazy
     def remote_array_name(self):
@@ -160,7 +148,7 @@ class Pool(pool.Pool):
         array.node = self.node
         return array
 
-    def status(self):
+    def pool_status(self):
         from converters import convert_size
         data = {
             "type": self.type,

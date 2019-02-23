@@ -17,31 +17,19 @@ class Pool(pool.Pool):
 
     @lazy
     def insecure_tpc(self):
-        try:
-            return self.conf_get("insecure_tpc")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("insecure_tpc")
 
     @lazy
     def compression(self):
-        try:
-            return self.conf_get("compression")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("compression")
 
     @lazy
     def sparse(self):
-        try:
-            return self.conf_get("sparse")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("sparse")
 
     @lazy
     def blocksize(self):
-        try:
-            return self.conf_get("blocksize")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("blocksize")
 
     def delete_disk(self, name=None, disk_id=None):
         return self.array.del_iscsi_zvol(name=name, volume=self.diskgroup)
@@ -85,11 +73,11 @@ class Pool(pool.Pool):
 
     @lazy
     def array_name(self):
-        return self.conf_get("array")
+        return self.oget("array")
 
     @lazy
     def diskgroup(self):
-        return self.conf_get("diskgroup")
+        return self.oget("diskgroup")
 
     @lazy
     def array(self):
@@ -100,7 +88,7 @@ class Pool(pool.Pool):
         array.node = self.node
         return array
 
-    def status(self):
+    def pool_status(self):
         from converters import convert_size
         data = {
             "type": self.type,

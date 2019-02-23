@@ -12,7 +12,7 @@ class Pool(pool.Pool):
 
     @lazy
     def zpool(self):
-        return self.node.conf_get(self.section, "name")
+        return self.oget("name")
 
     def translate(self, name=None, size=None, fmt=True, shared=False):
         data = []
@@ -39,7 +39,7 @@ class Pool(pool.Pool):
             data.append(zvol)
         return data
 
-    def status(self):
+    def pool_status(self):
         from converters import convert_size
         data = {
             "type": self.type,

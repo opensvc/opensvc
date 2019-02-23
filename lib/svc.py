@@ -337,6 +337,7 @@ ACTIONS_NEED_SNAP_TRIGGER = [
 TOPOLOGIES = [
     "failover",
     "flex",
+    "span",
 ]
 
 STATS_INTERVAL = 1
@@ -443,25 +444,40 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.action_rid_depends = []
         self.dependencies = {}
         self.running_action = None
-
-        # set by the builder
-        self.drpnodes = set()
-        self.ordered_drpnodes = []
-        self.drpnode = ""
-        self.flex_primary = ""
-        self.drp_flex_primary = ""
         self.presync_done = False
         self.stats_data = {}
         self.stats_updated = 0
 
-        # needed for oget()
+        # needed for kw scoping
         self.nodes = set()
+        self.drpnodes = set()
         self.encapnodes = set()
+        self.flex_primary = ""
+        self.drp_flex_primary = ""
 
-        if self.kind in "app":
+        # real values for kw needed by scoping
+        try:
             self.encapnodes = set(self.oget("DEFAULT", "encapnodes"))
-        self.ordered_nodes = self.oget("DEFAULT", "nodes")
+        except ValueError:
+            pass
+        try:
+            self.ordered_nodes = self.oget("DEFAULT", "nodes")
+        except ValueError:
+            pass
+        try:
+            self.ordered_drpnodes = self.oget("DEFAULT", "drpnodes")
+        except ValueError:
+            pass
+        try:
+            self.drpnode = self.oget("DEFAULT", "drpnode")
+        except ValueError:
+            self.drpnode = ""
+        if self.drpnode and self.drpnode not in self.ordered_drpnodes:
+            self.ordered_drpnodes.insert(0, self.drpnode)
         self.nodes = set(self.ordered_nodes)
+        self.drpnodes = set(self.ordered_drpnodes)
+        self.flex_primary = self.get_flex_primary()
+        self.drp_flex_primary = self.get_drp_flex_primary()
 
         # merged by the cmdline parser
         self.options = Storage(
@@ -539,18 +555,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             options=self.options,
             config=self.config,
             svc=self,
-            scheduler_actions={
-                "compliance_auto": SchedOpts(
-                    "DEFAULT",
-                    fname="last_comp_check",
-                    schedule_option="comp_schedule"
-                ),
-                "push_resinfo": SchedOpts(
-                    "DEFAULT",
-                    fname="last_push_resinfo",
-                    schedule_option="resinfo_schedule"
-                ),
-            },
+            scheduler_actions={},
         )
 
     @lazy
@@ -559,6 +564,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @lazy
     def disable_rollback(self):
+        return True
+
+    @lazy
+    def show_disabled(self):
         return True
 
     @lazy
@@ -611,7 +620,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @lazy
     def topology(self):
-        return "failover"
+        return "span"
 
     @lazy
     def svc_env(self):
@@ -1062,7 +1071,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         err = 0
         waitlock = convert_duration(options.waitlock)
-        if waitlock < 0:
+        if waitlock is None or waitlock < 0:
             waitlock = self.lock_timeout
 
         if action == "sync_all" and self.command_is_scoped():
@@ -2156,7 +2165,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         refresh = self.options.refresh or (not self.encap and self.options.cron)
         data = self.print_status_data(mon_data=False, refresh=refresh)
-        return rcStatus.Status(data["overall"]).value()
+        return rcStatus.Status(data.get("overall", "n/a")).value()
 
     @fcache
     def get_mon_data(self):
@@ -2230,17 +2239,30 @@ class BaseSvc(Crypt, ExtConfigMixin):
             except lock.LOCK_EXCEPTIONS as exc:
                 raise ex.excAbortAction(str(exc))
         else:
-            data["running"] = self.get_running(data["resources"].keys())
+            running = self.get_running(data.get("resources", {}).keys())
+            if running:
+                data["running"] = running
 
         if mon_data:
             mon_data = self.get_smon_data()
+            data["cluster"] = {}
             try:
-                data["cluster"] = {
-                    "compat": mon_data["compat"],
-                    "avail": mon_data["service"]["avail"],
-                    "overall": mon_data["service"]["overall"],
-                    "placement": mon_data["service"]["placement"],
-                }
+                data["cluster"]["compat"] = mon_data["compat"]
+            except:
+                pass
+            try:
+                data["cluster"]["avail"] = mon_data["service"]["avail"]
+            except:
+                pass
+            try:
+                data["cluster"]["overall"] = mon_data["service"]["overall"]
+            except:
+                pass
+            try:
+                data["cluster"]["placement"] = mon_data["service"]["placement"]
+            except:
+                pass
+            try:
                 data["monitor"] = mon_data["instances"][rcEnv.nodename]
             except:
                 pass
@@ -2330,7 +2352,183 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         Display in human-readable format the hierarchical service status.
         """
-        pass
+        data = self.print_status_data(mon_data=True, refresh=self.options.refresh)
+        if self.options.node:
+            nodename = self.options.node
+            mon_data = self.get_mon_data()
+            data = mon_data.get("nodes", {}).get(self.options.node, {}).get("services", {}).get("status", {}).get(self.svcpath, {})
+            data["cluster"] = mon_data.get("services", {}).get(self.svcpath, {})
+            data["cluster"]["compat"] = mon_data.get("compat")
+        else:
+            nodename = rcEnv.nodename
+
+        if self.options.format is not None or self.options.jsonpath_filter:
+            return data
+
+        # discard disabled resources ?
+        if self.options.show_disabled is not None:
+            discard_disabled = not self.options.show_disabled
+        else:
+            discard_disabled = not self.show_disabled
+
+        from fmt_service import format_service
+        mon_data = self.get_mon_data()
+        format_service(self.svcpath, data, mon_data=mon_data, discard_disabled=discard_disabled, volatile=self.volatile, nodename=nodename)
+
+    def delete(self):
+        """
+        The 'delete' action entrypoint.
+        If --unprovision is set, call the unprovision method.
+        Then if no resource specifier is set, remove all service files in
+        <pathetc>.
+        If a resource specifier is set, only delete the corresponding
+        sections in the configuration file.
+        """
+        self.delete_service_conf()
+        self.delete_service_logs()
+        self.set_purge_collector_tag()
+
+    def delete_service_logs(self):
+        """
+        Delete the service configuration logs
+        """
+        import glob
+        patterns = [
+            os.path.join(self.log_d, self.svcname+".log*"),
+            os.path.join(self.log_d, self.svcname+".debug.log*"),
+            os.path.join(self.log_d, '.'+self.svcname+".log*"),
+            os.path.join(self.log_d, '.'+self.svcname+".debug.log*"),
+            os.path.join(self.var_d, "frozen"),
+        ]
+        for pattern in patterns:
+            for fpath in glob.glob(pattern):
+                self.log.info("remove %s", fpath)
+                os.unlink(fpath)
+
+    def delete_service_conf(self):
+        """
+        Delete the service configuration files
+        """
+        import shutil
+        from rcUtilities import svclink_path
+        dpaths = [
+            self.paths.alt_initd,
+            self.paths.initd,
+            os.path.join(self.var_d),
+        ]
+        fpaths = [
+            self.paths.cf,
+            svclink_path(self.svcname, self.namespace, self.node.cluster_name),
+            self.paths.initd,
+        ]
+        for fpath in fpaths:
+            if os.path.exists(fpath) and \
+               (os.path.islink(fpath) or os.path.isfile(fpath)):
+                self.log.info("remove %s", fpath)
+                os.unlink(fpath)
+        for dpath in dpaths:
+            if os.path.exists(dpath):
+                self.log.info("remove %s", dpath)
+                try:
+                    shutil.rmtree(dpath)
+                except OSError:
+                    # errno 39: not empty (racing with a writer)
+                    pass
+
+    def set_purge_collector_tag(self):
+        if not self.options.purge_collector:
+            return
+        try:
+            self._set_purge_collector_tag()
+        except Exception as exc:
+            self.log.warning(exc)
+
+    def _set_purge_collector_tag(self):
+        self.log.info("tag the service for purge on the collector")
+        try:
+            data = self.collector_rest_get("/services/self", {"props": "svc_id"})
+            svc_id = data["data"][0]["svc_id"]
+            data = self.collector_rest_get("/tags/@purge")
+            if len(data["data"]) == 0:
+                data = self.collector_rest_post("/tags", {"tag_name": "@purge"})
+            data = self.collector_rest_post("/tags/services", {
+                "svc_id": svc_id,
+                "tag_id": data["data"][0]["tag_id"],
+            })
+            if "info" in data:
+                self.log.info(data["info"])
+        except Exception as exc:
+            raise ex.excError(str(exc))
+        if "error" in data:
+            raise ex.excError(data["error"])
+
+    def setenv(self, args, interactive=False):
+        """
+        For each option in the 'env' section of the configuration file,
+        * rewrite the value using the value specified in a corresponding
+          --env <option>=<value> commandline arg
+        * or prompt for the value if --interactive is set, and rewrite
+        * or leave the value as is, considering the default is accepted
+        """
+        explicit_options = []
+
+        for arg in args:
+            idx = arg.index("=")
+            option = arg[:idx]
+            value = arg[idx+1:]
+            self._set("env", option, value)
+            explicit_options.append(option)
+
+        if not interactive:
+            return
+
+        if not os.isatty(0):
+            raise ex.excError("--interactive is set but input fd is not a tty")
+
+        def get_href(ref):
+            ref = ref.strip("[]")
+            try:
+                response = node.urlopen(ref)
+                return response.read()
+            except:
+                return ""
+
+        def print_comment(comment):
+            """
+            Print a env keyword comment. For use in the interactive service
+            create codepath.
+            """
+            import re
+            comment = re.sub("(\[.+://.+])", lambda m: get_href(m.group(1)), comment)
+            print(comment)
+
+        from six.moves import input
+        for key, default_val in self.env_section_keys().items():
+            if key.endswith(".comment"):
+                continue
+            if key in explicit_options:
+                continue
+            if self.config.has_option("env", key+".comment"):
+                print_comment(self.config.get("env", key+".comment"))
+            newval = input("%s [%s] > " % (key, str(default_val)))
+            if newval != "":
+                self._set("env", key, newval)
+
+    def collector_rest_get(self, *args, **kwargs):
+        kwargs["svcname"] = self.svcpath
+        return self.node.collector_rest_get(*args, **kwargs)
+
+    def collector_rest_post(self, *args, **kwargs):
+        kwargs["svcname"] = self.svcpath
+        return self.node.collector_rest_post(*args, **kwargs)
+
+    def collector_rest_put(self, *args, **kwargs):
+        kwargs["svcname"] = self.svcpath
+        return self.node.collector_rest_put(*args, **kwargs)
+
+    def collector_rest_delete(self, *args, **kwargs):
+        kwargs["svcname"] = self.svcpath
+        return self.node.collector_rest_delete(*args, **kwargs)
 
     def options_to_rids(self, options, action):
         return set()
@@ -2373,6 +2571,63 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     def rollback(self):
         pass
+
+    @lazy
+    def parents(self):
+        return []
+
+    @lazy
+    def children(self):
+        return []
+
+    @lazy
+    def slaves(self):
+        return []
+
+    @lazy
+    def children_and_slaves(self):
+        return []
+
+    @lazy
+    def scale_target(self):
+        pass
+
+    def pg_stats(self):
+        return {}
+
+    @lazy
+    def flex_min_nodes(self):
+        return 0
+
+    @lazy
+    def flex_max_nodes(self):
+        return 0
+
+    @lazy
+    def flex_cpu_low_threshold(self):
+        return 0
+
+    @lazy
+    def flex_cpu_high_threshold(self):
+        return 0
+
+    @lazy
+    def comment(self):
+        return ""
+
+    @lazy
+    def app(self):
+        return
+
+    @lazy
+    def ha(self):
+        return False
+
+    def get_flex_primary(self):
+        return ""
+
+    def get_drp_flex_primary(self):
+        return ""
 
 
 class Svc(BaseSvc):
@@ -2520,6 +2775,26 @@ class Svc(BaseSvc):
         if isinstance(val, int) and val < 0:
             val = 0
         return val
+
+    def get_flex_primary(self):
+        try:
+            flex_primary = self.conf_get("DEFAULT", "flex_primary")
+        except ex.OptNotFound as exc:
+            if len(self.ordered_nodes) > 0:
+                flex_primary = self.ordered_nodes[0]
+            else:
+                flex_primary = ""
+        return flex_primary
+
+    def get_drp_flex_primary(self):
+        try:
+            drp_flex_primary = self.conf_get("DEFAULT", "drp_flex_primary")
+        except ex.OptNotFound as exc:
+            if len(self.ordered_drpnodes) > 0:
+                drp_flex_primary = self.ordered_drpnodes[0]
+            else:
+                drp_flex_primary = ""
+        return drp_flex_primary
 
     @lazy
     def scaler(self):
@@ -2710,6 +2985,18 @@ class Svc(BaseSvc):
         self.scheduler_configured = True
         monitor_schedule = self.oget('DEFAULT', 'monitor_schedule')
 
+        self.sched.scheduler_actions.update({
+            "compliance_auto": SchedOpts(
+                "DEFAULT",
+                fname="last_comp_check",
+                schedule_option="comp_schedule"
+            ),
+            "push_resinfo": SchedOpts(
+                "DEFAULT",
+                fname="last_push_resinfo",
+                schedule_option="resinfo_schedule"
+            ),
+        })
         if not self.encap:
             self.sched.scheduler_actions["status"] = SchedOpts(
                     "DEFAULT",
@@ -3187,33 +3474,6 @@ class Svc(BaseSvc):
             print(rcStatus.colorize_status(str(resource.status(refresh=self.options.refresh))))
         return 0
 
-    def print_status(self):
-        """
-        Display in human-readable format the hierarchical service status.
-        """
-        data = self.print_status_data(mon_data=True, refresh=self.options.refresh)
-        if self.options.node:
-            nodename = self.options.node
-            mon_data = self.get_mon_data()
-            data = mon_data.get("nodes", {}).get(self.options.node, {}).get("services", {}).get("status", {}).get(self.svcpath, {})
-            data["cluster"] = mon_data.get("services", {}).get(self.svcpath, {})
-            data["cluster"]["compat"] = mon_data.get("compat")
-        else:
-            nodename = rcEnv.nodename
-
-        if self.options.format is not None or self.options.jsonpath_filter:
-            return data
-
-        # discard disabled resources ?
-        if self.options.show_disabled is not None:
-            discard_disabled = not self.options.show_disabled
-        else:
-            discard_disabled = not self.show_disabled
-
-        from fmt_service import format_service
-        mon_data = self.get_mon_data()
-        format_service(self.svcpath, data, mon_data=mon_data, discard_disabled=discard_disabled, volatile=self.volatile, nodename=nodename)
-
     def print_status_data_eval(self, refresh=False, write_data=True):
         """
         Return a structure containing hierarchical status of
@@ -3233,7 +3493,9 @@ class Svc(BaseSvc):
             "subsets": {},
             "resources": {},
         }
-        data["running"] = self.get_running()
+        running = self.get_running()
+        if running:
+            data["running"] = running
         if self.topology == "flex":
             data.update({
                 "flex_min_nodes": self.flex_min_nodes,
@@ -4844,74 +5106,6 @@ class Svc(BaseSvc):
         """
         pass
 
-    def collector_rest_get(self, *args, **kwargs):
-        kwargs["svcname"] = self.svcpath
-        return self.node.collector_rest_get(*args, **kwargs)
-
-    def collector_rest_post(self, *args, **kwargs):
-        kwargs["svcname"] = self.svcpath
-        return self.node.collector_rest_post(*args, **kwargs)
-
-    def collector_rest_put(self, *args, **kwargs):
-        kwargs["svcname"] = self.svcpath
-        return self.node.collector_rest_put(*args, **kwargs)
-
-    def collector_rest_delete(self, *args, **kwargs):
-        kwargs["svcname"] = self.svcpath
-        return self.node.collector_rest_delete(*args, **kwargs)
-
-    def setenv(self, args, interactive=False):
-        """
-        For each option in the 'env' section of the configuration file,
-        * rewrite the value using the value specified in a corresponding
-          --env <option>=<value> commandline arg
-        * or prompt for the value if --interactive is set, and rewrite
-        * or leave the value as is, considering the default is accepted
-        """
-        explicit_options = []
-
-        for arg in args:
-            idx = arg.index("=")
-            option = arg[:idx]
-            value = arg[idx+1:]
-            self._set("env", option, value)
-            explicit_options.append(option)
-
-        if not interactive:
-            return
-
-        if not os.isatty(0):
-            raise ex.excError("--interactive is set but input fd is not a tty")
-
-        def get_href(ref):
-            ref = ref.strip("[]")
-            try:
-                response = node.urlopen(ref)
-                return response.read()
-            except:
-                return ""
-
-        def print_comment(comment):
-            """
-            Print a env keyword comment. For use in the interactive service
-            create codepath.
-            """
-            import re
-            comment = re.sub("(\[.+://.+])", lambda m: get_href(m.group(1)), comment)
-            print(comment)
-
-        from six.moves import input
-        for key, default_val in self.env_section_keys().items():
-            if key.endswith(".comment"):
-                continue
-            if key in explicit_options:
-                continue
-            if self.config.has_option("env", key+".comment"):
-                print_comment(self.config.get("env", key+".comment"))
-            newval = input("%s [%s] > " % (key, str(default_val)))
-            if newval != "":
-                self._set("env", key, newval)
-
     def set_disable(self, rids=None, disable=True):
         """
         Set the disable to <disable> (True|False) in the configuration file,
@@ -4986,53 +5180,6 @@ class Svc(BaseSvc):
         """
         return self.set_disable(self.action_rid, True)
 
-    def delete_service_logs(self):
-        """
-        Delete the service configuration logs
-        """
-        import glob
-        patterns = [
-            os.path.join(self.log_d, self.svcname+".log*"),
-            os.path.join(self.log_d, self.svcname+".debug.log*"),
-            os.path.join(self.log_d, '.'+self.svcname+".log*"),
-            os.path.join(self.log_d, '.'+self.svcname+".debug.log*"),
-            os.path.join(self.var_d, "frozen"),
-        ]
-        for pattern in patterns:
-            for fpath in glob.glob(pattern):
-                self.log.info("remove %s", fpath)
-                os.unlink(fpath)
-
-    def delete_service_conf(self):
-        """
-        Delete the service configuration files
-        """
-        import shutil
-        from rcUtilities import svclink_path
-        dpaths = [
-            self.paths.alt_initd,
-            self.paths.initd,
-            os.path.join(self.var_d),
-        ]
-        fpaths = [
-            self.paths.cf,
-            svclink_path(self.svcname, self.namespace, self.node.cluster_name),
-            self.paths.initd,
-        ]
-        for fpath in fpaths:
-            if os.path.exists(fpath) and \
-               (os.path.islink(fpath) or os.path.isfile(fpath)):
-                self.log.info("remove %s", fpath)
-                os.unlink(fpath)
-        for dpath in dpaths:
-            if os.path.exists(dpath):
-                self.log.info("remove %s", dpath)
-                try:
-                    shutil.rmtree(dpath)
-                except OSError:
-                    # errno 39: not empty (racing with a writer)
-                    pass
-
     def delete_resources(self, rids=None):
         """
         Delete service resources objects and references and in configuration file
@@ -5076,33 +5223,6 @@ class Svc(BaseSvc):
         Delete service resources from its configuration file
         """
         self.delete_sections(rids)
-
-    def set_purge_collector_tag(self):
-        if not self.options.purge_collector:
-            return
-        try:
-            self._set_purge_collector_tag()
-        except Exception as exc:
-            self.log.warning(exc)
-
-    def _set_purge_collector_tag(self):
-        self.log.info("tag the service for purge on the collector")
-        try:
-            data = self.collector_rest_get("/services/self", {"props": "svc_id"})
-            svc_id = data["data"][0]["svc_id"]
-            data = self.collector_rest_get("/tags/@purge")
-            if len(data["data"]) == 0:
-                data = self.collector_rest_post("/tags", {"tag_name": "@purge"})
-            data = self.collector_rest_post("/tags/services", {
-                "svc_id": svc_id,
-                "tag_id": data["data"][0]["tag_id"],
-            })
-            if "info" in data:
-                self.log.info(data["info"])
-        except Exception as exc:
-            raise ex.excError(str(exc))
-        if "error" in data:
-            raise ex.excError(data["error"])
 
     def delete(self):
         """

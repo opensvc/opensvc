@@ -3,24 +3,45 @@ from __future__ import print_function
 import os
 
 import rcExceptions as ex
-from rcUtilities import lazy, fmt_svcpath
+from rcUtilities import lazy, fmt_svcpath, mimport
 from converters import convert_size
-from svc import Svc
+from svc import BaseSvc, Svc
+
+DEFAULT_STATUS_GROUPS = [
+]
+
+class PoolSvc(BaseSvc):
+    @lazy
+    def pool(self):
+        pool_type = self.oget("pool", "type")
+        pool_mod = mimport("pool", pool_type)
+        return pool_mod.Pool(self.svcname, svc=self)
+
+    @lazy
+    def kwdict(self):
+        return __import__("pooldict")
 
 class Pool(object):
     type = None
 
-    def __init__(self, node=None, name=None):
-        self.node = node
-        self.name = name.strip(os.sep)
-        if node:
-            self.log = self.node.log
+    def __init__(self, name=None, node=None, svc=None, **kwargs):
+        try:
+            name = name.strip(os.sep)
+        except Exception:
+            pass
+        self.name = name
+        if node is None:
+            self.node = svc.node
+        else:
+            self.node = node
+        self.svc = svc
+        if svc:
+            self.log = svc.log
+        else:
+            self.log = node.log
 
-    def conf_get(self, kw, **kwargs):
-        return self.node.conf_get(self.section, kw, **kwargs)
-
-    def oget(self, kw, **kwargs):
-        return self.node.oget(self.section, kw, **kwargs)
+        # compat
+        self.pool = self
 
     @lazy
     def volume_env(self):
@@ -35,35 +56,29 @@ class Pool(object):
 
     @lazy
     def section(self):
-        return "pool#"+self.name
+        return "pool#" + self.name
+
+    def oget(self, key, **kwargs):
+        try:
+            return self.svc.oget("pool", key, **kwargs)
+        except AttributeError:
+            return self.node.oget(self.section, key, **kwargs)
 
     @lazy
     def fs_type(self):
-        try:
-            return self.conf_get("fs_type")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("fs_type")
 
     @lazy
     def mkfs_opt(self):
-        try:
-            return self.conf_get("mkfs_opt")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("mkfs_opt")
 
     @lazy
     def mkblk_opt(self):
-        try:
-            return self.conf_get("mkblk_opt")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("mkblk_opt")
 
     @lazy
     def mnt_opt(self):
-        try:
-            return self.conf_get("mnt_opt")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("mnt_opt")
 
     def mount_point(self, name):
         return os.path.join(os.sep, "srv", name)
@@ -93,7 +108,7 @@ class Pool(object):
         volume._update(data)
         self.node.install_service_files(volume.svcname, namespace=volume.namespace)
 
-    def status(self):
+    def pool_status(self):
         pass
 
     def translate(self, name=None, size=None, fmt=True, shared=False):
@@ -108,7 +123,8 @@ class Pool(object):
     def delete_volume(self, name, namespace=None):
         volume = Svc(svcname=name, namespace=namespace, node=self.node)
         if not volume.exists():
-            self.log("volume does not exist")
+            self.log.info("volume does not exist")
+            return
         self.log.info("delete volume %s", volume.svcpath)
         volume.action("delete", options={"wait": True, "unprovision": True, "time": "5m"})
         

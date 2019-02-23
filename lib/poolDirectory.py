@@ -13,10 +13,7 @@ class Pool(pool.Pool):
 
     @lazy
     def path(self):
-        try:
-            return self.node.conf_get(self.section, "path")
-        except ex.OptNotFound as exc:
-            return exc.default
+        return self.oget("path")
 
     def translate_blk(self, name=None, size=None, shared=False):
         data = [
@@ -42,7 +39,7 @@ class Pool(pool.Pool):
         })
         return data
 
-    def status(self):
+    def pool_status(self):
         from converters import convert_size
         if not os.path.exists(self.path):
             os.makedirs(self.path)

@@ -55,7 +55,7 @@ class Pool(pool.Pool):
             config["env"].update(env)
         self.node.install_svc_conf_from_data(volume.svcname, volume.namespace, config)
 
-    def status(self):
+    def pool_status(self):
         data = {
             "type": self.type,
             "name": self.name,

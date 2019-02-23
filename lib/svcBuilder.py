@@ -1603,43 +1603,12 @@ def build(name, namespace=None, svcconf=None, node=None, volatile=False):
     Instanciate a Svc object
     """
     if namespace == "pools":
-        from pool import Pool
-        svc = Pool(name, node=node, cf=svcconf)
+        from pool import PoolSvc
+        svc = PoolSvc(name, namespace, node=node, cf=svcconf)
     else:
         from svc import Svc
         svc = Svc(svcname=name, namespace=namespace, node=node,
                   cf=svcconf, volatile=volatile)
-
-    drpnodes = svc.oget("DEFAULT", "drpnodes")
-
-    try:
-        drpnode = svc.conf_get("DEFAULT", "drpnode").lower()
-        if drpnode not in drpnodes and drpnode != "":
-            drpnodes.append(drpnode)
-    except ex.OptNotFound as exc:
-        drpnode = ""
-
-    svc.ordered_drpnodes = drpnodes
-    svc.drpnodes = set(drpnodes)
-
-    try:
-        flex_primary = svc.conf_get("DEFAULT", "flex_primary").lower()
-    except ex.OptNotFound as exc:
-        if len(svc.ordered_nodes) > 0:
-            flex_primary = svc.ordered_nodes[0]
-        else:
-            flex_primary = ""
-    svc.flex_primary = flex_primary
-
-    try:
-        drp_flex_primary = svc.conf_get("DEFAULT", "drp_flex_primary").lower()
-    except ex.OptNotFound as exc:
-        if len(svc.ordered_drpnodes) > 0:
-            drp_flex_primary = svc.ordered_drpnodes[0]
-        else:
-            drp_flex_primary = ""
-    svc.drp_flex_primary = drp_flex_primary
-
     return svc
 
 def add_resources(svc):

@@ -2371,13 +2371,13 @@ class Node(Crypt, ExtConfigMixin):
         self.clouds[section] = cloud
         return cloud
 
-    def can_parallel(self, action, options):
+    def can_parallel(self, action, svcs, options):
         """
         Returns True if the action can be run in a subprocess per service
         """
         if rcEnv.sysname == "Windows":
             return False
-        if len(self.svcs) < 2:
+        if len(svcs) < 2:
             return False
         if options.parallel and action not in ACTIONS_NO_PARALLEL:
             return True
@@ -2406,8 +2406,9 @@ class Node(Crypt, ExtConfigMixin):
         * parallelization of the action in per-service subprocesses
         * collection and aggregation of returned data and errors
         """
+        svcs = [] + self.svcs
         if action == "ls":
-            data = self.strip_ns(sorted([svc.svcpath for svc in self.svcs]), options.namespace)
+            data = self.strip_ns(sorted([svc.svcpath for svc in svcs]), options.namespace)
             if options.format == "json":
                 print(json.dumps(data, indent=4, sort_keys=True))
             else:
@@ -2423,11 +2424,11 @@ class Node(Crypt, ExtConfigMixin):
         purge_cache_expired()
         self.log.debug("session uuid: %s", rcEnv.session_uuid)
 
-        if action in ACTIONS_NO_MULTIPLE_SERVICES and len(self.svcs) > 1:
+        if action in ACTIONS_NO_MULTIPLE_SERVICES and len(svcs) > 1:
             print("action '%s' is not allowed on multiple services" % action, file=sys.stderr)
             return 1
 
-        if self.can_parallel(action, options):
+        if self.can_parallel(action, svcs, options):
             from multiprocessing import Process
             data.procs = {}
             data.svcs = {}
@@ -2446,8 +2447,8 @@ class Node(Crypt, ExtConfigMixin):
                     count += 1
             return count
 
-        for svc in self.svcs:
-            if self.can_parallel(action, options):
+        for svc in svcs:
+            if self.can_parallel(action, svcs, options):
                 while running() >= self.max_parallel:
                     time.sleep(1)
                 data.svcs[svc.svcpath] = svc
@@ -2489,7 +2490,7 @@ class Node(Crypt, ExtConfigMixin):
                 except ex.excSignal:
                     break
 
-        if self.can_parallel(action, options):
+        if self.can_parallel(action, svcs, options):
             for svcpath in data.procs:
                 data.procs[svcpath].join()
                 ret = data.procs[svcpath].exitcode
@@ -2498,7 +2499,7 @@ class Node(Crypt, ExtConfigMixin):
                     # in this case, we don't want to decrement the err counter.
                     err += ret
         if timeout:
-            for svc in self.svcs:
+            for svc in svcs:
                 global_expect = svc.prepare_global_expect(action)
                 begin = time.time()
                 svc.wait_daemon_mon_action(global_expect, wait=True, timeout=timeout, log_progress=False)
@@ -2508,7 +2509,7 @@ class Node(Crypt, ExtConfigMixin):
 
         if need_aggregate:
             if self.options.single_service:
-                svcpath = self.svcs[0].svcpath
+                svcpath = svcs[0].svcpath
                 if svcpath not in data.outs:
                     return 1
                 self.print_data(data.outs[svcpath])
@@ -2939,6 +2940,11 @@ class Node(Crypt, ExtConfigMixin):
                  svc = Svc(name, _namespace, node=self)
                  svc.options.format = "json"
                  data[_svcpath] = svc.print_config()
+            if svcpath:
+                 if len(data) == 1:
+                     data = [d for d in data.values()][0]
+                 else:
+                     raise ex.excError("multiple configs available to create a single service")
 
         if fpath is not None and template is not None:
             raise ex.excError("--config and --template can't both be specified")
@@ -4518,6 +4524,8 @@ class Node(Crypt, ExtConfigMixin):
         for section in self.config.sections():
             if section.startswith("pool#"):
                 data.add(section.split("#")[-1])
+        for svcpath in self.svcs_selector("*", namespace="pools"):
+            data.add(split_svcpath(svcpath)[0])
         return sorted(list(data))
 
     @formatter
@@ -4576,7 +4584,7 @@ class Node(Crypt, ExtConfigMixin):
         volumes = self.pools_volumes()
         for name in self.pool_ls_data():
             pool = self.get_pool(name)
-            data[name] = pool.status()
+            data[name] = pool.pool_status()
             if name in volumes:
                 data[name]["volumes"] = sorted(list(volumes[name]))
             else:
@@ -4617,6 +4625,10 @@ class Node(Crypt, ExtConfigMixin):
         return self.get_pool(candidates[-1]["name"])
 
     def get_pool(self, poolname):
+        from pool import PoolSvc
+        pool = PoolSvc(poolname, "pools", node=self)
+        if pool.exists():
+            return pool.pool
         try:
             section = "pool#"+poolname
         except TypeError:
@@ -4629,7 +4641,7 @@ class Node(Crypt, ExtConfigMixin):
             ptype = exc.default
         from rcUtilities import mimport
         mod = mimport("pool", ptype)
-        return mod.Pool(node=self, name=poolname)
+        return mod.Pool(node=self, name=poolname, log=self.log)
 
     def pool_create_volume(self):
         nodes = self.nodes_selector(self.options.node)
