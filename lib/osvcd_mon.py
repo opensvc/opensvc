@@ -265,7 +265,7 @@ class Monitor(shared.OsvcThread):
 
         try:
             svc = shared.SERVICES[svcpath]
-            if svc.kind != "vol":
+            if svc.kind == "app":
                 self.event("instance_freeze", {
                     "reason": "install",
                     "svcpath": svc.svcpath,
@@ -915,6 +915,8 @@ class Monitor(shared.OsvcThread):
         failover and flex specific policies.
         """
         if status == "unknown":
+            return
+        if svc.topology == "span":
             return
         if svc.disabled:
             #self.log.info("service %s orchestrator out (disabled)", svc.svcpath)
@@ -2445,7 +2447,7 @@ class Monitor(shared.OsvcThread):
         return True
 
     def get_agg_deleted(self, svcpath):
-        if len([True for inst in self.get_service_instances(svcpath).values() if "avail" in inst]) > 0:
+        if len([True for inst in self.get_service_instances(svcpath).values() if "updated" in inst]) > 0:
             return False
         return True
 
@@ -2531,13 +2533,6 @@ class Monitor(shared.OsvcThread):
                 except (TypeError, KeyError):
                     continue
                 for svcpath, config in configs.items():
-                    try:
-                        sdata = shared.CLUSTER_DATA[nodename]["services"]["status"][svcpath]
-                    except (TypeError, KeyError):
-                        continue
-                    if "avail" not in sdata:
-                        # deleting
-                        continue
                     if svcpath not in data:
                         data[svcpath] = {}
                     data[svcpath][nodename] = Storage(config)
@@ -3202,8 +3197,10 @@ class Monitor(shared.OsvcThread):
                         self.set_smon(svcpath, global_expect=global_expect)
 
     def accept_g_expect(self, svcpath, instance, global_expect):
-        if svcpath not in shared.AGG:
-            return False
+        if svcpath in shared.AGG:
+            agg = shared.AGG[svcpath]
+        else:
+            agg = Storage()
         smon = self.get_service_monitor(svcpath)
         if global_expect not in ("aborted", "thawed", "frozen") and \
            self.abort_state(smon.status, global_expect, smon.placement):
@@ -3220,35 +3217,32 @@ class Monitor(shared.OsvcThread):
         elif global_expect == "started":
             if shared.SERVICES[svcpath].placement == "none":
                 return False
-            status = shared.AGG[svcpath].avail
             local_frozen = instance.get("frozen", 0)
-            if status in STOPPED_STATES or local_frozen:
+            if agg.avail is None:
+                return False
+            if agg.avail in STOPPED_STATES or local_frozen:
                 return True
             else:
                 return False
         elif global_expect == "frozen":
-            frozen = shared.AGG[svcpath].frozen
-            if frozen != "frozen":
+            if agg.frozen and agg.frozen != "frozen":
                 return True
             else:
                 return False
         elif global_expect == "thawed":
-            frozen = shared.AGG[svcpath].frozen
-            if frozen != "thawed":
+            if agg.frozen and agg.frozen != "thawed":
                  return True
             else:
                 return False
         elif global_expect == "provisioned":
             if shared.SERVICES[svcpath].placement == "none":
                 return False
-            provisioned = shared.AGG[svcpath].provisioned
-            if provisioned is not True:
+            if agg.provisioned not in (True, None):
                 return True
             else:
                 return False
         elif global_expect == "unprovisioned":
-            provisioned = shared.AGG[svcpath].provisioned
-            if provisioned is not False:
+            if agg.provisioned not in (False, None):
                 return True
             else:
                 return False
@@ -3261,9 +3255,8 @@ class Monitor(shared.OsvcThread):
         elif global_expect == "purged":
             if shared.SERVICES[svcpath].placement == "none":
                 return False
-            provisioned = shared.AGG[svcpath].provisioned
             deleted = self.get_agg_deleted(svcpath)
-            purged = self.get_agg_purged(provisioned, deleted)
+            purged = self.get_agg_purged(agg.provisioned, deleted)
             if purged is False:
                 return True
             else:
@@ -3277,9 +3270,7 @@ class Monitor(shared.OsvcThread):
         elif global_expect == "placed":
             if shared.SERVICES[svcpath].placement == "none":
                 return False
-            placement = shared.AGG[svcpath].placement
-            frozen = shared.AGG[svcpath].frozen
-            if placement == "non-optimal" or shared.AGG[svcpath].avail != "up" or frozen == "frozen":
+            if agg.placement == "non-optimal" or agg.avail != "up" or agg.frozen == "frozen":
                 svc = shared.SERVICES.get(svcpath)
                 if svc is None:
                     return True
@@ -3324,8 +3315,6 @@ class Monitor(shared.OsvcThread):
         data.overall = self.get_agg_overall(svcpath)
         data.placement = self.get_agg_placement(svcpath)
         data.provisioned = self.get_agg_provisioned(svcpath)
-        with shared.AGG_LOCK:
-            shared.AGG[svcpath] = data
         return data
 
     def get_agg_services(self):
@@ -3339,7 +3328,16 @@ class Monitor(shared.OsvcThread):
                     continue
         data = {}
         for svcpath in svcpaths:
+            try:
+                if self.get_service(svcpath).topology == "span":
+                    data[svcpath] = Storage()
+                    continue
+            except Exception as exc:
+                data[svcpath] = Storage()
+                pass
             data[svcpath] = self.get_agg(svcpath)
+        with shared.AGG_LOCK:
+            shared.AGG = data
         return data
 
     def status(self, **kwargs):

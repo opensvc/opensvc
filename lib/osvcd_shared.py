@@ -827,7 +827,7 @@ class OsvcThread(threading.Thread, Crypt):
                 try:
                     if svcpath in CLUSTER_DATA[nodename]["services"]["status"]:
                         try:
-                            CLUSTER_DATA[nodename]["services"]["status"][svcpath]["avail"]
+                            CLUSTER_DATA[nodename]["services"]["status"][svcpath]["updated"]
                         except (TypeError, KeyError):
                             # foreign
                             continue
