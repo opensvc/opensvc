@@ -1076,7 +1076,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         if action == "sync_all" and self.command_is_scoped():
             for rid in self.action_rid:
-                resource = self.get_resource(rid)
+                resource = self.get_resource(rid) # pylint: disable=assignment-from-no-return
                 if not resource or not resource.type.startswith("sync"):
                     continue
                 try:
@@ -1416,10 +1416,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 raise ex.excError("the --to <node>[,<node>,...] option is required")
             global_expect += self.options.destination_node
         elif action == "switch":
-            dst = self.destination_node_sanity_checks()
+            dst = self.destination_node_sanity_checks() # pylint: disable=assignment-from-no-return
             global_expect += dst
         elif action == "takeover":
-            dst = self.destination_node_sanity_checks(rcEnv.nodename)
+            dst = self.destination_node_sanity_checks(rcEnv.nodename) # pylint: disable=assignment-from-no-return
             global_expect += dst
         return global_expect
 
