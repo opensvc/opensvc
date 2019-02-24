@@ -101,9 +101,10 @@ class Collector(shared.OsvcThread):
         last_config = {}
         last_config_changed = []
         for svcpath, sdata in data["nodes"].get(rcEnv.nodename, {}).get("services", {}).get("config", {}).items():
-            config_csum = sdata.get("csum")
-            prev_config_csum = self.last_config.get(svcpath)
-            if config_csum != prev_config_csum:
+            config_csum = sdata.get("csum", 0)
+            prev_config_csum = self.last_config.get(svcpath, 0)
+            if prev_config_csum and config_csum != prev_config_csum:
+                # don't send all configs on daemon start
                 last_config_changed.append(svcpath)
             last_config[svcpath] = config_csum
         self.last_config = last_config
