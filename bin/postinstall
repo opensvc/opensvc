@@ -684,7 +684,7 @@ def install_params(path2file):
         buff = f.read()
     if sys.executable != "/usr/bin/python":
         buff += "OSVC_PYTHON=%s\n" % sys.executable
-    if os.path.join("share", "bin") not in __file__:
+    if os.path.join("share", "opensvc", "bin") not in __file__:
         root_path = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
         buff += "OSVC_ROOT_PATH=%s\n" % root_path
     try:
