@@ -645,11 +645,13 @@ class OsvcThread(threading.Thread, Crypt):
         if nodename in self.cluster_nodes:
             return
         nodes = self.cluster_nodes + [nodename]
-        from cluster import ClusterSvc
-        svc = ClusterSvc()
-        svc.set_multi(["cluster.nodes="+" ".join(nodes)], validation=False)
-        NODE.unset_multi("cluster.nodes")
-        del svc
+        if NODE.config.has_option("cluster", "nodes"):
+            NODE.set_multi(["cluster.nodes="+" ".join(nodes)], validation=False)
+        else:
+            from cluster import ClusterSvc
+            svc = ClusterSvc()
+            svc.set_multi(["cluster.nodes="+" ".join(nodes)], validation=False)
+            del svc
 
     def remove_cluster_node(self, nodename):
         if nodename not in self.cluster_nodes:

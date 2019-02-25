@@ -42,7 +42,7 @@ from rcColor import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         call, which, purge_cache_expired, read_cf, unset_lazy, \
                         drop_option, is_string, try_decode, is_service, \
-                        bencode, bdecode, \
+                        bencode, bdecode, set_lazy, \
                         list_services, init_locale, ANSI_ESCAPE, svc_pathetc, \
                         makedirs, exe_link_exists, fmt_svcpath, \
                         glob_services_config, split_svcpath, validate_name, \
@@ -4270,60 +4270,60 @@ class Node(Crypt, ExtConfigMixin):
         )
         if data is None:
             raise ex.excError("join node %s failed" % joined)
+
         data = data.get("data")
         if data is None:
             raise ex.excError("join failed: no data in response")
+        ndata = data.get("node", {}).get("data", {})
         toadd = []
         toremove = []
         sectoremove = []
-        cluster_name = data.get("cluster", {}).get("name")
-        if cluster_name is None:
-            raise ex.excError("join failed: no cluster.name in response")
-        cluster_nodes = data.get("cluster", {}).get("nodes")
-        if cluster_nodes is None:
-            raise ex.excError("join failed: no cluster.nodes in response")
-        if not isinstance(cluster_nodes, list):
-            raise ex.excError("join failed: cluster.nodes value is not a list")
-        cluster_id = data.get("cluster", {}).get("id")
-        cluster_drpnodes = data.get("cluster", {}).get("drpnodes")
-        dns = data.get("cluster", {}).get("dns")
-        quorum = data.get("cluster", {}).get("quorum", False)
 
-        peer_env = data.get("node", {}).get("env")
-        if peer_env and peer_env != self.env:
-            self.log.info("update node.env %s => %s", self.env, peer_env)
-            toadd.append("node.env="+peer_env)
-
-        try:
-            data["cluster_config"]["data"]["cluster"]["secret"]
-        except KeyError:
-            # secret might be bytes, when passed from rejoin
-            toadd.append("cluster.secret=" + bdecode(secret))
-        try:
-            data["cluster_config"]["data"]["cluster"]["name"]
-        except KeyError:
+        cluster_name = ndata.get("cluster", {}).get("name")
+        if cluster_name:
             toadd.append("cluster.name=" + cluster_name)
-        try:
-            data["cluster_config"]["data"]["cluster"]["nodes"]
-        except KeyError:
-            toadd.append("cluster.nodes=" + " ".join(cluster_nodes))
-        try:
-            data["cluster_config"]["data"]["cluster"]["id"]
-        except KeyError:
-            if cluster_id:
-                toadd.append("cluster.id=" + cluster_id)
-
-        if isinstance(dns, list) and len(dns) > 0:
-            toadd.append("cluster.dns=" + " ".join(dns))
+            self.set_lazy("cluster_name", cluster_name)
+        else:
+            toremove.append("cluster.name")
+        cluster_nodes = ndata.get("cluster", {}).get("nodes")
+        if cluster_nodes and isinstance(cluster_nodes, list):
+            toadd.append("cluster.nodes=" + cluster_nodes)
+        else:
+            toremove.append("cluster.nodes")
+        cluster_id = ndata.get("cluster", {}).get("id")
+        if cluster_id:
+            toadd.append("cluster.id=" + cluster_id)
+        else:
+            toremove.append("cluster.id")
+        cluster_drpnodes = ndata.get("cluster", {}).get("drpnodes")
         if isinstance(cluster_drpnodes, list) and len(cluster_drpnodes) > 0:
-            toadd.append("cluster.drpnodes=" + " ".join(cluster_drpnodes))
+            toadd.append("cluster.drpnodes=" + cluster_drpnodes)
+        else:
+            toremove.append("cluster.drpnodes")
+        dns = ndata.get("cluster", {}).get("dns")
+        if isinstance(dns, list) and len(dns) > 0:
+            toadd.append("cluster.dns=" + dns)
+        else:
+            toremove.append("cluster.dns")
+        quorum = ndata.get("cluster", {}).get("quorum", False)
         if quorum:
             toadd.append("cluster.quorum=true")
         else:
             toremove.append("cluster.quorum")
+        peer_env = ndata.get("node", {}).get("env")
+        if peer_env and peer_env != self.env:
+            toadd.append("node.env="+peer_env)
+        else:
+            toremove.append("node.env")
+        cluster_key = ndata.get("cluster", {}).get("secret")
+        if cluster_key:
+            # secret might be bytes, when passed from rejoin
+            toadd.append("cluster.secret=" + bdecode(secret))
+        else:
+            toremove.append("cluster.secret")
 
         config = self.get_config(cluster=False)
-        for section, _data in data.items():
+        for section, _data in ndata.items():
             if section.startswith("hb#"):
                 if config.has_section(section):
                     self.log.info("update heartbeat %s", section)
@@ -4367,60 +4367,61 @@ class Node(Crypt, ExtConfigMixin):
 
         # remove obsolete hb configurations
         for section in config.sections():
-            if section.startswith("hb#") and section not in data:
+            if section.startswith("hb#") and section not in ndata:
                 self.log.info("remove heartbeat %s", section)
                 sectoremove.append(section)
 
         # remove obsolete stonith configurations
         for section in config.sections():
-            if section.startswith("stonith#") and section not in data:
+            if section.startswith("stonith#") and section not in ndata:
                 self.log.info("remove stonith %s", section)
                 sectoremove.append(section)
 
         # remove obsolete arbitrator configurations
         for section in config.sections():
-            if section.startswith("arbitrator#") and section not in data:
+            if section.startswith("arbitrator#") and section not in ndata:
                 self.log.info("remove arbitrator %s", section)
                 sectoremove.append(section)
 
         # remove obsolete pool configurations
         for section in config.sections():
-            if section.startswith("pool#") and section not in data:
+            if section.startswith("pool#") and section not in ndata:
                 self.log.info("remove pool %s", section)
                 sectoremove.append(section)
 
         # remove obsolete network configurations
         for section in config.sections():
-            if section.startswith("network#") and section not in data:
+            if section.startswith("network#") and section not in ndata:
                 self.log.info("remove network %s", section)
                 sectoremove.append(section)
 
         self.log.info("join node %s", joined)
+        self.set_lazy("cluster_key", bdecode(secret))
         self.delete_sections(sectoremove)
         self.unset_multi(toremove)
         self.set_multi(toadd)
 
-        self.load_config()
-        self.unset_lazy("cluster_name")
-        self.unset_lazy("cluster_key")
-
         # install cluster config
-        cluster_config_data = data.get("cluster_config", {}).get("data")
-        cluster_config_mtime = data.get("cluster_config", {}).get("mtime")
+        cluster_config_data = data.get("cluster", {}).get("data")
+        cluster_config_mtime = data.get("cluster", {}).get("mtime")
         if cluster_config_data:
+            if not cluster_name:
+                cluster_name = cluster_config_data.get("cluster", {}).get("name", "default")
+            if not cluster_nodes:
+                cluster_nodes = cluster_config_data.get("cluster", {}).get("nodes", [])
+            self.set_lazy("cluster_name", cluster_name)
+            self.set_lazy("cluster_key", bdecode(secret))
+
             self.install_svc_conf_from_data("cluster", "system", cluster_config_data, restore=True)
             os.utime(rcEnv.paths.clusterconf, (cluster_config_mtime, cluster_config_mtime))
 
-        self.load_config()
-        self.unset_lazy("cluster_name")
-        self.unset_lazy("cluster_key")
 
         if cluster_config_data:
             self.install_service_files("cluster", "system")
 
         # join other nodes
         errors = 0
-        for nodename in cluster_nodes:
+        for nodename in cluster_nodes.split():
             if nodename in (rcEnv.nodename, joined):
                 continue
             data = self.daemon_send(
@@ -5128,6 +5129,13 @@ class Node(Crypt, ExtConfigMixin):
         return 0.0
 
     ##########################################################################
+
+    def set_lazy(self, prop, val):
+        """
+        Expose the set_lazy(self, ...) utility function as a method,
+        so Node() users don't have to import it from rcUtilities.
+        """
+        set_lazy(self, prop, val)
 
     def unset_lazy(self, prop):
         """

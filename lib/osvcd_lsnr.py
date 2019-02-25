@@ -904,36 +904,41 @@ class Listener(shared.OsvcThread):
             "status": 0,
             "data": {
                 "node": {
-                    "env": shared.NODE.env,
-                },
-                "cluster": {
-                    "nodes": new_nodes,
-                    "name": self.cluster_name,
+                    "data": {
+                        "node": {},
+                        "cluster": {},
+                    },
                 },
             },
         }
         config = shared.NODE.get_config(cluster=False)
+        if config.has_option("node", "env"):
+            result["data"]["node"]["data"]["node"]["env"] = shared.NODE.env
+        if config.has_option("cluster", "nodes"):
+            result["data"]["node"]["data"]["cluster"]["nodes"] = " ".join(new_nodes)
+        if config.has_option("cluster", "name"):
+            result["data"]["node"]["data"]["cluster"]["name"] = self.cluster_name
         if config.has_option("cluster", "drpnodes"):
-            result["data"]["cluster"]["drpnodes"] = self.cluster_drpnodes
+            result["data"]["node"]["data"]["cluster"]["drpnodes"] = " ".join(self.cluster_drpnodes)
         if config.has_option("cluster", "id"):
-            result["data"]["cluster"]["id"] = self.cluster_id
+            result["data"]["node"]["data"]["cluster"]["id"] = self.cluster_id
         if config.has_option("cluster", "quorum"):
-            result["data"]["cluster"]["quorum"] = self.quorum
+            result["data"]["node"]["data"]["cluster"]["quorum"] = self.quorum
         if config.has_option("cluster", "dns"):
-            result["data"]["cluster"]["dns"] = shared.NODE.dns
+            result["data"]["node"]["data"]["cluster"]["dns"] = " ".join(shared.NODE.dns)
         for section in config.sections():
             if section.startswith("hb#") or \
                section.startswith("stonith#") or \
                section.startswith("pool#") or \
                section.startswith("network#") or \
                section.startswith("arbitrator#"):
-                result["data"][section] = {}
+                result["data"]["node"]["data"][section] = {}
                 for key, val in config.items(section):
-                    result["data"][section][key] = val
+                    result["data"]["node"]["data"][section][key] = val
         from cluster import ClusterSvc
         svc = ClusterSvc(volatile=True, node=shared.NODE)
         if svc.exists():
-            result["data"]["cluster_config"] = {
+            result["data"]["cluster"] = {
                 "data": svc.print_config_data(),
                 "mtime": os.stat(svc.paths.cf).st_mtime,
             }
